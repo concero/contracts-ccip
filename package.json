@@ -27,7 +27,6 @@
     "next:format": "yarn workspace @se-2/nextjs format",
     "next:lint": "yarn workspace @se-2/nextjs lint",
     "precommit": "lint-staged",
-    "prepare": "install-self-peers -- --ignore-scripts",
     "start": "yarn workspace @se-2/nextjs dev",
     "test": "yarn hardhat:test",
     "vercel": "vercel",
@@ -42,6 +41,5 @@
     "lint-staged": "~13.2.2",
     "next": "~14.0.4",
     "vercel": "~32.4.1"
-  },
-  "packageManager": "yarn@3.2.3"
+  }
 }

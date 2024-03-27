@@ -1,6 +1,6 @@
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-
+import { LiquidityPool } from "../artifacts/contracts/Pool.sol";
 const ethAddress = "0x0000000000000000000000000000000000000000";
 const usdcAddress = "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318";
 const ROUTER_ADDRESS = "0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59";
@@ -39,10 +39,22 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
   // await deploy("FundMe", { from: deployer, args: [], log: true, autoMine: true });
   // const fundMe = await hre.ethers.getContract<FundMe>("FundMe", deployer);
 
-  // await deploy("LiquidityPool", { from: deployer, args: [ethAddress, usdcAddress], log: true, autoMine: true });
+  await deploy("LiquidityPool",
+    {
+      from: deployer,
+      args: [ethAddress, usdcAddress],
+      log: true,
+      autoMine: true
+    });
+  const liquidityPool = await hre.ethers.getContract<LiquidityPool>("LiquidityPool", deployer);
+  const usdcBalance = await liquidityPool.balanceOf(usdcAddress, WALLET_ADDRESS);
+  console.log("USDC Balance: ", usdcBalance.toString());
+
+
+
   // const walletBalance = await testUSDC.balanceOf(WALLET_ADDRESS);
   // if (walletBalance < ethers.parseEther("1000"))
-  //   await testUSDC.mint(WALLET_ADDRESS, ethers.parseEther("1000"));
+  // await testUSDC.mint(WALLET_ADDRESS, ethers.parseEther("1000"));
 
   // const liquidityPool = await hre.ethers.getContract<LiquidityPool>("LiquidityPool", deployer);
 };

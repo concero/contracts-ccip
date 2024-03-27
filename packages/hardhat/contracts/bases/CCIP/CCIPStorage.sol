@@ -4,10 +4,10 @@ pragma solidity ^0.8.20;
 
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import { Client } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import { EnumerableMap } from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.0/contracts/utils/structs/EnumerableMap.sol";
+// import { EnumerableMap } from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.0/contracts/utils/structs/EnumerableMap.sol";
 
 library CCIPStorage {
-	using EnumerableMap for EnumerableMap.Bytes32ToUintMap;
+	// using EnumerableMap for EnumerableMap.Bytes32ToUintMap;
 
 	bytes32 constant CCIP_STORAGE_POSITION = keccak256("ccip.internal.storage");
 
@@ -23,7 +23,7 @@ library CCIPStorage {
 		// The message contents of failed messages are stored here.
 		mapping(bytes32 messageId => Client.Any2EVMMessage contents) s_messageContents;
 		// Contains failed messages and their state.
-		EnumerableMap.Bytes32ToUintMap s_failedMessages;
+		// EnumerableMap.Bytes32ToUintMap s_failedMessages;
 	}
 
 	function _getCCIPStorage()

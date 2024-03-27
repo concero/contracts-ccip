@@ -14,9 +14,12 @@
     "lint": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore ./*.ts ./deploy/**/*.ts ./scripts/**/*.ts ./test/**/*.ts",
     "lint-staged": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore",
     "test": "REPORT_GAS=true hardhat test --network hardhat",
-    "verify": "hardhat etherscan-verify"
+    "verify": "hardhat etherscan-verify",
+    "clean": "hardhat clean"
   },
   "dependencies": {
+    "@chainlink/contracts": "^1.0.0",
+    "@chainlink/contracts-ccip": "^1.4.0",
     "@openzeppelin/contracts": "~4.8.1",
     "@typechain/ethers-v6": "~0.5.1",
     "dotenv": "~16.0.3",
@@ -54,9 +57,5 @@
     "ts-node": "~10.9.1",
     "typechain": "~8.1.0",
     "typescript": "~5.1.6"
-  },
-  "_moduleAliases": {
-    "@chainlink/contracts-ccip": "./.deps/npm/@chainlink/contracts-ccip/",
-    "@chainlink/contracts": "./.deps/npm/@chainlink/contracts/"
   }
 }

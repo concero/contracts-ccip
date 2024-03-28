@@ -31,7 +31,8 @@
     "test": "yarn hardhat:test",
     "vercel": "vercel",
     "vercel:yolo": "vercel --build-env NEXT_PUBLIC_IGNORE_BUILD_ERROR=true",
-    "verify": "yarn workspace @se-2/hardhat verify"
+    "verify": "yarn workspace @se-2/hardhat verify",
+    "clean" : "yarn workspace @se-2/hardhat clean"
   },
   "resolutions": {
     "usehooks-ts@^2.7.2": "patch:usehooks-ts@npm:^2.7.2#./.yarn/patches/usehooks-ts-npm-2.7.2-fceffe0e43.patch"

@@ -7,15 +7,10 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     LiquidityPool: {
-      address: "0x91A1EeE63f300B8f41AE6AF67eDEa2e2ed8c3f79",
+      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
       abi: [
         {
           inputs: [
-            {
-              internalType: "contract ERC20",
-              name: "_eth",
-              type: "address",
-            },
             {
               internalType: "contract ERC20",
               name: "_usdc",
@@ -26,12 +21,103 @@ const deployedContracts = {
           type: "constructor",
         },
         {
+          anonymous: false,
           inputs: [
             {
-              internalType: "contract ERC20",
-              name: "token",
+              indexed: true,
+              internalType: "address",
+              name: "user",
               type: "address",
             },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+          ],
+          name: "Deposited",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "Dewhitelisted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "previousOwner",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "newOwner",
+              type: "address",
+            },
+          ],
+          name: "OwnershipTransferred",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "Whitelisted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "user",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+          ],
+          name: "Withdrawn",
+          type: "event",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "addToWhitelist",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
             {
               internalType: "address",
               name: "account",
@@ -52,11 +138,6 @@ const deployedContracts = {
         {
           inputs: [
             {
-              internalType: "contract ERC20",
-              name: "token",
-              type: "address",
-            },
-            {
               internalType: "uint256",
               name: "amount",
               type: "uint256",
@@ -69,15 +150,48 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "eth",
+          name: "owner",
           outputs: [
             {
-              internalType: "contract ERC20",
+              internalType: "address",
               name: "",
               type: "address",
             },
           ],
           stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "removeFromWhitelist",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "renounceOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "newOwner",
+              type: "address",
+            },
+          ],
+          name: "transferOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
           type: "function",
         },
         {
@@ -95,11 +209,6 @@ const deployedContracts = {
         },
         {
           inputs: [
-            {
-              internalType: "contract ERC20",
-              name: "token",
-              type: "address",
-            },
             {
               internalType: "uint256",
               name: "amount",

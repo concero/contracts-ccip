@@ -8,6 +8,7 @@ import "hardhat-deploy-ethers";
 import "hardhat-gas-reporter";
 import { HardhatUserConfig } from "hardhat/config";
 import "solidity-coverage";
+
 dotenv.config();
 
 // If not set, it uses ours Alchemy's default API key.
@@ -45,7 +46,7 @@ const config: HardhatUserConfig = {
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${providerApiKey}`,
         enabled: process.env.MAINNET_FORKING_ENABLED === "true",
-        blockNumber: 9675000
+        blockNumber: 9_675_000,
       },
     },
     // mainnet: {

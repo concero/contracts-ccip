@@ -1,6 +1,6 @@
 /* global describe it before ethers */
 
-import { getSelectors, FacetCutAction, removeSelectors, findAddressPositionInFacets } from '../deploy/libraries/diamond.js';
+import { getSelectors, FacetCutAction, removeSelectors, findAddressPositionInFacets } from '../scripts/libraries/diamond';
 import { deployDiamond } from '../deploy/01_deployDiamond.ts';
 import { assert } from 'chai';
 

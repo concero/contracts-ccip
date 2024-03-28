@@ -2,7 +2,7 @@
 /* eslint-disable prefer-const */
 
 import { deployDiamond } from '../deploy/01_deployDiamond.ts';
-import { FacetCutAction } from "../deploy/libraries/diamond.js";
+import { FacetCutAction } from "../scripts/libraries/diamond";
 import { assert } from 'chai';
 
 // The diamond example comes with 8 function selectors

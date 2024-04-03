@@ -6,6 +6,8 @@ import { ConceroFunctions } from "./ConceroFunctions.sol";
 import { IERC20 } from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 
 contract ConceroBridge is ConceroCCIP, ConceroFunctions {
+	// string srcChainRequestSourceCode = "";
+
 	constructor(
 		address _link,
 		address _ccipRouter,
@@ -81,4 +83,8 @@ contract ConceroBridge is ConceroCCIP, ConceroFunctions {
 
 		IERC20(_token).transfer(_owner, amount);
 	}
+
+	// function sendSrcChainRequest() {
+	// 	sendRequest(srcChainRequestSourceCode, subscriptionId, args);
+	// }
 }

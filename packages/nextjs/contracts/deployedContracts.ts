@@ -6,8 +6,8 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
 const deployedContracts = {
   31337: {
-    ConceroCCIP: {
-      address: "0xc949A188e5D55B239a8ECc1A83c28863cD0e7f12",
+    ConceroBridge: {
+      address: "0x34cdeef1001C554919841D1397B4f3c141127cC0",
       abi: [
         {
           inputs: [
@@ -566,6 +566,11 @@ const deployedContracts = {
         {
           inputs: [
             {
+              internalType: "string",
+              name: "jsCode",
+              type: "string",
+            },
+            {
               internalType: "uint64",
               name: "subscriptionId",
               type: "uint64",
@@ -684,17 +689,17 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {
-        ccipReceive:
-          "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol",
-        getRouter:
-          "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol",
-        supportsInterface:
-          "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol",
-        acceptOwnership: "contracts/ConceroFunctionsConsumer.sol",
-        handleOracleFulfillment: "contracts/ConceroFunctionsConsumer.sol",
-        owner: "contracts/ConceroFunctionsConsumer.sol",
-        sendRequest: "contracts/ConceroFunctionsConsumer.sol",
-        transferOwnership: "contracts/ConceroFunctionsConsumer.sol",
+        allowListedDstChains: "contracts/ConceroCCIP.sol",
+        allowListedSenders: "contracts/ConceroCCIP.sol",
+        allowListedSrcChains: "contracts/ConceroCCIP.sol",
+        ccipReceive: "contracts/ConceroCCIP.sol",
+        getRouter: "contracts/ConceroCCIP.sol",
+        supportsInterface: "contracts/ConceroCCIP.sol",
+        acceptOwnership: "contracts/ConceroFunctions.sol",
+        handleOracleFulfillment: "contracts/ConceroFunctions.sol",
+        owner: "contracts/ConceroFunctions.sol",
+        sendRequest: "contracts/ConceroFunctions.sol",
+        transferOwnership: "contracts/ConceroFunctions.sol",
       },
     },
   },

@@ -1,6 +1,6 @@
-import {ConceroCCIP} from "../artifacts/contracts/ConceroCCIP.sol";
-import {DeployFunction} from "hardhat-deploy/types";
-import {HardhatRuntimeEnvironment} from "hardhat/types";
+import { ConceroCCIP } from "../artifacts/contracts/ConceroCCIP.sol";
+import { DeployFunction } from "hardhat-deploy/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 const ethAddress = "0x0000000000000000000000000000000000000000";
 const usdcAddress = "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318";
@@ -25,29 +25,29 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
     with a random private key in the .env file (then used on hardhat.config.ts)
     You can run the `yarn account` command to check your balance in every network.
   */
-  const {deployer} = await hre.getNamedAccounts();
-  const {deploy} = hre.deployments;
-  const {WALLET_ADDRESS} = process.env;
+  const { deployer } = await hre.getNamedAccounts();
+  const { deploy } = hre.deployments;
+  const { WALLET_ADDRESS } = process.env;
 
-  const fujiLinkAddress = '0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846'
-  const fujiCcipRouterAddress = '0xF694E193200268f9a4868e4Aa017A0118C9a8177'
-  const fujiChainSelector = '14767482510784806043'
-  const fujiDonId = '0x66756e2d6176616c616e6368652d66756a692d31000000000000000000000000'
-  const fujiFunctionRouter = '0xA9d587a00A31A52Ed70D6026794a8FC5E2F5dCb0'
+  const fujiLinkAddress = "0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846";
+  const fujiCcipRouterAddress = "0xF694E193200268f9a4868e4Aa017A0118C9a8177";
+  const fujiChainSelector = "14767482510784806043";
+  const fujiDonId = "0x66756e2d6176616c616e6368652d66756a692d31000000000000000000000000";
+  const fujiFunctionRouter = "0xA9d587a00A31A52Ed70D6026794a8FC5E2F5dCb0";
 
-  const mumbaiLinkAddress = '0x326C977E6efc84E512bB9C30f76E30c160eD06FB'
-  const mumbaiCcipRouterAddress = '0x1035CabC275068e0F4b745A29CEDf38E13aF41b1'
-  const mumbaiChainSelector = '12532609583862916517'
-  const mumbaiDonId = '0x66756e2d706f6c79676f6e2d6d756d6261692d31000000000000000000000000'
-  const mumbaiFunctionRouter = '0x6E2dc0F9DB014aE19888F539E59285D2Ea04244C'
+  const mumbaiLinkAddress = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
+  const mumbaiCcipRouterAddress = "0x1035CabC275068e0F4b745A29CEDf38E13aF41b1";
+  const mumbaiChainSelector = "12532609583862916517";
+  const mumbaiDonId = "0x66756e2d706f6c79676f6e2d6d756d6261692d31000000000000000000000000";
+  const mumbaiFunctionRouter = "0x6E2dc0F9DB014aE19888F539E59285D2Ea04244C";
 
-  await deploy("ConceroCCIP", {
+  await deploy("ConceroBridge", {
     from: deployer,
     args: [mumbaiLinkAddress, mumbaiCcipRouterAddress, mumbaiFunctionRouter, mumbaiDonId],
     log: true,
     autoMine: true,
   });
-  const conceroCCIP = await hre.ethers.getContract<ConceroCCIP>("ConceroCCIP", deployer);
+  const conceroCCIP = await hre.ethers.getContract<ConceroCCIP>("ConceroBridge", deployer);
   console.log("Concero CCIP Address: ", conceroCCIP.address);
 
   // const usdcBalance = await liquidityPool.balanceOf(usdcAddress, WALLET_ADDRESS);

@@ -49,6 +49,7 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
   });
   const liquidityPool = await hre.ethers.getContract<LiquidityPool>("LiquidityPool", deployer);
   console.log("Liquidity Pool Address: ", liquidityPool.address);
+
   // const usdcBalance = await liquidityPool.balanceOf(usdcAddress, WALLET_ADDRESS);
   // console.log("USDC Balance: ", usdcBalance.toString());
 

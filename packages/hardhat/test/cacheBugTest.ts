@@ -1,9 +1,9 @@
 /* global ethers describe before it */
 /* eslint-disable prefer-const */
 
-import { deployDiamond } from '../deploy/01_deployDiamond.ts';
-import { FacetCutAction } from "../scripts/libraries/diamond";
-import { assert } from 'chai';
+import {deployDiamond} from '../../../Diamonds/01_deployDiamond.ts';
+import {FacetCutAction} from "../scripts/libraries/diamond";
+import {assert} from 'chai';
 
 // The diamond example comes with 8 function selectors
 // [cut, loupe, loupe, loupe, loupe, erc165, transferOwnership, owner]
@@ -59,7 +59,7 @@ describe('Cache bug test', async () => {
         action: FacetCutAction.Add,
         functionSelectors: selectors
       }
-    ], ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
+    ], ethers.constants.AddressZero, '0x', {gasLimit: 800000})
     receipt = await tx.wait()
     if (!receipt.status) {
       throw Error(`Diamond upgrade failed: ${tx.hash}`)
@@ -78,7 +78,7 @@ describe('Cache bug test', async () => {
         action: FacetCutAction.Remove,
         functionSelectors: selectors
       }
-    ], ethers.constants.AddressZero, '0x', { gasLimit: 800000 })
+    ], ethers.constants.AddressZero, '0x', {gasLimit: 800000})
     receipt = await tx.wait()
     if (!receipt.status) {
       throw Error(`Diamond upgrade failed: ${tx.hash}`)

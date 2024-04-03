@@ -6,292 +6,247 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
 const deployedContracts = {
   31337: {
-    CDiamond: {
-      address: "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
-      abi: [
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_contractOwner",
-              type: "address",
-            },
-            {
-              internalType: "address",
-              name: "_diamondCutFacet",
-              type: "address",
-            },
-          ],
-          stateMutability: "payable",
-          type: "constructor",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_initializationContractAddress",
-              type: "address",
-            },
-            {
-              internalType: "bytes",
-              name: "_calldata",
-              type: "bytes",
-            },
-          ],
-          name: "InitializationFunctionReverted",
-          type: "error",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              components: [
-                {
-                  internalType: "address",
-                  name: "facetAddress",
-                  type: "address",
-                },
-                {
-                  internalType: "enum IDiamondCut.FacetCutAction",
-                  name: "action",
-                  type: "uint8",
-                },
-                {
-                  internalType: "bytes4[]",
-                  name: "functionSelectors",
-                  type: "bytes4[]",
-                },
-              ],
-              indexed: false,
-              internalType: "struct IDiamondCut.FacetCut[]",
-              name: "_diamondCut",
-              type: "tuple[]",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "_init",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "bytes",
-              name: "_calldata",
-              type: "bytes",
-            },
-          ],
-          name: "DiamondCut",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "address",
-              name: "previousOwner",
-              type: "address",
-            },
-            {
-              indexed: true,
-              internalType: "address",
-              name: "newOwner",
-              type: "address",
-            },
-          ],
-          name: "OwnershipTransferred",
-          type: "event",
-        },
-        {
-          stateMutability: "payable",
-          type: "fallback",
-        },
-        {
-          stateMutability: "payable",
-          type: "receive",
-        },
-      ],
-      inheritedFunctions: {},
-    },
-    DiamondCutFacet: {
-      address: "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
-      abi: [
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_initializationContractAddress",
-              type: "address",
-            },
-            {
-              internalType: "bytes",
-              name: "_calldata",
-              type: "bytes",
-            },
-          ],
-          name: "InitializationFunctionReverted",
-          type: "error",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              components: [
-                {
-                  internalType: "address",
-                  name: "facetAddress",
-                  type: "address",
-                },
-                {
-                  internalType: "enum IDiamondCut.FacetCutAction",
-                  name: "action",
-                  type: "uint8",
-                },
-                {
-                  internalType: "bytes4[]",
-                  name: "functionSelectors",
-                  type: "bytes4[]",
-                },
-              ],
-              indexed: false,
-              internalType: "struct IDiamondCut.FacetCut[]",
-              name: "_diamondCut",
-              type: "tuple[]",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "_init",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "bytes",
-              name: "_calldata",
-              type: "bytes",
-            },
-          ],
-          name: "DiamondCut",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              components: [
-                {
-                  internalType: "address",
-                  name: "facetAddress",
-                  type: "address",
-                },
-                {
-                  internalType: "enum IDiamondCut.FacetCutAction",
-                  name: "action",
-                  type: "uint8",
-                },
-                {
-                  internalType: "bytes4[]",
-                  name: "functionSelectors",
-                  type: "bytes4[]",
-                },
-              ],
-              indexed: false,
-              internalType: "struct IDiamondCut.FacetCut[]",
-              name: "_diamondCut",
-              type: "tuple[]",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "_init",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "bytes",
-              name: "_calldata",
-              type: "bytes",
-            },
-          ],
-          name: "DiamondCut",
-          type: "event",
-        },
-        {
-          inputs: [
-            {
-              components: [
-                {
-                  internalType: "address",
-                  name: "facetAddress",
-                  type: "address",
-                },
-                {
-                  internalType: "enum IDiamondCut.FacetCutAction",
-                  name: "action",
-                  type: "uint8",
-                },
-                {
-                  internalType: "bytes4[]",
-                  name: "functionSelectors",
-                  type: "bytes4[]",
-                },
-              ],
-              internalType: "struct IDiamondCut.FacetCut[]",
-              name: "_diamondCut",
-              type: "tuple[]",
-            },
-            {
-              internalType: "address",
-              name: "_init",
-              type: "address",
-            },
-            {
-              internalType: "bytes",
-              name: "_calldata",
-              type: "bytes",
-            },
-          ],
-          name: "diamondCut",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-      ],
-      inheritedFunctions: {
-        diamondCut: "contracts/interfaces/IDiamondCut.sol",
-      },
-    },
-    LiquidityPool: {
+    ConceroCCIP: {
       address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
       abi: [
         {
           inputs: [
             {
-              internalType: "contract ERC20",
-              name: "_usdc",
+              internalType: "address",
+              name: "_link",
               type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_ccipRouter",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_functionsRouter",
+              type: "address",
+            },
+            {
+              internalType: "bytes32",
+              name: "_donId",
+              type: "bytes32",
             },
           ],
           stateMutability: "nonpayable",
           type: "constructor",
         },
         {
+          inputs: [
+            {
+              internalType: "uint64",
+              name: "_dstChainSelector",
+              type: "uint64",
+            },
+          ],
+          name: "DestinationChainNotAllowed",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "EmptyArgs",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "EmptySource",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "owner",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "target",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+          ],
+          name: "FailedToWithdrawEth",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "InvalidReceiverAddress",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "router",
+              type: "address",
+            },
+          ],
+          name: "InvalidRouter",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "NoInlineSecrets",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "_fees",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "_feeToken",
+              type: "uint256",
+            },
+          ],
+          name: "NotEnoughBalance",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "NothingToWithdraw",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "OnlyRouterCanFulfill",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_sender",
+              type: "address",
+            },
+          ],
+          name: "SenderNotAllowed",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint64",
+              name: "_sourceChainSelector",
+              type: "uint64",
+            },
+          ],
+          name: "SourceChainNotAllowed",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          name: "UnexpectedRequestID",
+          type: "error",
+        },
+        {
           anonymous: false,
           inputs: [
             {
               indexed: true,
+              internalType: "bytes32",
+              name: "messageId",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "uint64",
+              name: "sourceChainSelector",
+              type: "uint64",
+            },
+            {
+              indexed: false,
               internalType: "address",
-              name: "user",
+              name: "sender",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "string",
+              name: "data",
+              type: "string",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "token",
               type: "address",
             },
             {
               indexed: false,
               internalType: "uint256",
-              name: "amount",
+              name: "tokenAmount",
               type: "uint256",
             },
           ],
-          name: "Deposited",
+          name: "CCIPReceived",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "messageId",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "uint64",
+              name: "destinationChainSelector",
+              type: "uint64",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "receiver",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "token",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "tokenAmount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "feeToken",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "fees",
+              type: "uint256",
+            },
+          ],
+          name: "CCIPSent",
           type: "event",
         },
         {
@@ -300,11 +255,17 @@ const deployedContracts = {
             {
               indexed: true,
               internalType: "address",
-              name: "account",
+              name: "from",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "to",
               type: "address",
             },
           ],
-          name: "Dewhitelisted",
+          name: "OwnershipTransferRequested",
           type: "event",
         },
         {
@@ -313,13 +274,13 @@ const deployedContracts = {
             {
               indexed: true,
               internalType: "address",
-              name: "previousOwner",
+              name: "from",
               type: "address",
             },
             {
               indexed: true,
               internalType: "address",
-              name: "newOwner",
+              name: "to",
               type: "address",
             },
           ],
@@ -331,12 +292,12 @@ const deployedContracts = {
           inputs: [
             {
               indexed: true,
-              internalType: "address",
-              name: "account",
-              type: "address",
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
             },
           ],
-          name: "Whitelisted",
+          name: "RequestFulfilled",
           type: "event",
         },
         {
@@ -344,29 +305,66 @@ const deployedContracts = {
           inputs: [
             {
               indexed: true,
-              internalType: "address",
-              name: "user",
-              type: "address",
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+          ],
+          name: "RequestSent",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
             },
             {
               indexed: false,
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
+              internalType: "string",
+              name: "",
+              type: "string",
+            },
+            {
+              indexed: false,
+              internalType: "bytes",
+              name: "",
+              type: "bytes",
+            },
+            {
+              indexed: false,
+              internalType: "bytes",
+              name: "",
+              type: "bytes",
             },
           ],
-          name: "Withdrawn",
+          name: "Response",
           type: "event",
+        },
+        {
+          inputs: [],
+          name: "acceptOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
         },
         {
           inputs: [
             {
-              internalType: "address",
-              name: "account",
-              type: "address",
+              internalType: "uint64",
+              name: "_dstChainSelector",
+              type: "uint64",
+            },
+            {
+              internalType: "bool",
+              name: "allowed",
+              type: "bool",
             },
           ],
-          name: "addToWhitelist",
+          name: "allowDestinationChain",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
@@ -375,16 +373,34 @@ const deployedContracts = {
           inputs: [
             {
               internalType: "address",
-              name: "account",
+              name: "_sender",
               type: "address",
             },
+            {
+              internalType: "bool",
+              name: "allowed",
+              type: "bool",
+            },
           ],
-          name: "balanceOf",
+          name: "allowListSender",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint64",
+              name: "",
+              type: "uint64",
+            },
+          ],
+          name: "allowListedDstChains",
           outputs: [
             {
-              internalType: "uint256",
+              internalType: "bool",
               name: "",
-              type: "uint256",
+              type: "bool",
             },
           ],
           stateMutability: "view",
@@ -393,12 +409,143 @@ const deployedContracts = {
         {
           inputs: [
             {
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
+              internalType: "address",
+              name: "",
+              type: "address",
             },
           ],
-          name: "deposit",
+          name: "allowListedSenders",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint64",
+              name: "",
+              type: "uint64",
+            },
+          ],
+          name: "allowListedSrcChains",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint64",
+              name: "_srcChainSelector",
+              type: "uint64",
+            },
+            {
+              internalType: "bool",
+              name: "allowed",
+              type: "bool",
+            },
+          ],
+          name: "allowSourceChain",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              components: [
+                {
+                  internalType: "bytes32",
+                  name: "messageId",
+                  type: "bytes32",
+                },
+                {
+                  internalType: "uint64",
+                  name: "sourceChainSelector",
+                  type: "uint64",
+                },
+                {
+                  internalType: "bytes",
+                  name: "sender",
+                  type: "bytes",
+                },
+                {
+                  internalType: "bytes",
+                  name: "data",
+                  type: "bytes",
+                },
+                {
+                  components: [
+                    {
+                      internalType: "address",
+                      name: "token",
+                      type: "address",
+                    },
+                    {
+                      internalType: "uint256",
+                      name: "amount",
+                      type: "uint256",
+                    },
+                  ],
+                  internalType: "struct Client.EVMTokenAmount[]",
+                  name: "destTokenAmounts",
+                  type: "tuple[]",
+                },
+              ],
+              internalType: "struct Client.Any2EVMMessage",
+              name: "message",
+              type: "tuple",
+            },
+          ],
+          name: "ccipReceive",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "getRouter",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "requestId",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes",
+              name: "response",
+              type: "bytes",
+            },
+            {
+              internalType: "bytes",
+              name: "err",
+              type: "bytes",
+            },
+          ],
+          name: "handleOracleFulfillment",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
@@ -419,20 +566,24 @@ const deployedContracts = {
         {
           inputs: [
             {
-              internalType: "address",
-              name: "account",
-              type: "address",
+              internalType: "uint64",
+              name: "subscriptionId",
+              type: "uint64",
+            },
+            {
+              internalType: "string[]",
+              name: "args",
+              type: "string[]",
             },
           ],
-          name: "removeFromWhitelist",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [],
-          name: "renounceOwnership",
-          outputs: [],
+          name: "sendRequest",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
           stateMutability: "nonpayable",
           type: "function",
         },
@@ -440,7 +591,54 @@ const deployedContracts = {
           inputs: [
             {
               internalType: "address",
-              name: "newOwner",
+              name: "_token",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "_amount",
+              type: "uint256",
+            },
+            {
+              internalType: "uint64",
+              name: "_destinationChainSelector",
+              type: "uint64",
+            },
+            {
+              internalType: "address",
+              name: "_receiver",
+              type: "address",
+            },
+          ],
+          name: "startTransaction",
+          outputs: [],
+          stateMutability: "payable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes4",
+              name: "interfaceId",
+              type: "bytes4",
+            },
+          ],
+          name: "supportsInterface",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "pure",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "to",
               type: "address",
             },
           ],
@@ -450,24 +648,11 @@ const deployedContracts = {
           type: "function",
         },
         {
-          inputs: [],
-          name: "usdc",
-          outputs: [
-            {
-              internalType: "contract ERC20",
-              name: "",
-              type: "address",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
           inputs: [
             {
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
+              internalType: "address",
+              name: "_owner",
+              type: "address",
             },
           ],
           name: "withdraw",
@@ -475,8 +660,42 @@ const deployedContracts = {
           stateMutability: "nonpayable",
           type: "function",
         },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_owner",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_token",
+              type: "address",
+            },
+          ],
+          name: "withdrawToken",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          stateMutability: "payable",
+          type: "receive",
+        },
       ],
-      inheritedFunctions: {},
+      inheritedFunctions: {
+        ccipReceive:
+          "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol",
+        getRouter:
+          "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol",
+        supportsInterface:
+          "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol",
+        acceptOwnership: "contracts/ConceroFunctionsConsumer.sol",
+        handleOracleFulfillment: "contracts/ConceroFunctionsConsumer.sol",
+        owner: "contracts/ConceroFunctionsConsumer.sol",
+        sendRequest: "contracts/ConceroFunctionsConsumer.sol",
+        transferOwnership: "contracts/ConceroFunctionsConsumer.sol",
+      },
     },
   },
 } as const;

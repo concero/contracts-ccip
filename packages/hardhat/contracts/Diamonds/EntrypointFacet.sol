@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { IDiamondCut } from "./interfaces/IDiamondCut.sol";
-import { CDiamond } from "./CDiamond.sol";
-import { IDiamond } from "./interfaces/IDiamond.sol";
+import {IDiamondCut} from "./interfaces/IDiamondCut.sol";
+import {CDiamond} from "./Diamonds/CDiamond.sol";
+import {IDiamond} from "./interfaces/IDiamond.sol";
 
 contract UserEntrypointFacet {
     CDiamond private diamond;

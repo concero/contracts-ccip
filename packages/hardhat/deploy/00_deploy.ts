@@ -29,27 +29,6 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
   const {deploy} = hre.deployments;
   const {WALLET_ADDRESS} = process.env;
 
-  // await deploy("CCIPFacet", { from: deployer, args: [], log: true, autoMine: true });
-  // const ccipInternal = await hre.ethers.getContract<CCIPFacet>("CCIPFacet", deployer);
-
-  // await deploy("TestUSDC", { from: deployer, args: [deployer], log: true, autoMine: true });
-  // const testUSDC = await hre.ethers.getContract<TestUSDC>("TestUSDC", deployer);
-
-  // await deploy("Sender", { from: deployer, args: [ROUTER_ADDRESS, LINK_ADDRESS], log: true, autoMine: true });
-  // const sender = await hre.ethers.getContract<Sender>("Sender", deployer);
-
-  // await deploy("FundMe", { from: deployer, args: [], log: true, autoMine: true });
-  // const fundMe = await hre.ethers.getContract<FundMe>("FundMe", deployer);
-
-  // await deploy("LiquidityPool", {
-  //   from: deployer,
-  //   args: [USDC_MAINNET],
-  //   log: true,
-  //   autoMine: true,
-  // });
-  // const liquidityPool = await hre.ethers.getContract<LiquidityPool>("LiquidityPool", deployer);
-  // console.log("Liquidity Pool Address: ", liquidityPool.address);
-
   const fujiLinkAddress = '0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846'
   const fujiCcipRouterAddress = '0xF694E193200268f9a4868e4Aa017A0118C9a8177'
   const fujiChainSelector = '14767482510784806043'

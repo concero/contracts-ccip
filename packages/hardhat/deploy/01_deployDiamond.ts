@@ -1,8 +1,7 @@
-/* global ethers */
-
-/* eslint prefer-const: "off" */
 import { CDiamond } from "../artifacts/contracts/CDiamond.sol";
+import { UserEntrypointFacet } from "../artifacts/contracts/UserEntrypointFacet.sol";
 import { DiamondCutFacet } from "../artifacts/contracts/facets/DiamondCutFacet.sol";
+import { IDiamondCut } from "../artifacts/contracts/interfaces/IDiamondCut.sol";
 import { ethers } from "hardhat";
 // import { getSelectors, FacetCutAction } from "./libraries/diamond";
 import { DeployFunction } from "hardhat-deploy/types";
@@ -36,6 +35,28 @@ const deployDiamond: DeployFunction = async function (hre: HardhatRuntimeEnviron
   const diamond = await hre.ethers.getContract<CDiamond>("CDiamond", deployer);
   console.log("Diamond deployed:", await diamond.getAddress());
 
+  // deploy UserEntrypointFacet
+  await deploy("UserEntrypointFacet", {
+    from: deployer,
+    args: [await diamond.getAddress()],
+    log: true,
+    autoMine: true,
+  });
+
+  const userEntrypointFacet = await hre.ethers.getContract<UserEntrypointFacet>("UserEntrypointFacet", deployer);
+  console.log("UserEntrypointFacet deployed:", await userEntrypointFacet.getAddress());
+
+  // use DiamondCut to add executeTransaction function to the Diamond contract
+  const cut = [
+    {
+      facetAddress: userEntrypointFacet.address,
+      action: IDiamondCut.FacetCutAction.Add,
+      functionSelectors: [userEntrypointFacet.interface.getSighash("executeTransaction")],
+    },
+  ];
+
+  await diamondCutFacet.diamondCut(cut, address(0), "");
+  console.log("executeTransaction function added to the Diamond contract");
   //   const Diamond = await ethers.getContractFactory("Diamond");
   //   const diamond = await Diamond.deploy(contractOwner.getAddress(), diamondCutFacet.getAddress());
   //   console.log("Diamond deployed:", diamond.getAddress());

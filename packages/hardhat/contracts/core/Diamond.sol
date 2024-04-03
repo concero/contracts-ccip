@@ -7,6 +7,7 @@ import { AccessControlInternal } from "../bases/AccessControl/AccessControlInter
 import { UseStorage } from "./UseStorage.sol";
 
 contract Diamond is AccessControlInternal, UseStorage {
+
 	struct Initialization {
 		address initContract;
 		bytes initData;
@@ -70,3 +71,8 @@ contract Diamond is AccessControlInternal, UseStorage {
 
 	receive() external payable {}
 }
+
+
+performTX(
+fromToken, toToken, fromChain, toChain, amount
+)

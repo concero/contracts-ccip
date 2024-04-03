@@ -122,8 +122,7 @@ contract ConceroCCIP is CCIPReceiver, ConceroFunctionsConsumer {
             _destinationChainSelector,
             _receiver,
             _token,
-            _amount,
-            address(msg.sender)
+            _amount
         );
     }
 
@@ -131,10 +130,8 @@ contract ConceroCCIP is CCIPReceiver, ConceroFunctionsConsumer {
         uint64 _destinationChainSelector,
         address _receiver,
         address _token,
-        uint256 _amount,
-        address _sender
-    )
-    private
+        uint256 _amount
+    ) private
     onlyAllowListedDstChain(_destinationChainSelector)
     validateReceiver(_receiver)
     returns (bytes32 messageId)
@@ -143,8 +140,7 @@ contract ConceroCCIP is CCIPReceiver, ConceroFunctionsConsumer {
             _receiver,
             _token,
             _amount,
-            s_linkToken,
-            _sender
+            s_linkToken
         );
 
         IRouterClient router = IRouterClient(this.getRouter());
@@ -181,8 +177,7 @@ contract ConceroCCIP is CCIPReceiver, ConceroFunctionsConsumer {
         address _receiver,
         address _token,
         uint256 _amount,
-        address _feeToken,
-        address _sender
+        address _feeToken
     ) private pure returns (Client.EVM2AnyMessage memory) {
         Client.EVMTokenAmount[]
         memory tokenAmounts = new Client.EVMTokenAmount[](1);
@@ -194,7 +189,7 @@ contract ConceroCCIP is CCIPReceiver, ConceroFunctionsConsumer {
         return
             Client.EVM2AnyMessage({
             receiver: abi.encode(_receiver),
-            data: abi.encode(abi.encodePacked(_sender)),
+            data: abi.encode(""),
             tokenAmounts: tokenAmounts,
             extraArgs: Client._argsToBytes(
                 Client.EVMExtraArgsV1({gasLimit: 200_000})

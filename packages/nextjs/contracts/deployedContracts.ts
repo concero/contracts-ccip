@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     ConceroCCIP: {
-      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      address: "0xc949A188e5D55B239a8ECc1A83c28863cD0e7f12",
       abi: [
         {
           inputs: [

@@ -13,7 +13,7 @@ contract ConceroCCIP is CCIPReceiver, ConceroFunctionsConsumer {
     mapping(uint64 => bool) public allowListedSrcChains;
     mapping(address => bool) public allowListedSenders;
 
-    address s_linkToken;
+    address private s_linkToken;
 
     error DestinationChainNotAllowed(uint64 _dstChainSelector);
     error InvalidReceiverAddress();
@@ -80,22 +80,22 @@ contract ConceroCCIP is CCIPReceiver, ConceroFunctionsConsumer {
         address _functionsRouter,
         bytes32 _donId
     )
-        CCIPReceiver(_ccipRouter)
-        ConceroFunctionsConsumer(_functionsRouter, _donId)
+    CCIPReceiver(_ccipRouter)
+    ConceroFunctionsConsumer(_functionsRouter, _donId)
     {
         s_linkToken = _link;
     }
 
     function allowDestinationChain(uint64 _dstChainSelector, bool allowed)
-        external
-        onlyOwner
+    external
+    onlyOwner
     {
         allowListedDstChains[_dstChainSelector] = allowed;
     }
 
     function allowSourceChain(uint64 _srcChainSelector, bool allowed)
-        external
-        onlyOwner
+    external
+    onlyOwner
     {
         allowListedSrcChains[_srcChainSelector] = allowed;
     }
@@ -134,10 +134,10 @@ contract ConceroCCIP is CCIPReceiver, ConceroFunctionsConsumer {
         uint256 _amount,
         address _sender
     )
-        private
-        onlyAllowListedDstChain(_destinationChainSelector)
-        validateReceiver(_receiver)
-        returns (bytes32 messageId)
+    private
+    onlyAllowListedDstChain(_destinationChainSelector)
+    validateReceiver(_receiver)
+    returns (bytes32 messageId)
     {
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
             _receiver,
@@ -185,7 +185,7 @@ contract ConceroCCIP is CCIPReceiver, ConceroFunctionsConsumer {
         address _sender
     ) private pure returns (Client.EVM2AnyMessage memory) {
         Client.EVMTokenAmount[]
-            memory tokenAmounts = new Client.EVMTokenAmount[](1);
+        memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({
             token: _token,
             amount: _amount
@@ -193,23 +193,23 @@ contract ConceroCCIP is CCIPReceiver, ConceroFunctionsConsumer {
 
         return
             Client.EVM2AnyMessage({
-                receiver: abi.encode(_receiver),
-                data: abi.encode(abi.encodePacked(_sender)),
-                tokenAmounts: tokenAmounts,
-                extraArgs: Client._argsToBytes(
-                    Client.EVMExtraArgsV1({gasLimit: 200_000})
-                ),
-                feeToken: _feeToken
-            });
+            receiver: abi.encode(_receiver),
+            data: abi.encode(abi.encodePacked(_sender)),
+            tokenAmounts: tokenAmounts,
+            extraArgs: Client._argsToBytes(
+                Client.EVMExtraArgsV1({gasLimit: 200_000})
+            ),
+            feeToken: _feeToken
+        });
     }
 
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage)
-        internal
-        override
-        onlyAllowlistedSenderAndChainSelector(
-            any2EvmMessage.sourceChainSelector,
-            abi.decode(any2EvmMessage.sender, (address))
-        )
+    internal
+    override
+    onlyAllowlistedSenderAndChainSelector(
+    any2EvmMessage.sourceChainSelector,
+    abi.decode(any2EvmMessage.sender, (address))
+    )
     {
         emit CCIPReceived(
             any2EvmMessage.messageId,
@@ -230,7 +230,7 @@ contract ConceroCCIP is CCIPReceiver, ConceroFunctionsConsumer {
             revert NothingToWithdraw();
         }
 
-        (bool sent, ) = _owner.call{value: amount}("");
+        (bool sent,) = _owner.call{value: amount}("");
 
         if (!sent) {
             revert FailedToWithdrawEth(msg.sender, _owner, amount);

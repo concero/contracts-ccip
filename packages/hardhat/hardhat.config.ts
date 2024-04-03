@@ -34,7 +34,6 @@ const config: HardhatUserConfig = {
   defaultNetwork: "localhost",
   namedAccounts: {
     deployer: {
-      // By default, it will take the first Hardhat account as the deployer
       default: 0,
     },
   },
@@ -48,6 +47,12 @@ const config: HardhatUserConfig = {
         enabled: process.env.MAINNET_FORKING_ENABLED === "true",
         blockNumber: 9_675_000,
       },
+      accounts: [
+        {
+          privateKey: deployerPrivateKey,
+          balance: "10000000000000000000000",
+        },
+      ],
     },
     // mainnet: {
     //   url: `https://eth-mainnet.alchemyapi.io/v2/${providerApiKey}`,

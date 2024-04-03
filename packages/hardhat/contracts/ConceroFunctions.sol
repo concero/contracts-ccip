@@ -5,7 +5,7 @@ import { FunctionsClient } from "@chainlink/contracts/src/v0.8/functions/v1_0_0/
 import { ConfirmedOwner } from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 import { FunctionsRequest } from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 
-contract FunctionsBase is FunctionsClient, ConfirmedOwner {
+contract ConceroFunctions is FunctionsClient, ConfirmedOwner {
 	bytes32 private donId;
 	bytes32 private lastRequestId;
 	using FunctionsRequest for FunctionsRequest.Request;
@@ -22,7 +22,7 @@ contract FunctionsBase is FunctionsClient, ConfirmedOwner {
 	}
 
 	function sendRequest(
-		string jsCode,
+		string memory jsCode,
 		uint64 subscriptionId,
 		string[] calldata args
 	) external onlyOwner returns (bytes32) {

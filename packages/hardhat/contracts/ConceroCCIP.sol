@@ -6,9 +6,8 @@ import { CCIPReceiver } from "@chainlink/contracts-ccip/src/v0.8/ccip/applicatio
 import { IERC20 } from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import { Client } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import { IRouterClient } from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
-import { FunctionsBase } from "./FunctionsBase.sol";
 
-contract ConceroCCIP is CCIPReceiver, FunctionsBase {
+contract ConceroCCIP is CCIPReceiver {
 	mapping(uint64 => bool) public allowListedDstChains;
 	mapping(uint64 => bool) public allowListedSrcChains;
 	mapping(address => bool) public allowListedSenders;
@@ -74,53 +73,8 @@ contract ConceroCCIP is CCIPReceiver, FunctionsBase {
 		_;
 	}
 
-	constructor(
-		address _link,
-		address _ccipRouter,
-		address _functionsRouter,
-		bytes32 _donId
-	) CCIPReceiver(_ccipRouter) FunctionsBase(_functionsRouter, _donId) {
+	constructor(address _link, address _ccipRouter) CCIPReceiver(_ccipRouter) {
 		s_linkToken = _link;
-	}
-
-	function allowDestinationChain(
-		uint64 _dstChainSelector,
-		bool allowed
-	) external onlyOwner {
-		allowListedDstChains[_dstChainSelector] = allowed;
-	}
-
-	function allowSourceChain(
-		uint64 _srcChainSelector,
-		bool allowed
-	) external onlyOwner {
-		allowListedSrcChains[_srcChainSelector] = allowed;
-	}
-
-	function allowListSender(address _sender, bool allowed) external onlyOwner {
-		allowListedSenders[_sender] = allowed;
-	}
-
-	function startTransaction(
-		address _token,
-		uint256 _amount,
-		uint64 _destinationChainSelector,
-		address _receiver
-	) external payable tokenAmountSufficiency(_token, _amount) {
-		bool isOK = IERC20(_token).transferFrom(
-			msg.sender,
-			address(this),
-			_amount
-		);
-
-		require(isOK, "Transfer failed");
-
-		_sendTokenPayLink(
-			_destinationChainSelector,
-			_receiver,
-			_token,
-			_amount
-		);
 	}
 
 	function _sendTokenPayLink(
@@ -129,7 +83,7 @@ contract ConceroCCIP is CCIPReceiver, FunctionsBase {
 		address _token,
 		uint256 _amount
 	)
-		private
+		internal
 		onlyAllowListedDstChain(_destinationChainSelector)
 		validateReceiver(_receiver)
 		returns (bytes32 messageId)
@@ -214,31 +168,5 @@ contract ConceroCCIP is CCIPReceiver, FunctionsBase {
 			any2EvmMessage.destTokenAmounts[0].token,
 			any2EvmMessage.destTokenAmounts[0].amount
 		);
-	}
-
-	receive() external payable {}
-
-	function withdraw(address _owner) public onlyOwner {
-		uint256 amount = address(this).balance;
-
-		if (amount == 0) {
-			revert NothingToWithdraw();
-		}
-
-		(bool sent, ) = _owner.call{ value: amount }("");
-
-		if (!sent) {
-			revert FailedToWithdrawEth(msg.sender, _owner, amount);
-		}
-	}
-
-	function withdrawToken(address _owner, address _token) public onlyOwner {
-		uint256 amount = IERC20(_token).balanceOf(address(this));
-
-		if (amount == 0) {
-			revert NothingToWithdraw();
-		}
-
-		IERC20(_token).transfer(_owner, amount);
 	}
 }

@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     ConceroBridge: {
-      address: "0x34cdeef1001C554919841D1397B4f3c141127cC0",
+      address: "0xc949A188e5D55B239a8ECc1A83c28863cD0e7f12",
       abi: [
         {
           inputs: [
@@ -551,6 +551,24 @@ const deployedContracts = {
           type: "function",
         },
         {
+          inputs: [
+            {
+              internalType: "string[]",
+              name: "args",
+              type: "string[]",
+            },
+            {
+              internalType: "uint64",
+              name: "subscriptionId",
+              type: "uint64",
+            },
+          ],
+          name: "handleTransaction",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
           inputs: [],
           name: "owner",
           outputs: [
@@ -561,35 +579,6 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "string",
-              name: "jsCode",
-              type: "string",
-            },
-            {
-              internalType: "uint64",
-              name: "subscriptionId",
-              type: "uint64",
-            },
-            {
-              internalType: "string[]",
-              name: "args",
-              type: "string[]",
-            },
-          ],
-          name: "sendRequest",
-          outputs: [
-            {
-              internalType: "bytes32",
-              name: "",
-              type: "bytes32",
-            },
-          ],
-          stateMutability: "nonpayable",
           type: "function",
         },
         {
@@ -698,7 +687,6 @@ const deployedContracts = {
         acceptOwnership: "contracts/ConceroFunctions.sol",
         handleOracleFulfillment: "contracts/ConceroFunctions.sol",
         owner: "contracts/ConceroFunctions.sol",
-        sendRequest: "contracts/ConceroFunctions.sol",
         transferOwnership: "contracts/ConceroFunctions.sol",
       },
     },

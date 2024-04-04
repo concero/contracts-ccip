@@ -22,12 +22,15 @@
     "dependencies": {
         "@chainlink/contracts": "^1.0.0",
         "@chainlink/contracts-ccip": "^1.4.0",
+        "@chainlink/functions-toolkit": "^0.2.8",
         "@openzeppelin/contracts": "~4.8.1",
         "@typechain/ethers-v6": "~0.5.1",
         "dotenv": "~16.0.3",
         "envfile": "~6.18.0",
+        "ethers": "5",
         "module-alias": "^2.2.3",
         "qrcode": "~1.5.1",
+        "secp256k1": "^5.0.0",
         "solhint": "^4.5.2",
         "solhint-plugin-prettier": "^0.1.0"
     },
@@ -51,7 +54,6 @@
         "eslint": "~8.26.0",
         "eslint-config-prettier": "~8.5.0",
         "eslint-plugin-prettier": "~4.2.1",
-        "ethers": "~6.10.0",
         "hardhat": "~2.19.4",
         "hardhat-deploy": "~0.11.45",
         "hardhat-deploy-ethers": "~0.4.1",

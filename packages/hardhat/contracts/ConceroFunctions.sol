@@ -25,7 +25,7 @@ contract ConceroFunctions is FunctionsClient, ConfirmedOwner {
 		string memory jsCode,
 		uint64 subscriptionId,
 		string[] calldata args
-	) external onlyOwner returns (bytes32) {
+	) internal returns (bytes32) {
 		FunctionsRequest.Request memory req;
 		req.initializeRequestForInlineJavaScript(jsCode);
 

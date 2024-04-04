@@ -32,7 +32,7 @@
     "vercel": "vercel",
     "vercel:yolo": "vercel --build-env NEXT_PUBLIC_IGNORE_BUILD_ERROR=true",
     "verify": "yarn workspace @se-2/hardhat verify",
-    "clean" : "yarn workspace @se-2/hardhat clean",
+    "clean": "yarn workspace @se-2/hardhat clean",
     "solhint": "yarn workspace @se-2/hardhat solhint"
   },
   "resolutions": {

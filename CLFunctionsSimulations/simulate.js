@@ -1,5 +1,8 @@
 const simulateScript = require("@chainlink/functions-toolkit").simulateScript;
 const fs = require("node:fs");
+const dotenv = require("dotenv");
+
+dotenv.config({ path: "./.env" });
 
 //const [fromChainSelector, toChainSelector, token, amount, txHash, sender, receiver, blockHash] = args;
 const fromChainSelector = "12532609583862916517";
@@ -23,10 +26,11 @@ const args = [
   receiver,
   blockHash,
 ];
+
 const secrets = {
-  PROVIDER_API_KEY,
-  WALLET_PRIVATE_KEY: process.env.WALLET_PRIVATE_KEY,
-  INFURA_API_KEY: PROVIDER_API_KEY,
+  "PROVIDER_API_KEY": PROVIDER_API_KEY,
+  "WALLET_PRIVATE_KEY": process.env.SECOND_TEST_WALLET_PRIVATE_KEY,
+  "INFURA_API_KEY": PROVIDER_API_KEY,
 };
 
 async function simulateDST() {

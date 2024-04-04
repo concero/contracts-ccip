@@ -25,6 +25,7 @@
         "@chainlink/functions-toolkit": "^0.2.8",
         "@openzeppelin/contracts": "~4.8.1",
         "@typechain/ethers-v6": "~0.5.1",
+        "bcrypto": "^5.5.2",
         "dotenv": "~16.0.3",
         "envfile": "~6.18.0",
         "ethers": "5",

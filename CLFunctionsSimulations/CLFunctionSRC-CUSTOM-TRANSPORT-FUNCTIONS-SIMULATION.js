@@ -14,7 +14,8 @@
 
 // SENDTX
 // async function sendTx() {
-const url = `https://polygon-mumbai.infura.io/v3/${secrets.INFURA_API_KEY}`;
+// const url = `https://polygon-mumbai.infura.io/v3/${secrets.INFURA_API_KEY}`;
+const url = `https://polygon-mumbai.gateway.tenderly.co`;
 const {createWalletClient, custom} = await import('npm:viem');
 const {privateKeyToAccount} = await import('npm:viem/accounts');
 const {polygonMumbai} = await import('npm:viem/chains');
@@ -28,27 +29,30 @@ const client = createWalletClient({
                 headers: {'Content-Type': 'application/json'},
                 data: {jsonrpc: '2.0', id: 1, method, params},
             };
+            console.log('REQUEST: ', JSON.stringify(req));
             const response = await Functions.makeHttpRequest({
                 url,
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 data: {jsonrpc: '2.0', id: 1, method, params},
             });
-            // console.log('Response DATA: ', response.data);
+            console.log('Response: ', response);
             return response.data.result;
         },
     }),
 });
 const account = privateKeyToAccount('0x' + secrets.WALLET_PRIVATE_KEY);
+// console.log('ACCOUNT: ', account);
+// return Functions.encodeString(account.address);
 const hash = await client.sendTransaction({
-  account,
-  to: '0x70E73f067a1fC9FE6D53151bd271715811746d3a',
-  value: 1000000n,
-  chain: polygonMumbai,
+    account,
+    to: '0x70E73f067a1fC9FE6D53151bd271715811746d3a',
+    value: 1000000n,
+    chain: polygonMumbai,
 });
 // console.log(`Transaction: ${hash}`);
 return Functions.encodeString(hash);
-}
+// }
 //
 // sendTx().catch(err => {
 //   console.error(err);

@@ -1,3 +1,4 @@
+import { CFunctions } from "../artifacts/contracts/CFunctions.sol";
 import { ConceroCCIP } from "../artifacts/contracts/ConceroCCIP.sol";
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -16,15 +17,15 @@ const USDC_MAINNET = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
  */
 const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   /*
-    On localhost, the deployer account is the one that comes with Hardhat, which is already funded.
+                  On localhost, the deployer account is the one that comes with Hardhat, which is already funded.
 
-    When deploying to live networks (e.g `yarn deploy --network goerli`), the deployer account
-    should have sufficient balance to pay for the gas fees for contract creation.
+                  When deploying to live networks (e.g `yarn deploy --network goerli`), the deployer account
+                  should have sufficient balance to pay for the gas fees for contract creation.
 
-    You can generate a random account with `yarn generate` which will fill DEPLOYER_PRIVATE_KEY
-    with a random private key in the .env file (then used on hardhat.config.ts)
-    You can run the `yarn account` command to check your balance in every network.
-  */
+                  You can generate a random account with `yarn generate` which will fill DEPLOYER_PRIVATE_KEY
+                  with a random private key in the .env file (then used on hardhat.config.ts)
+                  You can run the `yarn account` command to check your balance in every network.
+                */
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { WALLET_ADDRESS } = process.env;
@@ -34,21 +35,29 @@ const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEn
   const fujiChainSelector = "14767482510784806043";
   const fujiDonId = "0x66756e2d6176616c616e6368652d66756a692d31000000000000000000000000";
   const fujiFunctionRouter = "0xA9d587a00A31A52Ed70D6026794a8FC5E2F5dCb0";
-
   const mumbaiLinkAddress = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
   const mumbaiCcipRouterAddress = "0x1035CabC275068e0F4b745A29CEDf38E13aF41b1";
   const mumbaiChainSelector = "12532609583862916517";
   const mumbaiDonId = "0x66756e2d706f6c79676f6e2d6d756d6261692d31000000000000000000000000";
   const mumbaiFunctionRouter = "0x6E2dc0F9DB014aE19888F539E59285D2Ea04244C";
 
-  await deploy("ConceroBridge", {
+  // await deploy("ConceroBridge", {
+  //   from: deployer,
+  //   args: [mumbaiLinkAddress, mumbaiCcipRouterAddress, mumbaiFunctionRouter, mumbaiDonId],
+  //   log: true,
+  //   autoMine: true,
+  // });
+  // const conceroCCIP = await hre.ethers.getContract<ConceroCCIP>("ConceroBridge", deployer);
+
+  await deploy("CFunctions", {
     from: deployer,
-    args: [mumbaiLinkAddress, mumbaiCcipRouterAddress, mumbaiFunctionRouter, mumbaiDonId],
     log: true,
+    args: [mumbaiFunctionRouter, mumbaiDonId],
     autoMine: true,
   });
-  const conceroCCIP = await hre.ethers.getContract<ConceroCCIP>("ConceroBridge", deployer);
-  console.log("Concero CCIP Address: ", conceroCCIP.address);
+
+  const cFunctions = await hre.ethers.getContract<CFunctions>("CFunctions", deployer);
+  // console.log("Concero CCIP Address: ", conceroCCIP.address);
 
   // const usdcBalance = await liquidityPool.balanceOf(usdcAddress, WALLET_ADDRESS);
   // console.log("USDC Balance: ", usdcBalance.toString());

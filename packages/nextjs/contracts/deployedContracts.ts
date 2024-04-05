@@ -6,8 +6,436 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
 const deployedContracts = {
   31337: {
+    CFunctions: {
+      address: "0x88ef5523F110B649a856401cdce18D98B82e1FD2",
+      abi: [
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_router",
+              type: "address",
+            },
+            {
+              internalType: "bytes32",
+              name: "_donId",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          inputs: [],
+          name: "NotAllowed",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "OnlyRouterCanFulfill",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "txHash",
+              type: "bytes32",
+            },
+            {
+              internalType: "bool",
+              name: "isConfirmed",
+              type: "bool",
+            },
+          ],
+          name: "TXAlreadyExists",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          name: "UnexpectedRequestID",
+          type: "error",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "walletAddress",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "bool",
+              name: "status",
+              type: "bool",
+            },
+          ],
+          name: "AllowlistUpdated",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "from",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+          ],
+          name: "OwnershipTransferRequested",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "from",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+          ],
+          name: "OwnershipTransferred",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+          ],
+          name: "RequestFulfilled",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+          ],
+          name: "RequestSent",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "txHash",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "recipient",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "token",
+              type: "address",
+            },
+          ],
+          name: "TXConfirmed",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "txHash",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "recipient",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "token",
+              type: "address",
+            },
+          ],
+          name: "TXReleased",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "txHash",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "recipient",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "token",
+              type: "address",
+            },
+          ],
+          name: "UnconfirmedTXAdded",
+          type: "event",
+        },
+        {
+          inputs: [],
+          name: "acceptOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_walletAddress",
+              type: "address",
+            },
+          ],
+          name: "addToAllowlist",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "txHash",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "recipient",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              internalType: "address",
+              name: "token",
+              type: "address",
+            },
+          ],
+          name: "addUnconfirmedTX",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "requestId",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes",
+              name: "response",
+              type: "bytes",
+            },
+            {
+              internalType: "bytes",
+              name: "err",
+              type: "bytes",
+            },
+          ],
+          name: "handleOracleFulfillment",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "owner",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_walletAddress",
+              type: "address",
+            },
+          ],
+          name: "removeFromAllowlist",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "transactionHashes",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          name: "transactions",
+          outputs: [
+            {
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "recipient",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              internalType: "address",
+              name: "token",
+              type: "address",
+            },
+            {
+              internalType: "bool",
+              name: "isConfirmed",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+          ],
+          name: "transferOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+      ],
+      inheritedFunctions: {
+        handleOracleFulfillment:
+          "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol",
+        acceptOwnership:
+          "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol",
+        owner: "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol",
+        transferOwnership:
+          "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol",
+      },
+    },
     ConceroBridge: {
-      address: "0xc949A188e5D55B239a8ECc1A83c28863cD0e7f12",
+      address: "0x34cdeef1001C554919841D1397B4f3c141127cC0",
       abi: [
         {
           inputs: [

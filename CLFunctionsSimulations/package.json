@@ -1,0 +1,16 @@
+{
+  "name": "clfunctionssimulations",
+  "version": "1.0.0",
+  "description": "",
+  "main": "CLFunctionsDST.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@chainlink/functions-toolkit": "^0.2.8",
+    "dotenv": "^16.4.5",
+    "viem": "^2.9.9"
+  }
+}

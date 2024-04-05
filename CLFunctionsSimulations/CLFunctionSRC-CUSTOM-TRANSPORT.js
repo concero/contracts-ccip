@@ -25,66 +25,30 @@ async function sendTx() {
       async request({ method, params }) {
         const req = {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          // body: JSON.stringify({
-          //   jsonrpc: '2.0',
-          //   id: 1,
-          //   method,
-          //   params,
-          // }),
-          data: {
-            jsonrpc: '2.0',
-            id: 1,
-            method,
-            params,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          data: { jsonrpc: '2.0', id: 1, method, params },
         };
-
-        console.log('Request: ', JSON.stringify(req));
         const response = await Functions.makeHttpRequest({
           url,
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          data: {
-            jsonrpc: '2.0',
-            id: 1,
-            method,
-            params,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          data: { jsonrpc: '2.0', id: 1, method, params },
         });
-
-        console.log('Response DATA: ', response.data);
+        // console.log('Response DATA: ', response.data);
         return response.data.result;
       },
     }),
   });
   const account = privateKeyToAccount('0x' + secrets.WALLET_PRIVATE_KEY);
-  const hash = await client.sendTransaction({
-    account,
-    to: '0x70E73f067a1fC9FE6D53151bd271715811746d3a',
-    value: 1000000n,
-    chain: polygonMumbai,
-  });
-
-  console.log(`Transaction: ${hash}`);
-  return Functions.encodeString(hash);
-  // const provider = new ethers.JsonRpcProvider(chainSelectors[fromChainSelector].url);
-  // const signer = new ethers.Wallet(secrets.WALLET_PRIVATE_KEY, provider);
-
-  // const res = signer.sendTransaction({
-  //     value: ethers.parseEther('0.000001'),
-  //     to: '0x70E73f067a1fC9FE6D53151bd271715811746d3a',
-  // }).then((tx) => {
-  //     console.log(`Transaction: ${tx}`)
-  // }).catch((err) => {
-  //     console.log(`Error!: ${err}`)
-  // })
-
-  // return Functions.encodeString(res.hash);
+  return Functions.encodeString(account.address);
+  // const hash = await client.sendTransaction({
+  //   account,
+  //   to: '0x70E73f067a1fC9FE6D53151bd271715811746d3a',
+  //   value: 1000000n,
+  //   chain: polygonMumbai,
+  // });
+  // // console.log(`Transaction: ${hash}`);
+  // return Functions.encodeString(hash);
 }
 
 sendTx().catch(err => {

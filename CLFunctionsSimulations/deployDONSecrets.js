@@ -9,7 +9,7 @@ const mumbaiDonId = "fun-polygon-mumbai-1"
 const mumbaiFunctionsRouterAddress = "0x6E2dc0F9DB014aE19888F539E59285D2Ea04244C"
 const privateKey = process.env.DEPLOYER_PRIVATE_KEY
 const slotIdNumber = 0
-const expirationTimeMinutes = 15
+const expirationTimeMinutes = 1000
 
 const main = async () => {
     const secrets = {
@@ -19,10 +19,7 @@ const main = async () => {
     const provider = new ethers.providers.JsonRpcProvider(mumbaiRpcUrl);
     const wallet = new ethers.Wallet(privateKey);
     const signer = wallet.connect(provider);
-    const gatewayUrls = [
-        "https://01.functions-gateway.testnet.chain.link/",
-        "https://02.functions-gateway.testnet.chain.link/",
-    ];
+    const gatewayUrls = ["https://01.functions-gateway.testnet.chain.link/","https://02.functions-gateway.testnet.chain.link/"];
 
     const secretsManager = new SecretsManager({
         signer: signer,
@@ -38,7 +35,6 @@ const main = async () => {
         `Upload encrypted secret to gateways ${gatewayUrls}.`
     );
 
-    // Upload secrets
     const uploadResult = await secretsManager.uploadEncryptedSecretsToDON({
         encryptedSecretsHexstring: encryptedSecretsObj.encryptedSecrets,
         gatewayUrls: gatewayUrls,
@@ -53,8 +49,11 @@ const main = async () => {
         `\n✅ Secrets uploaded properly to gateways ${gatewayUrls}! Gateways response: `,
         uploadResult
     );
+
+    const secretsEntriesForGateway = await secretsManager.listDONHostedEncryptedSecrets(gatewayUrls)
+    console.log(JSON.stringify(secretsEntriesForGateway, null, 2))
 }
 
 main().catch((err) => {
-    console.log("ERROR: ", err)
+    console.log("ERROR: ", JSON.stringify(err, null, 2))
 })

@@ -16,7 +16,7 @@ const chainSelectors = {
     "14767482510784806043": {id: 43113, url: `https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`}
 };
 
-async function main() {
+async function sendTx() {
     const client = createWalletClient({
         chain: polygonMumbai,
         transport: http(chainSelectors[args[0]].url),
@@ -47,6 +47,6 @@ async function main() {
     // return Functions.encodeString(res.hash);
 }
 
-main().catch((err) => {
+sendTx().catch((err) => {
     console.error(err);
 });

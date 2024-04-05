@@ -12,5 +12,8 @@
     "@chainlink/functions-toolkit": "^0.2.8",
     "dotenv": "^16.4.5",
     "viem": "^2.9.9"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5"
   }
 }

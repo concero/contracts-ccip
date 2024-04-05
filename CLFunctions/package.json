@@ -2,9 +2,9 @@
   "name": "clfunctionssimulations",
   "version": "1.0.0",
   "description": "",
-  "main": "CLFunctionsDST.js",
+  "main": "CLF_dst/CLFunctionsDST.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "simulate": "node simulate.js"
   },
   "author": "",
   "license": "ISC",

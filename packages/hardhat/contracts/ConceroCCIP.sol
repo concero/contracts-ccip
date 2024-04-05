@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <=0.8.19;
 
-import { OwnerIsCreator } from "@chainlink/contracts-ccip/src/v0.8/shared/access/OwnerIsCreator.sol";
-import { CCIPReceiver } from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
-import { IERC20 } from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
-import { Client } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import { IRouterClient } from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
+import { OwnerIsCreator } from '@chainlink/contracts-ccip/src/v0.8/shared/access/OwnerIsCreator.sol';
+import { CCIPReceiver } from '@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol';
+import { IERC20 } from '@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol';
+import { Client } from '@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol';
+import { IRouterClient } from '@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol';
 
 contract ConceroCCIP is CCIPReceiver {
 	mapping(uint64 => bool) public allowListedDstChains;
@@ -23,22 +23,21 @@ contract ConceroCCIP is CCIPReceiver {
 	error FailedToWithdrawEth(address owner, address target, uint256 value);
 
 	event CCIPSent(
-		bytes32 indexed messageId,
-		uint64 indexed destinationChainSelector,
-		address receiver,
+		bytes32 indexed ccipMessageId,
+		address sender,
+		address recipient,
 		address token,
-		uint256 tokenAmount,
-		address feeToken,
-		uint256 fees
+		uint256 amount,
+		uint64 dstChainSelector
 	);
 
 	event CCIPReceived(
-		bytes32 indexed messageId,
-		uint64 indexed sourceChainSelector,
+		bytes32 indexed ccipMessageId,
+		uint64 srcChainSelector,
 		address sender,
-		string data,
+		address receiver,
 		address token,
-		uint256 tokenAmount
+		uint256 amount
 	);
 
 	modifier onlyAllowListedDstChain(uint64 _dstChainSelector) {
@@ -68,7 +67,7 @@ contract ConceroCCIP is CCIPReceiver {
 	modifier tokenAmountSufficiency(address _token, uint256 _amount) {
 		require(
 			IERC20(_token).balanceOf(msg.sender) >= _amount,
-			"Insufficient balance"
+			'Insufficient balance'
 		);
 		_;
 	}
@@ -112,12 +111,8 @@ contract ConceroCCIP is CCIPReceiver {
 
 		emit CCIPSent(
 			messageId,
-			_destinationChainSelector,
+			msg.sender,
 			_receiver,
-			_token,
-			_amount,
-			s_linkToken,
-			fees
 		);
 
 		// this.sendRequest()
@@ -141,7 +136,7 @@ contract ConceroCCIP is CCIPReceiver {
 		return
 			Client.EVM2AnyMessage({
 				receiver: abi.encode(_receiver),
-				data: abi.encode(""),
+				data: abi.encode(''),
 				tokenAmounts: tokenAmounts,
 				extraArgs: Client._argsToBytes(
 					Client.EVMExtraArgsV1({ gasLimit: 200_000 })

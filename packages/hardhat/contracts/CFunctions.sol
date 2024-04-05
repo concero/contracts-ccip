@@ -14,6 +14,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
 		address recipient;
 		uint256 amount;
 		address token;
+		uint64 srcChainSelector;
 		bool isConfirmed;
 	}
 

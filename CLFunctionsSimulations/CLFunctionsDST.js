@@ -4,7 +4,6 @@ const abi = [
   'event MessageReceived(bytes32 indexed messageId, uint64 indexed sourceChainSelector, address sender, string text, address token, uint256 tokenAmount)',
 ];
 const contract = new ethers.Interface(abi);
-
 const chainSelectors = {
   '12532609583862916517': {
     id: 80001,

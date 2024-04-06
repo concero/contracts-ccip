@@ -10,6 +10,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
     using FunctionsRequest for FunctionsRequest.Request;
 
     struct Transaction {
+        bytes32 ccipMessageId;
         address sender;
         address recipient;
         uint256 amount;
@@ -22,12 +23,11 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
     bytes32 private lastRequestId;
     mapping(address => bool) private allowlist;
     mapping(bytes32 => Transaction) public transactions;
-    bytes32[] public transactionHashes;
 
     // Events
-    event UnconfirmedTXAdded(bytes32 indexed txHash, address indexed sender, address indexed recipient, uint256 amount, address token);
-    event TXConfirmed(bytes32 indexed txHash, address indexed sender, address indexed recipient, uint256 amount, address token);
-    event TXReleased(bytes32 indexed txHash, address indexed recipient, uint256 amount, address token);
+    event UnconfirmedTXAdded(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, uint256 amount, address token);
+    event TXConfirmed(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, uint256 amount, address token);
+    event TXReleased(bytes32 indexed ccipMessageId, address indexed recipient, uint256 amount, address token);
     event AllowlistUpdated(address indexed walletAddress, bool status);
 
     // Errors
@@ -42,23 +42,28 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
 
     constructor(address _router, bytes32 _donId) FunctionsClient(_router) ConfirmedOwner(msg.sender) {
         donId = _donId;
+        allowlist[msg.sender] = true; // add owner to allowlist
     }
 
     function addToAllowlist(address _walletAddress) external onlyOwner {
+        require(_walletAddress != address(0), 'Invalid address');
+        require(!allowlist[_walletAddress], 'Address already in allowlist');
         allowlist[_walletAddress] = true;
         emit AllowlistUpdated(_walletAddress, true);
     }
 
     function removeFromAllowlist(address _walletAddress) external onlyOwner {
+        require(_walletAddress != address(0), 'Invalid address');
+        require(allowlist[_walletAddress], 'Address not in allowlist');
         allowlist[_walletAddress] = false;
         emit AllowlistUpdated(_walletAddress, true);
     }
 
-    function addUnconfirmedTX(bytes32 txHash, address sender, address recipient, uint256 amount, uint64 srcChainSelector, address token) external onlyAllowListedSenders {
-        Transaction storage transaction = transactions[txHash];
-        if (transaction.sender != address(0)) revert TXAlreadyExists(txHash, transaction.isConfirmed);
-        transactions[txHash] = Transaction(sender, recipient, amount, token, srcChainSelector, false);
-        emit UnconfirmedTXAdded(txHash, sender, recipient, amount, token);
+    function addUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 srcChainSelector, address token) external onlyAllowListedSenders {
+        Transaction storage transaction = transactions[ccipMessageId];
+        if (transaction.sender != address(0)) revert TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
+        transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
+        emit UnconfirmedTXAdded(ccipMessageId, sender, recipient, amount, token);
         //TODO Triggers CL Functions to check if TX present on SRC
     }
 
@@ -68,18 +73,22 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
         }
         //        string memory response = string(response);
         //TODO get txHash from fulfill, then call _confirmTX(txHash)
-        //        _confirmTX(txHash);
+        //        _confirmTX(ccipMessageId);
     }
 
-    function _confirmTX(bytes32 txHash) internal {
-        Transaction storage transaction = transactions[txHash];
+    function _confirmTX(bytes32 ccipMessageId) internal {
+        Transaction storage transaction = transactions[ccipMessageId];
         require(transaction.sender != address(0), 'TX does not exist');
         require(!transaction.isConfirmed, 'TX already confirmed');
         transaction.isConfirmed = true; // Confirm the transaction
 
-        emit TXConfirmed(txHash, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
+        emit TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
 
         //todo Releases the TX to the recipient
-        emit TXReleased(txHash, transaction.recipient, transaction.amount, transaction.token);
+        emit TXReleased(ccipMessageId, transaction.recipient, transaction.amount, transaction.token);
     }
+
+    receive() external payable {}
+
+    fallback() external payable {}
 }

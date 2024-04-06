@@ -11,11 +11,11 @@
     "format": "prettier --write ./*.ts ./deploy/**/*.ts ./scripts/**/*.ts ./test/**/*.ts",
     "generate": "hardhat run scripts/generateAccount.ts",
     "hardhat-verify": "hardhat verify",
+    "verify": "hardhat etherscan-verify",
     "lint": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore ./*.ts ./deploy/**/*.ts ./scripts/**/*.ts ./test/**/*.ts",
     "lint:fix": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore ./*.ts ./deploy/**/*.ts ./scripts/**/*.ts ./test/**/*.ts --fix",
     "lint-staged": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore",
     "test": "REPORT_GAS=true hardhat test --network hardhat",
-    "verify": "hardhat etherscan-verify",
     "clean": "rm -rf ./artifacts ./cache ./coverage ./typechain",
     "solhint": "solhint \"contracts/**/*.sol\""
   },

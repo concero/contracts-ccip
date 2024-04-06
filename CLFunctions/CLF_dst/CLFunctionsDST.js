@@ -15,10 +15,6 @@ const secrets = {
     INFURA_API_KEY: INFURA_API_KEY,
 };
 
-const ethers = await import('npm:ethers@6.10.0');
-const abi = ['event CCIPSent(bytes32 indexed ccipMessageId, address sender, address recipient, address token, uint256 amount, uint64 dstChainSelector)',];
-const contract = new ethers.Interface(abi);
-
 const url = `https://polygon-mumbai.infura.io/v3/${secrets.INFURA_API_KEY}`;
 const params = {
   method: 'POST',
@@ -40,41 +36,27 @@ const params = {
   }),
 }
 
-const dstContractReq = fetch(url, params).then(response => console.log(response)).catch(error => console.error(error));
+const response = await fetch(url, params)
+const data = await response.json()
 
+if (data?.error) {
+  console.error(data.error);
+  throw new Error('Error fetching destination contract address');
+}
+if (!data?.result) {
+  console.error(data);
+  throw new Error('Result is undefined');
+}
 
-// const { data } = dstContractReq;
-// if (data?.error) {
-//   console.error(data.error);
-//   throw new Error('Error fetching destination contract address');
-// }
-// if (!data?.result) {
-//   console.error(data);
-//   throw new Error('Result is undefined');
-// }
-// const filtered = data.result.filter(log => log.transactionHash === txHash);
-// if (filtered.length === 0) {
-//   console.error(data);
-//   throw new Error('No logs found for txHash');
-// }
-// if (filtered.length > 1) {
-//   console.error(data);
-//   throw new Error('Multiple logs found for txHash');
-// }
-// if (filtered[0].data === '0x') {
-//   console.error(data);
-//   throw new Error('Data is empty');
-// }
-
-// const log = {
-//   topics: [
-//     ethers.id('event CCIPSent(bytes32 indexed ccipMessageId, address sender, address recipient, address token, uint256 amount, uint64 dstChainSelector)'), // This is the topic for the event signature
-//     data.result.topics[1], // messageId
-//     data.result.topics[2], // sourceChainSelector
-//   ],
-//   data,
-// };
-// const decodedLog = contract.parseLog(log);
-// console.log('Decoded log:', decodedLog);
-// // return Functions.encodeString(JSON.stringify(decodedLog));
-// // return Functions.encodeString(JSON.stringify(filtered[0].data))
+const ethers = await import('npm:ethers@6.10.0');
+const strAbi = 'event CCIPSent(bytes32 indexed ccipMessageId, address sender, address recipient, address token, uint256 amount, uint64 dstChainSelector)'
+const abi = [strAbi];
+const contract = new ethers.Interface(abi);
+const log = {
+  topics: [ethers.id('CCIPSent(bytes32,address,address,address,uint256,uint64)'), data.result[0].topics[1]],
+  data: data.result[0].data
+};
+const decodedLog = contract.parseLog(log);
+console.log('Decoded log:', decodedLog);
+// return Functions.encodeString(JSON.stringify(decodedLog));
+// return Functions.encodeString(JSON.stringify(filtered[0].data))

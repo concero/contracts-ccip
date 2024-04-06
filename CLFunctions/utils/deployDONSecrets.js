@@ -2,14 +2,14 @@ const ethers = require('ethers');
 const SecretsManager = require('@chainlink/functions-toolkit').SecretsManager;
 const dotenv = require('dotenv');
 
-dotenv.config({path: './.env'});
+dotenv.config({path: '../../.env'});
 
 const mumbaiRpcUrl = `https://polygon-mumbai.infura.io/v3/${process.env.INFURA_API_KEY}`
 const mumbaiDonId = "fun-polygon-mumbai-1"
 const mumbaiFunctionsRouterAddress = "0x6E2dc0F9DB014aE19888F539E59285D2Ea04244C"
 const privateKey = process.env.DEPLOYER_PRIVATE_KEY
 const slotIdNumber = 0
-const expirationTimeMinutes = 1000
+const expirationTimeMinutes = 3000
 
 const main = async () => {
     const secrets = {

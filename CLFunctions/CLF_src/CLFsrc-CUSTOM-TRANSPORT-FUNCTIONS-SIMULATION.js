@@ -1,3 +1,8 @@
+/*
+Simulation requirements:
+numAllowedQueries: 2 – a minimum to initialise Viem.
+ */
+
 // CUSTOM TRANSPORT FUNCTIONS
 // import { Functions } from './sandbox.ts';
 //
@@ -10,9 +15,7 @@
 //     "12532609583862916517": {id: 80001, url: `https://polygon-mumbai.infura.io/v3/${secrets.INFURA_API_KEY}`},
 //     "14767482510784806043": {id: 43113, url: `https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`}
 // };
-//CL FUNCTIONS
 
-// SENDTX
 // async function sendTx() {
 // const url = `https://polygon-mumbai.infura.io/v3/${secrets.INFURA_API_KEY}`;
 const url = `https://polygon-mumbai.gateway.tenderly.co`;
@@ -25,22 +28,22 @@ try {
     chain: polygonMumbai,
     transport: custom({
       async request({ method, params }) {
+        // Hardcoded responses
+        if (method === 'eth_chainId') return '0x13881';
+        if (method === 'eth_estimateGas') return '0x5208';
+        if (method === 'eth_maxPriorityFeePerGas') return '0x3b9aca00';
+
         const req = {
-          method: 'POST',
+          url,
+          method: 'post',
           headers: { 'Content-Type': 'application/json' },
           data: { jsonrpc: '2.0', id: 1, method, params },
         };
-        // console.log('REQUEST: ', JSON.stringify(req));
-        const response = await Functions.makeHttpRequest({
-          url,
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          data: { jsonrpc: '2.0', id: 1, method, params },
-        });
-        // console.log('Response: ', response);
-        if (response.error || !response.data.result) {
-          throw new Error('Error fetching destination contract address');
-        }
+
+        console.log('REQUEST: ', JSON.stringify(req));
+        const response = await Functions.makeHttpRequest(req);
+        console.log('Response: ', response.data.result);
+        if (response.error || !response.data.result) throw new Error('error');
         return response.data.result;
       },
     }),

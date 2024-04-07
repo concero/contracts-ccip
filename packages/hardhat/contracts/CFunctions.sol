@@ -80,6 +80,10 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
         emit AllowlistUpdated(_walletAddress, true);
     }
 
+    function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
+        donHostedSecretsVersion = _version;
+    }
+
     function bytes32ToAddress(bytes32 _bytes32) internal pure returns (address) {
         return address(uint160(uint256(_bytes32)));
     }
@@ -115,7 +119,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
 
         sendRequest(args);
     }
-    
+
     function sendRequest(string[] memory args) internal {
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(jsCode);

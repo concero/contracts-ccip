@@ -51,7 +51,7 @@ packages/nextjs/*.tsbuildinfo
 # --- Hardhat files ---
 
 packages/hardhat/node_modules
-packages/hardhat/.env
+.env
 packages/hardhat/coverage
 packages/hardhat/coverage.json
 packages/hardhat/typechain

@@ -9,15 +9,10 @@ import "hardhat-gas-reporter";
 import { HardhatUserConfig } from "hardhat/config";
 import "solidity-coverage";
 
-dotenv.config();
+dotenv.config({ path: "../../.env" });
 
-// If not set, it uses ours Alchemy's default API key.
-// You can get your own at https://dashboard.alchemyapi.io
-const providerApiKey = process.env.ALCHEMY_API_KEY || "oKxs-03sij-U_N0iOlrSsZFr29-IqbuF";
-// If not set, it uses the hardhat account 0 private key.
-const deployerPrivateKey =
-  process.env.DEPLOYER_PRIVATE_KEY ?? "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
-// If not set, it uses ours Etherscan default API key.
+const providerApiKey = process.env.INFURA_API_KEY;
+const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY ?? process.exit(1);
 const etherscanApiKey = process.env.ETHERSCAN_API_KEY || "DNXJA8RX2Q3VZ4URQIWP7Z68CJXQZSC6AW";
 
 const config: HardhatUserConfig = {
@@ -32,7 +27,6 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        // https://docs.soliditylang.org/en/latest/using-the-compiler.html#optimizer-options
         runs: 200,
       },
     },
@@ -44,8 +38,6 @@ const config: HardhatUserConfig = {
     },
   },
   networks: {
-    // View the networks that are pre-configured.
-    // If the network you are looking for is not here you can add new network settings
     hardhat: {
       chainId: 31337,
       forking: {
@@ -141,11 +133,9 @@ const config: HardhatUserConfig = {
     //   accounts: [deployerPrivateKey],
     // },
   },
-  // configuration for harhdat-verify plugin
   etherscan: {
     apiKey: `${etherscanApiKey}`,
   },
-  // configuration for etherscan-verify from hardhat-deploy plugin
   verify: {
     etherscan: {
       apiKey: `${etherscanApiKey}`,

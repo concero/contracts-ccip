@@ -5,10 +5,15 @@ import {FunctionsClient} from '@chainlink/contracts/src/v0.8/functions/v1_0_0/Fu
 import {ConfirmedOwner} from '@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol';
 import {FunctionsRequest} from '@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
-import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import '@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol';
 
 contract CFunctions is FunctionsClient, ConfirmedOwner {
     using FunctionsRequest for FunctionsRequest.Request;
+    using Strings for uint256;
+    using Strings for uint64;
+    using Strings for address;
+    using Strings for bytes32;
+    using MessageHashUtils for bytes32;
 
     struct Transaction {
         bytes32 ccipMessageId;
@@ -25,12 +30,11 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
     uint8 private donHostedSecretsSlotID;
     uint64 private donHostedSecretsVersion;
 
-    string immutable jsCode = "const ethers = await import('npm:ethers@6.10.0');const [srcContractAddress, messageId] = args;const params = { url: `https://polygon-mumbai.infura.io/v3/${secrets.INFURA_API_KEY}`, method: 'POST', headers: {  'Content-Type': 'application/json', }, data: {  jsonrpc: '2.0',  method: 'eth_getLogs',  id: 1,  params: [   {    address: srcContractAddress,    topics: [null, messageId],    fromBlock: 'earliest',    toBlock: 'latest',   },  ], },};const response = await Functions.makeHttpRequest(params);const { data } = response;if (data?.error || !data?.result) { throw new Error('Error fetching logs');}const abi = ['event CCIPSent(bytes32 indexed, address, address, address, uint256, uint64)'];const contract = new ethers.Interface(abi);const log = { topics: [ethers.id('CCIPSent(bytes32,address,address,address,uint256,uint64)'), data.result[0].topics[1]], data: data.result[0].data,};const decodedLog = contract.parseLog(log);const croppedArgs = args.slice(1);for (let i = 0; i < decodedLog.args.length; i++) { if (decodedLog.args[i].toString() !== croppedArgs[i].toString()) {  throw new Error('Message ID does not match the event log'); }}return Functions.encodeString(messageId);";
+    string private jsCode = "const ethers = await import('npm:ethers@6.10.0');const [srcContractAddress, messageId] = args;const params = { url: `https://polygon-mumbai.infura.io/v3/${secrets.INFURA_API_KEY}`, method: 'POST', headers: {  'Content-Type': 'application/json', }, data: {  jsonrpc: '2.0',  method: 'eth_getLogs',  id: 1,  params: [   {    address: srcContractAddress,    topics: [null, messageId],    fromBlock: 'earliest',    toBlock: 'latest',   },  ], },};const response = await Functions.makeHttpRequest(params);const { data } = response;if (data?.error || !data?.result) { throw new Error('Error fetching logs');}const abi = ['event CCIPSent(bytes32 indexed, address, address, address, uint256, uint64)'];const contract = new ethers.Interface(abi);const log = { topics: [ethers.id('CCIPSent(bytes32,address,address,address,uint256,uint64)'), data.result[0].topics[1]], data: data.result[0].data,};const decodedLog = contract.parseLog(log);const croppedArgs = args.slice(1);for (let i = 0; i < decodedLog.args.length; i++) { if (decodedLog.args[i].toString() !== croppedArgs[i].toString()) {  throw new Error('Message ID does not match the event log'); }}return Functions.encodeString(messageId);";
 
     mapping(address => bool) private allowlist;
     mapping(bytes32 => Transaction) public transactions;
 
-    // Events
     event UnconfirmedTXAdded(
         bytes32 indexed ccipMessageId,
         address indexed sender,
@@ -48,7 +52,6 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
     event TXReleased(bytes32 indexed ccipMessageId, address indexed recipient, uint256 amount, address token);
     event AllowlistUpdated(address indexed walletAddress, bool status);
 
-    // Errors
     error NotAllowed();
     error TXAlreadyExists(bytes32 txHash, bool isConfirmed);
     error UnexpectedRequestID(bytes32);
@@ -60,7 +63,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
 
     constructor(address _router, bytes32 _donId) FunctionsClient(_router) ConfirmedOwner(msg.sender) {
         donId = _donId;
-        allowlist[msg.sender] = true; // add owner to allowlist
+        allowlist[msg.sender] = true;
     }
 
     function addToAllowlist(address _walletAddress) external onlyOwner {
@@ -75,6 +78,10 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
         require(allowlist[_walletAddress], 'Address not in allowlist');
         allowlist[_walletAddress] = false;
         emit AllowlistUpdated(_walletAddress, true);
+    }
+
+    function bytes32ToAddress(bytes32 _bytes32) internal pure returns (address) {
+        return address(uint160(uint256(_bytes32)));
     }
 
     function addUnconfirmedTX(
@@ -98,19 +105,18 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
         );
         emit UnconfirmedTXAdded(ccipMessageId, sender, recipient, amount, token);
 
-        sendRequest(
-            [
-            toHexString(ccipMessageId),
-            toHexString(sender),
-            toHexString(recipient),
-            toHexString(token),
-            toString(amount),
-            toString(srcChainSelector)
-            ]
-        );
-    }
+        string[] memory args = new string[](6);
+        args[0] = Strings.toHexString(bytes32ToAddress(ccipMessageId));
+        args[1] = Strings.toHexString(sender);
+        args[2] = Strings.toHexString(recipient);
+        args[3] = Strings.toHexString(token);
+        args[4] = Strings.toString(amount);
+        args[5] = Strings.toString(srcChainSelector);
 
-    function sendRequest(string[] calldata args) internal {
+        sendRequest(args);
+    }
+    
+    function sendRequest(string[] memory args) internal {
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(jsCode);
         req.addDONHostedSecrets(donHostedSecretsSlotID, donHostedSecretsVersion);
@@ -127,14 +133,14 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
             revert(string(err));
         }
 
-        _confirmTX(toEthSignedMessageHash(response));
+        _confirmTX(MessageHashUtils.toEthSignedMessageHash(response));
     }
 
     function _confirmTX(bytes32 ccipMessageId) internal {
         Transaction storage transaction = transactions[ccipMessageId];
         require(transaction.sender != address(0), 'TX does not exist');
         require(!transaction.isConfirmed, 'TX already confirmed');
-        transaction.isConfirmed = true; // Confirm the transaction
+        transaction.isConfirmed = true;
 
         emit TXConfirmed(
             ccipMessageId,
@@ -147,8 +153,4 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
         //todo Releases the TX to the recipient
         emit TXReleased(ccipMessageId, transaction.recipient, transaction.amount, transaction.token);
     }
-
-    receive() external payable {}
-
-    fallback() external payable {}
 }

@@ -23,7 +23,7 @@
     "@chainlink/contracts": "^1.0.0",
     "@chainlink/contracts-ccip": "^1.4.0",
     "@chainlink/functions-toolkit": "^0.2.8",
-    "@openzeppelin/contracts": "^5.0.2",
+    "@openzeppelin/contracts": "^5.0.0",
     "@typechain/ethers-v6": "~0.5.1",
     "bcrypto": "^5.5.2",
     "dotenv": "~16.0.3",

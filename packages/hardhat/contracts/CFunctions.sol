@@ -5,7 +5,6 @@ import {FunctionsClient} from '@chainlink/contracts/src/v0.8/functions/v1_0_0/Fu
 import {ConfirmedOwner} from '@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol';
 import {FunctionsRequest} from '@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
-import '@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol';
 
 contract CFunctions is FunctionsClient, ConfirmedOwner {
     using FunctionsRequest for FunctionsRequest.Request;
@@ -13,7 +12,6 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
     using Strings for uint64;
     using Strings for address;
     using Strings for bytes32;
-    using MessageHashUtils for bytes32;
 
     struct Transaction {
         bytes32 ccipMessageId;
@@ -88,6 +86,16 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
         return address(uint160(uint256(_bytes32)));
     }
 
+    function bytesToBytes32(bytes memory b) internal pure returns (bytes32) {
+        bytes32 out;
+        uint offset = 2;
+
+        for (uint i = 0; i < 32; i++) {
+            out |= bytes32(b[offset + i] & 0xFF) >> (i * 8);
+        }
+        return out;
+    }
+
     function addUnconfirmedTX(
         bytes32 ccipMessageId,
         address sender,
@@ -137,7 +145,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
             revert(string(err));
         }
 
-        _confirmTX(MessageHashUtils.toEthSignedMessageHash(response));
+        _confirmTX(bytesToBytes32(response));
     }
 
     function _confirmTX(bytes32 ccipMessageId) internal {

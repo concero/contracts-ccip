@@ -1,5 +1,7 @@
 const ethers = await import('npm:ethers@6.10.0');
+return Functions.encodeString(args);
 const [srcContractAddress, messageId] = args;
+
 const params = {
  url: `https://polygon-mumbai.infura.io/v3/${secrets.INFURA_API_KEY}`,
  method: 'POST',

@@ -107,15 +107,17 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
     }
 
     function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
-        uint8 i = 0;
-        while (i < 32 && _bytes32[i] != 0) {
-            i++;
+        bytes memory chars = "0123456789abcdef";
+
+        bytes memory str = new bytes(64);
+        
+        for (uint256 i = 0; i < 32; i++) {
+            bytes1 b = _bytes32[i];
+            str[i * 2] = chars[uint8(b) >> 4];
+            str[i * 2 + 1] = chars[uint8(b) & 0x0f];
         }
-        bytes memory bytesArray = new bytes(i);
-        for (i = 0; i < 32 && _bytes32[i] != 0; i++) {
-            bytesArray[i] = _bytes32[i];
-        }
-        return string(bytesArray);
+
+        return string(abi.encodePacked("0x", str));
     }
 
     function addUnconfirmedTX(
@@ -141,7 +143,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
         emit UnconfirmedTXAdded(ccipMessageId, sender, recipient, amount, token);
 
         string[] memory args = new string[](6);
-        args[0] = string(bytes32ToString(ccipMessageId));
+        args[0] = bytes32ToString(ccipMessageId);
         args[1] = Strings.toHexString(sender);
         args[2] = Strings.toHexString(recipient);
         args[3] = Strings.toHexString(token);

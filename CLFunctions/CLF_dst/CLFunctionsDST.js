@@ -1,7 +1,5 @@
 const ethers = await import('npm:ethers@6.10.0');
-return Functions.encodeString(args);
 const [srcContractAddress, messageId] = args;
-
 const params = {
  url: `https://polygon-mumbai.infura.io/v3/${secrets.INFURA_API_KEY}`,
  method: 'POST',
@@ -36,7 +34,7 @@ const log = {
 const decodedLog = contract.parseLog(log);
 const croppedArgs = args.slice(1);
 for (let i = 0; i < decodedLog.args.length; i++) {
- if (decodedLog.args[i].toString() !== croppedArgs[i].toString()) {
+ if (decodedLog.args[i].toString().toLowerCase() !== croppedArgs[i].toString().toLowerCase()) {
   throw new Error('Message ID does not match the event log');
  }
 }

@@ -10,7 +10,13 @@ const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvi
   await deploy("CFunctions", {
     from: deployer,
     log: true,
-    args: [CL_FUNCTIONS_ROUTER_MUMBAI, CL_FUNCTIONS_DON_ID_MUMBAI, 1437, 1712503865],
+    args: [
+      CL_FUNCTIONS_ROUTER_MUMBAI,
+      CL_FUNCTIONS_DON_ID_MUMBAI,
+      1437,
+      1712503865,
+      "0x4200A2257C399C1223f8F3122971eb6fafaaA976",
+    ],
     autoMine: true,
   });
 

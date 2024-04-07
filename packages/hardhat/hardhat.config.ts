@@ -12,7 +12,7 @@ import "solidity-coverage";
 dotenv.config({ path: "../../.env" });
 
 const providerApiKey = process.env.ALCHEMY_API_KEY;
-const deployerPrivateKey = process.env.SECOND_TEST_WALLET_PRIVATE_KEY ?? process.exit(1);
+const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY ?? process.exit(1);
 const etherscanApiKey = process.env.ETHERSCAN_API_KEY || "DNXJA8RX2Q3VZ4URQIWP7Z68CJXQZSC6AW";
 
 const config: HardhatUserConfig = {

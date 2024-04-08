@@ -16,6 +16,7 @@ const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvi
       1437,
       1712503865,
       "0x4200A2257C399C1223f8F3122971eb6fafaaA976",
+      "0x4200A2257C399C1223f8F3122971eb6fafaaA976",
     ],
     autoMine: true,
   });

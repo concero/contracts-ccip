@@ -14,7 +14,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
     using Strings for address;
     using Strings for bytes32;
 
-    ConceroBridge public conceroBridge;
+    ConceroBridge private conceroBridge;
 
     struct Transaction {
         bytes32 ccipMessageId;

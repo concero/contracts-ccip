@@ -15,7 +15,6 @@ contract ConceroCCIP is CCIPReceiver, IConcero {
 
     address immutable private s_linkToken;
     address internal externalConceroBridge;
-    address internal internalFunctionContract;
 
     modifier onlyAllowListedDstChain(uint64 _dstChainSelector) {
         if (!allowListedDstChains[_dstChainSelector]) {
@@ -31,13 +30,6 @@ contract ConceroCCIP is CCIPReceiver, IConcero {
         if (!allowListedSrcChains[_sourceChainSelector])
             revert SourceChainNotAllowed(_sourceChainSelector);
         if (!allowListedSenders[_sender]) revert SenderNotAllowed(_sender);
-        _;
-    }
-
-    modifier onlyFunctionContract() {
-        if (msg.sender != internalFunctionContract) {
-            revert NotFunctionContract(msg.sender);
-        }
         _;
     }
 

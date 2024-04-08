@@ -6,6 +6,14 @@ import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-sol
 import {ConfirmedOwner} from '@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol';
 
 contract ConceroBridge is ConceroCCIP, ConfirmedOwner {
+    address internal internalFunctionContract;
+
+    modifier onlyFunctionContract() {
+        if (msg.sender != internalFunctionContract) {
+            revert NotFunctionContract(msg.sender);
+        }
+        _;
+    }
 
     constructor(
         address _link,

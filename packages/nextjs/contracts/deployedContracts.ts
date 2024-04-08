@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     CFunctions: {
-      address: "0x10eE6447Ae2bC0eBa7EE187e8754De2438833C7c",
+      address: "0xD85DC7D6EAc0B68bDf5b62B5FB0622CCF604feB0",
       abi: [
         {
           inputs: [
@@ -47,43 +47,12 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "EmptyArgs",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "EmptySource",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "NoInlineSecrets",
-          type: "error",
-        },
-        {
-          inputs: [],
           name: "NotAllowed",
           type: "error",
         },
         {
           inputs: [],
           name: "OnlyRouterCanFulfill",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint256",
-              name: "value",
-              type: "uint256",
-            },
-            {
-              internalType: "uint256",
-              name: "length",
-              type: "uint256",
-            },
-          ],
-          name: "StringsInsufficientHexLength",
           type: "error",
         },
         {
@@ -347,7 +316,13 @@ const deployedContracts = {
             },
           ],
           name: "addUnconfirmedTX",
-          outputs: [],
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
           stateMutability: "nonpayable",
           type: "function",
         },
@@ -546,7 +521,7 @@ const deployedContracts = {
       },
     },
     ConceroBridge: {
-      address: "0xc28aa2112f15E3B66E0d801ed338E8477c375B50",
+      address: "0x08e072014e3e6e356EcF38dfDeD61B652eaf5691",
       abi: [
         {
           inputs: [
@@ -1201,7 +1176,7 @@ const deployedContracts = {
   },
   80001: {
     CFunctions: {
-      address: "0xba4Ecdc2b9025a727973aB497CD8DB350CC958cA",
+      address: "0x59d607709841174d20aAFc5e8A1357C4940e8e9F",
       abi: [
         {
           inputs: [
@@ -1215,39 +1190,9 @@ const deployedContracts = {
               name: "_donId",
               type: "bytes32",
             },
-            {
-              internalType: "uint64",
-              name: "_subscriptionId",
-              type: "uint64",
-            },
-            {
-              internalType: "uint64",
-              name: "_donHostedSecretsVersion",
-              type: "uint64",
-            },
-            {
-              internalType: "address",
-              name: "_externalCcipContract",
-              type: "address",
-            },
           ],
           stateMutability: "nonpayable",
           type: "constructor",
-        },
-        {
-          inputs: [],
-          name: "EmptyArgs",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "EmptySource",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "NoInlineSecrets",
-          type: "error",
         },
         {
           inputs: [],
@@ -1257,22 +1202,6 @@ const deployedContracts = {
         {
           inputs: [],
           name: "OnlyRouterCanFulfill",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint256",
-              name: "value",
-              type: "uint256",
-            },
-            {
-              internalType: "uint256",
-              name: "length",
-              type: "uint256",
-            },
-          ],
-          name: "StringsInsufficientHexLength",
           type: "error",
         },
         {
@@ -1491,6 +1420,10 @@ const deployedContracts = {
           type: "event",
         },
         {
+          stateMutability: "payable",
+          type: "fallback",
+        },
+        {
           inputs: [],
           name: "acceptOwnership",
           outputs: [],
@@ -1544,39 +1477,13 @@ const deployedContracts = {
             },
           ],
           name: "addUnconfirmedTX",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "bytes32",
-              name: "_bytes32",
-              type: "bytes32",
-            },
-          ],
-          name: "bytes32ToString",
           outputs: [
             {
-              internalType: "string",
-              name: "",
-              type: "string",
-            },
-          ],
-          stateMutability: "pure",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
               internalType: "bytes32",
-              name: "ccipMessageId",
+              name: "",
               type: "bytes32",
             },
           ],
-          name: "deleteTransaction",
-          outputs: [],
           stateMutability: "nonpayable",
           type: "function",
         },
@@ -1625,19 +1532,6 @@ const deployedContracts = {
             },
           ],
           name: "removeFromAllowlist",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint64",
-              name: "_version",
-              type: "uint64",
-            },
-          ],
-          name: "setDonHostedSecretsVersion",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
@@ -1703,6 +1597,10 @@ const deployedContracts = {
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
+        },
+        {
+          stateMutability: "payable",
+          type: "receive",
         },
       ],
       inheritedFunctions: {

@@ -170,6 +170,10 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
         _confirmTX(bytesToBytes32(response));
     }
 
+    function _fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) external {
+        fulfillRequest(requestId, response, err);
+    }
+
     function _confirmTX(bytes32 ccipMessageId) internal {
         Transaction storage transaction = transactions[ccipMessageId];
         require(transaction.sender != address(0), 'TX does not exist');

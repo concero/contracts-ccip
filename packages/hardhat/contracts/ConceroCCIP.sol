@@ -12,7 +12,8 @@ contract ConceroCCIP is CCIPReceiver {
     mapping(uint64 => bool) public allowListedSrcChains;
     mapping(address => bool) public allowListedSenders;
 
-    address private s_linkToken;
+    address immutable private s_linkToken;
+    address immutable private externalConceroBridge;
 
     error DestinationChainNotAllowed(uint64 _dstChainSelector);
     error InvalidReceiverAddress();
@@ -72,8 +73,9 @@ contract ConceroCCIP is CCIPReceiver {
         _;
     }
 
-    constructor(address _link, address _ccipRouter) CCIPReceiver(_ccipRouter) {
+    constructor(address _link, address _ccipRouter, address _externalConceroBridge) CCIPReceiver(_ccipRouter) {
         s_linkToken = _link;
+        externalConceroBridge = _externalConceroBridge;
     }
 
     function _sendTokenPayLink(
@@ -95,7 +97,6 @@ contract ConceroCCIP is CCIPReceiver {
         );
 
         IRouterClient router = IRouterClient(this.getRouter());
-
         uint256 fees = router.getFee(_destinationChainSelector, evm2AnyMessage);
 
         if (fees > address(s_linkToken).balance) {
@@ -109,9 +110,7 @@ contract ConceroCCIP is CCIPReceiver {
             evm2AnyMessage
         );
 
-        emit CCIPSent(messageId, msg.sender, _receiver, _token, _amount, _destinationChainSelector);
-
-        // this.sendRequest()
+        emit CCIPSent(messageId, msg.sender, externalConceroBridge, _token, _amount, _destinationChainSelector);
 
         return messageId;
     }
@@ -121,7 +120,7 @@ contract ConceroCCIP is CCIPReceiver {
         address _token,
         uint256 _amount,
         address _feeToken
-    ) private pure returns (Client.EVM2AnyMessage memory) {
+    ) private view returns (Client.EVM2AnyMessage memory) {
         Client.EVMTokenAmount[]
         memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({
@@ -131,8 +130,8 @@ contract ConceroCCIP is CCIPReceiver {
 
         return
             Client.EVM2AnyMessage({
-            receiver: abi.encode(_receiver),
-            data: abi.encode(''),
+            receiver: abi.encode(externalConceroBridge),
+            data: abi.encode(_receiver),
             tokenAmounts: tokenAmounts,
             extraArgs: Client._argsToBytes(
                 Client.EVMExtraArgsV1({gasLimit: 200_000})
@@ -151,21 +150,13 @@ contract ConceroCCIP is CCIPReceiver {
     abi.decode(any2EvmMessage.sender, (address))
     )
     {
-/*
-TypeError: Invalid type for argument in function call. Invalid implicit conversion from string memory to address requested.
-   --> contracts/ConceroCCIP.sol:158:13:
-    |
-158 |             abi.decode(any2EvmMessage.data, (string)),
-    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-*/
-//        emit CCIPReceived(
-//            any2EvmMessage.messageId,
-//            any2EvmMessage.sourceChainSelector,
-//            abi.decode(any2EvmMessage.sender, (address)),
-//            abi.decode(any2EvmMessage.data, (string)),
-//            any2EvmMessage.destTokenAmounts[0].token,
-//            any2EvmMessage.destTokenAmounts[0].amount
-//        );
+        emit CCIPReceived(
+            any2EvmMessage.messageId,
+            any2EvmMessage.sourceChainSelector,
+            abi.decode(any2EvmMessage.sender, (address)),
+            abi.decode(any2EvmMessage.data, (address)),
+            any2EvmMessage.destTokenAmounts[0].token,
+            any2EvmMessage.destTokenAmounts[0].amount
+        );
     }
 }

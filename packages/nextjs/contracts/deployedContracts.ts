@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     CFunctions: {
-      address: "0xB15F9586e044108931B6CE721FDE671B6803f7c4",
+      address: "0xfb796a8ecf922dfbD4F31fef6caDd2BEA0a962Be",
       abi: [
         {
           inputs: [
@@ -297,6 +297,29 @@ const deployedContracts = {
           type: "event",
         },
         {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "requestId",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes",
+              name: "response",
+              type: "bytes",
+            },
+            {
+              internalType: "bytes",
+              name: "err",
+              type: "bytes",
+            },
+          ],
+          name: "_fulfillRequest",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
           inputs: [],
           name: "acceptOwnership",
           outputs: [],
@@ -347,11 +370,6 @@ const deployedContracts = {
               internalType: "address",
               name: "token",
               type: "address",
-            },
-            {
-              internalType: "string",
-              name: "sourceCode",
-              type: "string",
             },
           ],
           name: "addUnconfirmedTX",
@@ -529,7 +547,7 @@ const deployedContracts = {
   },
   80001: {
     CFunctions: {
-      address: "0x89eCf8B45B83b9Dd2a26976037719687Ca7e533a",
+      address: "0xba4Ecdc2b9025a727973aB497CD8DB350CC958cA",
       abi: [
         {
           inputs: [

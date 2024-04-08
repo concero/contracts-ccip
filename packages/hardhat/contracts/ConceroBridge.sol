@@ -2,20 +2,16 @@
 pragma solidity ^0.8.19;
 
 import {ConceroCCIP} from "./ConceroCCIP.sol";
-import {ConceroFunctions} from "./ConceroFunctions.sol";
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
+import {ConfirmedOwner} from '@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol';
 
-contract ConceroBridge is ConceroCCIP, ConceroFunctions {
-    string srcChainRequestSourceCode = "console.log('test')";
+contract ConceroBridge is ConceroCCIP, ConfirmedOwner {
 
     constructor(
         address _link,
         address _ccipRouter,
-        address _functionsRouter,
-        bytes32 _donId
-    )
-    ConceroCCIP(_link, _ccipRouter)
-    ConceroFunctions(_functionsRouter, _donId)
+        address _externalConceroBridge
+    ) ConceroCCIP(_link, _ccipRouter, _externalConceroBridge) ConfirmedOwner(msg.sender)
     {}
 
     receive() external payable {}
@@ -58,6 +54,8 @@ contract ConceroBridge is ConceroCCIP, ConceroFunctions {
             _token,
             _amount
         );
+
+        // sendRequest() for trigger functions
     }
 
     function withdraw(address _owner) public onlyOwner {
@@ -82,12 +80,5 @@ contract ConceroBridge is ConceroCCIP, ConceroFunctions {
         }
 
         IERC20(_token).transfer(_owner, amount);
-    }
-
-    function handleTransaction(
-        string[] calldata args,
-        uint64 subscriptionId
-    ) external onlyOwner {
-        sendRequest(srcChainRequestSourceCode, subscriptionId, args);
     }
 }

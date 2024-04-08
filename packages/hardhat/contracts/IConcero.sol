@@ -30,4 +30,12 @@ interface IConcero {
         address token,
         uint256 amount
     );
+
+    event TXReleased(
+        bytes32 indexed ccipMessageId,
+        address indexed sender,
+        address indexed recipient,
+        address token,
+        uint256 amount
+    );
 }

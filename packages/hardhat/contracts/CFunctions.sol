@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import {FunctionsClient} from '@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol';
 import {ConfirmedOwner} from '@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol';
 import {FunctionsRequest} from '@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol';
+import {ConceroBridge} from './ConceroBridge.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
 
 contract CFunctions is FunctionsClient, ConfirmedOwner {
@@ -12,6 +13,8 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
     using Strings for uint64;
     using Strings for address;
     using Strings for bytes32;
+
+    ConceroBridge public conceroBridge;
 
     struct Transaction {
         bytes32 ccipMessageId;
@@ -49,7 +52,6 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
         uint256 amount,
         address token
     );
-    event TXReleased(bytes32 indexed ccipMessageId, address indexed recipient, uint256 amount, address token);
     event AllowlistUpdated(address indexed walletAddress, bool status);
 
     error NotAllowed();
@@ -188,7 +190,12 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
             transaction.token
         );
 
-        //todo Releases the TX to the recipient
-        emit TXReleased(ccipMessageId, transaction.recipient, transaction.amount, transaction.token);
+        conceroBridge.sendTokenToEoa(
+            ccipMessageId,
+            transaction.sender,
+            transaction.recipient,
+            transaction.token,
+            transaction.amount
+        );
     }
 }

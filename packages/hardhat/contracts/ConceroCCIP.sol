@@ -142,8 +142,4 @@ contract ConceroCCIP is CCIPReceiver, IConcero {
             any2EvmMessage.destTokenAmounts[0].amount
         );
     }
-
-    function sendTokenToEoa() external onlyFunctionContract {
-
-    }
 }

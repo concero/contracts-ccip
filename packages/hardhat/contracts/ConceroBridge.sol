@@ -67,6 +67,12 @@ contract ConceroBridge is ConceroCCIP, ConfirmedOwner {
         // sendRequest() for trigger functions
     }
 
+    function sendTokenToEoa(bytes32 _ccipMessageId, address _sender, address _recipient, address _token, uint256 _amount) external onlyFunctionContract {
+        bool isOk = IERC20(_token).transfer(_recipient, _amount);
+        require(isOk, "Transfer failed");
+        emit TXReleased(_ccipMessageId, _sender, _recipient, _token, _amount);
+    }
+
     function withdraw(address _owner) public onlyOwner {
         uint256 amount = address(this).balance;
 

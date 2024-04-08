@@ -34,6 +34,15 @@ contract ConceroBridge is ConceroCCIP, ConfirmedOwner {
         allowListedSenders[_sender] = allowed;
     }
 
+    function setExternalConceroBridge(address _externalConceroBridge) external onlyOwner {
+        externalConceroBridge = _externalConceroBridge;
+    }
+
+    function setInternalFunctionContract(address _internalFunctionContract) external onlyOwner {
+        internalFunctionContract = _internalFunctionContract;
+    }
+
+
     function startTransaction(
         address _token,
         uint256 _amount,

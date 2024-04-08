@@ -6,51 +6,20 @@ import {CCIPReceiver} from '@chainlink/contracts-ccip/src/v0.8/ccip/applications
 import {IERC20} from '@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol';
 import {Client} from '@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol';
 import {IRouterClient} from '@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol';
+import {IConcero} from "./IConcero.sol";
 
-contract ConceroCCIP is CCIPReceiver {
+contract ConceroCCIP is CCIPReceiver, IConcero {
     mapping(uint64 => bool) public allowListedDstChains;
     mapping(uint64 => bool) public allowListedSrcChains;
     mapping(address => bool) public allowListedSenders;
 
     address immutable private s_linkToken;
-    address immutable private externalConceroBridge;
-
-    error DestinationChainNotAllowed(uint64 _dstChainSelector);
-    error InvalidReceiverAddress();
-    error NotEnoughBalance(uint256 _fees, uint256 _feeToken);
-    error SourceChainNotAllowed(uint64 _sourceChainSelector);
-    error SenderNotAllowed(address _sender);
-    error NothingToWithdraw();
-    error FailedToWithdrawEth(address owner, address target, uint256 value);
-
-    event CCIPSent(
-        bytes32 indexed ccipMessageId,
-        address sender,
-        address recipient,
-        address token,
-        uint256 amount,
-        uint64 dstChainSelector
-    );
-
-    event CCIPReceived(
-        bytes32 indexed ccipMessageId,
-        uint64 srcChainSelector,
-        address sender,
-        address receiver,
-        address token,
-        uint256 amount
-    );
+    address internal externalConceroBridge;
+    address internal internalFunctionContract;
 
     modifier onlyAllowListedDstChain(uint64 _dstChainSelector) {
         if (!allowListedDstChains[_dstChainSelector]) {
             revert DestinationChainNotAllowed(_dstChainSelector);
-        }
-        _;
-    }
-
-    modifier validateReceiver(address _receiver) {
-        if (_receiver == address(0)) {
-            revert InvalidReceiverAddress();
         }
         _;
     }
@@ -62,6 +31,20 @@ contract ConceroCCIP is CCIPReceiver {
         if (!allowListedSrcChains[_sourceChainSelector])
             revert SourceChainNotAllowed(_sourceChainSelector);
         if (!allowListedSenders[_sender]) revert SenderNotAllowed(_sender);
+        _;
+    }
+
+    modifier onlyFunctionContract() {
+        if (msg.sender != internalFunctionContract) {
+            revert NotFunctionContract(msg.sender);
+        }
+        _;
+    }
+
+    modifier validateReceiver(address _receiver) {
+        if (_receiver == address(0)) {
+            revert InvalidReceiverAddress();
+        }
         _;
     }
 
@@ -158,5 +141,9 @@ contract ConceroCCIP is CCIPReceiver {
             any2EvmMessage.destTokenAmounts[0].token,
             any2EvmMessage.destTokenAmounts[0].amount
         );
+    }
+
+    function sendTokenToEoa() external onlyFunctionContract {
+
     }
 }

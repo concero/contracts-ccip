@@ -204,8 +204,8 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
             transaction.token
         );
 
-        if (conceroBridge == ConceroBridge(address(0))) {
-            revert 'ConceroBridge address not set';
+        if (address(conceroBridge) == address(0)) {
+            revert("ConceroBridge address not set");
         }
 
         conceroBridge.sendTokenToEoa(

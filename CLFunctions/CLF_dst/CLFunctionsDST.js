@@ -39,3 +39,6 @@ for (let i = 0; i < decodedLog.args.length; i++) {
  }
 }
 return Functions.encodeString(messageId);
+
+
+// command for removing \n symbols:  sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/ /g' -e 's/\t/ /g' CLFunctionsDST.js

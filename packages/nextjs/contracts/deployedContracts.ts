@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     CFunctions: {
-      address: "0x8C24703aeE66C0B0e7125037760b5Aa888359148",
+      address: "0xB15F9586e044108931B6CE721FDE671B6803f7c4",
       abi: [
         {
           inputs: [
@@ -30,6 +30,11 @@ const deployedContracts = {
               internalType: "uint64",
               name: "_donHostedSecretsVersion",
               type: "uint64",
+            },
+            {
+              internalType: "address",
+              name: "_externalCcipContract",
+              type: "address",
             },
           ],
           stateMutability: "nonpayable",
@@ -350,13 +355,7 @@ const deployedContracts = {
             },
           ],
           name: "addUnconfirmedTX",
-          outputs: [
-            {
-              internalType: "bytes32",
-              name: "",
-              type: "bytes32",
-            },
-          ],
+          outputs: [],
           stateMutability: "nonpayable",
           type: "function",
         },
@@ -530,7 +529,7 @@ const deployedContracts = {
   },
   80001: {
     CFunctions: {
-      address: "0x3EC7b64d007577dDdB5D94A9B70212b823e42E3A",
+      address: "0x89eCf8B45B83b9Dd2a26976037719687Ca7e533a",
       abi: [
         {
           inputs: [
@@ -553,6 +552,11 @@ const deployedContracts = {
               internalType: "uint64",
               name: "_donHostedSecretsVersion",
               type: "uint64",
+            },
+            {
+              internalType: "address",
+              name: "_externalCcipContract",
+              type: "address",
             },
           ],
           stateMutability: "nonpayable",
@@ -866,21 +870,29 @@ const deployedContracts = {
               name: "token",
               type: "address",
             },
-            {
-              internalType: "string",
-              name: "sourceCode",
-              type: "string",
-            },
           ],
           name: "addUnconfirmedTX",
-          outputs: [
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
             {
               internalType: "bytes32",
-              name: "",
+              name: "_bytes32",
               type: "bytes32",
             },
           ],
-          stateMutability: "nonpayable",
+          name: "bytes32ToString",
+          outputs: [
+            {
+              internalType: "string",
+              name: "",
+              type: "string",
+            },
+          ],
+          stateMutability: "pure",
           type: "function",
         },
         {

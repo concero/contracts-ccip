@@ -32,7 +32,13 @@
     "postinstall": "husky install",
     "precommit": "lint-staged",
     "vercel": "yarn workspace @se-2/nextjs vercel",
-    "vercel:yolo": "yarn workspace @se-2/nextjs vercel:yolo"
+    "vercel:yolo": "yarn workspace @se-2/nextjs vercel:yolo",
+    "clean": "yarn workspace @se-2/hardhat clean",
+    "solhint": "yarn workspace @se-2/hardhat solhint",
+    "solhint:fix": "yarn workspace @se-2/hardhat solhint:fix",
+    "format:sol": "yarn workspace @se-2/hardhat format:sol",
+    "gas-report": "yarn workspace @se-2/hardhat gas-report",
+    "slither": "yarn workspace @se-2/hardhat slither"
   },
   "packageManager": "yarn@3.2.3",
   "devDependencies": {

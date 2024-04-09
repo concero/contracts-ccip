@@ -33,7 +33,11 @@
     "vercel:yolo": "vercel --build-env NEXT_PUBLIC_IGNORE_BUILD_ERROR=true",
     "verify": "yarn workspace @se-2/hardhat verify",
     "clean": "yarn workspace @se-2/hardhat clean",
-    "solhint": "yarn workspace @se-2/hardhat solhint"
+    "solhint": "yarn workspace @se-2/hardhat solhint",
+    "solhint:fix": "yarn workspace @se-2/hardhat solhint:fix",
+    "format:sol": "yarn workspace @se-2/hardhat format:sol",
+    "gas-report": "yarn workspace @se-2/hardhat gas-report",
+    "slither": "yarn workspace @se-2/hardhat slither"
   },
   "resolutions": {
     "usehooks-ts@^2.7.2": "patch:usehooks-ts@npm:^2.7.2#./.yarn/patches/usehooks-ts-npm-2.7.2-fceffe0e43.patch"
@@ -42,6 +46,12 @@
     "husky": "~8.0.3",
     "lint-staged": "~13.2.2",
     "next": "~14.0.4",
-    "vercel": "~32.4.1"
+    "vercel": "~32.4.1",
+    "prettier": "^3.2.5",
+    "prettier-plugin-solidity": "^1.3.1",
+    "solhint": "^4.5.2",
+    "solhint-community": "^3.7.0",
+    "solhint-plugin-chainlink-solidity": "git+https://github.com/smartcontractkit/chainlink-solhint-rules.git#v1.2.1",
+    "solhint-plugin-prettier": "^0.1.0"
   }
 }

@@ -14,6 +14,7 @@ dotenv.config({ path: "../../.env" });
 const providerApiKey = process.env.ALCHEMY_API_KEY;
 const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY ?? process.exit(1);
 const etherscanApiKey = process.env.ETHERSCAN_API_KEY || "DNXJA8RX2Q3VZ4URQIWP7Z68CJXQZSC6AW";
+const enableGasReport = process.env.REPORT_GAS !== "false";
 
 const config: HardhatUserConfig = {
   paths: {
@@ -37,6 +38,9 @@ const config: HardhatUserConfig = {
     deployer: {
       default: 0,
     },
+    nikita: {
+      default: 1,
+    },
   },
   networks: {
     hardhat: {
@@ -49,6 +53,10 @@ const config: HardhatUserConfig = {
       accounts: [
         {
           privateKey: deployerPrivateKey,
+          balance: "10000000000000000000000",
+        },
+        {
+          privateKey: process.env.SECOND_TEST_WALLET_PRIVATE_KEY,
           balance: "10000000000000000000000",
         },
       ],
@@ -144,6 +152,9 @@ const config: HardhatUserConfig = {
   },
   sourcify: {
     enabled: false,
+  },
+  gasReporter: {
+    enabled: enableGasReport,
   },
 };
 

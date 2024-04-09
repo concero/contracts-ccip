@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {FunctionsClient} from '@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol';
-import {ConfirmedOwner} from '@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol';
-import {FunctionsRequest} from '@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol';
-import {ConceroBridge} from './ConceroBridge.sol';
-import '@openzeppelin/contracts/utils/Strings.sol';
+import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
+import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
+import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
+import {ConceroBridge} from "./ConceroBridge.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract CFunctions is FunctionsClient, ConfirmedOwner {
     using FunctionsRequest for FunctionsRequest.Request;
@@ -82,15 +82,15 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
     }
 
     function addToAllowlist(address _walletAddress) external onlyOwner {
-        require(_walletAddress != address(0), 'Invalid address');
-        require(!allowlist[_walletAddress], 'Address already in allowlist');
+        require(_walletAddress != address(0), "Invalid address");
+        require(!allowlist[_walletAddress], "Address already in allowlist");
         allowlist[_walletAddress] = true;
         emit AllowlistUpdated(_walletAddress, true);
     }
 
     function removeFromAllowlist(address _walletAddress) external onlyOwner {
-        require(_walletAddress != address(0), 'Invalid address');
-        require(allowlist[_walletAddress], 'Address not in allowlist');
+        require(_walletAddress != address(0), "Invalid address");
+        require(allowlist[_walletAddress], "Address not in allowlist");
         allowlist[_walletAddress] = false;
         emit AllowlistUpdated(_walletAddress, true);
     }
@@ -122,14 +122,14 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
     }
 
     function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
-        bytes memory chars = '0123456789abcdef';
+        bytes memory chars = "0123456789abcdef";
         bytes memory str = new bytes(64);
         for (uint256 i = 0; i < 32; i++) {
             bytes1 b = _bytes32[i];
             str[i * 2] = chars[uint8(b) >> 4];
             str[i * 2 + 1] = chars[uint8(b) & 0x0f];
         }
-        return string(abi.encodePacked('0x', str));
+        return string(abi.encodePacked("0x", str));
     }
 
 
@@ -140,18 +140,10 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
         uint256 amount,
         uint64 srcChainSelector,
         address token
-    ) external onlyAllowListedSenders {
+    ) external onlyAllowListedSenders returns (bytes32) {
         Transaction storage transaction = transactions[ccipMessageId];
         if (transaction.sender != address(0)) revert TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
-        transactions[ccipMessageId] = Transaction(
-            ccipMessageId,
-            sender,
-            recipient,
-            amount,
-            token,
-            srcChainSelector,
-            false
-        );
+        transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
 
         emit UnconfirmedTXAdded(ccipMessageId, sender, recipient, amount, token);
 
@@ -165,6 +157,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
         args[6] = Strings.toString(srcChainSelector);
 
         sendRequest(args);
+        return ccipMessageId;
     }
 
     function sendRequest(string[] memory args) internal {
@@ -188,17 +181,11 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
 
     function _confirmTX(bytes32 ccipMessageId) internal {
         Transaction storage transaction = transactions[ccipMessageId];
-        require(transaction.sender != address(0), 'TX does not exist');
-        require(!transaction.isConfirmed, 'TX already confirmed');
+        require(transaction.sender != address(0), "TX does not exist");
+        require(!transaction.isConfirmed, "TX already confirmed");
         transaction.isConfirmed = true;
 
-        emit TXConfirmed(
-            ccipMessageId,
-            transaction.sender,
-            transaction.recipient,
-            transaction.amount,
-            transaction.token
-        );
+        emit TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
 
         if (address(conceroBridge) == address(0)) {
             revert("ConceroBridge address not set");

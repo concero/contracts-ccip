@@ -4,54 +4,39 @@
   "private": true,
   "workspaces": {
     "packages": [
-      "packages/*"
+      "packages/hardhat",
+      "packages/nextjs"
     ]
   },
   "scripts": {
     "account": "yarn workspace @se-2/hardhat account",
     "chain": "yarn workspace @se-2/hardhat chain",
-    "compile": "yarn workspace @se-2/hardhat compile",
-    "deploy": "yarn workspace @se-2/hardhat deploy",
-    "flatten": "yarn workspace @se-2/hardhat flatten",
     "fork": "yarn workspace @se-2/hardhat fork",
-    "format": "yarn next:format && yarn hardhat:format",
-    "generate": "yarn workspace @se-2/hardhat generate",
+    "deploy": "yarn workspace @se-2/hardhat deploy",
+    "verify": "yarn workspace @se-2/hardhat verify",
     "hardhat-verify": "yarn workspace @se-2/hardhat hardhat-verify",
-    "hardhat:format": "yarn workspace @se-2/hardhat format",
+    "compile": "yarn workspace @se-2/hardhat compile",
+    "generate": "yarn workspace @se-2/hardhat generate",
+    "flatten": "yarn workspace @se-2/hardhat flatten",
     "hardhat:lint": "yarn workspace @se-2/hardhat lint",
     "hardhat:lint-staged": "yarn workspace @se-2/hardhat lint-staged",
+    "hardhat:format": "yarn workspace @se-2/hardhat format",
     "hardhat:test": "yarn workspace @se-2/hardhat test",
-    "postinstall": "husky install",
-    "next:build": "yarn workspace @se-2/nextjs build",
-    "next:check-types": "yarn workspace @se-2/nextjs check-types",
-    "next:format": "yarn workspace @se-2/nextjs format",
-    "next:lint": "yarn workspace @se-2/nextjs lint",
-    "precommit": "lint-staged",
-    "start": "yarn workspace @se-2/nextjs dev",
     "test": "yarn hardhat:test",
-    "vercel": "vercel",
-    "vercel:yolo": "vercel --build-env NEXT_PUBLIC_IGNORE_BUILD_ERROR=true",
-    "verify": "yarn workspace @se-2/hardhat verify",
-    "clean": "yarn workspace @se-2/hardhat clean",
-    "solhint": "yarn workspace @se-2/hardhat solhint",
-    "solhint:fix": "yarn workspace @se-2/hardhat solhint:fix",
-    "format:sol": "yarn workspace @se-2/hardhat format:sol",
-    "gas-report": "yarn workspace @se-2/hardhat gas-report",
-    "slither": "yarn workspace @se-2/hardhat slither"
+    "format": "yarn next:format && yarn hardhat:format",
+    "start": "yarn workspace @se-2/nextjs dev",
+    "next:lint": "yarn workspace @se-2/nextjs lint",
+    "next:format": "yarn workspace @se-2/nextjs format",
+    "next:check-types": "yarn workspace @se-2/nextjs check-types",
+    "next:build": "yarn workspace @se-2/nextjs build",
+    "postinstall": "husky install",
+    "precommit": "lint-staged",
+    "vercel": "yarn workspace @se-2/nextjs vercel",
+    "vercel:yolo": "yarn workspace @se-2/nextjs vercel:yolo"
   },
-  "resolutions": {
-    "usehooks-ts@^2.7.2": "patch:usehooks-ts@npm:^2.7.2#./.yarn/patches/usehooks-ts-npm-2.7.2-fceffe0e43.patch"
-  },
+  "packageManager": "yarn@3.2.3",
   "devDependencies": {
-    "husky": "~8.0.3",
-    "lint-staged": "~13.2.2",
-    "next": "~14.0.4",
-    "vercel": "~32.4.1",
-    "prettier": "^3.2.5",
-    "prettier-plugin-solidity": "^1.3.1",
-    "solhint": "^4.5.2",
-    "solhint-community": "^3.7.0",
-    "solhint-plugin-chainlink-solidity": "git+https://github.com/smartcontractkit/chainlink-solhint-rules.git#v1.2.1",
-    "solhint-plugin-prettier": "^0.1.0"
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3"
   }
 }

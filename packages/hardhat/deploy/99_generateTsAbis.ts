@@ -5,9 +5,10 @@
  * These definitions are used to derive the types needed in the custom scaffold-eth hooks, for example.
  * This script should run as the last deploy script.
  */
+
 import * as fs from "fs";
-import { DeployFunction } from "hardhat-deploy/types";
 import prettier from "prettier";
+import { DeployFunction } from "hardhat-deploy/types";
 
 const generatedContractComment = `
 /**

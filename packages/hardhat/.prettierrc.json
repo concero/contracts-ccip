@@ -1,6 +1,6 @@
 {
   "arrowParens": "avoid",
-  "printWidth": 120,
+  "printWidth": 160,
   "tabWidth": 2,
   "trailingComma": "all",
   "plugins": [
@@ -11,7 +11,7 @@
       "files": "*.sol",
       "options": {
         "parser": "solidity-parse",
-        "printWidth": 120,
+        "printWidth": 160,
         "tabWidth": 2,
         "useTabs": false,
         "singleQuote": false,

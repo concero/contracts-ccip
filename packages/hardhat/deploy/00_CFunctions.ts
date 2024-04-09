@@ -9,8 +9,8 @@ const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvi
   const { network } = hre;
 
   const chainSelectorsMap = {
-    8001: 12532609583862916517,
-    43113: 14767482510784806043,
+    8001: 12532609583862916517n,
+    43113: 14767482510784806043n,
   };
 
   await deploy("CFunctions", {
@@ -23,7 +23,7 @@ const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvi
       1712503865,
       "0x4200A2257C399C1223f8F3122971eb6fafaaA976",
       "0x3A684e72D220Ce842354bebf9AfFCdA34EE27D82",
-      chainSelectorsMap[network.config.chainId],
+      12532609583862916517n,
     ],
     autoMine: true,
   });

@@ -14,7 +14,12 @@
     "format": "prettier --write ./*.ts ./deploy/**/*.ts ./scripts/**/*.ts ./test/**/*.ts",
     "test": "REPORT_GAS=true hardhat test --network hardhat",
     "verify": "hardhat etherscan-verify",
-    "hardhat-verify": "hardhat verify"
+    "hardhat-verify": "hardhat verify",
+    "clean": "rm -rf ./artifacts ./cache ./coverage ./typechain",
+    "solhint": "solhint ./contracts/**/*.sol",
+    "solhint:fix": "solhint --fix ./contracts/**/*.sol",
+    "gas-report": "REPORT_GAS=true hardhat test --network hardhat",
+    "slither": "slither ."
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.7.0",
@@ -47,6 +52,9 @@
     "typescript": "^5.1.6"
   },
   "dependencies": {
+    "@chainlink/contracts": "^1.0.0",
+    "@chainlink/contracts-ccip": "^1.4.0",
+    "@chainlink/functions-toolkit": "^0.2.8",
     "@openzeppelin/contracts": "^4.8.1",
     "@typechain/ethers-v6": "^0.5.1",
     "dotenv": "^16.0.3",

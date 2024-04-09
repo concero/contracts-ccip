@@ -1,9 +1,8 @@
 import * as dotenv from "dotenv";
-import { ethers, Wallet } from "ethers";
-import { config } from "hardhat";
-import QRCode from "qrcode";
-
 dotenv.config();
+import { ethers, Wallet } from "ethers";
+import QRCode from "qrcode";
+import { config } from "hardhat";
 
 async function main() {
   const privateKey = process.env.DEPLOYER_PRIVATE_KEY;

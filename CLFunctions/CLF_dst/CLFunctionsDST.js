@@ -1,7 +1,15 @@
 const ethers = await import('npm:ethers@6.10.0');
 const [srcContractAddress, messageId] = args;
+const chainMap = {
+ '12532609583862916517': {
+  url: `https://polygon-mumbai.infura.io/v3/${secrets.INFURA_API_KEY}`,
+ },
+ '14767482510784806043': {
+  url: `https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
+ },
+};
 const params = {
- url: `https://polygon-mumbai.infura.io/v3/${secrets.INFURA_API_KEY}`,
+ url: chainMap[args[7]].url,
  method: 'POST',
  headers: {
   'Content-Type': 'application/json',
@@ -22,8 +30,8 @@ const params = {
 };
 const response = await Functions.makeHttpRequest(params);
 const { data } = response;
-if (data?.error || !data?.result) {
- throw new Error('Error fetching logs');
+if (data?.error || !data?.result.length) {
+ throw new Error('Logs not found');
 }
 const abi = ['event CCIPSent(bytes32 indexed, address, address, address, uint256, uint64)'];
 const contract = new ethers.Interface(abi);
@@ -33,12 +41,11 @@ const log = {
 };
 const decodedLog = contract.parseLog(log);
 const croppedArgs = args.slice(1);
-for (let i = 0; i < decodedLog.args.length; i++) {
+for (let i = 0; i < 7; i++) {
  if (decodedLog.args[i].toString().toLowerCase() !== croppedArgs[i].toString().toLowerCase()) {
   throw new Error('Message ID does not match the event log');
  }
 }
 return Functions.encodeUint256(BigInt(messageId));
-
 
 // command for removing \n symbols:  sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/ /g' -e 's/\t/ /g' CLFunctionsDST.js

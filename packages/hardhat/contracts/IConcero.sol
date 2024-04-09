@@ -13,29 +13,7 @@ interface IConcero {
   error FailedToWithdrawEth(address owner, address target, uint256 value);
   error NotFunctionContract(address _sender);
 
-  event CCIPSent(
-    bytes32 indexed ccipMessageId,
-    address sender,
-    address recipient,
-    address token,
-    uint256 amount,
-    uint64 dstChainSelector
-  );
-
-  event CCIPReceived(
-    bytes32 indexed ccipMessageId,
-    uint64 srcChainSelector,
-    address sender,
-    address receiver,
-    address token,
-    uint256 amount
-  );
-
-  event TXReleased(
-    bytes32 indexed ccipMessageId,
-    address indexed sender,
-    address indexed recipient,
-    address token,
-    uint256 amount
-  );
+  event CCIPSent(bytes32 indexed ccipMessageId, address sender, address recipient, address token, uint256 amount, uint64 dstChainSelector);
+  event CCIPReceived(bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, address receiver, address token, uint256 amount);
+  event TXReleased(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, address token, uint256 amount);
 }

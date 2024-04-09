@@ -6,6 +6,12 @@ const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvi
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { CL_FUNCTIONS_ROUTER_MUMBAI, CL_FUNCTIONS_DON_ID_MUMBAI } = process.env;
+  const { network } = hre;
+
+  const chainSelectorsMap = {
+    8001: 12532609583862916517,
+    43113: 14767482510784806043,
+  };
 
   await deploy("CFunctions", {
     from: deployer,
@@ -17,6 +23,7 @@ const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvi
       1712503865,
       "0x4200A2257C399C1223f8F3122971eb6fafaaA976",
       "0x3A684e72D220Ce842354bebf9AfFCdA34EE27D82",
+      chainSelectorsMap[network.config.chainId],
     ],
     autoMine: true,
   });

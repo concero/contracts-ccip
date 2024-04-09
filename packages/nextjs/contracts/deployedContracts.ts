@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     CFunctions: {
-      address: "0x10eE6447Ae2bC0eBa7EE187e8754De2438833C7c",
+      address: "0xBe183BC2D14bd204fF45A56F709B37d8AA3BF602",
       abi: [
         {
           inputs: [
@@ -271,29 +271,6 @@ const deployedContracts = {
           type: "event",
         },
         {
-          inputs: [
-            {
-              internalType: "bytes32",
-              name: "requestId",
-              type: "bytes32",
-            },
-            {
-              internalType: "bytes",
-              name: "response",
-              type: "bytes",
-            },
-            {
-              internalType: "bytes",
-              name: "err",
-              type: "bytes",
-            },
-          ],
-          name: "_fulfillRequest",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
           inputs: [],
           name: "acceptOwnership",
           outputs: [],
@@ -546,7 +523,7 @@ const deployedContracts = {
       },
     },
     ConceroBridge: {
-      address: "0xc28aa2112f15E3B66E0d801ed338E8477c375B50",
+      address: "0x0FE2E3d2e7EDd24536DD6a9098E0448Ba0fb34c0",
       abi: [
         {
           inputs: [
@@ -1201,7 +1178,7 @@ const deployedContracts = {
   },
   80001: {
     CFunctions: {
-      address: "0xba4Ecdc2b9025a727973aB497CD8DB350CC958cA",
+      address: "0xDE87382ca21DEDFD15853A1B4A0427B4066011D0",
       abi: [
         {
           inputs: [
@@ -1228,6 +1205,11 @@ const deployedContracts = {
             {
               internalType: "address",
               name: "_externalCcipContract",
+              type: "address",
+            },
+            {
+              internalType: "address payable",
+              name: "_internalCcipContract",
               type: "address",
             },
           ],
@@ -1434,37 +1416,6 @@ const deployedContracts = {
             {
               indexed: true,
               internalType: "address",
-              name: "recipient",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "token",
-              type: "address",
-            },
-          ],
-          name: "TXReleased",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "bytes32",
-              name: "ccipMessageId",
-              type: "bytes32",
-            },
-            {
-              indexed: true,
-              internalType: "address",
               name: "sender",
               type: "address",
             },
@@ -1489,6 +1440,29 @@ const deployedContracts = {
           ],
           name: "UnconfirmedTXAdded",
           type: "event",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "requestId",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes",
+              name: "response",
+              type: "bytes",
+            },
+            {
+              internalType: "bytes",
+              name: "err",
+              type: "bytes",
+            },
+          ],
+          name: "_fulfillRequest",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
         },
         {
           inputs: [],
@@ -1645,6 +1619,32 @@ const deployedContracts = {
         {
           inputs: [
             {
+              internalType: "address",
+              name: "_externalCcipContract",
+              type: "address",
+            },
+          ],
+          name: "setExternalCcipContract",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address payable",
+              name: "_internalCcipContract",
+              type: "address",
+            },
+          ],
+          name: "setInternalCcipContract",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
               internalType: "bytes32",
               name: "",
               type: "bytes32",
@@ -1709,10 +1709,11 @@ const deployedContracts = {
         handleOracleFulfillment:
           "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol",
         acceptOwnership:
-          "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol",
-        owner: "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol",
+          "@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner.sol",
+        owner:
+          "@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner.sol",
         transferOwnership:
-          "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol",
+          "@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner.sol",
       },
     },
   },

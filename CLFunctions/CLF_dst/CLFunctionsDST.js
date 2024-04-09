@@ -38,7 +38,7 @@ for (let i = 0; i < decodedLog.args.length; i++) {
   throw new Error('Message ID does not match the event log');
  }
 }
-return Functions.encodeString(messageId);
+return Functions.encodeUint256(BigInt(messageId));
 
 
 // command for removing \n symbols:  sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/ /g' -e 's/\t/ /g' CLFunctionsDST.js

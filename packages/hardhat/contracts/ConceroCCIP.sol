@@ -4,9 +4,11 @@ pragma solidity ^0.8.19;
 import {CCIPInternal} from "./CCIPInternal.sol";
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
+import {CFunctions} from "./CFunctions.sol";
 
 contract ConceroCCIP is CCIPInternal, ConfirmedOwner {
   address internal internalFunctionContract;
+  CFunctions private cFunctions;
 
   modifier onlyFunctionContract() {
     if (msg.sender != internalFunctionContract) {
@@ -33,6 +35,7 @@ contract ConceroCCIP is CCIPInternal, ConfirmedOwner {
 
   function setInternalFunctionContract(address _internalFunctionContract) external onlyOwner {
     internalFunctionContract = _internalFunctionContract;
+    cFunctions = CFunctions(_internalFunctionContract);
   }
 
   function setDstConceroCCIPContract(uint64 _chainSelector, address _dstConceroCCIPContract) external onlyOwner {
@@ -50,9 +53,12 @@ contract ConceroCCIP is CCIPInternal, ConfirmedOwner {
 
     require(isOK, "Transfer failed");
 
-    _sendTokenPayLink(_destinationChainSelector, _receiver, _token, _amount);
+    bytes32 ccipMessageId = _sendTokenPayLink(_destinationChainSelector, _receiver, _token, _amount);
 
-    // sendRequest() for trigger functions
+    if (address(cFunctions) == address(0)) {
+      revert("cFunctions address not set");
+    }
+    cFunctions.sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, _amount, _destinationChainSelector, _token);
   }
 
   function sendTokenToEoa(bytes32 _ccipMessageId, address _sender, address _recipient, address _token, uint256 _amount) external onlyFunctionContract {

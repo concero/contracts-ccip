@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     CFunctions: {
-      address: "0x7822227aF3ee85AE86AFcC53950a5d6894A5F176",
+      address: "0x08e072014e3e6e356EcF38dfDeD61B652eaf5691",
       abi: [
         {
           inputs: [
@@ -313,13 +313,7 @@ const deployedContracts = {
             },
           ],
           name: "addUnconfirmedTX",
-          outputs: [
-            {
-              internalType: "bytes32",
-              name: "",
-              type: "bytes32",
-            },
-          ],
+          outputs: [],
           stateMutability: "nonpayable",
           type: "function",
         },
@@ -523,7 +517,7 @@ const deployedContracts = {
       },
     },
     ConceroCCIP: {
-      address: "0x66F78f9c39ca7515842183bF5Bf7ee58451E5789",
+      address: "0x1a8dAdff5a5395eEb90B0Ea667E1f04912928Db8",
       abi: [
         {
           inputs: [
@@ -820,42 +814,6 @@ const deployedContracts = {
           inputs: [
             {
               internalType: "uint64",
-              name: "_dstChainSelector",
-              type: "uint64",
-            },
-            {
-              internalType: "bool",
-              name: "allowed",
-              type: "bool",
-            },
-          ],
-          name: "allowDestinationChain",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_sender",
-              type: "address",
-            },
-            {
-              internalType: "bool",
-              name: "allowed",
-              type: "bool",
-            },
-          ],
-          name: "allowListSender",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint64",
               name: "",
               type: "uint64",
             },
@@ -912,24 +870,6 @@ const deployedContracts = {
         {
           inputs: [
             {
-              internalType: "uint64",
-              name: "_srcChainSelector",
-              type: "uint64",
-            },
-            {
-              internalType: "bool",
-              name: "allowed",
-              type: "bool",
-            },
-          ],
-          name: "allowSourceChain",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
               components: [
                 {
                   internalType: "bytes32",
@@ -977,6 +917,25 @@ const deployedContracts = {
           name: "ccipReceive",
           outputs: [],
           stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint64",
+              name: "",
+              type: "uint64",
+            },
+          ],
+          name: "dstConceroCCIPContracts",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
           type: "function",
         },
         {
@@ -1034,6 +993,78 @@ const deployedContracts = {
             },
           ],
           name: "sendTokenToEoa",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint64",
+              name: "_dstChainSelector",
+              type: "uint64",
+            },
+            {
+              internalType: "bool",
+              name: "allowed",
+              type: "bool",
+            },
+          ],
+          name: "setAllowDestinationChain",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_sender",
+              type: "address",
+            },
+            {
+              internalType: "bool",
+              name: "allowed",
+              type: "bool",
+            },
+          ],
+          name: "setAllowListSender",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint64",
+              name: "_srcChainSelector",
+              type: "uint64",
+            },
+            {
+              internalType: "bool",
+              name: "allowed",
+              type: "bool",
+            },
+          ],
+          name: "setAllowSourceChain",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint64",
+              name: "_chainSelector",
+              type: "uint64",
+            },
+            {
+              internalType: "address",
+              name: "_dstConceroCCIPContract",
+              type: "address",
+            },
+          ],
+          name: "setDstConceroCCIPContract",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",

@@ -5,15 +5,27 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 const deployConceroCCIP: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const { LINK_MUMBAI, CL_CCIP_ROUTER_MUMBAI } = process.env;
+  const chainId = await hre.getChainId();
 
-  console.log("LINK_MUMBAI", LINK_MUMBAI);
-  console.log("CL_CCIP_ROUTER_MUMBAI", CL_CCIP_ROUTER_MUMBAI);
+  const deploymentOptions = {
+    80001: {
+      linkTokenAddress: process.env.LINK_MUMBAI,
+      router: process.env.CL_CCIP_ROUTER_MUMBAI,
+      // chainSelector: 12532609583862916517n,
+    },
+    43113: {
+      linkTokenAddress: process.env.LINK_FUJI,
+      router: process.env.CL_CCIP_ROUTER_FUJI,
+      // chainSelector: 14767482510784806043n,
+    },
+  };
+  if (!deploymentOptions[chainId]) throw new Error(`ChainId ${chainId} not supported`);
+  const { linkTokenAddress, router } = deploymentOptions[chainId];
 
   await deploy("ConceroCCIP", {
     from: deployer,
     log: true,
-    args: [LINK_MUMBAI, CL_CCIP_ROUTER_MUMBAI],
+    args: [linkTokenAddress, router],
     autoMine: true,
   });
 

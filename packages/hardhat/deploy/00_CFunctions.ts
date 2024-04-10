@@ -5,26 +5,32 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const { CL_FUNCTIONS_ROUTER_MUMBAI, CL_FUNCTIONS_DON_ID_MUMBAI } = process.env;
-  const { network } = hre;
+  const chainId = await hre.getChainId();
 
-  const chainSelectorsMap = {
-    8001: 12532609583862916517n,
-    43113: 14767482510784806043n,
+  const deploymentOptions = {
+    80001: {
+      router: process.env.CL_FUNCTIONS_ROUTER_MUMBAI,
+      donId: process.env.CL_FUNCTIONS_DON_ID_MUMBAI,
+      chainSelector: 12532609583862916517n,
+      subscriptionId: 1437,
+      donHostedSecretsVersion: 1712770854,
+    },
+    43113: {
+      donId: process.env.CL_FUNCTIONS_DON_ID_FUJI,
+      router: process.env.CL_FUNCTIONS_ROUTER_FUJI,
+      chainSelector: 14767482510784806043n,
+      subscriptionId: 1437,
+      donHostedSecretsVersion: 1712770854,
+    },
   };
+
+  if (!deploymentOptions[chainId]) throw new Error(`ChainId ${chainId} not supported`);
+  const { router, donId, chainSelector, subscriptionId, donHostedSecretsVersion } = deploymentOptions[chainId];
 
   await deploy("CFunctions", {
     from: deployer,
     log: true,
-    args: [
-      CL_FUNCTIONS_ROUTER_MUMBAI,
-      CL_FUNCTIONS_DON_ID_MUMBAI,
-      1437,
-      1712770854,
-      "0x4200A2257C399C1223f8F3122971eb6fafaaA976",
-      "0x3A684e72D220Ce842354bebf9AfFCdA34EE27D82",
-      "12532609583862916517",
-    ],
+    args: [router, donId, subscriptionId, donHostedSecretsVersion, chainSelector],
     autoMine: true,
   });
 

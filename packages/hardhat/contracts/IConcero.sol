@@ -19,13 +19,15 @@ interface ICCIP {
 }
 
 interface IFunctions {
-  event UnconfirmedTXAdded(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, uint256 amount, address token);
+  event UnconfirmedTXAdded(bytes32 indexed ccipMessageId, address sender, address recipient, uint256 amount, address token, uint64 srcChainSelector);
+  event UnconfirmedTXSent(bytes32 indexed ccipMessageId, address sender, address recipient, uint256 amount, address token, uint64 dstChainSelector);
   event TXConfirmed(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, uint256 amount, address token);
   event AllowlistUpdated(address indexed walletAddress, bool status);
 
   error NotAllowed();
   error TXAlreadyExists(bytes32 txHash, bool isConfirmed);
   error UnexpectedRequestID(bytes32);
+  error NotCCIPContract(address);
 
   struct Transaction {
     bytes32 ccipMessageId;

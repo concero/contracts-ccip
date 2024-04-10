@@ -12,9 +12,9 @@ contract CCIPInternal is CCIPReceiver, ICCIP {
   mapping(uint64 => bool) public allowListedDstChains;
   mapping(uint64 => bool) public allowListedSrcChains;
   mapping(address => bool) public allowListedSenderContracts;
+  mapping(uint64 => address) public dstConceroCCIPContracts;
 
   address private immutable s_linkToken;
-  address internal externalConceroCCIP;
 
   modifier onlyAllowListedDstChain(uint64 _dstChainSelector) {
     if (!allowListedDstChains[_dstChainSelector]) {
@@ -43,9 +43,8 @@ contract CCIPInternal is CCIPReceiver, ICCIP {
     _;
   }
 
-  constructor(address _link, address _ccipRouter, address _externalConceroCCIP) CCIPReceiver(_ccipRouter) {
+  constructor(address _link, address _ccipRouter) CCIPReceiver(_ccipRouter) {
     s_linkToken = _link;
-    externalConceroCCIP = _externalConceroCCIP;
   }
 
   function _sendTokenPayLink(
@@ -54,7 +53,7 @@ contract CCIPInternal is CCIPReceiver, ICCIP {
     address _token,
     uint256 _amount
   ) internal onlyAllowListedDstChain(_destinationChainSelector) validateReceiver(_receiver) returns (bytes32 messageId) {
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_receiver, _token, _amount, s_linkToken);
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_receiver, _token, _amount, s_linkToken, _destinationChainSelector);
 
     IRouterClient router = IRouterClient(this.getRouter());
     uint256 fees = router.getFee(_destinationChainSelector, evm2AnyMessage);
@@ -67,18 +66,24 @@ contract CCIPInternal is CCIPReceiver, ICCIP {
 
     messageId = router.ccipSend{value: fees}(_destinationChainSelector, evm2AnyMessage);
 
-    emit CCIPSent(messageId, msg.sender, externalConceroCCIP, _token, _amount, _destinationChainSelector);
+    emit CCIPSent(messageId, msg.sender, dstConceroCCIPContracts[_destinationChainSelector], _token, _amount, _destinationChainSelector);
 
     return messageId;
   }
 
-  function _buildCCIPMessage(address _receiver, address _token, uint256 _amount, address _feeToken) private view returns (Client.EVM2AnyMessage memory) {
+  function _buildCCIPMessage(
+    address _receiver,
+    address _token,
+    uint256 _amount,
+    address _feeToken,
+    uint64 _destinationChainSelector
+  ) private view returns (Client.EVM2AnyMessage memory) {
     Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
     tokenAmounts[0] = Client.EVMTokenAmount({token: _token, amount: _amount});
 
     return
       Client.EVM2AnyMessage({
-        receiver: abi.encode(externalConceroCCIP),
+        receiver: abi.encode(dstConceroCCIPContracts[_destinationChainSelector]),
         data: abi.encode(_receiver),
         tokenAmounts: tokenAmounts,
         extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 200_000})),

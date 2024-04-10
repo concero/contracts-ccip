@@ -6,9 +6,9 @@ import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
-import {IConcero} from "./IConcero.sol";
+import {ICCIP} from "./IConcero.sol";
 
-contract CCIPInternal is CCIPReceiver, IConcero {
+contract CCIPInternal is CCIPReceiver, ICCIP {
   mapping(uint64 => bool) public allowListedDstChains;
   mapping(uint64 => bool) public allowListedSrcChains;
   mapping(address => bool) public allowListedSenderContracts;

@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     CFunctions: {
-      address: "0x71D9DB8FCD18CaAb76B185e66A90e248Fc628AC8",
+      address: "0x7822227aF3ee85AE86AFcC53950a5d6894A5F176",
       abi: [
         {
           inputs: [
@@ -327,25 +327,6 @@ const deployedContracts = {
           inputs: [
             {
               internalType: "bytes32",
-              name: "_bytes32",
-              type: "bytes32",
-            },
-          ],
-          name: "bytes32ToString",
-          outputs: [
-            {
-              internalType: "string",
-              name: "",
-              type: "string",
-            },
-          ],
-          stateMutability: "pure",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "bytes32",
               name: "ccipMessageId",
               type: "bytes32",
             },
@@ -402,6 +383,30 @@ const deployedContracts = {
           name: "removeFromAllowlist",
           outputs: [],
           stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          name: "requests",
+          outputs: [
+            {
+              internalType: "enum IFunctions.RequestType",
+              name: "requestType",
+              type: "uint8",
+            },
+            {
+              internalType: "bool",
+              name: "isPending",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
           type: "function",
         },
         {
@@ -518,7 +523,7 @@ const deployedContracts = {
       },
     },
     ConceroCCIP: {
-      address: "0xdfEdE677eEb31a2244c5BC3E4cD1E1C81761e2B0",
+      address: "0x66F78f9c39ca7515842183bF5Bf7ee58451E5789",
       abi: [
         {
           inputs: [

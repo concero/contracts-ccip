@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-import {ConceroBridge} from "./ConceroBridge.sol";
+import {ConceroCCIP} from "./ConceroCCIP.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract CFunctions is FunctionsClient, ConfirmedOwner {
@@ -14,7 +14,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
   using Strings for address;
   using Strings for bytes32;
 
-  ConceroBridge private conceroBridge;
+  ConceroCCIP private conceroCCIP;
 
   struct Transaction {
     bytes32 ccipMessageId;
@@ -69,7 +69,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
     allowlist[msg.sender] = true;
     externalCcipContract = _externalCcipContract;
     internalCcipContract = _internalCcipContract;
-    conceroBridge = ConceroBridge(_internalCcipContract);
+    conceroCCIP = ConceroCCIP(_internalCcipContract);
     chainSelector = _chainSelector;
   }
 
@@ -93,7 +93,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
 
   function setInternalCcipContract(address payable _internalCcipContract) external onlyOwner {
     internalCcipContract = _internalCcipContract;
-    conceroBridge = ConceroBridge(_internalCcipContract);
+    conceroCCIP = ConceroCCIP(_internalCcipContract);
   }
 
   function setExternalCcipContract(address _externalCcipContract) external onlyOwner {
@@ -179,10 +179,10 @@ contract CFunctions is FunctionsClient, ConfirmedOwner {
 
     emit TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
 
-    if (address(conceroBridge) == address(0)) {
-      revert("ConceroBridge address not set");
+    if (address(conceroCCIP) == address(0)) {
+      revert("conceroCCIP address not set");
     }
 
-    conceroBridge.sendTokenToEoa(ccipMessageId, transaction.sender, transaction.recipient, transaction.token, transaction.amount);
+    conceroCCIP.sendTokenToEoa(ccipMessageId, transaction.sender, transaction.recipient, transaction.token, transaction.amount);
   }
 }

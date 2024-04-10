@@ -15,28 +15,25 @@ contract ConceroCCIP is CCIPInternal, ConfirmedOwner {
     _;
   }
 
-  // mapping(uint64 => address) public allowListedDstContracts;;
+  mapping(uint64 => address) public dstConceroCCIPContracts;
 
   constructor(
     address _link,
     address _ccipRouter,
     address _externalConceroCCIP
-  ) CCIPInternal(_link, _ccipRouter, _externalConceroCCIP) ConfirmedOwner(msg.sender) {
-    // set internalFunctionContract
-  }
+  ) CCIPInternal(_link, _ccipRouter, _externalConceroCCIP) ConfirmedOwner(msg.sender) {}
 
   receive() external payable {}
 
-  // rename to set
-  function allowDestinationChain(uint64 _dstChainSelector, bool allowed) external onlyOwner {
+  function setAllowDestinationChain(uint64 _dstChainSelector, bool allowed) external onlyOwner {
     allowListedDstChains[_dstChainSelector] = allowed;
   }
 
-  function allowSourceChain(uint64 _srcChainSelector, bool allowed) external onlyOwner {
+  function setAllowSourceChain(uint64 _srcChainSelector, bool allowed) external onlyOwner {
     allowListedSrcChains[_srcChainSelector] = allowed;
   }
 
-  function allowListSender(address _sender, bool allowed) external onlyOwner {
+  function setAllowListSender(address _sender, bool allowed) external onlyOwner {
     allowListedSenderContracts[_sender] = allowed;
   }
 
@@ -46,6 +43,10 @@ contract ConceroCCIP is CCIPInternal, ConfirmedOwner {
 
   function setInternalFunctionContract(address _internalFunctionContract) external onlyOwner {
     internalFunctionContract = _internalFunctionContract;
+  }
+
+  function setDstConceroCCIPContract(uint64 _chainSelector, address _dstConceroCCIPContract) external onlyOwner {
+    dstConceroCCIPContracts[_chainSelector] = _dstConceroCCIPContract;
   }
 
   function startTransaction(

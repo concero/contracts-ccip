@@ -53,13 +53,7 @@ contract CCIPInternal is CCIPReceiver, ICCIP {
     address _receiver,
     address _token,
     uint256 _amount
-  )
-    internal
-    onlyAllowListedDstChain(_destinationChainSelector)
-    // check validateReceiver modifier
-    validateReceiver(_receiver)
-    returns (bytes32 messageId)
-  {
+  ) internal onlyAllowListedDstChain(_destinationChainSelector) validateReceiver(_receiver) returns (bytes32 messageId) {
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_receiver, _token, _amount, s_linkToken);
 
     IRouterClient router = IRouterClient(this.getRouter());

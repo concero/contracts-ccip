@@ -113,12 +113,10 @@ contract CFunctions is FunctionsClient, ConfirmedOwner, IFunctions {
     uint256 amount,
     uint64 srcChainSelector,
     address token
-  ) external onlyAllowListedSenders returns (bytes32) {
+  ) external onlyAllowListedSenders {
     Transaction storage transaction = transactions[ccipMessageId];
     if (transaction.sender != address(0)) revert TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
     transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
-
-    emit UnconfirmedTXAdded(ccipMessageId, sender, recipient, amount, token);
 
     string[] memory args = new string[](8);
     args[0] = Strings.toHexString(externalCcipContract);
@@ -135,7 +133,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner, IFunctions {
     requests[reqId].requestType = RequestType.checkTxSrc;
     requests[reqId].isPending = true;
 
-    return ccipMessageId;
+    emit UnconfirmedTXAdded(ccipMessageId, sender, recipient, amount, token);
   }
 
   function sendRequest(string[] memory args, string memory jsCode) internal returns (bytes32) {

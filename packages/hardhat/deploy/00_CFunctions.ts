@@ -33,4 +33,3 @@ const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvi
 
 export default deployCFunctions;
 deployCFunctions.tags = ["CFunctions"];
-// yarn deploy --tags CFunctions

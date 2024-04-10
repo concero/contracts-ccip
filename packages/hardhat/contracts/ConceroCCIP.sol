@@ -15,13 +15,7 @@ contract ConceroCCIP is CCIPInternal, ConfirmedOwner {
     _;
   }
 
-  mapping(uint64 => address) public dstConceroCCIPContracts;
-
-  constructor(
-    address _link,
-    address _ccipRouter,
-    address _externalConceroCCIP
-  ) CCIPInternal(_link, _ccipRouter, _externalConceroCCIP) ConfirmedOwner(msg.sender) {}
+  constructor(address _link, address _ccipRouter) CCIPInternal(_link, _ccipRouter) ConfirmedOwner(msg.sender) {}
 
   receive() external payable {}
 
@@ -35,10 +29,6 @@ contract ConceroCCIP is CCIPInternal, ConfirmedOwner {
 
   function setAllowListSender(address _sender, bool allowed) external onlyOwner {
     allowListedSenderContracts[_sender] = allowed;
-  }
-
-  function setExternalConceroCCIP(address _externalConceroCCIP) external onlyOwner {
-    externalConceroCCIP = _externalConceroCCIP;
   }
 
   function setInternalFunctionContract(address _internalFunctionContract) external onlyOwner {

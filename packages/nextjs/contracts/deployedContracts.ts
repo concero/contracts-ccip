@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     CFunctions: {
-      address: "0x08e072014e3e6e356EcF38dfDeD61B652eaf5691",
+      address: "0xd574a83C9Ab2FA353BE8F7A2B19a2FdA7cE65cBA",
       abi: [
         {
           inputs: [
@@ -517,7 +517,7 @@ const deployedContracts = {
       },
     },
     ConceroCCIP: {
-      address: "0x1a8dAdff5a5395eEb90B0Ea667E1f04912928Db8",
+      address: "0x71D9DB8FCD18CaAb76B185e66A90e248Fc628AC8",
       abi: [
         {
           inputs: [
@@ -529,11 +529,6 @@ const deployedContracts = {
             {
               internalType: "address",
               name: "_ccipRouter",
-              type: "address",
-            },
-            {
-              internalType: "address",
-              name: "_externalConceroCCIP",
               type: "address",
             },
           ],
@@ -1073,19 +1068,6 @@ const deployedContracts = {
           inputs: [
             {
               internalType: "address",
-              name: "_externalConceroCCIP",
-              type: "address",
-            },
-          ],
-          name: "setExternalConceroCCIP",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
               name: "_internalFunctionContract",
               type: "address",
             },
@@ -1196,6 +1178,7 @@ const deployedContracts = {
         allowListedSenderContracts: "contracts/CCIPInternal.sol",
         allowListedSrcChains: "contracts/CCIPInternal.sol",
         ccipReceive: "contracts/CCIPInternal.sol",
+        dstConceroCCIPContracts: "contracts/CCIPInternal.sol",
         getRouter: "contracts/CCIPInternal.sol",
         supportsInterface: "contracts/CCIPInternal.sol",
         acceptOwnership:

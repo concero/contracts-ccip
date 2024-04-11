@@ -8,6 +8,7 @@ import "hardhat-deploy-ethers";
 import "hardhat-gas-reporter";
 import { HardhatUserConfig } from "hardhat/config";
 import "solidity-coverage";
+import * as tdly from "@tenderly/hardhat-tenderly";
 
 dotenv.config({ path: "../../.env" });
 
@@ -17,7 +18,13 @@ const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY ?? process.exit(1);
 const etherscanApiKey = process.env.ETHERSCAN_API_KEY || "DNXJA8RX2Q3VZ4URQIWP7Z68CJXQZSC6AW";
 const enableGasReport = process.env.REPORT_GAS !== "false";
 
+tdly.setup();
+
 const config: HardhatUserConfig = {
+  tenderly: {
+    username: "olegkron",
+    project: "own",
+  },
   paths: {
     artifacts: "artifacts",
     cache: "cache",
@@ -63,10 +70,12 @@ const config: HardhatUserConfig = {
       ],
     },
     polygonMumbai: {
+      chainId: 80001,
       url: `https://polygon-mumbai.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
       accounts: [deployerPrivateKey],
     },
     avalancheFuji: {
+      chainId: 43113,
       url: `https://avalanche-fuji.infura.io/v3/${INFURA_API_KEY}`,
       accounts: [deployerPrivateKey],
     },

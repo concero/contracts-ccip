@@ -19,7 +19,7 @@ const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvi
       donId: process.env.CL_FUNCTIONS_DON_ID_FUJI,
       router: process.env.CL_FUNCTIONS_ROUTER_FUJI,
       chainSelector: "14767482510784806043",
-      subscriptionId: 1437,
+      subscriptionId: 5810,
       donHostedSecretsVersion: 1712770854,
     },
   };

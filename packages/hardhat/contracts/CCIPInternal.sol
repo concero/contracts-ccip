@@ -58,8 +58,8 @@ contract CCIPInternal is CCIPReceiver, ICCIP {
     IRouterClient router = IRouterClient(this.getRouter());
     uint256 fees = router.getFee(_destinationChainSelector, evm2AnyMessage);
 
-    if (fees > address(s_linkToken).balance) {
-      revert NotEnoughBalance(address(s_linkToken).balance, fees);
+    if (fees > IERC20(s_linkToken).balanceOf(address(this))) {
+      revert NotEnoughBalance(IERC20(s_linkToken).balanceOf(address(this)), fees);
     }
 
     IERC20(_token).approve(address(router), _amount);

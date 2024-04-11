@@ -62,9 +62,10 @@ contract CCIPInternal is CCIPReceiver, ICCIP {
       revert NotEnoughBalance(IERC20(s_linkToken).balanceOf(address(this)), fees);
     }
 
+    IERC20(s_linkToken).approve(address(router), fees);
     IERC20(_token).approve(address(router), _amount);
 
-    messageId = router.ccipSend{value: fees}(_destinationChainSelector, evm2AnyMessage);
+    messageId = router.ccipSend(_destinationChainSelector, evm2AnyMessage);
 
     emit CCIPSent(messageId, msg.sender, dstConceroCCIPContracts[_destinationChainSelector], _token, _amount, _destinationChainSelector);
 

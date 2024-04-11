@@ -2465,7 +2465,7 @@ const deployedContracts = {
   },
   80001: {
     CFunctions: {
-      address: "0x936c74b937c4794302ec069269dA152BA94736f6",
+      address: "0xfdf8aE2b4e1576f659BF0f46f8939A1F3FD11D95",
       abi: [
         {
           inputs: [
@@ -3063,7 +3063,7 @@ const deployedContracts = {
       },
     },
     ConceroCCIP: {
-      address: "0x711B1B06f5bb85Ca516ed97c2882542A9701c4a3",
+      address: "0x4a558664f726c52aD67fc27c05b7965e265B5c88",
       abi: [
         {
           inputs: [

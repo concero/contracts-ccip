@@ -67,7 +67,7 @@ contract CCIPInternal is CCIPReceiver, ICCIP {
 
     messageId = router.ccipSend(_destinationChainSelector, evm2AnyMessage);
 
-    emit CCIPSent(messageId, msg.sender, dstConceroCCIPContracts[_destinationChainSelector], _token, _amount, _destinationChainSelector);
+    emit CCIPSent(messageId, msg.sender, _receiver, _token, _amount, _destinationChainSelector);
 
     return messageId;
   }

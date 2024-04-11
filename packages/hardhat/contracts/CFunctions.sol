@@ -21,6 +21,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner, IFunctions {
   uint64 private donHostedSecretsVersion;
   uint64 private immutable subscriptionId;
   address private externalCcipContract;
+  address private externalFunctionsContract;
   address private internalCcipContract;
   uint64 private immutable chainSelector;
 
@@ -84,6 +85,10 @@ contract CFunctions is FunctionsClient, ConfirmedOwner, IFunctions {
 
   function setExternalCcipContract(address _externalCcipContract) external onlyOwner {
     externalCcipContract = _externalCcipContract;
+  }
+
+  function setExternalFunctionsContract(address _externalFunctionsContract) external onlyOwner {
+    externalFunctionsContract = _externalFunctionsContract;
   }
 
   // DELETE IN PRODUCTION! TESTING ONLY
@@ -186,8 +191,12 @@ contract CFunctions is FunctionsClient, ConfirmedOwner, IFunctions {
     uint64 dstChainSelector,
     address token
   ) external onlyInternalCCIPContract {
+    if (externalFunctionsContract == address(0)) {
+      revert("externalFunctionsContract address not set");
+    }
+
     string[] memory args = new string[](8);
-    args[0] = Strings.toHexString(externalCcipContract);
+    args[0] = Strings.toHexString(externalFunctionsContract);
     args[1] = bytes32ToString(ccipMessageId);
     args[2] = Strings.toHexString(sender);
     args[3] = Strings.toHexString(recipient);

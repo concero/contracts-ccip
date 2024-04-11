@@ -148,13 +148,34 @@ const config: HardhatUserConfig = {
     // },
   },
   etherscan: {
-    apiKey: `${etherscanApiKey}`,
-  },
-  verify: {
-    etherscan: {
-      apiKey: `${etherscanApiKey}`,
+    apiKey: {
+      polygonMumbai: process.env.MUMBAI_SCAN_API_KEY,
+      avalancheFuji: "snowtrace",
     },
+    customChains: [
+      {
+        network: "polygonMumbai",
+        chainId: 80001,
+        urls: {
+          apiURL: "https://api-testnet.polygonscan.com/api",
+          browserURL: "https://mumbai.polygonscan.com",
+        },
+      },
+      {
+        network: "avalancheFuji",
+        chainId: 43114,
+        urls: {
+          apiURL: "https://api.routescan.io/v2/network/mainnet/evm/43114/etherscan",
+          browserURL: "https://snowtrace.io",
+        },
+      },
+    ],
   },
+  // verify: {
+  //   etherscan: {
+  //     apiKey: `${etherscanApiKey}`,
+  //   },
+  // },
   sourcify: {
     enabled: false,
   },

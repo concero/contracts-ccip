@@ -171,6 +171,7 @@ contract CFunctions is FunctionsClient, ConfirmedOwner, IFunctions {
 
   function _confirmTX(bytes32 ccipMessageId) internal {
     Transaction storage transaction = transactions[ccipMessageId];
+    address tokenToSend;
     require(transaction.sender != address(0), "TX does not exist");
     require(!transaction.isConfirmed, "TX already confirmed");
     transaction.isConfirmed = true;
@@ -180,7 +181,15 @@ contract CFunctions is FunctionsClient, ConfirmedOwner, IFunctions {
     if (address(conceroCCIP) == address(0)) {
       revert("conceroCCIP address not set");
     }
-    conceroCCIP.sendTokenToEoa(ccipMessageId, transaction.sender, transaction.recipient, transaction.token, transaction.amount);
+
+    //todo use mapping later and maybe move/add to CLF
+    if (transaction.token == 0xf1E3A5842EeEF51F2967b3F05D45DD4f4205FF40) {
+      tokenToSend = 0xD21341536c5cF5EB1bcb58f6723cE26e8D8E90e4;
+    } else if (transaction.token == 0xD21341536c5cF5EB1bcb58f6723cE26e8D8E90e4) {
+      tokenToSend = 0xf1E3A5842EeEF51F2967b3F05D45DD4f4205FF40;
+    }
+
+    conceroCCIP.sendTokenToEoa(ccipMessageId, transaction.sender, transaction.recipient, tokenToSend, transaction.amount);
   }
 
   function sendUnconfirmedTX(

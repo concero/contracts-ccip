@@ -65,19 +65,27 @@ function saveProcessedFile(content, outputPath) {
 	console.log(`Saved to dist/${outputPath}`);
 }
 
-function minifyFile(content) {
+function cleanupFile(content) {
 	return (
 		content
 			// Remove single-line comments, only if they're in the beginning of the line
 			.replace(/^\/\/.*/gm, '')
 			// Remove multi-line comments
 			.replace(/\/\*[\s\S]*?\*\//g, '')
+			// Remove empty lines
+			.replace(/^\s*[\r\n]/gm, '')
+	);
+}
+
+function minifyFile(content) {
+	return (
+		content
 			// Remove newlines
-			.replace(/\n/g, ' ')
+			.replace(/\n/g, '')
 			// Remove tabs
-			.replace(/\t/g, ' ')
+			.replace(/\t/g, '')
 			// Replace multiple spaces with a single space
-			.replace(/\s\s+/g, ' ')
+			.replace(/\s\s+/g, '')
 	);
 }
 
@@ -88,9 +96,12 @@ function buildFile() {
 	try {
 		let fileContent = fs.readFileSync(fileToBuild, 'utf8');
 		fileContent = replaceEnvironmentVariables(fileContent);
-		minifiedContent = minifyFile(fileContent);
-		saveProcessedFile(fileContent, fileToBuild);
-		saveProcessedFile(minifiedContent, fileToBuild.replace('.js', '.min.js'));
+
+		cleanFile = cleanupFile(fileContent);
+		minifiedFile = minifyFile(cleanFile);
+
+		saveProcessedFile(cleanFile, fileToBuild);
+		saveProcessedFile(minifiedFile, fileToBuild.replace('.js', '.min.js'));
 	} catch (err) {
 		console.error(`Error processing file ${fileToBuild}: ${err}`);
 		process.exit(1);

@@ -2,10 +2,10 @@ const ethers = await import('npm:ethers@6.10.0');
 const [srcContractAddress, messageId] = args;
 const chainMap = {
  '12532609583862916517': {
-  url: `https://polygon-mumbai.infura.io/v3/${secrets.INFURA_API_KEY}`,
+  url: `https://polygon-mumbai-bor-rpc.publicnode.com`,
  },
  '14767482510784806043': {
-  url: `https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
+  url: `https://avalanche-fuji-c-chain-rpc.publicnode.com`,
  },
 };
 const params = {

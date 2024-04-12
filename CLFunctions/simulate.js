@@ -8,6 +8,8 @@ const fs = require("node:fs");
 const dotenv = require("dotenv");
 const decodeHexString = require("./utils/decodeHexString");
 dotenv.config({ path: "../.env" });
+dotenv.config({ path: "../.env.chainlink" });
+dotenv.config({ path: "../.env.tokens" });
 
 const secrets = {
   WALLET_PRIVATE_KEY: process.env.SECOND_TEST_WALLET_PRIVATE_KEY,

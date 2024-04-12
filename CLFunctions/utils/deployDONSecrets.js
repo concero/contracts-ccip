@@ -3,6 +3,8 @@ const SecretsManager = require('@chainlink/functions-toolkit').SecretsManager;
 const dotenv = require('dotenv');
 
 dotenv.config({ path: '../../.env' });
+dotenv.config({ path: '../../.env.chainlink' });
+dotenv.config({ path: '../../.env.tokens' });
 
 // mumbai
 const mumbaiRpcUrl = `https://polygon-mumbai.infura.io/v3/${process.env.INFURA_API_KEY}`;

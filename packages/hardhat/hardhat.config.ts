@@ -12,6 +12,8 @@ import "solidity-coverage";
 import * as tdly from "@tenderly/hardhat-tenderly";
 
 dotenv.config({ path: "../../.env" });
+dotenv.config({ path: "../../.env.chainlink" });
+dotenv.config({ path: "../../.env.tokens" });
 
 const { ALCHEMY_API_KEY, INFURA_API_KEY } = process.env;
 

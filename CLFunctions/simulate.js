@@ -11,6 +11,7 @@ dotenv.config({ path: "../.env" });
 dotenv.config({ path: "../.env.chainlink" });
 dotenv.config({ path: "../.env.tokens" });
 
+
 const secrets = {
   WALLET_PRIVATE_KEY: process.env.SECOND_TEST_WALLET_PRIVATE_KEY,
   INFURA_API_KEY: process.env.INFURA_API_KEY,
@@ -45,7 +46,7 @@ async function simulate(pathToFile, args) {
     console.log("RESPONSE BYTES HEXSTRING:");
     console.log(responseBytesHexstring);
     console.log("RESPONSE BYTES DECODED:");
-    console.log(responseBytesHexstring);
+    console.log(decodeHexString(responseBytesHexstring));
   }
 }
 
@@ -59,7 +60,7 @@ async function simulate(pathToFile, args) {
 //   "12532609583862916517",
 //   "0x9999f7Fea5938fD3b1E26`A12c3f2fb024e194f97",
 // ]);
-simulate("./utils/test.js", []);
+// simulate("./utils/test.js", []);
 // simulate('./CLF_dst/CLFunctionsDST.js', [
 //  '0x4200A2257C399C1223f8F3122971eb6fafaaA976',
 //  '0xb47d30d9660222539498f85cefc5337257f8e0ebeabbce312108f218555ced50',

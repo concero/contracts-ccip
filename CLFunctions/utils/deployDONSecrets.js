@@ -2,69 +2,83 @@ const ethers = require('ethers');
 const SecretsManager = require('@chainlink/functions-toolkit').SecretsManager;
 const dotenv = require('dotenv');
 
-dotenv.config({ path: '../../.env' });
-dotenv.config({ path: '../../.env.chainlink' });
-dotenv.config({ path: '../../.env.tokens' });
+dotenv.config({path: '../.env'});
+dotenv.config({path: '../.env.chainlink'});
+dotenv.config({path: '../.env.tokens'});
 
-// mumbai
-const mumbaiRpcUrl = `https://polygon-mumbai.infura.io/v3/${process.env.INFURA_API_KEY}`;
-const mumbaiDonId = 'fun-polygon-mumbai-1';
-const mumbaiFunctionsRouterAddress = '0x6E2dc0F9DB014aE19888F539E59285D2Ea04244C';
+function trimHexStringTo32Bytes(str) {
+	return '0x' + str.slice(2).padStart(64, '0');
+}
 
-// fuji
-const fujiRpcUrl = `https://avalanche-fuji.infura.io/v3/${process.env.INFURA_API_KEY}`;
-const fujiDonId = 'fun-avalanche-fuji-1';
-const fujiFunctionsRouterAddress = process.env.CL_FUNCTIONS_ROUTER_FUJI;
-
-// common
-const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
-const slotIdNumber = 0;
-const expirationTimeMinutes = 4320;
-
-const deploySecrets = async (functionsRouterAddress, donId, rpcUrl) => {
- const secrets = {
-  INFURA_API_KEY: process.env.INFURA_API_KEY,
-  WALLET_PRIVATE_KEY: process.env.SECOND_TEST_WALLET_PRIVATE_KEY,
- };
- const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
- const wallet = new ethers.Wallet(privateKey);
- const signer = wallet.connect(provider);
- const gatewayUrls = [
-  'https://01.functions-gateway.testnet.chain.link/',
-  'https://02.functions-gateway.testnet.chain.link/',
- ];
-
- const secretsManager = new SecretsManager({
-  signer: signer,
-  functionsRouterAddress: functionsRouterAddress,
-  donId: donId,
- });
-
- await secretsManager.initialize();
-
- const encryptedSecretsObj = await secretsManager.encryptSecrets(secrets);
-
- console.log(`Upload encrypted secret to gateways ${gatewayUrls}.`);
-
- const uploadResult = await secretsManager.uploadEncryptedSecretsToDON({
-  encryptedSecretsHexstring: encryptedSecretsObj.encryptedSecrets,
-  gatewayUrls: gatewayUrls,
-  slotId: slotIdNumber,
-  minutesUntilExpiration: expirationTimeMinutes,
- });
-
- if (!uploadResult.success) throw new Error(`Encrypted secrets not uploaded to ${gatewayUrls}`);
-
- console.log(`\n✅ Secrets uploaded properly to gateways ${gatewayUrls}! Gateways response: `, uploadResult);
-
- const secretsEntriesForGateway = await secretsManager.listDONHostedEncryptedSecrets(gatewayUrls);
- console.log(JSON.stringify(secretsEntriesForGateway, null, 2));
+const chains = {
+	avalancheFuji: {
+		url: `https://avalanche-fuji.infura.io/v3/${process.env.INFURA_API_KEY}`,
+		router: process.env.CL_FUNCTIONS_ROUTER_FUJI,
+		donId: process.env.CL_FUNCTIONS_DON_ID_FUJI_ALIAS,
+	},
+	sepolia: {
+		url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+		router: process.env.CL_FUNCTIONS_ROUTER_SEPOLIA,
+		donId: process.env.CL_FUNCTIONS_DON_ID_SEPOLIA_ALIAS,
+	},
+	arbitrumSepolia: {
+		url: `https://arbitrum-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+		router: process.env.CL_FUNCTIONS_ROUTER_ARBITRUM_SEPOLIA,
+		donId: process.env.CL_FUNCTIONS_DON_ID_ARBITRUM_SEPOLIA_ALIAS,
+	},
+	baseSepolia: {
+		url: `https://base-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+		router: process.env.CL_FUNCTIONS_ROUTER_BASE_SEPOLIA,
+		donId: process.env.CL_FUNCTIONS_DON_ID_BASE_SEPOLIA_ALIAS,
+	},
+	optimismSepolia: {
+		url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+		router: process.env.CL_FUNCTIONS_ROUTER_OPTIMISM_SEPOLIA,
+		donId: process.env.CL_FUNCTIONS_DON_ID_OPTIMISM_SEPOLIA_ALIAS,
+	},
 };
 
-// deploySecrets(mumbaiFunctionsRouterAddress, mumbaiDonId, mumbaiRpcUrl).catch(err => {
-//  console.log('ERROR: ', JSON.stringify(err, null, 2));
-// });
+const args = process.argv.slice(2);
+const chainToDeployTo = args[0];
 
-deploySecrets(fujiFunctionsRouterAddress, fujiDonId, fujiRpcUrl).catch(err => {
- console.log('ERROR: ', JSON.stringify(err, null, 2));
+if (args.length === 0) throw new Error('Please provide the chain to deploy to as an argument.');
+if (!chains[chainToDeployTo]) throw new Error(`Chain ${chainToDeployTo} not supported.`);
+
+const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
+const slotId = 0;
+const minutesUntilExpiration = 4320;
+
+const secrets = {
+	INFURA_API_KEY: process.env.INFURA_API_KEY,
+	WALLET_PRIVATE_KEY: process.env.SECOND_TEST_WALLET_PRIVATE_KEY,
+};
+
+const deploySecrets = async (functionsRouterAddress, donId, rpcUrl) => {
+	const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+	const wallet = new ethers.Wallet(privateKey);
+	const signer = wallet.connect(provider);
+	const gatewayUrls = [
+		'https://01.functions-gateway.testnet.chain.link/',
+		'https://02.functions-gateway.testnet.chain.link/',
+	];
+	const secretsManager = new SecretsManager({signer, functionsRouterAddress, donId});
+	await secretsManager.initialize();
+	const {encryptedSecrets} = await secretsManager.encryptSecrets(secrets);
+	console.log(`Uploading secrets to: ${gatewayUrls}.`);
+
+	const {version, success} = await secretsManager.uploadEncryptedSecretsToDON({
+		encryptedSecretsHexstring: encryptedSecrets,
+		gatewayUrls,
+		slotId,
+		minutesUntilExpiration,
+	});
+
+	if (!success) throw new Error(`Encrypted secrets not uploaded to ${gatewayUrls}`);
+	console.log(`\n✅ Secrets uploaded to gateways ${gatewayUrls}! \nGateways response: `, version, success);
+	const secretsEntriesForGateway = await secretsManager.listDONHostedEncryptedSecrets(gatewayUrls);
+	console.log(JSON.stringify(secretsEntriesForGateway, null, 2));
+};
+
+deploySecrets(chains[chainToDeployTo].router, chains[chainToDeployTo].donId, chains[chainToDeployTo].url).catch(err => {
+	console.log('ERROR: ', err);
 });

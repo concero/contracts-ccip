@@ -72,11 +72,6 @@ const config: HardhatUserConfig = {
         },
       ],
     },
-    polygonMumbai: {
-      chainId: 80001,
-      url: `https://polygon-mumbai.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-      accounts: [deployerPrivateKey],
-    },
     avalancheFuji: {
       chainId: 43113,
       url: `https://avalanche-fuji.infura.io/v3/${INFURA_API_KEY}`,
@@ -86,10 +81,10 @@ const config: HardhatUserConfig = {
     //   url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
     //   accounts: [deployerPrivateKey],
     // },
-    // sepolia: {
-    //   url: `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-    //   accounts: [deployerPrivateKey],
-    // },
+    sepolia: {
+      url: `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+      accounts: [deployerPrivateKey],
+    },
     // goerli: {
     //   url: `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
     //   accounts: [deployerPrivateKey],
@@ -98,18 +93,18 @@ const config: HardhatUserConfig = {
     //   url: `https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     //   accounts: [deployerPrivateKey],
     // },
-    // arbitrumSepolia: {
-    //   url: `https://arb-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-    //   accounts: [deployerPrivateKey],
-    // },
+    arbitrumSepolia: {
+      url: `https://arb-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+      accounts: [deployerPrivateKey],
+    },
     // optimism: {
     //   url: `https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     //   accounts: [deployerPrivateKey],
     // },
-    // optimismSepolia: {
-    //   url: `https://opt-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-    //   accounts: [deployerPrivateKey],
-    // },
+    optimismSepolia: {
+      url: `https://opt-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+      accounts: [deployerPrivateKey],
+    },
     // polygon: {
     //   url: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     //   accounts: [deployerPrivateKey],
@@ -138,10 +133,10 @@ const config: HardhatUserConfig = {
     //   url: "https://goerli.base.org",
     //   accounts: [deployerPrivateKey],
     // },
-    // baseSepolia: {
-    //   url: "https://sepolia.base.org",
-    //   accounts: [deployerPrivateKey],
-    // },
+    baseSepolia: {
+      url: "https://sepolia.base.org",
+      accounts: [deployerPrivateKey],
+    },
     // scrollSepolia: {
     //   url: "https://sepolia-rpc.scroll.io",
     //   accounts: [deployerPrivateKey],
@@ -161,7 +156,6 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      polygonMumbai: process.env.MUMBAI_SCAN_API_KEY,
       avalancheFuji: "snowtrace",
     },
     customChains: [

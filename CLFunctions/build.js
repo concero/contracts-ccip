@@ -66,6 +66,13 @@ function saveProcessedFile(content, outputPath) {
 }
 
 function cleanupFile(content) {
+	// Check for the specific marker and remove everything above it
+	const marker = '/*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/';
+	const index = content.indexOf(marker);
+	if (index !== -1) {
+		// Keep everything from the marker onward
+		content = content.substring(index + marker.length);
+	}
 	return (
 		content
 			// Remove single-line comments, only if they're in the beginning of the line

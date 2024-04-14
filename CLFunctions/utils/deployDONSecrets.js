@@ -6,35 +6,31 @@ dotenv.config({path: '../.env'});
 dotenv.config({path: '../.env.chainlink'});
 dotenv.config({path: '../.env.tokens'});
 
-function trimHexStringTo32Bytes(str) {
-	return '0x' + str.slice(2).padStart(64, '0');
-}
-
 const chains = {
 	avalancheFuji: {
 		url: `https://avalanche-fuji.infura.io/v3/${process.env.INFURA_API_KEY}`,
-		router: process.env.CL_FUNCTIONS_ROUTER_FUJI,
-		donId: process.env.CL_FUNCTIONS_DON_ID_FUJI_ALIAS,
+		router: process.env.CLF_ROUTER_FUJI,
+		donId: process.env.CLF_DONID_FUJI_ALIAS,
 	},
 	sepolia: {
 		url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-		router: process.env.CL_FUNCTIONS_ROUTER_SEPOLIA,
-		donId: process.env.CL_FUNCTIONS_DON_ID_SEPOLIA_ALIAS,
+		router: process.env.CLF_ROUTER_SEPOLIA,
+		donId: process.env.CLF_DONID_SEPOLIA_ALIAS,
 	},
 	arbitrumSepolia: {
 		url: `https://arbitrum-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-		router: process.env.CL_FUNCTIONS_ROUTER_ARBITRUM_SEPOLIA,
-		donId: process.env.CL_FUNCTIONS_DON_ID_ARBITRUM_SEPOLIA_ALIAS,
+		router: process.env.CLF_ROUTER_ARBITRUM_SEPOLIA,
+		donId: process.env.CLF_DONID_ARBITRUM_SEPOLIA_ALIAS,
 	},
 	baseSepolia: {
 		url: `https://base-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-		router: process.env.CL_FUNCTIONS_ROUTER_BASE_SEPOLIA,
-		donId: process.env.CL_FUNCTIONS_DON_ID_BASE_SEPOLIA_ALIAS,
+		router: process.env.CLF_ROUTER_BASE_SEPOLIA,
+		donId: process.env.CLF_DONID_BASE_SEPOLIA_ALIAS,
 	},
 	optimismSepolia: {
 		url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-		router: process.env.CL_FUNCTIONS_ROUTER_OPTIMISM_SEPOLIA,
-		donId: process.env.CL_FUNCTIONS_DON_ID_OPTIMISM_SEPOLIA_ALIAS,
+		router: process.env.CLF_ROUTER_OPTIMISM_SEPOLIA,
+		donId: process.env.CLF_DONID_OPTIMISM_SEPOLIA_ALIAS,
 	},
 };
 

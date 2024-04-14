@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { CFunctions } from "../typechain-types";
 import "@nomicfoundation/hardhat-chai-matchers";
 
-describe("CFunctions", function() {
+describe("CFunctions", function () {
   let cFunctions: CFunctions;
   let deployer: string;
   let nikita: string;
@@ -24,15 +24,16 @@ describe("CFunctions", function() {
     cFunctions = await ethers.getContract("CFunctions", deployer);
   });
 
-  describe("addUnconfirmedTX", function() {
-    it("should fail when called by an address not on the allowlist", async function() {
+  describe("addUnconfirmedTX", function () {
+    it("should fail when called by an address not on the allowlist", async function () {
       // Assuming `anotherAccount` is not on the allowlist
       const anotherAccount = await ethers.getSigner(nikita);
 
-      await expect(cFunctions.connect(anotherAccount).addUnconfirmedTX(ccipMessageId, sender, recipient, amount, srcChainSelector, token))
-        .to.be.revertedWithCustomError(cFunctions, "NotAllowed");
+      await expect(
+        cFunctions.connect(anotherAccount).addUnconfirmedTX(ccipMessageId, sender, recipient, amount, srcChainSelector, token),
+      ).to.be.revertedWithCustomError(cFunctions, "NotAllowed");
     });
-    it("should add a new unconfirmed transaction successfully", async function() {
+    it("should add a new unconfirmed transaction successfully", async function () {
       // Retrieve a signer with the ability to sign transactions
       const signer = await ethers.getSigner(deployer);
 
@@ -41,12 +42,13 @@ describe("CFunctions", function() {
         .withArgs(ccipMessageId, sender, recipient, amount, token);
     });
 
-    it("should throw customError when adding a transaction with a duplicate ccipMessageId", async function() {
+    it("should throw customError when adding a transaction with a duplicate ccipMessageId", async function () {
       const signer = await ethers.getSigner(deployer);
 
       // The second call with the same ccipMessageId should revert
-      await expect(cFunctions.connect(signer).addUnconfirmedTX(ccipMessageId, sender, recipient, amount, srcChainSelector, token))
-        .to.be.revertedWithCustomError(cFunctions, "TXAlreadyExists");
+      await expect(
+        cFunctions.connect(signer).addUnconfirmedTX(ccipMessageId, sender, recipient, amount, srcChainSelector, token),
+      ).to.be.revertedWithCustomError(cFunctions, "TXAlreadyExists");
     });
   });
 });

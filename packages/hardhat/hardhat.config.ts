@@ -1,27 +1,37 @@
+import * as dotenv from "dotenv";
+
+dotenv.config({ path: "../../.env" });
+dotenv.config({ path: "../../.env.chainlink" });
+dotenv.config({ path: "../../.env.tokens" });
+
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
 import "@typechain/hardhat";
-import * as dotenv from "dotenv";
 import "hardhat-deploy";
 import "hardhat-deploy-ethers";
 import "hardhat-gas-reporter";
 import "hardhat-contract-sizer";
 import { HardhatUserConfig } from "hardhat/config";
 import "solidity-coverage";
+import "@chainlink/hardhat-chainlink";
 import * as tdly from "@tenderly/hardhat-tenderly";
+import rpc from "./constants/rpcUrls";
 
-dotenv.config({ path: "../../.env" });
-dotenv.config({ path: "../../.env.chainlink" });
-dotenv.config({ path: "../../.env.tokens" });
+import "./tasks";
 
 const { ALCHEMY_API_KEY, INFURA_API_KEY } = process.env;
+// task("deployConsumer", "Deploys the FunctionsConsumer contract")
+//   .addOptionalParam("verify", "Set to true to verify contract", false, types.boolean)
+//   .setAction(async (hardhat, taskArgs) => {
+//     await deployCLFConsumer(hardhat, taskArgs);
+//   });
 
 const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY ?? process.exit(1);
 const etherscanApiKey = process.env.ETHERSCAN_API_KEY || "DNXJA8RX2Q3VZ4URQIWP7Z68CJXQZSC6AW";
 const enableGasReport = process.env.REPORT_GAS !== "false";
 
-tdly.setup();
+// tdly.setup();
 
 const config: HardhatUserConfig = {
   tenderly: {
@@ -57,7 +67,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       chainId: 31337,
       forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
+        url: rpc.mainnet,
         enabled: process.env.MAINNET_FORKING_ENABLED === "true",
         blockNumber: 9_675_000,
       },
@@ -72,19 +82,33 @@ const config: HardhatUserConfig = {
         },
       ],
     },
-    avalancheFuji: {
-      chainId: 43113,
-      url: `https://avalanche-fuji.infura.io/v3/${INFURA_API_KEY}`,
+    // TESTNETS
+    sepolia: {
+      url: rpc.sepolia,
       accounts: [deployerPrivateKey],
     },
+    avalancheFuji: {
+      chainId: 43113,
+      url: rpc.avalancheFuji,
+      accounts: [deployerPrivateKey],
+    },
+    optimismSepolia: {
+      url: rpc.optimismSepolia,
+      accounts: [deployerPrivateKey],
+    },
+    arbitrumSepolia: {
+      url: rpc.arbitrumSepolia,
+      accounts: [deployerPrivateKey],
+    },
+    baseSepolia: {
+      url: rpc.baseSepolia,
+      accounts: [deployerPrivateKey],
+    },
+    // MAINNETS
     // mainnet: {
     //   url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
     //   accounts: [deployerPrivateKey],
     // },
-    sepolia: {
-      url: `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-      accounts: [deployerPrivateKey],
-    },
     // goerli: {
     //   url: `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
     //   accounts: [deployerPrivateKey],
@@ -93,18 +117,10 @@ const config: HardhatUserConfig = {
     //   url: `https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     //   accounts: [deployerPrivateKey],
     // },
-    arbitrumSepolia: {
-      url: `https://arb-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-      accounts: [deployerPrivateKey],
-    },
     // optimism: {
     //   url: `https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     //   accounts: [deployerPrivateKey],
     // },
-    optimismSepolia: {
-      url: `https://opt-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-      accounts: [deployerPrivateKey],
-    },
     // polygon: {
     //   url: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     //   accounts: [deployerPrivateKey],
@@ -133,10 +149,6 @@ const config: HardhatUserConfig = {
     //   url: "https://goerli.base.org",
     //   accounts: [deployerPrivateKey],
     // },
-    baseSepolia: {
-      url: "https://sepolia.base.org",
-      accounts: [deployerPrivateKey],
-    },
     // scrollSepolia: {
     //   url: "https://sepolia-rpc.scroll.io",
     //   accounts: [deployerPrivateKey],
@@ -159,14 +171,6 @@ const config: HardhatUserConfig = {
       avalancheFuji: "snowtrace",
     },
     customChains: [
-      {
-        network: "polygonMumbai",
-        chainId: 80001,
-        urls: {
-          apiURL: "https://api-testnet.polygonscan.com/api",
-          browserURL: "https://mumbai.polygonscan.com",
-        },
-      },
       {
         network: "avalancheFuji",
         chainId: 43114,

@@ -22,7 +22,7 @@ const deployConceroCCIP: DeployFunction = async function (hre: HardhatRuntimeEnv
 
   if (!deploymentOptions[chainId]) throw new Error(`ChainId ${chainId} not supported`);
   const { linkTokenAddress, router, oppositeChainSelector } = deploymentOptions[chainId];
-  
+
   const { address: contractAddress } = await deploy("ConceroCCIP", {
     from: deployer,
     log: true,

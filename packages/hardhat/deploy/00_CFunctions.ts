@@ -1,40 +1,25 @@
 import { CFunctions } from "../artifacts/contracts/CFunctions.sol";
-import { DeployFunction } from "hardhat-deploy/types";
+import { DeployFunction, Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import deploymentOptions from "../constants/CLFdeploymentOptions";
 
 const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const chainId = await hre.getChainId();
 
-  const deploymentOptions = {
-    80001: {
-      router: process.env.CL_FUNCTIONS_ROUTER_MUMBAI,
-      donId: process.env.CL_FUNCTIONS_DON_ID_MUMBAI,
-      chainSelector: "12532609583862916517",
-      subscriptionId: 1437,
-      donHostedSecretsVersion: 1712770854,
-    },
-    43113: {
-      donId: process.env.CL_FUNCTIONS_DON_ID_FUJI,
-      router: process.env.CL_FUNCTIONS_ROUTER_FUJI,
-      chainSelector: "14767482510784806043",
-      subscriptionId: 5810,
-      donHostedSecretsVersion: 1712841282,
-    },
-  };
+  if (!deploymentOptions[hre.network.name]) throw new Error(`Chain ${hre.network.name} not supported`);
+  const { router, donId, chainSelector, subscriptionId, donHostedSecretsVersion } = deploymentOptions[hre.network.name];
 
-  if (!deploymentOptions[chainId]) throw new Error(`ChainId ${chainId} not supported`);
-  const { router, donId, chainSelector, subscriptionId, donHostedSecretsVersion } = deploymentOptions[chainId];
-
-  const { address: contractAddress } = await deploy("CFunctions", {
+  const deployment = (await deploy("CFunctions", {
     from: deployer,
     log: true,
     args: [router, donId, subscriptionId, donHostedSecretsVersion, chainSelector],
     autoMine: true,
-  });
+  })) as Deployment;
 
   const cFunctions = await hre.ethers.getContract<CFunctions>("CFunctions", deployer);
+  const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(router, deployment.address, subscriptionId);
+  console.log(`CL Functions Consumer deployed successfully at ${CLFunctionsConsumerTXHash}`);
 
   // exec(
   //   `npx hardhat verify --network polygonMumbai ${contractAddress} ${router} ${donId} ${subscriptionId} ${donHostedSecretsVersion} ${chainSelector}`,

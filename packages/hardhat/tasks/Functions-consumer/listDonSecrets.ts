@@ -11,7 +11,6 @@ task("functions-list-don-secrets", "Displays encrypted secrets hosted on the DON
   if (!gatewayUrls || gatewayUrls.length === 0) {
     throw Error(`No gatewayUrls found for ${network.name} network.`);
   }
-
   const secretsManager = new SecretsManager({
     signer,
     functionsRouterAddress,

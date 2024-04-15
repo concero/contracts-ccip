@@ -10,7 +10,8 @@ const scriptDir = path.resolve(__dirname);
 // Setup environment configuration
 function setupEnvironment(envPath) {
 	dotenv.config({path: envPath});
-	dotenv.config({path: envPath + '.chainlink'});
+	dotenv.config({path: envPath + '.clf'});
+	dotenv.config({path: envPath + '.clccip'});
 	dotenv.config({path: envPath + '.tokens'});
 }
 

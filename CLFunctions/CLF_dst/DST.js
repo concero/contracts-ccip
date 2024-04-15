@@ -57,4 +57,4 @@ for (let i = 0; i < 7; i++) {
 }
 return Functions.encodeUint256(BigInt(messageId));
 
-// command for removing \n symbols:  sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/ /g' -e 's/\t/ /g' CLFunctionsDST.js
+// command for removing \n symbols:  sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/ /g' -e 's/\t/ /g' DST.js

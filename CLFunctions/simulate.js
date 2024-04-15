@@ -8,7 +8,8 @@ const fs = require('node:fs');
 const dotenv = require('dotenv');
 const decodeHexString = require('./utils/decodeHexString');
 dotenv.config({path: '../.env'});
-dotenv.config({path: '../.env.chainlink'});
+dotenv.config({path: '../.env.clf'});
+dotenv.config({path: '../.env.clccip'});
 dotenv.config({path: '../.env.tokens'});
 
 const secrets = {
@@ -49,18 +50,19 @@ async function simulate(pathToFile, args) {
 	}
 }
 
-simulate('./dist/CLFsrcProd.js', [
-	'0xa866BAcF9b8cf8beFC424Ec1EA253c0Ee7240118', // contractAddress
-	'0x1ab32e9ea01849048bfb59996e02f0082df9298550249d7c6cefec78e7e24cd8', // ccipMessageId
-	'0x70E73f067a1fC9FE6D53151bd271715811746d3a', // sender
-	'0x70E73f067a1fC9FE6D53151bd271715811746d3a', // recipient
-	'1000000000000000000', // amount
-	process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA, // srcChainSelector
-	process.env.CL_CCIP_CHAIN_SELECTOR_FUJI, // dstChainSelector
-	process.env.CCIPBNM_ARBITRUM_SEPOLIA, // token
-]);
+//
+// simulate('./dist/SRC.js', [
+// 	'0xa866BAcF9b8cf8beFC424Ec1EA253c0Ee7240118', // contractAddress
+// 	'0x1ab32e9ea01849048bfb59996e02f0082df9298550249d7c6cefec78e7e24cd8', // ccipMessageId
+// 	'0x70E73f067a1fC9FE6D53151bd271715811746d3a', // sender
+// 	'0x70E73f067a1fC9FE6D53151bd271715811746d3a', // recipient
+// 	'1000000000000000000', // amount
+// 	process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA, // srcChainSelector
+// 	process.env.CL_CCIP_CHAIN_SELECTOR_FUJI, // dstChainSelector
+// 	process.env.CCIPBNM_ARBITRUM_SEPOLIA, // token
+// ]);
 
-simulate('./dist/CLFunctionsDST.js', [
+simulate('./dist/DST.js', [
 	'0x4200A2257C399C1223f8F3122971eb6fafaaA976', // srcContractAddress
 	'0xb47d30d9660222539498f85cefc5337257f8e0ebeabbce312108f218555ced50', // messageId
 	'0x70E73f067a1fC9FE6D53151bd271715811746d3a', // sender
@@ -69,5 +71,4 @@ simulate('./dist/CLFunctionsDST.js', [
 	'1000000000000000', // amount
 	process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA, // dstChainSelector
 	process.env.CL_CCIP_CHAIN_SELECTOR_FUJI, // chain selector to get the logs from
-	,
 ]);

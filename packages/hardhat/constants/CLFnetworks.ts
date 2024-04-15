@@ -8,7 +8,7 @@ const DEFAULT_VERIFICATION_BLOCK_CONFIRMATIONS = 2;
 const npmCommand = process.env.npm_lifecycle_event;
 const isTestEnvironment = npmCommand == "test" || npmCommand == "test:unit";
 const isSimulation = process.argv.length === 3 && process.argv[2] === "functions-simulate-script" ? true : false;
-
+// console.log(process.env.LINK_MAINNET);
 // Set EVM private keys (required)
 const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 

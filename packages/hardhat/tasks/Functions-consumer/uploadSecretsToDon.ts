@@ -1,5 +1,8 @@
+import { task } from "hardhat/config";
+
 const { SecretsManager } = require("@chainlink/functions-toolkit");
 import networks from "../../constants/CLFnetworks";
+import secrets from "../../constants/CLFSecrets";
 
 const process = require("process");
 // const path = require("path");
@@ -34,11 +37,6 @@ task("functions-upload-secrets-don", "Encrypts secrets and uploads them to the D
     //   console.log("No secrets found in the request config.");
     //   return;
     // }
-
-    const secrets = {
-      INFURA_API_KEY: process.env.INFURA_API_KEY,
-      WALLET_PRIVATE_KEY: process.env.SECOND_TEST_WALLET_PRIVATE_KEY,
-    };
 
     console.log("Encrypting secrets and uploading to DON...");
     const encryptedSecretsObj = await secretsManager.encryptSecrets(secrets);

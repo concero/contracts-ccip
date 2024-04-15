@@ -5012,6 +5012,14 @@ __metadata:
   languageName: node
   linkType: hard
 
+"CLFScripts@workspace:packages/hardhat/tasks/CLFScripts":
+  version: 0.0.0-use.local
+  resolution: "CLFScripts@workspace:packages/hardhat/tasks/CLFScripts"
+  dependencies:
+    prettier: ^3.2.5
+  languageName: unknown
+  linkType: soft
+
 "JSONStream@npm:^1.3.5":
   version: 1.3.5
   resolution: "JSONStream@npm:1.3.5"

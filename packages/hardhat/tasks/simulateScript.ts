@@ -1,6 +1,7 @@
 import { task } from "hardhat/config";
 import fs from "fs";
-import secrets from "../../constants/CLFSecrets";
+import secrets from "../constants/CLFSecrets";
+import CLFSimulationConfig from "../constants/CLFSimulationConfig";
 
 const { simulateScript, decodeResult } = require("@chainlink/functions-toolkit");
 const path = require("path");
@@ -13,16 +14,8 @@ async function simulate(pathToFile, args) {
     source: fs.readFileSync(pathToFile, "utf8"),
     args,
     secrets,
-    maxOnChainResponseBytes: 256,
-    maxExecutionTimeMs: 100000,
-    maxMemoryUsageMb: 128,
-    numAllowedQueries: 5,
-    maxQueryDurationMs: 10000,
-    maxQueryUrlLength: 2048,
-    maxQueryRequestBytes: 2048,
-    maxQueryResponseBytes: 2097152,
+    ...CLFSimulationConfig,
   });
-
   if (errorString) {
     console.log("CAPTURED ERROR:");
     console.log(errorString);
@@ -41,10 +34,11 @@ async function simulate(pathToFile, args) {
   }
 }
 
+/* run with: bunx hardhat functions-simulate-script */
 task("functions-simulate-script", "Executes the JavaScript source code locally")
   // .addOptionalParam("configpath", "Path to Functions request config file", `${__dirname}/../Functions-request-config.js`, types.string)
   .setAction(async (taskArgs, hre) => {
-    // simulate('./dist/SRC.js', [
+    // simulate('./CLFScripts/dist/SRC.js', [
     // 	'0xa866BAcF9b8cf8beFC424Ec1EA253c0Ee7240118', // contractAddress
     // 	'0x1ab32e9ea01849048bfb59996e02f0082df9298550249d7c6cefec78e7e24cd8', // ccipMessageId
     // 	'0x70E73f067a1fC9FE6D53151bd271715811746d3a', // sender
@@ -55,7 +49,7 @@ task("functions-simulate-script", "Executes the JavaScript source code locally")
     // 	process.env.CCIPBNM_ARBITRUM_SEPOLIA, // token
     // ]);
 
-    await simulate(path.join(__dirname, "./dist/DST.js"), [
+    await simulate(path.join(__dirname, "./CLFScripts/dist/DST.js"), [
       "0x4200A2257C399C1223f8F3122971eb6fafaaA976", // srcContractAddress
       "0xb47d30d9660222539498f85cefc5337257f8e0ebeabbce312108f218555ced50", // messageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender

@@ -8,7 +8,6 @@
     "skipLibCheck": true
   },
   "ts-node": {
-    "swc": true,
-    "transpileOnly": true,
+    "swc": true
   }
 }

@@ -44,7 +44,7 @@
     "eslint": "^8.26.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "ethers": "^6.11.1",
+    "ethers": "^6.10.0",
     "hardhat": "^2.22.2",
     "hardhat-contract-sizer": "^2.10.0",
     "hardhat-deploy": "^0.11.45",
@@ -66,6 +66,8 @@
     "@chainlink/contracts-ccip": "^1.4.0",
     "@chainlink/functions-toolkit": "^0.2.8",
     "@chainlink/hardhat-chainlink": "^0.0.4",
+    "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
+    "@nomicfoundation/hardhat-viem": "^2.0.0",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@openzeppelin/contracts": "^4.8.1",
     "@swc/core": "^1.4.13",
@@ -77,6 +79,6 @@
     "regenerator-runtime": "^0.14.1",
     "solhint-plugin-chainlink-solidity": "git+https://github.com/smartcontractkit/chainlink-solhint-rules.git#v1.2.1",
     "swc": "^1.0.11",
-    "viem": "^2.9.16"
+    "viem": "^2.9.18"
   }
 }

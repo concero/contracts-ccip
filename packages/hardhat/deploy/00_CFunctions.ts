@@ -1,7 +1,7 @@
 import { CFunctions } from "../artifacts/contracts/CFunctions.sol";
 import { DeployFunction, Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import deploymentOptions from "../constants/CLFdeploymentOptions";
+import deploymentOptions from "../constants/CLFChains";
 
 const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();

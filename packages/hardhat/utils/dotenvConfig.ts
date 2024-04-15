@@ -1,10 +1,20 @@
 import * as dotenv from "dotenv";
 
-function configureDotEnv() {
-  dotenv.config({ path: "../../../.env" });
-  dotenv.config({ path: "../../../.env.clf" });
-  dotenv.config({ path: "../../../.env.clccip" });
-  dotenv.config({ path: "../../../.env.tokens" });
-}
+/**
+ * Configures the dotenv with paths relative to a base directory.
+ * @param {string} [basePath='../../../'] - The base path where .env files are located. Defaults to '../../'.
+ */
+function configureDotEnv(basePath = "../../") {
+  // Normalize the base path to ensure it ends with a '/'
+  const normalizedBasePath = basePath.endsWith("/") ? basePath : `${basePath}/`;
+  // const absolutepath = require("path").resolve(`${normalizedBasePath}.env`);
 
-export { configureDotEnv };
+  // Configure dotenv for each specific file
+  dotenv.config({ path: `${normalizedBasePath}.env` });
+  dotenv.config({ path: `${normalizedBasePath}.env.clf` });
+  dotenv.config({ path: `${normalizedBasePath}.env.clccip` });
+  dotenv.config({ path: `${normalizedBasePath}.env.tokens` });
+}
+configureDotEnv();
+
+export default configureDotEnv;

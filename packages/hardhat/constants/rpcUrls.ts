@@ -1,10 +1,3 @@
-import * as dotenv from "dotenv";
-
-dotenv.config({ path: "../../.env" });
-dotenv.config({ path: "../../.env.clf" });
-dotenv.config({ path: "../../.env.clccip" });
-dotenv.config({ path: "../../.env.tokens" });
-
 const { INFURA_API_KEY } = process.env;
 const rpc = {
   arbitrum: `https://arbitrum-mainnet.infura.io/v3/${INFURA_API_KEY}`,

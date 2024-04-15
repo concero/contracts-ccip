@@ -1,7 +1,4 @@
-const { configureDotEnv } = require("./utils/dotenvConfig");
-configureDotEnv();
-// console.log("process.env.LINK_MAINNET", process.env.LINK_MAINNET);
-
+import "./utils/dotenvConfig";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
@@ -16,13 +13,6 @@ import "@chainlink/hardhat-chainlink";
 import * as tdly from "@tenderly/hardhat-tenderly";
 import rpc from "./constants/rpcUrls";
 import "./tasks";
-
-const { ALCHEMY_API_KEY, INFURA_API_KEY } = process.env;
-// task("deployConsumer", "Deploys the FunctionsConsumer contract")
-//   .addOptionalParam("verify", "Set to true to verify contract", false, types.boolean)
-//   .setAction(async (hardhat, taskArgs) => {
-//     await deployCLFConsumer(hardhat, taskArgs);
-//   });
 
 const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY ?? process.exit(1);
 const etherscanApiKey = process.env.ETHERSCAN_API_KEY || "DNXJA8RX2Q3VZ4URQIWP7Z68CJXQZSC6AW";

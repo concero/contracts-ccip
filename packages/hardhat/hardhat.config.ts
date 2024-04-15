@@ -1,8 +1,6 @@
-import * as dotenv from "dotenv";
-
-dotenv.config({ path: "../../.env" });
-dotenv.config({ path: "../../.env.chainlink" });
-dotenv.config({ path: "../../.env.tokens" });
+const { configureDotEnv } = require("./utils/dotenvConfig");
+configureDotEnv();
+// console.log("process.env.LINK_MAINNET", process.env.LINK_MAINNET);
 
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-ethers";
@@ -17,7 +15,6 @@ import "solidity-coverage";
 import "@chainlink/hardhat-chainlink";
 import * as tdly from "@tenderly/hardhat-tenderly";
 import rpc from "./constants/rpcUrls";
-
 import "./tasks";
 
 const { ALCHEMY_API_KEY, INFURA_API_KEY } = process.env;

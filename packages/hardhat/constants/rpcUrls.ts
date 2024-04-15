@@ -1,7 +1,8 @@
 import * as dotenv from "dotenv";
 
 dotenv.config({ path: "../../.env" });
-dotenv.config({ path: "../../.env.chainlink" });
+dotenv.config({ path: "../../.env.clf" });
+dotenv.config({ path: "../../.env.clccip" });
 dotenv.config({ path: "../../.env.tokens" });
 
 const { INFURA_API_KEY } = process.env;

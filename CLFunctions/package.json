@@ -2,7 +2,7 @@
   "name": "clfunctionssimulations",
   "version": "1.0.0",
   "description": "",
-  "main": "CLF_dst/CLFunctionsDST.js",
+  "main": "CLF_dst/DST.js",
   "scripts": {
     "simulate": "node simulate.js"
   },

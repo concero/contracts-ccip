@@ -4,7 +4,8 @@ const dotenv = require('dotenv');
 import chains from '../../packages/hardhat/constants/CLFChains';
 
 dotenv.config({path: '../.env'});
-dotenv.config({path: '../.env.chainlink'});
+dotenv.config({path: '../.env.clf'});
+dotenv.config({path: '../.env.clccip'});
 dotenv.config({path: '../.env.tokens'});
 
 const args = process.argv.slice(2);

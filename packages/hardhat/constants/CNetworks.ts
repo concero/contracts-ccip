@@ -2,6 +2,11 @@ import { type CNetwork } from "../types/CNetwork";
 import rpc from "./rpcUrls";
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
 const deployerPK = process.env.DEPLOYER_PRIVATE_KEY ?? "";
+const functionsGatewayUrls = {
+  mainnet: ["https://01.functions-gateway.chain.link/", "https://02.functions-gateway.chain.link/"],
+  testnet: ["https://01.functions-gateway.testnet.chain.link/", "https://02.functions-gateway.testnet.chain.link/"],
+};
+
 const CNetworks: Record<string, CNetwork> = {
   hardhat: {
     chainId: 31337,
@@ -24,6 +29,7 @@ const CNetworks: Record<string, CNetwork> = {
     functionsDonId: process.env.CLF_DONID_SEPOLIA,
     functionsRouter: process.env.CLF_ROUTER_SEPOLIA,
     functionsSubIds: [process.env.CLF_SUBID_SEPOLIA],
+    functionsGatewayUrls: functionsGatewayUrls.testnet,
     donHostedSecretsVersion: 1712841282,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_SEPOLIA,
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
@@ -37,6 +43,7 @@ const CNetworks: Record<string, CNetwork> = {
     functionsDonId: process.env.CLF_DONID_SEPOLIA,
     functionsRouter: process.env.CLF_ROUTER_SEPOLIA,
     functionsSubIds: [process.env.CLF_SUBID_SEPOLIA],
+    functionsGatewayUrls: functionsGatewayUrls.testnet,
     donHostedSecretsVersion: 1712841282,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_SEPOLIA,
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
@@ -51,6 +58,7 @@ const CNetworks: Record<string, CNetwork> = {
     functionsDonIdAlias: process.env.CLF_DONID_FUJI_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_FUJI,
     functionsSubIds: [process.env.CLF_SUBID_FUJI],
+    functionsGatewayUrls: functionsGatewayUrls.testnet,
     donHostedSecretsVersion: 1712841282,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_FUJI,
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
@@ -63,6 +71,7 @@ const CNetworks: Record<string, CNetwork> = {
     functionsDonId: process.env.CLF_DONID_OPTIMISM_SEPOLIA,
     functionsRouter: process.env.CLF_ROUTER_OPTIMISM_SEPOLIA,
     functionsSubIds: [process.env.CLF_SUBID_OPTIMISM_SEPOLIA],
+    functionsGatewayUrls: functionsGatewayUrls.testnet,
     donHostedSecretsVersion: 1712841282,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA,
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
@@ -75,6 +84,7 @@ const CNetworks: Record<string, CNetwork> = {
     functionsDonId: process.env.CLF_DONID_ARBITRUM_SEPOLIA,
     functionsRouter: process.env.CLF_ROUTER_ARBITRUM_SEPOLIA,
     functionsSubIds: [process.env.CLF_SUBID_ARBITRUM_SEPOLIA],
+    functionsGatewayUrls: functionsGatewayUrls.testnet,
     donHostedSecretsVersion: 1712841282,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA,
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
@@ -87,6 +97,7 @@ const CNetworks: Record<string, CNetwork> = {
     functionsDonId: process.env.CLF_DONID_BASE_SEPOLIA,
     functionsRouter: process.env.CLF_ROUTER_BASE_SEPOLIA,
     functionsSubIds: [process.env.CLF_SUBID_BASE_SEPOLIA],
+    functionsGatewayUrls: functionsGatewayUrls.testnet,
     donHostedSecretsVersion: 1712841282,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA,
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,

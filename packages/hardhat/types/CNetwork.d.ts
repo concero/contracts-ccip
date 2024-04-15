@@ -10,6 +10,7 @@ export type CLFNetwork = {
   functionsDonId: envString;
   functionsDonIdAlias: envString;
   functionsSubIds: envString[];
+  functionsGatewayUrls: string[];
   gatewayUrls: string[];
   confirmations: number;
   chainSelector: envString;
@@ -26,4 +27,4 @@ export type CLCCIPNetwork = {
 };
 
 // Combined network configuration type
-export type CNetwork = NetworkUserConfig & Partial<CLFNetwork> & Partial<CLCCIPNetwork>;
+export type CNetwork = NetworkUserConfig & HttpNetworkUserConfig & Partial<CLFNetwork> & Partial<CLCCIPNetwork>;

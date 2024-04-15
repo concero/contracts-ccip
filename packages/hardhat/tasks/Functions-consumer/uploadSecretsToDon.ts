@@ -1,10 +1,7 @@
-import { task } from "hardhat/config";
-
-const { SecretsManager } = require("@chainlink/functions-toolkit");
-import networks from "../../constants/CLFnetworks";
+import { task, types } from "hardhat/config";
+import { SecretsManager } from "@chainlink/functions-toolkit";
+import chains from "../../constants/CNetworks";
 import secrets from "../../constants/CLFSecrets";
-
-const process = require("process");
 // const path = require("path");
 // run with: bunx hardhat functions-upload-secrets-don --slotid 0 --ttl 4320 --network avalancheFuji
 
@@ -12,32 +9,27 @@ const process = require("process");
 task("functions-upload-secrets-don", "Encrypts secrets and uploads them to the DON")
   .addParam("slotid", "Storage slot number 0 or higher - if the slotid is already in use, the existing secrets for that slotid will be overwritten")
   .addOptionalParam("ttl", "Time to live - minutes until the secrets hosted on the DON expire (defaults to 10, and must be at least 5)", 10, types.int)
-  .addOptionalParam("configpath", "Path to Functions request config file", `${__dirname}/../../Functions-request-config.js`, types.string)
+  // .addOptionalParam("configpath", "Path to Functions request config file", `${__dirname}/../../Functions-request-config.js`, types.string)
   .setAction(async taskArgs => {
-    const signer = await ethers.getSigner();
-    const functionsRouterAddress = networks[network.name]["functionsRouter"];
-    const donId = networks[network.name]["donId"];
-
-    const gatewayUrls = networks[network.name]["gatewayUrls"];
+    const { name } = hre.network;
+    const signer = await hre.ethers.getSigner();
+    const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls } = chains[name];
 
     const slotId = parseInt(taskArgs.slotid);
     const minutesUntilExpiration = taskArgs.ttl;
 
     const secretsManager = new SecretsManager({
       signer,
-      functionsRouterAddress,
-      donId,
+      functionsRouterAddress: functionsRouter,
+      donId: functionsDonIdAlias,
     });
     await secretsManager.initialize();
 
-    // // Get the secrets object from  Functions-request-config.js or other specific request config.
-    // const requestConfig = require(path.isAbsolute(taskArgs.configpath) ? taskArgs.configpath : path.join(process.cwd(), taskArgs.configpath));
-    //
-    // if (!requestConfig.secrets || requestConfig.secrets.length === 0) {
-    //   console.log("No secrets found in the request config.");
-    //   return;
-    // }
+    // Dynamically import the config file if necessary
+    // const configPath = path.isAbsolute(taskArgs.configpath) ? taskArgs.configpath : path.join(process.cwd(), taskArgs.configpath);
+    // const requestConfig = await import(configPath);
 
+    if (!secrets) return console.error("No secrets found.");
     console.log("Encrypting secrets and uploading to DON...");
     const encryptedSecretsObj = await secretsManager.encryptSecrets(secrets);
 
@@ -46,7 +38,7 @@ task("functions-upload-secrets-don", "Encrypts secrets and uploads them to the D
       success, // Boolean value indicating if encrypted secrets were successfully uploaded to all nodes connected to the gateway
     } = await secretsManager.uploadEncryptedSecretsToDON({
       encryptedSecretsHexstring: encryptedSecretsObj.encryptedSecrets,
-      gatewayUrls,
+      gatewayUrls: functionsGatewayUrls,
       slotId,
       minutesUntilExpiration,
     });

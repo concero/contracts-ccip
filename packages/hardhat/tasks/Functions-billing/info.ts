@@ -1,25 +1,28 @@
-const { SubscriptionManager } = require("@chainlink/functions-toolkit")
-import networks from "../../constants/CLFnetworks"
+import { task } from "hardhat/config";
+import { SubscriptionManager } from "@chainlink/functions-toolkit";
+import chains from "../../constants/CNetworks";
+import { formatEther } from "viem";
 
-task(
-  "functions-sub-info",
-  "Gets the Functions billing subscription balance, owner, and list of authorized consumer contract addresses"
-)
+// run with: bunx hardhat functions-sub-info --subid 5810 --network avalancheFuji
+task("functions-sub-info", "Gets the Functions billing subscription balance, owner, and list of authorized consumer contract addresses")
   .addParam("subid", "Subscription ID")
-  .setAction(async (taskArgs) => {
-    const subscriptionId = parseInt(taskArgs.subid)
+  .setAction(async taskArgs => {
+    const { name } = hre.network;
+    if (!chains[name]) throw new Error(`Chain ${name} not supported`);
 
-    const signer = await ethers.getSigner()
-    const linkTokenAddress = networks[network.name]["linkToken"]
-    const functionsRouterAddress = networks[network.name]["functionsRouter"]
+    const subscriptionId = parseInt(taskArgs.subid);
 
-    const sm = new SubscriptionManager({ signer, linkTokenAddress, functionsRouterAddress })
-    await sm.initialize()
+    const signer = await hre.ethers.getSigner();
+    const linkTokenAddress = chains[name].linkToken;
+    const functionsRouterAddress = chains[name].functionsRouter;
 
-    const subInfo = await sm.getSubscriptionInfo(subscriptionId)
-    // parse balances into LINK for readability
-    subInfo.balance = ethers.utils.formatEther(subInfo.balance) + " LINK"
-    subInfo.blockedBalance = ethers.utils.formatEther(subInfo.blockedBalance) + " LINK"
-    console.log(`\nInfo for subscription ${subscriptionId}:\n`, subInfo)
-  })
-  export default {}
+    const sm = new SubscriptionManager({ signer, linkTokenAddress, functionsRouterAddress });
+    await sm.initialize();
+
+    const subInfo = await sm.getSubscriptionInfo(subscriptionId);
+    subInfo.balance = formatEther(subInfo.balance) + " LINK";
+    subInfo.blockedBalance = formatEther(subInfo.blockedBalance) + " LINK";
+    console.log(`\nInfo for subscription ${subscriptionId}:\n`, subInfo);
+  });
+
+export default {};

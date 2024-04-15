@@ -2053,6 +2053,31 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@nomicfoundation/hardhat-toolbox-viem@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@nomicfoundation/hardhat-toolbox-viem@npm:3.0.0"
+  dependencies:
+    chai-as-promised: ^7.1.1
+  peerDependencies:
+    "@nomicfoundation/hardhat-ignition-viem": ^0.15.0
+    "@nomicfoundation/hardhat-network-helpers": ^1.0.0
+    "@nomicfoundation/hardhat-verify": ^2.0.0
+    "@nomicfoundation/hardhat-viem": ^2.0.0
+    "@types/chai": ^4.2.0
+    "@types/chai-as-promised": ^7.1.6
+    "@types/mocha": ">=9.1.0"
+    "@types/node": ">=18.0.0"
+    chai: ^4.2.0
+    hardhat: ^2.11.0
+    hardhat-gas-reporter: ^1.0.8
+    solidity-coverage: ^0.8.1
+    ts-node: ">=8.0.0"
+    typescript: ^5.0.4
+    viem: ^2.7.6
+  checksum: 4c67184270e521b237341a1607325baddacfa10c9a7189b8b7a07b5277d491ffca936c339958ca843137d1ee1be9d31e4905b1e453698ed0de792eaa3dfa6b0b
+  languageName: node
+  linkType: hard
+
 "@nomicfoundation/hardhat-verify@npm:^2.0.5":
   version: 2.0.5
   resolution: "@nomicfoundation/hardhat-verify@npm:2.0.5"
@@ -2069,6 +2094,20 @@ __metadata:
   peerDependencies:
     hardhat: ^2.0.4
   checksum: f64bf0aedd9487177799043d22cc2628868f06b927cc7ad8966169922489b0014af27b38e3a5fcc43fdd8fe9c4dd49d3588e9a724fc317b3ead5fd263e845561
+  languageName: node
+  linkType: hard
+
+"@nomicfoundation/hardhat-viem@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@nomicfoundation/hardhat-viem@npm:2.0.0"
+  dependencies:
+    abitype: ^0.9.8
+    lodash.memoize: ^4.1.2
+  peerDependencies:
+    hardhat: ^2.17.0
+    typescript: ~5.0.0
+    viem: ^2.7.6
+  checksum: 3d5a4e948695dc728fb3fb09577b341d84f15e52cf038b70483b1fca05944a6c00956aa89848655fedecfbe2521b42f8d71eab205ba5008af1eb223b767a48dd
   languageName: node
   linkType: hard
 
@@ -2717,7 +2756,9 @@ __metadata:
     "@nomicfoundation/hardhat-chai-matchers": ^2.0.6
     "@nomicfoundation/hardhat-ethers": ^3.0.5
     "@nomicfoundation/hardhat-network-helpers": ^1.0.10
+    "@nomicfoundation/hardhat-toolbox-viem": ^3.0.0
     "@nomicfoundation/hardhat-verify": ^2.0.5
+    "@nomicfoundation/hardhat-viem": ^2.0.0
     "@nomiclabs/hardhat-ethers": ^2.2.3
     "@openzeppelin/contracts": ^4.8.1
     "@swc/core": ^1.4.13
@@ -2740,7 +2781,7 @@ __metadata:
     eslint: ^8.26.0
     eslint-config-prettier: ^8.5.0
     eslint-plugin-prettier: ^4.2.1
-    ethers: ^6.11.1
+    ethers: ^6.10.0
     hardhat: ^2.22.2
     hardhat-contract-sizer: ^2.10.0
     hardhat-deploy: ^0.11.45
@@ -2760,7 +2801,7 @@ __metadata:
     ts-node: ^10.9.2
     typechain: ^8.1.0
     typescript: ^5.4.5
-    viem: ^2.9.16
+    viem: ^2.9.18
   languageName: unknown
   linkType: soft
 
@@ -5086,6 +5127,21 @@ __metadata:
     zod:
       optional: true
   checksum: ea2c0548c3ba58c37a6de7483d63389074da498e63d803b742bbe94eb4eaa1f51a35d000c424058b2583aef56698cf07c696eb3bc4dd0303bc20c6f0826a241a
+  languageName: node
+  linkType: hard
+
+"abitype@npm:^0.9.8":
+  version: 0.9.10
+  resolution: "abitype@npm:0.9.10"
+  peerDependencies:
+    typescript: ">=5.0.4"
+    zod: ^3 >=3.22.0
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+    zod:
+      optional: true
+  checksum: de703b58c221395f015c04a8512dde2cff2b9541c577a23cf205204604e624fbfd0e682e82f7954968d5e437cd0d7e630b1c159e73543881a4d0040238bfb13a
   languageName: node
   linkType: hard
 
@@ -9058,7 +9114,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ethers@npm:^6.11.1, ethers@npm:^6.8.1":
+"ethers@npm:^6.10.0, ethers@npm:^6.8.1":
   version: 6.11.1
   resolution: "ethers@npm:6.11.1"
   dependencies:
@@ -12353,6 +12409,13 @@ __metadata:
   version: 4.5.0
   resolution: "lodash.isequal@npm:4.5.0"
   checksum: da27515dc5230eb1140ba65ff8de3613649620e8656b19a6270afe4866b7bd461d9ba2ac8a48dcc57f7adac4ee80e1de9f965d89d4d81a0ad52bb3eec2609644
+  languageName: node
+  linkType: hard
+
+"lodash.memoize@npm:^4.1.2":
+  version: 4.1.2
+  resolution: "lodash.memoize@npm:4.1.2"
+  checksum: 9ff3942feeccffa4f1fafa88d32f0d24fdc62fd15ded5a74a5f950ff5f0c6f61916157246744c620173dddf38d37095a92327d5fd3861e2063e736a5c207d089
   languageName: node
   linkType: hard
 
@@ -18320,9 +18383,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:^2.9.16":
-  version: 2.9.16
-  resolution: "viem@npm:2.9.16"
+"viem@npm:^2.9.18":
+  version: 2.9.18
+  resolution: "viem@npm:2.9.18"
   dependencies:
     "@adraffy/ens-normalize": 1.10.0
     "@noble/curves": 1.2.0
@@ -18337,7 +18400,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: aef2e4b4c906fbeed31b4fdf273cfccfc297c4f62c639334f3ba7c642c2374ac1f91531f19f6bbb7051af14dc5420d54f7b26990bbda079b485c9ab66ca09826
+  checksum: 779d9bcc57fbae7bdc62c3332ad6f9f435e711e205a8dd90af07e93ec97dda882e2e090aee864dd9f7d4612163cebc2fb25d8eefa3a9907148f56417296fdd0d
   languageName: node
   linkType: hard
 

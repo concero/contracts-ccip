@@ -1,51 +1,49 @@
 import { task } from "hardhat/config";
 import { SubscriptionManager } from "@chainlink/functions-toolkit";
-import networks from "../../constants/CLFnetworks";
+import chains from "../../constants/CNetworks";
+import { formatEther } from "viem";
 
 // run with: bunx hardhat functions-sub-fund --amount 0.01 --subid 5810 --network avalancheFuji
-const subIds = [
-  process.env.CLF_SUBID_SEPOLIA,
-  process.env.CLF_SUBID_ARBITRUM_SEPOLIA,
-  process.env.CLF_SUBID_OPTIMISM_SEPOLIA,
-  process.env.CLF_SUBID_FUJI,
-  process.env.CLF_SUBID_BASE_SEPOLIA,
-];
-
 task("functions-sub-fund", "Funds a billing subscription for Functions consumer contracts")
   .addParam("amount", "Amount to fund subscription in LINK")
   .addParam("subid", "Subscription ID to fund")
-  .setAction(async taskArgs => {
-    if (!subIds.includes(taskArgs.subid)) throw new Error("Sub ID not present in known sub ids");
+  .setAction(async (taskArgs, hre) => {
+    const { name } = hre.network;
+    const subId = parseInt(taskArgs.subid, 10);
+    if (!chains[name]) throw new Error(`Network ${name} not supported`);
 
-    const signer = await ethers.getSigner();
-    const linkTokenAddress = networks[network.name]["linkToken"];
-    const functionsRouterAddress = networks[network.name]["functionsRouter"];
-    const txOptions = { confirmations: networks[network.name].confirmations };
-
-    const subscriptionId = parseInt(taskArgs.subid);
+    const signer = await hre.ethers.getSigner();
+    const { linkToken, functionsRouter, confirmations, functionsSubIds } = chains[name];
+    if (!functionsSubIds.includes(subId.toString())) throw new Error(`Subscription ID ${taskArgs.subid} not present on network ${name}`);
+    const txOptions = { confirmations };
     const linkAmount = taskArgs.amount;
-    const juelsAmount = ethers.utils.parseUnits(linkAmount, 18).toString();
+    const juelsAmount = hre.ethers.utils.parseUnits(linkAmount, 18).toString();
 
-    const sm = new SubscriptionManager({ signer, linkTokenAddress, functionsRouterAddress });
+    const sm = new SubscriptionManager({
+      signer,
+      linkTokenAddress: linkToken,
+      functionsRouterAddress: functionsRouter,
+    });
+
     await sm.initialize();
-    //
-    // await utils.prompt(
-    //   `\nPlease confirm that you wish to fund Subscription ${subscriptionId} with ${chalk.blue(
-    //     linkAmount + " LINK"
-    //   )} from your wallet.`
-    // )
 
-    console.log(`\nFunding subscription ${subscriptionId} with ${linkAmount} LINK...`);
+    // Optional: Implement a confirmation prompt before proceeding with a transaction
+    // Confirm the action with the user (commented out for brevity and example purposes)
+    // const utils = require('../path/to/utils');
+    // await utils.prompt(`Please confirm that you wish to fund Subscription ${subscriptionId} with ${linkAmount} LINK from your wallet.`);
 
-    const fundTxReceipt = await sm.fundSubscription({ juelsAmount, subscriptionId, txOptions });
-    console.log(`\nSubscription ${subscriptionId} funded with ${linkAmount} LINK in Tx: ${fundTxReceipt.transactionHash}`);
+    console.log(`Funding subscription ${subId} with ${linkAmount} LINK...`);
+    const fundTxReceipt = await sm.fundSubscription({ juelsAmount, subscriptionId: subId, txOptions });
 
-    const subInfo = await sm.getSubscriptionInfo(subscriptionId);
+    console.log(`Subscription ${subId} funded with ${linkAmount} LINK in Tx: ${fundTxReceipt.transactionHash}`);
 
-    // parse balances into LINK for readability
-    subInfo.balance = hre.ethers.formatEther(subInfo.balance) + " LINK";
-    subInfo.blockedBalance = hre.ethers.formatEther(subInfo.blockedBalance) + " LINK";
+    // Fetch and log updated subscription information
+    const subInfo = await sm.getSubscriptionInfo(subId);
 
-    console.log("\nUpdated subscription Info: ", subInfo);
+    subInfo.balance = formatEther(subInfo.balance) + " LINK";
+    subInfo.blockedBalance = formatEther(subInfo.blockedBalance) + " LINK";
+
+    console.log("Updated subscription Info: ", subInfo);
   });
+
 export default {};

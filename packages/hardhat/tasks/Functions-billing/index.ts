@@ -1,6 +1,6 @@
 // import create from "./create";
 import fund from "./fund";
-// import info from "./info";
+import info from "./info";
 // import remove from "./remove";
 // import cancel from "./cancel";
 // import transfer from "./transfer";
@@ -11,7 +11,7 @@ import add from "./add";
 export default {
   // create,
   fund,
-  // info,
+  info,
   add,
   // remove,
   // cancel,

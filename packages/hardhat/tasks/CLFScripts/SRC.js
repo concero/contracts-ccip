@@ -2,15 +2,6 @@
 Simulation requirements:
 numAllowedQueries: 2 – a minimum to initialise Viem.
  */
-
-// CUSTOM TRANSPORT FUNCTIONS
-// import { Functions } from '../utils/sandbox.ts';
-
-// const secrets = {
-// 	WALLET_PRIVATE_KEY: '44c04f3751b5e35344400ab7f7e561c3b80c02c2f87de69a561ecbf6d0018896',
-// 	INFURA_API_KEY: '8acf47c71165427f8cee3a92fea12da2',
-// };
-
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
 const {createWalletClient, custom} = await import('npm:viem');

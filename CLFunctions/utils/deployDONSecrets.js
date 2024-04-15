@@ -1,38 +1,11 @@
 const ethers = require('ethers');
 const SecretsManager = require('@chainlink/functions-toolkit').SecretsManager;
 const dotenv = require('dotenv');
+import chains from '../../packages/hardhat/constants/CLFChains';
 
 dotenv.config({path: '../.env'});
 dotenv.config({path: '../.env.chainlink'});
 dotenv.config({path: '../.env.tokens'});
-
-const chains = {
-	avalancheFuji: {
-		url: `https://avalanche-fuji.infura.io/v3/${process.env.INFURA_API_KEY}`,
-		router: process.env.CLF_ROUTER_FUJI,
-		donId: process.env.CLF_DONID_FUJI_ALIAS,
-	},
-	sepolia: {
-		url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-		router: process.env.CLF_ROUTER_SEPOLIA,
-		donId: process.env.CLF_DONID_SEPOLIA_ALIAS,
-	},
-	arbitrumSepolia: {
-		url: `https://arbitrum-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-		router: process.env.CLF_ROUTER_ARBITRUM_SEPOLIA,
-		donId: process.env.CLF_DONID_ARBITRUM_SEPOLIA_ALIAS,
-	},
-	baseSepolia: {
-		url: `https://base-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-		router: process.env.CLF_ROUTER_BASE_SEPOLIA,
-		donId: process.env.CLF_DONID_BASE_SEPOLIA_ALIAS,
-	},
-	optimismSepolia: {
-		url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-		router: process.env.CLF_ROUTER_OPTIMISM_SEPOLIA,
-		donId: process.env.CLF_DONID_OPTIMISM_SEPOLIA_ALIAS,
-	},
-};
 
 const args = process.argv.slice(2);
 const chainToDeployTo = args[0];
@@ -75,6 +48,8 @@ const deploySecrets = async (functionsRouterAddress, donId, rpcUrl) => {
 	console.log(JSON.stringify(secretsEntriesForGateway, null, 2));
 };
 
-deploySecrets(chains[chainToDeployTo].router, chains[chainToDeployTo].donId, chains[chainToDeployTo].url).catch(err => {
-	console.log('ERROR: ', err);
-});
+deploySecrets(chains[chainToDeployTo].router, chains[chainToDeployTo].donId, chains[chainToDeployTo].rpcUrl).catch(
+	err => {
+		console.log('ERROR: ', err);
+	},
+);

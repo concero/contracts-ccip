@@ -1,6 +1,5 @@
 // Purpose: To have a single source of truth for networks across the project
 import { type CNetwork } from "../types/CNetwork";
-import rpc from "./rpcUrls";
 import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
 const deployerPK = process.env.DEPLOYER_PRIVATE_KEY ?? "";
@@ -28,10 +27,41 @@ export const functionsGatewayUrls = {
 };
 
 const CNetworks: Record<string, CNetwork> = {
+  test: {
+    url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    accounts: [deployerPK],
+    // mock CLF data
+    functionsDonId: process.env.CLF_DONID_SEPOLIA,
+    functionsDonIdAlias: process.env.CLF_DONID_SEPOLIA_ALIAS,
+    functionsRouter: process.env.CLF_ROUTER_SEPOLIA,
+    functionsSubIds: [process.env.CLF_SUBID_SEPOLIA],
+    functionsGatewayUrls: functionsGatewayUrls.testnet,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_SEPOLIA,
+    chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_SEPOLIA,
+    confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
+    linkToken: process.env.LINK_SEPOLIA,
+    linkPriceFeed: process.env.LINK_PRICEFEED_SEPOLIA,
+    ccipRouter: process.env.CL_CCIP_ROUTER_SEPOLIA,
+  },
+  localhost: {
+    accounts: [deployerPK],
+    // mock CLF data
+    functionsDonId: process.env.CLF_DONID_SEPOLIA,
+    functionsDonIdAlias: process.env.CLF_DONID_SEPOLIA_ALIAS,
+    functionsRouter: process.env.CLF_ROUTER_SEPOLIA,
+    functionsSubIds: [process.env.CLF_SUBID_SEPOLIA],
+    functionsGatewayUrls: functionsGatewayUrls.testnet,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_SEPOLIA,
+    chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_SEPOLIA,
+    confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
+    linkToken: process.env.LINK_SEPOLIA,
+    linkPriceFeed: process.env.LINK_PRICEFEED_SEPOLIA,
+    ccipRouter: process.env.CL_CCIP_ROUTER_SEPOLIA,
+  },
   hardhat: {
     chainId: 31337,
     forking: {
-      url: rpc.mainnet,
+      url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
       enabled: process.env.MAINNET_FORKING_ENABLED === "true",
       blockNumber: 9_675_000,
     },
@@ -56,6 +86,7 @@ const CNetworks: Record<string, CNetwork> = {
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_SEPOLIA,
+    ccipRouter: process.env.CL_CCIP_ROUTER_SEPOLIA,
   } as HardhatNetworkUserConfig,
   // TESTNETS
   sepolia: {
@@ -71,6 +102,7 @@ const CNetworks: Record<string, CNetwork> = {
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_SEPOLIA,
+    ccipRouter: process.env.CL_CCIP_ROUTER_SEPOLIA,
   },
   avalancheFuji: {
     url: `https://avalanche-fuji.infura.io/v3/${process.env.INFURA_API_KEY}`,
@@ -86,6 +118,7 @@ const CNetworks: Record<string, CNetwork> = {
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_FUJI,
     linkPriceFeed: process.env.LINK_PRICEFEED_FUJI,
+    ccipRouter: process.env.CL_CCIP_ROUTER_FUJI,
   },
   optimismSepolia: {
     url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
@@ -100,6 +133,7 @@ const CNetworks: Record<string, CNetwork> = {
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_OPTIMISM_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_OPTIMISM_SEPOLIA,
+    ccipRouter: process.env.CL_CCIP_ROUTER_OPTIMISM_SEPOLIA,
   },
   arbitrumSepolia: {
     url: `https://arbitrum-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
@@ -114,6 +148,7 @@ const CNetworks: Record<string, CNetwork> = {
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_ARBITRUM_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_ARBITRUM_SEPOLIA,
+    ccipRouter: process.env.CL_CCIP_ROUTER_ARBITRUM_SEPOLIA,
   },
   baseSepolia: {
     url: `https://base-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
@@ -128,6 +163,7 @@ const CNetworks: Record<string, CNetwork> = {
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_BASE_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_BASE_SEPOLIA,
+    ccipRouter: process.env.CL_CCIP_ROUTER_BASE_SEPOLIA,
   },
   // MAINNETS
   // mainnet: {

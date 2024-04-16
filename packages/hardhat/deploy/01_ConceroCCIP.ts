@@ -6,9 +6,10 @@ import CNetworks from "../constants/CNetworks";
 const deployConceroCCIP: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
+  const { name } = hre.network;
 
-  if (!CNetworks[hre.network.name]) throw new Error(`Chain ${hre.network.name} not supported`);
-  const { linkToken, ccipRouter } = CNetworks[hre.network.name];
+  // if (!CNetworks[hre.network.name]) throw new Error(`Chain ${hre.network.name} not supported`);
+  const { linkToken, ccipRouter } = CNetworks[name];
 
   const { address: contractAddress } = await deploy("ConceroCCIP", {
     from: deployer,
@@ -17,7 +18,7 @@ const deployConceroCCIP: DeployFunction = async function (hre: HardhatRuntimeEnv
     autoMine: true,
   });
 
-  const conceroCCIP = await hre.ethers.getContract<ConceroCCIP>("ConceroCCIP", deployer);
+  // const conceroCCIP = await hre.ethers.getContract<ConceroCCIP>("ConceroCCIP", deployer);
 
   // await conceroCCIP.setAllowSourceChain(oppositeChainSelector, true);
   // await conceroCCIP.setAllowDestinationChain(oppositeChainSelector, true);

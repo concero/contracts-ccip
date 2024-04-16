@@ -57,9 +57,9 @@ function cleanupFile(content) {
 
 function minifyFile(content) {
   return content
-    .replace(/\n/g, "") // Remove newlines
-    .replace(/\t/g, "") // Remove tabs
-    .replace(/\s\s+/g, ""); // Replace multiple spaces with a single space
+    .replace(/\n/g, " ") // Remove newlines
+    .replace(/\t/g, " ") // Remove tabs
+    .replace(/\s\s+/g, " "); // Replace multiple spaces with a single space
 }
 
 task("functions-build-script", "Builds the JavaScript source code")

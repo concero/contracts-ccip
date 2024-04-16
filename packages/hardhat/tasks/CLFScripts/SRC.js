@@ -2,6 +2,8 @@
 Simulation requirements:
 numAllowedQueries: 2 – a minimum to initialise Viem.
  */
+// const secrets = {};
+// todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
 const {createWalletClient, custom} = await import('npm:viem');

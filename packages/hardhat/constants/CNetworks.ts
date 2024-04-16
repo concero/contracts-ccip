@@ -27,22 +27,6 @@ export const functionsGatewayUrls = {
 };
 
 const CNetworks: Record<string, CNetwork> = {
-  test: {
-    url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-    accounts: [deployerPK],
-    // mock CLF data
-    functionsDonId: process.env.CLF_DONID_SEPOLIA,
-    functionsDonIdAlias: process.env.CLF_DONID_SEPOLIA_ALIAS,
-    functionsRouter: process.env.CLF_ROUTER_SEPOLIA,
-    functionsSubIds: [process.env.CLF_SUBID_SEPOLIA],
-    functionsGatewayUrls: functionsGatewayUrls.testnet,
-    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_SEPOLIA,
-    chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_SEPOLIA,
-    confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
-    linkToken: process.env.LINK_SEPOLIA,
-    linkPriceFeed: process.env.LINK_PRICEFEED_SEPOLIA,
-    ccipRouter: process.env.CL_CCIP_ROUTER_SEPOLIA,
-  },
   localhost: {
     accounts: [deployerPK],
     // mock CLF data
@@ -57,7 +41,7 @@ const CNetworks: Record<string, CNetwork> = {
     linkToken: process.env.LINK_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_SEPOLIA,
     ccipRouter: process.env.CL_CCIP_ROUTER_SEPOLIA,
-  },
+  } as HardhatNetworkUserConfig,
   hardhat: {
     chainId: 31337,
     forking: {

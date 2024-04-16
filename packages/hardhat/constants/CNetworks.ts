@@ -1,8 +1,28 @@
+// Purpose: To have a single source of truth for networks across the project
 import { type CNetwork } from "../types/CNetwork";
 import rpc from "./rpcUrls";
+import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
 const deployerPK = process.env.DEPLOYER_PRIVATE_KEY ?? "";
-const functionsGatewayUrls = {
+
+export const networkEnvKeys = {
+  // mainnets
+  mainnet: "MAINNET",
+  arbitrum: "ARBITRUM",
+  optimism: "OPTIMISM",
+  polygon: "POLYGON",
+  polygonZkEvm: "POLYGON_ZKEVM",
+  avalanche: "AVALANCHE",
+  base: "BASE",
+  // testnets
+  sepolia: "SEPOLIA",
+  optimismSepolia: "OPTIMISM_SEPOLIA",
+  arbitrumSepolia: "ARBITRUM_SEPOLIA",
+  avalancheFuji: "FUJI",
+  baseSepolia: "BASE_SEPOLIA",
+};
+
+export const functionsGatewayUrls = {
   mainnet: ["https://01.functions-gateway.chain.link/", "https://02.functions-gateway.chain.link/"],
   testnet: ["https://01.functions-gateway.testnet.chain.link/", "https://02.functions-gateway.testnet.chain.link/"],
 };
@@ -27,24 +47,26 @@ const CNetworks: Record<string, CNetwork> = {
     ],
     // mock CLF data
     functionsDonId: process.env.CLF_DONID_SEPOLIA,
+    functionsDonIdAlias: process.env.CLF_DONID_SEPOLIA_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_SEPOLIA,
     functionsSubIds: [process.env.CLF_SUBID_SEPOLIA],
     functionsGatewayUrls: functionsGatewayUrls.testnet,
-    donHostedSecretsVersion: 1712841282,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_SEPOLIA,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_SEPOLIA,
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_SEPOLIA,
-  },
+  } as HardhatNetworkUserConfig,
   // TESTNETS
   sepolia: {
     url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
     accounts: [deployerPK],
     functionsDonId: process.env.CLF_DONID_SEPOLIA,
+    functionsDonIdAlias: process.env.CLF_DONID_SEPOLIA_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_SEPOLIA,
     functionsSubIds: [process.env.CLF_SUBID_SEPOLIA],
     functionsGatewayUrls: functionsGatewayUrls.testnet,
-    donHostedSecretsVersion: 1712841282,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_SEPOLIA,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_SEPOLIA,
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_SEPOLIA,
@@ -59,7 +81,7 @@ const CNetworks: Record<string, CNetwork> = {
     functionsRouter: process.env.CLF_ROUTER_FUJI,
     functionsSubIds: [process.env.CLF_SUBID_FUJI],
     functionsGatewayUrls: functionsGatewayUrls.testnet,
-    donHostedSecretsVersion: 1712841282,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_FUJI,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_FUJI,
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_FUJI,
@@ -69,10 +91,11 @@ const CNetworks: Record<string, CNetwork> = {
     url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
     accounts: [deployerPK],
     functionsDonId: process.env.CLF_DONID_OPTIMISM_SEPOLIA,
+    functionsDonIdAlias: process.env.CLF_DONID_OPTIMISM_SEPOLIA_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_OPTIMISM_SEPOLIA,
     functionsSubIds: [process.env.CLF_SUBID_OPTIMISM_SEPOLIA],
     functionsGatewayUrls: functionsGatewayUrls.testnet,
-    donHostedSecretsVersion: 1712841282,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_OPTIMISM_SEPOLIA,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA,
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_OPTIMISM_SEPOLIA,
@@ -82,23 +105,25 @@ const CNetworks: Record<string, CNetwork> = {
     url: `https://arbitrum-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
     accounts: [deployerPK],
     functionsDonId: process.env.CLF_DONID_ARBITRUM_SEPOLIA,
+    functionsDonIdAlias: process.env.CLF_DONID_ARBITRUM_SEPOLIA_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_ARBITRUM_SEPOLIA,
     functionsSubIds: [process.env.CLF_SUBID_ARBITRUM_SEPOLIA],
     functionsGatewayUrls: functionsGatewayUrls.testnet,
-    donHostedSecretsVersion: 1712841282,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_ARBITRUM_SEPOLIA,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA,
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_ARBITRUM_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_ARBITRUM_SEPOLIA,
   },
   baseSepolia: {
-    url: `https://base-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    url: `https://base-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
     accounts: [deployerPK],
     functionsDonId: process.env.CLF_DONID_BASE_SEPOLIA,
+    functionsDonIdAlias: process.env.CLF_DONID_BASE_SEPOLIA_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_BASE_SEPOLIA,
     functionsSubIds: [process.env.CLF_SUBID_BASE_SEPOLIA],
     functionsGatewayUrls: functionsGatewayUrls.testnet,
-    donHostedSecretsVersion: 1712841282,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_BASE_SEPOLIA,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA,
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_BASE_SEPOLIA,

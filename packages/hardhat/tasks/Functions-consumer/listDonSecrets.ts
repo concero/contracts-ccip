@@ -1,32 +1,40 @@
 import { SecretsManager } from "@chainlink/functions-toolkit";
-import networks from "../../constants/CLFnetworks";
+import chains from "../../constants/CNetworks";
+import updateEnvVariable from "../../utils/updateEnvVariable";
+import { networkEnvKeys } from "../../constants/CNetworks";
+import { task } from "hardhat/config";
 
 // run with: bunx hardhat functions-list-don-secrets --network avalancheFuji
 task("functions-list-don-secrets", "Displays encrypted secrets hosted on the DON").setAction(async taskArgs => {
-  const signer = await ethers.getSigner();
-  const functionsRouterAddress = networks[network.name]["functionsRouter"];
-  const donId = networks[network.name]["donId"];
+  const { name } = hre.network;
+  const signer = await hre.ethers.getSigner();
+  const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls } = chains[name];
 
-  const gatewayUrls = networks[network.name]["gatewayUrls"];
-  if (!gatewayUrls || gatewayUrls.length === 0) {
-    throw Error(`No gatewayUrls found for ${network.name} network.`);
+  if (!functionsGatewayUrls || functionsGatewayUrls.length === 0) {
+    throw Error(`No gatewayUrls found for ${name}.`);
   }
+
   const secretsManager = new SecretsManager({
     signer,
-    functionsRouterAddress,
-    donId,
+    functionsRouterAddress: functionsRouter,
+    donId: functionsDonIdAlias,
   });
   await secretsManager.initialize();
 
-  const { result } = await secretsManager.listDONHostedEncryptedSecrets(gatewayUrls);
-  console.log(`\nYour encrypted secrets currently hosted on DON ${donId}`);
-  console.log("\n\nGateway:", result.gatewayUrl);
+  const { result } = await secretsManager.listDONHostedEncryptedSecrets(functionsGatewayUrls);
+  console.log(`\nYour encrypted secrets currently hosted on DON ${functionsDonIdAlias}`);
+  // console.log("\n\nGateway:", result.gatewayUrl);
   let i = 0;
   result.nodeResponses.forEach(nodeResponse => {
     console.log(`\nNode Response #${i}`);
     i++;
+
     if (nodeResponse.rows) {
       nodeResponse.rows.forEach(row => {
+        if (row.version && row.expiration) {
+          updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`, row.version, "../../../.env.clf");
+          updateEnvVariable(`CLF_DON_SECRETS_EXPIRATION_${networkEnvKeys[name]}`, row.expiration, "../../../.env.clf");
+        }
         console.log(row);
       });
     } else {

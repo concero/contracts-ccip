@@ -1,10 +1,10 @@
-import CNetworks from "../constants/CNetworks";
-import { HardhatNetworkUserConfig, NetworkUserConfig } from "hardhat/types";
+// Purpose: To have a single source of truth for networks across the project
+import { NetworkUserConfig } from "hardhat/types";
 import { HttpNetworkUserConfig } from "hardhat/src/types/config";
-// import {} from "hardhat/src/types/config";
-// Chainlink Functions Network specific configuration
+
 export type envString = string | undefined;
 
+// Chainlink Functions Network specific configuration
 export type CLFNetwork = {
   functionsRouter: envString;
   functionsDonId: envString;
@@ -14,7 +14,7 @@ export type CLFNetwork = {
   gatewayUrls: string[];
   confirmations: number;
   chainSelector: envString;
-  donHostedSecretsVersion: number;
+  donHostedSecretsVersion: envString;
   linkToken: envString;
   linkPriceFeed: envString;
 };

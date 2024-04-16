@@ -75,6 +75,7 @@
     "@typechain/ethers-v6": "^0.5.1",
     "dotenv": "^16.4.5",
     "envfile": "^6.18.0",
+    "hardhat-change-network": "^0.0.7",
     "qrcode": "^1.5.1",
     "regenerator-runtime": "^0.14.1",
     "solhint-plugin-chainlink-solidity": "git+https://github.com/smartcontractkit/chainlink-solhint-rules.git#v1.2.1",

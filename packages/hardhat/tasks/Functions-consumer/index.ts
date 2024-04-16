@@ -9,6 +9,7 @@ import performUpkeep from "./performManualUpkeep";
 import setAutoRequest from "./setAutoRequest";
 import uploadSecretsToDon from "./uploadSecretsToDon";
 import listDonSecrets from "./listDonSecrets";
+import pullAllDonSecrets from "./pullAllDonSecrets";
 
 export default {
   readResultAndError,
@@ -22,4 +23,5 @@ export default {
   setAutoRequest,
   uploadSecretsToDon,
   listDonSecrets,
+  pullAllDonSecrets,
 };

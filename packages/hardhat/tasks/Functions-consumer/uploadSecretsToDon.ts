@@ -1,7 +1,8 @@
 import { task, types } from "hardhat/config";
 import { SecretsManager } from "@chainlink/functions-toolkit";
-import chains from "../../constants/CNetworks";
+import chains, { networkEnvKeys } from "../../constants/CNetworks";
 import secrets from "../../constants/CLFSecrets";
+import updateEnvVariable from "../../utils/updateEnvVariable";
 // const path = require("path");
 // run with: bunx hardhat functions-upload-secrets-don --slotid 0 --ttl 4320 --network avalancheFuji
 
@@ -44,5 +45,6 @@ task("functions-upload-secrets-don", "Encrypts secrets and uploads them to the D
     });
 
     console.log(`\nYou can now use slotId ${slotId} and version ${version} to reference the encrypted secrets hosted on the DON.`);
+    updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`, version, "../../../.env.clf");
   });
 export default {};

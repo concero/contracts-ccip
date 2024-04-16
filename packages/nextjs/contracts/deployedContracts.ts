@@ -6,14 +6,24 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
 const deployedContracts = {
   31337: {
-    CFunctions: {
-      address: "0xd574a83C9Ab2FA353BE8F7A2B19a2FdA7cE65cBA",
+    CCombined: {
+      address: "0x34cdeef1001C554919841D1397B4f3c141127cC0",
       abi: [
         {
           inputs: [
             {
               internalType: "address",
-              name: "_router",
+              name: "_link",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_ccipRouter",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_functionsRouter",
               type: "address",
             },
             {
@@ -32,16 +42,6 @@ const deployedContracts = {
               type: "uint64",
             },
             {
-              internalType: "address",
-              name: "_externalCcipContract",
-              type: "address",
-            },
-            {
-              internalType: "address payable",
-              name: "_internalCcipContract",
-              type: "address",
-            },
-            {
               internalType: "uint64",
               name: "_chainSelector",
               type: "uint64",
@@ -51,6 +51,17 @@ const deployedContracts = {
           type: "constructor",
         },
         {
+          inputs: [
+            {
+              internalType: "uint64",
+              name: "_dstChainSelector",
+              type: "uint64",
+            },
+          ],
+          name: "DestinationChainNotAllowed",
+          type: "error",
+        },
+        {
           inputs: [],
           name: "EmptyArgs",
           type: "error",
@@ -58,6 +69,43 @@ const deployedContracts = {
         {
           inputs: [],
           name: "EmptySource",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "owner",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "target",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+          ],
+          name: "FailedToWithdrawEth",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "InvalidReceiverAddress",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "router",
+              type: "address",
+            },
+          ],
+          name: "InvalidRouter",
           type: "error",
         },
         {
@@ -71,8 +119,73 @@ const deployedContracts = {
           type: "error",
         },
         {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          name: "NotCCIPContract",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "_fees",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "_feeToken",
+              type: "uint256",
+            },
+          ],
+          name: "NotEnoughBalance",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_sender",
+              type: "address",
+            },
+          ],
+          name: "NotFunctionContract",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "NothingToWithdraw",
+          type: "error",
+        },
+        {
           inputs: [],
           name: "OnlyRouterCanFulfill",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_sender",
+              type: "address",
+            },
+          ],
+          name: "SenderNotAllowed",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint64",
+              name: "_sourceChainSelector",
+              type: "uint64",
+            },
+          ],
+          name: "SourceChainNotAllowed",
           type: "error",
         },
         {
@@ -120,522 +233,6 @@ const deployedContracts = {
           ],
           name: "AllowlistUpdated",
           type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "address",
-              name: "from",
-              type: "address",
-            },
-            {
-              indexed: true,
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-          ],
-          name: "OwnershipTransferRequested",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "address",
-              name: "from",
-              type: "address",
-            },
-            {
-              indexed: true,
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-          ],
-          name: "OwnershipTransferred",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "bytes32",
-              name: "id",
-              type: "bytes32",
-            },
-          ],
-          name: "RequestFulfilled",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "bytes32",
-              name: "id",
-              type: "bytes32",
-            },
-          ],
-          name: "RequestSent",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "bytes32",
-              name: "ccipMessageId",
-              type: "bytes32",
-            },
-            {
-              indexed: true,
-              internalType: "address",
-              name: "sender",
-              type: "address",
-            },
-            {
-              indexed: true,
-              internalType: "address",
-              name: "recipient",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "token",
-              type: "address",
-            },
-          ],
-          name: "TXConfirmed",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "bytes32",
-              name: "ccipMessageId",
-              type: "bytes32",
-            },
-            {
-              indexed: true,
-              internalType: "address",
-              name: "sender",
-              type: "address",
-            },
-            {
-              indexed: true,
-              internalType: "address",
-              name: "recipient",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "token",
-              type: "address",
-            },
-          ],
-          name: "UnconfirmedTXAdded",
-          type: "event",
-        },
-        {
-          inputs: [],
-          name: "acceptOwnership",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_walletAddress",
-              type: "address",
-            },
-          ],
-          name: "addToAllowlist",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "bytes32",
-              name: "ccipMessageId",
-              type: "bytes32",
-            },
-            {
-              internalType: "address",
-              name: "sender",
-              type: "address",
-            },
-            {
-              internalType: "address",
-              name: "recipient",
-              type: "address",
-            },
-            {
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
-            },
-            {
-              internalType: "uint64",
-              name: "srcChainSelector",
-              type: "uint64",
-            },
-            {
-              internalType: "address",
-              name: "token",
-              type: "address",
-            },
-          ],
-          name: "addUnconfirmedTX",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "bytes32",
-              name: "ccipMessageId",
-              type: "bytes32",
-            },
-          ],
-          name: "deleteTransaction",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "bytes32",
-              name: "requestId",
-              type: "bytes32",
-            },
-            {
-              internalType: "bytes",
-              name: "response",
-              type: "bytes",
-            },
-            {
-              internalType: "bytes",
-              name: "err",
-              type: "bytes",
-            },
-          ],
-          name: "handleOracleFulfillment",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [],
-          name: "owner",
-          outputs: [
-            {
-              internalType: "address",
-              name: "",
-              type: "address",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_walletAddress",
-              type: "address",
-            },
-          ],
-          name: "removeFromAllowlist",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "bytes32",
-              name: "",
-              type: "bytes32",
-            },
-          ],
-          name: "requests",
-          outputs: [
-            {
-              internalType: "enum IFunctions.RequestType",
-              name: "requestType",
-              type: "uint8",
-            },
-            {
-              internalType: "bool",
-              name: "isPending",
-              type: "bool",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint64",
-              name: "_version",
-              type: "uint64",
-            },
-          ],
-          name: "setDonHostedSecretsVersion",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_externalCcipContract",
-              type: "address",
-            },
-          ],
-          name: "setExternalCcipContract",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address payable",
-              name: "_internalCcipContract",
-              type: "address",
-            },
-          ],
-          name: "setInternalCcipContract",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "bytes32",
-              name: "",
-              type: "bytes32",
-            },
-          ],
-          name: "transactions",
-          outputs: [
-            {
-              internalType: "bytes32",
-              name: "ccipMessageId",
-              type: "bytes32",
-            },
-            {
-              internalType: "address",
-              name: "sender",
-              type: "address",
-            },
-            {
-              internalType: "address",
-              name: "recipient",
-              type: "address",
-            },
-            {
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
-            },
-            {
-              internalType: "address",
-              name: "token",
-              type: "address",
-            },
-            {
-              internalType: "uint64",
-              name: "srcChainSelector",
-              type: "uint64",
-            },
-            {
-              internalType: "bool",
-              name: "isConfirmed",
-              type: "bool",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-          ],
-          name: "transferOwnership",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-      ],
-      inheritedFunctions: {
-        handleOracleFulfillment:
-          "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol",
-        acceptOwnership:
-          "@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner.sol",
-        owner:
-          "@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner.sol",
-        transferOwnership:
-          "@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner.sol",
-      },
-    },
-    ConceroCCIP: {
-      address: "0x71D9DB8FCD18CaAb76B185e66A90e248Fc628AC8",
-      abi: [
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_link",
-              type: "address",
-            },
-            {
-              internalType: "address",
-              name: "_ccipRouter",
-              type: "address",
-            },
-          ],
-          stateMutability: "nonpayable",
-          type: "constructor",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint64",
-              name: "_dstChainSelector",
-              type: "uint64",
-            },
-          ],
-          name: "DestinationChainNotAllowed",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "owner",
-              type: "address",
-            },
-            {
-              internalType: "address",
-              name: "target",
-              type: "address",
-            },
-            {
-              internalType: "uint256",
-              name: "value",
-              type: "uint256",
-            },
-          ],
-          name: "FailedToWithdrawEth",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "InvalidReceiverAddress",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "router",
-              type: "address",
-            },
-          ],
-          name: "InvalidRouter",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint256",
-              name: "_fees",
-              type: "uint256",
-            },
-            {
-              internalType: "uint256",
-              name: "_feeToken",
-              type: "uint256",
-            },
-          ],
-          name: "NotEnoughBalance",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_sender",
-              type: "address",
-            },
-          ],
-          name: "NotFunctionContract",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "NothingToWithdraw",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_sender",
-              type: "address",
-            },
-          ],
-          name: "SenderNotAllowed",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint64",
-              name: "_sourceChainSelector",
-              type: "uint64",
-            },
-          ],
-          name: "SourceChainNotAllowed",
-          type: "error",
         },
         {
           anonymous: false,
@@ -767,6 +364,69 @@ const deployedContracts = {
             {
               indexed: true,
               internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+          ],
+          name: "RequestFulfilled",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+          ],
+          name: "RequestSent",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "ccipMessageId",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "recipient",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "token",
+              type: "address",
+            },
+          ],
+          name: "TXConfirmed",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
               name: "ccipMessageId",
               type: "bytes32",
             },
@@ -799,8 +459,145 @@ const deployedContracts = {
           type: "event",
         },
         {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "ccipMessageId",
+              type: "bytes32",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "recipient",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "token",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint64",
+              name: "srcChainSelector",
+              type: "uint64",
+            },
+          ],
+          name: "UnconfirmedTXAdded",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "ccipMessageId",
+              type: "bytes32",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "recipient",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "token",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint64",
+              name: "dstChainSelector",
+              type: "uint64",
+            },
+          ],
+          name: "UnconfirmedTXSent",
+          type: "event",
+        },
+        {
           inputs: [],
           name: "acceptOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_walletAddress",
+              type: "address",
+            },
+          ],
+          name: "addToAllowlist",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "ccipMessageId",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "recipient",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              internalType: "uint64",
+              name: "srcChainSelector",
+              type: "uint64",
+            },
+            {
+              internalType: "address",
+              name: "token",
+              type: "address",
+            },
+          ],
+          name: "addUnconfirmedTX",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
@@ -814,25 +611,6 @@ const deployedContracts = {
             },
           ],
           name: "allowListedDstChains",
-          outputs: [
-            {
-              internalType: "bool",
-              name: "",
-              type: "bool",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "",
-              type: "address",
-            },
-          ],
-          name: "allowListedSenderContracts",
           outputs: [
             {
               internalType: "bool",
@@ -917,12 +695,38 @@ const deployedContracts = {
         {
           inputs: [
             {
+              internalType: "bytes32",
+              name: "ccipMessageId",
+              type: "bytes32",
+            },
+          ],
+          name: "deleteTransaction",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
               internalType: "uint64",
               name: "",
               type: "uint64",
             },
           ],
           name: "dstConceroCCIPContracts",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "externalContract",
           outputs: [
             {
               internalType: "address",
@@ -947,6 +751,29 @@ const deployedContracts = {
           type: "function",
         },
         {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "requestId",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes",
+              name: "response",
+              type: "bytes",
+            },
+            {
+              internalType: "bytes",
+              name: "err",
+              type: "bytes",
+            },
+          ],
+          name: "handleOracleFulfillment",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
           inputs: [],
           name: "owner",
           outputs: [
@@ -962,34 +789,38 @@ const deployedContracts = {
         {
           inputs: [
             {
-              internalType: "bytes32",
-              name: "_ccipMessageId",
-              type: "bytes32",
-            },
-            {
               internalType: "address",
-              name: "_sender",
+              name: "_walletAddress",
               type: "address",
-            },
-            {
-              internalType: "address",
-              name: "_recipient",
-              type: "address",
-            },
-            {
-              internalType: "address",
-              name: "_token",
-              type: "address",
-            },
-            {
-              internalType: "uint256",
-              name: "_amount",
-              type: "uint256",
             },
           ],
-          name: "sendTokenToEoa",
+          name: "removeFromAllowlist",
           outputs: [],
           stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          name: "requests",
+          outputs: [
+            {
+              internalType: "enum IFunctions.RequestType",
+              name: "requestType",
+              type: "uint8",
+            },
+            {
+              internalType: "bool",
+              name: "isPending",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
           type: "function",
         },
         {
@@ -1006,24 +837,6 @@ const deployedContracts = {
             },
           ],
           name: "setAllowDestinationChain",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_sender",
-              type: "address",
-            },
-            {
-              internalType: "bool",
-              name: "allowed",
-              type: "bool",
-            },
-          ],
-          name: "setAllowListSender",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
@@ -1050,6 +863,19 @@ const deployedContracts = {
           inputs: [
             {
               internalType: "uint64",
+              name: "_version",
+              type: "uint64",
+            },
+          ],
+          name: "setDonHostedSecretsVersion",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint64",
               name: "_chainSelector",
               type: "uint64",
             },
@@ -1068,11 +894,11 @@ const deployedContracts = {
           inputs: [
             {
               internalType: "address",
-              name: "_internalFunctionContract",
+              name: "_externalContract",
               type: "address",
             },
           ],
-          name: "setInternalFunctionContract",
+          name: "setExternalContract",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
@@ -1127,6 +953,55 @@ const deployedContracts = {
         {
           inputs: [
             {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          name: "transactions",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "ccipMessageId",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "recipient",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              internalType: "address",
+              name: "token",
+              type: "address",
+            },
+            {
+              internalType: "uint64",
+              name: "srcChainSelector",
+              type: "uint64",
+            },
+            {
+              internalType: "bool",
+              name: "isConfirmed",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
               internalType: "address",
               name: "to",
               type: "address",
@@ -1168,31 +1043,27 @@ const deployedContracts = {
           stateMutability: "nonpayable",
           type: "function",
         },
-        {
-          stateMutability: "payable",
-          type: "receive",
-        },
       ],
       inheritedFunctions: {
-        allowListedDstChains: "contracts/CCIPInternal.sol",
-        allowListedSenderContracts: "contracts/CCIPInternal.sol",
-        allowListedSrcChains: "contracts/CCIPInternal.sol",
-        ccipReceive: "contracts/CCIPInternal.sol",
-        dstConceroCCIPContracts: "contracts/CCIPInternal.sol",
-        getRouter: "contracts/CCIPInternal.sol",
-        supportsInterface: "contracts/CCIPInternal.sol",
+        handleOracleFulfillment:
+          "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol",
         acceptOwnership:
-          "@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner.sol",
-        owner:
-          "@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner.sol",
+          "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol",
+        owner: "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol",
         transferOwnership:
-          "@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner.sol",
+          "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol",
+        ccipReceive:
+          "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol",
+        getRouter:
+          "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol",
+        supportsInterface:
+          "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol",
       },
     },
   },
   43113: {
     CFunctions: {
-      address: "0x4e6D462064140caB21eDf38626a87A50156177B0",
+      address: "0xf6133B51C9dE42861F07a5d7e524Ca6a4A991B42",
       abi: [
         {
           inputs: [
@@ -1705,6 +1576,19 @@ const deployedContracts = {
         {
           inputs: [
             {
+              internalType: "address",
+              name: "_externalFunctionsContract",
+              type: "address",
+            },
+          ],
+          name: "setExternalFunctionsContract",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
               internalType: "address payable",
               name: "_internalCcipContract",
               type: "address",
@@ -1781,679 +1665,6 @@ const deployedContracts = {
       inheritedFunctions: {
         handleOracleFulfillment:
           "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol",
-        acceptOwnership:
-          "@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner.sol",
-        owner:
-          "@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner.sol",
-        transferOwnership:
-          "@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner.sol",
-      },
-    },
-    ConceroCCIP: {
-      address: "0x12507d88030C61Daeb09DF8CA8564E68eeb39db4",
-      abi: [
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_link",
-              type: "address",
-            },
-            {
-              internalType: "address",
-              name: "_ccipRouter",
-              type: "address",
-            },
-          ],
-          stateMutability: "nonpayable",
-          type: "constructor",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint64",
-              name: "_dstChainSelector",
-              type: "uint64",
-            },
-          ],
-          name: "DestinationChainNotAllowed",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "owner",
-              type: "address",
-            },
-            {
-              internalType: "address",
-              name: "target",
-              type: "address",
-            },
-            {
-              internalType: "uint256",
-              name: "value",
-              type: "uint256",
-            },
-          ],
-          name: "FailedToWithdrawEth",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "InvalidReceiverAddress",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "router",
-              type: "address",
-            },
-          ],
-          name: "InvalidRouter",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint256",
-              name: "_fees",
-              type: "uint256",
-            },
-            {
-              internalType: "uint256",
-              name: "_feeToken",
-              type: "uint256",
-            },
-          ],
-          name: "NotEnoughBalance",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_sender",
-              type: "address",
-            },
-          ],
-          name: "NotFunctionContract",
-          type: "error",
-        },
-        {
-          inputs: [],
-          name: "NothingToWithdraw",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_sender",
-              type: "address",
-            },
-          ],
-          name: "SenderNotAllowed",
-          type: "error",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint64",
-              name: "_sourceChainSelector",
-              type: "uint64",
-            },
-          ],
-          name: "SourceChainNotAllowed",
-          type: "error",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "bytes32",
-              name: "ccipMessageId",
-              type: "bytes32",
-            },
-            {
-              indexed: false,
-              internalType: "uint64",
-              name: "srcChainSelector",
-              type: "uint64",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "sender",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "receiver",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "token",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
-            },
-          ],
-          name: "CCIPReceived",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "bytes32",
-              name: "ccipMessageId",
-              type: "bytes32",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "sender",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "recipient",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "token",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "uint64",
-              name: "dstChainSelector",
-              type: "uint64",
-            },
-          ],
-          name: "CCIPSent",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "address",
-              name: "from",
-              type: "address",
-            },
-            {
-              indexed: true,
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-          ],
-          name: "OwnershipTransferRequested",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "address",
-              name: "from",
-              type: "address",
-            },
-            {
-              indexed: true,
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-          ],
-          name: "OwnershipTransferred",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "bytes32",
-              name: "ccipMessageId",
-              type: "bytes32",
-            },
-            {
-              indexed: true,
-              internalType: "address",
-              name: "sender",
-              type: "address",
-            },
-            {
-              indexed: true,
-              internalType: "address",
-              name: "recipient",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "token",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "amount",
-              type: "uint256",
-            },
-          ],
-          name: "TXReleased",
-          type: "event",
-        },
-        {
-          inputs: [],
-          name: "acceptOwnership",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint64",
-              name: "",
-              type: "uint64",
-            },
-          ],
-          name: "allowListedDstChains",
-          outputs: [
-            {
-              internalType: "bool",
-              name: "",
-              type: "bool",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "",
-              type: "address",
-            },
-          ],
-          name: "allowListedSenderContracts",
-          outputs: [
-            {
-              internalType: "bool",
-              name: "",
-              type: "bool",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint64",
-              name: "",
-              type: "uint64",
-            },
-          ],
-          name: "allowListedSrcChains",
-          outputs: [
-            {
-              internalType: "bool",
-              name: "",
-              type: "bool",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              components: [
-                {
-                  internalType: "bytes32",
-                  name: "messageId",
-                  type: "bytes32",
-                },
-                {
-                  internalType: "uint64",
-                  name: "sourceChainSelector",
-                  type: "uint64",
-                },
-                {
-                  internalType: "bytes",
-                  name: "sender",
-                  type: "bytes",
-                },
-                {
-                  internalType: "bytes",
-                  name: "data",
-                  type: "bytes",
-                },
-                {
-                  components: [
-                    {
-                      internalType: "address",
-                      name: "token",
-                      type: "address",
-                    },
-                    {
-                      internalType: "uint256",
-                      name: "amount",
-                      type: "uint256",
-                    },
-                  ],
-                  internalType: "struct Client.EVMTokenAmount[]",
-                  name: "destTokenAmounts",
-                  type: "tuple[]",
-                },
-              ],
-              internalType: "struct Client.Any2EVMMessage",
-              name: "message",
-              type: "tuple",
-            },
-          ],
-          name: "ccipReceive",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint64",
-              name: "",
-              type: "uint64",
-            },
-          ],
-          name: "dstConceroCCIPContracts",
-          outputs: [
-            {
-              internalType: "address",
-              name: "",
-              type: "address",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [],
-          name: "getRouter",
-          outputs: [
-            {
-              internalType: "address",
-              name: "",
-              type: "address",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [],
-          name: "owner",
-          outputs: [
-            {
-              internalType: "address",
-              name: "",
-              type: "address",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "bytes32",
-              name: "_ccipMessageId",
-              type: "bytes32",
-            },
-            {
-              internalType: "address",
-              name: "_sender",
-              type: "address",
-            },
-            {
-              internalType: "address",
-              name: "_recipient",
-              type: "address",
-            },
-            {
-              internalType: "address",
-              name: "_token",
-              type: "address",
-            },
-            {
-              internalType: "uint256",
-              name: "_amount",
-              type: "uint256",
-            },
-          ],
-          name: "sendTokenToEoa",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint64",
-              name: "_dstChainSelector",
-              type: "uint64",
-            },
-            {
-              internalType: "bool",
-              name: "allowed",
-              type: "bool",
-            },
-          ],
-          name: "setAllowDestinationChain",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_sender",
-              type: "address",
-            },
-            {
-              internalType: "bool",
-              name: "allowed",
-              type: "bool",
-            },
-          ],
-          name: "setAllowListSender",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint64",
-              name: "_srcChainSelector",
-              type: "uint64",
-            },
-            {
-              internalType: "bool",
-              name: "allowed",
-              type: "bool",
-            },
-          ],
-          name: "setAllowSourceChain",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint64",
-              name: "_chainSelector",
-              type: "uint64",
-            },
-            {
-              internalType: "address",
-              name: "_dstConceroCCIPContract",
-              type: "address",
-            },
-          ],
-          name: "setDstConceroCCIPContract",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_internalFunctionContract",
-              type: "address",
-            },
-          ],
-          name: "setInternalFunctionContract",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_token",
-              type: "address",
-            },
-            {
-              internalType: "uint256",
-              name: "_amount",
-              type: "uint256",
-            },
-            {
-              internalType: "uint64",
-              name: "_destinationChainSelector",
-              type: "uint64",
-            },
-            {
-              internalType: "address",
-              name: "_receiver",
-              type: "address",
-            },
-          ],
-          name: "startTransaction",
-          outputs: [],
-          stateMutability: "payable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "bytes4",
-              name: "interfaceId",
-              type: "bytes4",
-            },
-          ],
-          name: "supportsInterface",
-          outputs: [
-            {
-              internalType: "bool",
-              name: "",
-              type: "bool",
-            },
-          ],
-          stateMutability: "pure",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-          ],
-          name: "transferOwnership",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_owner",
-              type: "address",
-            },
-          ],
-          name: "withdraw",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "_owner",
-              type: "address",
-            },
-            {
-              internalType: "address",
-              name: "_token",
-              type: "address",
-            },
-          ],
-          name: "withdrawToken",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          stateMutability: "payable",
-          type: "receive",
-        },
-      ],
-      inheritedFunctions: {
-        allowListedDstChains: "contracts/CCIPInternal.sol",
-        allowListedSenderContracts: "contracts/CCIPInternal.sol",
-        allowListedSrcChains: "contracts/CCIPInternal.sol",
-        ccipReceive: "contracts/CCIPInternal.sol",
-        dstConceroCCIPContracts: "contracts/CCIPInternal.sol",
-        getRouter: "contracts/CCIPInternal.sol",
-        supportsInterface: "contracts/CCIPInternal.sol",
         acceptOwnership:
           "@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner.sol",
         owner:
@@ -2465,7 +1676,7 @@ const deployedContracts = {
   },
   80001: {
     CFunctions: {
-      address: "0xfdf8aE2b4e1576f659BF0f46f8939A1F3FD11D95",
+      address: "0x08Dd854eb116F44329770b9725e28a2144E48CA6",
       abi: [
         {
           inputs: [
@@ -2978,6 +2189,19 @@ const deployedContracts = {
         {
           inputs: [
             {
+              internalType: "address",
+              name: "_externalFunctionsContract",
+              type: "address",
+            },
+          ],
+          name: "setExternalFunctionsContract",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
               internalType: "address payable",
               name: "_internalCcipContract",
               type: "address",
@@ -3063,7 +2287,7 @@ const deployedContracts = {
       },
     },
     ConceroCCIP: {
-      address: "0x4a558664f726c52aD67fc27c05b7965e265B5c88",
+      address: "0xca7f871aeA312C9b64271D9eB947AC2bED6c8BF1",
       abi: [
         {
           inputs: [

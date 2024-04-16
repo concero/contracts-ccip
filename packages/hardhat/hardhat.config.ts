@@ -20,7 +20,6 @@ import "./tasks";
 const enableGasReport = process.env.REPORT_GAS !== "false";
 
 // tdly.setup();
-
 const config: HardhatUserConfig = {
   tenderly: {
     username: "olegkron",

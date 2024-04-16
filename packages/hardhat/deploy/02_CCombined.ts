@@ -1,28 +1,27 @@
-import { CFunctions } from "../artifacts/contracts/CFunctions.sol";
+import { CCombined } from "../artifacts/contracts/CCombined.sol";
 import { DeployFunction, Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import chains from "../constants/CNetworks";
 
 /* run with: yarn deploy --network avalancheFuji --tags CFunctions */
-const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const deployCCombined: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
   // if (!chains[name]) throw new Error(`Chain ${name} not supported`);
-  const { functionsRouter, functionsDonId, chainSelector, functionsSubIds, donHostedSecretsVersion } = chains[name];
+  const { linkToken, ccipRouter, functionsRouter, functionsDonId, chainSelector, functionsSubIds, donHostedSecretsVersion } = chains[name];
 
-  const deployment = (await deploy("CFunctions", {
+  const deployment = (await deploy("CCombined", {
     from: deployer,
     log: true,
-    args: [functionsRouter, functionsDonId, functionsSubIds[0], donHostedSecretsVersion, chainSelector],
+    args: [linkToken, ccipRouter, functionsRouter, functionsDonId, functionsSubIds[0], donHostedSecretsVersion, chainSelector],
     autoMine: true,
   })) as Deployment;
 
-  // const cFunctions = await hre.ethers.getContract<CFunctions>("CFunctions", deployer);
-  if (name !== "hardhat") {
-    const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(functionsRouter, deployment.address, functionsSubIds[0]);
-    console.log(`CL Functions Consumer added successfully: ${CLFunctionsConsumerTXHash}`);
-  }
+  // const cCombined = await hre.ethers.getContract<CCombined>("CCombined", deployer);
+  // const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(functionsRouter, deployment.address, functionsSubIds[0]);
+  // console.log(`CL Functions Consumer added successfully: ${CLFunctionsConsumerTXHash}`);
+
   // exec(
   //   `npx hardhat verify --network polygonMumbai ${contractAddress} ${router} ${donId} ${functionsSubId} ${donHostedSecretsVersion} ${chainSelector}`,
   //   (error, stdout, stderr) => {
@@ -35,5 +34,5 @@ const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvi
   // );
 };
 
-export default deployCFunctions;
-deployCFunctions.tags = ["CFunctions"];
+export default deployCCombined;
+deployCCombined.tags = ["CCombined"];

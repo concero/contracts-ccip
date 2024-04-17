@@ -40,8 +40,8 @@ task("functions-simulate-script", "Executes the JavaScript source code locally")
   // .addOptionalParam("path", "Path to script file", `${__dirname}/../Functions-request-config.js`, types.string)
   .setAction(async (taskArgs, hre) => {
     execSync(`bunx hardhat functions-build-script --path SRC.js`, { stdio: "inherit" });
-    await simulate(path.join(__dirname, "./CLFScripts/dist/SRC.min.js"), [
-      "0x10eE6447Ae2bC0eBa7EE187e8754De2438833C7c", // contractAddress
+    await simulate(path.join(__dirname, "./CLFScripts/dist/SRC.js"), [
+      "0xdaEc71476BB407FBf0646758Df9fD99Bc70F0e90", // contractAddress
       "0xcfecf49b293e528d0cd9b18892c481d83346d38d535ebaf0086805115abf6aa2", // ccipMessageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient

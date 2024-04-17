@@ -80,6 +80,7 @@
     "regenerator-runtime": "^0.14.1",
     "solhint-plugin-chainlink-solidity": "git+https://github.com/smartcontractkit/chainlink-solhint-rules.git#v1.2.1",
     "swc": "^1.0.11",
+    "terser": "^5.30.3",
     "viem": "^2.9.18"
   }
 }

@@ -40,9 +40,15 @@
     "format:sol": "yarn workspace @se-2/hardhat format:sol",
     "gas-report": "yarn workspace @se-2/hardhat gas-report",
     "slither": "yarn workspace @se-2/hardhat slither",
-    "size-contracts": "yarn workspace @se-2/hardhat size-contracts"
+    "size-contracts": "yarn workspace @se-2/hardhat size-contracts",
+    "functions-simulate-script" : "yarn workspace @se-2/hardhat hardhat functions-simulate-script",
+    "functions-build-script": "yarn workspace @se-2/hardhat hardhat functions-build-script",
+    "functions-upload-secrets-don" : "yarn workspace @se-2/hardhat hardhat functions-upload-secrets-don",
+    "functions-pull-all-don-secrets" : "yarn workspace @se-2/hardhat hardhat functions-pull-all-don-secrets",
+    "functions-list-don-secrets" : "yarn workspace @se-2/hardhat hardhat functions-list-don-secrets",
+    "functions-sub-fund" : "yarn workspace @se-2/hardhat hardhat functions-sub-fund",
+    "functions-sub-add" : "yarn workspace @se-2/hardhat hardhat functions-sub-add"
   },
-  "packageManager": "yarn@3.2.3",
   "devDependencies": {
     "husky": "^8.0.1",
     "lint-staged": "^13.0.3"

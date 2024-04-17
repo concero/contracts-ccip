@@ -2,8 +2,8 @@ import { SubscriptionManager } from "@chainlink/functions-toolkit";
 import chains from "../../constants/CNetworks";
 import { task } from "hardhat/config";
 
-// run with: bunx hardhat functions-sub-add --subid 5810 --contract 0x... --network avalancheFuji
-task("functions-sub-add", "Adds a consumer contract to the Functions billing subscription")
+// run with: bunx hardhat functions-consumer-add --subid 5810 --contract 0x... --network avalancheFuji
+task("functions-consumer-add", "Adds a consumer contract to the Functions billing subscription")
   .addOptionalParam("subid", "Subscription ID", undefined)
   .addParam("contract", "Address of the Functions consumer contract to authorize for billing")
   .setAction(async taskArgs => {

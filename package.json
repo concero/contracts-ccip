@@ -47,7 +47,7 @@
     "functions-pull-all-don-secrets" : "yarn workspace @se-2/hardhat functions-pull-all-don-secrets",
     "functions-list-don-secrets" : "yarn workspace @se-2/hardhat functions-list-don-secrets",
     "functions-sub-fund" : "yarn workspace @se-2/hardhat functions-sub-fund",
-    "functions-sub-add" : "yarn workspace @se-2/hardhat functions-sub-add"
+    "functions-consumer-add" : "yarn workspace @se-2/hardhat functions-consumer-add"
   },
   "devDependencies": {
     "husky": "^8.0.1",

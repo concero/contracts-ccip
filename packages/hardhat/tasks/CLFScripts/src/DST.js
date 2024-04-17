@@ -1,5 +1,6 @@
 const ethers = await import('npm:ethers@6.10.0');
 const [srcContractAddress, messageId] = args;
+
 const chainMap = {
 	'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
 		url: `https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
@@ -50,7 +51,7 @@ const log = {
 };
 const decodedLog = contract.parseLog(log);
 const croppedArgs = args.slice(1);
-for (let i = 0; i < 7; i++) {
+for (let i = 0; i < 6; i++) {
 	if (decodedLog.args[i].toString().toLowerCase() !== croppedArgs[i].toString().toLowerCase()) {
 		throw new Error('Message ID does not match the event log');
 	}

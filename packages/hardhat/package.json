@@ -27,7 +27,7 @@
     "functions-pull-all-don-secrets" : "hardhat functions-pull-all-don-secrets",
     "functions-list-don-secrets" : "hardhat functions-list-don-secrets",
     "functions-sub-fund" : "hardhat functions-sub-fund",
-    "functions-sub-add" : "hardhat functions-sub-add"
+    "functions-consumer-add" : "hardhat functions-consumer-add"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.7.0",

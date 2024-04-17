@@ -11,7 +11,7 @@ const chainMap = {
 		url: `https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
 	},
 	'${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}': {
-		url: `https://base-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+		url: `https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
 	},
 	'${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}': {
 		url: `https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,

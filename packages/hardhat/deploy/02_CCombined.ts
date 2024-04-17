@@ -18,7 +18,7 @@ const deployCCombined: DeployFunction = async function (hre: HardhatRuntimeEnvir
     autoMine: true,
   })) as Deployment;
 
-  const cCombined = await hre.ethers.getContract<CCombined>("CCombined", deployer);
+  // const cCombined = await hre.ethers.getContract<CCombined>("CCombined", deployer);
   const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(functionsRouter, deployment.address, functionsSubIds[0]);
   console.log(`CL Functions Consumer added successfully: ${CLFunctionsConsumerTXHash}`);
 

@@ -50,7 +50,7 @@ function cleanupFile(content) {
   const index = content.indexOf(marker);
   if (index !== -1) content = content.substring(index + marker.length);
   return content
-    .replace(/^\/\/.*/gm, "") // Remove single-line comments
+    .replace(/^\s*\/\/.*$/gm, "") // Remove single-line comments that might be indented
     .replace(/\/\*[\s\S]*?\*\//g, "") // Remove multi-line comments
     .replace(/^\s*[\r\n]/gm, ""); // Remove empty lines
 }
@@ -74,10 +74,10 @@ task("functions-build-script", "Builds the JavaScript source code")
     try {
       let fileContent = fs.readFileSync(fileToBuild, "utf8");
       fileContent = replaceEnvironmentVariables(fileContent);
-      fileContent = cleanupFile(fileContent);
-      let minifiedFile = minifyFile(fileContent);
+      let cleanedUpFile = cleanupFile(fileContent);
+      let minifiedFile = minifyFile(cleanedUpFile);
 
-      saveProcessedFile(fileContent, fileToBuild);
+      saveProcessedFile(cleanedUpFile, fileToBuild);
       saveProcessedFile(minifiedFile, fileToBuild.replace(".js", ".min.js"));
     } catch (err) {
       console.error(`Error processing file ${fileToBuild}: ${err}`);

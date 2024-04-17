@@ -64,10 +64,11 @@ function minifyFile(content) {
 
 // run with: bunx hardhat functions-build-script --path ./CLFScripts/DST.js
 task("functions-build-script", "Builds the JavaScript source code")
+  .addOptionalParam("all", "Build all scripts", undefined, types.boolean)
   .addParam("path", "Path to Functions script file", undefined, types.string)
   .setAction(async (taskArgs, hre) => {
     if (!taskArgs.path) return console.error("Path to Functions script file is required.");
-    const fileToBuild = path.join(__dirname, taskArgs.path);
+    const fileToBuild = path.join(__dirname, "CLFScripts", "src", taskArgs.path);
     checkFileAccessibility(fileToBuild);
 
     try {

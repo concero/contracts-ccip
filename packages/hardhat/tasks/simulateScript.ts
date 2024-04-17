@@ -2,6 +2,7 @@ import { task } from "hardhat/config";
 import fs from "fs";
 import secrets from "../constants/CLFSecrets";
 import CLFSimulationConfig from "../constants/CLFSimulationConfig";
+import { execSync } from "child_process";
 
 const { simulateScript, decodeResult } = require("@chainlink/functions-toolkit");
 const path = require("path");
@@ -36,9 +37,10 @@ async function simulate(pathToFile, args) {
 
 /* run with: bunx hardhat functions-simulate-script */
 task("functions-simulate-script", "Executes the JavaScript source code locally")
-  // .addOptionalParam("configpath", "Path to Functions request config file", `${__dirname}/../Functions-request-config.js`, types.string)
+  // .addOptionalParam("path", "Path to script file", `${__dirname}/../Functions-request-config.js`, types.string)
   .setAction(async (taskArgs, hre) => {
-    await simulate(path.join(__dirname, "./CLFScripts/dist/SRC.js"), [
+    execSync(`bunx hardhat functions-build-script --path SRC.js`, { stdio: "inherit" });
+    await simulate(path.join(__dirname, "./CLFScripts/dist/SRC.min.js"), [
       "0x10eE6447Ae2bC0eBa7EE187e8754De2438833C7c", // contractAddress
       "0xcfecf49b293e528d0cd9b18892c481d83346d38d535ebaf0086805115abf6aa2", // ccipMessageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
@@ -49,6 +51,7 @@ task("functions-simulate-script", "Executes the JavaScript source code locally")
       process.env.CCIPBNM_ARBITRUM_SEPOLIA, // token
     ]);
 
+    // execSync(`bunx hardhat functions-build-script --path DST.js`, { stdio: "inherit" });
     // await simulate(path.join(__dirname, "./CLFScripts/dist/DST.min.js"), [
     //   "0x4200A2257C399C1223f8F3122971eb6fafaaA976", // srcContractAddress
     //   "0xb47d30d9660222539498f85cefc5337257f8e0ebeabbce312108f218555ced50", // messageId

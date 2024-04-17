@@ -1,3 +1,5 @@
+import { task } from "hardhat/config";
+
 const { types } = require("hardhat/config");
 import { networks } from "../../constants/CLFnetworks";
 

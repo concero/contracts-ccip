@@ -20,7 +20,14 @@
     "solhint:fix": "solhint --fix ./contracts/**/*.sol",
     "gas-report": "REPORT_GAS=true hardhat test --network hardhat",
     "slither": "slither .",
-    "size-contracts": "hardhat size-contracts"
+    "size-contracts": "hardhat size-contracts",
+    "functions-simulate-script" : "hardhat functions-simulate-script",
+    "functions-build-script" : "hardhat functions-build-script",
+    "functions-upload-secrets-don" : "hardhat functions-upload-secrets-don",
+    "functions-pull-all-don-secrets" : "hardhat functions-pull-all-don-secrets",
+    "functions-list-don-secrets" : "hardhat functions-list-don-secrets",
+    "functions-sub-fund" : "hardhat functions-sub-fund",
+    "functions-sub-add" : "hardhat functions-sub-add"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.7.0",

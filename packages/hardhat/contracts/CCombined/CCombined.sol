@@ -58,12 +58,14 @@ contract CCombined is FunctionsClient, ConfirmedOwner, IFunctions, CCIPReceiver,
     _;
   }
 
+  //todo: shall we remove combined modifiers and instead use two separate ones?
   modifier onlyAllowlistedSenderAndChainSelector(uint64 _sourceChainSelector, address _sender) {
     if (!allowListedSrcChains[_sourceChainSelector]) revert SourceChainNotAllowed(_sourceChainSelector);
     if (!allowlist[_sender]) revert SenderNotAllowed(_sender);
     _;
   }
 
+  //todo: we can remove this and simply check for address(0) in the function
   modifier validateReceiver(address _receiver) {
     if (_receiver == address(0)) revert InvalidReceiverAddress();
     _;
@@ -312,7 +314,7 @@ contract CCombined is FunctionsClient, ConfirmedOwner, IFunctions, CCIPReceiver,
     transaction.isConfirmed = true;
     emit TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
 
-    //todo use mapping later and maybe move/add to CLF
+    //todo: use token mapping either JS code instead of here
     if (transaction.token == 0xf1E3A5842EeEF51F2967b3F05D45DD4f4205FF40) {
       tokenToSend = 0xD21341536c5cF5EB1bcb58f6723cE26e8D8E90e4;
     } else if (transaction.token == 0xD21341536c5cF5EB1bcb58f6723cE26e8D8E90e4) {

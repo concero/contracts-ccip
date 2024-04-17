@@ -64,10 +64,6 @@ try {
 					headers: {'Content-Type': 'application/json'},
 					data: {jsonrpc: '2.0', id: 1, method, params},
 				});
-				console.log({
-					url: chainSelectors[dstChainSelector].url,
-					data: {jsonrpc: '2.0', id: 1, method, params},
-				});
 				return response.data.result;
 			},
 		}),
@@ -81,6 +77,5 @@ try {
 	});
 	return Functions.encodeString(hash);
 } catch (err) {
-	console.log(err);
 	return Functions.encodeString('error');
 }

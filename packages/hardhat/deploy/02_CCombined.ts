@@ -18,9 +18,9 @@ const deployCCombined: DeployFunction = async function (hre: HardhatRuntimeEnvir
     autoMine: true,
   })) as Deployment;
 
-  // const cCombined = await hre.ethers.getContract<CCombined>("CCombined", deployer);
-  // const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(functionsRouter, deployment.address, functionsSubIds[0]);
-  // console.log(`CL Functions Consumer added successfully: ${CLFunctionsConsumerTXHash}`);
+  const cCombined = await hre.ethers.getContract<CCombined>("CCombined", deployer);
+  const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(functionsRouter, deployment.address, functionsSubIds[0]);
+  console.log(`CL Functions Consumer added successfully: ${CLFunctionsConsumerTXHash}`);
 
   // exec(
   //   `npx hardhat verify --network polygonMumbai ${contractAddress} ${router} ${donId} ${functionsSubId} ${donHostedSecretsVersion} ${chainSelector}`,

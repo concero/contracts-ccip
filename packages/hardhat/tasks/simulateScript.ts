@@ -38,15 +38,14 @@ async function simulate(pathToFile, args) {
 task("functions-simulate-script", "Executes the JavaScript source code locally")
   // .addOptionalParam("configpath", "Path to Functions request config file", `${__dirname}/../Functions-request-config.js`, types.string)
   .setAction(async (taskArgs, hre) => {
-    console.log((await hre.ethers.getSigner()).address);
     await simulate(path.join(__dirname, "./CLFScripts/dist/SRC.js"), [
       "0x10eE6447Ae2bC0eBa7EE187e8754De2438833C7c", // contractAddress
       "0xcfecf49b293e528d0cd9b18892c481d83346d38d535ebaf0086805115abf6aa2", // ccipMessageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
       "1000000000000000000", // amount
-      process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA, // srcChainSelector
-      process.env.CL_CCIP_CHAIN_SELECTOR_FUJI, // dstChainSelector
+      process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA, // srcChainSelector
+      process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA, // dstChainSelector
       process.env.CCIPBNM_ARBITRUM_SEPOLIA, // token
     ]);
 

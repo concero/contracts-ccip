@@ -1,8 +1,13 @@
 // Purpose: To have a single source of truth for networks across the project
 import { type CNetwork } from "../types/CNetwork";
 import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
+
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
-const deployerPK = process.env.DEPLOYER_PRIVATE_KEY ?? "";
+const deployerPK = process.env.DEPLOYER_PRIVATE_KEY;
+
+if (!deployerPK) {
+  throw new Error("DEPLOYER_PRIVATE_KEY is not set");
+}
 
 export const networkEnvKeys = {
   // mainnets

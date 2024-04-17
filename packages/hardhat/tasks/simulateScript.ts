@@ -39,9 +39,9 @@ task("functions-simulate-script", "Executes the JavaScript source code locally")
   // .addOptionalParam("configpath", "Path to Functions request config file", `${__dirname}/../Functions-request-config.js`, types.string)
   .setAction(async (taskArgs, hre) => {
     console.log((await hre.ethers.getSigner()).address);
-    await simulate(path.join(__dirname, "./CLFScripts/SRC.js"), [
-      "0xa866BAcF9b8cf8beFC424Ec1EA253c0Ee7240118", // contractAddress
-      "0x1ab32e9ea01849048bfb59996e02f0082df9298550249d7c6cefec78e7e24cd8", // ccipMessageId
+    await simulate(path.join(__dirname, "./CLFScripts/dist/SRC.js"), [
+      "0x10eE6447Ae2bC0eBa7EE187e8754De2438833C7c", // contractAddress
+      "0xcfecf49b293e528d0cd9b18892c481d83346d38d535ebaf0086805115abf6aa2", // ccipMessageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
       "1000000000000000000", // amount
@@ -50,7 +50,7 @@ task("functions-simulate-script", "Executes the JavaScript source code locally")
       process.env.CCIPBNM_ARBITRUM_SEPOLIA, // token
     ]);
 
-    // await simulate(path.join(__dirname, "./CLFScripts/DST.min.js"), [
+    // await simulate(path.join(__dirname, "./CLFScripts/dist/DST.min.js"), [
     //   "0x4200A2257C399C1223f8F3122971eb6fafaaA976", // srcContractAddress
     //   "0xb47d30d9660222539498f85cefc5337257f8e0ebeabbce312108f218555ced50", // messageId
     //   "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender

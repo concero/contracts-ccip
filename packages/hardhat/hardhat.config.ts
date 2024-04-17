@@ -19,7 +19,7 @@ import "./tasks";
 // const etherscanApiKey = process.env.ETHERSCAN_API_KEY || "DNXJA8RX2Q3VZ4URQIWP7Z68CJXQZSC6AW";
 const enableGasReport = process.env.REPORT_GAS !== "false";
 
-// tdly.setup();
+tdly.setup();
 const config: HardhatUserConfig = {
   tenderly: {
     username: "olegkron",

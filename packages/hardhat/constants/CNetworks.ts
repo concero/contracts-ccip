@@ -140,6 +140,7 @@ const CNetworks: Record<string, CNetwork> = {
     ccipRouter: process.env.CL_CCIP_ROUTER_ARBITRUM_SEPOLIA,
   },
   baseSepolia: {
+    chainId: 84532,
     url: `https://base-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
     accounts: [deployerPK],
     functionsDonId: process.env.CLF_DONID_BASE_SEPOLIA,

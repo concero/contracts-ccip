@@ -38,27 +38,27 @@ async function simulate(pathToFile, args) {
 task("functions-simulate-script", "Executes the JavaScript source code locally")
   // .addOptionalParam("configpath", "Path to Functions request config file", `${__dirname}/../Functions-request-config.js`, types.string)
   .setAction(async (taskArgs, hre) => {
-    await simulate("./tasks/CLFScripts/dist/SRC.js", [
-      "0xa866BAcF9b8cf8beFC424Ec1EA253c0Ee7240118", // contractAddress
-      "0x1ab32e9ea01849048bfb59996e02f0082df9298550249d7c6cefec78e7e24cd8", // ccipMessageId
-      "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
-      "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
-      "1000000000000000000", // amount
-      process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA, // srcChainSelector
-      process.env.CL_CCIP_CHAIN_SELECTOR_FUJI, // dstChainSelector
-      process.env.CCIPBNM_ARBITRUM_SEPOLIA, // token
-    ]);
-
-    // await simulate(path.join(__dirname, "./CLFScripts/dist/DST.js"), [
-    //   "0x4200A2257C399C1223f8F3122971eb6fafaaA976", // srcContractAddress
-    //   "0xb47d30d9660222539498f85cefc5337257f8e0ebeabbce312108f218555ced50", // messageId
+    // await simulate(path.join(__dirname, "./CLFScripts/dist/SRC.js"), [
+    //   "0xa866BAcF9b8cf8beFC424Ec1EA253c0Ee7240118", // contractAddress
+    //   "0x1ab32e9ea01849048bfb59996e02f0082df9298550249d7c6cefec78e7e24cd8", // ccipMessageId
     //   "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
     //   "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
-    //   process.env.CCIPBNM_FUJI, // token
-    //   "1000000000000000", // amount
-    //   process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA, // dstChainSelector
-    //   process.env.CL_CCIP_CHAIN_SELECTOR_FUJI, // chain selector to get the logs from
+    //   "1000000000000000000", // amount
+    //   process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA, // srcChainSelector
+    //   process.env.CL_CCIP_CHAIN_SELECTOR_FUJI, // dstChainSelector
+    //   process.env.CCIPBNM_ARBITRUM_SEPOLIA, // token
     // ]);
+
+    await simulate(path.join(__dirname, "./CLFScripts/dist/DST.min.js"), [
+      "0x4200A2257C399C1223f8F3122971eb6fafaaA976", // srcContractAddress
+      "0xb47d30d9660222539498f85cefc5337257f8e0ebeabbce312108f218555ced50", // messageId
+      "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
+      "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
+      process.env.CCIPBNM_FUJI, // token
+      "1000000000000000", // amount
+      process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA, // dstChainSelector
+      process.env.CL_CCIP_CHAIN_SELECTOR_FUJI, // chain selector to get the logs from
+    ]);
   });
 
 export default {};

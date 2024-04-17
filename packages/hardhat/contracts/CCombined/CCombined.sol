@@ -314,10 +314,11 @@ contract CCombined is FunctionsClient, ConfirmedOwner, IFunctions, CCIPReceiver,
     emit TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
 
     //todo: use token mapping either JS code instead of here
-    if (transaction.token == 0xf1E3A5842EeEF51F2967b3F05D45DD4f4205FF40) {
-      tokenToSend = 0xD21341536c5cF5EB1bcb58f6723cE26e8D8E90e4;
-    } else if (transaction.token == 0xD21341536c5cF5EB1bcb58f6723cE26e8D8E90e4) {
-      tokenToSend = 0xf1E3A5842EeEF51F2967b3F05D45DD4f4205FF40;
+    // arb -> base,  base -> arb BNM
+    if (transaction.token == 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D) {
+      tokenToSend = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e;
+    } else if (transaction.token == 0x88A2d74F47a237a62e7A51cdDa67270CE381555e) {
+      tokenToSend = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D;
     }
     sendTokenToEoa(ccipMessageId, transaction.sender, transaction.recipient, tokenToSend, transaction.amount);
   }

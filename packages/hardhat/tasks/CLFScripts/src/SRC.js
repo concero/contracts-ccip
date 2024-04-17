@@ -73,7 +73,7 @@ try {
 		functionName: 'addUnconfirmedTX',
 		address: contractAddress,
 		args: [ccipMessageId, sender, recipient, amount, BigInt(srcChainSelector), token],
-		gas: 1000000n,
+		// gas: 1000000n,
 	});
 	return Functions.encodeString(hash);
 } catch (err) {

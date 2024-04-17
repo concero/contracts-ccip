@@ -25,7 +25,7 @@ const chainSelectors = {
 		chain: arbitrumSepolia,
 	},
 	'${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}': {
-		url: `https://base-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+		url: `https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
 		chain: baseSepolia,
 	},
 	'${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}': {
@@ -64,6 +64,10 @@ try {
 					headers: {'Content-Type': 'application/json'},
 					data: {jsonrpc: '2.0', id: 1, method, params},
 				});
+				console.log({
+					url: chainSelectors[dstChainSelector].url,
+					data: {jsonrpc: '2.0', id: 1, method, params},
+				});
 				return response.data.result;
 			},
 		}),
@@ -77,5 +81,6 @@ try {
 	});
 	return Functions.encodeString(hash);
 } catch (err) {
+	console.log(err);
 	return Functions.encodeString('error');
 }

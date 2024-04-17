@@ -56,7 +56,7 @@ try {
 		transport: custom({
 			async request({method, params}) {
 				if (method === 'eth_chainId') return chainSelectors[dstChainSelector].chain.id;
-				if (method === 'eth_estimateGas') return '0x3d090';
+				// if (method === 'eth_estimateGas') return '0x3d090';
 				if (method === 'eth_maxPriorityFeePerGas') return '0x3b9aca00';
 				const response = await Functions.makeHttpRequest({
 					url: chainSelectors[dstChainSelector].url,

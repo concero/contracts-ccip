@@ -30,7 +30,7 @@ async function simulate(pathToFile, args) {
     console.log("RESPONSE BYTES HEXSTRING:");
     console.log(responseBytesHexstring);
     console.log("RESPONSE BYTES DECODED:");
-    // console.log(decodeHexString(responseBytesHexstring));
+    console.log(decodeResult(responseBytesHexstring, "string"));
   }
 }
 

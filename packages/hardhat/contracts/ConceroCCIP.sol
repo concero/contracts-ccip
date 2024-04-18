@@ -1,26 +1,70 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {CCIPInternal} from "./CCIPInternal.sol";
+import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
-import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
-import {CFunctions} from "./CFunctions.sol";
+import {ICCIP} from "./IConcero.sol";
+import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
+import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import {ConceroFunctions} from "./ConceroFunctions.sol";
 
-contract ConceroCCIP is CCIPInternal, ConfirmedOwner {
-  address internal internalFunctionContract;
-  CFunctions private cFunctions;
+contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
+  address private immutable s_linkToken;
 
-  modifier onlyFunctionContract() {
-    if (msg.sender != internalFunctionContract) {
-      revert NotFunctionContract(msg.sender);
-    }
+  mapping(uint64 => bool) public allowListedDstChains;
+  mapping(uint64 => bool) public allowListedSrcChains;
+
+  modifier onlyAllowListedDstChain(uint64 _dstChainSelector) {
+    if (!allowListedDstChains[_dstChainSelector]) revert DestinationChainNotAllowed(_dstChainSelector);
     _;
   }
 
-  constructor(address _link, address _ccipRouter) CCIPInternal(_link, _ccipRouter) ConfirmedOwner(msg.sender) {}
+  //todo: shall we remove combined modifiers and instead use two separate ones?
+  modifier onlyAllowlistedSenderAndChainSelector(uint64 _sourceChainSelector, address _sender) {
+    if (!allowListedSrcChains[_sourceChainSelector]) revert SourceChainNotAllowed(_sourceChainSelector);
+    if (!allowlist[_sender]) revert SenderNotAllowed(_sender);
+    _;
+  }
 
-  receive() external payable {}
+  modifier validateReceiver(address _receiver) {
+    if (_receiver == address(0)) revert InvalidReceiverAddress();
+    _;
+  }
 
+  modifier tokenAmountSufficiency(address _token, uint256 _amount) {
+    require(IERC20(_token).balanceOf(msg.sender) >= _amount, "Insufficient balance");
+    _;
+  }
+
+  constructor(
+    address _functionsRouter,
+    uint64 _donHostedSecretsVersion,
+    bytes32 _donId,
+    uint64 _subscriptionId,
+    uint64 _chainSelector,
+    address _link,
+    address _ccipRouter
+  ) ConceroFunctions(_functionsRouter, _donHostedSecretsVersion, _donId, _subscriptionId, _chainSelector) CCIPReceiver(_ccipRouter) {
+    s_linkToken = _link;
+    allowlist[msg.sender] = true;
+  }
+
+  // setters
+  function addToAllowlist(address _walletAddress) external onlyOwner {
+    require(_walletAddress != address(0), "Invalid address");
+    require(!allowlist[_walletAddress], "Address already in allowlist");
+    allowlist[_walletAddress] = true;
+    emit AllowlistUpdated(_walletAddress, true);
+  }
+
+  function removeFromAllowlist(address _walletAddress) external onlyOwner {
+    require(_walletAddress != address(0), "Invalid address");
+    require(allowlist[_walletAddress], "Address not in allowlist");
+    allowlist[_walletAddress] = false;
+    emit AllowlistUpdated(_walletAddress, true);
+  }
+
+  //ccip
   function setAllowDestinationChain(uint64 _dstChainSelector, bool allowed) external onlyOwner {
     allowListedDstChains[_dstChainSelector] = allowed;
   }
@@ -29,65 +73,59 @@ contract ConceroCCIP is CCIPInternal, ConfirmedOwner {
     allowListedSrcChains[_srcChainSelector] = allowed;
   }
 
-  function setAllowListSender(address _sender, bool allowed) external onlyOwner {
-    allowListedSenderContracts[_sender] = allowed;
+  function setDstConceroContract(uint64 _chainSelector, address _dstConceroCCIPContract) external onlyOwner {
+    dstConceroContracts[_chainSelector] = _dstConceroCCIPContract;
   }
 
-  function setInternalFunctionContract(address _internalFunctionContract) external onlyOwner {
-    internalFunctionContract = _internalFunctionContract;
-    cFunctions = CFunctions(_internalFunctionContract);
+  //ccip internal
+  function _sendTokenPayLink(
+    uint64 _destinationChainSelector,
+    address _receiver,
+    address _token,
+    uint256 _amount
+  ) internal onlyAllowListedDstChain(_destinationChainSelector) validateReceiver(_receiver) returns (bytes32 messageId) {
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_receiver, _token, _amount, s_linkToken, _destinationChainSelector);
+
+    IRouterClient router = IRouterClient(this.getRouter());
+    uint256 fees = router.getFee(_destinationChainSelector, evm2AnyMessage);
+    if (fees > IERC20(s_linkToken).balanceOf(address(this))) revert NotEnoughBalance(IERC20(s_linkToken).balanceOf(address(this)), fees);
+    IERC20(s_linkToken).approve(address(router), fees);
+    IERC20(_token).approve(address(router), _amount);
+    messageId = router.ccipSend(_destinationChainSelector, evm2AnyMessage);
+    emit CCIPSent(messageId, msg.sender, _receiver, _token, _amount, _destinationChainSelector);
+    return messageId;
   }
 
-  function setDstConceroCCIPContract(uint64 _chainSelector, address _dstConceroCCIPContract) external onlyOwner {
-    dstConceroCCIPContracts[_chainSelector] = _dstConceroCCIPContract;
-  }
-
-  function startTransaction(
+  function _buildCCIPMessage(
+    address _receiver,
     address _token,
     uint256 _amount,
-    uint64 _destinationChainSelector,
-    address _receiver
-  ) external payable tokenAmountSufficiency(_token, _amount) {
-    // move to OZ save transfer
-    bool isOK = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
+    address _feeToken,
+    uint64 _destinationChainSelector
+  ) private view returns (Client.EVM2AnyMessage memory) {
+    Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
+    tokenAmounts[0] = Client.EVMTokenAmount({token: _token, amount: _amount});
 
-    require(isOK, "Transfer failed");
-
-    bytes32 ccipMessageId = _sendTokenPayLink(_destinationChainSelector, _receiver, _token, _amount);
-
-    if (address(cFunctions) == address(0)) {
-      revert("cFunctions address not set");
-    }
-    cFunctions.sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, _amount, _destinationChainSelector, _token);
+    return
+      Client.EVM2AnyMessage({
+        receiver: abi.encode(dstConceroContracts[_destinationChainSelector]),
+        data: abi.encode(_receiver),
+        tokenAmounts: tokenAmounts,
+        extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 200_000})),
+        feeToken: _feeToken
+      });
   }
 
-  function sendTokenToEoa(bytes32 _ccipMessageId, address _sender, address _recipient, address _token, uint256 _amount) external onlyFunctionContract {
-    bool isOk = IERC20(_token).transfer(_recipient, _amount);
-    require(isOk, "Transfer failed");
-    emit TXReleased(_ccipMessageId, _sender, _recipient, _token, _amount);
-  }
-
-  function withdraw(address _owner) public onlyOwner {
-    uint256 amount = address(this).balance;
-
-    if (amount == 0) {
-      revert NothingToWithdraw();
-    }
-
-    (bool sent, ) = _owner.call{value: amount}("");
-
-    if (!sent) {
-      revert FailedToWithdrawEth(msg.sender, _owner, amount);
-    }
-  }
-
-  function withdrawToken(address _owner, address _token) public onlyOwner {
-    uint256 amount = IERC20(_token).balanceOf(address(this));
-
-    if (amount == 0) {
-      revert NothingToWithdraw();
-    }
-
-    IERC20(_token).transfer(_owner, amount);
+  function _ccipReceive(
+    Client.Any2EVMMessage memory any2EvmMessage
+  ) internal override onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address))) {
+    emit CCIPReceived(
+      any2EvmMessage.messageId,
+      any2EvmMessage.sourceChainSelector,
+      abi.decode(any2EvmMessage.sender, (address)),
+      abi.decode(any2EvmMessage.data, (address)),
+      any2EvmMessage.destTokenAmounts[0].token,
+      any2EvmMessage.destTokenAmounts[0].amount
+    );
   }
 }

@@ -15,7 +15,6 @@ interface ICCIP {
 
   event CCIPSent(bytes32 indexed ccipMessageId, address sender, address recipient, address token, uint256 amount, uint64 dstChainSelector);
   event CCIPReceived(bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, address receiver, address token, uint256 amount);
-  event TXReleased(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, address token, uint256 amount);
 }
 
 interface IFunctions {
@@ -23,6 +22,7 @@ interface IFunctions {
   event UnconfirmedTXSent(bytes32 indexed ccipMessageId, address sender, address recipient, uint256 amount, address token, uint64 dstChainSelector);
   event TXConfirmed(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, uint256 amount, address token);
   event AllowlistUpdated(address indexed walletAddress, bool status);
+  event TXReleased(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, address token, uint256 amount);
 
   error NotAllowed();
   error TXAlreadyExists(bytes32 txHash, bool isConfirmed);

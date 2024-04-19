@@ -55,6 +55,7 @@ task("functions-simulate-script", "Executes the JavaScript source code locally")
     await simulate(path.join(__dirname, "./CLFScripts/dist/DST.min.js"), [
       "0x2caD5b2a63BD8732FeD256EF0Cd94F8E06C6398d", // srcContractAddress
       process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA, // srcChainSelector, chain to get logs from
+      "0x210bb76", // blockNumber
       // event params:
       "0x1227eac72a2a7927cd468408b6dbf71098eb6115d88e3f41dec50a2d906235f3", // messageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
@@ -62,7 +63,6 @@ task("functions-simulate-script", "Executes the JavaScript source code locally")
       process.env.CCIPBNM_ARBITRUM_SEPOLIA, // token
       "1000000000000000000", // amount
       process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA, // dstChainSelector
-      "0x210bb76", // blockNumber
     ]);
   });
 

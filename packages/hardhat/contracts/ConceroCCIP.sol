@@ -82,14 +82,12 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
     uint256 _amount
   ) internal onlyAllowListedDstChain(_destinationChainSelector) validateReceiver(_receiver) returns (bytes32 messageId) {
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_receiver, _token, _amount, s_linkToken, _destinationChainSelector);
-
     IRouterClient router = IRouterClient(this.getRouter());
     uint256 fees = router.getFee(_destinationChainSelector, evm2AnyMessage);
     if (fees > IERC20(s_linkToken).balanceOf(address(this))) revert NotEnoughBalance(IERC20(s_linkToken).balanceOf(address(this)), fees);
     IERC20(s_linkToken).approve(address(router), fees);
     IERC20(_token).approve(address(router), _amount);
     messageId = router.ccipSend(_destinationChainSelector, evm2AnyMessage);
-    emit CCIPSent(messageId, msg.sender, _receiver, _token, _amount, _destinationChainSelector);
     return messageId;
   }
 

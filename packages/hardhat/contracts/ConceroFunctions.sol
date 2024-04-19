@@ -149,10 +149,18 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     sendTokenToEoa(ccipMessageId, transaction.sender, transaction.recipient, getToken(transaction.token), transaction.amount);
   }
 
-  function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, address token) internal {
+  function sendUnconfirmedTX(
+    bytes32 ccipMessageId,
+    address sender,
+    address recipient,
+    uint256 amount,
+    uint64 dstChainSelector,
+    address token,
+    CCIPToken tokenType
+  ) internal {
     if (dstConceroContracts[dstChainSelector] == address(0)) revert("address not set");
 
-    string[] memory args = new string[](9);
+    string[] memory args = new string[](10);
     //todo: Strings usage may not be required here. Consider ways of passing data without converting to string
     args[0] = Strings.toHexString(dstConceroContracts[dstChainSelector]);
     args[1] = bytes32ToString(ccipMessageId);
@@ -162,7 +170,8 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     args[5] = Strings.toString(chainSelector);
     args[6] = Strings.toString(dstChainSelector);
     args[7] = Strings.toHexString(token);
-    args[8] = Strings.toHexString(block.number);
+    args[8] = Strings.toString(uint(tokenType));
+    args[9] = Strings.toHexString(block.number);
 
     bytes32 reqId = sendRequest(args, srcJsCode);
     requests[reqId].requestType = RequestType.addUnconfirmedTxDst;

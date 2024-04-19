@@ -29,16 +29,6 @@ interface IFunctions {
   error UnexpectedRequestID(bytes32);
   error NotCCIPContract(address);
 
-  struct Transaction {
-    bytes32 ccipMessageId;
-    address sender;
-    address recipient;
-    uint256 amount;
-    address token;
-    uint64 srcChainSelector;
-    bool isConfirmed;
-  }
-
   enum RequestType {
     addUnconfirmedTxDst,
     checkTxSrc
@@ -47,5 +37,15 @@ interface IFunctions {
   struct Request {
     RequestType requestType;
     bool isPending;
+  }
+
+  struct Transaction {
+    bytes32 ccipMessageId;
+    address sender;
+    address recipient;
+    uint256 amount;
+    address token; // move to enum
+    uint64 srcChainSelector;
+    bool isConfirmed;
   }
 }

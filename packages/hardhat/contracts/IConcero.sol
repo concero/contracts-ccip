@@ -58,7 +58,7 @@ interface IFunctions is IConceroCommon {
     address sender,
     address recipient,
     uint256 amount,
-    address token,
+    CCIPToken token,
     uint64 dstChainSelector
   );
   event TXConfirmed(

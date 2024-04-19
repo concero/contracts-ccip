@@ -1,5 +1,5 @@
 const ethers = await import('npm:ethers@6.10.0');
-const [srcContractAddress, messageId] = args;
+const [srcContractAddress, messageId, blockNumber] = args;
 
 const chainMap = {
 	'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
@@ -32,12 +32,18 @@ const params = {
 			{
 				address: srcContractAddress,
 				topics: [null, messageId],
-				fromBlock: 'earliest',
-				toBlock: 'latest',
+				fromBlock: blockNumber,
+				toBlock: blockNumber,
 			},
 		],
 	},
 };
+console.log({
+	address: srcContractAddress,
+	topics: [null, messageId],
+	fromBlock: blockNumber,
+	toBlock: blockNumber,
+});
 const response = await Functions.makeHttpRequest(params);
 const {data} = response;
 if (data?.error || !data?.result.length) {
@@ -50,6 +56,7 @@ const log = {
 	data: data.result[0].data,
 };
 const decodedLog = contract.parseLog(log);
+console.log(decodedLog);
 const croppedArgs = args.slice(1);
 for (let i = 0; i < 6; i++) {
 	if (decodedLog.args[i].toString().toLowerCase() !== croppedArgs[i].toString().toLowerCase()) {

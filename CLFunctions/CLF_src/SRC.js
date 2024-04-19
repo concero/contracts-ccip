@@ -16,7 +16,17 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 const {createWalletClient, custom} = await import('npm:viem');
 const {privateKeyToAccount} = await import('npm:viem/accounts');
 const {sepolia, arbitrumSepolia, baseSepolia, optimismSepolia, avalancheFuji} = await import('npm:viem/chains');
-const [contractAddress, ccipMessageId, sender, recipient, amount, srcChainSelector, dstChainSelector, token] = args;
+const [
+	contractAddress,
+	ccipMessageId,
+	sender,
+	recipient,
+	amount,
+	srcChainSelector,
+	dstChainSelector,
+	token,
+	blockNumber,
+] = args;
 
 const chainSelectors = {
 	'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
@@ -51,6 +61,7 @@ const abi = [
 			{type: 'uint256', name: 'amount'},
 			{type: 'uint64', name: 'srcChainSelector'},
 			{type: 'address', name: 'token'},
+			{type: 'uint256', name: 'blockNumber'},
 		],
 		outputs: [],
 	},
@@ -79,7 +90,7 @@ try {
 		abi,
 		functionName: 'addUnconfirmedTX',
 		address: contractAddress,
-		args: [ccipMessageId, sender, recipient, amount, BigInt(srcChainSelector), token],
+		args: [ccipMessageId, sender, recipient, amount, BigInt(srcChainSelector), token, BigInt(blockNumber)],
 		gas: 1000000n,
 	});
 	return Functions.encodeString(hash);

@@ -2,25 +2,15 @@
 pragma solidity ^0.8.19;
 
 import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
+import {IConceroCommon} from "./IConcero.sol";
 
-contract ConceroCommon is ConfirmedOwner {
+contract ConceroCommon is ConfirmedOwner, IConceroCommon {
   uint64 internal immutable chainSelector;
   Chain internal immutable chainIndex;
   mapping(uint64 => address) internal dstConceroContracts;
   mapping(address => bool) internal allowlist; //todo: remove this, instead use allowedSenderContracts & allowedDstContracts.
   // ideally combine allowlisted contracts for both src and destination chains into one mapping
   // like so : mapping[uint64][address] public allowedContracts;
-
-  enum CCIPToken {
-    bnm,
-    usdc
-  }
-
-  enum Chain {
-    arb,
-    base,
-    opt
-  }
 
   constructor(uint64 _chainSelector, uint _chainIndex) ConfirmedOwner(msg.sender) {
     chainSelector = _chainSelector;
@@ -31,7 +21,7 @@ contract ConceroCommon is ConfirmedOwner {
     dstConceroContracts[_chainSelector] = _dstConceroCCIPContract;
   }
 
-  function getToken(CCIPToken token) internal pure returns (address) {
+  function getToken(CCIPToken token) internal view returns (address) {
     address[3][2] memory tokens;
 
     // Initialize BNM addresses

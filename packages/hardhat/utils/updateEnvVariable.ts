@@ -27,5 +27,6 @@ function updateEnvVariable(key: string, newValue: string, envPath: string = "../
   });
 
   writeFileSync(filePath, newLines.join("\n"));
+  process.env[key] = newValue;
 }
 export default updateEnvVariable;

@@ -9,7 +9,17 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 const {createWalletClient, custom} = await import('npm:viem');
 const {privateKeyToAccount} = await import('npm:viem/accounts');
 const {sepolia, arbitrumSepolia, baseSepolia, optimismSepolia, avalancheFuji} = await import('npm:viem/chains');
-const [contractAddress, ccipMessageId, sender, recipient, amount, srcChainSelector, dstChainSelector, token] = args;
+const [
+	contractAddress,
+	ccipMessageId,
+	sender,
+	recipient,
+	amount,
+	srcChainSelector,
+	dstChainSelector,
+	token,
+	blockNumber,
+] = args;
 
 const chainSelectors = {
 	'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
@@ -44,6 +54,7 @@ const abi = [
 			{type: 'uint256', name: 'amount'},
 			{type: 'uint64', name: 'srcChainSelector'},
 			{type: 'address', name: 'token'},
+			{type: 'uint256', name: 'blockNumber'},
 		],
 		outputs: [],
 	},
@@ -56,6 +67,7 @@ try {
 		transport: custom({
 			async request({method, params}) {
 				if (method === 'eth_chainId') return chainSelectors[dstChainSelector].chain.id;
+				// if (method === 'eth_estimateGas') return '0x3d090';
 				if (method === 'eth_maxPriorityFeePerGas') return '0x3b9aca00';
 				const response = await Functions.makeHttpRequest({
 					url: chainSelectors[dstChainSelector].url,
@@ -71,7 +83,16 @@ try {
 		abi,
 		functionName: 'addUnconfirmedTX',
 		address: contractAddress,
-		args: [ccipMessageId, sender, recipient, amount, BigInt(srcChainSelector), BigInt(dstChainSelector), token],
+		args: [
+			ccipMessageId,
+			sender,
+			recipient,
+			amount,
+			BigInt(srcChainSelector),
+			BigInt(dstChainSelector),
+			token,
+			BigInt(blockNumber),
+		],
 	});
 	return Functions.encodeString(hash);
 } catch (err) {

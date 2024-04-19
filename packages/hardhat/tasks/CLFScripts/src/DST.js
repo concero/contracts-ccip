@@ -1,7 +1,6 @@
 const ethers = await import('npm:ethers@6.10.0');
-const [srcContractAddress, srcChainSelector, ...eventArgs] = args;
-const [messageId, sender, recipient, token, amount, dstChainSelector, blockNumber] = eventArgs;
-
+const [srcContractAddress, srcChainSelector, blockNumber, ...eventArgs] = args;
+const messageId = eventArgs[0];
 const chainMap = {
 	'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
 		url: `https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
@@ -51,14 +50,10 @@ const log = {
 	data: data.result[0].data,
 };
 const decodedLog = contract.parseLog(log);
-console.log(decodedLog);
-
-for (let i = 0; i < 6; i++) {
+for (let i = 0; i < decodedLog.length; i++) {
 	console.log(decodedLog.args[i].toString().toLowerCase(), eventArgs[i].toString().toLowerCase());
 	if (decodedLog.args[i].toString().toLowerCase() !== eventArgs[i].toString().toLowerCase()) {
 		throw new Error('Message ID does not match the event log');
 	}
 }
 return Functions.encodeUint256(BigInt(messageId));
-
-// command for removing \n symbols:  sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/ /g' -e 's/\t/ /g' DST.js

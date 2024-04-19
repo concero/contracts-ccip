@@ -90,7 +90,7 @@ try {
 			amount,
 			BigInt(srcChainSelector),
 			BigInt(dstChainSelector),
-			token,
+			parseInt(token),
 			BigInt(blockNumber),
 		],
 	});

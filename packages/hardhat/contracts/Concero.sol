@@ -38,7 +38,7 @@ contract Concero is ConceroCCIP {
     require(isOK, "Transfer failed");
     bytes32 ccipMessageId = _sendTokenPayLink(_destinationChainSelector, _receiver, _token, _amount);
     emit CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, _amount, _destinationChainSelector);
-    sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, _amount, _destinationChainSelector, _token, _tokenType);
+    sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, _amount, _destinationChainSelector, _tokenType);
   }
 
   function withdraw(address _owner) public onlyOwner {

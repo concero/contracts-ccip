@@ -8,12 +8,12 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
   const { deploy } = hre.deployments;
   const { name } = hre.network;
   // if (!chains[name]) throw new Error(`Chain ${name} not supported`);
-  const { linkToken, ccipRouter, functionsRouter, functionsDonId, chainSelector, functionsSubIds, donHostedSecretsVersion } = chains[name];
+  const { linkToken, ccipRouter, functionsRouter, functionsDonId, chainSelector, functionsSubIds, donHostedSecretsVersion, conceroChainIndex } = chains[name];
 
   const deployment = (await deploy("Concero", {
     from: deployer,
     log: true,
-    args: [functionsRouter, donHostedSecretsVersion, functionsDonId, functionsSubIds[0], chainSelector, linkToken, ccipRouter],
+    args: [functionsRouter, donHostedSecretsVersion, functionsDonId, functionsSubIds[0], chainSelector, conceroChainIndex, linkToken, ccipRouter],
     autoMine: true,
   })) as Deployment;
 

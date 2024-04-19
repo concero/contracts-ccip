@@ -54,7 +54,7 @@ task("functions-simulate-script", "Executes the JavaScript source code locally")
     execSync(`bunx hardhat functions-build-script --path DST.js`, { stdio: "inherit" });
     await simulate(path.join(__dirname, "./CLFScripts/dist/DST.min.js"), [
       "0x2caD5b2a63BD8732FeD256EF0Cd94F8E06C6398d", // srcContractAddress
-      "0x1fdb07c3479b450a8bdf7e3237c4e6fc933fc3dc9090e81a4adad63e66027839", // messageId
+      "0x1227eac72a2a7927cd468408b6dbf71098eb6115d88e3f41dec50a2d906235f3", // messageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
       process.env.CCIPBNM_ARBITRUM_SEPOLIA, // token

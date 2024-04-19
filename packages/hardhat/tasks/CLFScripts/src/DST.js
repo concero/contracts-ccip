@@ -51,7 +51,6 @@ const log = {
 };
 const decodedLog = contract.parseLog(log);
 for (let i = 0; i < decodedLog.length; i++) {
-	console.log(decodedLog.args[i].toString().toLowerCase(), eventArgs[i].toString().toLowerCase());
 	if (decodedLog.args[i].toString().toLowerCase() !== eventArgs[i].toString().toLowerCase()) {
 		throw new Error('Message ID does not match the event log');
 	}

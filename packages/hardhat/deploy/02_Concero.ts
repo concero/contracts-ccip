@@ -7,7 +7,9 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
-  // if (!chains[name]) throw new Error(`Chain ${name} not supported`);
+  if (!chains[name]) {
+    throw new Error(`Chain ${name} not supported`);
+  }
   const { linkToken, ccipRouter, functionsRouter, functionsDonId, chainSelector, functionsSubIds, donHostedSecretsVersion, conceroChainIndex } = chains[name];
 
   const deployment = (await deploy("Concero", {
@@ -22,17 +24,6 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
     const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(functionsRouter, deployment.address, functionsSubIds[0]);
     console.log(`CL Functions Consumer added successfully: ${CLFunctionsConsumerTXHash}`);
   }
-
-  // exec(
-  //   `npx hardhat verify --network polygonMumbai ${contractAddress} ${router} ${donId} ${functionsSubId} ${donHostedSecretsVersion} ${chainSelector}`,
-  //   (error, stdout, stderr) => {
-  //     if (error) {
-  //       console.error(`ERROR: ${error}`);
-  //       return;
-  //     }
-  //     console.log(`SUCCESS`);
-  //   },
-  // );
 };
 
 export default deployConcero;

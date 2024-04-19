@@ -1,5 +1,6 @@
 const ethers = await import('npm:ethers@6.10.0');
-const [srcContractAddress, messageId, blockNumber] = args;
+const [srcContractAddress, srcChainSelector, ...eventArgs] = args;
+const [messageId, sender, recipient, token, amount, dstChainSelector, blockNumber] = eventArgs;
 
 const chainMap = {
 	'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
@@ -19,7 +20,7 @@ const chainMap = {
 	},
 };
 const params = {
-	url: chainMap[args[7]].url,
+	url: chainMap[srcChainSelector].url,
 	method: 'POST',
 	headers: {
 		'Content-Type': 'application/json',
@@ -38,14 +39,8 @@ const params = {
 		],
 	},
 };
-console.log({
-	address: srcContractAddress,
-	topics: [null, messageId],
-	fromBlock: blockNumber,
-	toBlock: blockNumber,
-});
-const response = await Functions.makeHttpRequest(params);
-const {data} = response;
+
+const {data} = await Functions.makeHttpRequest(params);
 if (data?.error || !data?.result.length) {
 	throw new Error('Logs not found');
 }
@@ -57,9 +52,10 @@ const log = {
 };
 const decodedLog = contract.parseLog(log);
 console.log(decodedLog);
-const croppedArgs = args.slice(1);
+
 for (let i = 0; i < 6; i++) {
-	if (decodedLog.args[i].toString().toLowerCase() !== croppedArgs[i].toString().toLowerCase()) {
+	console.log(decodedLog.args[i].toString().toLowerCase(), eventArgs[i].toString().toLowerCase());
+	if (decodedLog.args[i].toString().toLowerCase() !== eventArgs[i].toString().toLowerCase()) {
 		throw new Error('Message ID does not match the event log');
 	}
 }

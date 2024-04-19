@@ -86,13 +86,14 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConfirmedOwner {
     uint256 amount,
     uint64 srcChainSelector,
     uint64 dstChainSelector,
-    address token
+    address token,
+    uint256 blockNumber
   ) external onlyAllowListedSenders {
     Transaction storage transaction = transactions[ccipMessageId];
     if (transaction.sender != address(0)) revert TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
     transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
 
-    string[] memory args = new string[](8);
+    string[] memory args = new string[](9);
     /*
     todo: Strings usage may not be required here. Consider ways of passing data without converting to string
       like so:
@@ -116,6 +117,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConfirmedOwner {
     args[5] = Strings.toString(amount);
     args[6] = Strings.toString(chainSelector);
     args[7] = Strings.toString(srcChainSelector);
+    args[8] = Strings.toHexString(blockNumber);
 
     bytes32 reqId = sendRequest(args, dstJsCode);
     requests[reqId].requestType = RequestType.checkTxSrc;
@@ -166,7 +168,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConfirmedOwner {
   function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, address token) internal {
     if (dstConceroContracts[dstChainSelector] == address(0)) revert("address not set");
 
-    string[] memory args = new string[](8);
+    string[] memory args = new string[](9);
     //todo: Strings usage may not be required here. Consider ways of passing data without converting to string
     args[0] = Strings.toHexString(dstConceroContracts[dstChainSelector]);
     args[1] = bytes32ToString(ccipMessageId);
@@ -176,6 +178,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConfirmedOwner {
     args[5] = Strings.toString(chainSelector);
     args[6] = Strings.toString(dstChainSelector);
     args[7] = Strings.toHexString(token);
+    args[8] = Strings.toHexString(block.number);
 
     bytes32 reqId = sendRequest(args, srcJsCode);
     requests[reqId].requestType = RequestType.addUnconfirmedTxDst;

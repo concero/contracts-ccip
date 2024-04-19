@@ -71,7 +71,7 @@ try {
 		abi,
 		functionName: 'addUnconfirmedTX',
 		address: contractAddress,
-		args: [ccipMessageId, sender, recipient, amount, BigInt(srcChainSelector), token],
+		args: [ccipMessageId, sender, recipient, amount, BigInt(srcChainSelector), BigInt(dstChainSelector), token],
 	});
 	return Functions.encodeString(hash);
 } catch (err) {

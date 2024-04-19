@@ -4,12 +4,12 @@ pragma solidity ^0.8.19;
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol";
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {IFunctions} from "./IConcero.sol";
 import {Concero} from "./Concero.sol";
+import {ConceroCommon} from "./ConceroCommon.sol";
 
-contract ConceroFunctions is FunctionsClient, IFunctions, ConfirmedOwner {
+contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   using FunctionsRequest for FunctionsRequest.Request;
   using Strings for uint256;
   using Strings for uint64;
@@ -29,13 +29,6 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConfirmedOwner {
   string private constant dstJsCode =
     "const ethers = await import('npm:ethers@6.10.0'); const [srcContractAddress, messageId] = args; const chainMap = { '14767482510784806043': { url: `https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`, }, '16015286601757825753': { url: `https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, }, '3478487238524512106': { url: `https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, }, '10344971235874465080': { url: `https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`, }, '5224473277236331295': { url: `https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, }, }; const params = { url: chainMap[args[7]].url, method: 'POST', headers: { 'Content-Type': 'application/json', }, data: { jsonrpc: '2.0', method: 'eth_getLogs', id: 1, params: [ { address: srcContractAddress, topics: [null, messageId], fromBlock: 'earliest', toBlock: 'latest', }, ], }, }; const response = await Functions.makeHttpRequest(params); const {data} = response; if (data?.error || !data?.result.length) { throw new Error('Logs not found'); } const abi = ['event CCIPSent(bytes32 indexed, address, address, address, uint256, uint64)']; const contract = new ethers.Interface(abi); const log = { topics: [ethers.id('CCIPSent(bytes32,address,address,address,uint256,uint64)'), data.result[0].topics[1]], data: data.result[0].data, }; const decodedLog = contract.parseLog(log); const croppedArgs = args.slice(1); for (let i = 0; i < 6; i++) { if (decodedLog.args[i].toString().toLowerCase() !== croppedArgs[i].toString().toLowerCase()) { throw new Error('Message ID does not match the event log'); } } return Functions.encodeUint256(BigInt(messageId));";
 
-  // common vars
-  mapping(uint64 => address) internal dstConceroContracts;
-  uint64 private immutable chainSelector;
-  mapping(address => bool) internal allowlist; //todo: remove this, instead use allowedSenderContracts & allowedDstContracts.
-  // ideally combine allowlisted contracts for both src and destination chains into one mapping
-  // like so : mapping[uint64][address] public allowedContracts;
-
   modifier onlyAllowListedSenders() {
     if (!allowlist[msg.sender]) revert NotAllowed();
     _;
@@ -46,12 +39,12 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConfirmedOwner {
     uint64 _donHostedSecretsVersion,
     bytes32 _donId,
     uint64 _subscriptionId,
-    uint64 _chainSelector
-  ) FunctionsClient(_functionsRouter) ConfirmedOwner(msg.sender) {
+    uint64 _chainSelector,
+    uint _chainIndex
+  ) FunctionsClient(_functionsRouter) ConceroCommon(_chainSelector, _chainIndex) {
     donId = _donId;
     subscriptionId = _subscriptionId;
     donHostedSecretsVersion = _donHostedSecretsVersion;
-    chainSelector = _chainSelector;
   }
 
   // setters
@@ -86,7 +79,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConfirmedOwner {
     uint256 amount,
     uint64 srcChainSelector,
     uint64 dstChainSelector,
-    address token,
+    CCIPToken token,
     uint256 blockNumber
   ) external onlyAllowListedSenders {
     Transaction storage transaction = transactions[ccipMessageId];
@@ -113,7 +106,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConfirmedOwner {
     args[1] = bytes32ToString(ccipMessageId);
     args[2] = Strings.toHexString(sender);
     args[3] = Strings.toHexString(recipient);
-    args[4] = Strings.toHexString(token);
+    args[4] = Strings.toString(uint(token));
     args[5] = Strings.toString(amount);
     args[6] = Strings.toString(chainSelector);
     args[7] = Strings.toString(srcChainSelector);
@@ -147,22 +140,13 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConfirmedOwner {
   }
 
   function _confirmTX(bytes32 ccipMessageId) internal {
-    Transaction storage transaction = transactions[ccipMessageId];
-    address tokenToSend;
+    Transaction memory transaction = transactions[ccipMessageId];
     require(transaction.sender != address(0), "TX does not exist");
     require(!transaction.isConfirmed, "TX already confirmed");
     transaction.isConfirmed = true;
     emit TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
 
-    //todo: use token mapping either JS code instead of here
-    // arb -> base,  base -> arb BNM
-    if (transaction.token == 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D) {
-      tokenToSend = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e;
-    } else if (transaction.token == 0x88A2d74F47a237a62e7A51cdDa67270CE381555e) {
-      tokenToSend = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D;
-    }
-
-    sendTokenToEoa(ccipMessageId, transaction.sender, transaction.recipient, tokenToSend, transaction.amount);
+    sendTokenToEoa(ccipMessageId, transaction.sender, transaction.recipient, getToken(transaction.token), transaction.amount);
   }
 
   function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, address token) internal {

@@ -79,7 +79,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     uint256 amount,
     uint64 srcChainSelector,
     uint64 dstChainSelector,
-    address token,
+    CCIPToken token,
     uint256 blockNumber
   ) external onlyAllowListedSenders {
     Transaction storage transaction = transactions[ccipMessageId];
@@ -106,7 +106,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     args[1] = bytes32ToString(ccipMessageId);
     args[2] = Strings.toHexString(sender);
     args[3] = Strings.toHexString(recipient);
-    args[4] = Strings.toHexString(token);
+    args[4] = Strings.toString(uint(token));
     args[5] = Strings.toString(amount);
     args[6] = Strings.toString(chainSelector);
     args[7] = Strings.toString(srcChainSelector);
@@ -140,7 +140,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   }
 
   function _confirmTX(bytes32 ccipMessageId) internal {
-    Transaction storage transaction = transactions[ccipMessageId];
+    Transaction memory transaction = transactions[ccipMessageId];
     require(transaction.sender != address(0), "TX does not exist");
     require(!transaction.isConfirmed, "TX already confirmed");
     transaction.isConfirmed = true;

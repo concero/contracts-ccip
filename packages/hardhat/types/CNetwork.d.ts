@@ -14,6 +14,7 @@ export type CLFNetwork = {
   gatewayUrls: string[];
   confirmations: number;
   chainSelector: envString;
+  conceroChainIndex: number;
   donHostedSecretsVersion: envString;
   linkToken: envString;
   linkPriceFeed: envString;

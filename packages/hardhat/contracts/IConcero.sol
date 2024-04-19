@@ -16,7 +16,7 @@ interface IConceroCommon {
   }
 }
 
-interface ICCIP {
+interface ICCIP is IConceroCommon {
   error DestinationChainNotAllowed(uint64 _dstChainSelector);
   error InvalidReceiverAddress();
   error NotEnoughBalance(uint256 _fees, uint256 _feeToken);
@@ -30,7 +30,7 @@ interface ICCIP {
     bytes32 indexed ccipMessageId,
     address sender,
     address recipient,
-    address token,
+    CCIPToken token,
     uint256 amount,
     uint64 dstChainSelector
   );

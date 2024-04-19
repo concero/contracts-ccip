@@ -28,6 +28,7 @@ contract Concero is ConceroCCIP {
 
   function startTransaction(
     address _token,
+    CCIPToken _tokenType,
     uint256 _amount,
     uint64 _destinationChainSelector,
     address _receiver
@@ -36,7 +37,8 @@ contract Concero is ConceroCCIP {
     bool isOK = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
     require(isOK, "Transfer failed");
     bytes32 ccipMessageId = _sendTokenPayLink(_destinationChainSelector, _receiver, _token, _amount);
-    sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, _amount, _destinationChainSelector, _token);
+    emit CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, _amount, _destinationChainSelector);
+    sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, _amount, _destinationChainSelector, _token, _tokenType);
   }
 
   function withdraw(address _owner) public onlyOwner {

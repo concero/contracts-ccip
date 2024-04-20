@@ -62,7 +62,7 @@ function minifyFile(content) {
     .replace(/\s\s+/g, " "); // Replace multiple spaces with a single space
 }
 
-// run with: bunx hardhat functions-build-script --path ./CLFScripts/DST.js
+// run with: bunx hardhat functions-build-script --path DST.js
 task("functions-build-script", "Builds the JavaScript source code")
   .addOptionalParam("all", "Build all scripts", undefined, types.boolean)
   .addParam("path", "Path to Functions script file", undefined, types.string)

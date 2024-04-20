@@ -38,15 +38,14 @@ const params = {
 		],
 	},
 };
-
 const {data} = await Functions.makeHttpRequest(params);
 if (data?.error || !data?.result.length) {
 	throw new Error('Logs not found');
 }
-const abi = ['event CCIPSent(bytes32 indexed, address, address, address, uint256, uint64)'];
+const abi = ['event CCIPSent(bytes32 indexed, address, address, uint8, uint256, uint64)'];
 const contract = new ethers.Interface(abi);
 const log = {
-	topics: [ethers.id('CCIPSent(bytes32,address,address,address,uint256,uint64)'), data.result[0].topics[1]],
+	topics: [ethers.id('CCIPSent(bytes32,address,address,uint8,uint256,uint64)'), data.result[0].topics[1]],
 	data: data.result[0].data,
 };
 const decodedLog = contract.parseLog(log);

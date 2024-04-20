@@ -15,8 +15,8 @@ contract ConceroCommon is ConfirmedOwner, IConceroCommon {
     chainIndex = Chain(_chainIndex);
   }
 
-  function setConceroContract(uint64 _chainSelector, address _dstConceroCCIPContract) external onlyOwner {
-    conceroContracts[_chainSelector] = _dstConceroCCIPContract;
+  function setConceroContract(uint64 _chainSelector, address _conceroContract) external onlyOwner {
+    conceroContracts[_chainSelector] = _conceroContract;
   }
 
   function setConceroMessenger(address _walletAddress) external onlyOwner {

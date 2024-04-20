@@ -11,20 +11,15 @@ import {ConceroFunctions} from "./ConceroFunctions.sol";
 contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
   address private immutable s_linkToken;
 
-  mapping(uint64 => bool) public allowListedDstChains;
-  mapping(uint64 => bool) public allowListedSrcChains;
-
-  modifier onlyAllowListedDstChain(uint64 _dstChainSelector) {
-    if (!allowListedDstChains[_dstChainSelector]) revert DestinationChainNotAllowed(_dstChainSelector);
+  modifier onlyAllowListedChain(uint64 _chainSelector) {
+    if (conceroContracts[_chainSelector] == address(0)) revert ChainNotAllowed(_chainSelector);
     _;
   }
 
   //todo: shall we remove combined modifiers and instead use two separate ones?
-  modifier onlyAllowlistedSenderAndChainSelector(uint64 _sourceChainSelector, address _sender) {
-    if (!allowListedSrcChains[_sourceChainSelector]) revert SourceChainNotAllowed(_sourceChainSelector);
-    if (conceroContracts[_sourceChainSelector] == _sender) {
-      revert SenderNotAllowed(_sender);
-    }
+  modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
+    if (conceroContracts[_chainSelector] == address(0)) revert SourceChainNotAllowed(_chainSelector);
+    if (conceroContracts[_chainSelector] != _sender) revert SenderNotAllowed(_sender);
     _;
   }
 
@@ -52,22 +47,12 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
     messengerContracts[msg.sender] = true;
   }
 
-  // setters
-  //ccip
-  function setAllowDestinationChain(uint64 _dstChainSelector, bool allowed) external onlyOwner {
-    allowListedDstChains[_dstChainSelector] = allowed;
-  }
-
-  function setAllowSourceChain(uint64 _srcChainSelector, bool allowed) external onlyOwner {
-    allowListedSrcChains[_srcChainSelector] = allowed;
-  }
-
   function _sendTokenPayLink(
     uint64 _destinationChainSelector,
     address _receiver,
     address _token,
     uint256 _amount
-  ) internal onlyAllowListedDstChain(_destinationChainSelector) validateReceiver(_receiver) returns (bytes32 messageId) {
+  ) internal onlyAllowListedChain(_destinationChainSelector) validateReceiver(_receiver) returns (bytes32 messageId) {
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_receiver, _token, _amount, s_linkToken, _destinationChainSelector);
     IRouterClient router = IRouterClient(this.getRouter());
     uint256 fees = router.getFee(_destinationChainSelector, evm2AnyMessage);

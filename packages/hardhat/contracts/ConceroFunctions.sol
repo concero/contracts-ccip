@@ -78,7 +78,6 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     address recipient,
     uint256 amount,
     uint64 srcChainSelector,
-    uint64 dstChainSelector,
     CCIPToken token,
     uint256 blockNumber
   ) external onlyAllowListedSenders {
@@ -87,30 +86,15 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
 
     string[] memory args = new string[](9);
-    /*
-    todo: Strings usage may not be required here. Consider ways of passing data without converting to string
-      like so:
-      bytes memory args = abi.encode(
-        externalContract,
-        ccipMessageId,
-        sender,
-        recipient,
-        token,
-        amount,
-        chainSelector,
-        srcChainSelector
-      );
-      function sendRequest(bytes memory args string memory jsCode)
-    */
-    args[0] = Strings.toHexString(dstConceroContracts[dstChainSelector]);
-    args[1] = bytes32ToString(ccipMessageId);
-    args[2] = Strings.toHexString(sender);
-    args[3] = Strings.toHexString(recipient);
-    args[4] = Strings.toString(uint(token));
-    args[5] = Strings.toString(amount);
-    args[6] = Strings.toString(chainSelector);
-    args[7] = Strings.toString(srcChainSelector);
-    args[8] = Strings.toHexString(blockNumber);
+    args[0] = Strings.toHexString(dstConceroContracts[srcChainSelector]);
+    args[1] = Strings.toString(srcChainSelector);
+    args[2] = Strings.toHexString(blockNumber);
+    args[3] = bytes32ToString(ccipMessageId);
+    args[4] = Strings.toHexString(sender);
+    args[5] = Strings.toHexString(recipient);
+    args[6] = Strings.toString(uint(token));
+    args[7] = Strings.toString(amount);
+    args[8] = Strings.toString(chainSelector);
 
     bytes32 reqId = sendRequest(args, dstJsCode);
     requests[reqId].requestType = RequestType.checkTxSrc;
@@ -152,7 +136,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {
     if (dstConceroContracts[dstChainSelector] == address(0)) revert("address not set");
 
-    string[] memory args = new string[](9);
+    string[] memory args = new string[](8);
     //todo: Strings usage may not be required here. Consider ways of passing data without converting to string
     args[0] = Strings.toHexString(dstConceroContracts[dstChainSelector]);
     args[1] = bytes32ToString(ccipMessageId);
@@ -160,9 +144,8 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     args[3] = Strings.toHexString(recipient);
     args[4] = Strings.toString(amount);
     args[5] = Strings.toString(chainSelector);
-    args[6] = Strings.toString(dstChainSelector);
-    args[7] = Strings.toString(uint(token));
-    args[8] = Strings.toHexString(block.number);
+    args[6] = Strings.toString(uint(token));
+    args[7] = Strings.toHexString(block.number);
 
     bytes32 reqId = sendRequest(args, srcJsCode);
     requests[reqId].requestType = RequestType.addUnconfirmedTxDst;

@@ -9,18 +9,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 const {createWalletClient, custom} = await import('npm:viem');
 const {privateKeyToAccount} = await import('npm:viem/accounts');
 const {sepolia, arbitrumSepolia, baseSepolia, optimismSepolia, avalancheFuji} = await import('npm:viem/chains');
-const [
-	contractAddress,
-	ccipMessageId,
-	sender,
-	recipient,
-	amount,
-	srcChainSelector,
-	dstChainSelector,
-	token,
-	blockNumber,
-] = args;
-
+const [contractAddress, ccipMessageId, sender, recipient, amount, srcChainSelector, token, blockNumber] = args;
 const chainSelectors = {
 	'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
 		url: `https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
@@ -53,48 +42,35 @@ const abi = [
 			{type: 'address', name: 'recipient'},
 			{type: 'uint256', name: 'amount'},
 			{type: 'uint64', name: 'srcChainSelector'},
-			{type: 'address', name: 'token'},
+			{type: 'uint8', name: 'token'},
 			{type: 'uint256', name: 'blockNumber'},
 		],
 		outputs: [],
 	},
 ];
-try {
-	const account = privateKeyToAccount('0x' + secrets.WALLET_PRIVATE_KEY);
-	const walletClient = createWalletClient({
-		account,
-		chain: chainSelectors[dstChainSelector].chain,
-		transport: custom({
-			async request({method, params}) {
-				if (method === 'eth_chainId') return chainSelectors[dstChainSelector].chain.id;
-				// if (method === 'eth_estimateGas') return '0x3d090';
-				if (method === 'eth_maxPriorityFeePerGas') return '0x3b9aca00';
-				const response = await Functions.makeHttpRequest({
-					url: chainSelectors[dstChainSelector].url,
-					method: 'post',
-					headers: {'Content-Type': 'application/json'},
-					data: {jsonrpc: '2.0', id: 1, method, params},
-				});
-				return response.data.result;
-			},
-		}),
-	});
-	const hash = await walletClient.writeContract({
-		abi,
-		functionName: 'addUnconfirmedTX',
-		address: contractAddress,
-		args: [
-			ccipMessageId,
-			sender,
-			recipient,
-			amount,
-			BigInt(srcChainSelector),
-			BigInt(dstChainSelector),
-			parseInt(token),
-			BigInt(blockNumber),
-		],
-	});
-	return Functions.encodeString(hash);
-} catch (err) {
-	return Functions.encodeString('error');
-}
+const account = privateKeyToAccount('0x' + secrets.WALLET_PRIVATE_KEY);
+const walletClient = createWalletClient({
+	account,
+	chain: chainSelectors[dstChainSelector].chain,
+	transport: custom({
+		async request({method, params}) {
+			if (method === 'eth_chainId') return chainSelectors[dstChainSelector].chain.id;
+			if (method === 'eth_estimateGas') return '0x493E0';
+			if (method === 'eth_maxPriorityFeePerGas') return '0x3b9aca00';
+			const response = await Functions.makeHttpRequest({
+				url: chainSelectors[dstChainSelector].url,
+				method: 'post',
+				headers: {'Content-Type': 'application/json'},
+				data: {jsonrpc: '2.0', id: 1, method, params},
+			});
+			return response.data.result;
+		},
+	}),
+});
+const hash = await walletClient.writeContract({
+	abi,
+	functionName: 'addUnconfirmedTX',
+	address: contractAddress,
+	args: [ccipMessageId, sender, recipient, amount, BigInt(srcChainSelector), parseInt(token), BigInt(blockNumber)],
+});
+return Functions.encodeString(hash);

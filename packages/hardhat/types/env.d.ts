@@ -9,6 +9,11 @@ declare namespace NodeJS {
     ALCHEMY_API_KEY: string
     ETHERSCAN_API_KEY: string
     CHAINSTACK_API_KEY: string
+    CONCEROCCIP_SEPOLIA: string
+    CONCEROCCIP_ARBITRUM_SEPOLIA: string
+    CONCEROCCIP_BASE_SEPOLIA: string
+    CONCEROCCIP_FUJI: string
+    CONCEROCCIP_OPTIMISM_SEPOLIA: string
     // .env.clf
     CLF_SUBID_SEPOLIA:string
     CLF_SUBID_ARBITRUM_SEPOLIA:string

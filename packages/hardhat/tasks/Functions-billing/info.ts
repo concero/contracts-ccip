@@ -8,8 +8,6 @@ task("functions-sub-info", "Gets the Functions billing subscription balance, own
   .addParam("subid", "Subscription ID")
   .setAction(async taskArgs => {
     const { name } = hre.network;
-    if (!chains[name]) throw new Error(`Chain ${name} not supported`);
-
     const subscriptionId = parseInt(taskArgs.subid);
 
     const signer = await hre.ethers.getSigner();

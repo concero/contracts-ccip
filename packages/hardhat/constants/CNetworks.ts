@@ -1,6 +1,7 @@
 // Purpose: To have a single source of truth for networks across the project
 import { type CNetwork } from "../types/CNetwork";
 import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
+import { arbitrumSepolia, avalancheFuji, baseSepolia, optimismSepolia, sepolia } from "viem/chains";
 
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
 const deployerPK = process.env.DEPLOYER_PRIVATE_KEY;
@@ -92,6 +93,7 @@ const CNetworks: Record<string, CNetwork> = {
     linkToken: process.env.LINK_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_SEPOLIA,
     ccipRouter: process.env.CL_CCIP_ROUTER_SEPOLIA,
+    viemChain: sepolia,
   },
   avalancheFuji: {
     url: `https://avalanche-fuji.infura.io/v3/${process.env.INFURA_API_KEY}`,
@@ -108,6 +110,7 @@ const CNetworks: Record<string, CNetwork> = {
     linkToken: process.env.LINK_FUJI,
     linkPriceFeed: process.env.LINK_PRICEFEED_FUJI,
     ccipRouter: process.env.CL_CCIP_ROUTER_FUJI,
+    viemChain: avalancheFuji,
   },
   optimismSepolia: {
     url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
@@ -124,6 +127,7 @@ const CNetworks: Record<string, CNetwork> = {
     linkToken: process.env.LINK_OPTIMISM_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_OPTIMISM_SEPOLIA,
     ccipRouter: process.env.CL_CCIP_ROUTER_OPTIMISM_SEPOLIA,
+    viemChain: optimismSepolia,
   },
   arbitrumSepolia: {
     url: `https://arbitrum-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
@@ -140,6 +144,7 @@ const CNetworks: Record<string, CNetwork> = {
     linkToken: process.env.LINK_ARBITRUM_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_ARBITRUM_SEPOLIA,
     ccipRouter: process.env.CL_CCIP_ROUTER_ARBITRUM_SEPOLIA,
+    viemChain: arbitrumSepolia,
   },
   baseSepolia: {
     chainId: 84532,
@@ -157,6 +162,7 @@ const CNetworks: Record<string, CNetwork> = {
     linkToken: process.env.LINK_BASE_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_BASE_SEPOLIA,
     ccipRouter: process.env.CL_CCIP_ROUTER_BASE_SEPOLIA,
+    viemChain: baseSepolia,
   },
   // MAINNETS
   // mainnet: {

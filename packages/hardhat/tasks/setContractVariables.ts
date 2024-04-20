@@ -3,7 +3,13 @@ import { privateKeyToAccount } from "viem/accounts";
 import { createPublicClient, createWalletClient, getContract, http } from "viem";
 import { abi } from "../artifacts/contracts/Concero.sol/Concero.json";
 
-export async function setContractVariables(contracts, networks) {
+export async function setContractVariables(networks) {
+  const contracts = {
+    baseSepolia: process.env.CONCEROCCIP_BASE_SEPOLIA,
+    optimismSepolia: process.env.CONCEROCCIP_OPTIMISM_SEPOLIA,
+    arbitrumSepolia: process.env.CONCEROCCIP_ARBITRUM_SEPOLIA,
+  };
+
   for (const [networkName, contractAddress] of Object.entries(contracts)) {
     const { url } = chains[networkName];
 

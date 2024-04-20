@@ -13,12 +13,6 @@ const networks = { baseSepolia: baseSepolia, optimismSepolia: optimismSepolia, a
 task("deploy-ccip-infrastructure", "Deploy the CCIP infrastructure")
   .addOptionalParam("deploy", "Deploy the contract to a specific network", "true")
   .setAction(async taskArgs => {
-    const contracts = {
-      baseSepolia: process.env.CONCEROCCIP_BASE_SEPOLIA,
-      optimismSepolia: process.env.CONCEROCCIP_OPTIMISM_SEPOLIA,
-      arbitrumSepolia: process.env.CONCEROCCIP_ARBITRUM_SEPOLIA,
-    };
-
     if (taskArgs.deploy === "true") {
       if (hre.network.name !== "localhost") {
         await deployContract(hre.network.name, networks);
@@ -31,9 +25,15 @@ task("deploy-ccip-infrastructure", "Deploy the CCIP infrastructure")
       console.log("Skipping deployment");
     }
 
+    const contracts = {
+      baseSepolia: process.env.CONCEROCCIP_BASE_SEPOLIA,
+      optimismSepolia: process.env.CONCEROCCIP_OPTIMISM_SEPOLIA,
+      arbitrumSepolia: process.env.CONCEROCCIP_ARBITRUM_SEPOLIA,
+    };
+
     for (const [networkName, contractAddress] of Object.entries(contracts)) {
       await subscriptionHealthcheck(contractAddress, networkName, networks);
     }
-    await setContractVariables(contracts, networks);
+    await setContractVariables(networks);
   });
 export default {};

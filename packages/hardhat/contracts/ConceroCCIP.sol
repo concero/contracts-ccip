@@ -22,7 +22,9 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
   //todo: shall we remove combined modifiers and instead use two separate ones?
   modifier onlyAllowlistedSenderAndChainSelector(uint64 _sourceChainSelector, address _sender) {
     if (!allowListedSrcChains[_sourceChainSelector]) revert SourceChainNotAllowed(_sourceChainSelector);
-    if (!allowlist[_sender]) revert SenderNotAllowed(_sender);
+    if (conceroContracts[_sourceChainSelector] == _sender) {
+      revert SenderNotAllowed(_sender);
+    }
     _;
   }
 
@@ -47,24 +49,10 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
     address _ccipRouter
   ) ConceroFunctions(_functionsRouter, _donHostedSecretsVersion, _donId, _subscriptionId, _chainSelector, _chainIndex) CCIPReceiver(_ccipRouter) {
     s_linkToken = _link;
-    allowlist[msg.sender] = true;
+    messengerContracts[msg.sender] = true;
   }
 
   // setters
-  function addToAllowlist(address _walletAddress) external onlyOwner {
-    require(_walletAddress != address(0), "Invalid address");
-    require(!allowlist[_walletAddress], "Address already in allowlist");
-    allowlist[_walletAddress] = true;
-    emit AllowlistUpdated(_walletAddress, true);
-  }
-
-  function removeFromAllowlist(address _walletAddress) external onlyOwner {
-    require(_walletAddress != address(0), "Invalid address");
-    require(allowlist[_walletAddress], "Address not in allowlist");
-    allowlist[_walletAddress] = false;
-    emit AllowlistUpdated(_walletAddress, true);
-  }
-
   //ccip
   function setAllowDestinationChain(uint64 _dstChainSelector, bool allowed) external onlyOwner {
     allowListedDstChains[_dstChainSelector] = allowed;
@@ -74,7 +62,6 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
     allowListedSrcChains[_srcChainSelector] = allowed;
   }
 
-  //ccip internal
   function _sendTokenPayLink(
     uint64 _destinationChainSelector,
     address _receiver,
@@ -103,7 +90,7 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
 
     return
       Client.EVM2AnyMessage({
-        receiver: abi.encode(dstConceroContracts[_destinationChainSelector]),
+        receiver: abi.encode(conceroContracts[_destinationChainSelector]),
         data: abi.encode(_receiver),
         tokenAmounts: tokenAmounts,
         extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 200_000})),

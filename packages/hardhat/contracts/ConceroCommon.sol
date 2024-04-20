@@ -7,18 +7,30 @@ import {IConceroCommon} from "./IConcero.sol";
 contract ConceroCommon is ConfirmedOwner, IConceroCommon {
   uint64 internal immutable chainSelector;
   Chain internal immutable chainIndex;
-  mapping(uint64 => address) internal dstConceroContracts;
-  mapping(address => bool) internal allowlist; //todo: remove this, instead use allowedSenderContracts & allowedDstContracts.
-  // ideally combine allowlisted contracts for both src and destination chains into one mapping
-  // like so : mapping[uint64][address] public allowedContracts;
+  mapping(uint64 => address) internal conceroContracts;
+  mapping(address => bool) internal messengerContracts;
 
   constructor(uint64 _chainSelector, uint _chainIndex) ConfirmedOwner(msg.sender) {
     chainSelector = _chainSelector;
     chainIndex = Chain(_chainIndex);
   }
 
-  function setDstConceroContract(uint64 _chainSelector, address _dstConceroCCIPContract) external onlyOwner {
-    dstConceroContracts[_chainSelector] = _dstConceroCCIPContract;
+  function setConceroContract(uint64 _chainSelector, address _dstConceroCCIPContract) external onlyOwner {
+    conceroContracts[_chainSelector] = _dstConceroCCIPContract;
+  }
+
+  function setConceroMessenger(address _walletAddress) external onlyOwner {
+    require(_walletAddress != address(0), "Invalid address");
+    require(!messengerContracts[_walletAddress], "Address already in allowlist");
+    messengerContracts[_walletAddress] = true;
+    emit MessengerUpdated(_walletAddress, true);
+  }
+
+  function removeConceroMessenger(address _walletAddress) external onlyOwner {
+    require(_walletAddress != address(0), "Invalid address");
+    require(messengerContracts[_walletAddress], "Address not in messengerContracts");
+    messengerContracts[_walletAddress] = false;
+    emit MessengerUpdated(_walletAddress, true);
   }
 
   function getToken(CCIPToken token) internal view returns (address) {

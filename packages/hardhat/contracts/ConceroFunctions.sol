@@ -29,8 +29,8 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   string private constant dstJsCode =
     "const ethers = await import('npm:ethers@6.10.0'); const [srcContractAddress, srcChainSelector, blockNumber, ...eventArgs] = args; const messageId = eventArgs[0]; const chainMap = { '14767482510784806043': { url: `https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`, }, '16015286601757825753': { url: `https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, }, '3478487238524512106': { url: `https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, }, '10344971235874465080': { url: `https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`, }, '5224473277236331295': { url: `https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, }, }; const params = { url: chainMap[srcChainSelector].url, method: 'POST', headers: { 'Content-Type': 'application/json', }, data: { jsonrpc: '2.0', method: 'eth_getLogs', id: 1, params: [ { address: srcContractAddress, topics: [null, messageId], fromBlock: blockNumber, toBlock: blockNumber, }, ], }, }; const {data} = await Functions.makeHttpRequest(params); if (data?.error || !data?.result.length) { throw new Error('Logs not found'); } const abi = ['event CCIPSent(bytes32 indexed, address, address, uint8, uint256, uint64)']; const contract = new ethers.Interface(abi); const log = { topics: [ethers.id('CCIPSent(bytes32,address,address,uint8,uint256,uint64)'), data.result[0].topics[1]], data: data.result[0].data, }; const decodedLog = contract.parseLog(log); for (let i = 0; i < decodedLog.length; i++) { if (decodedLog.args[i].toString().toLowerCase() !== eventArgs[i].toString().toLowerCase()) { throw new Error('Message ID does not match the event log'); } } return Functions.encodeUint256(BigInt(messageId)); ";
 
-  modifier onlyAllowListedSenders() {
-    if (!allowlist[msg.sender]) revert NotAllowed();
+  modifier onlyMessenger() {
+    if (!messengerContracts[msg.sender]) revert NotMessenger(msg.sender);
     _;
   }
 
@@ -80,13 +80,13 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     uint64 srcChainSelector,
     CCIPToken token,
     uint256 blockNumber
-  ) external onlyAllowListedSenders {
+  ) external onlyMessenger {
     Transaction storage transaction = transactions[ccipMessageId];
     if (transaction.sender != address(0)) revert TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
     transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
 
     string[] memory args = new string[](9);
-    args[0] = Strings.toHexString(dstConceroContracts[srcChainSelector]);
+    args[0] = Strings.toHexString(conceroContracts[srcChainSelector]);
     args[1] = Strings.toString(srcChainSelector);
     args[2] = Strings.toHexString(blockNumber);
     args[3] = bytes32ToString(ccipMessageId);
@@ -134,11 +134,11 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   }
 
   function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {
-    if (dstConceroContracts[dstChainSelector] == address(0)) revert("address not set");
+    if (conceroContracts[dstChainSelector] == address(0)) revert("address not set");
 
     string[] memory args = new string[](9);
     //todo: Strings usage may not be required here. Consider ways of passing data without converting to string
-    args[0] = Strings.toHexString(dstConceroContracts[dstChainSelector]);
+    args[0] = Strings.toHexString(conceroContracts[dstChainSelector]);
     args[1] = bytes32ToString(ccipMessageId);
     args[2] = Strings.toHexString(sender);
     args[3] = Strings.toHexString(recipient);

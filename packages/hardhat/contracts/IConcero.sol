@@ -4,6 +4,8 @@ pragma solidity ^0.8.19;
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 
 interface IConceroCommon {
+  event MessengerUpdated(address indexed walletAddress, bool status);
+
   enum CCIPToken {
     bnm,
     usdc
@@ -68,7 +70,6 @@ interface IFunctions is IConceroCommon {
     uint256 amount,
     CCIPToken token
   );
-  event AllowlistUpdated(address indexed walletAddress, bool status);
   event TXReleased(
     bytes32 indexed ccipMessageId,
     address indexed sender,
@@ -77,7 +78,7 @@ interface IFunctions is IConceroCommon {
     uint256 amount
   );
 
-  error NotAllowed();
+  error NotMessenger(address);
   error TXAlreadyExists(bytes32 txHash, bool isConfirmed);
   error UnexpectedRequestID(bytes32);
   error NotCCIPContract(address);

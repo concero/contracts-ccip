@@ -5,16 +5,6 @@ import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-sol
 import {ConceroCCIP} from "./ConceroCCIP.sol";
 
 contract Concero is ConceroCCIP {
-  /* todo: allowlisted src + dst chains can be combined into one two-dimensional mapping like so:
-      this will still use one SLOAD but would remove the need for two separate mappings
-    mapping[uint64][uint64] public allowListedChains;
-    and then use it like so:
-    modifier onlyAllowListedChain(uint64 _chainSelector, uint64 _chainType) {
-      if (!allowListedChains[_chainType][_chainSelector]) revert ChainNotAllowed(_chainSelector);
-      _;
-    }
-  */
-
   constructor(
     address _functionsRouter,
     uint64 _donHostedSecretsVersion,

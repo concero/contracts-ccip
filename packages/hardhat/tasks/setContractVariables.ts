@@ -23,7 +23,7 @@ export async function setContractVariables(networks) {
         const { request: setDstConceroContractReq } = await publicClient.simulateContract({
           address: contractAddress,
           abi,
-          functionName: "setDstConceroContract",
+          functionName: "setConceroContract",
           account,
           args: [chainSelector, dstContract.toLowerCase()],
           chain: viemChain,
@@ -31,30 +31,6 @@ export async function setContractVariables(networks) {
         const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
         const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({ hash: setDstConceroContractHash });
         console.log(`Set ${networkName}:${contractAddress} dstConceroContract[${name}, ${dstContract}]. Gas used: ${setDstConceroContractGasUsed.toString()}`);
-
-        const { request: setAllowDestinationChainReq } = await publicClient.simulateContract({
-          address: contractAddress,
-          abi,
-          functionName: "setAllowDestinationChain",
-          account,
-          args: [chainSelector, true],
-          chain: viemChain,
-        });
-        const setAllowDestinationChainHash = await walletClient.writeContract(setAllowDestinationChainReq);
-        const { cumulativeGasUsed: setAllowDestinationChainGasUsed } = await publicClient.waitForTransactionReceipt({ hash: setAllowDestinationChainHash });
-        console.log(`Set ${networkName}:${contractAddress} allowDestinationChain[${name}, true]. Gas used: ${setAllowDestinationChainGasUsed.toString()}`);
-
-        const { request: setAllowSourceChainReq } = await publicClient.simulateContract({
-          address: contractAddress,
-          abi,
-          functionName: "setAllowSourceChain",
-          account,
-          args: [chainSelector, true],
-          chain: viemChain,
-        });
-        const setAllowSourceChainHash = await walletClient.writeContract(setAllowSourceChainReq);
-        const { cumulativeGasUsed: setAllowSourceChainGasUsed } = await publicClient.waitForTransactionReceipt({ hash: setAllowSourceChainHash });
-        console.log(`Set ${networkName}:${contractAddress} allowSourceChain[${name}, true]. Gas used: ${setAllowSourceChainGasUsed.toString()}`);
       }
     }
 
@@ -62,7 +38,7 @@ export async function setContractVariables(networks) {
       const { request: addToAllowlistReq } = await publicClient.simulateContract({
         address: contractAddress,
         abi,
-        functionName: "addToAllowlist",
+        functionName: "setConceroMessenger",
         account,
         args: [process.env.MESSENGER_WALLET_ADDRESS],
         chain: viemChain,

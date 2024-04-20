@@ -9,7 +9,17 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 const {createWalletClient, custom} = await import('npm:viem');
 const {privateKeyToAccount} = await import('npm:viem/accounts');
 const {sepolia, arbitrumSepolia, baseSepolia, optimismSepolia, avalancheFuji} = await import('npm:viem/chains');
-const [contractAddress, ccipMessageId, sender, recipient, amount, srcChainSelector, token, blockNumber] = args;
+const [
+	contractAddress,
+	ccipMessageId,
+	sender,
+	recipient,
+	amount,
+	srcChainSelector,
+	dstChainSelector,
+	token,
+	blockNumber,
+] = args;
 const chainSelectors = {
 	'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
 		url: `https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,

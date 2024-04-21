@@ -4,10 +4,10 @@ import updateEnvVariable from "../../utils/updateEnvVariable";
 import { networkEnvKeys } from "../../constants/CNetworks";
 import { task } from "hardhat/config";
 
+import { uploadSecretsToDon } from "./uploadSecretsToDon";
 // run with: bunx hardhat functions-list-don-secrets --network avalancheFuji
-task("functions-list-don-secrets", "Displays encrypted secrets hosted on the DON").setAction(async taskArgs => {
+task("functions-ensure-don-secrets", "Displays encrypted secrets hosted on the DON").setAction(async taskArgs => {
   const { name } = hre.network;
-
   const signer = await hre.ethers.getSigner();
   const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls } = chains[name];
 
@@ -24,27 +24,19 @@ task("functions-list-don-secrets", "Displays encrypted secrets hosted on the DON
 
   const { result } = await secretsManager.listDONHostedEncryptedSecrets(functionsGatewayUrls);
   const allSecrets = [];
-  // console.log(`\nYour encrypted secrets currently hosted on DON ${functionsDonIdAlias}`);
-  let i = 0;
-  result.nodeResponses.forEach(nodeResponse => {
-    // console.log(`\nNode Response #${i}`);
-    i++;
-
-    if (nodeResponse.rows) {
-      nodeResponse.rows.forEach(row => {
-        if (row.version && row.expiration) {
-          updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`, row.version, "../../../.env.clf");
-          updateEnvVariable(`CLF_DON_SECRETS_EXPIRATION_${networkEnvKeys[name]}`, row.expiration, "../../../.env.clf");
-        }
-        // console.log(row);
+  for (const res of result.nodeResponses) {
+    if (res.rows) {
+      res.rows.forEach(row => {
+        updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`, row.version, "../../../.env.clf");
+        updateEnvVariable(`CLF_DON_SECRETS_EXPIRATION_${networkEnvKeys[name]}`, row.expiration, "../../../.env.clf");
         allSecrets.push(row);
       });
     } else {
-      updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`, "0", "../../../.env.clf");
+      console.log(`No secrets found for ${name}. Uploading secrets...`);
+      await uploadSecretsToDon({ slotid: 0, ttl: 4320 });
     }
-  });
+  }
   console.log(`DON secrets for ${name}:`);
-  console.log(JSON.stringify(allSecrets));
-  return JSON.stringify(allSecrets);
+  console.log(allSecrets);
 });
 export default {};

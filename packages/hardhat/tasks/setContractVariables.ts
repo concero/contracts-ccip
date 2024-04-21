@@ -11,7 +11,7 @@ export async function setContractVariables(networks) {
   };
 
   for (const [networkName, contractAddress] of Object.entries(contracts)) {
-    const { url, viemChain } = chains[networkName];
+    const { url, viemChain, ccipBnmToken } = chains[networkName];
 
     const account = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
     const walletClient = createWalletClient({ transport: http(url), chain: networks[networkName], account });
@@ -49,5 +49,16 @@ export async function setContractVariables(networks) {
     } catch (e) {
       console.log(`Failed to add ${process.env.MESSENGER_WALLET_ADDRESS} to allowlist: ${e}`);
     }
+
+    // send 1 CCIPBNM token to the contract
+    const { request: sendReq } = await publicClient.simulateContract({
+      functionName: "transfer",
+      abi,
+      account,
+      address: ccipBnmToken,
+      args: [contractAddress, "1000000000000000000"],
+    });
+    const sendHash = await walletClient.writeContract(sendReq);
+    const { cumulativeGasUsed: sendGasUsed } = await publicClient.waitForTransactionReceipt({ hash: sendHash });
   }
 }

@@ -1,7 +1,8 @@
 {
-  "name": "se-2",
+  "name": "concero-sfe",
   "version": "0.0.1",
   "private": true,
+  "license": "UNLICENSED",
   "workspaces": {
     "packages": [
       "packages/hardhat",

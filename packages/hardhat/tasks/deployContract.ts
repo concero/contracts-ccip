@@ -1,29 +1,26 @@
-import { execSync } from "child_process";
-import chains, { networkEnvKeys } from "../constants/CNetworks";
-import { privateKeyToAccount } from "viem/accounts";
-import { createPublicClient, createWalletClient, http } from "viem";
+import { networkEnvKeys } from "../constants/CNetworks";
 import { abi, bytecode } from "../artifacts/contracts/Concero.sol/Concero.json";
 import updateEnvVariable from "../utils/updateEnvVariable";
-
-export async function deployContract(networkName: string, networks) {
+import { CNetwork } from "../types/CNetwork";
+import { getClients } from "./switchChain";
+import { execSync } from "child_process";
+export async function deployContract(chain: CNetwork) {
   execSync(`bunx hardhat compile`, { stdio: "inherit" });
-  const { linkToken, ccipRouter, functionsRouter, functionsDonId, chainSelector, functionsSubIds, donHostedSecretsVersion, conceroChainIndex, url } =
-    chains[networkName];
+  const { name, viemChain, linkToken, ccipRouter, functionsRouter, functionsDonId, chainSelector, functionsSubIds, conceroChainIndex, url } = chain;
+  const donHostedSecretsVersion = process.env[`CONCEROCCIP_${networkEnvKeys[name]}`]; // gets up-to-date env variable
 
-  const account = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
-  const walletClient = createWalletClient({ transport: http(url), chain: networks[networkName], account });
-  const publicClient = createPublicClient({ transport: http(url), chain: networks[networkName] });
+  const { walletClient, publicClient, account } = getClients(viemChain, url);
 
   const hash = await walletClient.deployContract({
     abi,
     account,
     bytecode,
-    args: [functionsRouter, donHostedSecretsVersion, functionsDonId, functionsSubIds[0], chainSelector, conceroChainIndex, linkToken, ccipRouter],
+    args: [functionsRouter, donHostedSecretsVersion, functionsDonId, functionsSubIds[0], chainSelector, conceroChainIndex.toString(), linkToken, ccipRouter],
   });
 
   const { contractAddress, cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ hash });
-  updateEnvVariable(`CONCEROCCIP_${networkEnvKeys[networkName]}`, contractAddress, "../../../.env");
-  console.log(`Deployed to ${networkName} at address ${contractAddress}\nTXHash: ${hash}\nGas used:${cumulativeGasUsed.toString()}`);
+  updateEnvVariable(`CONCEROCCIP_${networkEnvKeys[name]}`, contractAddress, "../../../.env");
+  console.log(`Deployed to ${name} at address ${contractAddress}\nTXHash: ${hash}\nGas used:${cumulativeGasUsed.toString()}`);
   // ensureFunctionsConsumerAdded(functionsSubId, contractAddress, networkName);
   // const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(functionsRouter, contractAddress, functionsSubIds[0]);
   // console.log(`CL Functions Consumer added successfully: ${CLFunctionsConsumerTXHash}`);

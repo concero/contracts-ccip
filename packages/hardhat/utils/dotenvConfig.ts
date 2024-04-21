@@ -1,4 +1,5 @@
 import * as dotenv from "dotenv";
+import fs from "fs";
 
 /**
  * Configures the dotenv with paths relative to a base directory.
@@ -16,5 +17,21 @@ function configureDotEnv(basePath = "../../") {
   dotenv.config({ path: `${normalizedBasePath}.env.tokens` });
 }
 configureDotEnv();
+
+export function reloadDotEnv(basePath = "../../") {
+  const normalizedBasePath = basePath.endsWith("/") ? basePath : `${basePath}/`;
+  const envFiles = [".env", ".env.clf", ".env.clccip", ".env.tokens"];
+
+  envFiles.forEach(file => {
+    const fullPath = `${normalizedBasePath}${file}`;
+    const currentEnv = dotenv.parse(fs.readFileSync(fullPath));
+
+    Object.keys(currentEnv).forEach(key => {
+      delete process.env[key];
+    });
+
+    dotenv.config({ path: fullPath });
+  });
+}
 
 export default configureDotEnv;

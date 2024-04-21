@@ -1,39 +1,42 @@
 import { task } from "hardhat/config";
-import { arbitrumSepolia, baseSepolia, optimismSepolia } from "viem/chains";
-import { setContractVariables } from "./setContractVariables";
 import { subscriptionHealthcheck } from "./ensureConsumerAdded";
 import { deployContract } from "./deployContract";
-
+import chains, { networkEnvKeys } from "../constants/CNetworks";
+import { execSync } from "child_process";
+import dotenv from "dotenv";
+import configureDotEnv, { reloadDotEnv } from "../utils/dotenvConfig";
+import dotenvConfig from "../utils/dotenvConfig";
 /* todo:
 - Make sure secrets for chain are set
  */
 
-const networks = { baseSepolia: baseSepolia, optimismSepolia: optimismSepolia, arbitrumSepolia: arbitrumSepolia };
+const selectedChains = [chains.arbitrumSepolia, chains.optimismSepolia, chains.baseSepolia];
 
 task("deploy-ccip-infrastructure", "Deploy the CCIP infrastructure")
   .addOptionalParam("deploy", "Deploy the contract to a specific network", "true")
   .setAction(async taskArgs => {
+    secretsHealthcheck(selectedChains);
     if (taskArgs.deploy === "true") {
       if (hre.network.name !== "localhost") {
-        await deployContract(hre.network.name, networks);
+        await deployContract(hre.network.name, selectedChains);
       } else {
-        for (const name in networks) {
-          await deployContract(name, networks);
+        for (const chain of selectedChains) {
+          await deployContract(chain, selectedChains);
         }
       }
     } else {
       console.log("Skipping deployment");
     }
 
-    const contracts = {
-      baseSepolia: process.env.CONCEROCCIP_BASE_SEPOLIA,
-      optimismSepolia: process.env.CONCEROCCIP_OPTIMISM_SEPOLIA,
-      arbitrumSepolia: process.env.CONCEROCCIP_ARBITRUM_SEPOLIA,
-    };
-
-    for (const [networkName, contractAddress] of Object.entries(contracts)) {
-      await subscriptionHealthcheck(contractAddress, networkName, networks);
-    }
-    await setContractVariables(networks);
+    await subscriptionHealthcheck(selectedChains);
+    // await setContractVariables(networks);
   });
+
+function secretsHealthcheck(selectedChains) {
+  for (const chain of selectedChains) {
+    execSync(`bunx hardhat functions-ensure-don-secrets --network ${chain.name}`, { stdio: "inherit" });
+  }
+
+  reloadDotEnv();
+}
 export default {};

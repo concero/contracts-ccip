@@ -6,6 +6,9 @@ import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-sol
 interface IConceroCommon {
   event MessengerUpdated(address indexed walletAddress, bool status);
 
+  error TransferFailed();
+  error InsufficientFee();
+
   enum CCIPToken {
     bnm,
     usdc

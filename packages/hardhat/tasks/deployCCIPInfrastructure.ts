@@ -1,5 +1,5 @@
 import { task } from "hardhat/config";
-import { arbitrumSepolia, baseSepolia, optimismSepolia } from "viem/chains";
+import { baseSepolia, optimismSepolia } from "viem/chains";
 import { setContractVariables } from "./setContractVariables";
 import { subscriptionHealthcheck } from "./ensureConsumerAdded";
 import { deployContract } from "./deployContract";
@@ -8,7 +8,11 @@ import { deployContract } from "./deployContract";
 - Make sure secrets for chain are set
  */
 
-const networks = { baseSepolia: baseSepolia, optimismSepolia: optimismSepolia, arbitrumSepolia: arbitrumSepolia };
+const networks = {
+  baseSepolia,
+  optimismSepolia,
+  // arbitrumSepolia
+};
 
 task("deploy-ccip-infrastructure", "Deploy the CCIP infrastructure")
   .addOptionalParam("deploy", "Deploy the contract to a specific network", "true")
@@ -28,7 +32,7 @@ task("deploy-ccip-infrastructure", "Deploy the CCIP infrastructure")
     const contracts = {
       baseSepolia: process.env.CONCEROCCIP_BASE_SEPOLIA,
       optimismSepolia: process.env.CONCEROCCIP_OPTIMISM_SEPOLIA,
-      arbitrumSepolia: process.env.CONCEROCCIP_ARBITRUM_SEPOLIA,
+      // arbitrumSepolia: process.env.CONCEROCCIP_ARBITRUM_SEPOLIA,
     };
 
     for (const [networkName, contractAddress] of Object.entries(contracts)) {

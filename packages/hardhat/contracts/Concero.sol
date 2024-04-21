@@ -26,8 +26,14 @@ contract Concero is ConceroCCIP {
     //todo: maybe move to OZ safeTransfer (but research needed)
     bool isOK = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
     require(isOK, "Transfer failed");
+
+    if (msg.value < (1500000 * tx.gasprice)) {
+      revert InsufficientFee();
+    }
+
     bytes32 ccipMessageId = _sendTokenPayLink(_destinationChainSelector, _receiver, _token, _amount);
     emit CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, _amount, _destinationChainSelector);
+
     sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, _amount, _destinationChainSelector, _tokenType);
   }
 

@@ -16,7 +16,6 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
     _;
   }
 
-  //todo: shall we remove combined modifiers and instead use two separate ones?
   modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
     if (conceroContracts[_chainSelector] == address(0)) revert SourceChainNotAllowed(_chainSelector);
     if (conceroContracts[_chainSelector] != _sender) revert SenderNotAllowed(_sender);
@@ -56,7 +55,13 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_receiver, _token, _amount, s_linkToken, _destinationChainSelector);
     IRouterClient router = IRouterClient(this.getRouter());
     uint256 fees = router.getFee(_destinationChainSelector, evm2AnyMessage);
-    if (fees > IERC20(s_linkToken).balanceOf(address(this))) revert NotEnoughBalance(IERC20(s_linkToken).balanceOf(address(this)), fees);
+    bool isOK = IERC20(s_linkToken).transferFrom(msg.sender, address(this), fees + 900000000000000000);
+    if (!isOK) {
+      revert TransferFailed();
+    }
+    if (fees > IERC20(s_linkToken).balanceOf(address(this))) {
+      revert NotEnoughBalance(IERC20(s_linkToken).balanceOf(address(this)), fees);
+    }
     IERC20(s_linkToken).approve(address(router), fees);
     IERC20(_token).approve(address(router), _amount);
     messageId = router.ccipSend(_destinationChainSelector, evm2AnyMessage);
@@ -78,7 +83,7 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
         receiver: abi.encode(conceroContracts[_destinationChainSelector]),
         data: abi.encode(_receiver),
         tokenAmounts: tokenAmounts,
-        extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 200_000})),
+        extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
         feeToken: _feeToken
       });
   }

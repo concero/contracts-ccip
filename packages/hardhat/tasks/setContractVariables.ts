@@ -1,42 +1,35 @@
-import chains from "../constants/CNetworks";
-import { privateKeyToAccount } from "viem/accounts";
-import { createPublicClient, createWalletClient, getContract, http } from "viem";
+import { networkEnvKeys } from "../constants/CNetworks";
 import { abi } from "../artifacts/contracts/Concero.sol/Concero.json";
+import { CNetwork } from "../types/CNetwork";
+import { getClients } from "./switchChain";
 
-export async function setContractVariables(networks) {
-  const contracts = {
-    baseSepolia: process.env.CONCEROCCIP_BASE_SEPOLIA,
-    optimismSepolia: process.env.CONCEROCCIP_OPTIMISM_SEPOLIA,
-    arbitrumSepolia: process.env.CONCEROCCIP_ARBITRUM_SEPOLIA,
-  };
+export async function setContractVariables(selectedChains: CNetwork[]) {
+  for (const chain of selectedChains) {
+    const { viemChain, url, name } = chain;
+    const contract = process.env[`CONCEROCCIP_${networkEnvKeys[name]}`]; // grabbing up-to-date var
+    const { walletClient, publicClient, account } = getClients(viemChain, url);
 
-  for (const [networkName, contractAddress] of Object.entries(contracts)) {
-    const { url, viemChain, ccipBnmToken } = chains[networkName];
-
-    const account = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
-    const walletClient = createWalletClient({ transport: http(url), chain: networks[networkName], account });
-    const publicClient = createPublicClient({ transport: http(url), chain: networks[networkName] });
-
-    for (const [name, dstContract] of Object.entries(contracts)) {
-      if (name !== networkName) {
-        const { chainSelector } = chains[name];
+    for (const dstChain of selectedChains) {
+      const { name: dstName, chainSelector: dstChainSelector } = dstChain;
+      if (dstName !== name) {
+        const dstContract = process.env[`CONCEROCCIP_${networkEnvKeys[dstName]}`];
         const { request: setDstConceroContractReq } = await publicClient.simulateContract({
-          address: contractAddress,
+          address: contract,
           abi,
           functionName: "setConceroContract",
           account,
-          args: [chainSelector, dstContract.toLowerCase()],
+          args: [dstChainSelector, dstContract],
           chain: viemChain,
         });
         const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
         const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({ hash: setDstConceroContractHash });
-        console.log(`Set ${networkName}:${contractAddress} dstConceroContract[${name}, ${dstContract}]. Gas used: ${setDstConceroContractGasUsed.toString()}`);
+        console.log(`Set ${name}:${contract} dstConceroContract[${dstName}, ${dstContract}]. Gas used: ${setDstConceroContractGasUsed.toString()}`);
       }
     }
 
     try {
       const { request: addToAllowlistReq } = await publicClient.simulateContract({
-        address: contractAddress,
+        address: contract,
         abi,
         functionName: "setConceroMessenger",
         account,
@@ -49,16 +42,5 @@ export async function setContractVariables(networks) {
     } catch (e) {
       console.log(`Failed to add ${process.env.MESSENGER_WALLET_ADDRESS} to allowlist: ${e}`);
     }
-
-    // send 1 CCIPBNM token to the contract
-    const { request: sendReq } = await publicClient.simulateContract({
-      functionName: "transfer",
-      abi,
-      account,
-      address: ccipBnmToken,
-      args: [contractAddress, "1000000000000000000"],
-    });
-    const sendHash = await walletClient.writeContract(sendReq);
-    const { cumulativeGasUsed: sendGasUsed } = await publicClient.waitForTransactionReceipt({ hash: sendHash });
   }
 }

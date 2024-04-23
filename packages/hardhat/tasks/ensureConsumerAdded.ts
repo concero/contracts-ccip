@@ -1,6 +1,5 @@
-import chains, { networkEnvKeys } from "../constants/CNetworks";
-import { privateKeyToAccount } from "viem/accounts";
-import { createPublicClient, createWalletClient, formatUnits, getContract, http } from "viem";
+import { networkEnvKeys } from "../constants/CNetworks";
+import { formatUnits, getContract } from "viem";
 import functionsRouterAbi from "@chainlink/contracts/abi/v0.8/FunctionsRouter.json";
 import linkTokenAbi from "@chainlink/contracts/abi/v0.8/LinkToken.json";
 import { getClients } from "./switchChain";

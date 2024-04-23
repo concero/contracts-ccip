@@ -7,15 +7,14 @@ import { execSync } from "child_process";
 export async function deployContract(chain: CNetwork) {
   execSync(`bunx hardhat compile`, { stdio: "inherit" });
   const { name, viemChain, linkToken, ccipRouter, functionsRouter, functionsDonId, chainSelector, functionsSubIds, conceroChainIndex, url } = chain;
-  const donHostedSecretsVersion = process.env[`CONCEROCCIP_${networkEnvKeys[name]}`]; // gets up-to-date env variable
+  const donHostedSecretsVersion = process.env[`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`]; // gets up-to-date env variable
 
   const { walletClient, publicClient, account } = getClients(viemChain, url);
-
   const hash = await walletClient.deployContract({
     abi,
     account,
     bytecode,
-    args: [functionsRouter, donHostedSecretsVersion, functionsDonId, functionsSubIds[0], chainSelector, conceroChainIndex.toString(), linkToken, ccipRouter],
+    args: [functionsRouter, donHostedSecretsVersion, functionsDonId, functionsSubIds[0], chainSelector, conceroChainIndex, linkToken, ccipRouter],
   });
 
   const { contractAddress, cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ hash });

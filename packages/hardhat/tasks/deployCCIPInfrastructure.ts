@@ -5,11 +5,7 @@ import chains from "../constants/CNetworks";
 import { execSync } from "child_process";
 import { reloadDotEnv } from "../utils/dotenvConfig";
 import { setContractVariables } from "./setContractVariables";
-import { dripCCIPBnM } from "./dripCCIPBnM";
 import { fundContract } from "./fundContract";
-/* todo:
-- Make sure secrets for chain are set
- */
 
 const selectedChains = [chains.arbitrumSepolia, chains.optimismSepolia, chains.baseSepolia];
 let deployableChains = selectedChains;
@@ -20,11 +16,11 @@ task("deploy-ccip-infrastructure", "Deploy the CCIP infrastructure")
     const { name } = hre.network;
     if (name !== "localhost" && name !== "hardhat") deployableChains = [chains[name]];
 
-    // secretsHealthcheck(deployableChains);
-    // if (taskArgs.deploy === "true") await deployContract(deployableChains);
-    // else console.log("Skipping deployment");
-    //
-    // await subscriptionHealthcheck(selectedChains);
+    secretsHealthcheck(deployableChains);
+    if (taskArgs.deploy === "true") await deployContract(deployableChains);
+    else console.log("Skipping deployment");
+
+    await subscriptionHealthcheck(selectedChains);
     await setContractVariables(selectedChains);
     await fundContract(deployableChains);
   });

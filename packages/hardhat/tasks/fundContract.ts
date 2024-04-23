@@ -1,6 +1,5 @@
 import { CNetwork } from "../types/CNetwork";
 import ierc20Abi from "@chainlink/contracts/abi/v0.8/IERC20.json";
-import { formatUnits } from "viem";
 import { getClients } from "./switchChain";
 import { networkEnvKeys } from "../constants/CNetworks";
 import { dripCCIPBnM } from "./dripCCIPBnM";
@@ -9,7 +8,7 @@ export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
   //checks balance of CCIPBnm of deployer
   for (const chain of chains) {
     const { ccipBnmToken, viemChain, url, name } = chain;
-    const { walletClient, publicClient, account } = getClients(viemChain, url);
+    const { publicClient, account } = getClients(viemChain, url);
     const balance = await publicClient.readContract({
       address: ccipBnmToken,
       abi: ierc20Abi,

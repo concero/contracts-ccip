@@ -12,6 +12,7 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
   }
   const { linkToken, ccipRouter, functionsRouter, functionsDonId, chainSelector, functionsSubIds, donHostedSecretsVersion, conceroChainIndex } = chains[name];
 
+  // return console.log([functionsRouter, donHostedSecretsVersion, functionsDonId, functionsSubIds[0], chainSelector, conceroChainIndex, linkToken, ccipRouter]);
   const deployment = (await deploy("Concero", {
     from: deployer,
     log: true,

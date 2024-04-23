@@ -81,6 +81,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   } as HardhatNetworkUserConfig,
   // TESTNETS
   sepolia: {
+    chainId: 11155111,
     url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
     accounts: [deployerPK],
     functionsDonId: process.env.CLF_DONID_SEPOLIA,
@@ -99,8 +100,8 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     name: "sepolia",
   },
   avalancheFuji: {
+    chainId: 43113,
     url: `https://avalanche-fuji.infura.io/v3/${process.env.INFURA_API_KEY}`,
-    chainId: 43113, // not sure if this is needed
     accounts: [deployerPK],
     functionsDonId: process.env.CLF_DONID_FUJI,
     functionsDonIdAlias: process.env.CLF_DONID_FUJI_ALIAS,
@@ -118,6 +119,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     name: "avalancheFuji",
   },
   optimismSepolia: {
+    chainId: 11155420,
     url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
     accounts: [deployerPK],
     functionsDonId: process.env.CLF_DONID_OPTIMISM_SEPOLIA,
@@ -127,7 +129,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     functionsGatewayUrls: functionsGatewayUrls.testnet,
     donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_OPTIMISM_SEPOLIA,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA,
-    conceroChainIndex: 2,
+    conceroChainIndex: "2",
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_OPTIMISM_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_OPTIMISM_SEPOLIA,
@@ -137,6 +139,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     name: "optimismSepolia",
   },
   arbitrumSepolia: {
+    chainId: 421614,
     url: `https://arbitrum-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
     accounts: [deployerPK],
     functionsDonId: process.env.CLF_DONID_ARBITRUM_SEPOLIA,
@@ -146,7 +149,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     functionsGatewayUrls: functionsGatewayUrls.testnet,
     donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_ARBITRUM_SEPOLIA,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA,
-    conceroChainIndex: 0,
+    conceroChainIndex: "0",
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_ARBITRUM_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_ARBITRUM_SEPOLIA,
@@ -166,7 +169,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     functionsGatewayUrls: functionsGatewayUrls.testnet,
     donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_BASE_SEPOLIA,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA,
-    conceroChainIndex: 1,
+    conceroChainIndex: "1",
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_BASE_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_BASE_SEPOLIA,

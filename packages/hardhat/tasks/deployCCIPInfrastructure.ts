@@ -1,7 +1,7 @@
 import { task } from "hardhat/config";
 import { subscriptionHealthcheck } from "./ensureConsumerAdded";
 import { deployContract } from "./deployContract";
-import chains, { networkEnvKeys } from "../constants/CNetworks";
+import chains from "../constants/CNetworks";
 import { execSync } from "child_process";
 import dotenv from "dotenv";
 import configureDotEnv, { reloadDotEnv } from "../utils/dotenvConfig";
@@ -15,10 +15,12 @@ const selectedChains = [chains.arbitrumSepolia, chains.optimismSepolia, chains.b
 task("deploy-ccip-infrastructure", "Deploy the CCIP infrastructure")
   .addOptionalParam("deploy", "Deploy the contract to a specific network", "true")
   .setAction(async taskArgs => {
+    const { name } = hre.network;
     secretsHealthcheck(selectedChains);
     if (taskArgs.deploy === "true") {
-      if (hre.network.name !== "localhost") {
-        await deployContract(hre.network.name, selectedChains);
+      if (name !== "localhost" && name !== "hardhat") {
+        console.log("deploying to", chains[name].name);
+        await deployContract(chains[name], selectedChains);
       } else {
         for (const chain of selectedChains) {
           await deployContract(chain, selectedChains);
@@ -34,9 +36,8 @@ task("deploy-ccip-infrastructure", "Deploy the CCIP infrastructure")
 
 function secretsHealthcheck(selectedChains) {
   for (const chain of selectedChains) {
-    execSync(`bunx hardhat functions-ensure-don-secrets --network ${chain.name}`, { stdio: "inherit" });
+    execSync(`yarn hardhat functions-ensure-don-secrets --network ${chain.name}`, { stdio: "inherit" });
   }
-
   reloadDotEnv();
 }
 export default {};

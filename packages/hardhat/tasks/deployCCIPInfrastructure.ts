@@ -7,7 +7,7 @@ import { reloadDotEnv } from "../utils/dotenvConfig";
 import { setContractVariables } from "./setContractVariables";
 import { fundContract } from "./fundContract";
 
-const selectedChains = [chains.arbitrumSepolia, chains.baseSepolia];
+const selectedChains = [chains.optimismSepolia, chains.baseSepolia];
 let deployableChains = selectedChains;
 
 task("deploy-ccip-infrastructure", "Deploy the CCIP infrastructure")
@@ -23,6 +23,7 @@ task("deploy-ccip-infrastructure", "Deploy the CCIP infrastructure")
     await subscriptionHealthcheck(selectedChains);
     await setContractVariables(selectedChains);
     await fundContract(deployableChains);
+    //todo: allowance of link & BNM
   });
 
 function secretsHealthcheck(selectedChains) {

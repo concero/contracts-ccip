@@ -65,8 +65,8 @@ const walletClient = createWalletClient({
 	transport: custom({
 		async request({method, params}) {
 			if (method === 'eth_chainId') return chainSelectors[dstChainSelector].chain.id;
-			if (method === 'eth_estimateGas') return '0xC3500';
-			if (method === 'eth_maxPriorityFeePerGas') return '0x0';
+			if (method === 'eth_estimateGas') return '0xc3500';
+			if (method === 'eth_maxPriorityFeePerGas') return '0x3b9aca00';
 			const response = await Functions.makeHttpRequest({
 				url: chainSelectors[dstChainSelector].url,
 				method: 'post',
@@ -82,31 +82,9 @@ try {
 		abi,
 		functionName: 'addUnconfirmedTX',
 		address: contractAddress,
-		args: [ccipMessageId, sender, recipient, amount, srcChainSelector, token, blockNumber],
+		args: [ccipMessageId, sender, recipient, amount, BigInt(srcChainSelector), token, blockNumber],
 	});
-	if (hash) {
-		if (typeof hash === 'string') {
-			return Functions.encodeString(hash + 'str');
-		} else if (typeof hash === 'number') {
-			return Functions.encodeString('hashnum');
-		} else if (typeof hash === 'bigint') {
-			return Functions.encodeString('bigint');
-		} else {
-			return Functions.encodeString('wronghash');
-		}
-	} else {
-		return Functions.encodeString('nohash');
-	}
+	return Functions.encodeString(hash);
 } catch (err) {
-	if (typeof err === 'string') {
-		return Functions.encodeString(err);
-	} else if (typeof err === 'object') {
-		if (Object.keys(err).length) {
-			return Functions.encodeString('objerr');
-		} else {
-			return Functions.encodeString('noobjerr');
-		}
-	} else {
-		return Functions.encodeString('err');
-	}
+	return Functions.encodeString('error');
 }

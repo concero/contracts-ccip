@@ -1,5 +1,5 @@
 import { networkEnvKeys } from "../constants/CNetworks";
-import { abi } from "../artifacts/contracts/Concero.sol/Concero.json";
+import { abi } from "../artifacts/contracts/Concero.sol/Concero.json"; //todo: this can be old if changed during execution.
 import { CNetwork } from "../types/CNetwork";
 import { getClients } from "./switchChain";
 

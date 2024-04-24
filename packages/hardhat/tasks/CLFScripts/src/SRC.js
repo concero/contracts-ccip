@@ -6,9 +6,9 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
-const {createWalletClient, custom} = await import('npm:viem');
-const {privateKeyToAccount} = await import('npm:viem/accounts');
-const {sepolia, arbitrumSepolia, baseSepolia, optimismSepolia, avalancheFuji} = await import('npm:viem/chains');
+const {createWalletClient, custom} = await import('npm:viem@2.9.26');
+const {privateKeyToAccount} = await import('npm:viem@2.9.26/accounts');
+const {sepolia, arbitrumSepolia, baseSepolia, optimismSepolia, avalancheFuji} = await import('npm:viem@2.9.26/chains');
 const [
 	contractAddress,
 	ccipMessageId,
@@ -77,14 +77,11 @@ const walletClient = createWalletClient({
 		},
 	}),
 });
-try {
-	const hash = await walletClient.writeContract({
-		abi,
-		functionName: 'addUnconfirmedTX',
-		address: contractAddress,
-		args: [ccipMessageId, sender, recipient, amount, BigInt(srcChainSelector), token, blockNumber],
-	});
-	return Functions.encodeString(hash);
-} catch (err) {
-	return Functions.encodeString('error');
-}
+
+const hash = await walletClient.writeContract({
+	abi,
+	functionName: 'addUnconfirmedTX',
+	address: contractAddress,
+	args: [ccipMessageId, sender, recipient, amount, BigInt(srcChainSelector), token, blockNumber],
+});
+return Functions.encodeString(hash);

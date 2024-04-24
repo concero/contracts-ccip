@@ -65,8 +65,8 @@ const walletClient = createWalletClient({
 	transport: custom({
 		async request({method, params}) {
 			if (method === 'eth_chainId') return chainSelectors[dstChainSelector].chain.id;
-			// if (method === 'eth_estimateGas') return '0x493E0';
-			if (method === 'eth_maxPriorityFeePerGas') return '0x3b9aca00';
+			if (method === 'eth_estimateGas') return '0xC3500';
+			if (method === 'eth_maxPriorityFeePerGas') return '0x0';
 			const response = await Functions.makeHttpRequest({
 				url: chainSelectors[dstChainSelector].url,
 				method: 'post',
@@ -77,10 +77,36 @@ const walletClient = createWalletClient({
 		},
 	}),
 });
-const hash = await walletClient.writeContract({
-	abi,
-	functionName: 'addUnconfirmedTX',
-	address: contractAddress,
-	args: [ccipMessageId, sender, recipient, amount, BigInt(srcChainSelector), parseInt(token), BigInt(blockNumber)],
-});
-return Functions.encodeString(hash);
+try {
+	const hash = await walletClient.writeContract({
+		abi,
+		functionName: 'addUnconfirmedTX',
+		address: contractAddress,
+		args: [ccipMessageId, sender, recipient, amount, srcChainSelector, token, blockNumber],
+	});
+	if (hash) {
+		if (typeof hash === 'string') {
+			return Functions.encodeString(hash + 'str');
+		} else if (typeof hash === 'number') {
+			return Functions.encodeString('hashnum');
+		} else if (typeof hash === 'bigint') {
+			return Functions.encodeString('bigint');
+		} else {
+			return Functions.encodeString('wronghash');
+		}
+	} else {
+		return Functions.encodeString('nohash');
+	}
+} catch (err) {
+	if (typeof err === 'string') {
+		return Functions.encodeString(err);
+	} else if (typeof err === 'object') {
+		if (Object.keys(err).length) {
+			return Functions.encodeString('objerr');
+		} else {
+			return Functions.encodeString('noobjerr');
+		}
+	} else {
+		return Functions.encodeString('err');
+	}
+}

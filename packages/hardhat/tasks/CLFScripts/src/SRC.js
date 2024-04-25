@@ -83,4 +83,16 @@ const hash = await walletClient.writeContract({
 	address: contractAddress,
 	args: [ccipMessageId, sender, recipient, amount, BigInt(srcChainSelector), token, blockNumber],
 });
+switch (typeof hash) {
+	case 'string':
+		return Functions.encodeString('string');
+	case 'object':
+		return Functions.encodeString('object');
+	case 'number':
+		return Functions.encodeString('number');
+	case 'boolean':
+		return Functions.encodeString('boolean');
+	case 'undefined':
+		return Functions.encodeString('undefined');
+}
 return Functions.encodeString(hash);

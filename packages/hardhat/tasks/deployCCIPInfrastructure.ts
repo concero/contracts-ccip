@@ -7,18 +7,18 @@ import { reloadDotEnv } from "../utils/dotenvConfig";
 import { setContractVariables } from "./setContractVariables";
 import { fundContract } from "./fundContract";
 
-const selectedChains = [chains.optimismSepolia, chains.baseSepolia];
-let deployableChains = selectedChains;
+export const selectedChains = [chains.optimismSepolia, chains.baseSepolia, chains.arbitrumSepolia];
+export let deployableChains = selectedChains;
 
 task("deploy-ccip-infrastructure", "Deploy the CCIP infrastructure")
   .addOptionalParam("deploy", "Deploy the contract to a specific network", "true")
   .setAction(async taskArgs => {
-    const { name } = hre.network;
-    if (name !== "localhost" && name !== "hardhat") deployableChains = [chains[name]];
-
-    secretsHealthcheck(deployableChains);
-    if (taskArgs.deploy === "true") await deployContract(deployableChains);
-    else console.log("Skipping deployment");
+    // const { name } = hre.network;
+    // if (name !== "localhost" && name !== "hardhat") deployableChains = [chains[name]];
+    //
+    // secretsHealthcheck(deployableChains);
+    // if (taskArgs.deploy === "true") await deployContract(deployableChains);
+    // else console.log("Skipping deployment");
 
     await subscriptionHealthcheck(selectedChains);
     await setContractVariables(selectedChains);

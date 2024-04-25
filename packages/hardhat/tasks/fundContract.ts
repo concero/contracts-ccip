@@ -3,6 +3,10 @@ import ierc20Abi from "@chainlink/contracts/abi/v0.8/IERC20.json";
 import { getClients } from "./switchChain";
 import { networkEnvKeys } from "../constants/CNetworks";
 import { dripCCIPBnM } from "./dripCCIPBnM";
+import { task } from "hardhat/config";
+import { selectedChains } from "./deployCCIPInfrastructure";
+import chains from "../constants/CNetworks";
+import { formatUnits } from "viem";
 
 export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
   //checks balance of CCIPBnm of deployer
@@ -22,7 +26,7 @@ export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
     }
   }
 }
-export async function fundContract(chains: CNetwork[]) {
+export async function fundContract(chains: CNetwork[], amount: number = 1) {
   for (const chain of chains) {
     const { name, viemChain, ccipBnmToken, url } = chain;
     const contract = process.env[`CONCEROCCIP_${networkEnvKeys[name]}`];
@@ -33,10 +37,25 @@ export async function fundContract(chains: CNetwork[]) {
       abi: ierc20Abi,
       account,
       address: ccipBnmToken,
-      args: [contract, 1n * 10n ** 18n],
+      args: [contract, BigInt(amount) * 10n ** 18n],
     });
     const sendHash = await walletClient.writeContract(sendReq);
     const { cumulativeGasUsed: sendGasUsed } = await publicClient.waitForTransactionReceipt({ hash: sendHash });
-    console.log(`Sent 1 CCIPBNM token to ${name}:${contract}. Gas used: ${sendGasUsed.toString()}`);
+    console.log(`Sent ${amount} CCIPBNM to ${name}:${contract}. Gas used: ${sendGasUsed.toString()}`);
   }
 }
+
+task("fund-contracts", "Funds the contract with 1 CCIPBNM token")
+  .addOptionalParam("amount", "Amount of CCIPBNM to send", "1")
+  .setAction(async taskArgs => {
+    const { name } = hre.network;
+    const amount = parseInt(taskArgs.amount, 10);
+    if (name !== "localhost" && name !== "hardhat") {
+      await fundContract([chains[name]], amount);
+    } else {
+      for (const chain of selectedChains) {
+        await fundContract([chain], amount);
+      }
+    }
+  });
+export default {};

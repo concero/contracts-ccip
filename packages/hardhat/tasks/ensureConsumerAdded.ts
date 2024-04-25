@@ -19,7 +19,7 @@ export async function subscriptionHealthcheck(selectedChains: CNetwork[]) {
       client: { public: publicClient, wallet: walletClient },
     });
     const { balance, consumers } = await functionsRouterContract.read.getSubscription([functionsSubIds[0]]);
-    const minBalance = 7n * 10n ** 18n; // Set minimum balance to 7 LINK
+    const minBalance = 250n * 10n ** 18n; // Set minimum balance to 250 LINK
 
     if (balance < minBalance) {
       const amountToFund = minBalance - balance;

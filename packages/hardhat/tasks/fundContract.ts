@@ -31,6 +31,8 @@ export async function fundContract(chains: CNetwork[], amount: number = 1) {
     const { name, viemChain, ccipBnmToken, url } = chain;
     const contract = process.env[`CONCEROCCIP_${networkEnvKeys[name]}`];
     const { walletClient, publicClient, account } = getClients(viemChain, url);
+    const gasPrice = await publicClient.getGasPrice();
+    console.log("gasprice", gasPrice);
     await ensureDeployerBnMBalance(chains);
     const { request: sendReq } = await publicClient.simulateContract({
       functionName: "transfer",
@@ -38,6 +40,7 @@ export async function fundContract(chains: CNetwork[], amount: number = 1) {
       account,
       address: ccipBnmToken,
       args: [contract, BigInt(amount) * 10n ** 18n],
+      gasPrice,
     });
     const sendHash = await walletClient.writeContract(sendReq);
     const { cumulativeGasUsed: sendGasUsed } = await publicClient.waitForTransactionReceipt({ hash: sendHash });
@@ -45,8 +48,8 @@ export async function fundContract(chains: CNetwork[], amount: number = 1) {
   }
 }
 
-task("fund-contracts", "Funds the contract with 1 CCIPBNM token")
-  .addOptionalParam("amount", "Amount of CCIPBNM to send", "1")
+task("fund-contracts", "Funds the contract with CCIPBNM tokens")
+  .addOptionalParam("amount", "Amount of CCIPBNM to send", "5")
   .setAction(async taskArgs => {
     const { name } = hre.network;
     const amount = parseInt(taskArgs.amount, 10);
@@ -59,3 +62,17 @@ task("fund-contracts", "Funds the contract with 1 CCIPBNM token")
     }
   });
 export default {};
+
+task("drip-ccip-bnm", "Drips CCIPBNM tokens to the deployer")
+  .addOptionalParam("amount", "Amount of CCIPBNM to drip", "5")
+  .setAction(async taskArgs => {
+    const { name } = hre.network;
+    const amount = parseInt(taskArgs.amount, 10);
+    if (name !== "localhost" && name !== "hardhat") {
+      await dripCCIPBnM([chains[name]], amount);
+    } else {
+      for (const chain of selectedChains) {
+        await dripCCIPBnM([chain], amount);
+      }
+    }
+  });

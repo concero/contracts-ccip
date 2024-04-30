@@ -5,7 +5,7 @@ import info from "./info";
 // import cancel from "./cancel";
 // import transfer from "./transfer";
 // import accept from "./accept";
-// import timeoutRequests from "./timeoutRequests";
+import timeoutRequests from "./timeoutRequests";
 import add from "./add";
 
 export default {
@@ -13,9 +13,9 @@ export default {
   fund,
   info,
   add,
+  timeoutRequests,
   // remove,
   // cancel,
   // transfer,
   // accept,
-  // timeoutRequests
 };

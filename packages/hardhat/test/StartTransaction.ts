@@ -91,7 +91,6 @@ describe("startBatchTransactions", () => {
       viemPublicClient: any,
       fromBlock: string,
     ): Promise<any | null> => {
-      console.log(id, eventName, contractAddress, viemPublicClient.chain.id, fromBlock);
       const logs = await viemPublicClient.getLogs({
         address: contractAddress,
         abi: ConceroAbi,

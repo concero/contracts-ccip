@@ -40,7 +40,7 @@ describe("startBatchTransactions", () => {
   const amount = "100000000000000";
   const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
   const linkTokenAddress = process.env.LINK_BASE_SEPOLIA;
-  const transactionsCount = 1;
+  const transactionsCount = 5;
   const srcContractAddress = process.env.CONCEROCCIP_BASE_SEPOLIA;
   const dstContractAddress = process.env.CONCEROCCIP_OPTIMISM_SEPOLIA;
 
@@ -163,12 +163,15 @@ describe("startBatchTransactions", () => {
     const transactionHashes = await Promise.all(transactionPromises);
     console.log("transactionHashes: ", transactionHashes);
 
-    const status = await checkTransactionStatus(
-      transactionHashes[0],
-      "0x" + fromSrcBlockNumber.toString(16),
-      "0x" + fromDstBlockNumber.toString(16),
-    );
+    const txStatusPromises = transactionHashes.map(txHash => {
+      return checkTransactionStatus(
+        txHash,
+        "0x" + fromSrcBlockNumber.toString(16),
+        "0x" + fromDstBlockNumber.toString(16),
+      );
+    });
 
-    console.log("status: ", status);
+    const txStatuses = await Promise.all(txStatusPromises);
+    console.log("txStatuses: ", txStatuses);
   }).timeout(0);
 });

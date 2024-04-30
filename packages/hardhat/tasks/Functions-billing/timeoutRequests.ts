@@ -1,9 +1,11 @@
 import { task, types } from "hardhat/config";
-import { SubscriptionManager, fetchRequestCommitment } from "@chainlink/functions-toolkit";
+import { fetchRequestCommitment, SubscriptionManager } from "@chainlink/functions-toolkit";
 import chains from "../../constants/CNetworks";
-import { JsonRpcProvider } from "ethers";
 
-task("functions-timeout-requests", "Times out expired Functions requests which have not been fulfilled within 5 minutes")
+task(
+  "functions-timeout-requests",
+  "Times out expired Functions requests which have not been fulfilled within 5 minutes",
+)
   .addParam("requestids", "1 or more request IDs to timeout separated by commas")
   .addOptionalParam("toblock", "Ending search block number (defaults to latest block)")
   .addOptionalParam("pastblockstosearch", "Number of past blocks to search", 1000, types.int)
@@ -20,13 +22,17 @@ task("functions-timeout-requests", "Times out expired Functions requests which h
     const { linkToken, functionsRouter, functionsDonIdAlias, confirmations, url } = chains[name];
     const txOptions = { confirmations };
 
-    const sm = new SubscriptionManager({ signer, linkTokenAddress: linkToken, functionsRouterAddress: functionsRouter });
+    const sm = new SubscriptionManager({
+      signer,
+      linkTokenAddress: linkToken,
+      functionsRouterAddress: functionsRouter,
+    });
     await sm.initialize();
 
     const requestCommitments = [];
     for (const requestId of requestIdsToTimeout) {
       try {
-        const provider = new JsonRpcProvider(url);
+        const provider = hre.ethers.provider;
         const requestCommitment = await fetchRequestCommitment({
           requestId,
           provider,

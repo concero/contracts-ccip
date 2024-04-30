@@ -6,19 +6,27 @@ import { Chain } from "viem/types/chain";
 import type { Account } from "viem/accounts/types";
 import { RpcSchema } from "viem/types/eip1193";
 import { privateKeyToAccount } from "viem/accounts";
-import { createPublicClient, createWalletClient, http, PrivateKeyAccount } from "viem";
-import { baseSepolia } from "viem/chains";
+import { createPublicClient, createWalletClient, decodeEventLog, http, PrivateKeyAccount } from "viem";
+import { baseSepolia, optimismSepolia } from "viem/chains";
 import ERC20ABI from "../abi/ERC20.json";
 import { PublicClient } from "viem/clients/createPublicClient";
 import { abi as ConceroAbi } from "../artifacts/contracts/Concero.sol/Concero.json";
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 describe("startBatchTransactions", () => {
   let Concero: Concero;
-  let publicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
+  let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
     chain: baseSepolia,
-    transport: http(),
+    transport: http(`https://base-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`),
   });
-  let viemAccount: PrivateKeyAccount = privateKeyToAccount(("0x" + process.env.TESTS_WALLET_PRIVATE_KEY) as `0x${string}`);
+  let dstPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
+    chain: optimismSepolia,
+    transport: http(`https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`),
+  });
+  let viemAccount: PrivateKeyAccount = privateKeyToAccount(
+    ("0x" + process.env.TESTS_WALLET_PRIVATE_KEY) as `0x${string}`,
+  );
   let nonce: BigInt;
   let walletClient: WalletClient<HttpTransport, Chain, Account, RpcSchema> = createWalletClient({
     chain: baseSepolia,
@@ -32,18 +40,19 @@ describe("startBatchTransactions", () => {
   const amount = "100000000000000";
   const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
   const linkTokenAddress = process.env.LINK_BASE_SEPOLIA;
-  const transactionsCount = 30;
-  const baseContractAddress = process.env.CONCEROCCIP_BASE_SEPOLIA;
+  const transactionsCount = 1;
+  const srcContractAddress = process.env.CONCEROCCIP_BASE_SEPOLIA;
+  const dstContractAddress = process.env.CONCEROCCIP_OPTIMISM_SEPOLIA;
 
   before(async () => {
-    nonce = await publicClient.getTransactionCount({
+    nonce = await srcPublicClient.getTransactionCount({
       address: viemAccount.address,
     });
   });
 
   const approveBnmAndLink = async () => {
     const approveToken = async (tokenAddress: string) => {
-      const tokenAmount = await publicClient.readContract({
+      const tokenAmount = await srcPublicClient.readContract({
         abi: ERC20ABI,
         functionName: "balanceOf",
         address: tokenAddress as `0x${string}`,
@@ -54,7 +63,7 @@ describe("startBatchTransactions", () => {
         abi: ERC20ABI,
         functionName: "approve",
         address: tokenAddress as `0x${string}`,
-        args: [baseContractAddress, BigInt(tokenAmount)],
+        args: [srcContractAddress, BigInt(tokenAmount)],
         nonce: nonce++,
       });
 
@@ -66,20 +75,82 @@ describe("startBatchTransactions", () => {
     const bnmHash = await approveToken(bnmTokenAddress);
     const linkHash = await approveToken(linkTokenAddress);
 
-    await Promise.all([publicClient.waitForTransactionReceipt({ hash: bnmHash }), publicClient.waitForTransactionReceipt({ hash: linkHash })]);
+    await Promise.all([
+      srcPublicClient.waitForTransactionReceipt({ hash: bnmHash }),
+      srcPublicClient.waitForTransactionReceipt({ hash: linkHash }),
+    ]);
+  };
+
+  const checkTransactionStatus = async (transactionHash: string, fromSrcBlockNumber: string, fromDstBlock: string) => {
+    await srcPublicClient.waitForTransactionReceipt({ hash: transactionHash });
+
+    const getLog = async (
+      id: string,
+      eventName: string,
+      contractAddress: string,
+      viemPublicClient: any,
+      fromBlock: string,
+    ): Promise<any | null> => {
+      console.log(id, eventName, contractAddress, viemPublicClient.chain.id, fromBlock);
+      const logs = await viemPublicClient.getLogs({
+        address: contractAddress,
+        abi: ConceroAbi,
+        fromBlock: fromBlock,
+        toBlock: "latest",
+      });
+
+      const filteredLog = logs.find((log: any) => {
+        const decodedLog: any = decodeEventLog({
+          abi: ConceroAbi,
+          data: log.data,
+          topics: log.topics,
+        });
+
+        const logId = eventName === "CCIPSent" ? log.transactionHash : decodedLog.args.ccipMessageId;
+        return logId?.toLowerCase() === id.toLowerCase() && decodedLog.eventName === eventName;
+      });
+
+      if (!filteredLog) {
+        return null;
+      }
+
+      return decodeEventLog({
+        abi: ConceroAbi,
+        data: filteredLog.data,
+        topics: filteredLog.topics,
+      });
+    };
+
+    const ccipMessageId = (
+      await getLog(transactionHash, "CCIPSent", srcContractAddress, srcPublicClient, fromSrcBlockNumber)
+    ).args.ccipMessageId;
+
+    console.log("ccipMessageId: ", ccipMessageId);
+
+    let dstLog = null;
+    while (dstLog === null) {
+      dstLog = await getLog(ccipMessageId, "TXReleased", dstContractAddress, dstPublicClient, fromDstBlock);
+      console.log("dstLogs: ", dstLog);
+      await sleep(2000);
+    }
+
+    return dstLog;
   };
 
   it("should start transactions", async () => {
+    const fromSrcBlockNumber = await srcPublicClient.getBlockNumber();
+    const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
+
     await approveBnmAndLink();
 
     let transactionPromises = [];
 
     for (let i = 0; i < transactionsCount; i++) {
-      const gasPrice = await publicClient.getGasPrice();
-      const { request } = await publicClient.simulateContract({
+      const gasPrice = await srcPublicClient.getGasPrice();
+      const { request } = await srcPublicClient.simulateContract({
         abi: ConceroAbi,
         functionName: "startTransaction",
-        address: baseContractAddress as `0x${string}`,
+        address: srcContractAddress as `0x${string}`,
         args: [bnmTokenAddress, 0, BigInt(amount), BigInt(dstChainSelector), senderAddress],
         account: viemAccount as Account,
         value: gasPrice * BigInt(1_600_000),
@@ -91,5 +162,13 @@ describe("startBatchTransactions", () => {
 
     const transactionHashes = await Promise.all(transactionPromises);
     console.log("transactionHashes: ", transactionHashes);
-  });
+
+    const status = await checkTransactionStatus(
+      transactionHashes[0],
+      "0x" + fromSrcBlockNumber.toString(16),
+      "0x" + fromDstBlockNumber.toString(16),
+    );
+
+    console.log("status: ", status);
+  }).timeout(0);
 });

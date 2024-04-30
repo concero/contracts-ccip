@@ -33,8 +33,10 @@ function secretsHealthcheck(selectedChains) {
   reloadDotEnv();
 }
 
-task("functions-secrets-healthcheck", "Ensures secrets are hosted on the DON for each network").setAction(async taskArgs => {
-  secretsHealthcheck(selectedChains);
-});
+task("functions-secrets-healthcheck", "Ensures secrets are hosted on the DON for each network").setAction(
+  async taskArgs => {
+    secretsHealthcheck(selectedChains);
+  },
+);
 
 export default {};

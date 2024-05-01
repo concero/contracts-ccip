@@ -5,13 +5,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract ConceroPool is Ownable {
-  address public approvedSender;
+  mapping(address => bool) public approvedSenders;
   mapping(address => bool) public isTokenSupported;
   mapping(address => uint256) public tokenBalances;
 
   event Deposited(address indexed token, address indexed from, uint256 amount);
   event Withdrawn(address indexed token, address indexed to, uint256 amount);
-  event ApprovedSenderChanged(address indexed previousSender, address indexed newSender);
+  event ApprovedSenderUpdated(address indexed newSender, bool isApproved);
 
   error Unauthorized();
   error InsufficientBalance();
@@ -24,13 +24,13 @@ contract ConceroPool is Ownable {
   }
 
   modifier onlyApprovedSender() {
-    require(msg.sender == approvedSender, "Caller is not the approved sender");
+    if (!approvedSenders[msg.sender]) revert Unauthorized();
     _;
   }
 
-  function setApprovedSender(address _approvedSender) external onlyOwner {
-    approvedSender = _approvedSender;
-    emit ApprovedSenderChanged(approvedSender, _approvedSender);
+  function setApprovedSender(address _approvedSender, bool _isApproved) external onlyOwner {
+    approvedSenders[_approvedSender] = _isApproved;
+    emit ApprovedSenderUpdated(_approvedSender, _isApproved);
   }
 
   function setSupportedToken(address token, bool isSupported) external onlyOwner {
@@ -59,6 +59,7 @@ contract ConceroPool is Ownable {
 
   function withdrawToken(address token, uint256 amount) external onlyApprovedSender {
     if (!isTokenSupported[token]) revert TokenNotSupported();
+    if (amount > tokenBalances[token]) revert InsufficientBalance();
     tokenBalances[token] -= amount;
     bool success = IERC20(token).transfer(msg.sender, amount);
     if (!success) revert TransferFailed();

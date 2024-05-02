@@ -35,9 +35,9 @@ contract ConceroMock is Concero {
   {
     transactions[CCIP_MESSAGE_ID] = Transaction({
       ccipMessageId: CCIP_MESSAGE_ID,
-      sender: address(this),
-      recipient: address(this),
-      amount: 100000000000000000,
+      sender: 0x70E73f067a1fC9FE6D53151bd271715811746d3a,
+      recipient: 0x70E73f067a1fC9FE6D53151bd271715811746d3a,
+      amount: 1000000000000,
       token: CCIPToken.bnm,
       srcChainSelector: 4949039107694359620,
       isConfirmed: false

@@ -15,6 +15,7 @@
     "format": "prettier --write ./*.ts ./deploy/**/*.ts ./scripts/**/*.ts ./test/**/*.ts",
     "test": "REPORT_GAS=true hardhat test --network hardhat",
     "forge-test": "cd ./test/forge/ && forge test -vvvvv",
+    "forge-clean": "cd ./test/forge/ && forge clean",
     "verify": "hardhat etherscan-verify",
     "hardhat-verify": "hardhat verify",
     "clean": "rm -rf ./artifacts ./cache ./coverage ./typechain-types",

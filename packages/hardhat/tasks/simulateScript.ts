@@ -41,13 +41,13 @@ task("functions-simulate-script", "Executes the JavaScript source code locally")
   .setAction(async (taskArgs, hre) => {
     execSync(`bunx hardhat functions-build-script --path SRC.js`, { stdio: "inherit" });
     await simulate(path.join(__dirname, "./CLFScripts/dist/SRC.min.js"), [
-      process.env.CONCEROCCIP_ARBITRUM_SEPOLIA, // contractAddress
+      process.env.CONCEROCCIP_OPTIMISM_SEPOLIA, // contractAddress
       "0x183a9b5dda70401944eae78ade21a7f6f433b5cfdb0c87130c35e86a151fc822", // ccipMessageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
       "100000000000000000", // amount
-      process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA, // srcChainSelector
-      process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA, // dstChainSelector
+      process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA, // srcChainSelector
+      process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA, // dstChainSelector
       "0", // token
       "0xA65233", // blockNumber
     ]);

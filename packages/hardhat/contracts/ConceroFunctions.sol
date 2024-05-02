@@ -123,7 +123,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   }
 
   function _confirmTX(bytes32 ccipMessageId) internal {
-    Transaction memory transaction = transactions[ccipMessageId];
+    Transaction storage transaction = transactions[ccipMessageId];
     require(transaction.sender != address(0), "TX does not exist");
     require(!transaction.isConfirmed, "TX already confirmed");
     transaction.isConfirmed = true;

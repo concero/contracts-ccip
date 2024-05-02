@@ -5,6 +5,12 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // const secrets = {};
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
+//todo: use ethers because it doesn't crash
+//todo: or destructure viem and paste its functions into the call
+//prod: use eval and off-chain hosted code with shasum check
+// check dep bundlers
+
+// its only 4 nodes!
 
 const {createWalletClient, custom} = await import('npm:viem@2.9.0');
 const {privateKeyToAccount} = await import('npm:viem@2.9.0/accounts');
@@ -20,6 +26,8 @@ const [
 	token,
 	blockNumber,
 ] = args;
+//todo: use bytes.args
+// math random is ok?
 const chainSelectors = {
 	'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
 		url: `https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
@@ -83,5 +91,6 @@ const hash = await walletClient.writeContract({
 	address: contractAddress,
 	args: [ccipMessageId, sender, recipient, amount, BigInt(srcChainSelector), token, blockNumber],
 });
-
+// todo convert to a uint8 array
 return Functions.encodeString(typeof hash);
+//todo: trycatch to trim errors

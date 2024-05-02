@@ -97,7 +97,7 @@ interface IFunctions is IConceroCommon {
   }
 
   struct Transaction {
-    bytes32 ccipMessageId;
+    bytes32 ccipMessageId; // TODO: remove this field
     address sender;
     address recipient;
     uint256 amount;

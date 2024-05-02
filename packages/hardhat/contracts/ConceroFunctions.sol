@@ -85,6 +85,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
 
     string[] memory args = new string[](9);
+    //todo: use bytes
     args[0] = Strings.toHexString(conceroContracts[srcChainSelector]);
     args[1] = Strings.toString(srcChainSelector);
     args[2] = Strings.toHexString(blockNumber);

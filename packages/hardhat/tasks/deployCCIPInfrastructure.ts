@@ -7,7 +7,7 @@ import { reloadDotEnv } from "../utils/dotenvConfig";
 import { setContractVariables } from "./setContractVariables";
 import { fundContract } from "./fundContract";
 
-export const selectedChains = [chains.optimismSepolia, chains.baseSepolia];
+export const selectedChains = [chains.optimismSepolia, chains.baseSepolia, chains.arbitrumSepolia];
 export let deployableChains = selectedChains;
 
 task("deploy-ccip-infrastructure", "Deploy the CCIP infrastructure")

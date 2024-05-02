@@ -3,12 +3,13 @@ import chains from "../../constants/CNetworks";
 import updateEnvVariable from "../../utils/updateEnvVariable";
 import { networkEnvKeys } from "../../constants/CNetworks";
 import { task } from "hardhat/config";
-import { abi } from "../../artifacts/contracts/Concero.sol/Concero.json"; //todo: REMOVE, this can be an OLD abi
-
 import { uploadSecretsToDon } from "./uploadSecretsToDon";
 import { getClients } from "../switchChain";
+import load from "../../utils/load";
+
 // run with: bunx hardhat functions-list-don-secrets --network avalancheFuji
 task("functions-ensure-don-secrets", "Displays encrypted secrets hosted on the DON").setAction(async taskArgs => {
+  const { abi } = await load("../artifacts/contracts/Concero.sol/Concero.json");
   const { name } = hre.network;
   const signer = await hre.ethers.getSigner();
   const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls, viemChain, url } = chains[name];
@@ -51,8 +52,12 @@ task("functions-ensure-don-secrets", "Displays encrypted secrets hosted on the D
       chain: viemChain,
     });
     const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
-    const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({ hash: setDstConceroContractHash });
-    console.log(`Set ${name}:${contract} setDonHostedSecretsVersion[${name}, ${row.version}]. Gas used: ${setDstConceroContractGasUsed.toString()}`);
+    const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({
+      hash: setDstConceroContractHash,
+    });
+    console.log(
+      `Set ${name}:${contract} setDonHostedSecretsVersion[${name}, ${row.version}]. Gas used: ${setDstConceroContractGasUsed.toString()}`,
+    );
   }
 
   console.log(`DON secrets for ${name}:`);

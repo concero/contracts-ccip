@@ -80,6 +80,7 @@ interface IFunctions is IConceroCommon {
     address token,
     uint256 amount
   );
+  event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
 
   error NotMessenger(address);
   error TXAlreadyExists(bytes32 txHash, bool isConfirmed);
@@ -94,6 +95,7 @@ interface IFunctions is IConceroCommon {
   struct Request {
     RequestType requestType;
     bool isPending;
+    bytes32 ccipMessageId;
   }
 
   struct Transaction {

@@ -50,10 +50,7 @@ try {
 			if (payload.method === 'eth_estimateGas') {
 				return [{jsonrpc: '2.0', id: payload.id, result: '0x1e8480'}];
 			}
-			if (
-				(payload.method === 'eth_chainId' && payload.id === 4) ||
-				(payload.method === 'eth_chainId' && payload.id === 5)
-			) {
+			if (payload.method === 'eth_chainId') {
 				return [res];
 			}
 			return res;

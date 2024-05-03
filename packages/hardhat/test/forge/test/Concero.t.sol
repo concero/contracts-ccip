@@ -2,21 +2,28 @@
 pragma solidity ^0.8.19;
 
 import {Test, console2} from "forge-std/Test.sol";
+import {StdCheats} from "forge-std/StdCheats.sol";
 import {Concero} from "contracts/Concero.sol";
 
 bytes32 constant CCIP_MESSAGE_ID = 0x7488ba033a94f37b22acb64fafab9d00aabff29c3f325dfcf4a217767b2bede2;
+string constant BASE_SEPOLIA_RPC = "https://sepolia.base.org";
+uint256 constant BASE_SEPOLIA_END_FORK_BLOCK_NUMBER = 9480039;
 
 contract ConceroConfirmTxTest is Test {
   ConceroMock public concero;
+  uint256 public baseForkId;
 
   function setUp() public {
     concero = new ConceroMock();
+    //    baseForkId = vm.createFork(BASE_SEPOLIA_RPC, BASE_SEPOLIA_END_FORK_BLOCK_NUMBER);
   }
 
   function test_confirmTx() public {
+    //    vm.selectFork(baseForkId);
+
     concero.mock_confirmTx(CCIP_MESSAGE_ID);
     Concero.Transaction memory transaction = concero.getTransaction(CCIP_MESSAGE_ID);
-    assertEq(transaction.isConfirmed, true);
+    assert(transaction.isConfirmed == true);
   }
 }
 
@@ -49,6 +56,6 @@ contract ConceroMock is Concero {
   }
 
   function mock_confirmTx(bytes32 ccipMessageId) public {
-    _confirmTX(ccipMessageId);
+    _confirmTX(ccipMessageId, transactions[ccipMessageId]);
   }
 }

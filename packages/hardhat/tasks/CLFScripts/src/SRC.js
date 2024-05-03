@@ -8,7 +8,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 try {
 	const ethers = await import('npm:ethers@6.10.0');
 	const [
-		contractAddress,
+		dstContractAddress,
 		ccipMessageId,
 		sender,
 		recipient,
@@ -35,11 +35,35 @@ try {
 			url: `https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
 		},
 	};
+	class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
+		constructor(url) {
+			super(url);
+			this.url = url;
+		}
+		async _send(payload) {
+			let resp = await fetch(this.url, {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify(payload),
+			});
+			const res = await resp.json();
+			if (payload.method === 'eth_estimateGas') {
+				return [{jsonrpc: '2.0', id: payload.id, result: '0x2DC6C0'}];
+			}
+			if (
+				(payload.method === 'eth_chainId' && payload.id === 4) ||
+				(payload.method === 'eth_chainId' && payload.id === 5)
+			) {
+				return [res];
+			}
+			return res;
+		}
+	}
 	const abi = ['function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256) external'];
-	const provider = new ethers.JsonRpcProvider(chainSelectors[dstChainSelector].url);
+	const provider = new FunctionsJsonRpcProvider(chainSelectors[dstChainSelector].url);
 	const wallet = new ethers.Wallet('0x' + secrets.WALLET_PRIVATE_KEY, provider);
 	const signer = wallet.connect(provider);
-	const contract = new ethers.Contract(contractAddress, abi, signer);
+	const contract = new ethers.Contract(dstContractAddress, abi, signer);
 	const tx = await contract.addUnconfirmedTX(
 		ccipMessageId,
 		sender,
@@ -52,5 +76,5 @@ try {
 	return Functions.encodeString(tx.hash);
 } catch (error) {
 	console.error(error);
-	throw new Error(error);
+	throw new Error(error.message.slice(0, 255));
 }

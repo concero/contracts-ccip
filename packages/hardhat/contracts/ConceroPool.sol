@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract ConceroPool is Ownable {
   mapping(address => bool) public approvedSenders;
   mapping(address => bool) public isTokenSupported;
-  mapping(address => uint256) public tokenBalances;
+  mapping(address => mapping(address => uint256)) public userBalances; // User balances for each token and ETH
 
   event Deposited(address indexed token, address indexed from, uint256 amount);
   event Withdrawn(address indexed token, address indexed to, uint256 amount);
@@ -38,12 +38,14 @@ contract ConceroPool is Ownable {
   }
 
   function depositETH() external payable onlyApprovedSender {
+    userBalances[address(0)][msg.sender] += msg.value;
     emit Deposited(address(0), msg.sender, msg.value);
   }
 
   function withdrawETH(uint256 amount) external onlyApprovedSender {
-    if (amount > address(this).balance) revert InsufficientBalance();
+    if (amount > userBalances[address(0)][msg.sender]) revert InsufficientBalance();
 
+    userBalances[address(0)][msg.sender] -= amount;
     payable(msg.sender).transfer(amount);
     emit Withdrawn(address(0), msg.sender, amount);
   }
@@ -53,14 +55,14 @@ contract ConceroPool is Ownable {
     bool success = IERC20(token).transferFrom(msg.sender, address(this), amount);
     if (!success) revert TransferFailed();
 
-    tokenBalances[token] += amount;
+    userBalances[token][msg.sender] += amount;
     emit Deposited(token, msg.sender, amount);
   }
 
   function withdrawToken(address token, uint256 amount) external onlyApprovedSender {
-    if (!isTokenSupported[token]) revert TokenNotSupported();
-    if (amount > tokenBalances[token]) revert InsufficientBalance();
-    tokenBalances[token] -= amount;
+    if (amount > userBalances[token][msg.sender]) revert InsufficientBalance();
+
+    userBalances[token][msg.sender] -= amount;
     bool success = IERC20(token).transfer(msg.sender, amount);
     if (!success) revert TransferFailed();
 

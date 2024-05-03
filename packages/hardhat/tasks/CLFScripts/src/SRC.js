@@ -48,7 +48,7 @@ try {
 			});
 			const res = await resp.json();
 			if (payload.method === 'eth_estimateGas') {
-				return [{jsonrpc: '2.0', id: payload.id, result: '0x2DC6C0'}];
+				return [{jsonrpc: '2.0', id: payload.id, result: '0x1e8480'}];
 			}
 			if (
 				(payload.method === 'eth_chainId' && payload.id === 4) ||

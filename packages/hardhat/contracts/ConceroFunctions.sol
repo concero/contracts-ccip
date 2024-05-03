@@ -119,18 +119,19 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     if (requests[requestId].requestType == RequestType.checkTxSrc) {
       // TODO: handle error
       if (err.length > 0) return;
-      _confirmTX(bytesToBytes32(response));
+
+      bytes32 ccipMessageId = bytesToBytes32(response);
+      Transaction storage transaction = transactions[ccipMessageId];
+      _confirmTX(ccipMessageId, transaction);
+      sendTokenToEoa(ccipMessageId, transaction.sender, transaction.recipient, getToken(transaction.token), transaction.amount);
     }
   }
 
-  function _confirmTX(bytes32 ccipMessageId) internal {
-    Transaction storage transaction = transactions[ccipMessageId];
+  function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
     require(transaction.sender != address(0), "TX does not exist");
     require(!transaction.isConfirmed, "TX already confirmed");
     transaction.isConfirmed = true;
     emit TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
-
-    sendTokenToEoa(ccipMessageId, transaction.sender, transaction.recipient, getToken(transaction.token), transaction.amount);
   }
 
   function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {

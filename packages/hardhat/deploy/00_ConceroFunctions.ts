@@ -1,26 +1,29 @@
-import { CFunctions } from "../artifacts/contracts/CFunctions.sol";
 import { DeployFunction, Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import chains from "../constants/CNetworks";
 
 /* run with: yarn deploy --network avalancheFuji --tags CFunctions */
-const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const deployConceroFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
   // if (!chains[name]) throw new Error(`Chain ${name} not supported`);
   const { functionsRouter, functionsDonId, chainSelector, functionsSubIds, donHostedSecretsVersion } = chains[name];
-
-  const deployment = (await deploy("CFunctions", {
+  const chainIndex = "0";
+  const deployment = (await deploy("ConceroFunctions", {
     from: deployer,
     log: true,
-    args: [functionsRouter, functionsDonId, functionsSubIds[0], donHostedSecretsVersion, chainSelector],
+    args: [functionsRouter, donHostedSecretsVersion, functionsDonId, functionsSubIds[0], chainSelector, chainIndex],
     autoMine: true,
   })) as Deployment;
 
   // const cFunctions = await hre.ethers.getContract<CFunctions>("CFunctions", deployer);
   if (name !== "hardhat") {
-    const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(functionsRouter, deployment.address, functionsSubIds[0]);
+    const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(
+      functionsRouter,
+      deployment.address,
+      functionsSubIds[0],
+    );
     console.log(`CL Functions Consumer added successfully: ${CLFunctionsConsumerTXHash}`);
   }
   // exec(
@@ -35,5 +38,5 @@ const deployCFunctions: DeployFunction = async function (hre: HardhatRuntimeEnvi
   // );
 };
 
-export default deployCFunctions;
-deployCFunctions.tags = ["CFunctions"];
+export default deployConceroFunctions;
+deployConceroFunctions.tags = ["ConceroFunctions"];

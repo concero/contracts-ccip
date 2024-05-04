@@ -1,7 +1,6 @@
-import { ConceroCCIP } from "../artifacts/contracts/ConceroCCIP.sol";
 import { DeployFunction } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import CNetworks from "../constants/CNetworks";
+import chains, { networkEnvKeys } from "../constants/CNetworks";
 
 const deployConceroCCIP: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
@@ -9,12 +8,24 @@ const deployConceroCCIP: DeployFunction = async function (hre: HardhatRuntimeEnv
   const { name } = hre.network;
 
   // if (!CNetworks[hre.network.name]) throw new Error(`Chain ${hre.network.name} not supported`);
-  const { linkToken, ccipRouter } = CNetworks[name];
+  const { linkToken, ccipRouter, functionsRouter, functionsDonId, chainSelector, functionsSubIds, conceroChainIndex } =
+    chains[name];
 
+  const donHostedSecretsVersion = process.env[`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`]; // gets up-to-date env variable
+  const chainIndex = "0";
   const { address: contractAddress } = await deploy("ConceroCCIP", {
     from: deployer,
     log: true,
-    args: [linkToken, ccipRouter],
+    args: [
+      functionsRouter,
+      donHostedSecretsVersion,
+      functionsDonId,
+      functionsSubIds[0],
+      chainSelector,
+      chainIndex,
+      linkToken,
+      ccipRouter,
+    ],
     autoMine: true,
   });
 

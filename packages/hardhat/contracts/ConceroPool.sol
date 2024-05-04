@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract ConceroPool is Ownable {
   mapping(address => bool) public approvedSenders;
   mapping(address => bool) public isTokenSupported;
-  mapping(address => mapping(address => uint256)) public userBalances; // User balances for each token and ETH
+  mapping(address => mapping(address => uint256)) public userBalances; // token -> sender -> balance
 
   event Deposited(address indexed token, address indexed from, uint256 amount);
   event Withdrawn(address indexed token, address indexed to, uint256 amount);

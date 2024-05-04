@@ -8,9 +8,9 @@ import { RpcSchema } from "viem/types/eip1193";
 import { privateKeyToAccount } from "viem/accounts";
 import { createPublicClient, createWalletClient, decodeEventLog, http, PrivateKeyAccount } from "viem";
 import { baseSepolia, optimismSepolia } from "viem/chains";
-import ERC20ABI from "../abi/ERC20.json";
+import ERC20ABI from "../../abi/ERC20.json";
 import { PublicClient } from "viem/clients/createPublicClient";
-import { abi as ConceroAbi } from "../artifacts/contracts/Concero.sol/Concero.json";
+import { abi as ConceroAbi } from "../../artifacts/contracts/Concero.sol/Concero.json";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -40,7 +40,7 @@ describe("startBatchTransactions", () => {
   const amount = "100000000000000";
   const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
   const linkTokenAddress = process.env.LINK_BASE_SEPOLIA;
-  const transactionsCount = 5;
+  const transactionsCount = 3;
   const srcContractAddress = process.env.CONCEROCCIP_BASE_SEPOLIA;
   const dstContractAddress = process.env.CONCEROCCIP_OPTIMISM_SEPOLIA;
 

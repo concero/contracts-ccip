@@ -80,12 +80,20 @@ interface IFunctions is IConceroCommon {
     address token,
     uint256 amount
   );
+  event TXReleaseFailed(
+    bytes32 indexed ccipMessageId,
+    address sender,
+    address recipient,
+    address token,
+    uint256 amount
+  );
   event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
 
   error NotMessenger(address);
   error TXAlreadyExists(bytes32 txHash, bool isConfirmed);
   error UnexpectedRequestID(bytes32);
   error NotCCIPContract(address);
+  error SendTokenFailed(bytes32 ccipMessageId, address token, uint256 amount, address recipient);
 
   enum RequestType {
     addUnconfirmedTxDst,

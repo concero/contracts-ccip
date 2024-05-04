@@ -76,6 +76,8 @@ try {
 	);
 	return Functions.encodeString(tx.hash);
 } catch (error) {
-	console.error(error);
+	if (error.message === 'already known') {
+		return Functions.encodeString('already known');
+	}
 	throw new Error(error.message.slice(0, 255));
 }

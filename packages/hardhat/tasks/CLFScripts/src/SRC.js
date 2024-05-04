@@ -76,7 +76,11 @@ try {
 	);
 	return Functions.encodeString(tx.hash);
 } catch (error) {
-	if (error.message === 'already known') {
+	if (
+		(error.code === 'UNKNOWN_ERROR' && error.message.includes('already known')) ||
+		error.message.includes('replacement fee too low') ||
+		error.message.includes('nonce has already been used')
+	) {
 		return Functions.encodeString('already known');
 	}
 	throw new Error(error.message.slice(0, 255));

@@ -14,7 +14,7 @@ import { abi as ConceroAbi } from "../../artifacts/contracts/Concero.sol/Concero
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-describe("startBatchTransactions", () => {
+describe("startBatchTransactions\n", () => {
   let Concero: Concero;
   let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
     chain: baseSepolia,
@@ -40,7 +40,7 @@ describe("startBatchTransactions", () => {
   const amount = "100000000000000";
   const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
   const linkTokenAddress = process.env.LINK_BASE_SEPOLIA;
-  const transactionsCount = 3;
+  const transactionsCount = 10;
   const srcContractAddress = process.env.CONCEROCCIP_BASE_SEPOLIA;
   const dstContractAddress = process.env.CONCEROCCIP_OPTIMISM_SEPOLIA;
 
@@ -129,8 +129,10 @@ describe("startBatchTransactions", () => {
     let dstLog = null;
     while (dstLog === null) {
       dstLog = await getLog(ccipMessageId, "TXReleased", dstContractAddress, dstPublicClient, fromDstBlock);
-      console.log("dstLogs: ", dstLog);
-      await sleep(2000);
+      if (dstLog) {
+        console.log("dstLogs: ", dstLog);
+      }
+      await sleep(5000);
     }
 
     return dstLog;
@@ -157,6 +159,7 @@ describe("startBatchTransactions", () => {
       });
 
       transactionPromises.push(walletClient.writeContract(request));
+      await sleep(3000);
     }
 
     const transactionHashes = await Promise.all(transactionPromises);

@@ -4,73 +4,85 @@ const messageId = eventArgs[0];
 const chainMap = {
 	'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
 		url: `https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
+		confirmations: 3n,
 	},
 	'${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}': {
 		url: `https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+		confirmations: 3n,
 	},
 	'${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}': {
 		url: `https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+		confirmations: 3n,
 	},
 	'${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}': {
 		url: `https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
+		confirmations: 3n,
 	},
 	'${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}': {
 		url: `https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+		confirmations: 3n,
 	},
 };
 
-const latestBlockParams = {
-	url: chainMap[srcChainSelector].url,
-	method: 'POST',
-	headers: {
-		'Content-Type': 'application/json',
-	},
-	data: {
-		jsonrpc: '2.0',
-		method: 'eth_blockNumber',
-		id: 1,
-	},
+const postRequestParams = data => {
+	return {
+		url: chainMap[srcChainSelector].url,
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		data,
+	};
 };
+const latestBlockParams = postRequestParams({
+	jsonrpc: '2.0',
+	method: 'eth_blockNumber',
+	id: 1,
+});
 const {data: latestBlockData} = await Functions.makeHttpRequest(latestBlockParams);
 
 if (latestBlockData.error) {
 	throw new Error(latestBlockData.error.message);
 }
 
-if (!latestBlockData.result.length) {
-	throw new Error('Latest block not found');
-}
-
 const toBlock = latestBlockData.result;
 const fromBlock = BigInt(toBlock) - 1000n;
-const params = {
-	url: chainMap[srcChainSelector].url,
-	method: 'POST',
-	headers: {
-		'Content-Type': 'application/json',
-	},
-	data: {
-		jsonrpc: '2.0',
-		method: 'eth_getLogs',
-		id: 1,
-		params: [
-			{
-				address: srcContractAddress,
-				topics: [null, messageId],
-				fromBlock: `0x${fromBlock.toString(16)}`,
-				toBlock: 'latest',
-			},
-		],
-	},
-};
-const {data} = await Functions.makeHttpRequest(params);
 
+const getLogParams = postRequestParams({
+	jsonrpc: '2.0',
+	method: 'eth_getLogs',
+	id: 1,
+	params: [
+		{
+			address: srcContractAddress,
+			topics: [null, messageId],
+			fromBlock: `0x${fromBlock.toString(16)}`,
+			toBlock: 'latest',
+		},
+	],
+});
+const {data} = await Functions.makeHttpRequest(getLogParams);
 if (data.error) {
 	throw new Error(data.error.message);
 }
-
 if (!data.result.length) {
 	throw new Error('Logs not found');
+}
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const {data: currentBlockNumberData} = await Functions.makeHttpRequest(latestBlockParams);
+let currentBlockNumber = BigInt(currentBlockNumberData.result);
+
+console.log(currentBlockNumber, BigInt(data.result[0].blockNumber));
+
+while (currentBlockNumber - BigInt(data.result[0].blockNumber) < chainMap[srcChainSelector].confirmations) {
+	console.log(currentBlockNumber, BigInt(data.result[0].blockNumber));
+	console.log(chainMap[srcChainSelector].confirmations);
+
+	await sleep(5000);
+	const {data: currentBlockNumberData} = await Functions.makeHttpRequest(latestBlockParams);
+	currentBlockNumber = BigInt(currentBlockNumberData.result);
 }
 
 const abi = ['event CCIPSent(bytes32 indexed, address, address, uint8, uint256, uint64)'];

@@ -60,11 +60,18 @@ try {
 			return resp.json();
 		}
 	}
-	const abi = ['function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256) external'];
+	const abi = [
+		'function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256) external',
+		'function transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool)',
+	];
 	const provider = new FunctionsJsonRpcProvider(chainSelectors[dstChainSelector].url);
 	const wallet = new ethers.Wallet('0x' + secrets.WALLET_PRIVATE_KEY, provider);
 	const signer = wallet.connect(provider);
 	const contract = new ethers.Contract(dstContractAddress, abi, signer);
+	const transaction = await contract.transactions(ccipMessageId);
+	if (transaction[1] !== '0x0000000000000000000000000000000000000000') {
+		return Functions.encodeString(`${ccipMessageId} already exists`);
+	}
 	const tx = await contract.addUnconfirmedTX(
 		ccipMessageId,
 		sender,

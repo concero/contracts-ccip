@@ -25,3 +25,4 @@ dist
 .env
 
 packages/hardhat/deployments
+packages/hardhat/test/forge/lib/

@@ -68,10 +68,12 @@ try {
 	const wallet = new ethers.Wallet('0x' + secrets.WALLET_PRIVATE_KEY, provider);
 	const signer = wallet.connect(provider);
 	const contract = new ethers.Contract(dstContractAddress, abi, signer);
-	const transaction = await contract.transactions(ccipMessageId);
-	if (transaction[1] !== '0x0000000000000000000000000000000000000000') {
-		return Functions.encodeString(`${ccipMessageId} already exists`);
-	}
+	try {
+		const transaction = await contract.transactions(ccipMessageId);
+		if (transaction[1] !== '0x0000000000000000000000000000000000000000') {
+			return Functions.encodeString(`${ccipMessageId} already exists`);
+		}
+	} catch {}
 	const tx = await contract.addUnconfirmedTX(
 		ccipMessageId,
 		sender,

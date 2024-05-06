@@ -74,12 +74,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const {data: currentBlockNumberData} = await Functions.makeHttpRequest(latestBlockParams);
 let currentBlockNumber = BigInt(currentBlockNumberData.result);
 
-console.log(currentBlockNumber, BigInt(data.result[0].blockNumber));
-
 while (currentBlockNumber - BigInt(data.result[0].blockNumber) < chainMap[srcChainSelector].confirmations) {
-	console.log(currentBlockNumber, BigInt(data.result[0].blockNumber));
-	console.log(chainMap[srcChainSelector].confirmations);
-
 	await sleep(5000);
 	const {data: currentBlockNumberData} = await Functions.makeHttpRequest(latestBlockParams);
 	currentBlockNumber = BigInt(currentBlockNumberData.result);

@@ -18,6 +18,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
   bytes32 private immutable donId;
   uint64 private immutable subscriptionId;
+
   uint8 private donHostedSecretsSlotID;
   uint64 private donHostedSecretsVersion;
 

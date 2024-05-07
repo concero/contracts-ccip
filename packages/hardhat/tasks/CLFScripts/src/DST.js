@@ -74,11 +74,10 @@ try {
 			provider: new FunctionsJsonRpcProvider(url),
 			priority: Math.random(),
 			stallTimeout: 2000,
-			weight: 1,
 		};
 	});
 
-	const provider = new ethers.FallbackProvider(fallBackProviders);
+	const provider = new ethers.FallbackProvider(fallBackProviders, null, {quorum: 1});
 
 	let latestBlockNumber = BigInt(await provider.getBlockNumber());
 	const ethersId = ethers.id('CCIPSent(bytes32,address,address,uint8,uint256,uint64)');

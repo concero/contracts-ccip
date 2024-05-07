@@ -62,7 +62,7 @@ task("functions-simulate-script", "Executes the JavaScript source code locally")
       process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA, // srcChainSelector, chain to get logs from
       "0x92DA49", // blockNumber
       // event params:
-      "0x4ae2539ff97d3914f01a099de28b08ea907d8ffbd8118d43f02a8852cef15c8a", // messageId
+      "0xc957703fb298a67ab8077f691dbf4cdb137be8fd39bd4afab67ef847f99a74c8", // messageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
       "0", // token

@@ -7,26 +7,29 @@ const chainMap = {
 		confirmations: 3n,
 	},
 	'${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}': {
-		url: `https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+		urls: [`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
 		confirmations: 3n,
 	},
 	'${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}': {
-		url: `https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+		urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://sepolia-rollup.arbitrum.io/rpc'],
 		confirmations: 3n,
 	},
 	'${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}': {
-		url: `https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
+		urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
 		confirmations: 3n,
 	},
 	'${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}': {
-		url: `https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+		urls: [`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
 		confirmations: 3n,
 	},
 };
 
+const randomIndex = Math.floor(Math.random() * chainMap[srcChainSelector].urls.length);
+const srcRpcUrl = chainMap[srcChainSelector].urls[randomIndex];
+
 const postRequestParams = data => {
 	return {
-		url: chainMap[srcChainSelector].url,
+		url: srcRpcUrl,
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -46,7 +49,7 @@ if (latestBlockData.error) {
 }
 
 const toBlock = latestBlockData.result;
-const fromBlock = BigInt(toBlock) - 1000n;
+const fromBlock = BigInt(toBlock) - 100000n;
 
 const getLogParams = postRequestParams({
 	jsonrpc: '2.0',

@@ -7,6 +7,7 @@ try {
 		'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			confirmations: 3n,
+			chainId: '0xa869',
 		},
 		'${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}': {
 			urls: [
@@ -15,35 +16,36 @@ try {
 				'https://ethereum-sepolia.blockpi.network/v1/rpc/public',
 			],
 			confirmations: 3n,
+			chainId: '0xaa36a7',
 		},
 		'${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}': {
 			urls: [
 				`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://arbitrum-sepolia-rpc.publicnode.com',
 				'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
+				'https://arbitrum-sepolia-rpc.publicnode.com',
 			],
 			confirmations: 3n,
+			chainId: '0x66eee',
 		},
 		'${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}': {
 			urls: [
 				`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-				'https://base-sepolia-rpc.publicnode.com',
 				'https://base-sepolia.blockpi.network/v1/rpc/public',
+				'https://base-sepolia-rpc.publicnode.com',
 			],
 			confirmations: 3n,
+			chainId: '0x14a34',
 		},
 		'${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}': {
 			urls: [
 				`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://optimism-sepolia-rpc.publicnode.com',
 				'https://optimism-sepolia.blockpi.network/v1/rpc/public',
+				'https://optimism-sepolia-rpc.publicnode.com',
 			],
 			confirmations: 3n,
+			chainId: '0xaa37dc',
 		},
 	};
-
-	const randomIndex = Math.floor(Math.random() * chainMap[srcChainSelector].urls.length);
-	const srcRpcUrl = chainMap[srcChainSelector].urls[randomIndex];
 
 	class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 		constructor(url) {
@@ -51,11 +53,8 @@ try {
 			this.url = url;
 		}
 		async _send(payload) {
-			if (payload.method === 'eth_estimateGas') {
-				return [{jsonrpc: '2.0', id: payload.id, result: '0x1e8480'}];
-			}
 			if (payload.method === 'eth_chainId') {
-				return [{jsonrpc: '2.0', id: payload.id, result: chainSelectors[dstChainSelector].chainId}];
+				return [{jsonrpc: '2.0', id: payload.id, result: chainMap[srcChainSelector].chainId}];
 			}
 			const resp = await fetch(this.url, {
 				method: 'POST',
@@ -70,12 +69,22 @@ try {
 		}
 	}
 
-	const provider = new FunctionsJsonRpcProvider(srcRpcUrl);
-	let latestBlockNumber = BigInt(await provider.getBlockNumber());
+	const fallBackProviders = chainMap[srcChainSelector].urls.map(url => {
+		return {
+			provider: new FunctionsJsonRpcProvider(url),
+			priority: Math.random(),
+			stallTimeout: 2000,
+			weight: 1,
+		};
+	});
 
+	const provider = new ethers.FallbackProvider(fallBackProviders);
+
+	let latestBlockNumber = BigInt(await provider.getBlockNumber());
+	const ethersId = ethers.id('CCIPSent(bytes32,address,address,uint8,uint256,uint64)');
 	const logs = await provider.getLogs({
 		address: srcContractAddress,
-		topics: [ethers.id('CCIPSent(bytes32,address,address,uint8,uint256,uint64)'), messageId],
+		topics: [ethersId, messageId],
 		fromBlock: latestBlockNumber - 1000n,
 		toBlock: latestBlockNumber,
 	});
@@ -88,7 +97,7 @@ try {
 	const abi = ['event CCIPSent(bytes32 indexed, address, address, uint8, uint256, uint64)'];
 	const contract = new ethers.Interface(abi);
 	const logData = {
-		topics: [ethers.id('CCIPSent(bytes32,address,address,uint8,uint256,uint64)'), log.topics[1]],
+		topics: [ethersId, log.topics[1]],
 		data: log.data,
 	};
 
@@ -102,7 +111,6 @@ try {
 	const logBlockNumber = BigInt(log.blockNumber);
 	while (latestBlockNumber - logBlockNumber < chainMap[srcChainSelector].confirmations) {
 		latestBlockNumber = BigInt(await provider.getBlockNumber());
-
 		await sleep(5000);
 	}
 

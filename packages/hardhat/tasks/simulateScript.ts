@@ -31,7 +31,11 @@ async function simulate(pathToFile, args) {
     console.log("RESPONSE BYTES HEXSTRING:");
     console.log(responseBytesHexstring);
     console.log("RESPONSE BYTES DECODED:");
-    console.log(decodeResult(responseBytesHexstring, "string"));
+    if (pathToFile.includes("DST.min.js")) {
+      console.log(decodeResult(responseBytesHexstring, "uint256"));
+    } else {
+      console.log(decodeResult(responseBytesHexstring, "string"));
+    }
   }
 }
 
@@ -58,7 +62,7 @@ task("functions-simulate-script", "Executes the JavaScript source code locally")
       process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA, // srcChainSelector, chain to get logs from
       "0x92DA49", // blockNumber
       // event params:
-      "0x301da1196e26baf9083835b1c858ea5936002a779d0f9e57ff6b131bf245d398", // messageId
+      "0x4ae2539ff97d3914f01a099de28b08ea907d8ffbd8118d43f02a8852cef15c8a", // messageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
       "0", // token

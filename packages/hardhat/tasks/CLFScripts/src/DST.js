@@ -26,8 +26,8 @@ try {
 		},
 		'${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}': {
 			urls: [
-				'https://base-sepolia-rpc.publicnode.com',
 				`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
+				'https://base-sepolia-rpc.publicnode.com',
 				'https://base-sepolia.blockpi.network/v1/rpc/public',
 			],
 			confirmations: 3n,
@@ -76,7 +76,7 @@ try {
 	const logs = await provider.getLogs({
 		address: srcContractAddress,
 		topics: [ethers.id('CCIPSent(bytes32,address,address,uint8,uint256,uint64)'), messageId],
-		fromBlock: latestBlockNumber - 100n,
+		fromBlock: latestBlockNumber - 1000n,
 		toBlock: latestBlockNumber,
 	});
 
@@ -99,12 +99,14 @@ try {
 		}
 	}
 
-	while (latestBlockNumber - BigInt(log.blockNumber) < chainMap[srcChainSelector].confirmations) {
+	const logBlockNumber = BigInt(log.blockNumber);
+	while (latestBlockNumber - logBlockNumber < chainMap[srcChainSelector].confirmations) {
 		latestBlockNumber = BigInt(await provider.getBlockNumber());
+
 		await sleep(5000);
 	}
 
-	if (latestBlockNumber - BigInt(log.blockNumber) < chainMap[srcChainSelector].confirmations) {
+	if (latestBlockNumber - logBlockNumber < chainMap[srcChainSelector].confirmations) {
 		throw new Error('Not enough confirmations');
 	}
 

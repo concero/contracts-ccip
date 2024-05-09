@@ -56,7 +56,7 @@ const chainSelectors = {
 	},
 };
 let nonce = 0;
-let retriesLimit = 5;
+let retriesLimit = 3;
 let retries = 0;
 let gasPrice;
 let maxPriorityFeePerGas;
@@ -82,7 +82,7 @@ const sendTransaction = async (contract, signer, txOptions) => {
 		return Functions.encodeString(tx.hash);
 	} catch (err) {
 		console.log(err.code, ' ', retries, nonce);
-		if (retries > retriesLimit) {
+		if (retries >= retriesLimit) {
 			throw new Error('retries reached the limit ' + err.message.slice(0, 200));
 		}
 		if (err.code === 'NONCE_EXPIRED') {
@@ -96,7 +96,6 @@ const sendTransaction = async (contract, signer, txOptions) => {
 	}
 };
 try {
-	let counter = 0;
 	class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 		constructor(url) {
 			super(url);
@@ -117,6 +116,12 @@ try {
 				return [
 					{jsonrpc: '2.0', id: payload[0].id, result: gasPrice, method: 'eth_gasPrice'},
 					{jsonrpc: '2.0', id: payload[1].id, result: maxPriorityFeePerGas, method: 'eth_maxPriorityFeePerGas'},
+				];
+			}
+			if (payload[0]?.id === 1 && payload[0].method === 'eth_chainId' && payload[1].id === 2 && payload.length === 2) {
+				return [
+					{jsonrpc: '2.0', method: 'eth_chainId', id: 1, result: chainSelectors[dstChainSelector].chainId},
+					{jsonrpc: '2.0', method: 'eth_getBlockByNumber', id: 2, result: chainSelectors[dstChainSelector].chainId},
 				];
 			}
 			let resp = await fetch(this.url, {

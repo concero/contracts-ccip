@@ -127,14 +127,13 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     }
 
     if (request.requestType == RequestType.checkTxSrc) {
-      bytes32 ccipMessageId = bytesToBytes32(response);
       Transaction storage transaction = transactions[ccipMessageId];
       _confirmTX(ccipMessageId, transaction);
       sendTokenToEoa(ccipMessageId, transaction.sender, transaction.recipient, getToken(transaction.token), transaction.amount);
     } else if (request.requestType == RequestType.addUnconfirmedTxDst) {
       uint256 dstGasPrice = abi.decode(response[0:32], (uint256));
       uint256 srcGasPrice = abi.decode(response[32:64], (uint256));
-      uint64 dstChainSelector = uint64(abi.decode(response[64:96], (uint256)));
+      uint64 dstChainSelector = uint64(abi.decode(response[64:128], (uint256)));
 
       lastGasPrices[chainSelector] = srcGasPrice;
       lastGasPrices[dstChainSelector] = dstGasPrice;

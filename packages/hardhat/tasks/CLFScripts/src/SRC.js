@@ -5,41 +5,98 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
+const ethers = await import('npm:ethers@6.10.0');
+const [
+	dstContractAddress,
+	ccipMessageId,
+	sender,
+	recipient,
+	amount,
+	srcChainSelector,
+	dstChainSelector,
+	token,
+	blockNumber,
+] = args;
+const chainSelectors = {
+	'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
+		urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
+		chainId: '0xa869',
+	},
+	'${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}': {
+		urls: [
+			`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+			'https://ethereum-sepolia-rpc.publicnode.com',
+			'https://ethereum-sepolia.blockpi.network/v1/rpc/public',
+		],
+		chainId: '0xaa36a7',
+	},
+	'${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}': {
+		urls: [
+			`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+			'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
+			'https://arbitrum-sepolia-rpc.publicnode.com',
+		],
+		chainId: '0x66eee',
+	},
+	'${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}': {
+		urls: [
+			`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
+			'https://base-sepolia.blockpi.network/v1/rpc/public',
+			'https://base-sepolia-rpc.publicnode.com',
+		],
+		chainId: '0x14a34',
+	},
+	'${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}': {
+		urls: [
+			`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+			'https://optimism-sepolia.blockpi.network/v1/rpc/public',
+			'https://optimism-sepolia-rpc.publicnode.com',
+		],
+		chainId: '0xaa37dc',
+	},
+};
+let nonce = 0;
+let retriesLimit = 5;
+let retries = 0;
+
+const sendTransaction = async (nonce, signer) => {
+	try {
+		const abi = [
+			'function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256) external',
+			'function transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool)',
+		];
+		const contract = new ethers.Contract(dstContractAddress, abi, signer);
+		try {
+			const transaction = await contract.transactions(ccipMessageId);
+			if (transaction[1] !== '0x0000000000000000000000000000000000000000') {
+				return Functions.encodeString(`${ccipMessageId} already exists`);
+			}
+		} catch {}
+		const tx = await contract.addUnconfirmedTX(
+			ccipMessageId,
+			sender,
+			recipient,
+			amount,
+			srcChainSelector,
+			token,
+			blockNumber,
+			{nonce},
+		);
+		return Functions.encodeString(tx.hash);
+	} catch (err) {
+		console.log(err.code, ' ', retries, nonce);
+		if (retries > retriesLimit) {
+			throw new Error('retries reached the limit ' + err.message.slice(0, 200));
+		}
+		if (err.code === 'NONCE_EXPIRED') {
+			retries++;
+			return await sendTransaction(++nonce, signer);
+		}
+		throw new Error(err.message.slice(0, 255));
+	}
+};
+
 try {
-	const ethers = await import('npm:ethers@6.10.0');
-	const [
-		dstContractAddress,
-		ccipMessageId,
-		sender,
-		recipient,
-		amount,
-		srcChainSelector,
-		dstChainSelector,
-		token,
-		blockNumber,
-	] = args;
-	const chainSelectors = {
-		'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
-			url: `https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
-			chainId: '0xa869',
-		},
-		'${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}': {
-			url: `https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-			chainId: '0xaa36a7',
-		},
-		'${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}': {
-			url: `https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-			chainId: '0x66eee',
-		},
-		'${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}': {
-			url: `https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-			chainId: '0x14a34',
-		},
-		'${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}': {
-			url: `https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-			chainId: '0xaa37dc',
-		},
-	};
 	class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 		constructor(url) {
 			super(url);
@@ -57,40 +114,26 @@ try {
 				headers: {'Content-Type': 'application/json'},
 				body: JSON.stringify(payload),
 			});
-			return resp.json();
+			const res = await resp.json();
+			if (res.length === undefined) {
+				return [res];
+			}
+			return res;
 		}
 	}
-	const abi = [
-		'function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256) external',
-		'function transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool)',
-	];
-	const provider = new FunctionsJsonRpcProvider(chainSelectors[dstChainSelector].url);
+	const fallbackProviders = chainSelectors[dstChainSelector].urls.map(url => {
+		return {
+			provider: new FunctionsJsonRpcProvider(url),
+			priority: Math.random(),
+			stallTimeout: 5000,
+			weight: 1,
+		};
+	});
+	const provider = new ethers.FallbackProvider(fallbackProviders, null, {quorum: 1});
 	const wallet = new ethers.Wallet('0x' + secrets.WALLET_PRIVATE_KEY, provider);
 	const signer = wallet.connect(provider);
-	const contract = new ethers.Contract(dstContractAddress, abi, signer);
-	try {
-		const transaction = await contract.transactions(ccipMessageId);
-		if (transaction[1] !== '0x0000000000000000000000000000000000000000') {
-			return Functions.encodeString(`${ccipMessageId} already exists`);
-		}
-	} catch {}
-	const tx = await contract.addUnconfirmedTX(
-		ccipMessageId,
-		sender,
-		recipient,
-		amount,
-		srcChainSelector,
-		token,
-		blockNumber,
-	);
-	return Functions.encodeString(tx.hash);
+	nonce = await provider.getTransactionCount(wallet.address);
+	return await sendTransaction(nonce, signer);
 } catch (error) {
-	if (
-		(error.code === 'UNKNOWN_ERROR' && error.message.includes('already known')) ||
-		error.message.includes('replacement fee too low') ||
-		error.message.includes('nonce has already been used')
-	) {
-		return Functions.encodeString('already known');
-	}
 	throw new Error(error.message.slice(0, 255));
 }

@@ -74,6 +74,7 @@ try {
 			provider: new FunctionsJsonRpcProvider(url),
 			priority: Math.random(),
 			stallTimeout: 2000,
+			weight: 1,
 		};
 	});
 

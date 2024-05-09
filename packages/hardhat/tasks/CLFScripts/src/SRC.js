@@ -58,14 +58,11 @@ const chainSelectors = {
 let nonce = 0;
 let retriesLimit = 5;
 let retries = 0;
+let gasPrice;
+let maxPriorityFeePerGas;
 
-const sendTransaction = async (nonce, signer) => {
+const sendTransaction = async (contract, signer, txOptions) => {
 	try {
-		const abi = [
-			'function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256) external',
-			'function transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool)',
-		];
-		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		try {
 			const transaction = await contract.transactions(ccipMessageId);
 			if (transaction[1] !== '0x0000000000000000000000000000000000000000') {
@@ -80,7 +77,7 @@ const sendTransaction = async (nonce, signer) => {
 			srcChainSelector,
 			token,
 			blockNumber,
-			{nonce},
+			txOptions,
 		);
 		return Functions.encodeString(tx.hash);
 	} catch (err) {
@@ -90,13 +87,16 @@ const sendTransaction = async (nonce, signer) => {
 		}
 		if (err.code === 'NONCE_EXPIRED') {
 			retries++;
-			return await sendTransaction(++nonce, signer);
+			return await sendTransaction(contract, signer, {
+				...txOptions,
+				nonce: nonce++,
+			});
 		}
 		throw new Error(err.message.slice(0, 255));
 	}
 };
-
 try {
+	let counter = 0;
 	class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 		constructor(url) {
 			super(url);
@@ -108,6 +108,16 @@ try {
 			}
 			if (payload.method === 'eth_chainId') {
 				return [{jsonrpc: '2.0', id: payload.id, result: chainSelectors[dstChainSelector].chainId}];
+			}
+			if (
+				payload[0]?.method === 'eth_gasPrice' &&
+				payload[1].method === 'eth_maxPriorityFeePerGas' &&
+				payload.length === 2
+			) {
+				return [
+					{jsonrpc: '2.0', id: payload[0].id, result: gasPrice, method: 'eth_gasPrice'},
+					{jsonrpc: '2.0', id: payload[1].id, result: maxPriorityFeePerGas, method: 'eth_maxPriorityFeePerGas'},
+				];
 			}
 			let resp = await fetch(this.url, {
 				method: 'POST',
@@ -132,8 +142,19 @@ try {
 	const provider = new ethers.FallbackProvider(fallbackProviders, null, {quorum: 1});
 	const wallet = new ethers.Wallet('0x' + secrets.WALLET_PRIVATE_KEY, provider);
 	const signer = wallet.connect(provider);
+	const abi = [
+		'function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256) external',
+		'function transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool)',
+	];
+	const contract = new ethers.Contract(dstContractAddress, abi, signer);
+	const feeData = await provider.getFeeData();
 	nonce = await provider.getTransactionCount(wallet.address);
-	return await sendTransaction(nonce, signer);
+	gasPrice = feeData.gasPrice;
+	maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
+	return await sendTransaction(contract, signer, {
+		gasPrice,
+		nonce,
+	});
 } catch (error) {
 	throw new Error(error.message.slice(0, 255));
 }

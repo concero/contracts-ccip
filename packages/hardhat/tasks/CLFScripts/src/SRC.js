@@ -69,7 +69,7 @@ const sendTransaction = async (contract, signer, txOptions) => {
 				return Functions.encodeString(`${ccipMessageId} already exists`);
 			}
 		} catch {}
-		const tx = await contract.addUnconfirmedTX(
+		await contract.addUnconfirmedTX(
 			ccipMessageId,
 			sender,
 			recipient,
@@ -79,7 +79,6 @@ const sendTransaction = async (contract, signer, txOptions) => {
 			blockNumber,
 			txOptions,
 		);
-		return Functions.encodeString(tx.hash);
 	} catch (err) {
 		console.log(err.code, ' ', retries, nonce);
 		if (retries >= retriesLimit) {
@@ -87,7 +86,7 @@ const sendTransaction = async (contract, signer, txOptions) => {
 		}
 		if (err.code === 'NONCE_EXPIRED') {
 			retries++;
-			return await sendTransaction(contract, signer, {
+			await sendTransaction(contract, signer, {
 				...txOptions,
 				nonce: nonce++,
 			});
@@ -156,10 +155,12 @@ try {
 	nonce = await provider.getTransactionCount(wallet.address);
 	gasPrice = feeData.gasPrice;
 	maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
-	return await sendTransaction(contract, signer, {
+	await sendTransaction(contract, signer, {
 		gasPrice,
 		nonce,
 	});
+
+	return Functions.encodeUint256(BigInt(gasPrice));
 } catch (error) {
 	throw new Error(error.message.slice(0, 255));
 }

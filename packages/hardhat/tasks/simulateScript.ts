@@ -31,11 +31,7 @@ async function simulate(pathToFile, args) {
     console.log("RESPONSE BYTES HEXSTRING:");
     console.log(responseBytesHexstring);
     console.log("RESPONSE BYTES DECODED:");
-    if (pathToFile.includes("DST.min.js")) {
-      console.log(decodeResult(responseBytesHexstring, "uint256"));
-    } else {
-      console.log(decodeResult(responseBytesHexstring, "string"));
-    }
+    console.log(decodeResult(responseBytesHexstring, "uint256"));
   }
 }
 

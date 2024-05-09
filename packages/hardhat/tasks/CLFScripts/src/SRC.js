@@ -55,6 +55,7 @@ const chainSelectors = {
 		chainId: '0xaa37dc',
 	},
 };
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 let nonce = 0;
 let retriesLimit = 3;
 let retries = 0;
@@ -85,6 +86,7 @@ const sendTransaction = async (contract, signer, txOptions) => {
 			throw new Error('retries reached the limit ' + err.message.slice(0, 200));
 		}
 		if (err.code === 'NONCE_EXPIRED') {
+			await sleep(1000);
 			retries++;
 			await sendTransaction(contract, signer, {
 				...txOptions,
@@ -160,7 +162,16 @@ try {
 		nonce,
 	});
 
-	return Functions.encodeUint256(BigInt(gasPrice));
+	const srcChainProvider = new FunctionsJsonRpcProvider(chainSelectors[srcChainSelector].urls[0]);
+	const srcGasPrice = Functions.encodeUint256(BigInt((await provider.getFeeData()).gasPrice));
+	const dstGasPrice = Functions.encodeUint256(BigInt(gasPrice));
+	const encodedDstChainSelector = Functions.encodeUint256(BigInt(dstChainSelector));
+	const res = new Uint8Array(srcGasPrice.length + dstGasPrice.length + encodedDstChainSelector.length);
+	res.set(srcGasPrice);
+	res.set(dstGasPrice, srcGasPrice.length);
+	res.set(encodedDstChainSelector, srcGasPrice.length + dstGasPrice.length);
+
+	return res;
 } catch (error) {
 	throw new Error(error.message.slice(0, 255));
 }

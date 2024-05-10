@@ -20,21 +20,21 @@ contract Concero is ConceroCCIP {
     address _token,
     CCIPToken _tokenType,
     uint256 _amount,
-    uint64 _destinationChainSelector,
+    uint64 _dstChainSelector,
     address _receiver
   ) external payable tokenAmountSufficiency(_token, _amount) {
     //todo: maybe move to OZ safeTransfer (but research needed)
     bool isOK = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
     require(isOK, "Transfer failed");
 
-    if (msg.value < (1_500_000 * tx.gasprice)) {
+    if (msg.value < (1_500_000 * lastGasPrices[_dstChainSelector])) {
       revert InsufficientFee();
     }
 
-    bytes32 ccipMessageId = _sendTokenPayLink(_destinationChainSelector, _receiver, _token, _amount);
-    emit CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, _amount, _destinationChainSelector);
+    bytes32 ccipMessageId = _sendTokenPayLink(_dstChainSelector, _receiver, _token, _amount);
+    emit CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, _amount, _dstChainSelector);
 
-    sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, _amount, _destinationChainSelector, _tokenType);
+    sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, _amount, _dstChainSelector, _tokenType);
   }
 
   function withdraw(address _owner) public onlyOwner {

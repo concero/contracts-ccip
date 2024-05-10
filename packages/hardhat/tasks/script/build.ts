@@ -62,26 +62,37 @@ function minifyFile(content) {
     .replace(/\s\s+/g, " "); // Replace multiple spaces with a single space
 }
 
+function buildScript(file: string) {
+  if (!file) return console.error("Path to Functions script file is required.");
+  const fileToBuild = path.join(...pathToScript, "src", file);
+  checkFileAccessibility(fileToBuild);
+
+  try {
+    let fileContent = fs.readFileSync(fileToBuild, "utf8");
+    fileContent = replaceEnvironmentVariables(fileContent);
+    let cleanedUpFile = cleanupFile(fileContent);
+    let minifiedFile = minifyFile(cleanedUpFile);
+
+    saveProcessedFile(cleanedUpFile, fileToBuild);
+    saveProcessedFile(minifiedFile, fileToBuild.replace(".js", ".min.js"));
+  } catch (err) {
+    console.error(`Error processing file ${fileToBuild}: ${err}`);
+    process.exit(1);
+  }
+}
+
 // run with: bunx hardhat functions-build-script --path DST.js
 task("clf-script-build", "Builds the JavaScript source code")
   .addFlag("all", "Build all scripts")
-  .addParam("file", "Path to Functions script file", undefined, types.string)
+  .addOptionalParam("file", "Path to Functions script file", undefined, types.string)
   .setAction(async (taskArgs, hre) => {
-    if (!taskArgs.file) return console.error("Path to Functions script file is required.");
-    const fileToBuild = path.join(...pathToScript, "src", taskArgs.file);
-    checkFileAccessibility(fileToBuild);
-
-    try {
-      let fileContent = fs.readFileSync(fileToBuild, "utf8");
-      fileContent = replaceEnvironmentVariables(fileContent);
-      let cleanedUpFile = cleanupFile(fileContent);
-      let minifiedFile = minifyFile(cleanedUpFile);
-
-      saveProcessedFile(cleanedUpFile, fileToBuild);
-      saveProcessedFile(minifiedFile, fileToBuild.replace(".js", ".min.js"));
-    } catch (err) {
-      console.error(`Error processing file ${fileToBuild}: ${err}`);
-      process.exit(1);
+    if (taskArgs.all) {
+      const files = fs.readdirSync(path.join(...pathToScript, "src"));
+      files.forEach(file => {
+        if (file.endsWith(".js")) buildScript(file);
+      });
+      return;
     }
+    buildScript(taskArgs.file);
   });
 export default {};

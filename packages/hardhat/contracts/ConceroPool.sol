@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract ConceroPool is Ownable {
-  mapping(address => bool) public approvedSenders;
+  mapping(address => bool) public approvedSenders; //todo
   mapping(address => bool) public isTokenSupported;
   mapping(address => mapping(address => uint256)) public userBalances; // token -> sender -> balance
 

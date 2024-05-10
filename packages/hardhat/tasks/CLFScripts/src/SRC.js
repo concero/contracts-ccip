@@ -85,12 +85,15 @@ const sendTransaction = async (contract, signer, txOptions) => {
 			throw new Error('retries reached the limit ' + err.message.slice(0, 200));
 		}
 		if (err.code === 'NONCE_EXPIRED') {
-			await sleep(1000);
+			await sleep(1000 + Math.random() * 1000);
 			retries++;
 			await sendTransaction(contract, signer, {
 				...txOptions,
 				nonce: nonce++,
 			});
+		}
+		if (err.code === 'UNKNOWN_ERROR' && err.message.include('already known')) {
+			return;
 		}
 		throw new Error(err.message.slice(0, 255));
 	}

@@ -57,19 +57,15 @@ const chainSelectors = {
 };
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 let nonce = 0;
-let retriesLimit = 3;
 let retries = 0;
 let gasPrice;
 let maxPriorityFeePerGas;
 
 const sendTransaction = async (contract, signer, txOptions) => {
 	try {
-		try {
-			const transaction = await contract.transactions(ccipMessageId);
-			if (transaction[1] !== '0x0000000000000000000000000000000000000000') {
-				return Functions.encodeString(`${ccipMessageId} already exists`);
-			}
-		} catch {}
+		const transaction = await contract.transactions(ccipMessageId);
+		if (transaction[1] !== '0x0000000000000000000000000000000000000000') return;
+
 		await contract.addUnconfirmedTX(
 			ccipMessageId,
 			sender,
@@ -81,10 +77,11 @@ const sendTransaction = async (contract, signer, txOptions) => {
 			txOptions,
 		);
 	} catch (err) {
-		if (retries >= retriesLimit) {
+		if (retries >= 3) {
 			throw new Error('retries reached the limit ' + err.message.slice(0, 200));
 		}
-		if (err.code === 'NONCE_EXPIRED') {
+		const {message, code} = err;
+		if (code === 'NONCE_EXPIRED' || code === 'REPLACEMENT_UNDERPRICED') {
 			await sleep(1000 + Math.random() * 1000);
 			retries++;
 			await sendTransaction(contract, signer, {
@@ -92,7 +89,7 @@ const sendTransaction = async (contract, signer, txOptions) => {
 				nonce: nonce++,
 			});
 		}
-		if (err.code === 'UNKNOWN_ERROR' && err.message.include('already known')) {
+		if (code === 'UNKNOWN_ERROR' && message.include('already known')) {
 			return;
 		}
 		throw new Error(err.message.slice(0, 255));

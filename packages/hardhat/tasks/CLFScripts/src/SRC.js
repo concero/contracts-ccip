@@ -81,7 +81,6 @@ const sendTransaction = async (contract, signer, txOptions) => {
 			txOptions,
 		);
 	} catch (err) {
-		console.log(err.code, ' ', retries, nonce);
 		if (retries >= retriesLimit) {
 			throw new Error('retries reached the limit ' + err.message.slice(0, 200));
 		}

@@ -77,23 +77,21 @@ const sendTransaction = async (contract, signer, txOptions) => {
 			txOptions,
 		);
 	} catch (err) {
+		const {message, code} = err;
 		if (retries >= 5) {
 			throw new Error('retries reached the limit ' + err.message?.slice(0, 200));
-		}
-		const {message, code} = err;
-		if (code === 'NONCE_EXPIRED' || message?.includes('replacement fee too low')) {
+		} else if (code === 'NONCE_EXPIRED' || message?.includes('replacement fee too low')) {
 			await sleep(1000 + Math.random() * 1000);
 			retries++;
 			await sendTransaction(contract, signer, {
 				...txOptions,
 				nonce: nonce++,
 			});
+		} else if (code === 'UNKNOWN_ERROR' && message?.includes('already known')) {
 			return;
+		} else {
+			throw new Error(err.message?.slice(0, 255));
 		}
-		if (code === 'UNKNOWN_ERROR' && message?.includes('already known')) {
-			return;
-		}
-		throw new Error(err.message?.slice(0, 255));
 	}
 };
 try {

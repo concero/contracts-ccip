@@ -6,7 +6,6 @@ import { execSync } from "child_process";
 
 const { simulateScript, decodeResult } = require("@chainlink/functions-toolkit");
 const path = require("path");
-const process = require("process");
 
 async function simulate(pathToFile, args) {
   if (!fs.existsSync(pathToFile)) return console.error(`File not found: ${pathToFile}`);

@@ -4,6 +4,7 @@ import chains from "../../../constants/CNetworks";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { JsonRpcProvider, Wallet } from "ethers";
 import hre from "hardhat";
+import { getEthersSignerAndProvider } from "../../utils/getEthersSignerAndProvider";
 
 task("clf-sub-timeout-requests", "Times out expired Functions requests which have not been fulfilled within 5 minutes")
   .addParam("requestids", "1 or more request IDs to timeout separated by commas")
@@ -18,7 +19,7 @@ task("clf-sub-timeout-requests", "Times out expired Functions requests which hav
     console.log(`Timing out requests ${requestIdsToTimeout} on ${name}`);
     const toBlock = taskArgs.toblock ? Number(taskArgs.toblock) : "latest";
     const pastBlocksToSearch = parseInt(taskArgs.pastblockstosearch);
-    const signer = await hre.ethers.getSigner();
+    const { signer, provider } = getEthersSignerAndProvider(chains[name]);
     const { linkToken, functionsRouter, functionsDonIdAlias, confirmations } = chains[name];
 
     // const txOptions = { overrides: { gasLimit: 10000000 } };
@@ -35,7 +36,7 @@ task("clf-sub-timeout-requests", "Times out expired Functions requests which hav
       try {
         const requestCommitment = await fetchRequestCommitment({
           requestId,
-          provider: signer.provider as JsonRpcProvider,
+          provider,
           functionsRouterAddress: functionsRouter,
           donId: functionsDonIdAlias,
           toBlock,

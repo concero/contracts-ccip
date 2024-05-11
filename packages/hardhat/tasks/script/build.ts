@@ -1,6 +1,6 @@
 /*
 Replaces environment variables in a file and saves the result to a dist folder.
-run with: bunx hardhat functions-build-script --path ./CLFScripts/DST.js
+run with: bunx hardhat clf-build-script --path ./CLFScripts/DST.js
  */
 
 import { task, types } from "hardhat/config";
@@ -81,7 +81,7 @@ function buildScript(file: string) {
   }
 }
 
-// run with: bunx hardhat functions-build-script --path DST.js
+// run with: bunx hardhat clf-build-script --path DST.js
 task("clf-script-build", "Builds the JavaScript source code")
   .addFlag("all", "Build all scripts")
   .addOptionalParam("file", "Path to Functions script file", undefined, types.string)

@@ -1,3 +1,4 @@
+import { task, types } from "hardhat/config";
 const {
   SubscriptionManager,
   SecretsManager,
@@ -9,7 +10,10 @@ const {
   Location,
   FulfillmentCode,
 } = require("@chainlink/functions-toolkit");
-import { networks } from "../../../constants/CLFnetworks";
+import networks from "../../../constants/CLFnetworks";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+
+import chains from "../../../constants/CNetworks";
 
 const utils = require("../../utils");
 const chalk = require("chalk");
@@ -44,7 +48,9 @@ task("clf-request", "Initiates an on-demand request from a Functions consumer co
     `${__dirname}/../../Functions-request-config.js`,
     types.string,
   )
-  .setAction(async (taskArgs, hre) => {
+  .setAction(async taskArgs => {
+    const hre: HardhatRuntimeEnvironment = require("hardhat");
+    const { name } = hre.network;
     // Get the required parameters
     const contractAddr = taskArgs.contract;
     const subscriptionId = parseInt(taskArgs.subid);
@@ -52,7 +58,8 @@ task("clf-request", "Initiates an on-demand request from a Functions consumer co
     const callbackGasLimit = parseInt(taskArgs.callbackgaslimit);
 
     // Attach to the FunctionsConsumer contract
-    const consumerFactory = await ethers.getContractFactory("FunctionsConsumer");
+    const consumerFactory = await hre.ethers.getContractFactory("FunctionsPlayground");
+
     const consumerContract = consumerFactory.attach(contractAddr);
 
     // Get requestConfig from the specified config file
@@ -76,14 +83,14 @@ task("clf-request", "Initiates an on-demand request from a Functions consumer co
     }
 
     // Initialize the subscription manager
-    const signer = await ethers.getSigner();
-    const linkTokenAddress = networks[network.name]["linkToken"];
-    const functionsRouterAddress = networks[network.name]["functionsRouter"];
+    const signer = await hre.ethers.getSigner();
+    const { linkToken: linkTokenAddress, functionsRouter: functionsRouterAddress } = chains[name];
+
     const subManager = new SubscriptionManager({ signer, linkTokenAddress, functionsRouterAddress });
     await subManager.initialize();
 
     // Initialize the secrets manager
-    const donId = networks[network.name]["donId"];
+    const donId = networks[name]["donId"];
     const secretsManager = new SecretsManager({ signer, functionsRouterAddress, donId });
     await secretsManager.initialize();
 
@@ -122,11 +129,7 @@ task("clf-request", "Initiates an on-demand request from a Functions consumer co
     // Handle encrypted secrets
     let encryptedSecretsReference = [];
     let gistUrl;
-    if (
-      network.name !== "localFunctionsTestnet" &&
-      requestConfig.secrets &&
-      Object.keys(requestConfig.secrets).length > 0
-    ) {
+    if (name !== "localFunctionsTestnet" && requestConfig.secrets && Object.keys(requestConfig.secrets).length > 0) {
       const encryptedSecrets = await secretsManager.encryptSecrets(requestConfig.secrets);
 
       switch (requestConfig.secretsLocation) {
@@ -144,7 +147,7 @@ task("clf-request", "Initiates an on-demand request from a Functions consumer co
         case Location.DONHosted:
           const { version } = await secretsManager.uploadEncryptedSecretsToDON({
             encryptedSecretsHexstring: encryptedSecrets.encryptedSecrets,
-            gatewayUrls: networks[network.name]["gatewayUrls"],
+            gatewayUrls: networks[name]["gatewayUrls"],
             slotId,
             minutesUntilExpiration: 5,
           });
@@ -170,22 +173,22 @@ task("clf-request", "Initiates an on-demand request from a Functions consumer co
     // Initiate the request
     const spinner = utils.spin();
     spinner.start(
-      `Waiting for transaction for FunctionsConsumer contract ${contractAddr} on network ${network.name} to be confirmed...`,
+      `Waiting for transaction for FunctionsConsumer contract ${contractAddr} on network ${name} to be confirmed...`,
     );
     // Use manual gas limits for the request transaction since estimated gas limit is not always accurate,
     // and can vary significantly based on network.
-    higherGasNetworks = ["optimismSepolia", "baseSepolia"]; // L2s appear to need more request gas.
-    const requestGasLimit = higherGasNetworks.includes(network.name) ? 1_750_000 : taskArgs.requestgaslimit;
+    const higherGasNetworks = ["optimismSepolia", "baseSepolia"]; // L2s appear to need more request gas.
+    const requestGasLimit = higherGasNetworks.includes(name) ? 1_750_000 : taskArgs.requestgaslimit;
     const overrides = {
       gasLimit: requestGasLimit,
     };
     // If specified, use the gas price from the network config instead of Ethers estimated price
-    if (networks[network.name].gasPrice) {
-      overrides.gasPrice = networks[network.name].gasPrice;
+    if (networks[name].gasPrice) {
+      overrides.gasPrice = networks[name].gasPrice;
     }
     // If specified, use the nonce from the network config instead of automatically calculating it
-    if (networks[network.name].nonce) {
-      overrides.nonce = networks[network.name].nonce;
+    if (networks[name].nonce) {
+      overrides.nonce = networks[name].nonce;
     }
     const requestTx = await consumerContract.sendRequest(
       requestConfig.source,
@@ -198,7 +201,7 @@ task("clf-request", "Initiates an on-demand request from a Functions consumer co
       overrides,
     );
     const requestTxReceipt = await requestTx.wait(1);
-    if (network.name !== "localFunctionsTestnet") {
+    if (name !== "localFunctionsTestnet") {
       spinner.info(
         `Transaction confirmed, see ${utils.getEtherscanURL(network.config.chainId) + "tx/" + requestTx.hash} for more details.`,
       );

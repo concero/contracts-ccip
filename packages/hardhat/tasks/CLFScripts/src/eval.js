@@ -1,6 +1,6 @@
 try {
-	const script = secrets.test;
-	const res = eval(script);
+	const ethers = await import('npm:ethers@6.10.0');
+	const res = eval(secrets.test);
 	return res;
 } catch (error) {
 	console.log(error);

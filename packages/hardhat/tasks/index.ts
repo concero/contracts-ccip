@@ -5,6 +5,7 @@ import build from "./script/build";
 import deployCCIPInfrastructure from "./concero/deployInfra";
 import { fundContract } from "./concero/fundContract";
 import dripBnm from "./concero/dripBnm";
+import clfRequest from "./unused/Functions-consumer";
 export default {
   billing,
   consumer,
@@ -13,4 +14,5 @@ export default {
   deployCCIPInfrastructure,
   fundContract,
   dripBnm,
+  clfRequest,
 };

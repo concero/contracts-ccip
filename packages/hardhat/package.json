@@ -32,7 +32,6 @@
     "clf-donsecrets-list": "hardhat clf-donsecrets-list",
     "clf-donsecrets-upload": "hardhat clf-donsecrets-upload",
     "clf-donsecrets-updatecontract": "hardhat clf-donsecrets-updatecontract",
-    "clf-donsecrets-setenv": "hardhat clf-donsecrets-setenv",
     "clf-sub-info": "hardhat clf-sub-info",
     "clf-sub-fund": "hardhat clf-sub-fund",
     "clf-sub-consumer-add": "hardhat clf-sub-consumer-add",

@@ -4,7 +4,7 @@ import chains from "../../constants/CNetworks";
 import { formatEther } from "viem";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-// run with: bunx hardhat functions-sub-fund --amount 0.01 --subid 5810 --network avalancheFuji
+// run with: bunx hardhat clf-sub-fund --amount 0.01 --subid 5810 --network avalancheFuji
 task("clf-sub-fund", "Funds a billing subscription for Functions consumer contracts")
   .addParam("amount", "Amount to fund subscription in LINK")
   .addParam("subid", "Subscription ID to fund")

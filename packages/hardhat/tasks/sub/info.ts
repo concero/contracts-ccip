@@ -4,7 +4,7 @@ import chains from "../../constants/CNetworks";
 import { formatEther } from "viem";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-// run with: bunx hardhat functions-sub-info --subid 5810 --network avalancheFuji
+// run with: bunx hardhat clf-sub-info --subid 5810 --network avalancheFuji
 task(
   "clf-sub-info",
   "Gets the Functions billing subscription balance, owner, and list of authorized consumer contract addresses",

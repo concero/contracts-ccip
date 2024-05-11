@@ -23,6 +23,7 @@ node_modules
 dist
 .env.*
 .env
+!.env.deplyments
 
 packages/hardhat/deployments
 packages/hardhat/test/forge/lib/

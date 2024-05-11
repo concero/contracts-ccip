@@ -1,5 +1,5 @@
 import readResultAndError from "./readResultAndError";
-import requestData from "./request";
+import request from "./request";
 import deployConsumer from "./deployConsumer";
 import deployAutoConsumer from "./deployAutoConsumer";
 import setDonId from "./setDonId";
@@ -13,7 +13,7 @@ import listDonSecrets from "../../donSecrets/list";
 import ensureDonSecrets from "../../donSecrets/updateContract";
 export default {
   readResultAndError,
-  requestData,
+  request,
   deployConsumer,
   deployAutoConsumer,
   setDonId,

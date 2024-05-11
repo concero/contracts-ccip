@@ -50,7 +50,7 @@ export async function setContractVariables(selectedChains: CNetwork[]) {
         `Added ${process.env.MESSENGER_WALLET_ADDRESS} to allowlist. Gas used: ${addToAllowlistGasUsed.toString()}`,
       );
     } catch (e) {
-      console.log(`Failed to add ${process.env.MESSENGER_WALLET_ADDRESS} to allowlist: ${e}`);
+      console.log(`Failed to add ${process.env.MESSENGER_WALLET_ADDRESS} to allowlist: ${e}`); //todo parse already in allowlist to make the error cleaner
     }
   }
 }

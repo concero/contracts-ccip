@@ -51,7 +51,7 @@ export async function updateContract(chains: CNetwork[]) {
     }
 
     if (res.rows) {
-      const row = res.rows[0];
+      const row = res.rows.filter(row => row.slot_id === 0)[0];
       updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`, row.version, "../../../.env.clf");
       updateEnvVariable(`CLF_DON_SECRETS_EXPIRATION_${networkEnvKeys[name]}`, row.expiration, "../../../.env.clf");
       allSecrets.push(row);

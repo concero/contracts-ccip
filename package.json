@@ -50,8 +50,8 @@
     "clf-donsecrets-updatecontract" : "yarn workspace @se-2/hardhat clf-donsecrets-updatecontract",
     "clf-sub-info" : "yarn workspace @se-2/hardhat clf-sub-info",
     "clf-sub-fund" : "yarn workspace @se-2/hardhat clf-sub-fund",
-    "clf-sub-consumer-rm" : "yarn workspace @se-2/hardhat clf-sub-consumer-rm",
     "clf-sub-consumer-add" : "yarn workspace @se-2/hardhat clf-sub-consumer-add",
+    "clf-sub-consumer-rm" : "yarn workspace @se-2/hardhat clf-sub-consumer-rm",
     "clf-sub-timeout-requests" : "yarn workspace @se-2/hardhat clf-sub-timeout-requests"
   },
   "devDependencies": {

@@ -8,15 +8,19 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
-  if (!chains[name]) {
-    throw new Error(`Chain ${name} not supported`);
-  }
-  const { linkToken, ccipRouter, functionsRouter, functionsDonId, chainSelector, functionsSubIds, conceroChainIndex } =
-    chains[name];
+  if (!chains[name]) throw new Error(`Chain ${name} not supported`);
 
-  const donHostedSecretsVersion = process.env[`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`]; // gets up-to-date env variable
+  const {
+    linkToken,
+    ccipRouter,
+    functionsRouter,
+    functionsDonId,
+    chainSelector,
+    functionsSubIds,
+    conceroChainIndex,
+    donHostedSecretsVersion,
+  } = chains[name];
 
-  // return console.log([functionsRouter, donHostedSecretsVersion, functionsDonId, functionsSubIds[0], chainSelector, conceroChainIndex, linkToken, ccipRouter]);
   const deployment = (await deploy("Concero", {
     from: deployer,
     log: true,
@@ -30,15 +34,19 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
       linkToken,
       ccipRouter,
     ],
-    autoMine: true, // only for local testing
+    autoMine: true,
   })) as Deployment;
 
-  // const cCombined = await hre.ethers.getContract<Concero>("Concero", deployer);
   if (name !== "hardhat" && name !== "localhost") {
+    try {
+      const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(
+        functionsRouter,
+        deployment.address,
+        functionsSubIds[0],
+      );
+    } catch (e) {}
+    console.log(`CL Functions Consumer added successfully: ${CLFunctionsConsumerTXHash}`);
     updateEnvVariable(`CONCEROCCIP_${networkEnvKeys[name]}`, deployment.address, "../../../.env.deployments");
-    // console.log(`Deployed to ${name} at address ${deployment.address}`);
-    // const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(functionsRouter, deployment.address, functionsSubIds[0]);
-    // console.log(`CL Functions Consumer added successfully: ${CLFunctionsConsumerTXHash}`);
   }
 };
 

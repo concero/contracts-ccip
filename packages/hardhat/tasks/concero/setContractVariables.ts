@@ -2,12 +2,13 @@ import { networkEnvKeys } from "../../constants/CNetworks";
 import { CNetwork } from "../../types/CNetwork";
 import { getClients } from "../utils/switchChain";
 import load from "../../utils/load";
+import { getEnvVar } from "../../utils/getEnvVar";
 
 export async function setContractVariables(selectedChains: CNetwork[]) {
   const { abi } = await load("../artifacts/contracts/Concero.sol/Concero.json");
   for (const chain of selectedChains) {
     const { viemChain, url, name } = chain;
-    const contract = process.env[`CONCEROCCIP_${networkEnvKeys[name]}`]; // grabbing up-to-date var
+    const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
     const { walletClient, publicClient, account } = getClients(viemChain, url);
 
     for (const dstChain of selectedChains) {

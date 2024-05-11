@@ -117,12 +117,6 @@ try {
 					{jsonrpc: '2.0', id: payload[1].id, result: maxPriorityFeePerGas, method: 'eth_maxPriorityFeePerGas'},
 				];
 			}
-			if (payload[0]?.id === 1 && payload[0].method === 'eth_chainId' && payload[1].id === 2 && payload.length === 2) {
-				return [
-					{jsonrpc: '2.0', method: 'eth_chainId', id: 1, result: chainSelectors[dstChainSelector].chainId},
-					{jsonrpc: '2.0', method: 'eth_getBlockByNumber', id: 2, result: chainSelectors[dstChainSelector].chainId},
-				];
-			}
 			let resp = await fetch(this.url, {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},

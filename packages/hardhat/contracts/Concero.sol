@@ -27,7 +27,7 @@ contract Concero is ConceroCCIP {
     bool isOK = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
     require(isOK, "Transfer failed");
 
-    if (msg.value < (1_500_000 * lastGasPrices[_dstChainSelector])) {
+    if (msg.value < (750000 * lastGasPrices[_dstChainSelector]) + 750000 * lastGasPrices[chainSelector]) {
       revert InsufficientFee();
     }
 

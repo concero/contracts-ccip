@@ -1,9 +1,10 @@
-import billing from "./Functions-billing";
-import consumer from "./Functions-consumer";
-import simulate from "./simulateScript";
-import build from "./buildScript";
-import deployCCIPInfrastructure from "./deployCCIPInfrastructure";
-import { fundContract } from "./fundContract";
+import billing from "./unused/Functions-billing";
+import consumer from "./unused/Functions-consumer";
+import simulate from "./script/simulate";
+import build from "./script/build";
+import deployCCIPInfrastructure from "./concero/deployInfra";
+import { fundContract } from "./concero/fundContract";
+import dripBnm from "./concero/dripBnm";
 export default {
   billing,
   consumer,
@@ -11,4 +12,5 @@ export default {
   build,
   deployCCIPInfrastructure,
   fundContract,
+  dripBnm,
 };

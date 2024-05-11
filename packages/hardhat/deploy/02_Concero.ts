@@ -35,7 +35,7 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
 
   // const cCombined = await hre.ethers.getContract<Concero>("Concero", deployer);
   if (name !== "hardhat" && name !== "localhost") {
-    updateEnvVariable(`CONCEROCCIP_${networkEnvKeys[name]}`, deployment.address, "../../../.env");
+    updateEnvVariable(`CONCEROCCIP_${networkEnvKeys[name]}`, deployment.address, "../../../.env.deployments");
     // console.log(`Deployed to ${name} at address ${deployment.address}`);
     // const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(functionsRouter, deployment.address, functionsSubIds[0]);
     // console.log(`CL Functions Consumer added successfully: ${CLFunctionsConsumerTXHash}`);

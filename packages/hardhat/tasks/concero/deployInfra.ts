@@ -1,0 +1,30 @@
+import { task } from "hardhat/config";
+import { subHealthcheck } from "./subHealthcheck";
+import { deployContract } from "./deployContract";
+import chains from "../../constants/CNetworks";
+import { setContractVariables } from "./setContractVariables";
+import { fundContract } from "./fundContract";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { updateContract } from "../donSecrets/updateContract";
+
+export const liveChains = [chains.optimismSepolia, chains.baseSepolia, chains.arbitrumSepolia];
+export let deployableChains = liveChains;
+
+task("deploy-infra", "Deploy the CCIP infrastructure")
+  .addFlag("skipdeploy", "Deploy the contract to a specific network")
+  .setAction(async taskArgs => {
+    const hre: HardhatRuntimeEnvironment = require("hardhat");
+    const { name } = hre.network;
+    if (name !== "localhost" && name !== "hardhat") deployableChains = [chains[name]];
+
+    await updateContract(deployableChains);
+    if (!taskArgs.skipdeploy) await deployContract(deployableChains);
+    else console.log("Skipping deployment");
+
+    await subHealthcheck(liveChains);
+    await setContractVariables(liveChains);
+    await fundContract(deployableChains);
+    //todo: allowance of link & BNM
+  });
+
+export default {};

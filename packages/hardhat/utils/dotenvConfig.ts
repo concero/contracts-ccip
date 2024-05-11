@@ -15,6 +15,7 @@ function configureDotEnv(basePath = "../../") {
   dotenv.config({ path: `${normalizedBasePath}.env.clf` });
   dotenv.config({ path: `${normalizedBasePath}.env.clccip` });
   dotenv.config({ path: `${normalizedBasePath}.env.tokens` });
+  dotenv.config({ path: `${normalizedBasePath}.env.deployments` });
 }
 configureDotEnv();
 

@@ -9,7 +9,7 @@ import performUpkeep from "./performManualUpkeep";
 import setAutoRequest from "./setAutoRequest";
 import uploadSecretsToDon from "../../donSecrets/upload";
 import listDonSecrets from "../../donSecrets/list";
-import pullAllDonSecrets from "../../donSecrets/setEnv";
+
 import ensureDonSecrets from "../../donSecrets/updateContract";
 export default {
   readResultAndError,
@@ -23,6 +23,5 @@ export default {
   setAutoRequest,
   uploadSecretsToDon,
   listDonSecrets,
-  pullAllDonSecrets,
   ensureDonSecrets,
 };

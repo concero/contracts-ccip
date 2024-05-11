@@ -6,9 +6,10 @@ import { setContractVariables } from "./setContractVariables";
 import { fundContract } from "./fundContract";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { updateContract } from "../donSecrets/updateContract";
+import { CNetwork } from "../../types/CNetwork";
 
-export const liveChains = [chains.optimismSepolia, chains.baseSepolia, chains.arbitrumSepolia];
-export let deployableChains = liveChains;
+export const liveChains: CNetwork[] = [chains.optimismSepolia, chains.baseSepolia, chains.arbitrumSepolia];
+let deployableChains: CNetwork[] = liveChains;
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")

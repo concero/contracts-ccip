@@ -35,12 +35,12 @@ async function simulate(pathToFile, args) {
   }
 }
 
-/* run with: bunx hardhat functions-simulate-script */
-task("functions-simulate-script", "Executes the JavaScript source code locally")
+/* run with: bunx hardhat clf-simulate-script */
+task("clf-script-simulate", "Executes the JavaScript source code locally")
   // .addOptionalParam("path", "Path to script file", `${__dirname}/../Functions-request-config.js`, types.string)
   .setAction(async (taskArgs, hre) => {
-    execSync(`bunx hardhat functions-build-script --path SRC.js`, { stdio: "inherit" });
-    await simulate(path.join(__dirname, "./CLFScripts/dist/SRC.min.js"), [
+    execSync(`bunx hardhat clf-script-build --file SRC.js`, { stdio: "inherit" });
+    await simulate(path.join(__dirname, "../", "./CLFScripts/dist/SRC.min.js"), [
       process.env.CONCEROCCIP_OPTIMISM_SEPOLIA, // contractAddress
       "0x4395f93854194ca639615651c5662cf39a77308927ebe7d31c9e970958687a49", // ccipMessageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
@@ -52,8 +52,8 @@ task("functions-simulate-script", "Executes the JavaScript source code locally")
       "0xA65233", // blockNumber
     ]);
 
-    // execSync(`bunx hardhat functions-build-script --path DST.js`, { stdio: "inherit" });
-    // await simulate(path.join(__dirname, "./CLFScripts/dist/DST.min.js"), [
+    // execSync(`bunx hardhat clf-script-build --file DST.js`, { stdio: "inherit" });
+    // await simulate(path.join(__dirname, "../", "./CLFScripts/dist/DST.min.js"), [
     //   process.env.CONCEROCCIP_BASE_SEPOLIA, // srcContractAddress
     //   process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA, // srcChainSelector, chain to get logs from
     //   "0x92DA49", // blockNumber

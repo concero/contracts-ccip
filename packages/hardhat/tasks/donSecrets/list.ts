@@ -8,7 +8,7 @@ import { liveChains } from "../concero/deployInfra";
 import { CNetwork } from "../../types/CNetwork";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 
-// run with: bunx hardhat functions-list-don-secrets --network avalancheFuji
+// run with: bunx hardhat clf-list-don-secrets --network avalancheFuji
 task("clf-donsecrets-list", "Displays encrypted secrets hosted on the DON")
   .addFlag("all", "List secrets from all chains")
   .setAction(async taskArgs => {

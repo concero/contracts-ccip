@@ -3,7 +3,7 @@ import chains from "../../constants/CNetworks";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-// run with: bunx hardhat functions-consumer-add --subid 5810 --contract 0x... --network avalancheFuji
+// run with: bunx hardhat clf-consumer-add --subid 5810 --contract 0x... --network avalancheFuji
 task("clf-sub-consumer-add", "Adds a consumer contract to the Functions billing subscription")
   .addOptionalParam("subid", "Subscription ID", undefined)
   .addParam("contract", "Address(es) of the Functions consumer contract to authorize for billing")

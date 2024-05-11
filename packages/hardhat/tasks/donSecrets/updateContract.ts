@@ -24,9 +24,7 @@ export async function updateContract(chains: CNetwork[]) {
     const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls, viemChain, url, name } = chain;
     const { signer } = getEthersSignerAndProvider(chain);
 
-    if (!functionsGatewayUrls || functionsGatewayUrls.length === 0) {
-      throw Error(`No gatewayUrls found for ${name}.`);
-    }
+    if (!functionsGatewayUrls || functionsGatewayUrls.length === 0) throw Error(`No gatewayUrls found for ${name}.`);
 
     const secretsManager = new SecretsManager({
       signer,

@@ -81,7 +81,7 @@ const sendTransaction = async (contract, signer, txOptions) => {
 		if (retries >= 5) {
 			throw new Error('retries reached the limit ' + err.message?.slice(0, 200));
 		} else if (code === 'NONCE_EXPIRED' || message?.includes('replacement fee too low')) {
-			await sleep(1000 + Math.random() * 1000);
+			await sleep(1000 + Math.random() * 1500);
 			retries++;
 			await sendTransaction(contract, signer, {
 				...txOptions,
@@ -168,5 +168,10 @@ try {
 
 	return res;
 } catch (error) {
-	throw new Error(error.message?.slice(0, 255));
+	const {message} = error;
+	if (message?.includes('Exceeded maximum of 20 HTTP queries')) {
+		return new Uint8Array(1);
+	} else {
+		throw new Error(message?.slice(0, 255));
+	}
 }

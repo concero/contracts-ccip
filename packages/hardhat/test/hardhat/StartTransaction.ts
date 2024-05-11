@@ -40,7 +40,7 @@ describe("startBatchTransactions\n", () => {
   const amount = "100000000000000";
   const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
   const linkTokenAddress = process.env.LINK_BASE_SEPOLIA;
-  const transactionsCount = 10;
+  const transactionsCount = 3;
   const srcContractAddress = process.env.CONCEROCCIP_BASE_SEPOLIA;
   const dstContractAddress = process.env.CONCEROCCIP_OPTIMISM_SEPOLIA;
 
@@ -159,7 +159,6 @@ describe("startBatchTransactions\n", () => {
       });
 
       transactionPromises.push(walletClient.writeContract(request));
-      await sleep(3000);
     }
 
     const transactionHashes = await Promise.all(transactionPromises);

@@ -25,7 +25,7 @@ task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")
   });
 export default {};
 
-export async function upload(taskArgs) {
+export async function upload(taskArgs): Promise<Number | undefined> {
   const hre: HardhatRuntimeEnvironment = require("hardhat");
 
   const { name } = hre.network;
@@ -46,7 +46,10 @@ export async function upload(taskArgs) {
   // const configPath = path.isAbsolute(taskArgs.configpath) ? taskArgs.configpath : path.join(process.cwd(), taskArgs.configpath);
   // const requestConfig = await import(configPath);
 
-  if (!secrets) return console.error("No secrets found.");
+  if (!secrets) {
+    console.error("No secrets to upload.");
+    return;
+  }
   // console.log("Uploading secrets to DON for network:", name);
   const encryptedSecretsObj = await secretsManager.encryptSecrets(secrets);
 
@@ -62,4 +65,5 @@ export async function upload(taskArgs) {
 
   console.log(`Secrets uploaded to DON for network: ${name} with version: ${version}`);
   updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`, version, "../../../.env.clf");
+  return version;
 }

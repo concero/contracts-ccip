@@ -23,7 +23,9 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     else console.log("Skipping deployment");
 
     await subHealthcheck(liveChains);
+    console.log("\n\n\n");
     await setContractVariables(liveChains);
+    console.log("\n\n\n");
     await fundContract(deployableChains);
     //todo: allowance of link & BNM
   });

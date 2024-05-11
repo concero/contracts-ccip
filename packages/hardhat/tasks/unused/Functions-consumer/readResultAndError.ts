@@ -3,7 +3,7 @@ import { decodeResult } from "@chainlink/functions-toolkit";
 import path from "path";
 import process from "process";
 
-// run with: bunx hardhat functions-read --contract 0x...
+// run with: bunx hardhat clf-read --contract 0x...
 task(
   "clf-read",
   "Reads the latest response (or error) returned to a FunctionsConsumer or AutomatedFunctionsConsumer consumer contract",

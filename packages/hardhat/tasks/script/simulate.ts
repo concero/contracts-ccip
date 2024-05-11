@@ -1,10 +1,10 @@
 import { task } from "hardhat/config";
 import fs from "fs";
-import secrets from "../constants/CLFSecrets";
-import CLFSimulationConfig from "../constants/CLFSimulationConfig";
+import secrets from "../../constants/CLFSecrets";
+import CLFSimulationConfig from "../../constants/CLFSimulationConfig";
 import { execSync } from "child_process";
-
 const { simulateScript, decodeResult } = require("@chainlink/functions-toolkit");
+
 const path = require("path");
 const process = require("process");
 

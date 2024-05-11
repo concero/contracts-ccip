@@ -48,7 +48,6 @@
     "clf-donsecrets-list" : "yarn workspace @se-2/hardhat clf-donsecrets-list",
     "clf-donsecrets-upload" : "yarn workspace @se-2/hardhat clf-donsecrets-upload",
     "clf-donsecrets-updatecontract" : "yarn workspace @se-2/hardhat clf-donsecrets-updatecontract",
-    "clf-donsecrets-setenv" : "yarn workspace @se-2/hardhat clf-donsecrets-setenv",
     "clf-sub-info" : "yarn workspace @se-2/hardhat clf-sub-info",
     "clf-sub-fund" : "yarn workspace @se-2/hardhat clf-sub-fund",
     "clf-sub-consumer-rm" : "yarn workspace @se-2/hardhat clf-sub-consumer-rm",

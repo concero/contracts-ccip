@@ -6,6 +6,7 @@ import { dripBnm } from "./dripBnm";
 import { task } from "hardhat/config";
 import { liveChains } from "./deployInfra";
 import chains from "../../constants/CNetworks";
+import { getEnvVar } from "../../utils/getEnvVar";
 
 export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
   //checks balance of CCIPBnm of deployer
@@ -28,7 +29,7 @@ export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
 export async function fundContract(chains: CNetwork[], amount: number = 1) {
   for (const chain of chains) {
     const { name, viemChain, ccipBnmToken, url } = chain;
-    const contract = process.env[`CONCEROCCIP_${networkEnvKeys[name]}`];
+    const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
     const { walletClient, publicClient, account } = getClients(viemChain, url);
     const gasPrice = await publicClient.getGasPrice();
     await ensureDeployerBnMBalance(chains);

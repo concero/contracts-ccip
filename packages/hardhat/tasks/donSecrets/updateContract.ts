@@ -9,6 +9,7 @@ import load from "../../utils/load";
 import { liveChains } from "../concero/deployInfra";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import { CNetwork } from "../../types/CNetwork";
+import { getEnvVar } from "../../utils/getEnvVar";
 
 // run with: bunx clf-donsecrets-updatecontract --network avalancheFuji
 task("clf-donsecrets-updatecontract", "Uploads DON secrets and updates contract variables")
@@ -24,9 +25,9 @@ export async function updateContract(chains: CNetwork[]) {
     const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls, viemChain, url, name } = chain;
     const { signer } = getEthersSignerAndProvider(chain);
 
-    if (!functionsGatewayUrls || functionsGatewayUrls.length === 0) {
-      throw Error(`No gatewayUrls found for ${name}.`);
-    }
+    if (!functionsGatewayUrls || functionsGatewayUrls.length === 0) throw Error(`No gatewayUrls found for ${name}.`);
+    const { walletClient, publicClient, account } = getClients(viemChain, url);
+    const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`); // grabbing up-to-date var
 
     const secretsManager = new SecretsManager({
       signer,
@@ -37,15 +38,16 @@ export async function updateContract(chains: CNetwork[]) {
 
     const { result } = await secretsManager.listDONHostedEncryptedSecrets(functionsGatewayUrls);
     const allSecrets = [];
-
-    const { walletClient, publicClient, account } = getClients(viemChain, url);
-    const contract = process.env[`CONCEROCCIP_${networkEnvKeys[name]}`]; // grabbing up-to-date var
-
     const res = result.nodeResponses[0];
+
     if (!res.rows) {
       console.log(`No secrets found for ${name}. Uploading secrets...`);
-      const newlyUploadedVersion = await upload({ slotid: 0, ttl: 4320 });
-      allSecrets.push(newlyUploadedVersion);
+      const {
+        slot_id: newSlotId,
+        version: newVersion,
+        expiration: newExpiration,
+      } = await upload({ slotid: 0, ttl: 4320 });
+      res.rows = [{ slot_id: newSlotId, version: newVersion, expiration: newExpiration }];
     }
 
     if (res.rows) {
@@ -59,9 +61,10 @@ export async function updateContract(chains: CNetwork[]) {
         abi,
         functionName: "setDonHostedSecretsVersion",
         account,
-        args: [row.version.toString()],
+        args: [row.version],
         chain: viemChain,
       });
+
       const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
       const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setDstConceroContractHash,

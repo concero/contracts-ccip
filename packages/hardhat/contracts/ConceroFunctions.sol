@@ -136,7 +136,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
       _confirmTX(request.ccipMessageId, transaction);
       sendTokenToEoa(request.ccipMessageId, transaction.sender, transaction.recipient, getToken(transaction.token), transaction.amount);
     } else if (request.requestType == RequestType.addUnconfirmedTxDst) {
-      if (response.length != 128) {
+      if (response.length != 192) {
         return;
       }
 

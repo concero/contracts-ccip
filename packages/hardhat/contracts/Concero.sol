@@ -9,12 +9,15 @@ contract Concero is ConceroCCIP {
     address _functionsRouter,
     uint64 _donHostedSecretsVersion,
     bytes32 _donId,
+    uint8 _donHostedSecretsSlotId,
     uint64 _subscriptionId,
     uint64 _chainSelector,
     uint _chainIndex,
     address _link,
     address _ccipRouter
-  ) ConceroCCIP(_functionsRouter, _donHostedSecretsVersion, _donId, _subscriptionId, _chainSelector, _chainIndex, _link, _ccipRouter) {}
+  )
+    ConceroCCIP(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, _link, _ccipRouter)
+  {}
 
   function startTransaction(
     address _token,
@@ -27,7 +30,7 @@ contract Concero is ConceroCCIP {
     bool isOK = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
     require(isOK, "Transfer failed");
 
-    if (msg.value < (1_500_000 * lastGasPrices[_dstChainSelector])) {
+    if (msg.value < ((750000 * lastGasPrices[_dstChainSelector]) + 750000 * lastGasPrices[chainSelector])) {
       revert InsufficientFee();
     }
 

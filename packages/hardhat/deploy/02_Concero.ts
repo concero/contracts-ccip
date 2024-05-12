@@ -28,6 +28,7 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
       functionsRouter,
       donHostedSecretsVersion,
       functionsDonId,
+      1,
       functionsSubIds[0],
       chainSelector,
       conceroChainIndex,

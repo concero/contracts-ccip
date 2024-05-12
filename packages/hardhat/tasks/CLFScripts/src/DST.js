@@ -1,5 +1,4 @@
 try {
-	const ethers = await import('npm:ethers@6.10.0');
 	const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 	const [srcContractAddress, srcChainSelector, _, ...eventArgs] = args;
 	const messageId = eventArgs[0];

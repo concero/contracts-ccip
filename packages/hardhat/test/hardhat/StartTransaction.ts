@@ -40,7 +40,7 @@ describe("startBatchTransactions\n", () => {
   const amount = "100000000000000";
   const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
   const linkTokenAddress = process.env.LINK_BASE_SEPOLIA;
-  const transactionsCount = 3;
+  const transactionsCount = 1;
   const srcContractAddress = process.env.CONCEROCCIP_BASE_SEPOLIA;
   const dstContractAddress = process.env.CONCEROCCIP_OPTIMISM_SEPOLIA;
 

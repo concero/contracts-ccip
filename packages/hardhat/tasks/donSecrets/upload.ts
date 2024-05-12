@@ -72,6 +72,9 @@ export async function upload(taskArgs): Promise<{ slot_id: number; version: numb
   const { slot_id, version: newVersion, expiration } = result.nodeResponses[0].rows[0];
   if (version !== newVersion) {
     console.error(`Secrets were not uploaded to all nodes. Version mismatch: ${version} !== ${newVersion}`);
+    console.log("Node [0]:", result.nodeResponses[0].rows);
+    console.log("Node [1]:", result.nodeResponses[1].rows);
+    console.log({ slot_id, version: newVersion, expiration });
     return;
   }
 

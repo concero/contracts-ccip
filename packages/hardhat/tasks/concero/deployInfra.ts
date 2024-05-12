@@ -18,9 +18,10 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     const { name } = hre.network;
     if (name !== "localhost" && name !== "hardhat") deployableChains = [chains[name]];
 
-    await updateContract(deployableChains);
     if (!taskArgs.skipdeploy) await deployContract(deployableChains, hre);
     else console.log("Skipping deployment");
+
+    await updateContract(deployableChains);
 
     await subHealthcheck(liveChains);
     console.log("\n\n\n");

@@ -1,7 +1,6 @@
 import { SecretsManager } from "@chainlink/functions-toolkit";
-import chains from "../../constants/CNetworks";
+import chains, { networkEnvKeys } from "../../constants/CNetworks";
 import updateEnvVariable from "../../utils/updateEnvVariable";
-import { networkEnvKeys } from "../../constants/CNetworks";
 import { task } from "hardhat/config";
 import { upload } from "./upload";
 import { getClients } from "../utils/switchChain";
@@ -52,8 +51,12 @@ export async function updateContract(chains: CNetwork[]) {
 
     if (res.rows) {
       const row = res.rows.filter(row => row.slot_id === 0)[0];
-      updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`, row.version, "../../../.env.clf");
-      updateEnvVariable(`CLF_DON_SECRETS_EXPIRATION_${networkEnvKeys[name]}`, row.expiration, "../../../.env.clf");
+      updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`, row.version.toString(), "../../../.env.clf");
+      updateEnvVariable(
+        `CLF_DON_SECRETS_EXPIRATION_${networkEnvKeys[name]}`,
+        row.expiration.toString(),
+        "../../../.env.clf",
+      );
       allSecrets.push(row);
 
       const { request: setDstConceroContractReq } = await publicClient.simulateContract({

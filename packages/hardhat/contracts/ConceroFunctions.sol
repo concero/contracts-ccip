@@ -19,7 +19,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   bytes32 private immutable donId;
   uint64 private immutable subscriptionId;
 
-  uint8 private donHostedSecretsSlotID;
+  uint8 private donHostedSecretsSlotId;
   uint64 private donHostedSecretsVersion;
 
   mapping(bytes32 => Transaction) public transactions;
@@ -40,6 +40,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     address _functionsRouter,
     uint64 _donHostedSecretsVersion,
     bytes32 _donId,
+    uint8 _donHostedSecretsSlotId,
     uint64 _subscriptionId,
     uint64 _chainSelector,
     uint _chainIndex
@@ -47,10 +48,15 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     donId = _donId;
     subscriptionId = _subscriptionId;
     donHostedSecretsVersion = _donHostedSecretsVersion;
+    donHostedSecretsSlotId = _donHostedSecretsSlotId;
   }
 
   function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
     donHostedSecretsVersion = _version;
+  }
+
+  function setDonHostedSecretsSlotID(uint8 _donHostedSecretsSlotId) external onlyOwner {
+    donHostedSecretsSlotId = _donHostedSecretsSlotId;
   }
 
   function bytesToBytes32(bytes memory b) internal pure returns (bytes32) {
@@ -107,7 +113,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   function sendRequest(string[] memory args, string memory jsCode) internal returns (bytes32) {
     FunctionsRequest.Request memory req;
     req.initializeRequestForInlineJavaScript(jsCode);
-    req.addDONHostedSecrets(donHostedSecretsSlotID, donHostedSecretsVersion);
+    req.addDONHostedSecrets(donHostedSecretsSlotId, donHostedSecretsVersion);
     req.setArgs(args);
     return _sendRequest(req.encodeCBOR(), subscriptionId, 300000, donId);
   }

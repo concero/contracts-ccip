@@ -9,12 +9,15 @@ contract Concero is ConceroCCIP {
     address _functionsRouter,
     uint64 _donHostedSecretsVersion,
     bytes32 _donId,
+    uint8 _donHostedSecretsSlotId,
     uint64 _subscriptionId,
     uint64 _chainSelector,
     uint _chainIndex,
     address _link,
     address _ccipRouter
-  ) ConceroCCIP(_functionsRouter, _donHostedSecretsVersion, _donId, _subscriptionId, _chainSelector, _chainIndex, _link, _ccipRouter) {}
+  )
+    ConceroCCIP(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, _link, _ccipRouter)
+  {}
 
   function startTransaction(
     address _token,

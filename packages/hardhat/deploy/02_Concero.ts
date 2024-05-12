@@ -28,6 +28,7 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
       functionsRouter,
       donHostedSecretsVersion,
       functionsDonId,
+      0,
       functionsSubIds[0],
       chainSelector,
       conceroChainIndex,
@@ -38,8 +39,9 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {
+    let CLFunctionsConsumerTXHash;
     try {
-      const CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(
+      CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(
         functionsRouter,
         deployment.address,
         functionsSubIds[0],

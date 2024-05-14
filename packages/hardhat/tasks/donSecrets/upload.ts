@@ -5,7 +5,7 @@ import secrets from "../../constants/CLFSecrets";
 import updateEnvVariable from "../../utils/updateEnvVariable";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 // const path = require("path");
-// run with: bunx hardhat clf-upload-secrets-don --slotid 0 --ttl 4320 --network avalancheFuji
+// run with: yarn hardhat clf-donsecrets-upload --slotid 0 --ttl 4320 --network avalancheFuji
 
 // todo: add to deployedSecrets file with expiration time, and check if it's expired before using itV
 task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")

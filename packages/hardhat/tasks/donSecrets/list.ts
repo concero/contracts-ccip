@@ -1,14 +1,13 @@
 import { SecretsManager } from "@chainlink/functions-toolkit";
-import chains from "../../constants/CNetworks";
+import chains, { networkEnvKeys } from "../../constants/CNetworks";
 import updateEnvVariable from "../../utils/updateEnvVariable";
-import { networkEnvKeys } from "../../constants/CNetworks";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { liveChains } from "../concero/deployInfra";
 import { CNetwork } from "../../types/CNetwork";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 
-// run with: bunx hardhat clf-list-don-secrets --network avalancheFuji
+// run with: yarn hardhat clf-donsecrets-list --network avalancheFuji
 task("clf-donsecrets-list", "Displays encrypted secrets hosted on the DON")
   .addFlag("all", "List secrets from all chains")
   .setAction(async taskArgs => {

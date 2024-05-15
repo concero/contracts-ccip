@@ -5,7 +5,7 @@ import secrets from "../../constants/CLFSecrets";
 import updateEnvVariable from "../../utils/updateEnvVariable";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 // const path = require("path");
-// run with: bunx hardhat clf-upload-secrets-don --slotid 0 --ttl 4320 --network avalancheFuji
+// run with: yarn hardhat clf-donsecrets-upload --slotid 0 --ttl 4320 --network avalancheFuji
 
 // todo: add to deployedSecrets file with expiration time, and check if it's expired before using itV
 task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")
@@ -69,7 +69,11 @@ export async function upload(taskArgs): Promise<{ slot_id: number; version: numb
     console.error("Secrets were not uploaded to DON.");
     return;
   }
-  const { slot_id, version: newVersion, expiration } = result.nodeResponses[0].rows[0];
+  const {
+    slot_id,
+    version: newVersion,
+    expiration,
+  } = result.nodeResponses[0].rows.find(row => row.slot_id.toString() === taskArgs.slotid);
   if (version !== newVersion) {
     console.error(`Secrets were not uploaded to all nodes. Version mismatch: ${version} !== ${newVersion}`);
     console.log("Node [0]:", result.nodeResponses[0].rows);

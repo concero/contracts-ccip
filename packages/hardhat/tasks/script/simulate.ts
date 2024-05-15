@@ -3,6 +3,7 @@ import fs from "fs";
 import secrets from "../../constants/CLFSecrets";
 import CLFSimulationConfig from "../../constants/CLFSimulationConfig";
 import { execSync } from "child_process";
+
 const { simulateScript, decodeResult } = require("@chainlink/functions-toolkit");
 
 const path = require("path");
@@ -39,8 +40,8 @@ async function simulate(pathToFile, args) {
 task("clf-script-simulate", "Executes the JavaScript source code locally")
   // .addOptionalParam("path", "Path to script file", `${__dirname}/../Functions-request-config.js`, types.string)
   .setAction(async (taskArgs, hre) => {
-    execSync(`bunx hardhat clf-script-build --file SRC.js`, { stdio: "inherit" });
-    await simulate(path.join(__dirname, "../", "./CLFScripts/dist/SRC.min.js"), [
+    execSync(`bunx hardhat clf-script-build --all`, { stdio: "inherit" });
+    await simulate(path.join(__dirname, "../", "./CLFScripts/dist/eval.min.js"), [
       process.env.CONCEROCCIP_OPTIMISM_SEPOLIA, // contractAddress
       "0x5315f93854194ca639615651c5662cf39a77308927ebe7d31c9e970958687a49", // ccipMessageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender

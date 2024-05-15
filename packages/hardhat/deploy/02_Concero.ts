@@ -2,6 +2,9 @@ import { DeployFunction, Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
+import log from "../utils/log";
+import { addConsumer } from "@chainlink/hardhat-chainlink/dist/src/functions";
+import addCLFConsumer from "../tasks/sub/add";
 
 /* run with: yarn deploy --network avalancheFuji --tags Concero */
 const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -39,16 +42,8 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {
-    let CLFunctionsConsumerTXHash;
-    try {
-      CLFunctionsConsumerTXHash = await hre.chainlink.functions.addConsumer(
-        functionsRouter,
-        deployment.address,
-        functionsSubIds[0],
-      );
-    } catch (e) {}
-    console.log(`CL Functions Consumer added successfully: ${CLFunctionsConsumerTXHash}`);
     updateEnvVariable(`CONCEROCCIP_${networkEnvKeys[name]}`, deployment.address, "../../../.env.deployments");
+    await addCLFConsumer(chains[name], [deployment.address], functionsSubIds[0]);
   }
 };
 

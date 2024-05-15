@@ -7,6 +7,7 @@ import { task } from "hardhat/config";
 import { liveChains } from "./deployInfra";
 import chains from "../../constants/CNetworks";
 import { getEnvVar } from "../../utils/getEnvVar";
+import log from "../../utils/log";
 
 export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
   //checks balance of CCIPBnm of deployer
@@ -21,7 +22,10 @@ export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
     });
 
     if (balance < 5n * 10n ** 18n) {
-      console.log(`Deployer ${name}:${account.address} has insufficient CCIPBNM balance. Dripping...`);
+      log(
+        `Deployer ${name}:${account.address} has insufficient CCIPBNM balance. Dripping...`,
+        "ensureDeployerBnMBalance",
+      );
       await dripBnm([chain], 5);
     }
   }
@@ -31,7 +35,6 @@ export async function fundContract(chains: CNetwork[], amount: number = 1) {
     const { name, viemChain, ccipBnmToken, url } = chain;
     const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
     const { walletClient, publicClient, account } = getClients(viemChain, url);
-    const gasPrice = await publicClient.getGasPrice();
     await ensureDeployerBnMBalance(chains);
     const { request: sendReq } = await publicClient.simulateContract({
       functionName: "transfer",
@@ -39,11 +42,10 @@ export async function fundContract(chains: CNetwork[], amount: number = 1) {
       account,
       address: ccipBnmToken,
       args: [contract, BigInt(amount) * 10n ** 18n],
-      gasPrice,
     });
     const sendHash = await walletClient.writeContract(sendReq);
     const { cumulativeGasUsed: sendGasUsed } = await publicClient.waitForTransactionReceipt({ hash: sendHash });
-    console.log(`Sent ${amount} CCIPBNM to ${name}:${contract}. Gas used: ${sendGasUsed.toString()}`);
+    log(`Sent ${amount} CCIPBNM to ${name}:${contract}. Gas used: ${sendGasUsed.toString()}`, "fundContract");
   }
 }
 

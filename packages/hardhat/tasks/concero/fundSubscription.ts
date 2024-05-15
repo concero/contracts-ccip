@@ -6,8 +6,9 @@ import { getClients } from "../utils/switchChain";
 import { encodeAbiParameters } from "viem";
 import { CNetwork } from "../../types/CNetwork";
 import { getEnvVar } from "../../utils/getEnvVar";
+import log from "../../utils/log";
 
-export async function subHealthcheck(selectedChains: CNetwork[]) {
+export async function fundSubscription(selectedChains: CNetwork[]) {
   for (const chain of selectedChains) {
     const { linkToken, functionsRouter, functionsSubIds, viemChain, url, name } = chain;
     const { walletClient, publicClient } = getClients(viemChain, url);
@@ -34,20 +35,22 @@ export async function subHealthcheck(selectedChains: CNetwork[]) {
 
       const hash = await linkTokenContract.write.transferAndCall([functionsRouter, amountToFund, encodedData]);
       const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ hash });
-      console.log(
+      log(
         `Funded Sub ${functionsSubIds[0]} with ${formatUnits(amountToFund, 18)} LINK. Tx Hash: ${hash} Gas used: ${cumulativeGasUsed.toString()}`,
+        "fundSubscription",
       );
     }
 
-    if (!consumers.map(c => c.toLowerCase()).includes(contract.toLowerCase())) {
-      // console.log(`Adding consumer ${contract} to Sub ${functionsSubIds[0]}`);
-      const hash = await functionsRouterContract.write.addConsumer([functionsSubIds[0], contract.toLowerCase()]);
-      const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ hash });
-      console.log(
-        `Consumer ${name}:${contract} added to Sub ${functionsSubIds[0]}. Tx Hash: ${hash} Gas used: ${cumulativeGasUsed.toString()}`,
-      );
-    } else {
-      console.log(`Consumer ${name}:${contract} is already subscribed to ${functionsSubIds[0]}. Skipping...`);
-    }
+    // CLF consumer is currently being added in the depolyment script
+    // if (!consumers.map(c => c.toLowerCase()).includes(contract.toLowerCase())) {
+    //   // console.log(`Adding consumer ${contract} to Sub ${functionsSubIds[0]}`);
+    //   const hash = await functionsRouterContract.write.addConsumer([functionsSubIds[0], contract.toLowerCase()]);
+    //   const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ hash });
+    //   console.log(
+    //     `Consumer ${name}:${contract} added to Sub ${functionsSubIds[0]}. Tx Hash: ${hash} Gas used: ${cumulativeGasUsed.toString()}`,
+    //   );
+    // } else {
+    //   console.log(`Consumer ${name}:${contract} is already subscribed to ${functionsSubIds[0]}. Skipping...`);
+    // }
   }
 }

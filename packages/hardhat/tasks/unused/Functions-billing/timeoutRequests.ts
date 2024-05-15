@@ -19,7 +19,7 @@ task("clf-sub-timeout-requests", "Times out expired Functions requests which hav
     console.log(`Timing out requests ${requestIdsToTimeout} on ${name}`);
     const toBlock = taskArgs.toblock ? Number(taskArgs.toblock) : "latest";
     const pastBlocksToSearch = parseInt(taskArgs.pastblockstosearch);
-    const { signer, provider } = getEthersSignerAndProvider(chains[name]);
+    const { signer, provider } = getEthersSignerAndProvider(chains[name].url);
     const { linkToken, functionsRouter, functionsDonIdAlias, confirmations } = chains[name];
 
     // const txOptions = { overrides: { gasLimit: 10000000 } };

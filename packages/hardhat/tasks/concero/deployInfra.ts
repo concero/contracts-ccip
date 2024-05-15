@@ -25,7 +25,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     else log("Skipping deployment", "deploy-infra");
 
     await uploadDonSecrets(deployableChains, slotId, 4320);
-    await setContractVariables(liveChains, slotId);
+    await setContractVariables(liveChains, deployableChains, slotId);
     await fundSubscription(liveChains);
     await fundContract(deployableChains);
     //todo: allowance of link & BNM

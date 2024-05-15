@@ -28,7 +28,8 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
       functionsRouter,
       donHostedSecretsVersion,
       functionsDonId,
-      0,
+      // TODO: get don slot id from flag
+      1,
       functionsSubIds[0],
       chainSelector,
       conceroChainIndex,

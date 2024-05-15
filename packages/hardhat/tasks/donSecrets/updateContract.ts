@@ -10,7 +10,7 @@ import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider"
 import { CNetwork } from "../../types/CNetwork";
 import { getEnvVar } from "../../utils/getEnvVar";
 
-// run with: bunx clf-donsecrets-updatecontract --network avalancheFuji
+// run with: yarn hardhat clf-donsecrets-updatecontract --network avalancheFuji
 task("clf-donsecrets-updatecontract", "Uploads DON secrets and updates contract variables")
   .addFlag("all", "List secrets from all chains")
   .setAction(async taskArgs => {
@@ -50,7 +50,8 @@ export async function updateContract(chains: CNetwork[]) {
     }
 
     if (res.rows) {
-      const row = res.rows.filter(row => row.slot_id === 0)[0];
+      // TODO: get slot id from flag
+      const row = res.rows.filter(row => row.slot_id === 1)[0];
       updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`, row.version.toString(), "../../../.env.clf");
       updateEnvVariable(
         `CLF_DON_SECRETS_EXPIRATION_${networkEnvKeys[name]}`,

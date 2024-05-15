@@ -2,48 +2,78 @@ import { DeployFunction, Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
-import log from "../utils/log";
-import { addConsumer } from "@chainlink/hardhat-chainlink/dist/src/functions";
 import addCLFConsumer from "../tasks/sub/add";
+import log from "../utils/log";
+
+interface ConstructorArgs {
+  slotId?: number;
+  functionsRouter?: string;
+  donHostedSecretsVersion?: number;
+  functionsDonId?: string;
+  functionsSubId?: string;
+  chainSelector?: string;
+  conceroChainIndex?: number;
+  linkToken?: string;
+  ccipRouter?: string;
+}
 
 /* run with: yarn deploy --network avalancheFuji --tags Concero */
-const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const deployConcero: DeployFunction = async function (
+  hre: HardhatRuntimeEnvironment,
+  constructorArgs: ConstructorArgs = {},
+) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
   if (!chains[name]) throw new Error(`Chain ${name} not supported`);
 
   const {
+    functionsRouter,
+    donHostedSecretsVersion,
+    functionsDonId,
+    functionsSubIds,
+    chainSelector,
+    conceroChainIndex,
     linkToken,
     ccipRouter,
-    functionsRouter,
-    functionsDonId,
-    chainSelector,
-    functionsSubIds,
-    conceroChainIndex,
-    donHostedSecretsVersion,
   } = chains[name];
+
+  const defaultArgs = {
+    slotId: 0,
+    functionsRouter: functionsRouter,
+    donHostedSecretsVersion: donHostedSecretsVersion,
+    functionsDonId: functionsDonId,
+    functionsSubId: functionsSubIds[0],
+    chainSelector: chainSelector,
+    conceroChainIndex: conceroChainIndex,
+    linkToken: linkToken,
+    ccipRouter: ccipRouter,
+  };
+
+  // Merge defaultArgs with constructorArgs
+  const args = { ...defaultArgs, ...constructorArgs };
 
   const deployment = (await deploy("Concero", {
     from: deployer,
     log: true,
     args: [
-      functionsRouter,
-      donHostedSecretsVersion,
-      functionsDonId,
-      0,
-      functionsSubIds[0],
-      chainSelector,
-      conceroChainIndex,
-      linkToken,
-      ccipRouter,
+      args.functionsRouter,
+      args.donHostedSecretsVersion,
+      args.functionsDonId,
+      args.slotId,
+      args.functionsSubId,
+      args.chainSelector,
+      args.conceroChainIndex,
+      args.linkToken,
+      args.ccipRouter,
     ],
     autoMine: true,
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {
+    log(`Contract Concero deployed to ${name} at ${deployment.address}`, "deployConcero");
     updateEnvVariable(`CONCEROCCIP_${networkEnvKeys[name]}`, deployment.address, "../../../.env.deployments");
-    await addCLFConsumer(chains[name], [deployment.address], functionsSubIds[0]);
+    await addCLFConsumer(chains[name], [deployment.address], args.functionsSubId);
   }
 };
 

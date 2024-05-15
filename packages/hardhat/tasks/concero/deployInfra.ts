@@ -1,14 +1,13 @@
 import { task, types } from "hardhat/config";
 import { fundSubscription } from "./fundSubscription";
-import { deployContract } from "./deployContract";
 import chains from "../../constants/CNetworks";
 import { setContractVariables } from "./setContractVariables";
 import { fundContract } from "./fundContract";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { updateContract } from "../donSecrets/updateContract";
 import { CNetwork } from "../../types/CNetwork";
 import log from "../../utils/log";
 import uploadDonSecrets from "../donSecrets/upload";
+import deployConcero from "../../deploy/02_Concero";
 
 export const liveChains: CNetwork[] = [chains.baseSepolia, chains.arbitrumSepolia];
 let deployableChains: CNetwork[] = liveChains;
@@ -21,7 +20,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     const { name } = hre.network;
     const slotId = parseInt(taskArgs.slotid);
     if (name !== "localhost" && name !== "hardhat") deployableChains = [chains[name]];
-    if (!taskArgs.skipdeploy) await deployContract(deployableChains, hre);
+    if (!taskArgs.skipdeploy) await deployConcero(hre, { slotId });
     else log("Skipping deployment", "deploy-infra");
 
     await uploadDonSecrets(deployableChains, slotId, 4320);

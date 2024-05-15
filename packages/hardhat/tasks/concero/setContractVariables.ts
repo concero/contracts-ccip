@@ -82,6 +82,8 @@ export async function setContractVariables(liveChains: CNetwork[], deployableCha
       "setContractVariables",
     );
 
+    //todo: Set DonHostedSecrets slotId in case necessary
+
     // Add Messenger to allowlist
     try {
       const { request: addToAllowlistReq } = await publicClient.simulateContract({

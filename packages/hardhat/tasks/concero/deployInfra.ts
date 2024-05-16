@@ -1,32 +1,31 @@
-import { task } from "hardhat/config";
-import { subHealthcheck } from "./subHealthcheck";
-import { deployContract } from "./deployContract";
+import { task, types } from "hardhat/config";
+import { fundSubscription } from "./fundSubscription";
 import chains from "../../constants/CNetworks";
 import { setContractVariables } from "./setContractVariables";
 import { fundContract } from "./fundContract";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { updateContract } from "../donSecrets/updateContract";
 import { CNetwork } from "../../types/CNetwork";
+import log from "../../utils/log";
+import uploadDonSecrets from "../donSecrets/upload";
+import deployConcero from "../../deploy/02_Concero";
 
-export const liveChains: CNetwork[] = [chains.optimismSepolia, chains.baseSepolia, chains.arbitrumSepolia];
+export const liveChains: CNetwork[] = [chains.baseSepolia, chains.arbitrumSepolia];
 let deployableChains: CNetwork[] = liveChains;
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
+  .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const { name } = hre.network;
+    const slotId = parseInt(taskArgs.slotid);
     if (name !== "localhost" && name !== "hardhat") deployableChains = [chains[name]];
+    if (!taskArgs.skipdeploy) await deployConcero(hre, { slotId });
+    else log("Skipping deployment", "deploy-infra");
 
-    if (!taskArgs.skipdeploy) await deployContract(deployableChains, hre);
-    else console.log("Skipping deployment");
-
-    await updateContract(deployableChains);
-
-    await subHealthcheck(liveChains);
-    console.log("\n\n\n");
-    await setContractVariables(liveChains);
-    console.log("\n\n\n");
+    await uploadDonSecrets(deployableChains, slotId, 4320);
+    await setContractVariables(liveChains, deployableChains, slotId);
+    await fundSubscription(liveChains);
     await fundContract(deployableChains);
     //todo: allowance of link & BNM
   });

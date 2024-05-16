@@ -3,8 +3,13 @@ pragma solidity ^0.8.19;
 
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {ConceroCCIP} from "./ConceroCCIP.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 contract Concero is ConceroCCIP {
+  uint256 public immutable CL_FUNCTIONS_FEE_IN_LINK = 500000000000000000; // 0.5 link
+
+  AggregatorV3Interface public linkToSrcNativeTokenPriceFeeds;
+
   constructor(
     address _functionsRouter,
     uint64 _donHostedSecretsVersion,
@@ -14,25 +19,42 @@ contract Concero is ConceroCCIP {
     uint64 _chainSelector,
     uint _chainIndex,
     address _link,
-    address _ccipRouter
-  )
-    ConceroCCIP(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, _link, _ccipRouter)
-  {}
+    address _ccipRouter,
+    address _linkToSrcNativeTokenPriceFeeds
+  ) ConceroCCIP(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, _link, _ccipRouter) {
+    linkToSrcNativeTokenPriceFeeds = AggregatorV3Interface(_linkToSrcNativeTokenPriceFeeds);
+  }
+
+  modifier valueSufficiency(uint64 _dstChainSelector) {
+    //    if (!isBridge) return;
+
+    // dst chain cl_functions gas fee
+    uint256 calldata srcFunctionsGasFee = (750000 * lastGasPrices[chainSelector]);
+    uint256 calldata dstFunctionsGasFee = (750000 * lastGasPrices[_dstChainSelector]);
+
+    // cl_functions fee amount
+    (, int256 linkToToNativeRate, , , ) = linkToSrcNativeTokenPriceFeeds.latestRoundData();
+    uint8 rateDecimals = linkToSrcNativeTokenPriceFeeds.decimals();
+    uint256 calldata functionsSrcFeeInNative = (CL_FUNCTIONS_FEE_IN_LINK * (uint256(linkToToNativeRate) * 10 ** (18 - rateDecimals))) / 1 ether;
+
+    if (msg.value < totalFee) {
+      revert InsufficientFee();
+    }
+
+    _;
+  }
 
   function startTransaction(
     address _token,
     CCIPToken _tokenType,
     uint256 _amount,
     uint64 _dstChainSelector,
-    address _receiver
-  ) external payable tokenAmountSufficiency(_token, _amount) {
+    address _receiver,
+    bytes calldata _swapData
+  ) external payable tokenAmountSufficiency(_token, _amount) valueSufficiency(_dstChainSelector) {
     //todo: maybe move to OZ safeTransfer (but research needed)
     bool isOK = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
     require(isOK, "Transfer failed");
-
-    if (msg.value < ((750000 * lastGasPrices[_dstChainSelector]) + 750000 * lastGasPrices[chainSelector])) {
-      revert InsufficientFee();
-    }
 
     bytes32 ccipMessageId = _sendTokenPayLink(_dstChainSelector, _receiver, _token, _amount);
     emit CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, _amount, _dstChainSelector);

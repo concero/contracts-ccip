@@ -7,6 +7,40 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { liveChains } from "../concero/deployInfra";
 import { CNetwork } from "../../types/CNetwork";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
+import log from "../../utils/log";
+
+async function listSecrets(chain: CNetwork): Promise<{ [slotId: number]: { version: number; expiration: number } }> {
+  const { provider, signer } = getEthersSignerAndProvider(chain.url);
+  const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls } = chain;
+  if (!functionsGatewayUrls || functionsGatewayUrls.length === 0)
+    throw Error(`No gatewayUrls found for ${chain.name}.`);
+
+  const secretsManager = new SecretsManager({
+    signer,
+    functionsRouterAddress: functionsRouter,
+    donId: functionsDonIdAlias,
+  });
+  await secretsManager.initialize();
+
+  const { result } = await secretsManager.listDONHostedEncryptedSecrets(functionsGatewayUrls);
+  const allSecrets = {};
+
+  result.nodeResponses.forEach(nodeResponse => {
+    if (nodeResponse.rows) {
+      nodeResponse.rows.forEach(row => {
+        if (allSecrets[row.slot_id] && allSecrets[row.slot_id].version !== row.version)
+          return log(`Node mismatch for slot_id. ${allSecrets[row.slot_id]} !== ${row.slot_id}!`, "listSecrets");
+        allSecrets[row.slot_id] = { version: row.version, expiration: row.expiration };
+      });
+    }
+    // else {
+    //   // updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[chain.name]}`, "0", "../../../.env.clf");
+    // }
+  });
+  log(`DON secrets for ${chain.name}:`, "listSecrets");
+  console.log(allSecrets);
+  return allSecrets;
+}
 
 // run with: bunx hardhat clf-list-don-secrets --network avalancheFuji
 task("clf-donsecrets-list", "Displays encrypted secrets hosted on the DON")
@@ -25,45 +59,4 @@ task("clf-donsecrets-list", "Displays encrypted secrets hosted on the DON")
     }
   });
 
-async function listSecrets(chain: CNetwork) {
-  const { provider, signer } = getEthersSignerAndProvider(chain);
-
-  const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls } = chain;
-  if (!functionsGatewayUrls || functionsGatewayUrls.length === 0)
-    throw Error(`No gatewayUrls found for ${chain.name}.`);
-
-  const secretsManager = new SecretsManager({
-    signer,
-    functionsRouterAddress: functionsRouter,
-    donId: functionsDonIdAlias,
-  });
-  await secretsManager.initialize();
-
-  const { result } = await secretsManager.listDONHostedEncryptedSecrets(functionsGatewayUrls);
-  const allSecrets = [];
-  let i = 0;
-  result.nodeResponses.forEach(nodeResponse => {
-    i++;
-
-    if (nodeResponse.rows) {
-      nodeResponse.rows.forEach(row => {
-        if (row.version && row.expiration) {
-          updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[chain.name]}`, row.version, "../../../.env.clf");
-          updateEnvVariable(
-            `CLF_DON_SECRETS_EXPIRATION_${networkEnvKeys[chain.name]}`,
-            row.expiration,
-            "../../../.env.clf",
-          );
-        }
-        allSecrets.push(row);
-      });
-    } else {
-      updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[chain.name]}`, "0", "../../../.env.clf");
-    }
-  });
-  console.log(`DON secrets for ${chain.name}:`);
-  console.log(JSON.stringify(allSecrets));
-  return JSON.stringify(allSecrets);
-}
-
-export default {};
+export default listSecrets;

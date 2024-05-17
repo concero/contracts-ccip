@@ -9,58 +9,42 @@ Foundry consists of:
 -   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
 -   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
 
-## Documentation
+## Clone
 
-https://book.getfoundry.sh/
+```shell
+git clone https://github.com/concero/scaffoldeth/tree/feat/DEXSwap
+```
 
 ## Usage
 
 ### Build
 
 ```shell
+$ cd cd packages/foundry
+```
+
+```shell
+$ yarn install
+```
+
+```shell
+$ foundryup
+```
+
+```shell
 $ forge build
+```
+
+### Env file
+
+Rename the `.env.example` file to `.env` and update the `BASE_RPC_URL=` variable with `YOUR_KEY` from alchemy. Note the tests run on a Base Mainnet Fork. After updating the file, run the following command:
+
+```shell
+$ source .env
 ```
 
 ### Test
 
 ```shell
 $ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
 ```

@@ -8,7 +8,9 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interf
 contract Concero is ConceroCCIP {
   uint256 public immutable CL_FUNCTIONS_FEE_IN_LINK = 500000000000000000; // 0.5 link
 
-  AggregatorV3Interface public linkToSrcNativeTokenPriceFeeds;
+  AggregatorV3Interface public linkToUsdPriceFeeds;
+  AggregatorV3Interface public usdcToUsdPriceFeeds;
+  AggregatorV3Interface public nativeToUsdPriceFeeds;
 
   constructor(
     address _functionsRouter,
@@ -20,28 +22,64 @@ contract Concero is ConceroCCIP {
     uint _chainIndex,
     address _link,
     address _ccipRouter,
-    address _linkToSrcNativeTokenPriceFeeds
+    address _linkToUsdPriceFeeds,
+    address _usdcToUsdPriceFeeds
   ) ConceroCCIP(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, _link, _ccipRouter) {
-    linkToSrcNativeTokenPriceFeeds = AggregatorV3Interface(_linkToSrcNativeTokenPriceFeeds);
+    linkToUsdPriceFeeds = AggregatorV3Interface(_linkToUsdPriceFeeds);
+    usdcToUsdPriceFeeds = AggregatorV3Interface(_usdcToUsdPriceFeeds);
   }
 
-  modifier valueSufficiency(uint64 _dstChainSelector) {
-    //    if (!isBridge) return;
+  // fees module
+  function getLinkToUsdcRate() public view returns (int256, uint8) {
+    (, int256 linkToUsdRate, , , ) = linkToUsdPriceFeeds.latestRoundData();
+    (, int256 usdcToUsdRate, , , ) = usdcToUsdPriceFeeds.latestRoundData();
 
-    // dst chain cl_functions gas fee
-    uint256 calldata srcFunctionsGasFee = (750000 * lastGasPrices[chainSelector]);
-    uint256 calldata dstFunctionsGasFee = (750000 * lastGasPrices[_dstChainSelector]);
+    uint8 decimals = 18;
+    int256 linkToUsdcRate = (linkToUsdRate * int256(10 ** decimals)) / usdcToUsdRate;
 
-    // cl_functions fee amount
-    (, int256 linkToToNativeRate, , , ) = linkToSrcNativeTokenPriceFeeds.latestRoundData();
-    uint8 rateDecimals = linkToSrcNativeTokenPriceFeeds.decimals();
-    uint256 calldata functionsSrcFeeInNative = (CL_FUNCTIONS_FEE_IN_LINK * (uint256(linkToToNativeRate) * 10 ** (18 - rateDecimals))) / 1 ether;
+    return (linkToUsdcRate, decimals);
+  }
 
-    if (msg.value < totalFee) {
-      revert InsufficientFee();
-    }
+  function getNativeToUsdcRate() public view returns (int256, uint8) {
+    (, int256 nativeToUsdRate, , , ) = nativeToUsdPriceFeeds.latestRoundData();
+    (, int256 usdcToUsdRate, , , ) = usdcToUsdPriceFeeds.latestRoundData();
 
-    _;
+    uint8 decimals = 18;
+    int256 linkToUsdcRate = (nativeToUsdRate * int256(10 ** decimals)) / usdcToUsdRate;
+
+    return (linkToUsdcRate, decimals);
+  }
+
+  function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) public view returns (uint256) {
+    (int256 linkToUsdcRate, ) = getLinkToUsdcRate();
+    (int256 nativeToUsdcRate, ) = getNativeToUsdcRate();
+
+    // TODO: check what to do if rate is negative
+    if (linkToUsdcRate < 0) return 0;
+
+    uint256 functionsFeeInUsdc = (CL_FUNCTIONS_FEE_IN_LINK * uint256(linkToUsdcRate)) / 1 ether;
+
+    uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector, amount);
+    uint256 ccpFeeInUsdc = (ccpFeeInLink * uint256(linkToUsdcRate)) / 1 ether;
+
+    uint256 conceroFeeInUsdc = amount * 0.003;
+
+    uint256 srcFunctionsGasFee = (750000 * lastGasPrices[chainSelector]);
+    uint256 dstFunctionsGasFee = (750000 * lastGasPrices[dstChainSelector]);
+    uint256 functionsGasFeeInNative = srcFunctionsGasFee + dstFunctionsGasFee;
+    uint256 functionsGasFeeInUsdc = (functionsGasFeeInNative * uint256(nativeToUsdcRate)) / 1 ether;
+
+    return functionsFeeInUsdc + ccpFeeInUsdc + conceroFeeInUsdc + functionsGasFeeInUsdc;
+  }
+
+  function getDstTotalFeeInUsdc(uint256 amount) public view returns (uint256) {
+    return amount * 0.001;
+  }
+
+  function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(this), getToken(tokenType), 1 ether, s_linkToken, dstChainSelector);
+    IRouterClient router = IRouterClient(this.getRouter());
+    return router.getFee(dstChainSelector, evm2AnyMessage);
   }
 
   function startTransaction(

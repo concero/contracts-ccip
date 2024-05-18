@@ -4,13 +4,23 @@ pragma solidity ^0.8.19;
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {ConceroCCIP} from "./ConceroCCIP.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 
 contract Concero is ConceroCCIP {
-  uint256 public immutable CL_FUNCTIONS_FEE_IN_LINK = 500000000000000000; // 0.5 link
+  mapping(uint64 => uint256) public clfPremiumFees;
 
-  AggregatorV3Interface public linkToUsdPriceFeeds;
-  AggregatorV3Interface public usdcToUsdPriceFeeds;
-  AggregatorV3Interface public nativeToUsdPriceFeeds;
+  AggregatorV3Interface public immutable linkToUsdPriceFeeds;
+  AggregatorV3Interface public immutable usdcToUsdPriceFeeds;
+  AggregatorV3Interface public immutable nativeToUsdPriceFeeds;
+  AggregatorV3Interface public immutable linkToNativePriceFeeds;
+
+  struct PriceFeeds {
+    address linkToUsdPriceFeeds;
+    address usdcToUsdPriceFeeds;
+    address nativeToUsdPriceFeeds;
+    address linkToNativePriceFeeds;
+  }
 
   constructor(
     address _functionsRouter,
@@ -22,11 +32,16 @@ contract Concero is ConceroCCIP {
     uint _chainIndex,
     address _link,
     address _ccipRouter,
-    address _linkToUsdPriceFeeds,
-    address _usdcToUsdPriceFeeds
+    PriceFeeds memory priceFeeds
   ) ConceroCCIP(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, _link, _ccipRouter) {
-    linkToUsdPriceFeeds = AggregatorV3Interface(_linkToUsdPriceFeeds);
-    usdcToUsdPriceFeeds = AggregatorV3Interface(_usdcToUsdPriceFeeds);
+    linkToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.linkToUsdPriceFeeds);
+    usdcToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.usdcToUsdPriceFeeds);
+    nativeToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.nativeToUsdPriceFeeds);
+    linkToNativePriceFeeds = AggregatorV3Interface(priceFeeds.linkToNativePriceFeeds);
+
+    clfPremiumFees[3478487238524512106] = 4000000000000000; // 0.004 link | arb
+    clfPremiumFees[10344971235874465080] = 1847290640394088; // 0.0018 link | base // takes in usd mb price feed needed
+    clfPremiumFees[5224473277236331295] = 2000000000000000; // 0.002 link | opt
   }
 
   // fees module
@@ -50,36 +65,87 @@ contract Concero is ConceroCCIP {
     return (linkToUsdcRate, decimals);
   }
 
-  function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) public view returns (uint256) {
+  function getFunctionsFeeInLink(uint64 dstChainSelector) public view returns (uint256) {
+    (, int256 linkToNativeRate, , , ) = linkToNativePriceFeeds.latestRoundData();
+
+    // TODO: check what to do if rate is negative
+    if (linkToNativeRate < 0) {
+      return 0;
+    }
+
+    uint256 srcGasPrice = lastGasPrices[chainSelector];
+    uint256 dstGasPrice = lastGasPrices[dstChainSelector];
+    uint256 srsClFeeInLink = clfPremiumFees[chainSelector] +
+      ((srcGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_CALLBACK_GAS_LIMIT)) * uint256(linkToNativeRate)) /
+      1 ether;
+    uint256 dstClFeeInLink = clfPremiumFees[dstChainSelector] +
+      ((dstGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_CALLBACK_GAS_LIMIT)) * uint256(linkToNativeRate)) /
+      1 ether;
+
+    return srsClFeeInLink + dstClFeeInLink;
+  }
+
+  function getFunctionsFeeInUsdc(uint64 dstChainSelector) public view returns (uint256) {
     (int256 linkToUsdcRate, ) = getLinkToUsdcRate();
+
+    // TODO: check what to do if rate is negative
+    if (linkToUsdcRate < 0) {
+      return 0;
+    }
+
+    uint256 functionsFeeInLink = getFunctionsFeeInLink(dstChainSelector);
+    return (functionsFeeInLink * uint256(linkToUsdcRate)) / 1 ether;
+  }
+
+  function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) public view returns (uint256) {
     (int256 nativeToUsdcRate, ) = getNativeToUsdcRate();
 
     // TODO: check what to do if rate is negative
-    if (linkToUsdcRate < 0) return 0;
+    if (nativeToUsdcRate < 0) {
+      return 0;
+    }
 
-    uint256 functionsFeeInUsdc = (CL_FUNCTIONS_FEE_IN_LINK * uint256(linkToUsdcRate)) / 1 ether;
+    // cl functions fee
+    uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
 
-    uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector, amount);
-    uint256 ccpFeeInUsdc = (ccpFeeInLink * uint256(linkToUsdcRate)) / 1 ether;
+    // cl ccip fee
+    uint256 ccpFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector);
 
-    uint256 conceroFeeInUsdc = amount * 0.003;
+    // concero fee
+    uint256 conceroFeeInUsdc = amount / 1000;
 
-    uint256 srcFunctionsGasFee = (750000 * lastGasPrices[chainSelector]);
-    uint256 dstFunctionsGasFee = (750000 * lastGasPrices[dstChainSelector]);
-    uint256 functionsGasFeeInNative = srcFunctionsGasFee + dstFunctionsGasFee;
+    // gas fee
+    uint256 functionsGasFeeInNative = (750_000 * lastGasPrices[chainSelector]) + (750_000 * lastGasPrices[dstChainSelector]);
     uint256 functionsGasFeeInUsdc = (functionsGasFeeInNative * uint256(nativeToUsdcRate)) / 1 ether;
 
     return functionsFeeInUsdc + ccpFeeInUsdc + conceroFeeInUsdc + functionsGasFeeInUsdc;
   }
 
   function getDstTotalFeeInUsdc(uint256 amount) public view returns (uint256) {
-    return amount * 0.001;
+    return amount / 1000;
   }
 
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(this), getToken(tokenType), 1 ether, s_linkToken, dstChainSelector);
     IRouterClient router = IRouterClient(this.getRouter());
     return router.getFee(dstChainSelector, evm2AnyMessage);
+  }
+
+  function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
+    (int256 linkToUsdcRate, ) = getLinkToUsdcRate();
+
+    // TODO: check what to do if rate is negative
+    if (linkToUsdcRate < 0) {
+      return 0;
+    }
+
+    uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector);
+    return (ccpFeeInLink * uint256(linkToUsdcRate)) / 1 ether;
+  }
+
+  // setters
+  function setClfPremiumFees(uint64 chainSelector, uint256 feeAmount) external onlyOwner {
+    clfPremiumFees[chainSelector] = feeAmount;
   }
 
   function startTransaction(
@@ -89,7 +155,7 @@ contract Concero is ConceroCCIP {
     uint64 _dstChainSelector,
     address _receiver,
     bytes calldata _swapData
-  ) external payable tokenAmountSufficiency(_token, _amount) valueSufficiency(_dstChainSelector) {
+  ) external payable tokenAmountSufficiency(_token, _amount) {
     //todo: maybe move to OZ safeTransfer (but research needed)
     bool isOK = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
     require(isOK, "Transfer failed");

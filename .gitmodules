@@ -4,3 +4,12 @@
 [submodule "packages/foundry/lib/forge-std"]
 	path = packages/foundry/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "packages/foundry/lib/openzeppelin-contracts"]
+	path = packages/foundry/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "packages/foundry/lib/chainlink-local"]
+	path = packages/foundry/lib/chainlink-local
+	url = https://github.com/smartcontractkit/chainlink-local
+[submodule "packages/foundry/lib/chainlink"]
+	path = packages/foundry/lib/chainlink
+	url = https://github.com/smartcontractkit/chainlink

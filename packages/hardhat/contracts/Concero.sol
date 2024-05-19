@@ -112,13 +112,13 @@ contract Concero is ConceroCCIP {
     uint256 ccpFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector);
 
     // concero fee
-    uint256 conceroFeeInUsdc = amount / 1000;
+    uint256 conceroFee = amount / 1000;
 
     // gas fee
     uint256 functionsGasFeeInNative = (750_000 * lastGasPrices[chainSelector]) + (750_000 * lastGasPrices[dstChainSelector]);
     uint256 functionsGasFeeInUsdc = (functionsGasFeeInNative * uint256(nativeToUsdcRate)) / 1 ether;
 
-    return functionsFeeInUsdc + ccpFeeInUsdc + conceroFeeInUsdc + functionsGasFeeInUsdc;
+    return functionsFeeInUsdc + ccpFeeInUsdc + conceroFee + functionsGasFeeInUsdc;
   }
 
   function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {

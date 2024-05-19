@@ -11,14 +11,14 @@ string constant BASE_SEPOLIA_RPC = "https://sepolia.base.org";
 uint256 constant BASE_SEPOLIA_END_FORK_BLOCK_NUMBER = 10171514;
 
 contract ConceroGasAbstractionTest is Test {
-  Concero public concero;
+  ConceroMock public concero;
   uint256 public baseForkId;
 
   function setUp() public {
     baseForkId = vm.createFork(BASE_SEPOLIA_RPC, BASE_SEPOLIA_END_FORK_BLOCK_NUMBER);
     vm.selectFork(baseForkId);
 
-    concero = new Concero(
+    concero = new ConceroMock(
       0xf9B8fc078197181C841c296C876945aaa425B278,
       1715958404,
       0x66756e2d626173652d6d61696e6e65742d310000000000000000000000000000,
@@ -35,13 +35,60 @@ contract ConceroGasAbstractionTest is Test {
         linkToNativePriceFeeds: 0x56a43EB56Da12C0dc1D972ACb089c06a5dEF8e69
       })
     );
+
+    concero.setLastGasPrices(5224473277236331295, 1000263);
+    concero.setLastGasPrices(10344971235874465080, 1000292);
   }
 
-  function test_getTotalFee() public view {
-    uint256 ccipFee = concero.getCCIPFeeInUsdc(IConceroCommon.CCIPToken.bnm, 5224473277236331295);
-    console2.logUint(ccipFee);
+  function test_getDstTotalFeeInUsdc() public view {
+    uint256 dstFee = concero.getDstTotalFeeInUsdc(10 ether);
+    assert(dstFee == 0.01 ether);
+  }
 
+  function test_getCCIIPFeeInUsdc() public view {
+    uint256 ccipFee = concero.getCCIPFeeInUsdc(IConceroCommon.CCIPToken.bnm, 5224473277236331295);
+    assert(ccipFee == 0.170980663044073040 ether);
+  }
+
+  function test_getFunctionsFeeInUsdc() public view {
+    uint256 functionsFee = concero.getFunctionsFeeInUsdc(5224473277236331295);
+    assert(functionsFee == 0.063584862174435019 ether);
+  }
+
+  function test_getSrcFee() public view {
     uint256 totalFee = concero.getSrcTotalFeeInUsdc(IConceroCommon.CCIPToken.bnm, 5224473277236331295, 1000000000000000000);
-    console2.logUint(totalFee);
+    assert(totalFee == 0.240220524283293254 ether);
+  }
+}
+
+contract ConceroMock is Concero {
+  constructor(
+    address _functionsRouter,
+    uint64 _donHostedSecretsVersion,
+    bytes32 _donId,
+    uint8 _donHostedSecretsSlotId,
+    uint64 _subscriptionId,
+    uint64 _chainSelector,
+    uint _chainIndex,
+    address _link,
+    address _ccipRouter,
+    PriceFeeds memory priceFeeds
+  )
+    Concero(
+      _functionsRouter,
+      _donHostedSecretsVersion,
+      _donId,
+      _donHostedSecretsSlotId,
+      _subscriptionId,
+      _chainSelector,
+      _chainIndex,
+      _link,
+      _ccipRouter,
+      priceFeeds
+    )
+  {}
+
+  function setLastGasPrices(uint64 _token, uint256 _price) public {
+    lastGasPrices[_token] = _price;
   }
 }

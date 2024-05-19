@@ -9,7 +9,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import {ISwapRouter} from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import {TransferHelper} from '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
-import {IRouter} from "@velodrome/contracts/interfaces/IRouter.sol";
+import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
 import {ISwapRouter02, IV3SwapRouter} from "./Interfaces/ISwapRouter02.sol";
 
 error DexSwap_CallerNotAllowed(address caller);

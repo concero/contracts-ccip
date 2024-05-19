@@ -83,7 +83,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
   ///@notice event emitted when value is deposited into the contract
   event ConceroPool_Deposited(address indexed token, address indexed from, uint256 amount);
   ///@notice event emitted when a new withdraw request is made
-  event ConceroPool_WithdrawRequest(address caller, address token, uint256 amount);
+  event ConceroPool_WithdrawRequest(address caller, address token, uint256 condition, uint256 amount);
   ///@notice event emitted when a value is withdraw from the contract
   event ConceroPool_Withdrawn(address to, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain tx is received.
@@ -260,14 +260,14 @@ contract ConceroPool is CCIPReceiver, Ownable {
               isActiv: true,
               isFulfilled: false
             });
-            emit ConceroPool_WithdrawRequest(msg.sender, _token, _amount); //CLF will listen to this.
+            emit ConceroPool_WithdrawRequest(msg.sender, _token, condition, _amount); //CLF will listen to this.
           } else{
             _withdrawEther(_amount);
           }
         }
       } else {
         if(request.isActiv){
-          if(IERC20(_token).balanceOf(address(this)) > request.condition){
+          if(IERC20(_token).balanceOf(address(this)) >= request.condition){
 
             s_withdrawWaitlist[_token].isActiv = false;
             s_withdrawWaitlist[_token].isFulfilled = true;
@@ -287,7 +287,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
               isActiv: true,
               isFulfilled: false
             });
-            emit ConceroPool_WithdrawRequest(msg.sender, _token, _amount); //CLF will listen to this.
+            emit ConceroPool_WithdrawRequest(msg.sender, _token, condition, _amount); //CLF will listen to this.
           } else{
             _withdrawToken(_token, _amount);
           }

@@ -259,7 +259,7 @@ contract ConceroPoolTest is Test {
     }
 
     ///withdrawEther///
-    event ConceroPool_WithdrawRequest(address caller, address token, uint256 amount);
+    event ConceroPool_WithdrawRequest(address caller, address token, uint256 condition, uint256 amount);
     event ConceroPool_Withdrawn(address to, address token, uint256 amount);
     function test_withdrawEtherRequest() public setApprovals{
         uint256 withdrawRequestValue = 4 ether;
@@ -272,9 +272,11 @@ contract ConceroPoolTest is Test {
         assertEq(address(concero).balance, concero.s_userBalances(address(0), Puka));
 
         //======== Create request for ether withdraw
+        uint256 threshold = (address(concero).balance - ((address(concero).balance * THRESHOLD) / 100)) + withdrawRequestValue;
+
         vm.prank(Puka);
         vm.expectEmit();
-        emit ConceroPool_WithdrawRequest(Puka, address(0), withdrawRequestValue);
+        emit ConceroPool_WithdrawRequest(Puka, address(0), threshold, withdrawRequestValue);
         concero.withdrawLiquidityRequest(address(0), withdrawRequestValue);
 
         assertEq(address(concero).balance, INITIAL_BALANCE);
@@ -284,7 +286,6 @@ contract ConceroPoolTest is Test {
 
         //======== Checks the request
         ConceroPool.WithdrawRequests memory request = concero.getRequestInfo(address(0));
-        uint256 threshold = (address(concero).balance - ((address(concero).balance * THRESHOLD) / 100)) + withdrawRequestValue;
         assertEq(request.condition, threshold);
         assertEq(request.amount, withdrawRequestValue);
         assertEq(request.isActiv, true);
@@ -367,14 +368,15 @@ contract ConceroPoolTest is Test {
         concero.withdrawLiquidityRequest(address(0), INITIAL_BALANCE + withdrawRequestValue);
 
         //======== Create request for ether withdraw
+        uint256 threshold = (address(concero).balance - ((address(concero).balance * THRESHOLD) / 100)) + withdrawRequestValue;
+
         vm.prank(Puka);
         vm.expectEmit();
-        emit ConceroPool_WithdrawRequest(Puka, address(0), withdrawRequestValue);
+        emit ConceroPool_WithdrawRequest(Puka, address(0), threshold, withdrawRequestValue);
         concero.withdrawLiquidityRequest(address(0), withdrawRequestValue);
 
         //======== Checks the request
         ConceroPool.WithdrawRequests memory request = concero.getRequestInfo(address(0));
-        uint256 threshold = (address(concero).balance - ((address(concero).balance * THRESHOLD) / 100)) + withdrawRequestValue;
         assertEq(request.condition, threshold);
         assertEq(request.amount, withdrawRequestValue);
         assertEq(request.isActiv, true);
@@ -409,14 +411,17 @@ contract ConceroPoolTest is Test {
         assertEq(mockUSDT.balanceOf(address(concero)), INITIAL_BALANCE);
 
         //======== Create request for USDC/USDT withdraw
+        uint256 thresholdUSDC = (mockUSDC.balanceOf(address(concero)) - ((mockUSDC.balanceOf(address(concero)) * THRESHOLD) / 100)) + withdrawRequestValue;
+        uint256 thresholdUSDT = (mockUSDT.balanceOf(address(concero)) - ((mockUSDT.balanceOf(address(concero)) * THRESHOLD) / 100)) + withdrawRequestValue;
+
         vm.prank(Puka);
         vm.expectEmit();
-        emit ConceroPool_WithdrawRequest(Puka, address(mockUSDC), withdrawRequestValue);
+        emit ConceroPool_WithdrawRequest(Puka, address(mockUSDC), thresholdUSDC, withdrawRequestValue);
         concero.withdrawLiquidityRequest(address(mockUSDC), withdrawRequestValue);
 
         vm.prank(Puka);
         vm.expectEmit();
-        emit ConceroPool_WithdrawRequest(Puka, address(mockUSDT), withdrawRequestValue);
+        emit ConceroPool_WithdrawRequest(Puka, address(mockUSDT), thresholdUSDT, withdrawRequestValue);
         concero.withdrawLiquidityRequest(address(mockUSDT), withdrawRequestValue);
 
         //======== Checks if the user balance is still the same
@@ -425,14 +430,12 @@ contract ConceroPoolTest is Test {
 
         //======== Checks the request
         ConceroPool.WithdrawRequests memory requestUSDC = concero.getRequestInfo(address(mockUSDC));
-        uint256 thresholdUSDC = (mockUSDC.balanceOf(address(concero)) - ((mockUSDC.balanceOf(address(concero)) * THRESHOLD) / 100)) + withdrawRequestValue;
         assertEq(requestUSDC.condition, thresholdUSDC);
         assertEq(requestUSDC.amount, withdrawRequestValue);
         assertEq(requestUSDC.isActiv, true);
         assertEq(requestUSDC.isFulfilled, false);
 
         ConceroPool.WithdrawRequests memory requestUSDT = concero.getRequestInfo(address(mockUSDT));
-        uint256 thresholdUSDT = (mockUSDT.balanceOf(address(concero)) - ((mockUSDT.balanceOf(address(concero)) * THRESHOLD) / 100)) + withdrawRequestValue;
         assertEq(requestUSDT.condition, thresholdUSDT);
         assertEq(requestUSDT.amount, withdrawRequestValue);
         assertEq(requestUSDT.isActiv, true);
@@ -474,6 +477,104 @@ contract ConceroPoolTest is Test {
         assertEq(requestAfterUSDT.amount, withdrawRequestValue);
         assertEq(requestAfterUSDT.isActiv, false);
         assertEq(requestAfterUSDT.isFulfilled, true);
+    }
+
+    function test_withdrawERC20MultiRequests() public setApprovals{
+        uint256 withdrawRequestValue = 4 ether;
+        uint256 valueToRebalance = 3 ether;
+
+        //======== Approve the transfer
+        vm.startPrank(Puka);
+        mockUSDC.approve(address(concero), INITIAL_BALANCE);
+
+        //======== Deposits
+        vm.expectEmit();
+        emit ConceroPool_Deposited(address(mockUSDC), Puka, INITIAL_BALANCE);
+        concero.depositToken(address(mockUSDC), INITIAL_BALANCE);
+        vm.stopPrank();
+
+        assertEq(mockUSDC.balanceOf(address(concero)), INITIAL_BALANCE);
+
+        //======== Create request for USDC withdraw
+        uint256 thresholdUSDC = (mockUSDC.balanceOf(address(concero)) - ((mockUSDC.balanceOf(address(concero)) * THRESHOLD) / 100)) + withdrawRequestValue;
+
+        vm.prank(Puka);
+        vm.expectEmit();
+        emit ConceroPool_WithdrawRequest(Puka, address(mockUSDC), thresholdUSDC, withdrawRequestValue);
+        concero.withdrawLiquidityRequest(address(mockUSDC), withdrawRequestValue);
+
+        //======== Checks if the user balance is still the same
+        assertEq(concero.s_userBalances(address(mockUSDC), Puka), INITIAL_BALANCE);
+
+        //======== Checks the request
+        ConceroPool.WithdrawRequests memory requestUSDC = concero.getRequestInfo(address(mockUSDC));
+        assertEq(requestUSDC.condition, thresholdUSDC);
+        assertEq(requestUSDC.amount, withdrawRequestValue);
+        assertEq(requestUSDC.isActiv, true);
+        assertEq(requestUSDC.isFulfilled, false);
+
+        //======== Receives more USDC to proceed with the withdraw
+        mockUSDC.mint(address(concero), valueToRebalance);
+        assertEq(mockUSDC.balanceOf(address(concero)), INITIAL_BALANCE + valueToRebalance);
+
+        //======== Realize the Withdraw
+        vm.prank(Puka);
+        vm.expectEmit();
+        emit ConceroPool_Withdrawn(Puka, address(mockUSDC), withdrawRequestValue);
+        concero.withdrawLiquidityRequest(address(mockUSDC), withdrawRequestValue);
+
+        //======== Checks if the user balance is updated
+        assertEq(concero.s_userBalances(address(mockUSDC), Puka), INITIAL_BALANCE - withdrawRequestValue);
+
+        //======== Checks the request
+        ConceroPool.WithdrawRequests memory requestAfterUSDC = concero.getRequestInfo(address(mockUSDC));
+        console2.log(requestAfterUSDC.condition);
+        assertEq(requestAfterUSDC.condition, thresholdUSDC);
+        assertEq(requestAfterUSDC.amount, withdrawRequestValue);
+        assertEq(requestAfterUSDC.isActiv, false);
+        assertEq(requestAfterUSDC.isFulfilled, true);
+
+        // ===============================================================================================================
+        
+        //======== Create second request for USDC withdraw
+        uint256 secondThresholdUSDC = (mockUSDC.balanceOf(address(concero)) - ((mockUSDC.balanceOf(address(concero)) * THRESHOLD) / 100)) + withdrawRequestValue;
+
+        vm.prank(Puka);
+        vm.expectEmit();
+        emit ConceroPool_WithdrawRequest(Puka, address(mockUSDC), secondThresholdUSDC, withdrawRequestValue);
+        concero.withdrawLiquidityRequest(address(mockUSDC), withdrawRequestValue);
+
+        //======== Checks if the user balance is still the same
+        assertEq(concero.s_userBalances(address(mockUSDC), Puka), INITIAL_BALANCE - withdrawRequestValue);
+
+        //======== Checks the second request
+        ConceroPool.WithdrawRequests memory secondRequestUSDC = concero.getRequestInfo(address(mockUSDC));
+        assertEq(secondRequestUSDC.condition, secondThresholdUSDC);
+        assertEq(secondRequestUSDC.amount, withdrawRequestValue);
+        assertEq(secondRequestUSDC.isActiv, true);
+        assertEq(secondRequestUSDC.isFulfilled, false);
+
+        //======== Receives more USDC to proceed with the withdraw
+        mockUSDC.mint(address(concero), withdrawRequestValue);
+
+        assertEq(mockUSDC.balanceOf(address(concero)), INITIAL_BALANCE + valueToRebalance - withdrawRequestValue + withdrawRequestValue);
+
+        //======== Realize the Withdraw
+        vm.prank(Puka);
+        vm.expectEmit();
+        emit ConceroPool_Withdrawn(Puka, address(mockUSDC), withdrawRequestValue);
+        concero.withdrawLiquidityRequest(address(mockUSDC), withdrawRequestValue);
+
+        //======== Checks if the user balance is updated
+        assertEq(concero.s_userBalances(address(mockUSDC), Puka), INITIAL_BALANCE - withdrawRequestValue - withdrawRequestValue);
+
+        //======== Checks the request
+        ConceroPool.WithdrawRequests memory secondRequestAfterUSDC = concero.getRequestInfo(address(mockUSDC));
+        uint256 thresholdAfterUSDC = (mockUSDC.balanceOf(address(concero)) - ((mockUSDC.balanceOf(address(concero)) * THRESHOLD) / 100)) + withdrawRequestValue;
+        assertEq(secondRequestAfterUSDC.condition, secondThresholdUSDC);
+        assertEq(secondRequestAfterUSDC.amount, withdrawRequestValue);
+        assertEq(secondRequestAfterUSDC.isActiv, false);
+        assertEq(secondRequestAfterUSDC.isFulfilled, true);
     }
 
     function test_withdrawERC20Directly() public setApprovals{
@@ -560,14 +661,15 @@ contract ConceroPoolTest is Test {
         concero.withdrawLiquidityRequest(address(mockUSDC), INITIAL_BALANCE + withdrawRequestValue);
 
         //======== Create request for ether withdraw
+        uint256 threshold = (mockUSDC.balanceOf(address(concero)) - ((mockUSDC.balanceOf(address(concero)) * THRESHOLD) / 100)) + withdrawRequestValue;
+
         vm.prank(Puka);
         vm.expectEmit();
-        emit ConceroPool_WithdrawRequest(Puka, address(mockUSDC), withdrawRequestValue);
+        emit ConceroPool_WithdrawRequest(Puka, address(mockUSDC), threshold, withdrawRequestValue);
         concero.withdrawLiquidityRequest(address(mockUSDC), withdrawRequestValue);
 
         //======== Checks the request
         ConceroPool.WithdrawRequests memory request = concero.getRequestInfo(address(mockUSDC));
-        uint256 threshold = (mockUSDC.balanceOf(address(concero)) - ((mockUSDC.balanceOf(address(concero)) * THRESHOLD) / 100)) + withdrawRequestValue;
         assertEq(request.condition, threshold);
         assertEq(request.amount, withdrawRequestValue);
         assertEq(request.isActiv, true);

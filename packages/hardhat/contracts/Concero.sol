@@ -121,7 +121,7 @@ contract Concero is ConceroCCIP {
     return functionsFeeInUsdc + ccpFeeInUsdc + conceroFeeInUsdc + functionsGasFeeInUsdc;
   }
 
-  function getDstTotalFeeInUsdc(uint256 amount) public view returns (uint256) {
+  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
     return amount / 1000;
   }
 
@@ -153,8 +153,7 @@ contract Concero is ConceroCCIP {
     CCIPToken _tokenType,
     uint256 _amount,
     uint64 _dstChainSelector,
-    address _receiver,
-    bytes calldata _swapData
+    address _receiver
   ) external payable tokenAmountSufficiency(_token, _amount) {
     //todo: maybe move to OZ safeTransfer (but research needed)
     bool isOK = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
@@ -179,3 +178,5 @@ contract Concero is ConceroCCIP {
     IERC20(_token).transfer(_owner, amount);
   }
 }
+
+// 0.064584776842341620

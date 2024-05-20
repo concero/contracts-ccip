@@ -8,6 +8,7 @@ interface IConceroCommon {
 
   error TransferFailed();
   error InsufficientFee();
+  error InsufficientFundsForFees(uint256 amount, uint256 fee);
 
   enum CCIPToken {
     bnm,

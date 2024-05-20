@@ -3,6 +3,7 @@ import fs from "fs";
 import secrets from "../../constants/CLFSecrets";
 import CLFSimulationConfig from "../../constants/CLFSimulationConfig";
 import { execSync } from "child_process";
+
 const { simulateScript, decodeResult } = require("@chainlink/functions-toolkit");
 
 const path = require("path");
@@ -39,32 +40,32 @@ async function simulate(pathToFile, args) {
 task("clf-script-simulate", "Executes the JavaScript source code locally")
   // .addOptionalParam("path", "Path to script file", `${__dirname}/../Functions-request-config.js`, types.string)
   .setAction(async (taskArgs, hre) => {
-    execSync(`bunx hardhat clf-script-build --file SRC.js`, { stdio: "inherit" });
-    await simulate(path.join(__dirname, "../", "./CLFScripts/dist/SRC.min.js"), [
-      process.env.CONCEROCCIP_OPTIMISM_SEPOLIA, // contractAddress
-      "0x5315f93854194ca639615651c5662cf39a77308927ebe7d31c9e970958687a49", // ccipMessageId
-      "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
-      "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
-      "100000000000000000", // amount
-      process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA, // srcChainSelector
-      process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA, // dstChainSelector
-      "0", // token
-      "0xA65233", // blockNumber
-    ]);
-
-    // execSync(`bunx hardhat clf-script-build --file DST.js`, { stdio: "inherit" });
-    // await simulate(path.join(__dirname, "../", "./CLFScripts/dist/DST.min.js"), [
-    //   process.env.CONCEROCCIP_BASE_SEPOLIA, // srcContractAddress
-    //   process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA, // srcChainSelector, chain to get logs from
-    //   "0x92DA49", // blockNumber
-    //   // event params:
-    //   "0xc957703fb298a67ab8077f691dbf4cdb137be8fd39bd4afab67ef847f99a74c8", // messageId
+    // execSync(`bunx hardhat clf-script-build --file SRC.js`, { stdio: "inherit" });
+    // await simulate(path.join(__dirname, "../", "./CLFScripts/dist/SRC.min.js"), [
+    //   process.env.CONCEROCCIP_OPTIMISM_SEPOLIA, // contractAddress
+    //   "0x5315f93854194ca639615651c5662cf39a77308927ebe7d31c9e970958687a49", // ccipMessageId
     //   "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
     //   "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
+    //   "100000000000000000", // amount
+    //   process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA, // srcChainSelector
+    //   process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA, // dstChainSelector
     //   "0", // token
-    //   "40000000000000000", // amount
-    //   "5224473277236331295", // dstChainSelector
+    //   "0xA65233", // blockNumber
     // ]);
+
+    execSync(`bunx hardhat clf-script-build --file DST.js`, { stdio: "inherit" });
+    await simulate(path.join(__dirname, "../", "./CLFScripts/dist/DST.min.js"), [
+      process.env.CONCEROCCIP_BASE_SEPOLIA, // srcContractAddress
+      process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA, // srcChainSelector, chain to get logs from
+      "0x92DA49", // blockNumber
+      // event params:
+      "0xcbb4574636f48c0490d6bee60231da8859441fd1db1dd398040dbdfaa2c8cdc8", // messageId
+      "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
+      "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
+      "0", // token
+      "40000000000000000", // amount
+      "5224473277236331295", // dstChainSelector
+    ]);
   });
 
 export default {};

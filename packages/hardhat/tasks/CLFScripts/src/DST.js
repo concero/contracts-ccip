@@ -1,6 +1,7 @@
 try {
+	const ethers = await import('npm:ethers@6.10.0');
 	const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-	const [srcContractAddress, srcChainSelector, _, ...eventArgs] = args;
+	const [srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = args;
 	const messageId = eventArgs[0];
 	const chainMap = {
 		'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
@@ -78,8 +79,17 @@ try {
 	});
 
 	const provider = new ethers.FallbackProvider(fallBackProviders, null, {quorum: 1});
-
 	let latestBlockNumber = BigInt(await provider.getBlockNumber());
+
+	while (latestBlockNumber - BigInt(txBlockNumber) < chainMap[srcChainSelector].confirmations) {
+		latestBlockNumber = BigInt(await provider.getBlockNumber());
+		await sleep(5000);
+	}
+
+	if (latestBlockNumber - BigInt(txBlockNumber) < chainMap[srcChainSelector].confirmations) {
+		throw new Error('Not enough confirmations');
+	}
+
 	const ethersId = ethers.id('CCIPSent(bytes32,address,address,uint8,uint256,uint64)');
 	const logs = await provider.getLogs({
 		address: srcContractAddress,
@@ -105,16 +115,6 @@ try {
 		if (decodedLog.args[i].toString().toLowerCase() !== eventArgs[i].toString().toLowerCase()) {
 			throw new Error('Message ID does not match the event log');
 		}
-	}
-
-	const logBlockNumber = BigInt(log.blockNumber);
-	while (latestBlockNumber - logBlockNumber < chainMap[srcChainSelector].confirmations) {
-		latestBlockNumber = BigInt(await provider.getBlockNumber());
-		await sleep(5000);
-	}
-
-	if (latestBlockNumber - logBlockNumber < chainMap[srcChainSelector].confirmations) {
-		throw new Error('Not enough confirmations');
 	}
 
 	return Functions.encodeUint256(BigInt(messageId));

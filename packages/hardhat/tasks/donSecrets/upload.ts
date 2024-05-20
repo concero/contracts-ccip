@@ -8,6 +8,7 @@ import { CNetwork } from "../../types/CNetwork";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import log from "../../utils/log";
 import listSecrets from "./list";
+
 // const path = require("path");
 
 async function upload(chains: CNetwork[], slotid: number, ttl: number) {
@@ -60,7 +61,7 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
   }
 }
 
-// run with: bunx hardhat clf-upload-secrets-don --slotid 0 --ttl 4320 --network avalancheFuji
+// run with: yarn hardhat clf-donsecrets-upload --slotid 0 --ttl 4320 --network avalancheFuji
 // todo: add to deployedSecrets file with expiration time, and check if it's expired before using itV
 task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")
   .addParam(

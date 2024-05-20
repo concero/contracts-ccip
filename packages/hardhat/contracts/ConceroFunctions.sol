@@ -16,6 +16,8 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   using Strings for address;
   using Strings for bytes32;
 
+  uint32 public immutable CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
+  uint256 public immutable CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
   bytes32 private immutable donId;
   uint64 private immutable subscriptionId;
 
@@ -115,7 +117,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     req.initializeRequestForInlineJavaScript(jsCode);
     req.addDONHostedSecrets(donHostedSecretsSlotId, donHostedSecretsVersion);
     req.setArgs(args);
-    return _sendRequest(req.encodeCBOR(), subscriptionId, 300000, donId);
+    return _sendRequest(req.encodeCBOR(), subscriptionId, CL_FUNCTIONS_CALLBACK_GAS_LIMIT, donId);
   }
 
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
@@ -134,7 +136,8 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     if (request.requestType == RequestType.checkTxSrc) {
       Transaction storage transaction = transactions[request.ccipMessageId];
       _confirmTX(request.ccipMessageId, transaction);
-      sendTokenToEoa(request.ccipMessageId, transaction.sender, transaction.recipient, getToken(transaction.token), transaction.amount);
+      uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
+      sendTokenToEoa(request.ccipMessageId, transaction.sender, transaction.recipient, getToken(transaction.token), amount);
     } else if (request.requestType == RequestType.addUnconfirmedTxDst) {
       if (response.length != 96) {
         return;
@@ -144,6 +147,10 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
       lastGasPrices[chainSelector] = srcGasPrice;
       lastGasPrices[uint64(dstChainSelector)] = dstGasPrice;
     }
+  }
+
+  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
+    return amount / 1000;
   }
 
   function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {

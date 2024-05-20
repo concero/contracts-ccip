@@ -34,10 +34,17 @@ contract ConceroMock is Concero {
       0,
       0x0,
       0,
+      0,
       3734403246176062136,
       0,
       0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846,
-      0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846
+      0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846,
+      PriceFeeds({
+        linkToUsdPriceFeeds: 0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846,
+        usdcToUsdPriceFeeds: 0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846,
+        nativeToUsdPriceFeeds: 0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846,
+        linkToNativePriceFeeds: 0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846
+      })
     )
   {
     transactions[CCIP_MESSAGE_ID] = Transaction({

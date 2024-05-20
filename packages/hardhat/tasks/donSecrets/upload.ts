@@ -78,7 +78,7 @@ task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")
     const hre: HardhatRuntimeEnvironment = require("hardhat");
 
     const { slotid, ttl } = taskArgs;
-    await upload(chains[hre.network.name], slotid, ttl);
+    await upload([chains[hre.network.name]], slotid, ttl);
   });
 
 export default upload;

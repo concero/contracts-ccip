@@ -1,9 +1,9 @@
 /*
 Replaces environment variables in a file and saves the result to a dist folder.
-run with: bunx hardhat clf-build-script --path ./CLFScripts/DST.js
  */
 
 import { task, types } from "hardhat/config";
+
 export const pathToScript = [__dirname, "../", "CLFScripts"];
 const fs = require("fs");
 const path = require("path");
@@ -81,7 +81,7 @@ function buildScript(file: string) {
   }
 }
 
-// run with: bunx hardhat clf-build-script --path DST.js
+// run with: yarn hardhat clf-script-build --path DST.js
 task("clf-script-build", "Builds the JavaScript source code")
   .addFlag("all", "Build all scripts")
   .addOptionalParam("file", "Path to Functions script file", undefined, types.string)

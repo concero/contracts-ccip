@@ -136,7 +136,8 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     if (request.requestType == RequestType.checkTxSrc) {
       Transaction storage transaction = transactions[request.ccipMessageId];
       _confirmTX(request.ccipMessageId, transaction);
-      sendTokenToEoa(request.ccipMessageId, transaction.sender, transaction.recipient, getToken(transaction.token), transaction.amount);
+      uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
+      sendTokenToEoa(request.ccipMessageId, transaction.sender, transaction.recipient, getToken(transaction.token), amount);
     } else if (request.requestType == RequestType.addUnconfirmedTxDst) {
       if (response.length != 96) {
         return;
@@ -146,6 +147,10 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
       lastGasPrices[chainSelector] = srcGasPrice;
       lastGasPrices[uint64(dstChainSelector)] = dstGasPrice;
     }
+  }
+
+  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
+    return amount / 1000;
   }
 
   function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {

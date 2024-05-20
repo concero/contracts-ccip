@@ -38,13 +38,6 @@ contract DexSwap is Ownable{
     bytes dexData; //routerAddress + data to do swap
   }
 
-  struct ExactInputParams {
-        bytes path;
-        address recipient;
-        uint256 amountIn;
-        uint256 amountOutMinimum;
-  }
-
   event DexSwap_OrchestratorContractUpdated(address previousAddress, address orchestrator);
   event DexSwap_NewRouterAdded(address router, uint256 isAllowed);
   event DexSwap_RemovingDust(address receiver, uint256 amount);
@@ -79,6 +72,11 @@ contract DexSwap is Ownable{
     emit DexSwap_OrchestratorContractUpdated(previousAddress, s_orchestrator);
   }
 
+  /**
+   * @notice function to manage DEX routers addresses
+   * @param _router the address of the router
+   * @param _isAllowed 1 == Allowed | Any other value is not allowed.
+   */
   function manageRouterAddress(address _router, uint256 _isAllowed) external payable onlyOwner{
     s_routerAllowed[_router] = _isAllowed;
 
@@ -97,6 +95,11 @@ contract DexSwap is Ownable{
     IERC20(_token).safeTransfer(msg.sender, _amount);
   }
 
+  /**
+   * @notice Entry point function for the Orchestrator to take loans
+   * @param _swapData a struct that contains dex informations.
+   * @dev only the Orchestrator contract should be able to call this function
+   */
   function conceroEntry(SwapData memory _swapData) external onlyOrchestrator{
     if (_swapData.dexData.length < 1) revert DexSwap_EmptyDexData();
 
@@ -126,7 +129,6 @@ contract DexSwap is Ownable{
    * @dev This function also accept FoT tokens
    * @dev This function can execute single or multi hop swaps
    */
-  //Checked
   function _swapUniV2Like(bytes memory _dexData) private {
 
     (address routerAddress, uint256 amountIn, uint256 amountOutMin, address[] memory path, address to, uint256 deadline) = abi.decode(
@@ -160,7 +162,6 @@ contract DexSwap is Ownable{
    * @param _dexData the enconded swap data
    * @dev This function can execute swap in any protocol compatible with UniV3 that implements the ISwapRouter
    */
-  //Checked
   function _swapSushiV3Single(bytes memory _dexData) private {
 
     (
@@ -200,7 +201,6 @@ contract DexSwap is Ownable{
    * @param _dexData the enconded swap data
    * @dev This function can execute swap in any protocol compatible with UniV3 that implements the IV3SwapRouter
    */
-  //Checked
   function _swapUniV3Single(bytes memory _dexData) private {
 
     (
@@ -238,7 +238,6 @@ contract DexSwap is Ownable{
    * @param _dexData the enconded swap data
    * @dev This function can execute swap in any protocol compatible with ISwapRouter
    */
-  //Checked
   function _swapSushiV3Multi(bytes memory _dexData) private returns(uint256 _amountOut){
     
     (address routerAddress,
@@ -271,7 +270,6 @@ contract DexSwap is Ownable{
    * @param _dexData the enconded swap data
    * @dev This function can execute swap in any protocol compatible
    */
-  //Checked
   function _swapUniV3Multi(bytes memory _dexData) private returns(uint256 _amountOut){
     
     (

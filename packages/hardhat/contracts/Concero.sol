@@ -121,10 +121,6 @@ contract Concero is ConceroCCIP {
     return functionsFeeInUsdc + ccpFeeInUsdc + conceroFee + functionsGasFeeInUsdc;
   }
 
-  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
-    return amount / 1000;
-  }
-
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(this), getToken(tokenType), 1 ether, s_linkToken, dstChainSelector);
     IRouterClient router = IRouterClient(this.getRouter());
@@ -159,10 +155,13 @@ contract Concero is ConceroCCIP {
     bool isOK = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
     require(isOK, "Transfer failed");
 
-    bytes32 ccipMessageId = _sendTokenPayLink(_dstChainSelector, _receiver, _token, _amount);
-    emit CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, _amount, _dstChainSelector);
+    uint256 totalSrcFee = getSrcTotalFeeInUsdc(_tokenType, _dstChainSelector, _amount);
+    if (_amount < totalSrcFee) revert InsufficientFundsForFees(_amount, totalSrcFee);
 
-    sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, _amount, _dstChainSelector, _tokenType);
+    uint256 amount = _amount - totalSrcFee;
+    bytes32 ccipMessageId = _sendTokenPayLink(_dstChainSelector, _receiver, _token, amount);
+    emit CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, amount, _dstChainSelector);
+    sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, amount, _dstChainSelector, _tokenType);
   }
 
   function withdraw(address _owner) public onlyOwner {
@@ -178,5 +177,3 @@ contract Concero is ConceroCCIP {
     IERC20(_token).transfer(_owner, amount);
   }
 }
-
-// 0.064584776842341620

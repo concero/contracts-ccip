@@ -7,6 +7,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 
 const ethers = await import('npm:ethers@6.10.0');
 const [
+	_,
 	dstContractAddress,
 	ccipMessageId,
 	sender,

@@ -7,6 +7,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 async function main() {
 	const ethers = await import('npm:ethers@6.10.0');
 	const [
+		_,
 		dstContractAddress,
 		ccipMessageId,
 		sender,
@@ -59,7 +60,6 @@ async function main() {
 	let nonce = 0;
 	let retries = 0;
 	let gasPrice;
-	let maxPriorityFeePerGas;
 
 	const sendTransaction = async (contract, signer, txOptions) => {
 		try {
@@ -107,16 +107,6 @@ async function main() {
 				if (payload.method === 'eth_chainId') {
 					return [{jsonrpc: '2.0', id: payload.id, result: chainSelectors[dstChainSelector].chainId}];
 				}
-				if (
-					payload[0]?.method === 'eth_gasPrice' &&
-					payload[1].method === 'eth_maxPriorityFeePerGas' &&
-					payload.length === 2
-				) {
-					return [
-						{jsonrpc: '2.0', id: payload[0].id, result: gasPrice, method: 'eth_gasPrice'},
-						{jsonrpc: '2.0', id: payload[1].id, result: maxPriorityFeePerGas, method: 'eth_maxPriorityFeePerGas'},
-					];
-				}
 				let resp = await fetch(this.url, {
 					method: 'POST',
 					headers: {'Content-Type': 'application/json'},
@@ -130,6 +120,7 @@ async function main() {
 			}
 		}
 
+		console.log('dstChainSelector', dstChainSelector);
 		const dstUrl =
 			chainSelectors[dstChainSelector].urls[Math.floor(Math.random() * chainSelectors[dstChainSelector].urls.length)];
 		const provider = new FunctionsJsonRpcProvider(dstUrl);
@@ -143,7 +134,6 @@ async function main() {
 		const feeData = await provider.getFeeData();
 		nonce = await provider.getTransactionCount(wallet.address);
 		gasPrice = feeData.gasPrice;
-		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
 			gasPrice,
 			nonce,

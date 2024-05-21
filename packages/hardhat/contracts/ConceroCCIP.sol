@@ -9,7 +9,7 @@ import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.s
 import {ConceroFunctions} from "./ConceroFunctions.sol";
 
 contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
-  address private immutable s_linkToken;
+  address public immutable s_linkToken;
 
   modifier onlyAllowListedChain(uint64 _chainSelector) {
     if (conceroContracts[_chainSelector] == address(0)) revert ChainNotAllowed(_chainSelector);
@@ -78,7 +78,7 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
     uint256 _amount,
     address _feeToken,
     uint64 _destinationChainSelector
-  ) private view returns (Client.EVM2AnyMessage memory) {
+  ) internal view returns (Client.EVM2AnyMessage memory) {
     Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
     tokenAmounts[0] = Client.EVMTokenAmount({token: _token, amount: _amount});
 

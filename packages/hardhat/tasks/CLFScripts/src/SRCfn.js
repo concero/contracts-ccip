@@ -5,7 +5,9 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 async function main() {
+	const ethers = await import('npm:ethers@6.10.0');
 	const [
+		_,
 		dstContractAddress,
 		ccipMessageId,
 		sender,
@@ -58,12 +60,11 @@ async function main() {
 	let nonce = 0;
 	let retries = 0;
 	let gasPrice;
-	let maxPriorityFeePerGas;
 
 	const sendTransaction = async (contract, signer, txOptions) => {
 		try {
 			const transaction = await contract.transactions(ccipMessageId);
-			if (transaction[1] !== '0x0000000000000000000000000000000000000000') return;
+			if ((await contract.transactions(ccipMessageId))[1] !== '0x0000000000000000000000000000000000000000') return;
 
 			await contract.addUnconfirmedTX(
 				ccipMessageId,
@@ -76,22 +77,21 @@ async function main() {
 				txOptions,
 			);
 		} catch (err) {
-			if (retries >= 3) {
-				throw new Error('retries reached the limit ' + err.message.slice(0, 200));
-			}
 			const {message, code} = err;
-			if (code === 'NONCE_EXPIRED' || code === 'REPLACEMENT_UNDERPRICED') {
-				await sleep(1000 + Math.random() * 1000);
+			if (retries >= 5) {
+				throw new Error('retries reached the limit ' + err.message?.slice(0, 200));
+			} else if (code === 'NONCE_EXPIRED' || message?.includes('replacement fee too low')) {
+				await sleep(1000 + Math.random() * 1500);
 				retries++;
 				await sendTransaction(contract, signer, {
 					...txOptions,
 					nonce: nonce++,
 				});
-			}
-			if (code === 'UNKNOWN_ERROR' && message.include('already known')) {
+			} else if (code === 'UNKNOWN_ERROR' && message?.includes('already known')) {
 				return;
+			} else {
+				throw new Error(err.message?.slice(0, 255));
 			}
-			throw new Error(err.message.slice(0, 255));
 		}
 	};
 	try {
@@ -107,22 +107,6 @@ async function main() {
 				if (payload.method === 'eth_chainId') {
 					return [{jsonrpc: '2.0', id: payload.id, result: chainSelectors[dstChainSelector].chainId}];
 				}
-				if (
-					payload[0]?.method === 'eth_gasPrice' &&
-					payload[1].method === 'eth_maxPriorityFeePerGas' &&
-					payload.length === 2
-				) {
-					return [
-						{jsonrpc: '2.0', id: payload[0].id, result: gasPrice, method: 'eth_gasPrice'},
-						{jsonrpc: '2.0', id: payload[1].id, result: maxPriorityFeePerGas, method: 'eth_maxPriorityFeePerGas'},
-					];
-				}
-				if (payload[0]?.id === 1 && payload[0].method === 'eth_chainId' && payload[1].id === 2 && payload.length === 2) {
-					return [
-						{jsonrpc: '2.0', method: 'eth_chainId', id: 1, result: chainSelectors[dstChainSelector].chainId},
-						{jsonrpc: '2.0', method: 'eth_getBlockByNumber', id: 2, result: chainSelectors[dstChainSelector].chainId},
-					];
-				}
 				let resp = await fetch(this.url, {
 					method: 'POST',
 					headers: {'Content-Type': 'application/json'},
@@ -135,15 +119,11 @@ async function main() {
 				return res;
 			}
 		}
-		const fallbackProviders = chainSelectors[dstChainSelector].urls.map(url => {
-			return {
-				provider: new FunctionsJsonRpcProvider(url),
-				priority: Math.random(),
-				stallTimeout: 5000,
-				weight: 1,
-			};
-		});
-		const provider = new ethers.FallbackProvider(fallbackProviders, null, {quorum: 1});
+
+		console.log('dstChainSelector', dstChainSelector);
+		const dstUrl =
+			chainSelectors[dstChainSelector].urls[Math.floor(Math.random() * chainSelectors[dstChainSelector].urls.length)];
+		const provider = new FunctionsJsonRpcProvider(dstUrl);
 		const wallet = new ethers.Wallet('0x' + secrets.WALLET_PRIVATE_KEY, provider);
 		const signer = wallet.connect(provider);
 		const abi = [
@@ -154,16 +134,17 @@ async function main() {
 		const feeData = await provider.getFeeData();
 		nonce = await provider.getTransactionCount(wallet.address);
 		gasPrice = feeData.gasPrice;
-		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
 			gasPrice,
 			nonce,
 		});
 
-		const srcChainProvider = new FunctionsJsonRpcProvider(chainSelectors[srcChainSelector].urls[0]);
-		const srcGasPrice = Functions.encodeUint256(BigInt((await provider.getFeeData()).gasPrice));
-		const dstGasPrice = Functions.encodeUint256(BigInt(gasPrice));
-		const encodedDstChainSelector = Functions.encodeUint256(BigInt(dstChainSelector));
+		const srcUrl =
+			chainSelectors[srcChainSelector].urls[Math.floor(Math.random() * chainSelectors[srcChainSelector].urls.length)];
+		const srcChainProvider = new FunctionsJsonRpcProvider(srcUrl);
+		const srcGasPrice = Functions.encodeUint256(BigInt((await srcChainProvider.getFeeData()).gasPrice || 0));
+		const dstGasPrice = Functions.encodeUint256(BigInt(gasPrice || 0));
+		const encodedDstChainSelector = Functions.encodeUint256(BigInt(dstChainSelector || 0));
 		const res = new Uint8Array(srcGasPrice.length + dstGasPrice.length + encodedDstChainSelector.length);
 		res.set(srcGasPrice);
 		res.set(dstGasPrice, srcGasPrice.length);
@@ -171,7 +152,12 @@ async function main() {
 
 		return res;
 	} catch (error) {
-		throw new Error(error.message.slice(0, 255));
+		const {message} = error;
+		if (message?.includes('Exceeded maximum of 20 HTTP queries')) {
+			return new Uint8Array(1);
+		} else {
+			throw new Error(message?.slice(0, 255));
+		}
 	}
 }
 main();

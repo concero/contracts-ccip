@@ -40,14 +40,16 @@ describe("startBatchTransactions\n", () => {
   const amount = "100000000000000";
   const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
   const linkTokenAddress = process.env.LINK_BASE_SEPOLIA;
-  const transactionsCount = 3;
+  const transactionsCount = 1;
   const srcContractAddress = process.env.CONCEROCCIP_BASE_SEPOLIA;
   const dstContractAddress = process.env.CONCEROCCIP_OPTIMISM_SEPOLIA;
 
   before(async () => {
-    nonce = await srcPublicClient.getTransactionCount({
-      address: viemAccount.address,
-    });
+    nonce = BigInt(
+      await srcPublicClient.getTransactionCount({
+        address: viemAccount.address,
+      }),
+    );
   });
 
   const approveBnmAndLink = async () => {
@@ -71,7 +73,6 @@ describe("startBatchTransactions\n", () => {
 
       return tokenHash;
     };
-
     const bnmHash = await approveToken(bnmTokenAddress);
     const linkHash = await approveToken(linkTokenAddress);
 
@@ -139,10 +140,26 @@ describe("startBatchTransactions\n", () => {
   };
 
   it("should start transactions", async () => {
+    await approveBnmAndLink();
+
     const fromSrcBlockNumber = await srcPublicClient.getBlockNumber();
     const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
+    const srcLastGasPrice =
+      (await srcPublicClient.readContract({
+        abi: ConceroAbi,
+        functionName: "lastGasPrices",
+        address: srcContractAddress as `0x${string}`,
+        args: [srcChainSelector],
+      })) * 750_000n;
+    const dstLastGasPrice =
+      (await srcPublicClient.readContract({
+        abi: ConceroAbi,
+        functionName: "lastGasPrices",
+        address: srcContractAddress as `0x${string}`,
+        args: [dstChainSelector],
+      })) * 750_000n;
 
-    await approveBnmAndLink();
+    const value = srcLastGasPrice + dstLastGasPrice;
 
     let transactionPromises = [];
 
@@ -154,7 +171,7 @@ describe("startBatchTransactions\n", () => {
         address: srcContractAddress as `0x${string}`,
         args: [bnmTokenAddress, 0, BigInt(amount), BigInt(dstChainSelector), senderAddress],
         account: viemAccount as Account,
-        value: gasPrice * BigInt(1_600_000),
+        value,
         nonce: nonce++,
       });
 

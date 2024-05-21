@@ -24,6 +24,9 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   uint8 private donHostedSecretsSlotId;
   uint64 private donHostedSecretsVersion;
 
+  bytes32 private srcJsHashSum;
+  bytes32 private dstJsHashSum;
+
   mapping(bytes32 => Transaction) public transactions;
   mapping(bytes32 => Request) public requests;
   mapping(uint64 => uint256) public lastGasPrices; // chain selector => last gas price in wei
@@ -61,6 +64,14 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     donHostedSecretsSlotId = _donHostedSecretsSlotId;
   }
 
+  function setDstJsHashSum(bytes32 hashSum) external onlyOwner {
+    dstJsHashSum = hashSum;
+  }
+
+  function setSrcJsHashSum(bytes32 hashSum) external onlyOwner {
+    srcJsHashSum = hashSum;
+  }
+
   function bytesToBytes32(bytes memory b) internal pure returns (bytes32) {
     bytes32 out;
     for (uint i = 0; i < 32; i++) {
@@ -95,15 +106,16 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     string[] memory args = new string[](9);
     //todo: use bytes
-    args[0] = Strings.toHexString(conceroContracts[srcChainSelector]);
-    args[1] = Strings.toString(srcChainSelector);
-    args[2] = Strings.toHexString(blockNumber);
-    args[3] = bytes32ToString(ccipMessageId);
-    args[4] = Strings.toHexString(sender);
-    args[5] = Strings.toHexString(recipient);
-    args[6] = Strings.toString(uint(token));
-    args[7] = Strings.toString(amount);
-    args[8] = Strings.toString(chainSelector);
+    args[0] = bytes32ToString(srcJsHashSum);
+    args[1] = Strings.toHexString(conceroContracts[srcChainSelector]);
+    args[2] = Strings.toString(srcChainSelector);
+    args[3] = Strings.toHexString(blockNumber);
+    args[4] = bytes32ToString(ccipMessageId);
+    args[5] = Strings.toHexString(sender);
+    args[6] = Strings.toHexString(recipient);
+    args[7] = Strings.toString(uint(token));
+    args[8] = Strings.toString(amount);
+    args[9] = Strings.toString(chainSelector);
 
     bytes32 reqId = sendRequest(args, dstJsCode);
     requests[reqId].requestType = RequestType.checkTxSrc;
@@ -165,15 +177,16 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     string[] memory args = new string[](9);
     //todo: Strings usage may not be required here. Consider ways of passing data without converting to string
-    args[0] = Strings.toHexString(conceroContracts[dstChainSelector]);
-    args[1] = bytes32ToString(ccipMessageId);
-    args[2] = Strings.toHexString(sender);
-    args[3] = Strings.toHexString(recipient);
-    args[4] = Strings.toString(amount);
-    args[5] = Strings.toString(chainSelector);
-    args[6] = Strings.toString(dstChainSelector);
-    args[7] = Strings.toString(uint(token));
-    args[8] = Strings.toHexString(block.number);
+    args[0] = bytes32ToString(dstJsHashSum);
+    args[1] = Strings.toHexString(conceroContracts[dstChainSelector]);
+    args[2] = bytes32ToString(ccipMessageId);
+    args[3] = Strings.toHexString(sender);
+    args[4] = Strings.toHexString(recipient);
+    args[5] = Strings.toString(amount);
+    args[6] = Strings.toString(chainSelector);
+    args[7] = Strings.toString(dstChainSelector);
+    args[8] = Strings.toString(uint(token));
+    args[9] = Strings.toHexString(block.number);
 
     bytes32 reqId = sendRequest(args, srcJsCode);
     requests[reqId].requestType = RequestType.addUnconfirmedTxDst;

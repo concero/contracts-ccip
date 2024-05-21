@@ -1,7 +1,7 @@
 try {
 	const ethers = await import('npm:ethers@6.10.0');
 	const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-	const [srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = args;
+	const [_, srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = args;
 	const messageId = eventArgs[0];
 	const chainMap = {
 		'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {

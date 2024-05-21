@@ -69,7 +69,6 @@ contract ConceroPool is CCIPReceiver, Ownable {
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
-
   ///@notice event emitted when an Orchestrator is updated
   event ConceroPool_OrchestratorUpdated(address previousOrchestrator, address orchestrator);
   ///@notice event emitted when a Messenger is updated

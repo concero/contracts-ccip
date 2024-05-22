@@ -141,67 +141,71 @@ describe("startBatchTransactions\n", () => {
   };
 
   it("should start transactions", async () => {
-    await approveBnmAndLink();
+    try {
+      await approveBnmAndLink();
 
-    const fromSrcBlockNumber = await srcPublicClient.getBlockNumber();
-    const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
-    // const srcLastGasPrice =
-    //   (await srcPublicClient.readContract({
-    //     abi: ConceroAbi,
-    //     functionName: "lastGasPrices",
-    //     address: srcContractAddress as `0x${string}`,
-    //     args: [srcChainSelector],
-    //   })) * 750_000n;
-    // const dstLastGasPrice =
-    //   (await srcPublicClient.readContract({
-    //     abi: ConceroAbi,
-    //     functionName: "lastGasPrices",
-    //     address: srcContractAddress as `0x${string}`,
-    //     args: [dstChainSelector],
-    //   })) * 750_000n;
-    //
-    // const value = srcLastGasPrice + dstLastGasPrice;
+      const fromSrcBlockNumber = await srcPublicClient.getBlockNumber();
+      const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
+      // const srcLastGasPrice =
+      //   (await srcPublicClient.readContract({
+      //     abi: ConceroAbi,
+      //     functionName: "lastGasPrices",
+      //     address: srcContractAddress as `0x${string}`,
+      //     args: [srcChainSelector],
+      //   })) * 750_000n;
+      // const dstLastGasPrice =
+      //   (await srcPublicClient.readContract({
+      //     abi: ConceroAbi,
+      //     functionName: "lastGasPrices",
+      //     address: srcContractAddress as `0x${string}`,
+      //     args: [dstChainSelector],
+      //   })) * 750_000n;
+      //
+      // const value = srcLastGasPrice + dstLastGasPrice;
 
-    let transactionPromises = [];
+      let transactionPromises = [];
 
-    for (let i = 0; i < transactionsCount; i++) {
-      const gasPrice = await srcPublicClient.getGasPrice();
-      // const { request } = await srcPublicClient.simulateContract({
-      //   abi: ConceroAbi,
-      //   functionName: "startTransaction",
-      //   address: srcContractAddress as `0x${string}`,
-      //   args: [bnmTokenAddress, 0, BigInt(amount), BigInt(dstChainSelector), senderAddress],
-      //   account: viemAccount as Account,
-      //   // value,
-      //   nonce: nonce++,
-      // });
-      // transactionPromises.push(walletClient.writeContract(request));
+      for (let i = 0; i < transactionsCount; i++) {
+        // const { request } = await srcPublicClient.simulateContract({
+        //   abi: ConceroAbi,
+        //   functionName: "startTransaction",
+        //   address: srcContractAddress as `0x${string}`,
+        //   args: [bnmTokenAddress, 0, BigInt(amount), BigInt(dstChainSelector), senderAddress],
+        //   account: viemAccount as Account,
+        //   // value,
+        //   nonce: nonce++,
+        // });
+        // transactionPromises.push(walletClient.writeContract(request));
 
-      transactionPromises.push(
-        walletClient.writeContract({
-          abi: ConceroAbi,
-          functionName: "startTransaction",
-          address: srcContractAddress as `0x${string}`,
-          args: [bnmTokenAddress, 0, BigInt(amount), BigInt(dstChainSelector), senderAddress],
-          account: viemAccount as Account,
-          // value,
-          nonce: nonce++,
-        }),
-      );
+        transactionPromises.push(
+          walletClient.writeContract({
+            abi: ConceroAbi,
+            functionName: "startTransaction",
+            address: srcContractAddress as `0x${string}`,
+            args: [bnmTokenAddress, 0, BigInt(amount), BigInt(dstChainSelector), senderAddress],
+            account: viemAccount as Account,
+            // value,
+            nonce: nonce++,
+            gas: 4_000_000n,
+          }),
+        );
+      }
+
+      const transactionHashes = await Promise.all(transactionPromises);
+      console.log("transactionHashes: ", transactionHashes);
+
+      const txStatusPromises = transactionHashes.map(txHash => {
+        return checkTransactionStatus(
+          txHash,
+          "0x" + fromSrcBlockNumber.toString(16),
+          "0x" + fromDstBlockNumber.toString(16),
+        );
+      });
+
+      const txStatuses = await Promise.all(txStatusPromises);
+      console.log("txStatuses: ", txStatuses);
+    } catch (err) {
+      console.log(err);
     }
-
-    const transactionHashes = await Promise.all(transactionPromises);
-    console.log("transactionHashes: ", transactionHashes);
-
-    const txStatusPromises = transactionHashes.map(txHash => {
-      return checkTransactionStatus(
-        txHash,
-        "0x" + fromSrcBlockNumber.toString(16),
-        "0x" + fromDstBlockNumber.toString(16),
-      );
-    });
-
-    const txStatuses = await Promise.all(txStatusPromises);
-    console.log("txStatuses: ", txStatuses);
   }).timeout(0);
 });

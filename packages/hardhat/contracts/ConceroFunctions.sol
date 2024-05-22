@@ -37,9 +37,9 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   mapping(uint64 => uint256) public lastGasPrices; // chain selector => last gas price in wei
 
   string private constant srcJsCode =
-    "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.SRC_JS, 'utf8').digest('hex'); if (hash.toLowerCase() === args[0].toLowerCase()) return await eval(secrets.SRC_JS); throw new Error('Invalid hash'); } catch (err) { throw new Error(err.message.slice(0, 255));}";
+    "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.SRC_JS, 'utf8').digest('hex'); if ('0x' + hash.toLowerCase() === args[0].toLowerCase()) { return await eval(secrets.SRC_JS); } else { throw new Error(`0x${hash.toLowerCase()} != ${args[0].toLowerCase()}`); } } catch (err) { throw new Error(err.message.slice(0, 255));}";
   string private constant dstJsCode =
-    "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.DST_JS, 'utf8').digest('hex'); if (hash.toLowerCase() === args[0].toLowerCase()) return await eval(secrets.DST_JS); throw new Error('Invalid hash'); } catch (err) { throw new Error(err.message.slice(0, 255));}";
+    "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.DST_JS, 'utf8').digest('hex'); if ('0x' + hash.toLowerCase() === args[0].toLowerCase()) { return await eval(secrets.DST_JS); } else { throw new Error(`0x${hash.toLowerCase()} != ${args[0].toLowerCase()}`); } } catch (err) { throw new Error(err.message.slice(0, 255));}";
 
   modifier onlyMessenger() {
     if (!messengerContracts[msg.sender]) revert NotMessenger(msg.sender);
@@ -112,9 +112,9 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     if (transaction.sender != address(0)) revert TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
     transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
 
-    string[] memory args = new string[](9);
+    string[] memory args = new string[](10);
     //todo: use bytes
-    args[0] = bytes32ToString(srcJsHashSum);
+    args[0] = bytes32ToString(dstJsHashSum);
     args[1] = Strings.toHexString(conceroContracts[srcChainSelector]);
     args[2] = Strings.toString(srcChainSelector);
     args[3] = Strings.toHexString(blockNumber);
@@ -183,9 +183,9 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {
     if (conceroContracts[dstChainSelector] == address(0)) revert("address not set");
 
-    string[] memory args = new string[](9);
+    string[] memory args = new string[](10);
     //todo: Strings usage may not be required here. Consider ways of passing data without converting to string
-    args[0] = bytes32ToString(dstJsHashSum);
+    args[0] = bytes32ToString(srcJsHashSum);
     args[1] = Strings.toHexString(conceroContracts[dstChainSelector]);
     args[2] = bytes32ToString(ccipMessageId);
     args[3] = Strings.toHexString(sender);

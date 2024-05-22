@@ -23,6 +23,8 @@ error ConceroPool_TransferFailed();
 error ConceroPool_TokenNotSupported();
 ///@notice error emitted when the caller is not an Orchestrator
 error ConceroPool_ItsNotAnOrchestrator(address caller);
+///@notice error emitted when the receiver is the address(0)
+error ConceroPool_InvalidAddress();
 ///@notice error emitted when the CCIP message sender is not allowed.
 error ConceroPool_SenderNotAllowed(address _sender);
 ///@notice error emitted when an attempt to create a new request is made while other is still active.
@@ -345,10 +347,12 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @notice function to the Concero Orchestrator contract take loans
    * @param _token address of the token being loaned
    * @param _amount being loaned
+   * @param _receiver address of the user that will receive the amount
    * @dev only the Orchestrator contract should be able to call this function
   */
   function orchestratorLoan(address _token, uint256 _amount, address _receiver) external {
     if(msg.sender != s_conceroOrchestrator) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
+    if(_receiver == address(0)) revert ConceroPool_InvalidAddress();
 
     if(_token == address(0)){
       if(_amount > address(this).balance) revert ConceroPool_InsufficientBalance();

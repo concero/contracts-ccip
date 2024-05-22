@@ -32,8 +32,22 @@ contract Concero is ConceroCCIP {
     uint _chainIndex,
     address _link,
     address _ccipRouter,
-    PriceFeeds memory priceFeeds
-  ) ConceroCCIP(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, _link, _ccipRouter) {
+    PriceFeeds memory priceFeeds,
+    JsCodeHashSum memory jsCodeHashSum
+  )
+    ConceroCCIP(
+      _functionsRouter,
+      _donHostedSecretsVersion,
+      _donId,
+      _donHostedSecretsSlotId,
+      _subscriptionId,
+      _chainSelector,
+      _chainIndex,
+      _link,
+      _ccipRouter,
+      jsCodeHashSum
+    )
+  {
     linkToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.linkToUsdPriceFeeds);
     usdcToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.usdcToUsdPriceFeeds);
     nativeToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.nativeToUsdPriceFeeds);

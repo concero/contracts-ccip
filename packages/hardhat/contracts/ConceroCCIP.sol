@@ -41,9 +41,10 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
     uint64 _chainSelector,
     uint _chainIndex,
     address _link,
-    address _ccipRouter
+    address _ccipRouter,
+    JsCodeHashSum memory jsCodeHashSum
   )
-    ConceroFunctions(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex)
+    ConceroFunctions(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, jsCodeHashSum)
     CCIPReceiver(_ccipRouter)
   {
     s_linkToken = _link;

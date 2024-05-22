@@ -137,6 +137,12 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     ccipRouter: process.env.CL_CCIP_ROUTER_OPTIMISM_SEPOLIA,
     viemChain: optimismSepolia,
     name: "optimismSepolia",
+    priceFeed: {
+      linkToUsdPriceFeeds: process.env.LINK_USD_PRICEFEED_OPTIMISM_SEPOLIA!,
+      usdcToUsdPriceFeeds: process.env.USDC_USD_PRICEFEED_OPTIMISM_SEPOLIA!,
+      nativeToUsdPriceFeeds: process.env.NATIVE_USD_PRICEFEED_OPTIMISM_SEPOLIA!,
+      linkToNativePriceFeeds: process.env.LINK_NATIVE_PRICEFEED_OPTIMISM_SEPOLIA!,
+    },
   },
   arbitrumSepolia: {
     chainId: 421614,
@@ -157,6 +163,12 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     ccipRouter: process.env.CL_CCIP_ROUTER_ARBITRUM_SEPOLIA,
     viemChain: arbitrumSepolia,
     name: "arbitrumSepolia",
+    priceFeed: {
+      linkToUsdPriceFeeds: process.env.LINK_USD_PRICEFEED_ARBITRUM_SEPOLIA!,
+      usdcToUsdPriceFeeds: process.env.USDC_USD_PRICEFEED_ARBITRUM_SEPOLIA!,
+      nativeToUsdPriceFeeds: process.env.NATIVE_USD_PRICEFEED_ARBITRUM_SEPOLIA!,
+      linkToNativePriceFeeds: process.env.LINK_NATIVE_PRICEFEED_ARBITRUM_SEPOLIA!,
+    },
   },
   baseSepolia: {
     chainId: 84532,
@@ -177,6 +189,12 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     ccipRouter: process.env.CL_CCIP_ROUTER_BASE_SEPOLIA,
     viemChain: baseSepolia,
     name: "baseSepolia",
+    priceFeed: {
+      linkToUsdPriceFeeds: process.env.LINK_USD_PRICEFEED_BASE_SEPOLIA!,
+      usdcToUsdPriceFeeds: process.env.USDC_USD_PRICEFEED_BASE_SEPOLIA!,
+      nativeToUsdPriceFeeds: process.env.NATIVE_USD_PRICEFEED_BASE_SEPOLIA!,
+      linkToNativePriceFeeds: process.env.LINK_NATIVE_PRICEFEED_BASE_SEPOLIA!,
+    },
   },
   // MAINNETS
   // mainnet: {

@@ -23,12 +23,20 @@ export type CLFNetwork = {
   name: CNetworkNames;
 };
 
+interface PriceFeed {
+  linkToUsdPriceFeeds: string,
+  usdcToUsdPriceFeeds: string,
+  nativeToUsdPriceFeeds: string,
+  linkToNativePriceFeeds: string,
+}
+
 // Chainlink CCIP Network specific configuration
 export type CLCCIPNetwork = {
   linkToken: envString;
   ccipBnmToken: envString;
   ccipRouter: envString;
   chainSelector: envString;
+  priceFeed: PriceFeed;
 };
 
 // Combined network configuration type

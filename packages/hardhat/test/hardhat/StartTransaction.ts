@@ -37,7 +37,7 @@ describe("startBatchTransactions\n", () => {
   const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
   const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA;
   const senderAddress = process.env.TESTS_WALLET_ADDRESS;
-  const amount = "100000000000000";
+  const amount = "1000000000000000000";
   const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
   const linkTokenAddress = process.env.LINK_BASE_SEPOLIA;
   const transactionsCount = 1;
@@ -73,12 +73,13 @@ describe("startBatchTransactions\n", () => {
 
       return tokenHash;
     };
+
     const bnmHash = await approveToken(bnmTokenAddress);
-    const linkHash = await approveToken(linkTokenAddress);
+    // const linkHash = await approveToken(linkTokenAddress);
 
     await Promise.all([
       srcPublicClient.waitForTransactionReceipt({ hash: bnmHash }),
-      srcPublicClient.waitForTransactionReceipt({ hash: linkHash }),
+      // srcPublicClient.waitForTransactionReceipt({ hash: linkHash }),
     ]);
   };
 
@@ -144,38 +145,49 @@ describe("startBatchTransactions\n", () => {
 
     const fromSrcBlockNumber = await srcPublicClient.getBlockNumber();
     const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
-    const srcLastGasPrice =
-      (await srcPublicClient.readContract({
-        abi: ConceroAbi,
-        functionName: "lastGasPrices",
-        address: srcContractAddress as `0x${string}`,
-        args: [srcChainSelector],
-      })) * 750_000n;
-    const dstLastGasPrice =
-      (await srcPublicClient.readContract({
-        abi: ConceroAbi,
-        functionName: "lastGasPrices",
-        address: srcContractAddress as `0x${string}`,
-        args: [dstChainSelector],
-      })) * 750_000n;
-
-    const value = srcLastGasPrice + dstLastGasPrice;
+    // const srcLastGasPrice =
+    //   (await srcPublicClient.readContract({
+    //     abi: ConceroAbi,
+    //     functionName: "lastGasPrices",
+    //     address: srcContractAddress as `0x${string}`,
+    //     args: [srcChainSelector],
+    //   })) * 750_000n;
+    // const dstLastGasPrice =
+    //   (await srcPublicClient.readContract({
+    //     abi: ConceroAbi,
+    //     functionName: "lastGasPrices",
+    //     address: srcContractAddress as `0x${string}`,
+    //     args: [dstChainSelector],
+    //   })) * 750_000n;
+    //
+    // const value = srcLastGasPrice + dstLastGasPrice;
 
     let transactionPromises = [];
 
     for (let i = 0; i < transactionsCount; i++) {
       const gasPrice = await srcPublicClient.getGasPrice();
-      const { request } = await srcPublicClient.simulateContract({
-        abi: ConceroAbi,
-        functionName: "startTransaction",
-        address: srcContractAddress as `0x${string}`,
-        args: [bnmTokenAddress, 0, BigInt(amount), BigInt(dstChainSelector), senderAddress],
-        account: viemAccount as Account,
-        value,
-        nonce: nonce++,
-      });
+      // const { request } = await srcPublicClient.simulateContract({
+      //   abi: ConceroAbi,
+      //   functionName: "startTransaction",
+      //   address: srcContractAddress as `0x${string}`,
+      //   args: [bnmTokenAddress, 0, BigInt(amount), BigInt(dstChainSelector), senderAddress],
+      //   account: viemAccount as Account,
+      //   // value,
+      //   nonce: nonce++,
+      // });
+      // transactionPromises.push(walletClient.writeContract(request));
 
-      transactionPromises.push(walletClient.writeContract(request));
+      transactionPromises.push(
+        walletClient.writeContract({
+          abi: ConceroAbi,
+          functionName: "startTransaction",
+          address: srcContractAddress as `0x${string}`,
+          args: [bnmTokenAddress, 0, BigInt(amount), BigInt(dstChainSelector), senderAddress],
+          account: viemAccount as Account,
+          // value,
+          nonce: nonce++,
+        }),
+      );
     }
 
     const transactionHashes = await Promise.all(transactionPromises);

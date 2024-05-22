@@ -86,7 +86,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
   ///@notice event emitted when a value is withdraw from the contract
   event ConceroPool_Withdrawn(address to, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain tx is received.
-  event ConceroPool_CCIPReceived(bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, address token, uint256 amount);
+  event ConceroPool_CCIPReceived(bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, uint256 data, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain message is sent.
   event ConceroPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, bytes data, address linkToken, uint256 fees);
 
@@ -335,7 +335,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
 
     if (fees > i_linkToken.balanceOf(address(this))) revert ConceroPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
-    IERC20(_token).safeApprove(address(i_router), _amount);
+    IERC20(_token).approve(address(i_router), _amount);
     i_linkToken.approve(address(i_router), fees);
 
     messageId = i_router.ccipSend(_destinationChainSelector, evm2AnyMessage);
@@ -347,7 +347,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _amount being loaned
    * @dev only the Orchestrator contract should be able to call this function
   */
-  function orchestratorLoan(address _token, uint256 _amount) external {
+  function orchestratorLoan(address _token, uint256 _amount, address _receiver) external {
     if(msg.sender != s_conceroOrchestrator) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
 
     if(_token == address(0)){
@@ -359,7 +359,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
     }else {
       if(_amount > IERC20(_token).balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
 
-      IERC20(_token).safeTransfer(msg.sender, _amount);
+      IERC20(_token).safeTransfer(_receiver, _amount);
     }
   }
 
@@ -385,6 +385,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
       any2EvmMessage.messageId,
       any2EvmMessage.sourceChainSelector,
       abi.decode(any2EvmMessage.sender, (address)),
+      abi.decode(any2EvmMessage.data, (uint256)),
       any2EvmMessage.destTokenAmounts[0].token,
       any2EvmMessage.destTokenAmounts[0].amount
     );

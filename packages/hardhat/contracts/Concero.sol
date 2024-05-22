@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ConceroCCIP} from "./ConceroCCIP.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 
 contract Concero is ConceroCCIP {
+  using SafeERC20 for IERC20;
+
   mapping(uint64 => uint256) public clfPremiumFees;
 
   AggregatorV3Interface public immutable linkToUsdPriceFeeds;
@@ -50,6 +53,7 @@ contract Concero is ConceroCCIP {
     (, int256 usdcToUsdRate, , , ) = usdcToUsdPriceFeeds.latestRoundData();
 
     uint8 decimals = 18;
+    //@audit USDC overflow? Loss of precision?
     int256 linkToUsdcRate = (linkToUsdRate * int256(10 ** decimals)) / usdcToUsdRate;
 
     return (linkToUsdcRate, decimals);
@@ -60,6 +64,7 @@ contract Concero is ConceroCCIP {
     (, int256 usdcToUsdRate, , , ) = usdcToUsdPriceFeeds.latestRoundData();
 
     uint8 decimals = 18;
+    //@audit USDC overflow? Loss of precision?
     int256 linkToUsdcRate = (nativeToUsdRate * int256(10 ** decimals)) / usdcToUsdRate;
 
     return (linkToUsdcRate, decimals);
@@ -73,9 +78,9 @@ contract Concero is ConceroCCIP {
       return 0;
     }
 
-    uint256 srcGasPrice = lastGasPrices[chainSelector];
-    uint256 dstGasPrice = lastGasPrices[dstChainSelector];
-    uint256 srsClFeeInLink = clfPremiumFees[chainSelector] +
+    uint256 srcGasPrice = s_lastGasPrices[i_chainSelector];
+    uint256 dstGasPrice = s_lastGasPrices[dstChainSelector];
+    uint256 srsClFeeInLink = clfPremiumFees[i_chainSelector] +
       ((srcGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_CALLBACK_GAS_LIMIT)) * uint256(linkToNativeRate)) /
       1 ether;
     uint256 dstClFeeInLink = clfPremiumFees[dstChainSelector] +
@@ -109,22 +114,24 @@ contract Concero is ConceroCCIP {
     uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
 
     // cl ccip fee
-    uint256 ccpFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector);
+    uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector);
 
     // concero fee
-    uint256 conceroFee = amount / 1000;
+    uint256 conceroFee = amount / 1000; //@audit 1_000? == 0.1?
 
     // gas fee
-    uint256 functionsGasFeeInNative = (750_000 * lastGasPrices[chainSelector]) + (750_000 * lastGasPrices[dstChainSelector]);
+    uint256 functionsGasFeeInNative = (750_000 * s_lastGasPrices[i_chainSelector]) + (750_000 * s_lastGasPrices[dstChainSelector]);
     uint256 functionsGasFeeInUsdc = (functionsGasFeeInNative * uint256(nativeToUsdcRate)) / 1 ether;
 
-    return functionsFeeInUsdc + ccpFeeInUsdc + conceroFee + functionsGasFeeInUsdc;
+    return functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + functionsGasFeeInUsdc;
   }
 
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(this), getToken(tokenType), 1 ether, s_linkToken, dstChainSelector);
-    IRouterClient router = IRouterClient(this.getRouter());
-    return router.getFee(dstChainSelector, evm2AnyMessage);
+    //@audit why do we have 1 ether hardcoded here?
+    //@audit How do we pass a "mock" uint256 to calculate fee here?
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType), 1 ether, 0.01 ether , dstChainSelector);
+
+    return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
   }
 
   function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
@@ -141,9 +148,15 @@ contract Concero is ConceroCCIP {
 
   // setters
   function setClfPremiumFees(uint64 chainSelector, uint256 feeAmount) external onlyOwner {
+    //@audit we must limit this amount. If we don't, it Will trigger a lot of red flags in audits.
+    uint256 previousValue = clfPremiumFees[chainSelector];
     clfPremiumFees[chainSelector] = feeAmount;
+
+    emit Concero_CLFPremiumFeeUpdated(chainSelector, previousValue, feeAmount);
   }
 
+  //@audit should not use tokenAmountSufficiency modifier.
+  //modifiers takes a lot of gas to be created and this checks is used only here.
   function startTransaction(
     address _token,
     CCIPToken _tokenType,
@@ -151,29 +164,31 @@ contract Concero is ConceroCCIP {
     uint64 _dstChainSelector,
     address _receiver
   ) external payable tokenAmountSufficiency(_token, _amount) {
-    //todo: maybe move to OZ safeTransfer (but research needed)
-    bool isOK = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
-    require(isOK, "Transfer failed");
 
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(_tokenType, _dstChainSelector, _amount);
-    if (_amount < totalSrcFee) revert InsufficientFundsForFees(_amount, totalSrcFee);
+    if (_amount < totalSrcFee) revert Concero_InsufficientFundsForFees(_amount, totalSrcFee);
 
     uint256 amount = _amount - totalSrcFee;
+
+    IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+
     bytes32 ccipMessageId = _sendTokenPayLink(_dstChainSelector, _receiver, _token, amount);
-    emit CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, amount, _dstChainSelector);
-    sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, amount, _dstChainSelector, _tokenType);
+
+    emit Concero_CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, amount, _dstChainSelector);
+
+    _sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, amount, _dstChainSelector, _tokenType);
   }
 
   function withdraw(address _owner) public onlyOwner {
     uint256 amount = address(this).balance;
-    if (amount == 0) revert NothingToWithdraw();
+    if (amount == 0) revert Concero_NothingToWithdraw();
     (bool sent, ) = _owner.call{value: amount}("");
-    if (!sent) revert FailedToWithdrawEth(msg.sender, _owner, amount);
+    if (!sent) revert Concero_FailedToWithdrawEth(msg.sender, _owner, amount);
   }
 
   function withdrawToken(address _owner, address _token) public onlyOwner {
     uint256 amount = IERC20(_token).balanceOf(address(this));
-    if (amount == 0) revert NothingToWithdraw();
-    IERC20(_token).transfer(_owner, amount);
+    if (amount == 0) revert Concero_NothingToWithdraw();
+    IERC20(_token).safeTransfer(_owner, amount);
   }
 }

@@ -1,34 +1,38 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
-import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
-import {ICCIP} from "./IConcero.sol";
-import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ICCIP} from "./IConcero.sol";
 import {ConceroFunctions} from "./ConceroFunctions.sol";
 
-contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
-  address public immutable s_linkToken;
+contract ConceroCCIP is ICCIP, ConceroFunctions {
+  using SafeERC20 for IERC20;
+
+  LinkTokenInterface private immutable i_linkToken;
+  IRouterClient internal immutable i_ccipRouter;
 
   modifier onlyAllowListedChain(uint64 _chainSelector) {
-    if (conceroContracts[_chainSelector] == address(0)) revert ChainNotAllowed(_chainSelector);
+    if (s_conceroContracts[_chainSelector] == address(0)) revert ConceroCCIP_ChainNotAllowed(_chainSelector);
     _;
   }
 
   modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
-    if (conceroContracts[_chainSelector] == address(0)) revert SourceChainNotAllowed(_chainSelector);
-    if (conceroContracts[_chainSelector] != _sender) revert SenderNotAllowed(_sender);
+    if (s_conceroContracts[_chainSelector] == address(0)) revert ConceroCCIP_SourceChainNotAllowed(_chainSelector);
+    if (s_conceroContracts[_chainSelector] != _sender) revert ConceroCCIP_SenderNotAllowed(_sender);
     _;
   }
 
   modifier validateReceiver(address _receiver) {
-    if (_receiver == address(0)) revert InvalidReceiverAddress();
+    if (_receiver == address(0)) revert ConceroCCIP_InvalidReceiverAddress();
     _;
   }
 
   modifier tokenAmountSufficiency(address _token, uint256 _amount) {
-    require(IERC20(_token).balanceOf(msg.sender) >= _amount, "Insufficient balance");
+    if(IERC20(_token).balanceOf(msg.sender) < _amount) revert ConceroCCIP_InsufficientBalance();
     _;
   }
 
@@ -44,10 +48,10 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
     address _ccipRouter
   )
     ConceroFunctions(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex)
-    CCIPReceiver(_ccipRouter)
   {
-    s_linkToken = _link;
-    messengerContracts[msg.sender] = true;
+    i_linkToken = LinkTokenInterface(_link);
+    i_ccipRouter = IRouterClient(_ccipRouter);
+    s_messengerContracts[msg.sender] = true;
   }
 
   function _sendTokenPayLink(
@@ -56,27 +60,28 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
     address _token,
     uint256 _amount
   ) internal onlyAllowListedChain(_destinationChainSelector) validateReceiver(_receiver) returns (bytes32 messageId) {
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_receiver, _token, _amount, s_linkToken, _destinationChainSelector);
-    IRouterClient router = IRouterClient(this.getRouter());
-    uint256 fees = router.getFee(_destinationChainSelector, evm2AnyMessage);
-    bool isOK = IERC20(s_linkToken).transferFrom(msg.sender, address(this), fees + 900000000000000000);
-    if (!isOK) {
-      revert TransferFailed();
-    }
-    if (fees > IERC20(s_linkToken).balanceOf(address(this))) {
-      revert NotEnoughBalance(IERC20(s_linkToken).balanceOf(address(this)), fees);
-    }
-    IERC20(s_linkToken).approve(address(router), fees);
-    IERC20(_token).approve(address(router), _amount);
-    messageId = router.ccipSend(_destinationChainSelector, evm2AnyMessage);
-    return messageId;
+
+    // @audit Deal with Loss of Precision on fee calculation. USDC is a 6 decimals Token.
+    //TODO how can I minimize loss of precision here?
+    uint256 dataToSend = _amount;
+
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage( _token, _amount, dataToSend, _destinationChainSelector);
+    
+    uint256 fees = i_ccipRouter.getFee(_destinationChainSelector, evm2AnyMessage);
+
+    if (fees > i_linkToken.balanceOf(address(this))) revert ConceroCCIP_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
+
+    i_linkToken.approve(address(i_ccipRouter), fees);
+    //@audit Should we use `safeIncreaseAllowance` here?
+    IERC20(_token).approve(address(i_ccipRouter), _amount);
+
+    messageId = i_ccipRouter.ccipSend(_destinationChainSelector, evm2AnyMessage);
   }
 
   function _buildCCIPMessage(
-    address _receiver,
     address _token,
     uint256 _amount,
-    address _feeToken,
+    uint256 _dataToSend,
     uint64 _destinationChainSelector
   ) internal view returns (Client.EVM2AnyMessage memory) {
     Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
@@ -84,24 +89,11 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
 
     return
       Client.EVM2AnyMessage({
-        receiver: abi.encode(conceroContracts[_destinationChainSelector]),
-        data: abi.encode(_receiver),
+        receiver: abi.encode(s_conceroContracts[_destinationChainSelector]),
+        data: abi.encode(_dataToSend),
         tokenAmounts: tokenAmounts,
         extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
-        feeToken: _feeToken
+        feeToken: address(i_linkToken)
       });
-  }
-
-  function _ccipReceive(
-    Client.Any2EVMMessage memory any2EvmMessage
-  ) internal override onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address))) {
-    emit CCIPReceived(
-      any2EvmMessage.messageId,
-      any2EvmMessage.sourceChainSelector,
-      abi.decode(any2EvmMessage.sender, (address)),
-      abi.decode(any2EvmMessage.data, (address)),
-      any2EvmMessage.destTokenAmounts[0].token,
-      any2EvmMessage.destTokenAmounts[0].amount
-    );
   }
 }

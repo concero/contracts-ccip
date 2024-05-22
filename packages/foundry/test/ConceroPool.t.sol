@@ -847,4 +847,7 @@ contract ConceroPoolTest is Test {
         //========= Checks if the value is correctly stored on the destination
         assertEq(concero.s_userBalances(address(cccipToken), Puka), lpFee);
     }
+
+    //TODO
+    //Double check on LP's fees.
 }   

@@ -69,7 +69,6 @@ contract ConceroPool is CCIPReceiver, Ownable {
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
-
   ///@notice event emitted when an Orchestrator is updated
   event ConceroPool_OrchestratorUpdated(address previousOrchestrator, address orchestrator);
   ///@notice event emitted when a Messenger is updated
@@ -238,9 +237,10 @@ contract ConceroPool is CCIPReceiver, Ownable {
 
       if(_token == address(0)){
 
-        if(request.isActiv){
+        uint256 etherBalance = address(this).balance;
 
-          if(address(this).balance >= request.condition){
+        if(request.isActiv){
+          if(etherBalance >= request.condition){
 
             s_withdrawWaitlist[_token].isActiv = false;
             s_withdrawWaitlist[_token].isFulfilled = true;
@@ -250,9 +250,9 @@ contract ConceroPool is CCIPReceiver, Ownable {
             revert ConceroPool_ActivRequestNotFulfilledYet();
           }
         }else{
-          if(_amount > (address(this).balance * WITHDRAW_THRESHOLD)/100){
+          if(_amount > (etherBalance * WITHDRAW_THRESHOLD)/100){
 
-            uint256 condition = (address(this).balance - ((address(this).balance * WITHDRAW_THRESHOLD)/100)) + _amount;
+            uint256 condition = (etherBalance - ((etherBalance * WITHDRAW_THRESHOLD)/100)) + _amount;
 
             s_withdrawWaitlist[_token] = WithdrawRequests({
               condition: condition,
@@ -266,8 +266,9 @@ contract ConceroPool is CCIPReceiver, Ownable {
           }
         }
       } else {
+        uint256 erc20Balance = IERC20(_token).balanceOf(address(this));
         if(request.isActiv){
-          if(IERC20(_token).balanceOf(address(this)) >= request.condition){
+          if( erc20Balance >= request.condition){
 
             s_withdrawWaitlist[_token].isActiv = false;
             s_withdrawWaitlist[_token].isFulfilled = true;
@@ -277,9 +278,9 @@ contract ConceroPool is CCIPReceiver, Ownable {
             revert ConceroPool_ActivRequestNotFulfilledYet();
           }
         } else {
-          if(_amount > ((IERC20(_token).balanceOf(address(this)) * WITHDRAW_THRESHOLD)/100)){
+          if(_amount > (erc20Balance * WITHDRAW_THRESHOLD)/100){
 
-            uint256 condition = (IERC20(_token).balanceOf(address(this)) - ((IERC20(_token).balanceOf(address(this)) * WITHDRAW_THRESHOLD)/100)) + _amount;
+            uint256 condition = (erc20Balance - ((erc20Balance * WITHDRAW_THRESHOLD)/100)) + _amount;
 
             s_withdrawWaitlist[_token] = WithdrawRequests({
               condition: condition,

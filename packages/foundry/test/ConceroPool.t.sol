@@ -30,6 +30,7 @@ contract ConceroPoolTest is Test {
     address Exploiter = makeAddr("Exploiter");
     address Orchestrator = makeAddr("Orchestrator");
     address Messenger = makeAddr("Messenger");
+    address UserReceiver = makeAddr("Receiver");
 
     function setUp() public {
         ccipLocalSimulator = new CCIPLocalSimulator();
@@ -74,10 +75,10 @@ contract ConceroPoolTest is Test {
 
         ccipBnM.drip(address(conceroReceiver));
         ccipBnM.drip(address(concero));
+        ccipBnM.drip(Puka);
 
         ccipLocalSimulator.requestLinkFromFaucet(address(conceroReceiver), INITIAL_BALANCE);
     }
-
     
     modifier setApprovals(){
         vm.startPrank(Barba);
@@ -738,22 +739,26 @@ contract ConceroPoolTest is Test {
         //======= Mocks a not allowed loan call
         vm.prank(biggerPlayer);
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_ItsNotAnOrchestrator.selector, biggerPlayer));
-        concero.orchestratorLoan(address(mockUSDC), 500 ether);
+        concero.orchestratorLoan(address(mockUSDC), 500 ether, biggerPlayer);
 
         //======= Orchestrator takes a ERC20 loan
         vm.startPrank(Orchestrator);
-        concero.orchestratorLoan(address(mockUSDC), 500 ether);
+        concero.orchestratorLoan(address(mockUSDC), 500 ether, UserReceiver);
+
+        assertEq(mockUSDC.balanceOf(UserReceiver), 500 ether);
 
         //======= Orchestrator takes a loan that exceeds the amount on the pool
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_InsufficientBalance.selector));
-        concero.orchestratorLoan(address(mockUSDC), 600 ether);
+        concero.orchestratorLoan(address(mockUSDC), 600 ether, UserReceiver);
 
         //======= Orchestrator takes an Ether loan
-        concero.orchestratorLoan(address(0), 500 ether);
+        concero.orchestratorLoan(address(0), 500 ether, UserReceiver);
+
+        assertEq(UserReceiver.balance, 500 ether);
 
         //======= Orchestrator takes an Ether loan that exceeds the amount on the pool
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_InsufficientBalance.selector));
-        concero.orchestratorLoan(address(0), 600 ether);
+        concero.orchestratorLoan(address(0), 600 ether, UserReceiver);
         vm.stopPrank();
 
         assertEq(mockUSDC.balanceOf(address(concero)), 500 ether);
@@ -768,10 +773,10 @@ contract ConceroPoolTest is Test {
     function test_revertsOrchestratorLoan() public {
         vm.prank(Exploiter);
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_ItsNotAnOrchestrator.selector, Exploiter));
-        concero.orchestratorLoan(address(0), 10 ether);
+        concero.orchestratorLoan(address(0), 10 ether, Exploiter);
     }
 
-    ///ccipSendToPool & ccipReceiver///
+    ///ccipSendToPool & ccipReceiver for USDC distribution///
     event ConceroPool_RewardWithdrawd(address token, uint256 amount);
     function test_ccipSendToPool() public setApprovals{
 
@@ -799,6 +804,43 @@ contract ConceroPoolTest is Test {
 
         //========= Checks if the value is ignored on the destination as expected
         assertEq(concero.s_userBalances(address(cccipToken), Puka), 0);
+    }
+
+    ///ccipSendToPool & ccipReceiver for compound LP Rewards///
+    function test_ccipCompoundFee() public setApprovals{
+        //========= Set the Concero Contracts allowed to receive C-chain messages
+        vm.startPrank(Barba);
+        concero.setConceroPool(destinationChainSelector, address(conceroReceiver));
+        conceroReceiver.setConceroPool(destinationChainSelector, address(concero));
+
+        //========= Mock the messenger address that will be allowed to call the function
+        conceroReceiver.setMessenger(Messenger);
+        vm.stopPrank();
+
+        //========= Deposits some CCIP-BnM just to have a initial balance
+        vm.startPrank(Puka);
+        cccipToken.approve(address(concero), 1 ether);
+        concero.depositToken(address(cccipToken), 1 ether);
+        vm.stopPrank();
+
+        //========= Checks the user balance
+        assertEq(concero.s_userBalances(address(cccipToken), Puka), 1 ether);
+
+        //========= Mock LP Fee just to test
+        uint256 valueToSend = 1 ether;
+        uint256 lpFee = (1 ether * 1) / 10_000; // 0.01
+        assertEq(lpFee, 100_000_000_000_000); //100_000_000_000_000
+
+        //========= Call ccipSendToPool function
+        vm.prank(Messenger);
+        conceroReceiver.ccipSendToPool(destinationChainSelector, address(cccipToken), valueToSend, abi.encode(lpFee));
+
+        //========= Checks if value is delivered as expected
+        assertEq(cccipToken.balanceOf(address(conceroReceiver)), 0);
+        assertEq(cccipToken.balanceOf(address(concero)), 3 ether);
+
+        //========= Checks if the value is ignored on the destination as expected
+        assertEq(concero.s_userBalances(address(cccipToken), Puka), 1 ether + lpFee);
     }
 
     error ConceroPool_DestinationNotAllowed();
@@ -847,7 +889,4 @@ contract ConceroPoolTest is Test {
         //========= Checks if the value is correctly stored on the destination
         assertEq(concero.s_userBalances(address(cccipToken), Puka), lpFee);
     }
-
-    //TODO
-    //Double check on LP's fees.
-}   
+}

@@ -17,11 +17,15 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
-    const { name } = hre.network;
     const slotId = parseInt(taskArgs.slotid);
+    const { name } = hre.network;
     if (name !== "localhost" && name !== "hardhat") deployableChains = [chains[name]];
-    if (!taskArgs.skipdeploy) await deployConcero(hre, { slotId });
-    else log("Skipping deployment", "deploy-infra");
+
+    if (!taskArgs.skipdeploy) {
+      await deployConcero(hre, { slotId });
+    } else {
+      log("Skipping deployment", "deploy-infra");
+    }
 
     await uploadDonSecrets(deployableChains, slotId, 4320);
     await setContractVariables(liveChains, deployableChains, slotId);

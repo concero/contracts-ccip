@@ -60,10 +60,6 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_receiver, _token, _amount, s_linkToken, _destinationChainSelector);
     IRouterClient router = IRouterClient(this.getRouter());
     uint256 fees = router.getFee(_destinationChainSelector, evm2AnyMessage);
-    bool isOK = IERC20(s_linkToken).transferFrom(msg.sender, address(this), fees + 900000000000000000);
-    if (!isOK) {
-      revert TransferFailed();
-    }
     if (fees > IERC20(s_linkToken).balanceOf(address(this))) {
       revert NotEnoughBalance(IERC20(s_linkToken).balanceOf(address(this)), fees);
     }

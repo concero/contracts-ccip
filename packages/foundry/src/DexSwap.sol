@@ -97,24 +97,28 @@ contract DexSwap is Ownable{
 
   /**
    * @notice Entry point function for the Orchestrator to take loans
-   * @param _swapData a struct that contains dex informations.
+   * @param _swapData a struct array that contains dex informations.
    * @dev only the Orchestrator contract should be able to call this function
    */
-  function conceroEntry(SwapData memory _swapData) external onlyOrchestrator {
-    if (_swapData.dexData.length < 1) revert DexSwap_EmptyDexData();
+  function conceroEntry(SwapData[] memory _swapData) external onlyOrchestrator {
+    if (_swapData.length < 1) revert DexSwap_EmptyDexData();
 
-    if (_swapData.dexType == DexType.UniswapV2) {
-      _swapUniV2Like(_swapData.dexData);
-    } else if (_swapData.dexType == DexType.SushiV3Single) {
-      _swapSushiV3Single(_swapData.dexData);
-    } else if (_swapData.dexType == DexType.UniswapV3Single) {
-      _swapUniV3Single(_swapData.dexData);
-    } else if (_swapData.dexType == DexType.SushiV3Multi) {
-      _swapSushiV3Multi(_swapData.dexData);
-    } else if (_swapData.dexType == DexType.UniswapV3Multi) {
-      _swapUniV3Multi(_swapData.dexData);
-    } else if (_swapData.dexType == DexType.Aerodrome) {
-      _swapDrome(_swapData.dexData);
+    uint256 swapDataLength = _swapData.length;
+
+    for(uint i; i <swapDataLength; ++i){
+      if (_swapData[i].dexType == DexType.UniswapV2) {
+        _swapUniV2Like(_swapData[i].dexData);
+      } else if (_swapData[i].dexType == DexType.SushiV3Single) {
+        _swapSushiV3Single(_swapData[i].dexData);
+      } else if (_swapData[i].dexType == DexType.UniswapV3Single) {
+        _swapUniV3Single(_swapData[i].dexData);
+      } else if (_swapData[i].dexType == DexType.SushiV3Multi) {
+        _swapSushiV3Multi(_swapData[i].dexData);
+      } else if (_swapData[i].dexType == DexType.UniswapV3Multi) {
+        _swapUniV3Multi(_swapData[i].dexData);
+      } else if (_swapData[i].dexType == DexType.Aerodrome) {
+        _swapDrome(_swapData[i].dexData);
+      }
     }
   }
 

@@ -138,14 +138,15 @@ contract DexSwapTest is Test {
         address to = address(Orchestrator);
         uint deadline = block.timestamp + 1800;
 
-        DexSwap.SwapData memory swapData = DexSwap.SwapData({
-            dexType: DexSwap.DexType.UniswapV2,
-            dexData: abi.encode(sushiV2, amountIn, amountOutMin, path, to, deadline)
-        });
-
         vm.startPrank(Orchestrator);
         wEth.approve(address(dex), 0.1 ether);
-    
+
+        DexSwap.SwapData[] memory swapData = new DexSwap.SwapData[](1);
+        swapData[0] = DexSwap.SwapData({
+                            dexType: DexSwap.DexType.UniswapV2,
+                            dexData: abi.encode(sushiV2, amountIn, amountOutMin, path, to, deadline)
+                        });
+                    
         dex.conceroEntry(swapData);
 
         assertEq(wEth.balanceOf(address(Orchestrator)), 9.9 ether);
@@ -158,10 +159,11 @@ contract DexSwapTest is Test {
     function test_swapSushiV3Single() public {
         helper();
 
-        DexSwap.SwapData memory swapData = DexSwap.SwapData({
-            dexType: DexSwap.DexType.SushiV3Single,
-            dexData: abi.encode(sushiV3, address(wEth), address(USDC), 500, address(Orchestrator), block.timestamp + 1800, 1*10**17, 120*10**6, 0)
-        });
+        DexSwap.SwapData[] memory swapData = new DexSwap.SwapData[](1);
+        swapData[0] = DexSwap.SwapData({
+                            dexType: DexSwap.DexType.SushiV3Single,
+                            dexData: abi.encode(sushiV3, address(wEth), address(USDC), 500, address(Orchestrator), block.timestamp + 1800, 1*10**17, 120*10**6, 0)
+                        });
 
         vm.startPrank(Orchestrator);
         wEth.approve(address(dex), 1 ether);
@@ -178,7 +180,8 @@ contract DexSwapTest is Test {
     function test_swapUniV3Single() public {
         helper();
 
-        DexSwap.SwapData memory swapData = DexSwap.SwapData({
+        DexSwap.SwapData[] memory swapData = new DexSwap.SwapData[](1);
+        swapData[0] = DexSwap.SwapData({
             dexType: DexSwap.DexType.UniswapV3Single,
             dexData: abi.encode(uniswapV3, address(wEth), address(USDC), 500, address(Orchestrator), 1*10**17, 260*10**6, 0)
         });
@@ -201,7 +204,8 @@ contract DexSwapTest is Test {
 
         bytes memory path = abi.encodePacked(wEth, poolFee, USDC, poolFee, wEth);
 
-        DexSwap.SwapData memory swapData = DexSwap.SwapData({
+        DexSwap.SwapData[] memory swapData = new DexSwap.SwapData[](1);
+        swapData[0] = DexSwap.SwapData({
             dexType: DexSwap.DexType.SushiV3Multi,
             dexData: abi.encode(sushiV3, address(wEth), path, address(Orchestrator), block.timestamp + 300,1*10**17, 9*10**16)
         });
@@ -225,7 +229,8 @@ contract DexSwapTest is Test {
 
         bytes memory path = abi.encodePacked(wEth, poolFee, USDC, poolFee, wEth);
 
-        DexSwap.SwapData memory swapData = DexSwap.SwapData({
+        DexSwap.SwapData[] memory swapData = new DexSwap.SwapData[](1);
+        swapData[0] = DexSwap.SwapData({
             dexType: DexSwap.DexType.UniswapV3Multi,
             dexData: abi.encode(uniswapV3, address(wEth), path, address(Orchestrator), 1*10**17, 9*10**16)
         });
@@ -267,7 +272,8 @@ contract DexSwapTest is Test {
 
         route[0] = routes;
 
-        DexSwap.SwapData memory swapData = DexSwap.SwapData({
+        DexSwap.SwapData[] memory swapData = new DexSwap.SwapData[](1);
+        swapData[0] = DexSwap.SwapData({
             dexType: DexSwap.DexType.Aerodrome,
             dexData: abi.encode(aerodromeRouter, 0.93 ether , 280 ether, route, Barba, block.timestamp + 1800)
         });
@@ -279,5 +285,63 @@ contract DexSwapTest is Test {
 
         assertEq(wEth.balanceOf(address(dex)), 0);
         assertTrue(AERO.balanceOf(Barba) > 280 ether );
+    }
+
+    //multiple swaps in different DEXes
+    function test_swapInDifferentDEXes() public {
+        vm.selectFork(baseMainFork);
+
+        vm.deal(Orchestrator, INITIAL_BALANCE);
+
+        assertEq(Orchestrator.balance, INITIAL_BALANCE);
+        assertEq(wEth.balanceOf(Orchestrator), 0);
+
+        vm.prank(Orchestrator);
+        wEth.deposit{value: INITIAL_BALANCE}();
+
+        assertEq(wEth.balanceOf(Orchestrator), INITIAL_BALANCE);
+
+        //======= Velodrome
+
+        IRouter.Route[] memory route = new IRouter.Route[](1);
+
+        IRouter.Route memory routes = IRouter.Route({
+            from: address(wEth),
+            to: address(AERO),
+            stable: false,
+            factory: 0x420DD381b31aEf6683db6B902084cB0FFECe40Da
+        });
+
+        route[0] = routes;
+
+        DexSwap.SwapData[] memory swapData = new DexSwap.SwapData[](2);
+        swapData[0] = DexSwap.SwapData({
+            dexType: DexSwap.DexType.Aerodrome,
+            dexData: abi.encode(aerodromeRouter, 0.93 ether , 280 ether, route, address(Orchestrator), block.timestamp + 1800)
+        });
+
+        //======== Uniswap V3 Multi
+        
+        uint24 poolFee = 500;
+
+        bytes memory path = abi.encodePacked(wEth, poolFee, USDC, poolFee, wEth);
+
+        swapData[1] = DexSwap.SwapData({
+            dexType: DexSwap.DexType.UniswapV3Multi,
+            dexData: abi.encode(uniswapV3, address(wEth), path, address(Orchestrator), 1*10**17, 9*10**16)
+        });
+
+        //======== Create the Array
+
+        vm.startPrank(Orchestrator);
+        wEth.approve(address(dex), INITIAL_BALANCE);
+    
+        dex.conceroEntry(swapData);
+
+        assertEq(wEth.balanceOf(address(dex)), 0);
+        assertTrue(AERO.balanceOf(Orchestrator) > 280 ether );
+
+        assertTrue(wEth.balanceOf(Orchestrator) > 0.09 ether);
+
     }
 }

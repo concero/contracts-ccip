@@ -100,25 +100,20 @@ contract DexSwap is Ownable{
    * @param _swapData a struct that contains dex informations.
    * @dev only the Orchestrator contract should be able to call this function
    */
-  function conceroEntry(SwapData memory _swapData) external onlyOrchestrator{
+  function conceroEntry(SwapData memory _swapData) external onlyOrchestrator {
     if (_swapData.dexData.length < 1) revert DexSwap_EmptyDexData();
 
-    if(uint256(_swapData.dexType) == 0){
+    if (_swapData.dexType == DexType.UniswapV2) {
       _swapUniV2Like(_swapData.dexData);
-
-    } else if(uint256(_swapData.dexType) == 1){
+    } else if (_swapData.dexType == DexType.SushiV3Single) {
       _swapSushiV3Single(_swapData.dexData);
-
-    } else if(uint256(_swapData.dexType) == 2){
+    } else if (_swapData.dexType == DexType.UniswapV3Single) {
       _swapUniV3Single(_swapData.dexData);
-      
-    } else if(uint256(_swapData.dexType) == 3){
+    } else if (_swapData.dexType == DexType.SushiV3Multi) {
       _swapSushiV3Multi(_swapData.dexData);
-    
-    }else if(uint256(_swapData.dexType) == 4){
+    } else if (_swapData.dexType == DexType.UniswapV3Multi) {
       _swapUniV3Multi(_swapData.dexData);
-
-    }else if(uint256(_swapData.dexType) == 5){
+    } else if (_swapData.dexType == DexType.Aerodrome) {
       _swapDrome(_swapData.dexData);
     }
   }

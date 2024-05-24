@@ -168,14 +168,16 @@ contract Concero is ConceroCCIP {
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(_tokenType, _dstChainSelector, _amount);
     if (_amount < totalSrcFee) revert Concero_InsufficientFundsForFees(_amount, totalSrcFee);
 
+    //@audit totalSrcFee is 1000
     uint256 amount = _amount - totalSrcFee;
 
+    //@audit in the future, the receiver must be the DEXSwap pool
     IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
 
-    bytes32 ccipMessageId = _sendTokenPayLink(_dstChainSelector, _receiver, _token, amount);
+    bytes32 ccipMessageId = _sendTokenPayLink(_dstChainSelector, _token, amount, totalSrcFee);
 
     emit Concero_CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, amount, _dstChainSelector);
-
+    //comment it out for local testing
     _sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, amount, _dstChainSelector, _tokenType);
   }
 

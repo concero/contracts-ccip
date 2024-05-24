@@ -26,6 +26,7 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
     _;
   }
 
+  //@audit we should remove it and relocate the if inside the function
   modifier validateReceiver(address _receiver) {
     if (_receiver == address(0)) revert ConceroCCIP_InvalidReceiverAddress();
     _;
@@ -56,16 +57,12 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
 
   function _sendTokenPayLink(
     uint64 _destinationChainSelector,
-    address _receiver,
     address _token,
-    uint256 _amount
-  ) internal onlyAllowListedChain(_destinationChainSelector) validateReceiver(_receiver) returns (bytes32 messageId) {
+    uint256 _amount,
+    uint256 _lpFee
+  ) internal onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
 
-    // @audit Deal with Loss of Precision on fee calculation. USDC is a 6 decimals Token.
-    //TODO how can I minimize loss of precision here?
-    uint256 dataToSend = _amount;
-
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage( _token, _amount, dataToSend, _destinationChainSelector);
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage( _token, _amount, _lpFee, _destinationChainSelector);
     
     uint256 fees = i_ccipRouter.getFee(_destinationChainSelector, evm2AnyMessage);
 
@@ -81,7 +78,7 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
   function _buildCCIPMessage(
     address _token,
     uint256 _amount,
-    uint256 _dataToSend,
+    uint256 _lpFee,
     uint64 _destinationChainSelector
   ) internal view returns (Client.EVM2AnyMessage memory) {
     Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
@@ -90,7 +87,7 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
     return
       Client.EVM2AnyMessage({
         receiver: abi.encode(s_conceroContracts[_destinationChainSelector]),
-        data: abi.encode(_dataToSend),
+        data: abi.encode(_lpFee),
         tokenAmounts: tokenAmounts,
         extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
         feeToken: address(i_linkToken)

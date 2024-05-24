@@ -207,10 +207,11 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
       } else{
         //@audit We need to call the DEX module here.
+        // dexSwap.conceroEntry(passing the user address as receiver);
       }
 
     } else if (request.requestType == RequestType.addUnconfirmedTxDst) {
-      
+      //@audit what means this 96?
       if (response.length != 96) {
         return;
       }

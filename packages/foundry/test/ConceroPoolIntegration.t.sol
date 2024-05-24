@@ -3,11 +3,13 @@ pragma solidity ^0.8.19;
 
 import {Test, console2} from "forge-std/Test.sol";
 
+import {ConceroMock} from "./Mocks/ConceroMock.sol";
 import {Concero} from "../src/Concero.sol";
 import {ConceroPool} from "../src/ConceroPool.sol";
 import {IConceroCommon} from "../src/IConcero.sol";
 
 import {ConceroDeploy} from "../script/ConceroDeploy.s.sol";
+import {ConceroMockDeploy} from "../script/ConceroMockDeploy.s.sol";
 import {ConceroPoolDeploy} from "../script/ConceroPoolDeploy.s.sol";
 import {HelperConfig} from "../script/HelperConfig.sol";
 
@@ -19,13 +21,13 @@ import {MockV3Aggregator} from "@starterKit/src/test/mocks/MockV3Aggregator.sol"
 
 contract ConceroIntegrationPoolTest is Test {
     //Instantiate Contracts
-    Concero public concero;
+    ConceroMock public concero;
     ConceroPool public pool;
     ConceroPool public poolReceiver;
     
     //Instantiate Scripts
     ConceroPoolDeploy public deployPool;
-    ConceroDeploy public deployConcero;
+    ConceroMockDeploy public deployConcero;
     HelperConfig public helper;
 
 
@@ -82,7 +84,7 @@ contract ConceroIntegrationPoolTest is Test {
 
         //Initiate Global Variables with Chainlink Local Variables
         destinationChainSelector = chainSelector; //16015286601757825753
-        cccipToken = (ccipBnM);
+        cccipToken = ccipBnM;
         source_Router = address(sourceRouter);
 
         //Deploy Mocks
@@ -90,7 +92,7 @@ contract ConceroIntegrationPoolTest is Test {
 
         //Deploy Scripts for Contracts Deploys
         deployPool = new ConceroPoolDeploy();
-        deployConcero = new ConceroDeploy();
+        deployConcero = new ConceroMockDeploy();
         helper = new HelperConfig();
 
         //Deploy protocol Contracts
@@ -171,6 +173,8 @@ contract ConceroIntegrationPoolTest is Test {
         poolReceiver.setApprovedSender(address(cccipToken), Messenger);
 
         concero.setConceroContract(destinationChainSelector, address(poolReceiver));
+        concero.setConceroMessenger(Messenger);
+        concero.setConceroPoolAddress(payable(address(poolReceiver)));
         vm.stopPrank();
         _;
     }
@@ -247,4 +251,89 @@ contract ConceroIntegrationPoolTest is Test {
         assertEq(mUSDC.balanceOf(UserReceiver), userValue);
     }
 
+    function test_wholeFlowPlusDestinationFunctions() public setApprovals{
+        //======= LP Deposits USDC on the Main Pool
+        vm.startPrank(lp);
+        mUSDC.approve(address(pool), POOL_INITIAL_BALANCE);
+        pool.depositToken(address(mUSDC), POOL_INITIAL_BALANCE);
+        vm.stopPrank();
+        
+        //======= We check the pool balance;
+                    //Here, the LP Fees will be compounding directly for the LP address
+        assertEq(mUSDC.balanceOf(address(pool)), POOL_INITIAL_BALANCE);
+
+        //======= Messenger Transfers value to other cross-chain pool
+                    //Empty data because it's a internal transfer
+                    //We only pass data when it's a external one and we are using the LP money
+                    //to pay users upfront
+        uint256 crossChainPoolBalance = POOL_INITIAL_BALANCE / 2;
+        vm.prank(Messenger);
+        pool.ccipSendToPool(destinationChainSelector, address(mUSDC), crossChainPoolBalance);
+
+        //======= Check pool's balances
+        assertEq(mUSDC.balanceOf(address(pool)), crossChainPoolBalance);
+        assertEq(mUSDC.balanceOf(address(poolReceiver)), crossChainPoolBalance);
+
+        //======= Check if Messenger balance got updated on `poolReceiver`
+                    //Here, we check the Messenger balance and not lp balance
+                    //because the messenger will be the one will transfer money to other chains
+                    //So, we are using the messenger address to allow transfer through whitelisted dst
+                    //Also, the compounding in cross-chain dst will be made on top of the Messenger address.
+        assertEq(poolReceiver.s_userBalances(address(mUSDC), Messenger), crossChainPoolBalance);
+
+        //======= Starting a user transaction
+        uint256 amountToTransfer = 1 * USDC_DECIMALS;
+        vm.startPrank(Athena);
+        mUSDC.approve(address(concero), 1 * USDC_DECIMALS);
+        concero.startTransaction(address(mUSDC), IConceroCommon.CCIPToken.usdc, amountToTransfer, destinationChainSelector, address(poolReceiver));
+        vm.stopPrank();
+        //======= We are not mocking Functions here. Need to improve it.
+
+        //======= Check the total balance on the poolReceiver contract
+                //Sub the ConceroFee
+        uint256 conceroFee = amountToTransfer / 1000;
+
+        assertEq(mUSDC.balanceOf(address(poolReceiver)), (crossChainPoolBalance + amountToTransfer - conceroFee));
+    
+        //======= Check the total balance on the concero contract
+        assertEq(mUSDC.balanceOf(address(concero)), conceroFee);
+
+        //======= Check the LP fee compounding
+        assertEq(poolReceiver.s_userBalances(address(mUSDC), Messenger), crossChainPoolBalance + conceroFee);
+        
+        //======= Let's pretend that CLF did the Job and 'Orchestrator' will transfer funds to the user
+                //Some line of code must be comment and created on the contract, to test this.
+                //Check the code if this is failing
+        bytes32 ccipMessageId = 0xcb78b8f826a16ce47cbfc4979ff1e5ea0822a94bbb224fb54e8d36e6f88ae096;
+        address sender = address(concero);
+        address recipient = UserReceiver;
+        uint256 amount = amountToTransfer - conceroFee;
+        uint64 srcChainSelector = destinationChainSelector;
+        ConceroMock.CCIPToken token = IConceroCommon.CCIPToken.usdc;
+        uint256 blockNumber = 1;
+
+        vm.prank(Messenger);
+        concero.addUnconfirmedTX(
+                                ccipMessageId,
+                                sender,
+                                recipient,
+                                amount,
+                                srcChainSelector,
+                                token,
+                                blockNumber
+                                );
+        
+        //======= After adding a request, we can simulate the payment calling the mock function below
+        concero.externalFulfillRequest(ccipMessageId, "","");
+
+        //=============== Both seccions bellow proves that the calculation is wrong.
+                        //But, the pool is correctly implemented
+
+        //======= Checks if the pool has the correct balance
+        assertEq(mUSDC.balanceOf(address(poolReceiver)), crossChainPoolBalance + ((amountToTransfer - conceroFee) / 1000));
+
+        //======= Checks if the User received the correct amount
+        uint256 userValue = (amountToTransfer - conceroFee) - ((amountToTransfer - conceroFee) / 1000);
+        assertEq(mUSDC.balanceOf(UserReceiver), userValue);
+    }
 }

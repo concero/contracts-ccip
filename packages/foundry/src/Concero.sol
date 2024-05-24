@@ -128,7 +128,6 @@ contract Concero is ConceroCCIP {
 
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     //@audit why do we have 1 ether hardcoded here?
-    //@audit How do we pass a "mock" uint256 to calculate fee here?
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType), 1 ether, 0.01 ether , dstChainSelector);
 
     return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);

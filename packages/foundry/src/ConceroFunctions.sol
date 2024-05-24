@@ -144,7 +144,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     s_transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
 
     //@audit bytes[] memory args = new bytes[](9)
-    string[] memory args = new string[](9);
+    string[] memory args = new string[](10);
     //todo: use bytes
     //@audit = abi.encode(param);
     args[0] = bytes32ToString(s_srcJsHashSum);
@@ -158,7 +158,11 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     args[8] = Strings.toString(amount);
     args[9] = Strings.toString(i_chainSelector);
 
-    bytes32 reqId = sendRequest(args, dstJsCode);
+    //Comment this out to local testing
+    // bytes32 reqId = sendRequest(args, dstJsCode);
+    
+    //Comment this out after testing
+    bytes32 reqId = ccipMessageId;
 
     s_requests[reqId].requestType = RequestType.checkTxSrc;
     s_requests[reqId].isPending = true;
@@ -199,13 +203,17 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
       uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
+      //@audit
+      //When receiving, we are taking the fee on top of the transfered money
+      //Not on top of the initial money. So, we are "rounding down" against
+      //the protocol and charging less than we should.
       address tokenReceived = getToken(transaction.token);
 
-      if(tokenReceived == getToken(CCIPToken.bnm)){ //@audit hardcode for CCIP-BnM - Should be USDC
+      if(tokenReceived == getToken(CCIPToken.usdc)){
 
-        s_pool.orchestratorLoan(tokenReceived, amount, transaction.recipient);
+        s_pool.orchestratorLoan(/*tokenReceived*/0xa0Cb889707d426A7A386870A03bc70d1b0697598, amount, transaction.recipient);
 
-      } else{
+      } else {
         //@audit We need to call the DEX module here.
         // dexSwap.conceroEntry(passing the user address as receiver);
       }

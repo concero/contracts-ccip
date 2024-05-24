@@ -5,6 +5,8 @@ export type CLFSecrets = {
   WALLET_PRIVATE_KEY: envString;
   INFURA_API_KEY: envString;
   ALCHEMY_API_KEY: envString;
+  SRC_JS: string;
+  DST_JS: string;
 };
 
 const secrets: CLFSecrets = {

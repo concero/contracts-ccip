@@ -108,7 +108,7 @@ contract Concero is ConceroCCIP {
     }
 
     uint256 functionsFeeInLink = getFunctionsFeeInLink(dstChainSelector);
-    return (functionsFeeInLink * uint256(linkToUsdcRate)) / 1 ether;
+    return (functionsFeeInLink * uint256(linkToUsdcRate)) / 1 ether; //todo: we're dividing by 18 decimals, not 6 for USDC. this is critical
   }
 
   function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) public view returns (uint256) {

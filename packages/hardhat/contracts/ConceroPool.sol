@@ -63,14 +63,17 @@ contract ConceroPool is CCIPReceiver, Ownable {
   mapping(address token => address senderAllowed) public s_approvedSenders;
   ///@notice Mapping to keep track of balances of user on a given token
   mapping(address token => mapping(address user => uint256 balance)) public s_userBalances;
-  ///@notice Mapping to keep track of allowed pool addresses
-  mapping(uint64 chainId => address poolAddress) public s_allowedPool;
+  ///@notice Mapping to keep track of allowed pool senders
+  mapping(uint64 chainId => mapping(address poolAddress => uint256)) public s_allowedPool;
+  ///@notice Mapping to keep track of allowed pool receiver
+  mapping(uint64 chainId => address pool) public s_poolReceiver;
   ///@notice Mapping to keep track of withdraw requests
   mapping(address token => WithdrawRequests) private s_withdrawWaitlist;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
+
   ///@notice event emitted when an Orchestrator is updated
   event ConceroPool_OrchestratorUpdated(address previousOrchestrator, address orchestrator);
   ///@notice event emitted when a Messenger is updated
@@ -80,7 +83,9 @@ contract ConceroPool is CCIPReceiver, Ownable {
   ///@notice event emitted when an approved sender is updated
   event ConceroPool_ApprovedSenderUpdated(address token, address indexed newSender);
   ///@notice event emitted when a Concero contract is added
-  event ConceroPool_ConceroContractUpdated(uint64 chainSelector, address conceroContract);
+  event ConceroPool_ConceroContractUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
+  ///@notice event emitted when a Concero pool is added
+  event ConceroPool_PoolReceiverUpdated(uint64 chainSelector, address pool);
   ///@notice event emitted when value is deposited into the contract
   event ConceroPool_Deposited(address indexed token, address indexed from, uint256 amount);
   ///@notice event emitted when a new withdraw request is made
@@ -88,9 +93,9 @@ contract ConceroPool is CCIPReceiver, Ownable {
   ///@notice event emitted when a value is withdraw from the contract
   event ConceroPool_Withdrawn(address to, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain tx is received.
-  event ConceroPool_CCIPReceived(bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, uint256 data, address token, uint256 amount);
+  event ConceroPool_CCIPReceived(bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain message is sent.
-  event ConceroPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, bytes data, address linkToken, uint256 fees);
+  event ConceroPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
 
   ///////////////
   ///MODIFIERS///
@@ -110,7 +115,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _sender address of the sender contract
    */
   modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
-    if (s_allowedPool[_chainSelector] != _sender) revert ConceroPool_SenderNotAllowed(_sender);
+    if (s_allowedPool[_chainSelector][_sender] != APPROVED) revert ConceroPool_SenderNotAllowed(_sender);
     _;
   }
 
@@ -156,14 +161,28 @@ contract ConceroPool is CCIPReceiver, Ownable {
   /**
    * @notice function to manage the Cross-chains Concero contracts
    * @param _chainSelector chain identifications
-   * @param _allowedPool address of the Cross-chains Concero contracts
+   * @param _contractAddress address of the Cross-chains Concero contracts
+   * @param _isAllowed 1 == allowed | Any other value == not allowed
    * @dev only owner can call it
    * @dev it's payable to save some gas.
   */
-  function setConceroPool(uint64 _chainSelector, address _allowedPool) external payable onlyOwner {
-    s_allowedPool[_chainSelector] = _allowedPool;
+  function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable onlyOwner {
+    s_allowedPool[_chainSelector][_contractAddress] = _isAllowed;
 
-    emit ConceroPool_ConceroContractUpdated(_chainSelector, _allowedPool);
+    emit ConceroPool_ConceroContractUpdated(_chainSelector, _contractAddress, _isAllowed);
+  }
+
+  /**
+   * @notice function to manage the Cross-chains Concero contracts
+   * @param _chainSelector chain identifications
+   * @param _pool address of the Cross-chains Concero contracts
+   * @dev only owner can call it
+   * @dev it's payable to save some gas.
+  */
+  function setConceroPoolReceiver(uint64 _chainSelector, address _pool) external payable onlyOwner{
+    s_poolReceiver[_chainSelector] = _pool;
+
+    emit ConceroPool_PoolReceiverUpdated(_chainSelector, _pool);
   }
 
   /**
@@ -303,14 +322,12 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _destinationChainSelector Chain Id of the chain that will receive the amount
    * @param _token  address of the token to be sent
    * @param _amount amount of the token to be sent
-   * @param _data A uint256 that can be sent as data.
-   * @dev Only data that can be sent is the uint256 because the the `_ccipReceive` function can only deal with this specific decoding
    */
-  function ccipSendToPool(uint64 _destinationChainSelector, address _token, uint256 _amount, bytes memory _data) external returns(bytes32 messageId) {
+  function ccipSendToPool(uint64 _destinationChainSelector, address _token, uint256 _amount) external returns(bytes32 messageId) {
 
     if(msg.sender != s_messengerAddress) revert ConceroPool_Unauthorized();
 
-    if(s_allowedPool[_destinationChainSelector] == address(0)) revert ConceroPool_DestinationNotAllowed();
+    if(s_poolReceiver[_destinationChainSelector] == address(0)) revert ConceroPool_DestinationNotAllowed();
 
     Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
 
@@ -322,8 +339,8 @@ contract ConceroPool is CCIPReceiver, Ownable {
     tokenAmounts[0] = tokenAmount;
 
     Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
-        receiver: abi.encode(s_allowedPool[_destinationChainSelector]),
-        data: _data,
+        receiver: abi.encode(s_poolReceiver[_destinationChainSelector]),
+        data: "",
         tokenAmounts: tokenAmounts,
         extraArgs: Client._argsToBytes(
             Client.EVMExtraArgsV1({gasLimit: 300_000})
@@ -333,11 +350,11 @@ contract ConceroPool is CCIPReceiver, Ownable {
 
     uint256 fees = i_router.getFee(_destinationChainSelector, evm2AnyMessage);
 
-    emit ConceroPool_MessageSent(messageId, _destinationChainSelector, s_allowedPool[_destinationChainSelector], _data, address(i_linkToken), fees);
+    emit ConceroPool_MessageSent(messageId, _destinationChainSelector, s_poolReceiver[_destinationChainSelector], address(i_linkToken), fees);
 
     if (fees > i_linkToken.balanceOf(address(this))) revert ConceroPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
-    IERC20(_token).approve(address(i_router), _amount);
+    IERC20(_token).safeApprove(address(i_router), _amount);
     i_linkToken.approve(address(i_router), fees);
 
     messageId = i_router.ccipSend(_destinationChainSelector, evm2AnyMessage);
@@ -349,6 +366,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _amount being loaned
    * @param _receiver address of the user that will receive the amount
    * @dev only the Orchestrator contract should be able to call this function
+   * @dev for ether transfer, the _receiver need to be known and trusted
   */
   function orchestratorLoan(address _token, uint256 _amount, address _receiver) external {
     if(msg.sender != s_conceroOrchestrator) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
@@ -357,7 +375,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
     if(_token == address(0)){
       if(_amount > address(this).balance) revert ConceroPool_InsufficientBalance();
 
-      (bool sent, ) = s_conceroOrchestrator.call{value: _amount}("");
+      (bool sent, ) = _receiver.call{value: _amount}("");
       if(!sent) revert ConceroPool_TransferFailed();
 
     }else {
@@ -376,20 +394,21 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @dev only allowed chains and sender must be able to deliver a message in this function.
   */
   function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address))) {
+    address receivedToken = any2EvmMessage.destTokenAmounts[0].token;
+    address allowedSenderToCompoundLpFee = s_approvedSenders[receivedToken];
 
     if(any2EvmMessage.data.length > 0){
       uint256 receivedAmount = abi.decode(any2EvmMessage.data, (uint256));
-      address receivedToken = any2EvmMessage.destTokenAmounts[0].token;
-      address allowedSenderToCompoundLpFee = s_approvedSenders[receivedToken];
 
       s_userBalances[receivedToken][allowedSenderToCompoundLpFee] = s_userBalances[receivedToken][allowedSenderToCompoundLpFee] + receivedAmount;
+    } else {
+      s_userBalances[receivedToken][s_messengerAddress] = s_userBalances[receivedToken][s_messengerAddress] + any2EvmMessage.destTokenAmounts[0].amount;
     }
     
     emit ConceroPool_CCIPReceived(
       any2EvmMessage.messageId,
       any2EvmMessage.sourceChainSelector,
       abi.decode(any2EvmMessage.sender, (address)),
-      abi.decode(any2EvmMessage.data, (uint256)),
       any2EvmMessage.destTokenAmounts[0].token,
       any2EvmMessage.destTokenAmounts[0].amount
     );

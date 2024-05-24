@@ -132,20 +132,36 @@ contract ConceroPoolTest is Test {
         concero.setMessenger(Orchestrator);
     }
 
-    ///setConceroPool///
-    event ConceroPool_ConceroContractUpdated(uint64 chainSelector, address conceroContract);
+    ///setConceroContractSender///
+    event ConceroPool_ConceroContractUpdated(uint64 chainSelector, address conceroContract, uint256);
     function test_setConceroPool() public {
         vm.prank(Barba);
         vm.expectEmit();
-        emit ConceroPool_ConceroContractUpdated(destinationChainSelector, address(conceroReceiver));
-        concero.setConceroPool(destinationChainSelector, address(conceroReceiver));
+        emit ConceroPool_ConceroContractUpdated(destinationChainSelector, address(conceroReceiver), 1);
+        concero.setConceroContractSender(destinationChainSelector, address(conceroReceiver), 1);
 
-        assertEq(concero.s_allowedPool(destinationChainSelector), address(conceroReceiver));
+        assertEq(concero.s_allowedPool(destinationChainSelector, address(conceroReceiver)), 1);
     }
 
     function test_revertSetConceroPool() public {
         vm.expectRevert("Ownable: caller is not the owner");
-        concero.setConceroPool(destinationChainSelector, address(conceroReceiver));
+        concero.setConceroContractSender(destinationChainSelector, address(conceroReceiver), 1);
+    }
+
+    //setConceroPoolReceiver///
+    event ConceroPool_PoolReceiverUpdated(uint64 chainSelector, address contractAddress);
+    function test_setConceroPoolReceiver() public {
+        vm.prank(Barba);
+        vm.expectEmit();
+        emit ConceroPool_PoolReceiverUpdated(destinationChainSelector, address(conceroReceiver));
+        concero.setConceroPoolReceiver(destinationChainSelector, address(conceroReceiver));
+
+        assertEq(concero.s_poolReceiver(destinationChainSelector), address(conceroReceiver));
+    }
+
+    function test_revertSetConceroPoolReceiver() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        concero.setConceroPoolReceiver(destinationChainSelector, address(conceroReceiver));
     }
 
     ///setSupportedToken///
@@ -763,8 +779,8 @@ contract ConceroPoolTest is Test {
 
         assertEq(mockUSDC.balanceOf(address(concero)), 500 ether);
         assertEq(address(concero).balance, 500 ether);
-        assertEq(mockUSDC.balanceOf(Orchestrator), 500 ether);
-        assertEq(Orchestrator.balance, 500 ether);
+        assertEq(mockUSDC.balanceOf(UserReceiver), 500 ether);
+        assertEq(UserReceiver.balance, 500 ether);
         assertEq(concero.availableBalanceNow(address(mockUSDC)), 500 ether);
         assertEq(concero.availableBalanceNow(address(0)), 500 ether);
     }
@@ -782,36 +798,41 @@ contract ConceroPoolTest is Test {
 
         //========= Set the Concero Contracts allowed to receive C-chain messages
         vm.startPrank(Barba);
-        concero.setConceroPool(destinationChainSelector, address(conceroReceiver));
-        conceroReceiver.setConceroPool(destinationChainSelector, address(concero));
+        concero.setConceroContractSender(destinationChainSelector, address(conceroReceiver), 1);
+        concero.setConceroPoolReceiver(destinationChainSelector, address(conceroReceiver));
+        conceroReceiver.setConceroContractSender(destinationChainSelector, address(concero), 1);
+        conceroReceiver.setConceroPoolReceiver(destinationChainSelector, address(concero));
 
         //========= Mock the messenger address that will be allowed to call the function
+        concero.setMessenger(Messenger);
         conceroReceiver.setMessenger(Messenger);
         vm.stopPrank();
 
         //========= Mock LP Fee just to test
-        uint256 lpFee = (1 ether * 1) / 10_000; // 0.01
-        assertEq(lpFee, 100_000_000_000_000); //100_000_000_000_000
+        uint256 amount = 1 ether;
 
         //========= Call ccipSendToPool function
         vm.startPrank(Messenger);
-        conceroReceiver.ccipSendToPool(destinationChainSelector, address(cccipToken), lpFee, "");
+        conceroReceiver.ccipSendToPool(destinationChainSelector, address(cccipToken), amount);
         vm.stopPrank();
 
         //========= Checks if value is delivered as expected
-        assertEq(cccipToken.balanceOf(address(conceroReceiver)), 1 ether - lpFee);
-        assertEq(cccipToken.balanceOf(address(concero)), 1 ether + lpFee);
+        assertEq(cccipToken.balanceOf(address(conceroReceiver)), 0);
+        assertEq(cccipToken.balanceOf(address(concero)), 1 ether + amount);
 
         //========= Checks if the value is ignored on the destination as expected
         assertEq(concero.s_userBalances(address(cccipToken), Puka), 0);
+        assertEq(concero.s_userBalances(address(cccipToken), Messenger), amount);
     }
 
-    ///ccipSendToPool & ccipReceiver for compound LP Rewards///
+    ///ccipSendToPool & ccipReceiver transfer liquidity///
     function test_ccipCompoundFee() public setApprovals{
         //========= Set the Concero Contracts allowed to receive C-chain messages
         vm.startPrank(Barba);
-        concero.setConceroPool(destinationChainSelector, address(conceroReceiver));
-        conceroReceiver.setConceroPool(destinationChainSelector, address(concero));
+        concero.setConceroContractSender(destinationChainSelector, address(conceroReceiver), 1);
+        concero.setConceroPoolReceiver(destinationChainSelector, address(conceroReceiver));
+        conceroReceiver.setConceroContractSender(destinationChainSelector, address(concero), 1);
+        conceroReceiver.setConceroPoolReceiver(destinationChainSelector, address(concero));
 
         //========= Mock the messenger address that will be allowed to call the function
         conceroReceiver.setMessenger(Messenger);
@@ -833,22 +854,21 @@ contract ConceroPoolTest is Test {
 
         //========= Call ccipSendToPool function
         vm.prank(Messenger);
-        conceroReceiver.ccipSendToPool(destinationChainSelector, address(cccipToken), valueToSend, abi.encode(lpFee));
+        conceroReceiver.ccipSendToPool(destinationChainSelector, address(cccipToken), valueToSend);
 
         //========= Checks if value is delivered as expected
         assertEq(cccipToken.balanceOf(address(conceroReceiver)), 0);
         assertEq(cccipToken.balanceOf(address(concero)), 3 ether);
-
-        //========= Checks if the value is ignored on the destination as expected
-        assertEq(concero.s_userBalances(address(cccipToken), Puka), 1 ether + lpFee);
     }
 
     error ConceroPool_DestinationNotAllowed();
     function test_revertCCIPSendToPool() public setApprovals{
         //========= Set the Concero Contracts allowed to receive C-chain messages
         vm.startPrank(Barba);
-        concero.setConceroPool(destinationChainSelector, address(conceroReceiver));
-        conceroReceiver.setConceroPool(destinationChainSelector, address(concero));
+        concero.setConceroContractSender(destinationChainSelector, address(conceroReceiver), 1);
+        concero.setConceroPoolReceiver(destinationChainSelector, address(conceroReceiver));
+        conceroReceiver.setConceroContractSender(destinationChainSelector, address(concero), 1);
+        conceroReceiver.setConceroPoolReceiver(destinationChainSelector, address(concero));
 
         //========= Mock the messenger address that will be allowed to call the function
         conceroReceiver.setMessenger(Messenger);
@@ -857,19 +877,19 @@ contract ConceroPoolTest is Test {
         //========= Call ccipSendToPool function from an arbitrary not allowed address
         vm.startPrank(Barba);
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_Unauthorized.selector));
-        conceroReceiver.ccipSendToPool(destinationChainSelector, address(cccipToken), 0, "");
+        conceroReceiver.ccipSendToPool(destinationChainSelector, address(cccipToken), 0);
         vm.stopPrank();
 
         //========= Call ccipSendToPool function passing a not allowed destination
         vm.startPrank(Messenger);
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_DestinationNotAllowed.selector));
-        conceroReceiver.ccipSendToPool(1651516161, address(cccipToken), 0, "");
+        conceroReceiver.ccipSendToPool(1651516161, address(cccipToken), 0);
         vm.stopPrank();
 
         //========= Call ccipSendToPool function passing a not allowed destination
         vm.startPrank(Messenger);
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_DestinationNotAllowed.selector));
-        conceroReceiver.ccipSendToPool(1651516161, address(0), 0, "");
+        conceroReceiver.ccipSendToPool(1651516161, address(0), 0);
         vm.stopPrank();
 
         //========= Mock LP Fee just to test
@@ -879,14 +899,11 @@ contract ConceroPoolTest is Test {
 
         //========= Call ccipSendToPool function passing a not allowed destination
         vm.startPrank(Messenger);
-        conceroReceiver.ccipSendToPool(destinationChainSelector, address(cccipToken), lpFee, data);
+        conceroReceiver.ccipSendToPool(destinationChainSelector, address(cccipToken), lpFee);
         vm.stopPrank();
 
         //========= Checks if value is delivered as expected
         assertEq(cccipToken.balanceOf(address(conceroReceiver)), 1 ether - lpFee);
         assertEq(cccipToken.balanceOf(address(concero)), 1 ether + lpFee);
-
-        //========= Checks if the value is correctly stored on the destination
-        assertEq(concero.s_userBalances(address(cccipToken), Puka), lpFee);
     }
 }

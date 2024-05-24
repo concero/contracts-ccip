@@ -94,6 +94,7 @@ interface IFunctions is IConceroCommon {
     address token,
     uint256 amount
   );
+  
   event ConceroFunctions_FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
   event ConceroFunctions_ConceroPoolAddressUpdated(address previousAddress, address pool);
   event ConceroFunctions_DonSecretVersionUpdated(uint64 previousDonSecretVersion, uint64 newDonSecretVersion);

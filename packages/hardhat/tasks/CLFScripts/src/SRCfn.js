@@ -120,7 +120,6 @@ async function main() {
 			}
 		}
 
-		console.log('dstChainSelector', dstChainSelector);
 		const dstUrl =
 			chainSelectors[dstChainSelector].urls[Math.floor(Math.random() * chainSelectors[dstChainSelector].urls.length)];
 		const provider = new FunctionsJsonRpcProvider(dstUrl);

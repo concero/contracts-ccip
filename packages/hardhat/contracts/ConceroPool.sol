@@ -56,14 +56,13 @@ contract ConceroPool is CCIPReceiver, Ownable {
   ///@notice Chainlink CCIP Router
   IRouterClient private immutable i_router;
 
-  //1 == True
-  ///@notice Mapping to keep track of allowed tokens
+  ///@notice Mapping to keep track of allowed tokens ~ 1 == True
   mapping(address token => uint256 isApproved) public s_isTokenSupported;
   ///@notice Mapping to keep track of allowed senders on a given token
   mapping(address token => address senderAllowed) public s_approvedSenders;
   ///@notice Mapping to keep track of balances of user on a given token
   mapping(address token => mapping(address user => uint256 balance)) public s_userBalances;
-  ///@notice Mapping to keep track of allowed pool senders
+  ///@notice Mapping to keep track of allowed pool senders ~ 1 == True
   mapping(uint64 chainId => mapping(address poolAddress => uint256)) public s_allowedPool;
   ///@notice Mapping to keep track of allowed pool receiver
   mapping(uint64 chainId => address pool) public s_poolReceiver;
@@ -119,9 +118,9 @@ contract ConceroPool is CCIPReceiver, Ownable {
     _;
   }
 
-  constructor(address _link, address _ccipRouter)  CCIPReceiver(_ccipRouter){
-      i_linkToken = LinkTokenInterface(_link);
-      i_router = IRouterClient(_ccipRouter);
+  constructor(address _link, address _ccipRouter) CCIPReceiver(_ccipRouter) {
+    i_linkToken = LinkTokenInterface(_link);
+    i_router = IRouterClient(_ccipRouter);
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -137,8 +136,8 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _orchestrator the address from the orchestrator
    * @dev only owner can call it
    * @dev it's payable to save some gas.
-  */
-  function setConceroOrchestrator(address _orchestrator) external payable onlyOwner{
+   */
+  function setConceroOrchestrator(address _orchestrator) external payable onlyOwner {
     address previousOrchestrator = s_conceroOrchestrator;
 
     s_conceroOrchestrator = _orchestrator;
@@ -150,7 +149,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @notice Function to update the messenger address
    * @param _messenger the address that will call some restrict functions
    */
-  function setMessenger(address _messenger) external payable onlyOwner{
+  function setMessenger(address _messenger) external payable onlyOwner {
     address previousMessenger = s_messengerAddress;
 
     s_messengerAddress = _messenger;
@@ -165,7 +164,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _isAllowed 1 == allowed | Any other value == not allowed
    * @dev only owner can call it
    * @dev it's payable to save some gas.
-  */
+   */
   function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable onlyOwner {
     s_allowedPool[_chainSelector][_contractAddress] = _isAllowed;
 
@@ -178,8 +177,8 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _pool address of the Cross-chains Concero contracts
    * @dev only owner can call it
    * @dev it's payable to save some gas.
-  */
-  function setConceroPoolReceiver(uint64 _chainSelector, address _pool) external payable onlyOwner{
+   */
+  function setConceroPoolReceiver(uint64 _chainSelector, address _pool) external payable onlyOwner {
     s_poolReceiver[_chainSelector] = _pool;
 
     emit ConceroPool_PoolReceiverUpdated(_chainSelector, _pool);
@@ -191,7 +190,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _isApproved 1 == True | Any other value == False
    * @dev only owner can call it
    * @dev it's payable to save some gas.
-  */
+   */
   function setSupportedToken(address _token, uint256 _isApproved) external payable onlyOwner {
     s_isTokenSupported[_token] = _isApproved;
 
@@ -204,13 +203,13 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _approvedSender address of the depositor
    * @dev only owner can call it
    * @dev it's payable to save some gas.
-  */
+   */
   function setApprovedSender(address _token, address _approvedSender) external payable onlyOwner {
     if (s_isTokenSupported[_token] != APPROVED) revert ConceroPool_TokenNotSupported();
 
     s_approvedSenders[_token] = _approvedSender;
 
-    emit ConceroPool_ApprovedSenderUpdated( _token, _approvedSender);
+    emit ConceroPool_ApprovedSenderUpdated(_token, _approvedSender);
   }
 
   ////////////////////////
@@ -220,11 +219,11 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @notice function to deposit Ether
    * @dev The address(0) is hardcode as ether
    * @dev only approved address can call this function
-  */
+   */
   function depositEther() external payable onlyApprovedSender(address(0)) {
     uint256 valueToBeTransfered = msg.value;
-    
-    s_userBalances[address(0)][msg.sender] = s_userBalances[address(0)][msg.sender]+ valueToBeTransfered;
+
+    s_userBalances[address(0)][msg.sender] = s_userBalances[address(0)][msg.sender] + valueToBeTransfered;
 
     emit ConceroPool_Deposited(address(0), msg.sender, valueToBeTransfered);
   }
@@ -234,11 +233,10 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _token the address of the token to be deposited
    * @param _amount the amount to be deposited
    * @dev only approved address can call this function
-  */
+   */
   function depositToken(address _token, uint256 _amount) external onlyApprovedSender(_token) {
-
     s_userBalances[_token][msg.sender] = s_userBalances[_token][msg.sender] + _amount;
-    
+
     emit ConceroPool_Deposited(_token, msg.sender, _amount);
 
     IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
@@ -251,69 +249,54 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @dev if the value is bigger than the threshold, a request will be created
    * @dev if the value is less than the threshold, the withdraw will procced right away.
    */
-  function withdrawLiquidityRequest(address _token, uint256 _amount) external onlyApprovedSender(_token){
-    if(_amount > s_userBalances[_token][msg.sender]) revert ConceroPool_InsufficientBalance();
+  function withdrawLiquidityRequest(address _token, uint256 _amount) external onlyApprovedSender(_token) {
+    if (_amount > s_userBalances[_token][msg.sender]) revert ConceroPool_InsufficientBalance();
 
     WithdrawRequests memory request = s_withdrawWaitlist[_token];
 
-      if(_token == address(0)){
+    if (_token == address(0)) {
+      uint256 etherBalance = address(this).balance;
 
-        uint256 etherBalance = address(this).balance;
+      if (request.isActiv) {
+        if (etherBalance >= request.condition) {
+          s_withdrawWaitlist[_token].isActiv = false;
+          s_withdrawWaitlist[_token].isFulfilled = true;
 
-        if(request.isActiv){
-          if(etherBalance >= request.condition){
-
-            s_withdrawWaitlist[_token].isActiv = false;
-            s_withdrawWaitlist[_token].isFulfilled = true;
-
-            _withdrawEther(_amount);
-          } else {
-            revert ConceroPool_ActivRequestNotFulfilledYet();
-          }
-        }else{
-          if(_amount > (etherBalance * WITHDRAW_THRESHOLD)/100){
-
-            uint256 condition = (etherBalance - ((etherBalance * WITHDRAW_THRESHOLD)/100)) + _amount;
-
-            s_withdrawWaitlist[_token] = WithdrawRequests({
-              condition: condition,
-              amount: _amount,
-              isActiv: true,
-              isFulfilled: false
-            });
-            emit ConceroPool_WithdrawRequest(msg.sender, _token, condition, _amount); //CLF will listen to this.
-          } else{
-            _withdrawEther(_amount);
-          }
+          _withdrawEther(_amount);
+        } else {
+          revert ConceroPool_ActivRequestNotFulfilledYet();
         }
       } else {
-        uint256 erc20Balance = IERC20(_token).balanceOf(address(this));
-        if(request.isActiv){
-          if( erc20Balance >= request.condition){
+        if (_amount > (etherBalance * WITHDRAW_THRESHOLD) / 100) {
+          uint256 condition = (etherBalance - ((etherBalance * WITHDRAW_THRESHOLD) / 100)) + _amount;
 
-            s_withdrawWaitlist[_token].isActiv = false;
-            s_withdrawWaitlist[_token].isFulfilled = true;
-
-            _withdrawToken(_token, _amount);
-          } else {
-            revert ConceroPool_ActivRequestNotFulfilledYet();
-          }
+          s_withdrawWaitlist[_token] = WithdrawRequests({condition: condition, amount: _amount, isActiv: true, isFulfilled: false});
+          emit ConceroPool_WithdrawRequest(msg.sender, _token, condition, _amount); //CLF will listen to this.
         } else {
-          if(_amount > (erc20Balance * WITHDRAW_THRESHOLD)/100){
-
-            uint256 condition = (erc20Balance - ((erc20Balance * WITHDRAW_THRESHOLD)/100)) + _amount;
-
-            s_withdrawWaitlist[_token] = WithdrawRequests({
-              condition: condition,
-              amount: _amount,
-              isActiv: true,
-              isFulfilled: false
-            });
-            emit ConceroPool_WithdrawRequest(msg.sender, _token, condition, _amount); //CLF will listen to this.
-          } else{
-            _withdrawToken(_token, _amount);
-          }
+          _withdrawEther(_amount);
         }
+      }
+    } else {
+      uint256 erc20Balance = IERC20(_token).balanceOf(address(this));
+      if (request.isActiv) {
+        if (erc20Balance >= request.condition) {
+          s_withdrawWaitlist[_token].isActiv = false;
+          s_withdrawWaitlist[_token].isFulfilled = true;
+
+          _withdrawToken(_token, _amount);
+        } else {
+          revert ConceroPool_ActivRequestNotFulfilledYet();
+        }
+      } else {
+        if (_amount > (erc20Balance * WITHDRAW_THRESHOLD) / 100) {
+          uint256 condition = (erc20Balance - ((erc20Balance * WITHDRAW_THRESHOLD) / 100)) + _amount;
+
+          s_withdrawWaitlist[_token] = WithdrawRequests({condition: condition, amount: _amount, isActiv: true, isFulfilled: false});
+          emit ConceroPool_WithdrawRequest(msg.sender, _token, condition, _amount); //CLF will listen to this.
+        } else {
+          _withdrawToken(_token, _amount);
+        }
+      }
     }
   }
 
@@ -323,29 +306,23 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _token  address of the token to be sent
    * @param _amount amount of the token to be sent
    */
-  function ccipSendToPool(uint64 _destinationChainSelector, address _token, uint256 _amount) external returns(bytes32 messageId) {
+  function ccipSendToPool(uint64 _destinationChainSelector, address _token, uint256 _amount) external returns (bytes32 messageId) {
+    if (msg.sender != s_messengerAddress) revert ConceroPool_Unauthorized();
 
-    if(msg.sender != s_messengerAddress) revert ConceroPool_Unauthorized();
-
-    if(s_poolReceiver[_destinationChainSelector] == address(0)) revert ConceroPool_DestinationNotAllowed();
+    if (s_poolReceiver[_destinationChainSelector] == address(0)) revert ConceroPool_DestinationNotAllowed();
 
     Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
 
-    Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({
-        token: _token,
-        amount: _amount
-    });
+    Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({token: _token, amount: _amount});
 
     tokenAmounts[0] = tokenAmount;
 
     Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
-        receiver: abi.encode(s_poolReceiver[_destinationChainSelector]),
-        data: "",
-        tokenAmounts: tokenAmounts,
-        extraArgs: Client._argsToBytes(
-            Client.EVMExtraArgsV1({gasLimit: 300_000})
-        ),
-        feeToken: address(i_linkToken)
+      receiver: abi.encode(s_poolReceiver[_destinationChainSelector]),
+      data: "",
+      tokenAmounts: tokenAmounts,
+      extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
+      feeToken: address(i_linkToken)
     });
 
     uint256 fees = i_router.getFee(_destinationChainSelector, evm2AnyMessage);
@@ -367,19 +344,18 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _receiver address of the user that will receive the amount
    * @dev only the Orchestrator contract should be able to call this function
    * @dev for ether transfer, the _receiver need to be known and trusted
-  */
+   */
   function orchestratorLoan(address _token, uint256 _amount, address _receiver) external {
-    if(msg.sender != s_conceroOrchestrator) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
-    if(_receiver == address(0)) revert ConceroPool_InvalidAddress();
+    if (msg.sender != s_conceroOrchestrator) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
+    if (_receiver == address(0)) revert ConceroPool_InvalidAddress();
 
-    if(_token == address(0)){
-      if(_amount > address(this).balance) revert ConceroPool_InsufficientBalance();
+    if (_token == address(0)) {
+      if (_amount > address(this).balance) revert ConceroPool_InsufficientBalance();
 
       (bool sent, ) = _receiver.call{value: _amount}("");
-      if(!sent) revert ConceroPool_TransferFailed();
-
-    }else {
-      if(_amount > IERC20(_token).balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
+      if (!sent) revert ConceroPool_TransferFailed();
+    } else {
+      if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
 
       IERC20(_token).safeTransfer(_receiver, _amount);
     }
@@ -392,19 +368,21 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @notice CCIP function to receive bridged values
    * @param any2EvmMessage the CCIP message
    * @dev only allowed chains and sender must be able to deliver a message in this function.
-  */
-  function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address))) {
+   */
+  function _ccipReceive(
+    Client.Any2EVMMessage memory any2EvmMessage
+  ) internal override onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address))) {
     address receivedToken = any2EvmMessage.destTokenAmounts[0].token;
     address allowedSenderToCompoundLpFee = s_approvedSenders[receivedToken];
 
-    if(any2EvmMessage.data.length > 0){
+    if (any2EvmMessage.data.length > 0) {
       uint256 receivedAmount = abi.decode(any2EvmMessage.data, (uint256));
 
       s_userBalances[receivedToken][allowedSenderToCompoundLpFee] = s_userBalances[receivedToken][allowedSenderToCompoundLpFee] + receivedAmount;
     } else {
       s_userBalances[receivedToken][s_messengerAddress] = s_userBalances[receivedToken][s_messengerAddress] + any2EvmMessage.destTokenAmounts[0].amount;
     }
-    
+
     emit ConceroPool_CCIPReceived(
       any2EvmMessage.messageId,
       any2EvmMessage.sourceChainSelector,
@@ -422,7 +400,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _amount the ether amout to withdraw
    * @dev The address(0) is hardcode as ether
    * @dev this is a private function that can only be called throught `withdrawLiquidityRequest`
-  */
+   */
   function _withdrawEther(uint256 _amount) private onlyApprovedSender(address(0)) {
     if (_amount > s_userBalances[address(0)][msg.sender] || _amount > address(this).balance) revert ConceroPool_InsufficientBalance();
 
@@ -431,7 +409,7 @@ contract ConceroPool is CCIPReceiver, Ownable {
     emit ConceroPool_Withdrawn(msg.sender, address(0), _amount);
 
     (bool sent, ) = msg.sender.call{value: _amount}("");
-    if(!sent) revert ConceroPool_TransferFailed();
+    if (!sent) revert ConceroPool_TransferFailed();
   }
 
   /**
@@ -439,13 +417,13 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _token address of the token to be withdraw
    * @param _amount the total amount to be withdraw
    * @dev this is a private function that can only be called throught `withdrawLiquidityRequest`
-  */
+   */
   function _withdrawToken(address _token, uint256 _amount) private onlyApprovedSender(_token) {
-    if(_amount > IERC20(_token).balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
+    if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
 
     s_userBalances[_token][msg.sender] = s_userBalances[_token][msg.sender] - _amount;
 
-    emit ConceroPool_Withdrawn(msg.sender, _token,  _amount);
+    emit ConceroPool_Withdrawn(msg.sender, _token, _amount);
 
     IERC20(_token).safeTransfer(msg.sender, _amount);
   }
@@ -458,18 +436,17 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @param _token the address of the token
    * @return _contractBalance in the momento of the call.
    * @dev to access ether, _token must be address(0).
-  */
-  function availableBalanceNow(address _token) external view returns(uint256 _contractBalance){
-    if(_token == address(0)){
+   */
+  function availableBalanceNow(address _token) external view returns (uint256 _contractBalance) {
+    if (_token == address(0)) {
       _contractBalance = address(this).balance;
-    }else {
+    } else {
       _contractBalance = IERC20(_token).balanceOf(address(this));
-    }    
-  }
-  
-  //@audit can remove this later
-  function getRequestInfo(address _token) external view returns(WithdrawRequests memory request){
-    request = s_withdrawWaitlist[_token];
+    }
   }
 
+  //@audit can remove this later
+  function getRequestInfo(address _token) external view returns (WithdrawRequests memory request) {
+    request = s_withdrawWaitlist[_token];
+  }
 }

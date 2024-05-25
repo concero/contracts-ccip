@@ -128,7 +128,6 @@ contract Concero is ConceroCCIP {
 
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     //@audit why do we have 1 ether hardcoded here?
-    //@audit How do we pass a "mock" uint256 to calculate fee here?
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType), 1 ether, 0.01 ether , dstChainSelector);
 
     return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
@@ -171,15 +170,15 @@ contract Concero is ConceroCCIP {
     //@audit totalSrcFee is 1000
     uint256 amount = _amount - totalSrcFee;
 
-    //@audit in the future, the receiver must be the DEXSwap pool
+    //@audit in the future, the receiver must be the DEXSwap
     IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-
+    
     //DEXSWAP
 
     bytes32 ccipMessageId = _sendTokenPayLink(_dstChainSelector, _token, amount, totalSrcFee);
 
     emit Concero_CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, amount, _dstChainSelector);
-    //comment it out for local testing
+    //comment it out for foundry local testing
     _sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, amount, _dstChainSelector, _tokenType);
   }
 

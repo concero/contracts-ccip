@@ -37,6 +37,7 @@ const deployConcero: DeployFunction = async function (
     conceroChainIndex,
     linkToken,
     ccipRouter,
+    priceFeed,
   } = chains[name];
 
   const defaultArgs = {
@@ -49,6 +50,7 @@ const deployConcero: DeployFunction = async function (
     conceroChainIndex: conceroChainIndex,
     linkToken: linkToken,
     ccipRouter: ccipRouter,
+    priceFeed: priceFeed,
   };
 
   // Merge defaultArgs with constructorArgs
@@ -67,6 +69,7 @@ const deployConcero: DeployFunction = async function (
       args.conceroChainIndex,
       args.linkToken,
       args.ccipRouter,
+      args.priceFeed,
     ],
     autoMine: true,
   })) as Deployment;

@@ -4,6 +4,7 @@ import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import addCLFConsumer from "../tasks/sub/add";
 import log from "../utils/log";
+import secrets from "../constants/CLFSecrets";
 
 interface ConstructorArgs {
   slotId?: number;
@@ -17,6 +18,12 @@ interface ConstructorArgs {
   ccipRouter?: string;
 }
 
+function getHashSum(sourceCode: string) {
+  const hash = require("crypto").createHash("sha256");
+  hash.update(sourceCode, "utf8");
+  return hash.digest("hex");
+}
+
 /* run with: yarn deploy --network avalancheFuji --tags Concero */
 const deployConcero: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment,
@@ -28,6 +35,9 @@ const deployConcero: DeployFunction = async function (
 
   if (!chains[name]) throw new Error(`Chain ${name} not supported`);
 
+  console.log(secrets.SRC_JS);
+  console.log(getHashSum(secrets.SRC_JS), getHashSum(secrets.DST_JS));
+  return;
   const {
     functionsRouter,
     donHostedSecretsVersion,
@@ -51,6 +61,11 @@ const deployConcero: DeployFunction = async function (
     linkToken: linkToken,
     ccipRouter: ccipRouter,
     priceFeed: priceFeed,
+    priceFeed: priceFeed,
+    jsCodeHashSum: {
+      src: "0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124",
+      dst: "0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173",
+    },
   };
 
   // Merge defaultArgs with constructorArgs
@@ -70,6 +85,8 @@ const deployConcero: DeployFunction = async function (
       args.linkToken,
       args.ccipRouter,
       args.priceFeed,
+      args.priceFeed,
+      args.jsCodeHashSum,
     ],
     autoMine: true,
   })) as Deployment;

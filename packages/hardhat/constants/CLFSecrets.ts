@@ -1,4 +1,7 @@
 import fs from "fs";
+import { buildScript } from "../tasks/script/build";
+import log from "../utils/log";
+import path from "path";
 
 type envString = string | undefined;
 export type CLFSecrets = {
@@ -8,13 +11,25 @@ export type CLFSecrets = {
   SRC_JS: string;
   DST_JS: string;
 };
-
+const jsPath = "./tasks/CLFScripts";
 const secrets: CLFSecrets = {
   WALLET_PRIVATE_KEY: process.env.SECOND_TEST_WALLET_PRIVATE_KEY,
   INFURA_API_KEY: process.env.INFURA_API_KEY,
   ALCHEMY_API_KEY: process.env.ALCHEMY_API_KEY,
-  SRC_JS: fs.readFileSync("./tasks/CLFScripts/dist/SRCfn.min.js", "utf8"),
-  DST_JS: fs.readFileSync("./tasks/CLFScripts/dist/DSTfn.min.js", "utf8"),
+  SRC_JS: getJS(jsPath, "SRC"),
+  DST_JS: getJS(jsPath, "DST"),
 };
 
 export default secrets;
+
+function getJS(jsPath: string, type: string): string {
+  const source = path.join(jsPath, "src", `${type}.js`);
+  const dist = path.join(jsPath, "dist", `${type}.min.js`);
+
+  if (!fs.existsSync(dist)) {
+    log(`File not found: ${dist}, building...`, "getJS");
+    buildScript(source);
+  }
+
+  return fs.readFileSync(dist, "utf8");
+}

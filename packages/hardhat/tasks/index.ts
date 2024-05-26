@@ -6,6 +6,7 @@ import deployCCIPInfrastructure from "./concero/deployInfra";
 import { fundContract } from "./concero/fundContract";
 import dripBnm from "./concero/dripBnm";
 import clfRequest from "./unused/Functions-consumer";
+import getHashSum from "./getHashSum";
 export default {
   billing,
   consumer,
@@ -15,4 +16,5 @@ export default {
   fundContract,
   dripBnm,
   clfRequest,
+  getHashSum,
 };

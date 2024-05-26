@@ -33,5 +33,3 @@ function getJS(jsPath: string, type: string): string {
 
   return fs.readFileSync(dist, "utf8");
 }
-
-console.log(secrets);

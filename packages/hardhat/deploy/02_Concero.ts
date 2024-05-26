@@ -5,6 +5,7 @@ import updateEnvVariable from "../utils/updateEnvVariable";
 import addCLFConsumer from "../tasks/sub/add";
 import log from "../utils/log";
 import secrets from "../constants/CLFSecrets";
+import getHashSum from "../utils/getHashSum";
 
 interface ConstructorArgs {
   slotId?: number;
@@ -16,12 +17,6 @@ interface ConstructorArgs {
   conceroChainIndex?: number;
   linkToken?: string;
   ccipRouter?: string;
-}
-
-function getHashSum(sourceCode: string) {
-  const hash = require("crypto").createHash("sha256");
-  hash.update(sourceCode, "utf8");
-  return `0x${hash.digest("hex")}`;
 }
 
 /* run with: yarn deploy --network avalancheFuji --tags Concero */

@@ -104,7 +104,7 @@ contract DexSwap is Ownable {
 
     uint256 swapDataLength = _swapData.length;
 
-    for(uint i; i <swapDataLength; ++i){
+    for (uint i; i < swapDataLength; ++i) {
       if (_swapData[i].dexType == DexType.UniswapV2) {
         _swapUniV2Like(_swapData[i].dexData);
       } else if (_swapData[i].dexType == DexType.SushiV3Single) {
@@ -128,9 +128,9 @@ contract DexSwap is Ownable {
    * @dev This function can execute single or multi hop swaps
    */
   function _swapUniV2Like(bytes memory _dexData) private {
-    (address routerAddress, uint256 amountIn, uint256 amountOutMin, address[] memory path, address to, uint256 deadline) = abi.decode(
+    (address routerAddress, uint256 amountIn, uint256 amountOutMin, address[] memory path, uint256 deadline) = abi.decode(
       _dexData,
-      (address, uint256, uint256, address[], address, uint256)
+      (address, uint256, uint256, address[], uint256)
     );
 
     if (s_routerAllowed[routerAddress] != 1) revert DexSwap_RouterNotAllowed();
@@ -140,6 +140,8 @@ contract DexSwap is Ownable {
     IERC20(path[0]).safeTransferFrom(msg.sender, address(this), amountIn);
 
     uint256 balanceAfter = IERC20(path[0]).balanceOf(address(this));
+
+    address to = address(this);
 
     if ((balanceAfter - balanceBefore) == amountIn) {
       IERC20(path[0]).approve(routerAddress, amountIn);
@@ -165,12 +167,11 @@ contract DexSwap is Ownable {
       address tokenIn,
       address tokenOut,
       uint24 fee,
-      address recipient,
       uint256 deadline,
       uint256 amountIn,
       uint256 amountOutMinimum,
       uint160 sqrtPriceLimitX96
-    ) = abi.decode(_dexData, (address, address, address, uint24, address, uint256, uint256, uint256, uint160));
+    ) = abi.decode(_dexData, (address, address, address, uint24, uint256, uint256, uint256, uint160));
 
     if (s_routerAllowed[routerAddress] != 1) revert DexSwap_RouterNotAllowed();
 
@@ -180,7 +181,7 @@ contract DexSwap is Ownable {
       tokenIn: tokenIn,
       tokenOut: tokenOut,
       fee: fee,
-      recipient: recipient,
+      recipient: address(this),
       deadline: deadline,
       amountIn: amountIn,
       amountOutMinimum: amountOutMinimum,
@@ -198,16 +199,10 @@ contract DexSwap is Ownable {
    * @dev This function can execute swap in any protocol compatible with UniV3 that implements the IV3SwapRouter
    */
   function _swapUniV3Single(bytes memory _dexData) private {
-    (
-      address routerAddress,
-      address tokenIn,
-      address tokenOut,
-      uint24 fee,
-      address recipient,
-      uint256 amountIn,
-      uint256 amountOutMinimum,
-      uint160 sqrtPriceLimitX96
-    ) = abi.decode(_dexData, (address, address, address, uint24, address, uint256, uint256, uint160));
+    (address routerAddress, address tokenIn, address tokenOut, uint24 fee, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) = abi.decode(
+      _dexData,
+      (address, address, address, uint24, uint256, uint256, uint160)
+    );
 
     if (s_routerAllowed[routerAddress] != 1) revert DexSwap_RouterNotAllowed();
 
@@ -217,7 +212,7 @@ contract DexSwap is Ownable {
       tokenIn: tokenIn,
       tokenOut: tokenOut,
       fee: fee,
-      recipient: recipient,
+      recipient: address(this),
       amountIn: amountIn,
       amountOutMinimum: amountOutMinimum,
       sqrtPriceLimitX96: sqrtPriceLimitX96
@@ -234,9 +229,9 @@ contract DexSwap is Ownable {
    * @dev This function can execute swap in any protocol compatible with ISwapRouter
    */
   function _swapSushiV3Multi(bytes memory _dexData) private returns (uint256 _amountOut) {
-    (address routerAddress, address tokenIn, bytes memory path, address recipient, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum) = abi.decode(
+    (address routerAddress, address tokenIn, bytes memory path, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum) = abi.decode(
       _dexData,
-      (address, address, bytes, address, uint256, uint256, uint256)
+      (address, address, bytes, uint256, uint256, uint256)
     );
 
     if (s_routerAllowed[routerAddress] != 1) revert DexSwap_RouterNotAllowed();
@@ -245,7 +240,7 @@ contract DexSwap is Ownable {
 
     ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
       path: path,
-      recipient: recipient,
+      recipient: address(this),
       deadline: deadline,
       amountIn: amountIn,
       amountOutMinimum: amountOutMinimum
@@ -266,10 +261,9 @@ contract DexSwap is Ownable {
       address routerAddress,
       address tokenIn, // <@
       bytes memory path,
-      address recipient,
       uint256 amountIn,
       uint256 amountOutMinimum
-    ) = abi.decode(_dexData, (address, address, bytes, address, uint256, uint256));
+    ) = abi.decode(_dexData, (address, address, bytes, uint256, uint256));
 
     if (s_routerAllowed[routerAddress] != 1) revert DexSwap_RouterNotAllowed();
 
@@ -277,7 +271,7 @@ contract DexSwap is Ownable {
 
     IV3SwapRouter.ExactInputParams memory params = IV3SwapRouter.ExactInputParams({
       path: path,
-      recipient: recipient,
+      recipient: address(this),
       amountIn: amountIn,
       amountOutMinimum: amountOutMinimum
     });
@@ -295,9 +289,9 @@ contract DexSwap is Ownable {
   function _swapDrome(bytes memory _dexData) private {
     if (_dexData.length < 1) revert DexSwap_EmptyDexData();
 
-    (address routerAddress, uint256 amountIn, uint256 amountOutMin, IRouter.Route[] memory routes, address to, uint256 deadline) = abi.decode(
+    (address routerAddress, uint256 amountIn, uint256 amountOutMin, IRouter.Route[] memory routes, uint256 deadline) = abi.decode(
       _dexData,
-      (address, uint256, uint256, IRouter.Route[], address, uint256)
+      (address, uint256, uint256, IRouter.Route[], uint256)
     );
 
     if (s_routerAllowed[routerAddress] != 1) revert DexSwap_RouterNotAllowed();
@@ -307,6 +301,8 @@ contract DexSwap is Ownable {
     IERC20(routes[0].from).safeTransferFrom(msg.sender, address(this), amountIn);
 
     uint256 balanceAfter = IERC20(routes[0].from).balanceOf(address(this));
+
+    address to = address(this);
 
     if ((balanceAfter - balanceBefore) == amountIn) {
       IERC20(routes[0].from).approve(routerAddress, amountIn);

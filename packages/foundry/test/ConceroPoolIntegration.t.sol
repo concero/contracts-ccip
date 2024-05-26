@@ -191,7 +191,7 @@ contract ConceroIntegrationPoolTest is Test {
     }
 
     event Concero_CCIPSent();
-    function test_wholeFlow() public setApprovals{
+    function test_wholeFlowOne() public setApprovals{
         //======= LP Deposits USDC on the Main Pool
         vm.startPrank(lp);
         mUSDC.approve(address(pool), POOL_INITIAL_BALANCE);

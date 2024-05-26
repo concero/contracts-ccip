@@ -35,9 +35,6 @@ const deployConcero: DeployFunction = async function (
 
   if (!chains[name]) throw new Error(`Chain ${name} not supported`);
 
-  console.log(secrets.SRC_JS);
-  console.log(getHashSum(secrets.SRC_JS), getHashSum(secrets.DST_JS));
-  return;
   const {
     functionsRouter,
     donHostedSecretsVersion,
@@ -61,7 +58,6 @@ const deployConcero: DeployFunction = async function (
     linkToken: linkToken,
     ccipRouter: ccipRouter,
     priceFeed: priceFeed,
-    priceFeed: priceFeed,
     jsCodeHashSum: {
       src: "0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124",
       dst: "0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173",
@@ -84,7 +80,6 @@ const deployConcero: DeployFunction = async function (
       args.conceroChainIndex,
       args.linkToken,
       args.ccipRouter,
-      args.priceFeed,
       args.priceFeed,
       args.jsCodeHashSum,
     ],

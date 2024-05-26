@@ -11,32 +11,18 @@ import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRoute
 import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
 import {ISwapRouter02, IV3SwapRouter} from "./Interfaces/ISwapRouter02.sol";
+import {IDexSwap} from "./IDexSwap.sol";
 
 error DexSwap_CallerNotAllowed(address caller);
 error DexSwap_EmptyDexData();
 error DexSwap_RouterNotAllowed();
 
-contract DexSwap is Ownable {
+contract DexSwap is IDexSwap, Ownable {
   using SafeERC20 for IERC20;
 
   ///////////////////////
   /// DATA STRUCTURES ///
   ///////////////////////
-  ///@notice Concero Enum to track DEXes
-  enum DexType {
-    UniswapV2, //0
-    SushiV3Single, //1
-    UniswapV3Single, //2
-    SushiV3Multi, //3
-    UniswapV3Multi, //4
-    Aerodrome //5
-  }
-
-  ///@notice Concero Struct to track DEX Data
-  struct SwapData {
-    DexType dexType;
-    bytes dexData; //routerAddress + data to do swap
-  }
 
   event DexSwap_OrchestratorContractUpdated(address previousAddress, address orchestrator);
   event DexSwap_NewRouterAdded(address router, uint256 isAllowed);

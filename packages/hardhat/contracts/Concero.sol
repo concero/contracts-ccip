@@ -1,19 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {ConceroCCIP} from "./ConceroCCIP.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
+import {IDexSwap} from "./IDexSwap.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Concero is ConceroCCIP {
+  using SafeERC20 for IERC20;
+
   mapping(uint64 => uint256) public clfPremiumFees;
 
   AggregatorV3Interface public immutable linkToUsdPriceFeeds;
   AggregatorV3Interface public immutable usdcToUsdPriceFeeds;
   AggregatorV3Interface public immutable nativeToUsdPriceFeeds;
   AggregatorV3Interface public immutable linkToNativePriceFeeds;
+
+  IDexSwap private dexSwap;
 
   struct PriceFeeds {
     address linkToUsdPriceFeeds;
@@ -32,6 +38,7 @@ contract Concero is ConceroCCIP {
     uint _chainIndex,
     address _link,
     address _ccipRouter,
+    address _dexSwap,
     PriceFeeds memory priceFeeds,
     JsCodeHashSum memory jsCodeHashSum
   )
@@ -52,10 +59,20 @@ contract Concero is ConceroCCIP {
     usdcToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.usdcToUsdPriceFeeds);
     nativeToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.nativeToUsdPriceFeeds);
     linkToNativePriceFeeds = AggregatorV3Interface(priceFeeds.linkToNativePriceFeeds);
+    dexSwap = IDexSwap(_dexSwap);
 
     clfPremiumFees[3478487238524512106] = 4000000000000000; // 0.004 link | arb
     clfPremiumFees[10344971235874465080] = 1847290640394088; // 0.0018 link | base // takes in usd mb price feed needed
     clfPremiumFees[5224473277236331295] = 2000000000000000; // 0.002 link | opt
+  }
+
+  // setters
+  function setClfPremiumFees(uint64 chainSelector, uint256 feeAmount) external onlyOwner {
+    clfPremiumFees[chainSelector] = feeAmount;
+  }
+
+  function setDexSwap(address _dexSwap) external onlyOwner {
+    dexSwap = IDexSwap(_dexSwap);
   }
 
   // fees module
@@ -153,21 +170,20 @@ contract Concero is ConceroCCIP {
     return (ccpFeeInLink * uint256(linkToUsdcRate)) / 1 ether;
   }
 
-  // setters
-  function setClfPremiumFees(uint64 chainSelector, uint256 feeAmount) external onlyOwner {
-    clfPremiumFees[chainSelector] = feeAmount;
-  }
-
-  function startTransaction(
+  function entrypoint(
     address _token,
     CCIPToken _tokenType,
     uint256 _amount,
     uint64 _dstChainSelector,
-    address _receiver
+    address _receiver,
+    IDexSwap.SwapData[] memory _swapData
   ) external payable tokenAmountSufficiency(_token, _amount) {
     //todo: maybe move to OZ safeTransfer (but research needed)
-    bool isOK = IERC20(_token).transferFrom(msg.sender, address(this), _amount);
-    require(isOK, "Transfer failed");
+    IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+
+    if (_swapData.length > 0) {
+      dexSwap.conceroEntry(_swapData);
+    }
 
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(_tokenType, _dstChainSelector, _amount);
     if (_amount < totalSrcFee) revert InsufficientFundsForFees(_amount, totalSrcFee);
@@ -188,6 +204,6 @@ contract Concero is ConceroCCIP {
   function withdrawToken(address _owner, address _token) public onlyOwner {
     uint256 amount = IERC20(_token).balanceOf(address(this));
     if (amount == 0) revert NothingToWithdraw();
-    IERC20(_token).transfer(_owner, amount);
+    IERC20(_token).safeTransfer(_owner, amount);
   }
 }

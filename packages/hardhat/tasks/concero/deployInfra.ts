@@ -8,6 +8,7 @@ import { CNetwork } from "../../types/CNetwork";
 import log from "../../utils/log";
 import uploadDonSecrets from "../donSecrets/upload";
 import deployConcero from "../../deploy/02_Concero";
+import { execSync } from "child_process";
 
 export const liveChains: CNetwork[] = [chains.baseSepolia, chains.arbitrumSepolia, chains.optimismSepolia];
 let deployableChains: CNetwork[] = liveChains;
@@ -22,6 +23,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     if (name !== "localhost" && name !== "hardhat") deployableChains = [chains[name]];
 
     if (!taskArgs.skipdeploy) {
+      execSync("yarn compile", { stdio: "inherit" });
       await deployConcero(hre, { slotId });
     } else {
       log("Skipping deployment", "deploy-infra");

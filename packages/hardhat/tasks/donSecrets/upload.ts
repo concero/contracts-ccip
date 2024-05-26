@@ -52,7 +52,7 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
       "donSecrets/upload",
     );
 
-    const checkSecretsRes = await listSecrets(chain);
+    await listSecrets(chain);
 
     // log(`Current DONSecrets for ${name}:`, "donSecrets/upload");
     // log(checkSecretsRes, "donSecrets/upload");
@@ -68,12 +68,7 @@ task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")
     "slotid",
     "Storage slot number 0 or higher - if the slotid is already in use, the existing secrets for that slotid will be overwritten",
   )
-  .addOptionalParam(
-    "ttl",
-    "Time to live - minutes until the secrets hosted on the DON expire (defaults to 10, and must be at least 5)",
-    10,
-    types.int,
-  )
+  .addOptionalParam("ttl", "Time to live - minutes until the secrets hosted on the DON expire", 4320, types.int)
   // .addOptionalParam("configpath", "Path to Functions request config file", `${__dirname}/../../Functions-request-config.js`, types.string)
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");

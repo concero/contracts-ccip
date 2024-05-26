@@ -41,7 +41,7 @@ const deployConceroPool: DeployFunction = async function (hre: HardhatRuntimeEnv
   }) as Deployment ;
 
   log(`ConceroPool deployed to ${name} to: ${deployConceroPool.address}`, "deployConceroPool");
-  updateEnvVariable(`ConceroPool ${networkEnvKeys[name]}`, deployConceroPool.address, "../../../.env.deployments")
+  // updateEnvVariable(`ConceroPool ${networkEnvKeys[name]}`, deployConceroPool.address, "../../../.env.deployments")
 };
 
 export default deployConceroPool;

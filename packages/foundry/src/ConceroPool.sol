@@ -350,12 +350,12 @@ contract ConceroPool is CCIPReceiver, Ownable {
 
     uint256 fees = i_router.getFee(_destinationChainSelector, evm2AnyMessage);
 
-    emit ConceroPool_MessageSent(messageId, _destinationChainSelector, s_poolReceiver[_destinationChainSelector], address(i_linkToken), fees);
-
     if (fees > i_linkToken.balanceOf(address(this))) revert ConceroPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
     IERC20(_token).safeApprove(address(i_router), _amount);
     i_linkToken.approve(address(i_router), fees);
+    
+    emit ConceroPool_MessageSent(messageId, _destinationChainSelector, s_poolReceiver[_destinationChainSelector], address(i_linkToken), fees);
 
     messageId = i_router.ccipSend(_destinationChainSelector, evm2AnyMessage);
   }

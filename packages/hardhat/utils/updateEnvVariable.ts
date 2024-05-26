@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from "fs";
 import path from "path";
+import log from "./log";
 
 /**
  * Update an environment variable in the .env file
@@ -15,7 +16,8 @@ function updateEnvVariable(key: string, newValue: string, envPath: string = "../
   let lines = envContents.split(/\r?\n/);
 
   if (!lines.some(line => line.startsWith(`${key}=`))) {
-    throw new Error(`Key not found: ${key}`);
+    log(`Key ${key} not found in .env file. Adding to ${filePath}`, "updateEnvVariable");
+    lines.push(`${key}=${newValue}`);
   }
 
   const newLines = lines.map(line => {

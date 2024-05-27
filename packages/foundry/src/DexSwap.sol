@@ -24,12 +24,13 @@ contract DexSwap is Ownable{
   ///////////////////////
   ///@notice Concero Enum to track DEXes
   enum DexType {
-    UniswapV2, //0
-    SushiV3Single, //1
-    UniswapV3Single, //2
-    SushiV3Multi, //3
-    UniswapV3Multi, //4
-    Aerodrome //5
+    UniswapV2,
+    SushiV3Single,
+    UniswapV3Single,
+    SushiV3Multi,
+    UniswapV3Multi,
+    Aerodrome,
+    UniswapV2Ether
   }
 
   ///@notice Concero Struct to track DEX Data
@@ -38,11 +39,20 @@ contract DexSwap is Ownable{
     bytes dexData; //routerAddress + data to do swap
   }
 
+  /////////////////////
+  ///STATE VARIABLES///
+  /////////////////////
+  address private s_orchestrator;
+
+  //////////////
+  ///CONSTANT///
+  //////////////
+  uint256 private constant APPROVED = 1;
+
   event DexSwap_OrchestratorContractUpdated(address previousAddress, address orchestrator);
   event DexSwap_NewRouterAdded(address router, uint256 isAllowed);
   event DexSwap_RemovingDust(address receiver, uint256 amount);
 
-  address private s_orchestrator;
   ///@notice mapping to keep track of allowed routers to perform swaps. 1 == Allowed.
   mapping(address router => uint256 isAllowed) public s_routerAllowed;
 
@@ -57,6 +67,9 @@ contract DexSwap is Ownable{
   /////////////////////////////////////////////////////////////////
   ////////////////////////////FUNCTIONS////////////////////////////
   /////////////////////////////////////////////////////////////////
+
+  receive() external payable{}
+
   constructor(){}
 
   /**
@@ -75,12 +88,12 @@ contract DexSwap is Ownable{
   /**
    * @notice function to manage DEX routers addresses
    * @param _router the address of the router
-   * @param _isAllowed 1 == Allowed | Any other value is not allowed.
+   * @param _isApproved 1 == Approved | Any other value is not Approved.
    */
-  function manageRouterAddress(address _router, uint256 _isAllowed) external payable onlyOwner{
-    s_routerAllowed[_router] = _isAllowed;
+  function manageRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner{
+    s_routerAllowed[_router] = _isApproved;
 
-    emit DexSwap_NewRouterAdded(_router, _isAllowed);
+    emit DexSwap_NewRouterAdded(_router, _isApproved);
   }
 
   /**
@@ -88,7 +101,7 @@ contract DexSwap is Ownable{
    * @param _token the address of the token to be withdraw
    * @param _amount the amount of dust to be collected
    */
-  function dustCollection(address _token, uint256 _amount) external onlyOwner {
+  function dustRemoval(address _token, uint256 _amount) external payable onlyOwner {
 
     emit DexSwap_RemovingDust(msg.sender, _amount);
 
@@ -96,11 +109,22 @@ contract DexSwap is Ownable{
   }
 
   /**
+   * @notice function to withdraw any dust that may be stuck in this contract
+   * @param _receiver the address that will receive the amount
+   */
+  function dustEtherRemoval(address _receiver) external onlyOwner{
+    uint256 amount = address(this).balance;
+
+    (bool sent, ) = _receiver.call{value: amount}("");
+    if(sent = false) revert();
+  }
+
+  /**
    * @notice Entry point function for the Orchestrator to take loans
    * @param _swapData a struct array that contains dex informations.
    * @dev only the Orchestrator contract should be able to call this function
    */
-  function conceroEntry(SwapData[] memory _swapData) external onlyOrchestrator {
+  function conceroEntry(SwapData[] memory _swapData, uint256 _amount) external payable onlyOrchestrator {
     if (_swapData.length < 1) revert DexSwap_EmptyDexData();
 
     uint256 swapDataLength = _swapData.length;
@@ -118,6 +142,8 @@ contract DexSwap is Ownable{
         _swapUniV3Multi(_swapData[i].dexData);
       } else if (_swapData[i].dexType == DexType.Aerodrome) {
         _swapDrome(_swapData[i].dexData);
+      } else if(_swapData[i].dexType == DexType.UniswapV2Ether){
+        _swapEtherOnUniV2Like(_swapData[i].dexData, _amount);
       }
     }
   }
@@ -128,14 +154,20 @@ contract DexSwap is Ownable{
    * @dev This function also accept FoT tokens
    * @dev This function can execute single or multi hop swaps
    */
-  function _swapUniV2Like(bytes memory _dexData) private {
+  function _swapUniV2Like(bytes memory _dexData) private returns(uint[] memory amounts){
 
-    (address routerAddress, uint256 amountIn, uint256 amountOutMin, address[] memory path, address to, uint256 deadline) = abi.decode(
-      _dexData,
-      (address, uint256, uint256, address[], address, uint256)
+    (
+      address routerAddress,
+      uint256 amountIn,
+      uint256 amountOutMin,
+      address[] memory path,
+      address to,
+      uint256 deadline
+    ) = abi.decode(
+      _dexData, (address, uint256, uint256, address[], address, uint256)
     );
     
-    if(s_routerAllowed[routerAddress] != 1) revert DexSwap_RouterNotAllowed();
+    if(s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 
     uint256 balanceBefore = IERC20(path[0]).balanceOf(address(this));
 
@@ -146,7 +178,7 @@ contract DexSwap is Ownable{
     if((balanceAfter - balanceBefore) == amountIn){
       IERC20(path[0]).approve(routerAddress, amountIn);
 
-      IUniswapV2Router02(routerAddress).swapExactTokensForTokens(amountIn, amountOutMin, path, to, deadline);
+      amounts = IUniswapV2Router02(routerAddress).swapExactTokensForTokens(amountIn, amountOutMin, path, to, deadline);
     } else {
       uint256 amount = balanceAfter - balanceBefore;
 
@@ -161,7 +193,7 @@ contract DexSwap is Ownable{
    * @param _dexData the enconded swap data
    * @dev This function can execute swap in any protocol compatible with UniV3 that implements the ISwapRouter
    */
-  function _swapSushiV3Single(bytes memory _dexData) private {
+  function _swapSushiV3Single(bytes memory _dexData) private returns(uint256 amountOut){
 
     (
       address routerAddress,
@@ -175,7 +207,7 @@ contract DexSwap is Ownable{
       uint160 sqrtPriceLimitX96
     ) = abi.decode(_dexData, (address, address, address, uint24, address, uint256, uint256, uint256, uint160));
 
-    if(s_routerAllowed[routerAddress] != 1) revert DexSwap_RouterNotAllowed();
+    if(s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
     
     TransferHelper.safeTransferFrom(tokenIn, msg.sender, address(this), amountIn);
 
@@ -192,7 +224,7 @@ contract DexSwap is Ownable{
 
     TransferHelper.safeApprove(tokenIn, routerAddress, amountIn);
 
-    ISwapRouter(routerAddress).exactInputSingle(dex);
+    amountOut = ISwapRouter(routerAddress).exactInputSingle(dex);
   }
 
   /**
@@ -200,7 +232,7 @@ contract DexSwap is Ownable{
    * @param _dexData the enconded swap data
    * @dev This function can execute swap in any protocol compatible with UniV3 that implements the IV3SwapRouter
    */
-  function _swapUniV3Single(bytes memory _dexData) private {
+  function _swapUniV3Single(bytes memory _dexData) private  returns(uint256 amountOut){
 
     (
       address routerAddress,
@@ -213,7 +245,7 @@ contract DexSwap is Ownable{
       uint160 sqrtPriceLimitX96
     ) = abi.decode(_dexData, (address, address, address, uint24, address, uint256, uint256, uint160));
 
-    if(s_routerAllowed[routerAddress] != 1) revert DexSwap_RouterNotAllowed();
+    if(s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
     
     TransferHelper.safeTransferFrom(tokenIn, msg.sender, address(this), amountIn);
 
@@ -229,7 +261,7 @@ contract DexSwap is Ownable{
 
     TransferHelper.safeApprove(tokenIn, routerAddress, amountIn);
 
-    ISwapRouter02(routerAddress).exactInputSingle(dex);
+    amountOut = ISwapRouter02(routerAddress).exactInputSingle(dex);
   }
 
   /**
@@ -247,7 +279,7 @@ contract DexSwap is Ownable{
     uint256 amountIn,
     uint256 amountOutMinimum) = abi.decode(_dexData,(address,address,bytes,address,uint256,uint256,uint256));
   
-    if(s_routerAllowed[routerAddress] != 1) revert DexSwap_RouterNotAllowed();
+    if(s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 
     TransferHelper.safeTransferFrom(tokenIn, msg.sender, address(this), amountIn);
 
@@ -280,7 +312,7 @@ contract DexSwap is Ownable{
     uint256 amountOutMinimum
     ) = abi.decode(_dexData,(address,address,bytes,address,uint256,uint256));
   
-    if(s_routerAllowed[routerAddress] != 1) revert DexSwap_RouterNotAllowed();
+    if(s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 
     TransferHelper.safeTransferFrom(tokenIn, msg.sender, address(this), amountIn); // <@
 
@@ -301,7 +333,7 @@ contract DexSwap is Ownable{
    * @param _dexData the enconded swap data
    * @dev This function accepts regular and Fee on Transfer tokens
    */
-  function _swapDrome(bytes memory _dexData) private {
+  function _swapDrome(bytes memory _dexData) private returns(uint256[] memory _amounts){
     if (_dexData.length < 1) revert DexSwap_EmptyDexData();
 
     (address routerAddress,
@@ -311,7 +343,7 @@ contract DexSwap is Ownable{
     address to,
     uint256 deadline) = abi.decode(_dexData,(address,uint256,uint256,IRouter.Route[],address,uint256));
 
-    if(s_routerAllowed[routerAddress] != 1) revert DexSwap_RouterNotAllowed();
+    if(s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 
     uint256 balanceBefore = IERC20(routes[0].from).balanceOf(address(this));
 
@@ -322,7 +354,7 @@ contract DexSwap is Ownable{
     if((balanceAfter - balanceBefore) == amountIn){
       IERC20(routes[0].from).approve(routerAddress, amountIn);
 
-      IRouter(routerAddress).swapExactTokensForTokens(amountIn, amountOutMin, routes, to, deadline);
+      _amounts = IRouter(routerAddress).swapExactTokensForTokens(amountIn, amountOutMin, routes, to, deadline);
     } else {
       uint256 amount = balanceAfter - balanceBefore;
 
@@ -330,6 +362,27 @@ contract DexSwap is Ownable{
       
       IRouter(routerAddress).swapExactTokensForTokensSupportingFeeOnTransferTokens(amount, amountOutMin, routes, to, deadline);
     }
+  }
+
+  /**
+   * @notice This function can be used with any Uniswap forked router
+   * @param _dexData the enconded swap data
+   * @param _amount the ether amount to swap
+   */
+  function _swapEtherOnUniV2Like(bytes memory _dexData, uint256 _amount) private returns(uint256[] memory amounts){
+    if (_dexData.length < 1) revert DexSwap_EmptyDexData();
+
+    (
+      address routerAddress,
+      uint256 amountOutMin,
+      address[] memory path,
+      address to,
+      uint256 deadline
+    ) = abi.decode(_dexData,(address,uint256,address[],address,uint256));
+
+    if(s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
+
+    amounts = IUniswapV2Router02(routerAddress).swapExactETHForTokens{value: _amount}(amountOutMin, path, to, deadline);
   }
 }
 

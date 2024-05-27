@@ -117,13 +117,29 @@ contract DexSwapTest is Test {
         dex.manageRouterAddress(0x425141165d3DE9FEC831896C016617a52363b687, 1);
     }
 
-    ///dustCollection///
+    ///dustRemoval///
     event DexSwap_RemovingDust(address caller, uint256 amount);
-    function test_dustCollection() public {
+    function test_dustRemoval() public {
         vm.prank(Barba);
         vm.expectEmit();
         emit DexSwap_RemovingDust(Barba, INITIAL_BALANCE);
-        dex.dustCollection(address(tUSDC), INITIAL_BALANCE);
+        dex.dustRemoval(address(tUSDC), INITIAL_BALANCE);
+    }
+
+    ///dustEtherRemoval///
+    function test_dustEtherRemoval() public {
+        address newAddress = address(1);
+        vm.deal(Barba, INITIAL_BALANCE);
+        vm.deal(newAddress, 0);
+
+        vm.prank(Barba);
+        (bool sent,) = address(dex).call{value: 1 ether}("");
+        if(!sent) revert();
+
+        vm.prank(Barba);
+        dex.dustEtherRemoval(newAddress);
+
+        assertEq(newAddress.balance, 1 ether);
     }
 
     ///conceroEntry///
@@ -147,7 +163,7 @@ contract DexSwapTest is Test {
                             dexData: abi.encode(sushiV2, amountIn, amountOutMin, path, to, deadline)
                         });
                     
-        dex.conceroEntry(swapData);
+        dex.conceroEntry(swapData, 0);
 
         assertEq(wEth.balanceOf(address(Orchestrator)), 9.9 ether);
         assertEq(wEth.balanceOf(address(dex)), 0);
@@ -168,7 +184,7 @@ contract DexSwapTest is Test {
         vm.startPrank(Orchestrator);
         wEth.approve(address(dex), 1 ether);
     
-        dex.conceroEntry(swapData);
+        dex.conceroEntry(swapData, 0);
 
         assertEq(wEth.balanceOf(address(Orchestrator)), 9.9 ether);
         assertEq(wEth.balanceOf(address(dex)), 0);
@@ -189,7 +205,7 @@ contract DexSwapTest is Test {
         vm.startPrank(Orchestrator);
         wEth.approve(address(dex), 1*10**17);
     
-        dex.conceroEntry(swapData);
+        dex.conceroEntry(swapData, 0);
 
         assertEq(wEth.balanceOf(address(Orchestrator)), 9.9 ether);
         assertEq(wEth.balanceOf(address(dex)), 0);
@@ -216,7 +232,7 @@ contract DexSwapTest is Test {
         assertEq(wEth.balanceOf(Orchestrator), INITIAL_BALANCE);
         assertEq(wEth.allowance(Orchestrator, address(dex)), 0.1 ether);
     
-        dex.conceroEntry(swapData);
+        dex.conceroEntry(swapData, 0);
 
         assertTrue(wEth.balanceOf(Orchestrator) > 0.09 ether);
     }
@@ -241,7 +257,7 @@ contract DexSwapTest is Test {
         assertEq(wEth.balanceOf(Orchestrator), INITIAL_BALANCE);
         assertEq(wEth.allowance(Orchestrator, address(dex)), 0.1 ether);
     
-        dex.conceroEntry(swapData);
+        dex.conceroEntry(swapData, 0);
 
         assertTrue(wEth.balanceOf(Orchestrator) > 0.09 ether);
     }
@@ -281,7 +297,7 @@ contract DexSwapTest is Test {
         vm.startPrank(Orchestrator);
         wEth.approve(address(dex), 1 ether);
     
-        dex.conceroEntry(swapData);
+        dex.conceroEntry(swapData, 0);
 
         assertEq(wEth.balanceOf(address(dex)), 0);
         assertTrue(AERO.balanceOf(Barba) > 280 ether );
@@ -336,12 +352,47 @@ contract DexSwapTest is Test {
         vm.startPrank(Orchestrator);
         wEth.approve(address(dex), INITIAL_BALANCE);
     
-        dex.conceroEntry(swapData);
+        dex.conceroEntry(swapData, 0);
 
         assertEq(wEth.balanceOf(address(dex)), 0);
         assertTrue(AERO.balanceOf(Orchestrator) > 280 ether );
 
         assertTrue(wEth.balanceOf(Orchestrator) > 0.09 ether);
 
+    }
+
+    //_swapEtherOnUniV2Like//
+    function test_swapEtherOnUniV2Like() public {
+        //===== Mock the value.
+                //In this case, the value is passed as a param through the function
+                //Also is transferred in the call
+        uint256 amountToSend = 0.1 ether;
+
+        //===== Mock the data for payload to send to the function
+        uint amountOutMin = 270*10**6;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(USDC);
+        address to = address(Orchestrator);
+        uint deadline = block.timestamp + 1800;
+
+        //===== Gives Orchestrator some ether and checks the balance
+        vm.deal(Orchestrator, INITIAL_BALANCE);
+        assertEq(Orchestrator.balance, INITIAL_BALANCE);
+
+        //===== Mock the payload to send on the function
+        DexSwap.SwapData[] memory swapData = new DexSwap.SwapData[](1);
+        swapData[0] = DexSwap.SwapData({
+                            dexType: DexSwap.DexType.UniswapV2Ether,
+                            dexData: abi.encode(uniswapV2, amountOutMin, path, to, deadline)
+                        });
+
+        //===== Start transaction calling the function and passing the payload
+        vm.startPrank(Orchestrator);                    
+        dex.conceroEntry{value: amountToSend}(swapData, amountToSend);
+        vm.stopPrank();
+
+        assertEq(Orchestrator.balance, 9.9 ether);
+        assertTrue(USDC.balanceOf(address(Orchestrator)) > 350*10**6);
     }
 }

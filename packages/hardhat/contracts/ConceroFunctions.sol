@@ -11,9 +11,6 @@ import {Concero} from "./Concero.sol";
 import {ConceroPool} from "./ConceroPool.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 
-error ConceroFunctions_TxDoesNotExist();
-error ConceroFunctions_TxAlreadyConfirmed();
-error ConceroFunctions_AddressNotSet();
 
 contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   using SafeERC20 for IERC20;
@@ -53,7 +50,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.DST_JS, 'utf8').digest('hex'); if ('0x' + hash.toLowerCase() === args[0].toLowerCase()) { return await eval(secrets.DST_JS); } else { throw new Error(`0x${hash.toLowerCase()} != ${args[0].toLowerCase()}`); } } catch (err) { throw new Error(err.message.slice(0, 255));}";
 
   modifier onlyMessenger() {
-    if (!s_messengerContracts[msg.sender]) revert ConceroFunctions_NotMessenger(msg.sender);
+    if (!s_messengerContracts[msg.sender]) revert NotMessenger(msg.sender);
     _;
   }
 
@@ -80,7 +77,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_donHostedSecretsVersion = _version;
 
-    emit ConceroFunctions_DonSecretVersionUpdated(previousValue, _version);
+    emit DonSecretVersionUpdated(previousValue, _version);
   }
 
   function setDonHostedSecretsSlotID(uint8 _donHostedSecretsSlotId) external onlyOwner {
@@ -88,7 +85,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
 
-    emit ConceroFunctions_DonSlotIdUpdated(previousValue, _donHostedSecretsSlotId); 
+    emit DonSlotIdUpdated(previousValue, _donHostedSecretsSlotId); 
   }
 
   function setDstJsHashSum(bytes32 _hashSum) external onlyOwner {
@@ -96,7 +93,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_dstJsHashSum = _hashSum;
 
-    emit ConceroFunctions_DestinationJsHashSumUpdated(previousValue, _hashSum);
+    emit DestinationJsHashSumUpdated(previousValue, _hashSum);
   }
 
   function setSrcJsHashSum(bytes32 _hashSum) external onlyOwner {
@@ -104,7 +101,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_srcJsHashSum = _hashSum;
     
-    emit ConceroFunctions_SourceJsHashSumUpdated(previousValue, _hashSum);
+    emit SourceJsHashSumUpdated(previousValue, _hashSum);
   }
 
   //@New
@@ -113,7 +110,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_pool = ConceroPool(_pool);
 
-    emit ConceroFunctions_ConceroPoolAddressUpdated(previousAddress, _pool);
+    emit ConceroPoolAddressUpdated(previousAddress, _pool);
   }
 
   //@audit if updated to bytes[] memory. We can remove this guys
@@ -147,7 +144,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     uint256 blockNumber
   ) external onlyMessenger {
     Transaction memory transaction = s_transactions[ccipMessageId];
-    if (transaction.sender != address(0)) revert ConceroFunctions_TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
+    if (transaction.sender != address(0)) revert TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
     
     s_transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
 
@@ -172,7 +169,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     s_requests[reqId].isPending = true;
     s_requests[reqId].ccipMessageId = ccipMessageId;
 
-    emit ConceroFunctions_UnconfirmedTXAdded(ccipMessageId, sender, recipient, amount, token, srcChainSelector);
+    emit UnconfirmedTXAdded(ccipMessageId, sender, recipient, amount, token, srcChainSelector);
   }
 
   //@audit I think we can send bytes[] memory args instead of string[] memory args.
@@ -189,13 +186,13 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     Request storage request = s_requests[requestId];
 
     if (!request.isPending) {
-      revert ConceroFunctions_UnexpectedRequestID(requestId);
+      revert UnexpectedRequestID(requestId);
     }
 
     request.isPending = false;
 
     if (err.length > 0) {
-      emit ConceroFunctions_FunctionsRequestError(request.ccipMessageId, requestId, uint8(request.requestType));
+      emit FunctionsRequestError(request.ccipMessageId, requestId, uint8(request.requestType));
       return;
     }
 
@@ -237,16 +234,16 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   }
 
   function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
-    if(transaction.sender == address(0)) revert ConceroFunctions_TxDoesNotExist();
-    if(transaction.isConfirmed == true) revert ConceroFunctions_TxAlreadyConfirmed();
+    if(transaction.sender == address(0)) revert TxDoesNotExist();
+    if(transaction.isConfirmed == true) revert TxAlreadyConfirmed();
 
     transaction.isConfirmed = true;
 
-    emit ConceroFunctions_TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
+    emit TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
   }
 
-  function _sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {
-    if (s_conceroContracts[dstChainSelector] == address(0)) revert ConceroFunctions_AddressNotSet();
+  function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {
+    if (s_conceroContracts[dstChainSelector] == address(0)) revert AddressNotSet();
 
     string[] memory args = new string[](10);
     //todo: Strings usage may not be required here. Consider ways of passing data without converting to string
@@ -266,6 +263,6 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     s_requests[reqId].isPending = true;
     s_requests[reqId].ccipMessageId = ccipMessageId;
 
-    emit ConceroFunctions_UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
+    emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
   }
 }

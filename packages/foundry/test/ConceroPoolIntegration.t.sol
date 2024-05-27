@@ -14,6 +14,7 @@ import {ConceroPoolDeploy} from "../script/ConceroPoolDeploy.s.sol";
 import {HelperConfig} from "../script/HelperConfig.sol";
 
 import {USDC} from "./Mocks/USDC.sol";
+import {FunctionsRouter} from "./Mocks/FunctionsRouter.sol";
 
 import {CCIPLocalSimulator, IRouterClient, WETH9, LinkToken, BurnMintERC677Helper} from "@chainlink/local/src/ccip/CCIPLocalSimulator.sol";
 import {PriceFeedConsumer} from "./Mocks/PriceFeedConsumer.sol";
@@ -37,6 +38,7 @@ contract ConceroIntegrationPoolTest is Test {
     MockV3Aggregator public usdcToUsdPriceFeeds;
     MockV3Aggregator public nativeToUsdPriceFeeds;
     MockV3Aggregator public linkToNativePriceFeeds;
+    FunctionsRouter public functionsRouter;
 
     uint64 private destinationChainSelector;
     BurnMintERC677Helper private cccipToken;
@@ -60,7 +62,7 @@ contract ConceroIntegrationPoolTest is Test {
     address Athena = makeAddr("Athena");
     address Exploiter = makeAddr("Exploiter");
     address Messenger = makeAddr("Messenger");
-    address UserReceiver = makeAddr("Receiver");
+    address UserReceiver = makeAddr("UserReceiver");
 
     function setUp() public {
         // Chainlink CCIP Local Environment
@@ -82,6 +84,20 @@ contract ConceroIntegrationPoolTest is Test {
         nativeToUsdPriceFeeds = new MockV3Aggregator(DECIMALS, INITIAL_ANSWER);
         linkToNativePriceFeeds = new MockV3Aggregator(DECIMALS, INITIAL_ANSWER);
 
+        //Chainlink Functions Router
+        functionsRouter = new FunctionsRouter(
+            address(linkToken),
+            FunctionsRouter.Config ({
+                maxConsumersPerSubscription: 1, //uint16 maxConsumersPerSubscription;
+                adminFee: 1, // uint72 adminFee; //                             ║ Flat fee (in Juels of LINK) that will be paid to the Router owner for operation of the network
+                handleOracleFulfillmentSelector :0x39b05122, //bytes4 handleOracleFulfillmentSelector; //      ║ The function selector that is used when calling back to the Client contract
+                gasForCallExactCheck: 10, // uint16 gasForCallExactCheck; // ════════════════╝ Used during calling back to the client. Ensures we have at least enough gas to be able to revert if gasAmount >  63//64*gas available.
+                maxCallbackGasLimits: new uint32[](1), //uint32[] maxCallbackGasLimits; // ══════════════╸ List of max callback gas limits used by flag with GAS_FLAG_INDEX
+                subscriptionDepositMinimumRequests: 1, //uint16 subscriptionDepositMinimumRequests; //═══╗ Amount of requests that must be completed before the full subscription balance will be released when closing a subscription account.
+                subscriptionDepositJuels: 1 //uint72 subscriptionDepositJuels; // ════════════╝ Amount of subscription funds that are held as a deposit until Config.subscriptionDepositMinimumRequests are made using the subscription.
+            })
+        );
+
         //Initiate Global Variables with Chainlink Local Variables
         destinationChainSelector = chainSelector; //16015286601757825753
         cccipToken = ccipBnM;
@@ -99,15 +115,15 @@ contract ConceroIntegrationPoolTest is Test {
         pool = deployPool.run(address(linkToken), address(sourceRouter));
         poolReceiver = deployPool.run(address(linkToken), address(destinationRouter));
         concero = deployConcero.run(
-            address(0),
-            0,
-            0x66756e2d657468657265756d2d7365706f6c69612d3100000000000000000000,
-            0,
-            0,
-            chainSelector,
-            1,
-            address(linkToken),
-            address(sourceRouter),
+            address(functionsRouter), //address _functionsRouter
+            0, //uint64 _donHostedSecretsVersion
+            0x66756e2d657468657265756d2d7365706f6c69612d3100000000000000000000, //bytes32 _donId
+            2, //uint8 _donHostedSecretsSlotId
+            0, //uint64 _subscriptionId,
+            chainSelector, //uint64 _chainSelector,
+            1, //uint _chainIndex,
+            address(linkToken), //address _link,
+            address(sourceRouter), //address _ccipRouter,
             Concero.PriceFeeds ({
                 linkToUsdPriceFeeds: address(linkToUsdPriceFeeds),
                 usdcToUsdPriceFeeds: address(linkToUsdPriceFeeds),
@@ -190,7 +206,7 @@ contract ConceroIntegrationPoolTest is Test {
         console2.log(nativeToUsdRate);
     }
 
-    event Concero_CCIPSent();
+    event CCIPSent();
     function test_wholeFlowOne() public setApprovals{
         //======= LP Deposits USDC on the Main Pool
         vm.startPrank(lp);
@@ -232,23 +248,28 @@ contract ConceroIntegrationPoolTest is Test {
         //======= Check the total balance on the poolReceiver contract
                 //Sub the ConceroFee
         uint256 conceroFee = amountToTransfer / 1000;
+        uint256 amountToTransferWithoutSrcFee = amountToTransfer - conceroFee;
 
-        assertEq(mUSDC.balanceOf(address(poolReceiver)), (crossChainPoolBalance + amountToTransfer - conceroFee));
+        assertEq(mUSDC.balanceOf(address(poolReceiver)), (crossChainPoolBalance + amountToTransferWithoutSrcFee));
     
         //======= Check the total balance on the pool contract
                 //Plus the ConceroFee
         assertEq(mUSDC.balanceOf(address(concero)), conceroFee);
 
         //======= Check the LP fee compounding
-        assertEq(poolReceiver.s_userBalances(address(mUSDC), Messenger), crossChainPoolBalance + conceroFee);
+        assertEq(poolReceiver.s_userBalances(address(mUSDC), Messenger), crossChainPoolBalance + (amountToTransferWithoutSrcFee/1000));
 
         //======= Let's pretend that CLF did the Job and 'Orchestrator' will transfer funds to the user
-        uint256 userValue = amountToTransfer - (conceroFee * 2);
+        uint256 userValue = amountToTransferWithoutSrcFee - (amountToTransferWithoutSrcFee / 1000);
+
         vm.prank(address(concero));
         poolReceiver.orchestratorLoan(address(mUSDC), userValue, UserReceiver);
 
         //======= Checks if the User received the correct amount
         assertEq(mUSDC.balanceOf(UserReceiver), userValue);
+
+        //======= Check if we have loss of precision in somewhere
+        assertEq((userValue + (amountToTransferWithoutSrcFee / 1000) + conceroFee), 1* USDC_DECIMALS);
     }
 
     function test_wholeFlowPlusDestinationFunctions() public setApprovals{
@@ -292,6 +313,7 @@ contract ConceroIntegrationPoolTest is Test {
         //======= Check the total balance on the poolReceiver contract
                 //Sub the ConceroFee
         uint256 conceroFee = amountToTransfer / 1000;
+        uint256 amountToTransferWithoutFee = amountToTransfer - conceroFee;
 
         assertEq(mUSDC.balanceOf(address(poolReceiver)), (crossChainPoolBalance + amountToTransfer - conceroFee));
     
@@ -299,7 +321,7 @@ contract ConceroIntegrationPoolTest is Test {
         assertEq(mUSDC.balanceOf(address(concero)), conceroFee);
 
         //======= Check the LP fee compounding
-        assertEq(poolReceiver.s_userBalances(address(mUSDC), Messenger), crossChainPoolBalance + conceroFee);
+        assertEq(poolReceiver.s_userBalances(address(mUSDC), Messenger), crossChainPoolBalance + (amountToTransferWithoutFee/1000));
         
         //======= Let's pretend that CLF did the Job and 'Orchestrator' will transfer funds to the user
                 //Some line of code must be comment and created on the contract, to test this.
@@ -324,10 +346,7 @@ contract ConceroIntegrationPoolTest is Test {
                                 );
         
         //======= After adding a request, we can simulate the payment calling the mock function below
-        concero.externalFulfillRequest(ccipMessageId, "","");
-
-        //=============== Both seccions bellow proves that the calculation is wrong.
-                        //But, the pool is correctly implemented
+        concero.externalFulfillRequest(0x0000000000000000000000000000000000000000000000000000000000000000, "","");
 
         //======= Checks if the pool has the correct balance
         assertEq(mUSDC.balanceOf(address(poolReceiver)), crossChainPoolBalance + ((amountToTransfer - conceroFee) / 1000));

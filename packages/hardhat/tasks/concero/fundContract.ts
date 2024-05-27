@@ -31,21 +31,25 @@ export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
   }
 }
 export async function fundContract(chains: CNetwork[], amount: number = 1) {
-  for (const chain of chains) {
-    const { name, viemChain, ccipBnmToken, url } = chain;
-    const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
-    const { walletClient, publicClient, account } = getClients(viemChain, url);
-    await ensureDeployerBnMBalance(chains);
-    const { request: sendReq } = await publicClient.simulateContract({
-      functionName: "transfer",
-      abi: ierc20Abi,
-      account,
-      address: ccipBnmToken,
-      args: [contract, BigInt(amount) * 10n ** 18n],
-    });
-    const sendHash = await walletClient.writeContract(sendReq);
-    const { cumulativeGasUsed: sendGasUsed } = await publicClient.waitForTransactionReceipt({ hash: sendHash });
-    log(`Sent ${amount} CCIPBNM to ${name}:${contract}. Gas used: ${sendGasUsed.toString()}`, "fundContract");
+  try {
+    for (const chain of chains) {
+      const { name, viemChain, ccipBnmToken, url } = chain;
+      const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
+      const { walletClient, publicClient, account } = getClients(viemChain, url);
+      await ensureDeployerBnMBalance(chains);
+      const { request: sendReq } = await publicClient.simulateContract({
+        functionName: "transfer",
+        abi: ierc20Abi,
+        account,
+        address: ccipBnmToken,
+        args: [contract, BigInt(amount) * 10n ** 18n],
+      });
+      const sendHash = await walletClient.writeContract(sendReq);
+      const { cumulativeGasUsed: sendGasUsed } = await publicClient.waitForTransactionReceipt({ hash: sendHash });
+      log(`Sent ${amount} CCIPBNM to ${name}:${contract}. Gas used: ${sendGasUsed.toString()}`, "fundContract");
+    }
+  } catch (error) {
+    log(`Error for ${name}: ${error.message}`, "fundContract");
   }
 }
 

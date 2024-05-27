@@ -8,6 +8,9 @@ import { CNetwork } from "../../types/CNetwork";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import log from "../../utils/log";
 import listSecrets from "./list";
+import { setDonHostedSecretsVersion } from "../concero/setContractVariables";
+import load from "../../utils/load";
+import { liveChains } from "../concero/deployInfra";
 
 // const path = require("path");
 
@@ -69,12 +72,30 @@ task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")
     "Storage slot number 0 or higher - if the slotid is already in use, the existing secrets for that slotid will be overwritten",
   )
   .addOptionalParam("ttl", "Time to live - minutes until the secrets hosted on the DON expire", 4320, types.int)
+  .addFlag("all", "Upload secrets to all networks")
+  .addFlag("updatecontracts", "Update the contracts with the new secrets")
   // .addOptionalParam("configpath", "Path to Functions request config file", `${__dirname}/../../Functions-request-config.js`, types.string)
   .setAction(async taskArgs => {
-    const hre: HardhatRuntimeEnvironment = require("hardhat");
+    const hre = require("hardhat");
+    const { slotid, ttl, all, updatecontracts } = taskArgs;
 
-    const { slotid, ttl } = taskArgs;
-    await upload([chains[hre.network.name]], slotid, ttl);
+    // Function to upload secrets and optionally update contracts
+    const processNetwork = async (chain: CNetwork) => {
+      await upload([chain], slotid, ttl);
+      if (updatecontracts) {
+        const { abi } = await load("../artifacts/contracts/Concero.sol/Concero.json");
+        await setDonHostedSecretsVersion(chain, parseInt(slotid), abi);
+      }
+    };
+
+    // Process all networks if 'all' flag is set
+    if (all) {
+      for (const liveChain of liveChains) {
+        await processNetwork(liveChain);
+      }
+    } else {
+      await processNetwork(chains[hre.network.name]);
+    }
   });
 
 export default upload;

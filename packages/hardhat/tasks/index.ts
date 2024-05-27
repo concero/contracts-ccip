@@ -4,9 +4,10 @@ import simulate from "./script/simulate";
 import build from "./script/build";
 import deployCCIPInfrastructure from "./concero/deployInfra";
 import { fundContract } from "./concero/fundContract";
+import updateHashes from "./concero/updateHashes";
 import dripBnm from "./concero/dripBnm";
 import clfRequest from "./unused/Functions-consumer";
-import getHashSum from "./getHashSum";
+import getHashSum from "./script/getHashSum";
 export default {
   billing,
   consumer,
@@ -17,4 +18,5 @@ export default {
   dripBnm,
   clfRequest,
   getHashSum,
+  updateHashes,
 };

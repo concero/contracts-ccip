@@ -191,7 +191,7 @@ contract Concero is ConceroCCIP {
     bytes32 ccipMessageId = _sendTokenPayLink(_dstChainSelector, _token, amount, totalSrcFee);
 
     emit Concero_CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, amount, _dstChainSelector);
-    //comment it out for foundry local testing
+    
     _sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, amount, _dstChainSelector, _tokenType);
   }
 

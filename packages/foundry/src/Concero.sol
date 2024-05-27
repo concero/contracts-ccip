@@ -151,7 +151,7 @@ contract Concero is ConceroCCIP {
     uint256 previousValue = clfPremiumFees[chainSelector];
     clfPremiumFees[chainSelector] = feeAmount;
 
-    emit Concero_CLFPremiumFeeUpdated(chainSelector, previousValue, feeAmount);
+    emit CLFPremiumFeeUpdated(chainSelector, previousValue, feeAmount);
   }
 
   //@audit should not use tokenAmountSufficiency modifier.
@@ -165,30 +165,41 @@ contract Concero is ConceroCCIP {
   ) external payable tokenAmountSufficiency(_token, _amount) {
 
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(_tokenType, _dstChainSelector, _amount);
-    if (_amount < totalSrcFee) revert Concero_InsufficientFundsForFees(_amount, totalSrcFee);
+    if (_amount < totalSrcFee) revert InsufficientFundsForFees(_amount, totalSrcFee);
 
-    //@audit totalSrcFee is 1000
     uint256 amount = _amount - totalSrcFee;
+
+    //1000 == * 10 / 10_000. Simplifying.
+    uint256 liquidityProviderFee = amount / 1000;
+
+    // if(_token == USDC){
+    //   CCIP transfer
+    // } else if(_token == address(0)){
+    //   uint256 etherAmount = msg.value;
+    //   dex.conceroEntry{value: etherAmount}(_swapData, etherAmount);
+    // } else if(
+    //   dex.conceroEntry(_swapData, 0);
+    // )
 
     IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
 
-    bytes32 ccipMessageId = _sendTokenPayLink(_dstChainSelector, _token, amount, totalSrcFee);
+    bytes32 ccipMessageId = _sendTokenPayLink(_dstChainSelector, _token, amount, liquidityProviderFee);
 
-    emit Concero_CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, amount, _dstChainSelector);
-    //comment it out for local testing
-    // _sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, amount, _dstChainSelector, _tokenType);
+    emit CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, amount, _dstChainSelector);
+    
+    sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, amount, _dstChainSelector, _tokenType);
   }
 
   function withdraw(address _owner) public onlyOwner {
     uint256 amount = address(this).balance;
-    if (amount == 0) revert Concero_NothingToWithdraw();
+    if (amount == 0) revert NothingToWithdraw();
     (bool sent, ) = _owner.call{value: amount}("");
-    if (!sent) revert Concero_FailedToWithdrawEth(msg.sender, _owner, amount);
+    if (!sent) revert FailedToWithdrawEth(msg.sender, _owner, amount);
   }
 
   function withdrawToken(address _owner, address _token) public onlyOwner {
     uint256 amount = IERC20(_token).balanceOf(address(this));
-    if (amount == 0) revert Concero_NothingToWithdraw();
+    if (amount == 0) revert NothingToWithdraw();
     IERC20(_token).safeTransfer(_owner, amount);
   }
 }

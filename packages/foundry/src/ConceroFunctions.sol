@@ -11,9 +11,9 @@ import {Concero} from "./Concero.sol";
 import {ConceroPool} from "./ConceroPool.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 
-error ConceroFunctions_TxDoesNotExist();
-error ConceroFunctions_TxAlreadyConfirmed();
-error ConceroFunctions_AddressNotSet();
+error TxDoesNotExist();
+error TxAlreadyConfirmed();
+error AddressNotSet();
 
 contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   using SafeERC20 for IERC20;
@@ -48,7 +48,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     "try { const ethers = await import('npm:ethers@6.10.0'); const sleep = ms => new Promise(resolve => setTimeout(resolve, ms)); const [srcContractAddress, srcChainSelector, _, ...eventArgs] = args; const messageId = eventArgs[0]; const chainMap = { '14767482510784806043': { urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`], confirmations: 3n, chainId: '0xa869', }, '16015286601757825753': { urls: [ `https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://ethereum-sepolia-rpc.publicnode.com', 'https://ethereum-sepolia.blockpi.network/v1/rpc/public', ], confirmations: 3n, chainId: '0xaa36a7', }, '3478487238524512106': { urls: [ `https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://arbitrum-sepolia.blockpi.network/v1/rpc/public', 'https://arbitrum-sepolia-rpc.publicnode.com', ], confirmations: 3n, chainId: '0x66eee', }, '10344971235874465080': { urls: [ `https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`, 'https://base-sepolia.blockpi.network/v1/rpc/public', 'https://base-sepolia-rpc.publicnode.com', ], confirmations: 3n, chainId: '0x14a34', }, '5224473277236331295': { urls: [ `https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://optimism-sepolia.blockpi.network/v1/rpc/public', 'https://optimism-sepolia-rpc.publicnode.com', ], confirmations: 3n, chainId: '0xaa37dc', }, }; class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider { constructor(url) { super(url); this.url = url; } async _send(payload) { if (payload.method === 'eth_chainId') { return [{jsonrpc: '2.0', id: payload.id, result: chainMap[srcChainSelector].chainId}]; } const resp = await fetch(this.url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload), }); const result = await resp.json(); if (payload.length === undefined) { return [result]; } return result; } } const fallBackProviders = chainMap[srcChainSelector].urls.map(url => { return { provider: new FunctionsJsonRpcProvider(url), priority: Math.random(), stallTimeout: 2000, weight: 1, }; }); const provider = new ethers.FallbackProvider(fallBackProviders, null, {quorum: 1}); let latestBlockNumber = BigInt(await provider.getBlockNumber()); const ethersId = ethers.id('CCIPSent(bytes32,address,address,uint8,uint256,uint64)'); const logs = await provider.getLogs({ address: srcContractAddress, topics: [ethersId, messageId], fromBlock: latestBlockNumber - 1000n, toBlock: latestBlockNumber, }); if (!logs.length) { throw new Error('No logs found'); } const log = logs[0]; const abi = ['event CCIPSent(bytes32 indexed, address, address, uint8, uint256, uint64)']; const contract = new ethers.Interface(abi); const logData = { topics: [ethersId, log.topics[1]], data: log.data, }; const decodedLog = contract.parseLog(logData); for (let i = 0; i < decodedLog.length; i++) { if (decodedLog.args[i].toString().toLowerCase() !== eventArgs[i].toString().toLowerCase()) { throw new Error('Message ID does not match the event log'); } } const logBlockNumber = BigInt(log.blockNumber); while (latestBlockNumber - logBlockNumber < chainMap[srcChainSelector].confirmations) { latestBlockNumber = BigInt(await provider.getBlockNumber()); await sleep(5000); } if (latestBlockNumber - logBlockNumber < chainMap[srcChainSelector].confirmations) { throw new Error('Not enough confirmations'); } return Functions.encodeUint256(BigInt(messageId)); } catch (error) { throw new Error(error.message.slice(0, 255));}";
 
   modifier onlyMessenger() {
-    if (!s_messengerContracts[msg.sender]) revert ConceroFunctions_NotMessenger(msg.sender);
+    if (!s_messengerContracts[msg.sender]) revert NotMessenger(msg.sender);
     _;
   }
 
@@ -72,7 +72,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_donHostedSecretsVersion = _version;
 
-    emit ConceroFunctions_DonSecretVersionUpdated(previousValue, _version);
+    emit DonSecretVersionUpdated(previousValue, _version);
   }
 
   function setDonHostedSecretsSlotID(uint8 _donHostedSecretsSlotId) external onlyOwner {
@@ -80,7 +80,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
 
-    emit ConceroFunctions_DonSlotIdUpdated(previousValue, _donHostedSecretsSlotId); 
+    emit DonSlotIdUpdated(previousValue, _donHostedSecretsSlotId); 
   }
 
   function setDstJsHashSum(bytes32 _hashSum) external onlyOwner {
@@ -88,7 +88,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_dstJsHashSum = _hashSum;
 
-    emit ConceroFunctions_DestinationJsHashSumUpdated(previousValue, _hashSum);
+    emit DestinationJsHashSumUpdated(previousValue, _hashSum);
   }
 
   function setSrcJsHashSum(bytes32 _hashSum) external onlyOwner {
@@ -96,7 +96,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_srcJsHashSum = _hashSum;
     
-    emit ConceroFunctions_SourceJsHashSumUpdated(previousValue, _hashSum);
+    emit SourceJsHashSumUpdated(previousValue, _hashSum);
   }
 
   //@New
@@ -105,7 +105,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_pool = ConceroPool(_pool);
 
-    emit ConceroFunctions_ConceroPoolAddressUpdated(previousAddress, _pool);
+    emit ConceroPoolAddressUpdated(previousAddress, _pool);
   }
 
   //@audit if updated to bytes[] memory. We can remove this guys
@@ -139,7 +139,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     uint256 blockNumber
   ) external onlyMessenger {
     Transaction memory transaction = s_transactions[ccipMessageId];
-    if (transaction.sender != address(0)) revert ConceroFunctions_TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
+    if (transaction.sender != address(0)) revert TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
     
     s_transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
 
@@ -158,17 +158,13 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     args[8] = Strings.toString(amount);
     args[9] = Strings.toString(i_chainSelector);
 
-    //Comment this out to local testing
-    // bytes32 reqId = sendRequest(args, dstJsCode);
-    
-    //Comment this out after testing
-    bytes32 reqId = ccipMessageId;
+    bytes32 reqId = sendRequest(args, dstJsCode);
 
     s_requests[reqId].requestType = RequestType.checkTxSrc;
     s_requests[reqId].isPending = true;
     s_requests[reqId].ccipMessageId = ccipMessageId;
 
-    emit ConceroFunctions_UnconfirmedTXAdded(ccipMessageId, sender, recipient, amount, token, srcChainSelector);
+    emit UnconfirmedTXAdded(ccipMessageId, sender, recipient, amount, token, srcChainSelector);
   }
 
   //@audit I think we can send bytes[] memory args instead of string[] memory args.
@@ -185,13 +181,13 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     Request storage request = s_requests[requestId];
 
     if (!request.isPending) {
-      revert ConceroFunctions_UnexpectedRequestID(requestId);
+      revert UnexpectedRequestID(requestId);
     }
 
     request.isPending = false;
 
     if (err.length > 0) {
-      emit ConceroFunctions_FunctionsRequestError(request.ccipMessageId, requestId, uint8(request.requestType));
+      emit FunctionsRequestError(request.ccipMessageId, requestId, uint8(request.requestType));
       return;
     }
 
@@ -203,15 +199,11 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
       uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
-      //@audit
-      //When receiving, we are taking the fee on top of the transfered money
-      //Not on top of the initial money. So, we are "rounding down" against
-      //the protocol and charging less than we should.
       address tokenReceived = getToken(transaction.token);
 
       if(tokenReceived == getToken(CCIPToken.usdc)){
 
-        s_pool.orchestratorLoan(/*tokenReceived*/0xa0Cb889707d426A7A386870A03bc70d1b0697598, amount, transaction.recipient);
+        s_pool.orchestratorLoan(/*tokenReceived*/ 0x1d1499e622D69689cdf9004d05Ec547d650Ff211, amount, transaction.recipient);
 
       } else {
         //@audit We need to call the DEX module here.
@@ -237,18 +229,18 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   }
 
   function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
-    if(transaction.sender == address(0)) revert ConceroFunctions_TxDoesNotExist();
-    if(transaction.isConfirmed == true) revert ConceroFunctions_TxAlreadyConfirmed();
+    if(transaction.sender == address(0)) revert TxDoesNotExist();
+    if(transaction.isConfirmed == true) revert TxAlreadyConfirmed();
 
     transaction.isConfirmed = true;
 
-    emit ConceroFunctions_TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
+    emit TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
   }
 
-  function _sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {
-    if (s_conceroContracts[dstChainSelector] == address(0)) revert ConceroFunctions_AddressNotSet();
+  function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {
+    if (s_conceroContracts[dstChainSelector] == address(0)) revert AddressNotSet();
 
-    string[] memory args = new string[](9);
+    string[] memory args = new string[](10);
     //todo: Strings usage may not be required here. Consider ways of passing data without converting to string
     args[0] = bytes32ToString(s_dstJsHashSum);
     args[1] = Strings.toHexString(s_conceroContracts[dstChainSelector]);
@@ -266,6 +258,6 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     s_requests[reqId].isPending = true;
     s_requests[reqId].ccipMessageId = ccipMessageId;
 
-    emit ConceroFunctions_UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
+    emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
   }
 }

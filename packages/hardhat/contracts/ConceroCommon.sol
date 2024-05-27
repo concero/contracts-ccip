@@ -20,26 +20,26 @@ contract ConceroCommon is ConfirmedOwner, IConceroCommon {
   function setConceroContract(uint64 _chainSelector, address _conceroContract) external onlyOwner {
     s_conceroContracts[_chainSelector] = _conceroContract;
 
-    emit ConceroCommon_ConceroContractUpdated(_chainSelector, _conceroContract);
+    emit ConceroContractUpdated(_chainSelector, _conceroContract);
   }
 
   function setConceroMessenger(address _walletAddress) external onlyOwner {
-    if(_walletAddress == address(0)) revert ConceroCommon_InvalidAddress();
-    if(s_messengerContracts[_walletAddress] == true) revert ConceroCommon_AddressAlreadyAllowlisted();
+    if(_walletAddress == address(0)) revert InvalidAddress();
+    if(s_messengerContracts[_walletAddress] == true) revert AddressAlreadyAllowlisted();
 
     s_messengerContracts[_walletAddress] = true;
 
-    emit ConceroCommon_MessengerUpdated(_walletAddress, true);
+    emit MessengerUpdated(_walletAddress, true);
   }
 
   //@audit we can merge setConceroMessenger & removeConceroMessenger
   function removeConceroMessenger(address _walletAddress) external onlyOwner {
-    if(_walletAddress == address(0)) revert ConceroCommon_InvalidAddress();
-    if(s_messengerContracts[_walletAddress] == false) revert ConceroCommon_NotAllowlistedOrAlreadyRemoved();
+    if(_walletAddress == address(0)) revert InvalidAddress();
+    if(s_messengerContracts[_walletAddress] == false) revert NotAllowlistedOrAlreadyRemoved();
 
     s_messengerContracts[_walletAddress] = false;
 
-    emit ConceroCommon_MessengerUpdated(_walletAddress, true);
+    emit MessengerUpdated(_walletAddress, true);
   }
 
   function getToken(CCIPToken token) internal view returns (address) {
@@ -55,8 +55,8 @@ contract ConceroCommon is ConfirmedOwner, IConceroCommon {
     tokens[1][1] = 0x036CbD53842c5426634e7929541eC2318f3dCF7e; // base
     tokens[1][2] = 0x5fd84259d66Cd46123540766Be93DFE6D43130D7; // opt
 
-    if(uint256(token) > tokens.length) revert ConceroCommon_TokenTypeOutOfBounds();
-    if(uint256(i_chainIndex) > tokens[uint256(token)].length) revert ConceroCommon_ChainIndexOutOfBounds();
+    if(uint256(token) > tokens.length) revert TokenTypeOutOfBounds();
+    if(uint256(i_chainIndex) > tokens[uint256(token)].length) revert ChainIndexOutOfBounds();
 
     return tokens[uint256(token)][uint256(i_chainIndex)];
   }

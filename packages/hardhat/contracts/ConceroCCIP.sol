@@ -16,24 +16,24 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
   IRouterClient internal immutable i_ccipRouter;
 
   modifier onlyAllowListedChain(uint64 _chainSelector) {
-    if (s_conceroContracts[_chainSelector] == address(0)) revert ConceroCCIP_ChainNotAllowed(_chainSelector);
+    if (s_conceroContracts[_chainSelector] == address(0)) revert ChainNotAllowed(_chainSelector);
     _;
   }
 
   modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
-    if (s_conceroContracts[_chainSelector] == address(0)) revert ConceroCCIP_SourceChainNotAllowed(_chainSelector);
-    if (s_conceroContracts[_chainSelector] != _sender) revert ConceroCCIP_SenderNotAllowed(_sender);
+    if (s_conceroContracts[_chainSelector] == address(0)) revert SourceChainNotAllowed(_chainSelector);
+    if (s_conceroContracts[_chainSelector] != _sender) revert SenderNotAllowed(_sender);
     _;
   }
 
   //@audit we should remove it and relocate the if inside the function
   modifier validateReceiver(address _receiver) {
-    if (_receiver == address(0)) revert ConceroCCIP_InvalidReceiverAddress();
+    if (_receiver == address(0)) revert InvalidReceiverAddress();
     _;
   }
 
   modifier tokenAmountSufficiency(address _token, uint256 _amount) {
-    if(IERC20(_token).balanceOf(msg.sender) < _amount) revert ConceroCCIP_InsufficientBalance();
+    if(IERC20(_token).balanceOf(msg.sender) < _amount) revert InsufficientBalance();
     _;
   }
 
@@ -67,7 +67,7 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
     
     uint256 fees = i_ccipRouter.getFee(_destinationChainSelector, evm2AnyMessage);
 
-    if (fees > i_linkToken.balanceOf(address(this))) revert ConceroCCIP_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
+    if (fees > i_linkToken.balanceOf(address(this))) revert NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
     i_linkToken.approve(address(i_ccipRouter), fees);
     //@audit Should we use `safeIncreaseAllowance` here?

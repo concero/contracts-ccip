@@ -7,7 +7,7 @@ import { fundContract } from "./concero/fundContract";
 import updateHashes from "./concero/updateHashes";
 import dripBnm from "./concero/dripBnm";
 import clfRequest from "./unused/Functions-consumer";
-import getHashSum from "./script/getHashSum";
+import getHashSum from "./script/listHashes";
 export default {
   billing,
   consumer,

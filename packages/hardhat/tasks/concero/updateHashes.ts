@@ -11,62 +11,69 @@ import log from "../../utils/log";
 
 async function updateHashes(chain: CNetwork) {
   const { name, url, viemChain } = chain;
-  const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
-  const { walletClient, publicClient, account } = getClients(viemChain, url);
-  const { abi } = await load("../artifacts/contracts/Concero.sol/Concero.json");
-  // todo: make public variables for this to work
-  // const result = await publicClient.readContract({
-  //   address: contract,
-  //   abi,
-  //   functionName: "JsCodeHashSum",
-  //   account,
-  //   chain: viemChain,
-  // });
-  //
-  // if (result.status === "success") {
-  //   console.log(`Read Hash of the contract on ${name}: ${result.result}`);
-  // }
+  try {
+    const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
+    const { walletClient, publicClient, account } = getClients(viemChain, url);
+    const { abi } = await load("../artifacts/contracts/Concero.sol/Concero.json");
+    // todo: make public variables for this to work
+    // const result = await publicClient.readContract({
+    //   address: contract,
+    //   abi,
+    //   functionName: "JsCodeHashSum",
+    //   account,
+    //   chain: viemChain,
+    // });
+    //
+    // if (result.status === "success") {
+    //   console.log(`Read Hash of the contract on ${name}: ${result.result}`);
+    // }
 
-  const srcHash = getHashSum(secrets.SRC_JS);
-  const dstHash = getHashSum(secrets.DST_JS);
+    const srcHash = getHashSum(secrets.SRC_JS);
+    const dstHash = getHashSum(secrets.DST_JS);
 
-  const { request: updateHashReq } = await publicClient.simulateContract({
-    address: contract,
-    abi,
-    functionName: "setSrcJsHashSum",
-    account,
-    chain: viemChain,
-    args: [srcHash],
-  });
+    const { request: updateHashReq } = await publicClient.simulateContract({
+      address: contract,
+      abi,
+      functionName: "setSrcJsHashSum",
+      account,
+      chain: viemChain,
+      args: [srcHash],
+    });
 
-  const updateHashRes = await walletClient.writeContract(updateHashReq);
-  const { cumulativeGasUsed: updateHashGasUsed } = await publicClient.waitForTransactionReceipt({
-    hash: updateHashRes,
-  });
+    const updateHashRes = await walletClient.writeContract(updateHashReq);
+    const { cumulativeGasUsed: updateHashGasUsed } = await publicClient.waitForTransactionReceipt({
+      hash: updateHashRes,
+    });
 
-  log(`Set ${name}:${contract} setSrcJsHashSum[${srcHash}] Gas used: ${updateHashGasUsed.toString()}`, "update-hashes");
+    log(
+      `Set ${name}:${contract} setSrcJsHashSum[${srcHash}] Gas used: ${updateHashGasUsed.toString()}`,
+      "update-hashes",
+    );
 
-  const { request: updateDstHashReq } = await publicClient.simulateContract({
-    address: contract,
-    abi,
-    functionName: "setDstJsHashSum",
-    account,
-    chain: viemChain,
-    args: [dstHash],
-  });
+    const { request: updateDstHashReq } = await publicClient.simulateContract({
+      address: contract,
+      abi,
+      functionName: "setDstJsHashSum",
+      account,
+      chain: viemChain,
+      args: [dstHash],
+    });
 
-  const updateDstHashRes = await walletClient.writeContract(updateDstHashReq);
-  const { cumulativeGasUsed: updateDstHashGasUsed } = await publicClient.waitForTransactionReceipt({
-    hash: updateDstHashRes,
-  });
+    const updateDstHashRes = await walletClient.writeContract(updateDstHashReq);
+    const { cumulativeGasUsed: updateDstHashGasUsed } = await publicClient.waitForTransactionReceipt({
+      hash: updateDstHashRes,
+    });
 
-  log(
-    `Set ${name}:${contract} setDstJsHashSum[${dstHash}] Gas used: ${updateDstHashGasUsed.toString()}`,
-    "update-hashes",
-  );
+    log(
+      `Set ${name}:${contract} setDstJsHashSum[${dstHash}] Gas used: ${updateDstHashGasUsed.toString()}`,
+      "update-hashes",
+    );
+  } catch (error) {
+    log(`Error for ${name}: ${error.message}`, "update-hashes");
+  }
 }
 
-task("update-hashes", "Update the hashes of the contracts")
+task("clf-update-hashes", "Update the hashes of the contracts")
   .addFlag("all", "Update all contracts")
   .setAction(async (taskArgs, hre) => {
     if (taskArgs.all) {

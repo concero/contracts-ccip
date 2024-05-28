@@ -12,9 +12,16 @@ interface IDexSwap {
     Aerodrome //5
   }
 
+  error InvalidSwapData();
+
   ///@notice Concero Struct to track DEX Data
   struct SwapData {
     DexType dexType;
+    address fromToken;
+    uint256 fromAmount;
+    address toToken;
+    uint256 toAmount;
+    uint256 toAmountMin;
     bytes dexData; //routerAddress + data to do swap
   }
 

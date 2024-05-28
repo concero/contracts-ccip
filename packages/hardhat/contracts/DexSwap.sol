@@ -12,6 +12,7 @@ import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/Transfer
 import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
 import {ISwapRouter02, IV3SwapRouter} from "./Interfaces/ISwapRouter02.sol";
 import {IDexSwap} from "./IDexSwap.sol";
+import "./LibConcero.sol";
 
 error DexSwap_CallerNotAllowed(address caller);
 error DexSwap_EmptyDexData();
@@ -88,6 +89,8 @@ contract DexSwap is IDexSwap, Ownable {
   function conceroEntry(SwapData[] memory _swapData) external onlyOrchestrator {
     if (_swapData.length < 1) revert DexSwap_EmptyDexData();
 
+    address toToken = _swapData[_swapData.length - 1].toToken;
+    uint256 toTokenBalanceBefore = LibConcero.getBalance(toToken, address(this));
     uint256 swapDataLength = _swapData.length;
 
     for (uint i; i < swapDataLength; ++i) {
@@ -105,6 +108,11 @@ contract DexSwap is IDexSwap, Ownable {
         _swapDrome(_swapData[i].dexData);
       }
     }
+
+    uint256 toTokenBalanceAfter = LibConcero.getBalance(toToken, address(this));
+    uint256 amountOut = toTokenBalanceAfter - toTokenBalanceBefore;
+
+    IERC20(toToken).safeTransfer(s_orchestrator, amountOut);
   }
 
   /**

@@ -27,11 +27,6 @@ contract ConceroCCIP is CCIPReceiver, ICCIP, ConceroFunctions {
     _;
   }
 
-  modifier tokenAmountSufficiency(address _token, uint256 _amount) {
-    require(IERC20(_token).balanceOf(msg.sender) >= _amount, "Insufficient balance");
-    _;
-  }
-
   constructor(
     address _functionsRouter,
     uint64 _donHostedSecretsVersion,

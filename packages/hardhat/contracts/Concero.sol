@@ -8,6 +8,7 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {IDexSwap} from "./IDexSwap.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {LibConcero} from "./LibConcero.sol";
 
 contract Concero is ConceroCCIP {
   using SafeERC20 for IERC20;
@@ -64,6 +65,39 @@ contract Concero is ConceroCCIP {
     clfPremiumFees[3478487238524512106] = 4000000000000000; // 0.004 link | arb
     clfPremiumFees[10344971235874465080] = 1847290640394088; // 0.0018 link | base // takes in usd mb price feed needed
     clfPremiumFees[5224473277236331295] = 2000000000000000; // 0.002 link | opt
+  }
+
+  modifier tokenAmountSufficiency(address token, uint256 amount) {
+    if (LibConcero.isNativeToken(token)) {
+      if (msg.value >= amount) revert InvalidAmount();
+    } else {
+      uint256 balance = LibConcero.getBalance(token, msg.sender);
+      if (balance < amount) revert InvalidAmount();
+    }
+
+    _;
+  }
+
+  modifier validateSwapAndBridgeData(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata srcSwapData) {
+    address swapDataToToken = srcSwapData[srcSwapData.length - 1].toToken;
+    if (swapDataToToken == getToken(bridgeData.tokenType)) {
+      revert InvalidBridgeData();
+    }
+    _;
+  }
+
+  modifier validateBridgeData(BridgeData calldata bridgeData) {
+    if (bridgeData.amount > 0) {
+      revert InvalidAmount();
+    }
+    _;
+  }
+
+  modifier validateSwapData(IDexSwap.SwapData[] calldata swapData) {
+    if (swapData.length > 0) {
+      revert IDexSwap.InvalidSwapData();
+    }
+    _;
   }
 
   // setters
@@ -149,7 +183,7 @@ contract Concero is ConceroCCIP {
     uint256 functionsGasFeeInNative = (750_000 * lastGasPrices[chainSelector]) + (750_000 * lastGasPrices[dstChainSelector]);
     uint256 functionsGasFeeInUsdc = (functionsGasFeeInNative * uint256(nativeToUsdcRate)) / 1 ether;
 
-    return functionsFeeInUsdc + ccpFeeInUsdc + conceroFee + functionsGasFeeInUsdc;
+    return (functionsFeeInUsdc + ccpFeeInUsdc + conceroFee + functionsGasFeeInUsdc);
   }
 
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
@@ -170,28 +204,70 @@ contract Concero is ConceroCCIP {
     return (ccpFeeInLink * uint256(linkToUsdcRate)) / 1 ether;
   }
 
-  function entrypoint(
-    address _token,
-    CCIPToken _tokenType,
-    uint256 _amount,
-    uint64 _dstChainSelector,
-    address _receiver,
-    IDexSwap.SwapData[] memory _swapData
-  ) external payable tokenAmountSufficiency(_token, _amount) {
-    //todo: maybe move to OZ safeTransfer (but research needed)
-    IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+  function _startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata dstSwapData) internal {
+    address fromToken = getToken(bridgeData.tokenType);
+    uint256 totalSrcFee = getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount);
 
-    if (_swapData.length > 0) {
-      dexSwap.conceroEntry(_swapData);
+    if (bridgeData.amount < totalSrcFee) {
+      revert InsufficientFundsForFees(bridgeData.amount, totalSrcFee);
     }
 
-    uint256 totalSrcFee = getSrcTotalFeeInUsdc(_tokenType, _dstChainSelector, _amount);
-    if (_amount < totalSrcFee) revert InsufficientFundsForFees(_amount, totalSrcFee);
+    uint256 amount = bridgeData.amount - totalSrcFee;
+    bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, bridgeData.receiver, fromToken, bridgeData.amount);
+    emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
+    sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType);
+  }
 
-    uint256 amount = _amount - totalSrcFee;
-    bytes32 ccipMessageId = _sendTokenPayLink(_dstChainSelector, _receiver, _token, amount);
-    emit CCIPSent(ccipMessageId, msg.sender, _receiver, _tokenType, amount, _dstChainSelector);
-    sendUnconfirmedTX(ccipMessageId, msg.sender, _receiver, amount, _dstChainSelector, _tokenType);
+  function _swap(IDexSwap.SwapData[] calldata swapData) internal returns (uint256) {
+    address fromToken = swapData[0].fromToken;
+    uint256 fromAmount = swapData[0].fromAmount;
+
+    IERC20(fromToken).safeTransferFrom(msg.sender, address(this), fromAmount);
+
+    address toToken = swapData[swapData.length - 1].toToken;
+    uint256 toAmountMin = swapData[swapData.length - 1].toAmountMin;
+
+    uint256 balanceBefore = LibConcero.getBalance(toToken, address(this));
+    dexSwap.conceroEntry(swapData);
+    uint256 balanceAfter = LibConcero.getBalance(toToken, address(this));
+
+    if ((balanceBefore + toAmountMin) < balanceAfter) {
+      revert FundsLost(toToken, balanceBefore, balanceAfter, toAmountMin);
+    }
+
+    uint256 amountOut = balanceAfter - balanceBefore;
+    return amountOut;
+  }
+
+  function swap(IDexSwap.SwapData[] calldata swapData) external payable tokenAmountSufficiency(swapData[0].fromToken, swapData[0].fromAmount) {
+    uint256 amountOut = _swap(swapData);
+    address toToken = swapData[swapData.length - 1].toToken;
+    LibConcero.transferERC20(toToken, amountOut, msg.sender);
+  }
+
+  function swapAndBridge(
+    BridgeData calldata bridgeData,
+    IDexSwap.SwapData[] calldata srcSwapData,
+    IDexSwap.SwapData[] calldata dstSwapData
+  )
+    external
+    payable
+    tokenAmountSufficiency(srcSwapData[0].fromToken, srcSwapData[0].fromAmount)
+    validateSwapData(srcSwapData)
+    validateBridgeData(bridgeData)
+    validateSwapAndBridgeData(bridgeData, srcSwapData)
+  {
+    _swap(srcSwapData);
+    _startBridge(bridgeData, dstSwapData);
+  }
+
+  function bridge(
+    BridgeData calldata bridgeData,
+    IDexSwap.SwapData[] calldata dstSwapData
+  ) external payable tokenAmountSufficiency(getToken(bridgeData.tokenType), bridgeData.amount) validateBridgeData(bridgeData) {
+    address fromToken = getToken(bridgeData.tokenType);
+    IERC20(fromToken).safeTransferFrom(msg.sender, address(this), bridgeData.amount);
+    _startBridge(bridgeData, dstSwapData);
   }
 
   function withdraw(address _owner) public onlyOwner {

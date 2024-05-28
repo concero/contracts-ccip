@@ -1,9 +1,9 @@
 /*
 Replaces environment variables in a file and saves the result to a dist folder.
+run with: yarn hardhat clf-build-script --path ./CLFScripts/DST.js
  */
 
 import { task, types } from "hardhat/config";
-
 export const pathToScript = [__dirname, "../", "CLFScripts"];
 const fs = require("fs");
 const path = require("path");

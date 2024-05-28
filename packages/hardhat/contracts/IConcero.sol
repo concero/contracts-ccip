@@ -16,6 +16,8 @@ interface IConceroCommon {
   error ChainIndexOutOfBounds();
 
   error InsufficientFundsForFees(uint256 amount, uint256 fee);
+  error FundsLost(address token, uint256 balanceBefore, uint256 balanceAfter, uint256 amount);
+  error InvalidAmount();
 
   enum CCIPToken {
     bnm,
@@ -39,7 +41,8 @@ interface ICCIP is IConceroCommon {
 
   error NothingToWithdraw();
   error FailedToWithdrawEth(address owner, address target, uint256 value);
-  error NotFunctionContract(address sender); //@audit not being used
+  error NotFunctionContract(address _sender); //@audit not being used
+  error InvalidBridgeData();
 
   event CCIPSent(
     bytes32 indexed ccipMessageId,
@@ -54,6 +57,14 @@ interface ICCIP is IConceroCommon {
     uint256 previousValue,
     uint256 feeAmount
   );
+
+  struct BridgeData {
+    CCIPToken tokenType;
+    uint256 amount;
+    uint256 minAmount;
+    uint64 dstChainSelector;
+    address receiver;
+  }
 }
 
 interface IFunctions is IConceroCommon {
@@ -97,7 +108,7 @@ interface IFunctions is IConceroCommon {
   event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
   event ConceroPoolAddressUpdated(address previousAddress, address pool);
   event DonSecretVersionUpdated(uint64 previousDonSecretVersion, uint64 newDonSecretVersion);
-  event DonSlotIdUpdated(uint8 previousDonSlot, uint8 newDonSlot); 
+  event DonSlotIdUpdated(uint8 previousDonSlot, uint8 newDonSlot);
   event DestinationJsHashSumUpdated(bytes32 previousDstHashSum, bytes32 newDstHashSum);
   event SourceJsHashSumUpdated(bytes32 previousSrcHashSum, bytes32 newSrcHashSum);
 
@@ -109,7 +120,7 @@ interface IFunctions is IConceroCommon {
   error TxDoesNotExist();
   error TxAlreadyConfirmed();
   error AddressNotSet();
-  
+
   enum RequestType {
     addUnconfirmedTxDst,
     checkTxSrc

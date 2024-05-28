@@ -86,7 +86,7 @@ contract DexSwap is IDexSwap, Ownable {
    * @param _swapData a struct array that contains dex informations.
    * @dev only the Orchestrator contract should be able to call this function
    */
-  function conceroEntry(SwapData[] memory _swapData) external onlyOrchestrator {
+  function conceroEntry(SwapData[] memory _swapData, uint256 nativeAmount) external payable onlyOrchestrator {
     if (_swapData.length < 1) revert DexSwap_EmptyDexData();
 
     address toToken = _swapData[_swapData.length - 1].toToken;

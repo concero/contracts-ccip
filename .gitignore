@@ -30,3 +30,4 @@ dist
 
 packages/hardhat/deployments
 packages/hardhat/test/forge/lib/
+packages/foundry/lib

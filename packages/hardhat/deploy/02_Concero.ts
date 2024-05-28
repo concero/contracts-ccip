@@ -27,6 +27,7 @@ const deployConcero: DeployFunction = async function (
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
+
   if (!chains[name]) throw new Error(`Chain ${name} not supported`);
 
   const {
@@ -42,10 +43,10 @@ const deployConcero: DeployFunction = async function (
   } = chains[name];
 
   const defaultArgs = {
-    slotId: 0,
     functionsRouter: functionsRouter,
     donHostedSecretsVersion: donHostedSecretsVersion,
     functionsDonId: functionsDonId,
+    slotId: 0,
     functionsSubId: functionsSubIds[0],
     chainSelector: chainSelector,
     conceroChainIndex: conceroChainIndex,

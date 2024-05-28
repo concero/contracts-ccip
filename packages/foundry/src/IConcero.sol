@@ -94,6 +94,7 @@ interface IFunctions is IConceroCommon {
     address token,
     uint256 amount
   );
+  
   event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
   event ConceroPoolAddressUpdated(address previousAddress, address pool);
   event DonSecretVersionUpdated(uint64 previousDonSecretVersion, uint64 newDonSecretVersion);
@@ -106,10 +107,7 @@ interface IFunctions is IConceroCommon {
   error UnexpectedRequestID(bytes32);
   error NotCCIPContract(address); //@audit not being used
   error SendTokenFailed(bytes32 ccipMessageId, address token, uint256 amount, address recipient);//@audit we can remove this or is being tracked somewhere else?
-  error TxDoesNotExist();
-  error TxAlreadyConfirmed();
-  error AddressNotSet();
-  
+
   enum RequestType {
     addUnconfirmedTxDst,
     checkTxSrc

@@ -97,6 +97,11 @@ contract Concero is ConceroCCIP {
     if (swapData.length > 0) {
       revert IDexSwap.InvalidSwapData();
     }
+
+    if (LibConcero.isNativeToken(swapData[0].fromToken)) {
+      if (swapData[0].fromAmount > msg.value) revert IDexSwap.InvalidSwapData();
+    }
+
     _;
   }
 
@@ -228,7 +233,7 @@ contract Concero is ConceroCCIP {
     uint256 toAmountMin = swapData[swapData.length - 1].toAmountMin;
 
     uint256 balanceBefore = LibConcero.getBalance(toToken, address(this));
-    dexSwap.conceroEntry(swapData);
+    dexSwap.conceroEntry{value: msg.value}(swapData, msg.value);
     uint256 balanceAfter = LibConcero.getBalance(toToken, address(this));
 
     if ((balanceBefore + toAmountMin) < balanceAfter) {

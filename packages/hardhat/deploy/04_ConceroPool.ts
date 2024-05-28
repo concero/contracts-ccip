@@ -1,31 +1,47 @@
-import { DeployFunction } from "hardhat-deploy/types";
+import { DeployFunction, Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import chains, { networkEnvKeys } from "../constants/CNetworks";
+import updateEnvVariable from "../utils/updateEnvVariable";
+import log from "../utils/log";
 
-const deployConceroPool: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts, network } = hre;
-  const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+interface ConstructorArgs {
+  linkToken?: string;
+  ccipRouter?: string;
+}
 
-  // THIS IS JUST AN EXAMPLE, PLEASE REPLACE WITH REAL ADDRESSES
-  const USDC_ADDRESS = process.env.USDC_ARBITRUM;
-  const USDT_ADDRESS = process.env.USDC_ARBITRUM_SEPOLIA;
+const deployConceroPool: DeployFunction = async function (hre: HardhatRuntimeEnvironment,
+  constructorArgs: ConstructorArgs = {},
+) {
+  const { deployer } = await hre.getNamedAccounts();
+  const { deploy } = hre.deployments;
+  const { name } = hre.network;  
 
-  if (!USDC_ADDRESS || !USDT_ADDRESS) {
-    throw new Error("USDC_ADDRESS and USDT_ADDRESS must be defined in the environment variables.");
-  }
+  const {
+    linkToken,
+    ccipRouter,
+  } = chains[name];
+
+  const defaultArgs = {
+    linkToken: linkToken,
+    ccipRouter: ccipRouter,
+  };
+
+  // Merge defaultArgs with constructorArgs
+  const args = { ...defaultArgs, ...constructorArgs };
 
   console.log("Deploying ConceroPool...");
-  const deploymentResult = await deploy("ConceroPool", {
+  const deployConceroPool = await deploy("ConceroPool", {
     from: deployer,
-    args: [USDC_ADDRESS, USDT_ADDRESS], // Constructor arguments
+    args: [
+      args.linkToken,
+      args.ccipRouter
+    ],
     log: true,
     autoMine: true,
-  });
+  }) as Deployment ;
 
-  console.log(`ConceroPool deployed to: ${deploymentResult.address}`);
-
-  // Optional: Update deployment address in an environment file or elsewhere
-  // updateEnvVariable("CONCERO_POOL_ADDRESS", deploymentResult.address, "../../.env");
+  log(`ConceroPool deployed to ${name} to: ${deployConceroPool.address}`, "deployConceroPool");
+  // updateEnvVariable(`ConceroPool ${networkEnvKeys[name]}`, deployConceroPool.address, "../../../.env.deployments")
 };
 
 export default deployConceroPool;

@@ -9,17 +9,15 @@ interface ConstructorArgs {
   ccipRouter?: string;
 }
 
-const deployConceroPool: DeployFunction = async function (hre: HardhatRuntimeEnvironment,
+const deployConceroPool: DeployFunction = async function (
+  hre: HardhatRuntimeEnvironment,
   constructorArgs: ConstructorArgs = {},
 ) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const { name } = hre.network;  
+  const { name } = hre.network;
 
-  const {
-    linkToken,
-    ccipRouter,
-  } = chains[name];
+  const { linkToken, ccipRouter } = chains[name];
 
   const defaultArgs = {
     linkToken: linkToken,
@@ -30,15 +28,12 @@ const deployConceroPool: DeployFunction = async function (hre: HardhatRuntimeEnv
   const args = { ...defaultArgs, ...constructorArgs };
 
   console.log("Deploying ConceroPool...");
-  const deployConceroPool = await deploy("ConceroPool", {
+  const deployConceroPool = (await deploy("ConceroPool", {
     from: deployer,
-    args: [
-      args.linkToken,
-      args.ccipRouter
-    ],
+    args: [args.linkToken, args.ccipRouter],
     log: true,
     autoMine: true,
-  }) as Deployment ;
+  })) as Deployment;
 
   log(`ConceroPool deployed to ${name} to: ${deployConceroPool.address}`, "deployConceroPool");
   // updateEnvVariable(`ConceroPool ${networkEnvKeys[name]}`, deployConceroPool.address, "../../../.env.deployments")

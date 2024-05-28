@@ -106,9 +106,6 @@ contract Concero is ConceroCCIP {
   }
 
   // setters
-  function setClfPremiumFees(uint64 chainSelector, uint256 feeAmount) external onlyOwner {
-    clfPremiumFees[chainSelector] = feeAmount;
-  }
 
   function setDexSwap(address _dexSwap) external onlyOwner {
     dexSwap = IDexSwap(_dexSwap);
@@ -145,9 +142,9 @@ contract Concero is ConceroCCIP {
       return 0;
     }
 
-    uint256 srcGasPrice = lastGasPrices[chainSelector];
-    uint256 dstGasPrice = lastGasPrices[dstChainSelector];
-    uint256 srsClFeeInLink = clfPremiumFees[chainSelector] +
+    uint256 srcGasPrice = s_lastGasPrices[CHAIN_SELECTOR];
+    uint256 dstGasPrice = s_lastGasPrices[dstChainSelector];
+    uint256 srsClFeeInLink = clfPremiumFees[CHAIN_SELECTOR] +
       ((srcGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_CALLBACK_GAS_LIMIT)) * uint256(linkToNativeRate)) /
       1 ether;
     uint256 dstClFeeInLink = clfPremiumFees[dstChainSelector] +
@@ -187,16 +184,17 @@ contract Concero is ConceroCCIP {
     uint256 conceroFee = amount / 1000; //@audit 1_000? == 0.1?
 
     // gas fee
-    uint256 functionsGasFeeInNative = (750_000 * lastGasPrices[chainSelector]) + (750_000 * lastGasPrices[dstChainSelector]);
+    uint256 functionsGasFeeInNative = (750_000 * s_lastGasPrices[CHAIN_SELECTOR]) + (750_000 * s_lastGasPrices[dstChainSelector]);
     uint256 functionsGasFeeInUsdc = (functionsGasFeeInNative * uint256(nativeToUsdcRate)) / 1 ether;
 
     return functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + functionsGasFeeInUsdc;
   }
 
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(this), getToken(tokenType), 1 ether, s_linkToken, dstChainSelector);
-    IRouterClient router = IRouterClient(this.getRouter());
-    return router.getFee(dstChainSelector, evm2AnyMessage);
+    // todo: instead of 0.1 ether, pass the actual fee into _buildCCIPMessage()
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType), 1 ether, 0.1 ether, dstChainSelector);
+
+    return CCIP_ROUTER.getFee(dstChainSelector, evm2AnyMessage);
   }
 
   function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
@@ -220,16 +218,19 @@ contract Concero is ConceroCCIP {
     }
 
     uint256 amount = bridgeData.amount - totalSrcFee;
-    bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, bridgeData.receiver, fromToken, bridgeData.amount);
+    //todo: Pass the actual lp_fee instead of  0.1 ether in _sendTokenPayLink()
+    bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, bridgeData.amount, 0.1 ether);
     emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
     sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType);
-  // setters
-  function setClfPremiumFees(uint64 chainSelector, uint256 feeAmount) external onlyOwner {
-    //@audit we must limit this amount. If we don't, it Will trigger a lot of red flags in audits.
-    uint256 previousValue = clfPremiumFees[chainSelector];
-    clfPremiumFees[chainSelector] = feeAmount;
+  }
 
-    emit CLFPremiumFeeUpdated(chainSelector, previousValue, feeAmount);
+  // setters
+  function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external onlyOwner {
+    //@audit we must limit this amount. If we don't, it Will trigger a lot of red flags in audits.
+    uint256 previousValue = clfPremiumFees[_chainSelector];
+    clfPremiumFees[_chainSelector] = feeAmount;
+
+    emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
   }
 
   function _swap(IDexSwap.SwapData[] calldata swapData) internal returns (uint256) {

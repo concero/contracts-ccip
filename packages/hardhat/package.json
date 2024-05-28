@@ -27,6 +27,8 @@
     "drip-bnm": "hardhat drip-bnm",
     "fund-contracts": "hardhat fund-contracts",
     "deploy-infra": "hardhat deploy-infra",
+    "clf-update-hashes": "hardhat clf-update-hashes",
+    "clf-list-hashes": "hardhat clf-list-hashes",
     "clf-script-build": "hardhat clf-script-build",
     "clf-script-simulate": "hardhat clf-script-simulate",
     "clf-donsecrets-list": "hardhat clf-donsecrets-list",

@@ -9,6 +9,8 @@ interface IConceroCommon {
   error TransferFailed();
   error InsufficientFee();
   error InsufficientFundsForFees(uint256 amount, uint256 fee);
+  error FundsLost(address token, uint256 balanceBefore, uint256 balanceAfter, uint256 amount);
+  error InvalidAmount();
 
   enum CCIPToken {
     bnm,
@@ -31,6 +33,7 @@ interface ICCIP is IConceroCommon {
   error NothingToWithdraw();
   error FailedToWithdrawEth(address owner, address target, uint256 value);
   error NotFunctionContract(address _sender);
+  error InvalidBridgeData();
 
   event CCIPSent(
     bytes32 indexed ccipMessageId,
@@ -48,6 +51,14 @@ interface ICCIP is IConceroCommon {
     address token,
     uint256 amount
   );
+
+  struct BridgeData {
+    CCIPToken tokenType;
+    uint256 amount;
+    uint256 minAmount;
+    uint64 dstChainSelector;
+    address receiver;
+  }
 }
 
 interface IFunctions is IConceroCommon {

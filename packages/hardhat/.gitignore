@@ -25,3 +25,9 @@ deployments/localhost
 
 # other
 temp
+
+
+packages/foundry/out
+packages/foundry/node_modules
+packages/foundry/cache
+

@@ -13,7 +13,7 @@ const isSimulation = process.argv.length === 3 && process.argv[2] === "functions
 const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 
 // TODO @dev - set this to run the accept.js task.
-const SECOND_PRIVATE_KEY = process.env.SECOND_TEST_WALLET_PRIVATE_KEY;
+const SECOND_PRIVATE_KEY = process.env.MESSENGER_WALLET_PRIVATE_KEY;
 
 if (!isTestEnvironment && !isSimulation && !PRIVATE_KEY) {
   throw Error("Set the PRIVATE_KEY environment variable with your EVM wallet private key");
@@ -86,7 +86,10 @@ const CLFnetworks = {
     linkPriceFeed: "0x42585eD362B3f1BCa95c640FdFf35Ef899212734", // LINK/ETH
     functionsRouter: "0xb83E47C2bC239B3bf370bc41e1459A34b41238D0",
     donId: "fun-ethereum-sepolia-1",
-    gatewayUrls: ["https://01.functions-gateway.testnet.chain.link/", "https://02.functions-gateway.testnet.chain.link/"],
+    gatewayUrls: [
+      "https://01.functions-gateway.testnet.chain.link/",
+      "https://02.functions-gateway.testnet.chain.link/",
+    ],
   },
   polygonMumbai: {
     url: process.env.POLYGON_MUMBAI_RPC_URL || "UNSET",
@@ -101,7 +104,10 @@ const CLFnetworks = {
     linkPriceFeed: "0x12162c3E810393dEC01362aBf156D7ecf6159528", // LINK/MATIC
     functionsRouter: "0x6E2dc0F9DB014aE19888F539E59285D2Ea04244C",
     donId: "fun-polygon-mumbai-1",
-    gatewayUrls: ["https://01.functions-gateway.testnet.chain.link/", "https://02.functions-gateway.testnet.chain.link/"],
+    gatewayUrls: [
+      "https://01.functions-gateway.testnet.chain.link/",
+      "https://02.functions-gateway.testnet.chain.link/",
+    ],
   },
   avalancheFuji: {
     url: process.env.AVALANCHE_FUJI_RPC_URL || "UNSET",
@@ -116,7 +122,10 @@ const CLFnetworks = {
     linkPriceFeed: "0x79c91fd4F8b3DaBEe17d286EB11cEE4D83521775", // LINK/AVAX
     functionsRouter: "0xA9d587a00A31A52Ed70D6026794a8FC5E2F5dCb0",
     donId: "fun-avalanche-fuji-1",
-    gatewayUrls: ["https://01.functions-gateway.testnet.chain.link/", "https://02.functions-gateway.testnet.chain.link/"],
+    gatewayUrls: [
+      "https://01.functions-gateway.testnet.chain.link/",
+      "https://02.functions-gateway.testnet.chain.link/",
+    ],
   },
   arbitrum: {
     url: process.env.ARBITRUM_RPC_URL || "UNSET",
@@ -148,7 +157,10 @@ const CLFnetworks = {
     linkPriceFeed: "0x3ec8593F930EA45ea58c968260e6e9FF53FC934f", // LINK/ETH
     functionsRouter: "0x234a5fb5Bd614a7AA2FfAB244D603abFA0Ac5C5C",
     donId: "fun-arbitrum-sepolia-1",
-    gatewayUrls: ["https://01.functions-gateway.testnet.chain.link/", "https://02.functions-gateway.testnet.chain.link/"],
+    gatewayUrls: [
+      "https://01.functions-gateway.testnet.chain.link/",
+      "https://02.functions-gateway.testnet.chain.link/",
+    ],
   },
   baseSepolia: {
     url: process.env.BASE_SEPOLIA_RPC_URL || "UNSET", // https://docs.basescan.org/v/sepolia-basescan/
@@ -163,7 +175,10 @@ const CLFnetworks = {
     linkPriceFeed: "0x56a43EB56Da12C0dc1D972ACb089c06a5dEF8e69", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=base&page=1
     functionsRouter: "0xf9B8fc078197181C841c296C876945aaa425B278",
     donId: "fun-base-sepolia-1",
-    gatewayUrls: ["https://01.functions-gateway.testnet.chain.link/", "https://02.functions-gateway.testnet.chain.link/"],
+    gatewayUrls: [
+      "https://01.functions-gateway.testnet.chain.link/",
+      "https://02.functions-gateway.testnet.chain.link/",
+    ],
   },
   optimismSepolia: {
     url: process.env.OPTIMISM_SEPOLIA_RPC_URL || "UNSET", // https://docs.optimism.io/chain/networks#op-sepolia
@@ -178,7 +193,10 @@ const CLFnetworks = {
     linkPriceFeed: "0x98EeB02BC20c5e7079983e8F0D0D839dFc8F74fA", //https://docs.chain.link/data-feeds/price-feeds/addresses?network=optimism&page=1#optimism-sepolia
     functionsRouter: "0xC17094E3A1348E5C7544D4fF8A36c28f2C6AAE28",
     donId: "fun-optimism-sepolia-1",
-    gatewayUrls: ["https://01.functions-gateway.testnet.chain.link/", "https://02.functions-gateway.testnet.chain.link/"],
+    gatewayUrls: [
+      "https://01.functions-gateway.testnet.chain.link/",
+      "https://02.functions-gateway.testnet.chain.link/",
+    ],
   },
   // localFunctionsTestnet is updated dynamically by scripts/startLocalFunctionsTestnet.js so it should not be modified here
   localFunctionsTestnet: {

@@ -15,18 +15,21 @@ let deployableChains: CNetwork[] = liveChains;
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
+  // .addFlag("all", "Deploy the contract to all networks")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
     const { name } = hre.network;
+
+    // if (taskArgs.all) deployableChains = liveChains;
+    // else
     if (name !== "localhost" && name !== "hardhat") deployableChains = [chains[name]];
 
-    if (!taskArgs.skipdeploy) {
+    if (taskArgs.skipdeploy) log("Skipping deployment", "deploy-infra");
+    else {
       execSync("yarn compile", { stdio: "inherit" });
       await deployConcero(hre, { slotId });
-    } else {
-      log("Skipping deployment", "deploy-infra");
     }
 
     await uploadDonSecrets(deployableChains, slotId, 4320);

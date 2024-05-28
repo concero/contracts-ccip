@@ -92,6 +92,9 @@
     "@swc/core": "^1.4.13",
     "@swc/helpers": "^0.5.9",
     "@typechain/ethers-v6": "^0.5.1",
+    "@uniswap/swap-router-contracts": "https://github.com/Uniswap/swap-router-contracts",
+    "@uniswap/v2-periphery": "https://github.com/Uniswap/v2-periphery",
+    "@uniswap/v3-periphery": "https://github.com/sushiswap/v3-periphery",
     "dotenv": "^16.4.5",
     "envfile": "^6.18.0",
     "ethers": "6.12.1",
@@ -101,6 +104,7 @@
     "solhint-plugin-chainlink-solidity": "git+https://github.com/smartcontractkit/chainlink-solhint-rules.git#v1.2.1",
     "swc": "^1.0.11",
     "terser": "^5.30.3",
+    "velodrome": "https://github.com/velodrome-finance/contracts",
     "viem": "^2.9.18"
   }
 }

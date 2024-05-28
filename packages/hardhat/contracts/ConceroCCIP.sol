@@ -12,8 +12,8 @@ import {ConceroFunctions} from "./ConceroFunctions.sol";
 contract ConceroCCIP is ICCIP, ConceroFunctions {
   using SafeERC20 for IERC20;
 
-  LinkTokenInterface private immutable linkToken;
-  IRouterClient internal immutable ccipRouter;
+  LinkTokenInterface internal immutable LINK_TOKEN;
+  IRouterClient internal immutable CCIP_ROUTER;
 
   modifier onlyAllowListedChain(uint64 _chainSelector) {
     if (s_conceroContracts[_chainSelector] == address(0)) revert ChainNotAllowed(_chainSelector);
@@ -32,11 +32,6 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
     _;
   }
 
-  modifier tokenAmountSufficiency(address _token, uint256 _amount) {
-    if(IERC20(_token).balanceOf(msg.sender) < _amount) revert InsufficientBalance();
-    _;
-  }
-
   constructor(
     address _functionsRouter,
     uint64 _donHostedSecretsVersion,
@@ -48,11 +43,9 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
     address _link,
     address _ccipRouter,
     JsCodeHashSum memory jsCodeHashSum
-  )
-    ConceroFunctions(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, jsCodeHashSum)
-  {
-    linkToken = LinkTokenInterface(_link);
-    ccipRouter = IRouterClient(_ccipRouter);
+  ) ConceroFunctions(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, jsCodeHashSum) {
+    LINK_TOKEN = LinkTokenInterface(_link);
+    CCIP_ROUTER = IRouterClient(_ccipRouter);
     s_messengerContracts[msg.sender] = true;
   }
 
@@ -62,18 +55,17 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
     uint256 _amount,
     uint256 _lpFee
   ) internal onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_token, _amount, _lpFee, _destinationChainSelector);
 
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage( _token, _amount, _lpFee, _destinationChainSelector);
+    uint256 fees = CCIP_ROUTER.getFee(_destinationChainSelector, evm2AnyMessage);
 
-    uint256 fees = ccipRouter.getFee(_destinationChainSelector, evm2AnyMessage);
+    if (fees > LINK_TOKEN.balanceOf(address(this))) revert NotEnoughLinkBalance(LINK_TOKEN.balanceOf(address(this)), fees);
 
-    if (fees > linkToken.balanceOf(address(this))) revert NotEnoughLinkBalance(linkToken.balanceOf(address(this)), fees);
-
-    linkToken.approve(address(ccipRouter), fees);
+    LINK_TOKEN.approve(address(CCIP_ROUTER), fees);
     //@audit Should we use `safeIncreaseAllowance` here?
-    IERC20(_token).approve(address(ccipRouter), _amount);
+    IERC20(_token).approve(address(CCIP_ROUTER), _amount);
 
-    messageId = ccipRouter.ccipSend(_destinationChainSelector, evm2AnyMessage);
+    messageId = CCIP_ROUTER.ccipSend(_destinationChainSelector, evm2AnyMessage);
   }
 
   function _buildCCIPMessage(
@@ -91,7 +83,7 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
         data: abi.encode(_lpFee),
         tokenAmounts: tokenAmounts,
         extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
-        feeToken: address(linkToken)
+        feeToken: address(LINK_TOKEN)
       });
   }
 }

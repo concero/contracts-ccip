@@ -7,8 +7,8 @@ interface IConceroCommon {
   event ConceroContractUpdated(uint64 chainSelector, address conceroContract);
   event MessengerUpdated(address indexed walletAddress, bool status);
 
-  error TransferFailed(); //@audit not being used
-  error InsufficientFee(); //@audit not being used
+  //  error TransferFailed(); //@audit not being used
+  //  error InsufficientFee(); //@audit not being used
   error InvalidAddress();
   error AddressAlreadyAllowlisted();
   error NotAllowlistedOrAlreadyRemoved();
@@ -36,12 +36,12 @@ interface ICCIP is IConceroCommon {
   error SourceChainNotAllowed(uint64 sourceChainSelector);
   error SenderNotAllowed(address sender);
   error InvalidReceiverAddress();
-  error InsufficientBalance();
+  //  error InsufficientBalance(); // no usages
   error NotEnoughLinkBalance(uint256 fees, uint256 feeToken);
 
   error NothingToWithdraw();
   error FailedToWithdrawEth(address owner, address target, uint256 value);
-  error NotFunctionContract(address _sender); //@audit not being used
+  //  error NotFunctionContract(address _sender); //@audit not being used
   error InvalidBridgeData();
 
   event CCIPSent(
@@ -52,11 +52,7 @@ interface ICCIP is IConceroCommon {
     uint256 amount,
     uint64 dstChainSelector
   );
-  event CLFPremiumFeeUpdated(
-    uint64 chainSelector,
-    uint256 previousValue,
-    uint256 feeAmount
-  );
+  event CLFPremiumFeeUpdated(uint64 chainSelector, uint256 previousValue, uint256 feeAmount);
 
   struct BridgeData {
     CCIPToken tokenType;
@@ -97,14 +93,15 @@ interface IFunctions is IConceroCommon {
     address indexed recipient,
     address token,
     uint256 amount
-  );
-  event TXReleaseFailed( //@audit we can remove this or is being tracked somewhere else?
+  ); //@audit unused
+  event TXReleaseFailed(
     bytes32 indexed ccipMessageId,
     address sender,
     address recipient,
     address token,
     uint256 amount
-  );
+  ); //@audit we can remove this or is being tracked somewhere else?
+
   event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
   event ConceroPoolAddressUpdated(address previousAddress, address pool);
   event DonSecretVersionUpdated(uint64 previousDonSecretVersion, uint64 newDonSecretVersion);
@@ -115,8 +112,8 @@ interface IFunctions is IConceroCommon {
   error NotMessenger(address);
   error TXAlreadyExists(bytes32 txHash, bool isConfirmed);
   error UnexpectedRequestID(bytes32);
-  error NotCCIPContract(address); //@audit not being used
-  error SendTokenFailed(bytes32 ccipMessageId, address token, uint256 amount, address recipient);//@audit we can remove this or is being tracked somewhere else?
+  //  error NotCCIPContract(address); //@audit not being used
+  //  error SendTokenFailed(bytes32 ccipMessageId, address token, uint256 amount, address recipient); //@audit we can remove this or is being tracked somewhere else?
   error TxDoesNotExist();
   error TxAlreadyConfirmed();
   error AddressNotSet();

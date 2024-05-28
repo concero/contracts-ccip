@@ -11,7 +11,6 @@ import {Concero} from "./Concero.sol";
 import {ConceroPool} from "./ConceroPool.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 
-
 contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   using SafeERC20 for IERC20;
 
@@ -85,7 +84,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
 
-    emit DonSlotIdUpdated(previousValue, _donHostedSecretsSlotId); 
+    emit DonSlotIdUpdated(previousValue, _donHostedSecretsSlotId);
   }
 
   function setDstJsHashSum(bytes32 _hashSum) external onlyOwner {
@@ -100,7 +99,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     bytes32 previousValue = s_dstJsHashSum;
 
     s_srcJsHashSum = _hashSum;
-    
+
     emit SourceJsHashSumUpdated(previousValue, _hashSum);
   }
 
@@ -145,7 +144,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   ) external onlyMessenger {
     Transaction memory transaction = s_transactions[ccipMessageId];
     if (transaction.sender != address(0)) revert TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
-    
+
     s_transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
 
     //@audit bytes[] memory args = new bytes[](9)
@@ -161,7 +160,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     args[6] = Strings.toHexString(recipient);
     args[7] = Strings.toString(uint(token));
     args[8] = Strings.toString(amount);
-    args[9] = Strings.toString(i_chainSelector);
+    args[9] = Strings.toString(CHAIN_SELECTOR);
 
     bytes32 reqId = sendRequest(args, dstJsCode);
 
@@ -197,24 +196,22 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     }
 
     if (request.requestType == RequestType.checkTxSrc) {
-
       Transaction storage transaction = s_transactions[request.ccipMessageId];
-      
+
       _confirmTX(request.ccipMessageId, transaction);
 
       uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
       address tokenReceived = getToken(transaction.token);
 
-      if(tokenReceived == getToken(CCIPToken.bnm)){ //@audit hardcode for CCIP-BnM - Should be USDC
+      if (tokenReceived == getToken(CCIPToken.bnm)) {
+        //@audit hardcode for CCIP-BnM - Should be USDC
 
         s_pool.orchestratorLoan(tokenReceived, amount, transaction.recipient);
-
-      } else{
+      } else {
         //@audit We need to call the DEX module here.
         // dexSwap.conceroEntry(passing the user address as receiver);
       }
-
     } else if (request.requestType == RequestType.addUnconfirmedTxDst) {
       //@audit what means this 96?
       if (response.length != 96) {
@@ -223,7 +220,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
       (uint256 dstGasPrice, uint256 srcGasPrice, uint256 dstChainSelector) = abi.decode(response, (uint256, uint256, uint256));
 
-      s_lastGasPrices[i_chainSelector] = srcGasPrice;
+      s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice;
       s_lastGasPrices[uint64(dstChainSelector)] = dstGasPrice;
     }
   }
@@ -234,8 +231,8 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   }
 
   function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
-    if(transaction.sender == address(0)) revert TxDoesNotExist();
-    if(transaction.isConfirmed == true) revert TxAlreadyConfirmed();
+    if (transaction.sender == address(0)) revert TxDoesNotExist();
+    if (transaction.isConfirmed == true) revert TxAlreadyConfirmed();
 
     transaction.isConfirmed = true;
 
@@ -253,7 +250,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     args[3] = Strings.toHexString(sender);
     args[4] = Strings.toHexString(recipient);
     args[5] = Strings.toString(amount);
-    args[6] = Strings.toString(i_chainSelector);
+    args[6] = Strings.toString(CHAIN_SELECTOR);
     args[7] = Strings.toString(dstChainSelector);
     args[8] = Strings.toString(uint256(token));
     args[9] = Strings.toHexString(block.number);

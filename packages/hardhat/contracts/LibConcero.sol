@@ -40,4 +40,22 @@ library LibConcero {
 
     IERC20(token).safeTransfer(recipient, amount);
   }
+
+  function transferFromERC20(address token, address from, address to, uint256 amount) internal {
+    if (isNativeToken(token)) {
+      revert NativeTokenIsNotERC20();
+    }
+
+    if (to == address(0)) {
+      revert TransferToNullAddress();
+    }
+
+    uint256 balanceBefore = getBalance(token, to);
+    IERC20(token).safeTransferFrom(from, to, amount);
+    uint256 balanceAfter = getBalance(token, to);
+
+    if (balanceAfter - balanceBefore != amount) {
+      revert InsufficientBalance(balanceAfter, amount);
+    }
+  }
 }

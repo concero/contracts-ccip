@@ -237,12 +237,13 @@ contract Concero is ConceroCCIP {
     address fromToken = swapData[0].fromToken;
     uint256 fromAmount = swapData[0].fromAmount;
 
-    IERC20(fromToken).safeTransferFrom(msg.sender, address(this), fromAmount);
+    LibConcero.transferFromERC20(fromToken, msg.sender, address(this), fromAmount);
 
     address toToken = swapData[swapData.length - 1].toToken;
     uint256 toAmountMin = swapData[swapData.length - 1].toAmountMin;
 
     uint256 balanceBefore = LibConcero.getBalance(toToken, address(this));
+    LibConcero.transferERC20(fromToken, fromAmount, address(dexSwap));
     dexSwap.conceroEntry{value: msg.value}(swapData, msg.value);
     uint256 balanceAfter = LibConcero.getBalance(toToken, address(this));
 

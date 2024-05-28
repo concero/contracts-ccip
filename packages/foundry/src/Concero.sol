@@ -35,22 +35,8 @@ contract Concero is ConceroCCIP {
     uint _chainIndex,
     address _link,
     address _ccipRouter,
-    PriceFeeds memory priceFeeds,
-    JsCodeHashSum memory jsCodeHashSum
-  )
-    ConceroCCIP(
-      _functionsRouter,
-      _donHostedSecretsVersion,
-      _donId,
-      _donHostedSecretsSlotId,
-      _subscriptionId,
-      _chainSelector,
-      _chainIndex,
-      _link,
-      _ccipRouter,
-      jsCodeHashSum
-    )
-  {
+    PriceFeeds memory priceFeeds
+  ) ConceroCCIP(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, _link, _ccipRouter) {
     linkToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.linkToUsdPriceFeeds);
     usdcToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.usdcToUsdPriceFeeds);
     nativeToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.nativeToUsdPriceFeeds);
@@ -113,7 +99,7 @@ contract Concero is ConceroCCIP {
     }
 
     uint256 functionsFeeInLink = getFunctionsFeeInLink(dstChainSelector);
-    return (functionsFeeInLink * uint256(linkToUsdcRate)) / 1 ether; //todo: we're dividing by 18 decimals, not 6 for USDC. this is critical
+    return (functionsFeeInLink * uint256(linkToUsdcRate)) / 1 ether;
   }
 
   function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) public view returns (uint256) {
@@ -142,7 +128,7 @@ contract Concero is ConceroCCIP {
 
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     //@audit why do we have 1 ether hardcoded here?
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType), 1 ether, 0.01 ether, dstChainSelector);
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType), 1 ether, 0.01 ether , dstChainSelector);
 
     return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
   }
@@ -177,18 +163,25 @@ contract Concero is ConceroCCIP {
     uint64 _dstChainSelector,
     address _receiver
   ) external payable tokenAmountSufficiency(_token, _amount) {
+
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(_tokenType, _dstChainSelector, _amount);
     if (_amount < totalSrcFee) revert InsufficientFundsForFees(_amount, totalSrcFee);
 
-    
     uint256 amount = _amount - totalSrcFee;
 
+    //1000 == * 10 / 10_000. Simplifying.
     uint256 liquidityProviderFee = amount / 1000;
 
-    //@audit in the future, the receiver must be the DEXSwap
-    IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+    // if(_token == USDC){
+    //   CCIP transfer
+    // } else if(_token == address(0)){
+    //   uint256 etherAmount = msg.value;
+    //   dex.conceroEntry{value: etherAmount}(_swapData, etherAmount);
+    // } else if(
+    //   dex.conceroEntry(_swapData, 0);
+    // )
 
-    //DEXSWAP
+    IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
 
     bytes32 ccipMessageId = _sendTokenPayLink(_dstChainSelector, _token, amount, liquidityProviderFee);
 

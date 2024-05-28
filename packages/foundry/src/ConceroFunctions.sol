@@ -11,6 +11,9 @@ import {Concero} from "./Concero.sol";
 import {ConceroPool} from "./ConceroPool.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 
+error TxDoesNotExist();
+error TxAlreadyConfirmed();
+error AddressNotSet();
 
 contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   using SafeERC20 for IERC20;
@@ -20,11 +23,6 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   using Strings for uint64;
   using Strings for address;
   using Strings for bytes32;
-
-  struct JsCodeHashSum {
-    bytes32 src;
-    bytes32 dst;
-  }
 
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
@@ -45,9 +43,9 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   mapping(uint64 => uint256) public s_lastGasPrices; // chain selector => last gas price in wei
 
   string private constant srcJsCode =
-    "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.SRC_JS, 'utf8').digest('hex'); if ('0x' + hash.toLowerCase() === args[0].toLowerCase()) { return await eval(secrets.SRC_JS); } else { throw new Error(`0x${hash.toLowerCase()} != ${args[0].toLowerCase()}`); } } catch (err) { throw new Error(err.message.slice(0, 255));}";
+    "const ethers = await import('npm:ethers@6.10.0'); const [ dstContractAddress, ccipMessageId, sender, recipient, amount, srcChainSelector, dstChainSelector, token, blockNumber, ] = args; const chainSelectors = { '14767482510784806043': { urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`], chainId: '0xa869', }, '16015286601757825753': { urls: [ `https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://ethereum-sepolia-rpc.publicnode.com', 'https://ethereum-sepolia.blockpi.network/v1/rpc/public', ], chainId: '0xaa36a7', }, '3478487238524512106': { urls: [ `https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://arbitrum-sepolia.blockpi.network/v1/rpc/public', 'https://arbitrum-sepolia-rpc.publicnode.com', ], chainId: '0x66eee', }, '10344971235874465080': { urls: [ `https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`, 'https://base-sepolia.blockpi.network/v1/rpc/public', 'https://base-sepolia-rpc.publicnode.com', ], chainId: '0x14a34', }, '5224473277236331295': { urls: [ `https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://optimism-sepolia.blockpi.network/v1/rpc/public', 'https://optimism-sepolia-rpc.publicnode.com', ], chainId: '0xaa37dc', }, }; const sleep = ms => new Promise(resolve => setTimeout(resolve, ms)); let nonce = 0; let retries = 0; let gasPrice; const sendTransaction = async (contract, signer, txOptions) => { try { const transaction = await contract.transactions(ccipMessageId); if ((await contract.transactions(ccipMessageId))[1] !== '0x0000000000000000000000000000000000000000') return; await contract.addUnconfirmedTX( ccipMessageId, sender, recipient, amount, srcChainSelector, token, blockNumber, txOptions, ); } catch (err) { const {message, code} = err; if (retries >= 5) { throw new Error('retries reached the limit ' + err.message?.slice(0, 200)); } else if (code === 'NONCE_EXPIRED' || message?.includes('replacement fee too low')) { await sleep(1000 + Math.random() * 1500); retries++; await sendTransaction(contract, signer, { ...txOptions, nonce: nonce++, }); } else if (code === 'UNKNOWN_ERROR' && message?.includes('already known')) { return; } else { throw new Error(err.message?.slice(0, 255)); } } }; try { class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider { constructor(url) { super(url); this.url = url; } async _send(payload) { if (payload.method === 'eth_estimateGas') { return [{jsonrpc: '2.0', id: payload.id, result: '0x1e8480'}]; } if (payload.method === 'eth_chainId') { return [{jsonrpc: '2.0', id: payload.id, result: chainSelectors[dstChainSelector].chainId}]; } let resp = await fetch(this.url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload), }); const res = await resp.json(); if (res.length === undefined) { return [res]; } return res; } } const dstUrl = chainSelectors[dstChainSelector].urls[Math.floor(Math.random() * chainSelectors[dstChainSelector].urls.length)]; const provider = new FunctionsJsonRpcProvider(dstUrl); const wallet = new ethers.Wallet('0x' + secrets.WALLET_PRIVATE_KEY, provider); const signer = wallet.connect(provider); const abi = [ 'function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256) external', 'function transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool)', ]; const contract = new ethers.Contract(dstContractAddress, abi, signer); const feeData = await provider.getFeeData(); nonce = await provider.getTransactionCount(wallet.address); gasPrice = feeData.gasPrice; await sendTransaction(contract, signer, { gasPrice, nonce, }); const srcUrl = chainSelectors[srcChainSelector].urls[Math.floor(Math.random() * chainSelectors[srcChainSelector].urls.length)]; const srcChainProvider = new FunctionsJsonRpcProvider(srcUrl); const srcGasPrice = Functions.encodeUint256(BigInt((await srcChainProvider.getFeeData()).gasPrice || 0)); const dstGasPrice = Functions.encodeUint256(BigInt(gasPrice || 0)); const encodedDstChainSelector = Functions.encodeUint256(BigInt(dstChainSelector || 0)); const res = new Uint8Array(srcGasPrice.length + dstGasPrice.length + encodedDstChainSelector.length); res.set(srcGasPrice); res.set(dstGasPrice, srcGasPrice.length); res.set(encodedDstChainSelector, srcGasPrice.length + dstGasPrice.length); return res; } catch (error) { const {message} = error; if (message?.includes('Exceeded maximum of 20 HTTP queries')) { return new Uint8Array(1); } else { throw new Error(message?.slice(0, 255));}}";
   string private constant dstJsCode =
-    "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.DST_JS, 'utf8').digest('hex'); if ('0x' + hash.toLowerCase() === args[0].toLowerCase()) { return await eval(secrets.DST_JS); } else { throw new Error(`0x${hash.toLowerCase()} != ${args[0].toLowerCase()}`); } } catch (err) { throw new Error(err.message.slice(0, 255));}";
+    "try { const ethers = await import('npm:ethers@6.10.0'); const sleep = ms => new Promise(resolve => setTimeout(resolve, ms)); const [srcContractAddress, srcChainSelector, _, ...eventArgs] = args; const messageId = eventArgs[0]; const chainMap = { '14767482510784806043': { urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`], confirmations: 3n, chainId: '0xa869', }, '16015286601757825753': { urls: [ `https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://ethereum-sepolia-rpc.publicnode.com', 'https://ethereum-sepolia.blockpi.network/v1/rpc/public', ], confirmations: 3n, chainId: '0xaa36a7', }, '3478487238524512106': { urls: [ `https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://arbitrum-sepolia.blockpi.network/v1/rpc/public', 'https://arbitrum-sepolia-rpc.publicnode.com', ], confirmations: 3n, chainId: '0x66eee', }, '10344971235874465080': { urls: [ `https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`, 'https://base-sepolia.blockpi.network/v1/rpc/public', 'https://base-sepolia-rpc.publicnode.com', ], confirmations: 3n, chainId: '0x14a34', }, '5224473277236331295': { urls: [ `https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://optimism-sepolia.blockpi.network/v1/rpc/public', 'https://optimism-sepolia-rpc.publicnode.com', ], confirmations: 3n, chainId: '0xaa37dc', }, }; class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider { constructor(url) { super(url); this.url = url; } async _send(payload) { if (payload.method === 'eth_chainId') { return [{jsonrpc: '2.0', id: payload.id, result: chainMap[srcChainSelector].chainId}]; } const resp = await fetch(this.url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload), }); const result = await resp.json(); if (payload.length === undefined) { return [result]; } return result; } } const fallBackProviders = chainMap[srcChainSelector].urls.map(url => { return { provider: new FunctionsJsonRpcProvider(url), priority: Math.random(), stallTimeout: 2000, weight: 1, }; }); const provider = new ethers.FallbackProvider(fallBackProviders, null, {quorum: 1}); let latestBlockNumber = BigInt(await provider.getBlockNumber()); const ethersId = ethers.id('CCIPSent(bytes32,address,address,uint8,uint256,uint64)'); const logs = await provider.getLogs({ address: srcContractAddress, topics: [ethersId, messageId], fromBlock: latestBlockNumber - 1000n, toBlock: latestBlockNumber, }); if (!logs.length) { throw new Error('No logs found'); } const log = logs[0]; const abi = ['event CCIPSent(bytes32 indexed, address, address, uint8, uint256, uint64)']; const contract = new ethers.Interface(abi); const logData = { topics: [ethersId, log.topics[1]], data: log.data, }; const decodedLog = contract.parseLog(logData); for (let i = 0; i < decodedLog.length; i++) { if (decodedLog.args[i].toString().toLowerCase() !== eventArgs[i].toString().toLowerCase()) { throw new Error('Message ID does not match the event log'); } } const logBlockNumber = BigInt(log.blockNumber); while (latestBlockNumber - logBlockNumber < chainMap[srcChainSelector].confirmations) { latestBlockNumber = BigInt(await provider.getBlockNumber()); await sleep(5000); } if (latestBlockNumber - logBlockNumber < chainMap[srcChainSelector].confirmations) { throw new Error('Not enough confirmations'); } return Functions.encodeUint256(BigInt(messageId)); } catch (error) { throw new Error(error.message.slice(0, 255));}";
 
   modifier onlyMessenger() {
     if (!s_messengerContracts[msg.sender]) revert NotMessenger(msg.sender);
@@ -61,15 +59,12 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     uint8 _donHostedSecretsSlotId,
     uint64 _subscriptionId,
     uint64 _chainSelector,
-    uint _chainIndex,
-    JsCodeHashSum memory jsCodeHashSum
+    uint _chainIndex
   ) FunctionsClient(_functionsRouter) ConceroCommon(_chainSelector, _chainIndex) {
     i_donId = _donId;
     i_subscriptionId = _subscriptionId;
     s_donHostedSecretsVersion = _donHostedSecretsVersion;
     s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
-    s_srcJsHashSum = jsCodeHashSum.src;
-    s_dstJsHashSum = jsCodeHashSum.dst;
   }
 
   function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
@@ -152,7 +147,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     string[] memory args = new string[](10);
     //todo: use bytes
     //@audit = abi.encode(param);
-    args[0] = bytes32ToString(s_dstJsHashSum);
+    args[0] = bytes32ToString(s_srcJsHashSum);
     args[1] = Strings.toHexString(s_conceroContracts[srcChainSelector]);
     args[2] = Strings.toString(srcChainSelector);
     args[3] = Strings.toHexString(blockNumber);
@@ -206,11 +201,11 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
       address tokenReceived = getToken(transaction.token);
 
-      if(tokenReceived == getToken(CCIPToken.bnm)){ //@audit hardcode for CCIP-BnM - Should be USDC
+      if(tokenReceived == getToken(CCIPToken.usdc)){
 
-        s_pool.orchestratorLoan(tokenReceived, amount, transaction.recipient);
+        s_pool.orchestratorLoan(/*tokenReceived*/ 0x1d1499e622D69689cdf9004d05Ec547d650Ff211, amount, transaction.recipient);
 
-      } else{
+      } else {
         //@audit We need to call the DEX module here.
         // dexSwap.conceroEntry(passing the user address as receiver);
       }
@@ -247,7 +242,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     string[] memory args = new string[](10);
     //todo: Strings usage may not be required here. Consider ways of passing data without converting to string
-    args[0] = bytes32ToString(s_srcJsHashSum);
+    args[0] = bytes32ToString(s_dstJsHashSum);
     args[1] = Strings.toHexString(s_conceroContracts[dstChainSelector]);
     args[2] = bytes32ToString(ccipMessageId);
     args[3] = Strings.toHexString(sender);

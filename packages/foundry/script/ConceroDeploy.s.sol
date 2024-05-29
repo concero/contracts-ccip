@@ -16,7 +16,10 @@ contract ConceroDeploy is Script {
             uint _chainIndex,
             address _link,
             address _ccipRouter,
-            Concero.PriceFeeds memory _priceFeeds) public returns(Concero concero){
+            address _dexSwap,
+            Concero.PriceFeeds memory _priceFeeds,
+            Concero.JsCodeHashSum memory jsCodeHashSum
+        ) public returns(Concero concero){
 
         vm.startBroadcast();
         concero = new Concero(
@@ -29,7 +32,9 @@ contract ConceroDeploy is Script {
             _chainIndex,
             _link,
             _ccipRouter,
-            _priceFeeds
+            _dexSwap,
+            _priceFeeds,
+            jsCodeHashSum
         );
         vm.stopBroadcast();
     }

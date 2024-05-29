@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
 import {ConceroMock} from "../test/Mocks/ConceroMock.sol";
+import {Concero} from "../src/Concero.sol";
 
 contract ConceroMockDeploy is Script {
 
@@ -16,7 +17,10 @@ contract ConceroMockDeploy is Script {
             uint _chainIndex,
             address _link,
             address _ccipRouter,
-            ConceroMock.PriceFeeds memory _priceFeeds) public returns(ConceroMock concero){
+            address _dexSwap,
+            Concero.PriceFeeds memory _priceFeeds,
+            Concero.JsCodeHashSum memory jsCodeHashSum
+    ) public returns(ConceroMock concero){
 
         vm.startBroadcast();
         concero = new ConceroMock(
@@ -29,7 +33,9 @@ contract ConceroMockDeploy is Script {
             _chainIndex,
             _link,
             _ccipRouter,
-            _priceFeeds
+            _dexSwap,
+            _priceFeeds,
+            jsCodeHashSum
         );
         vm.stopBroadcast();
     }

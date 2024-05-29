@@ -242,6 +242,7 @@ contract Concero is ConceroCCIP {
     address toToken = swapData[swapData.length - 1].toToken;
     uint256 toAmountMin = swapData[swapData.length - 1].toAmountMin;
 
+    // TODO: mb move check balance logic only inside swapAndBridge() function
     uint256 balanceBefore = LibConcero.getBalance(toToken, address(dexSwap));
     LibConcero.transferERC20(fromToken, fromAmount, address(dexSwap));
     dexSwap.conceroEntry{value: nativeAmount}(swapData, nativeAmount);

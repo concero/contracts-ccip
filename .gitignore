@@ -21,9 +21,7 @@ node_modules
 
 # cli
 dist
-.env.*
 .env
-!.env.deployments
 
 packages/hardhat/deployments
 packages/hardhat/test/forge/lib/

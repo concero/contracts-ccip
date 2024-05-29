@@ -233,7 +233,7 @@ contract Concero is ConceroCCIP {
     emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
   }
 
-  function _swap(IDexSwap.SwapData[] calldata swapData) internal returns (uint256) {
+  function _swap(IDexSwap.SwapData[] calldata swapData, uint256 nativeAmount) internal returns (uint256) {
     address fromToken = swapData[0].fromToken;
     uint256 fromAmount = swapData[0].fromAmount;
 
@@ -242,10 +242,10 @@ contract Concero is ConceroCCIP {
     address toToken = swapData[swapData.length - 1].toToken;
     uint256 toAmountMin = swapData[swapData.length - 1].toAmountMin;
 
-    uint256 balanceBefore = LibConcero.getBalance(toToken, address(this));
+    uint256 balanceBefore = LibConcero.getBalance(toToken, address(dexSwap));
     LibConcero.transferERC20(fromToken, fromAmount, address(dexSwap));
-    dexSwap.conceroEntry{value: msg.value}(swapData, msg.value);
-    uint256 balanceAfter = LibConcero.getBalance(toToken, address(this));
+    dexSwap.conceroEntry{value: nativeAmount}(swapData, nativeAmount);
+    uint256 balanceAfter = LibConcero.getBalance(toToken, address(dexSwap));
 
     if ((balanceBefore + toAmountMin) < balanceAfter) {
       revert FundsLost(toToken, balanceBefore, balanceAfter, toAmountMin);
@@ -256,9 +256,10 @@ contract Concero is ConceroCCIP {
   }
 
   function swap(IDexSwap.SwapData[] calldata swapData) external payable tokenAmountSufficiency(swapData[0].fromToken, swapData[0].fromAmount) {
-    uint256 amountOut = _swap(swapData);
-    address toToken = swapData[swapData.length - 1].toToken;
-    LibConcero.transferERC20(toToken, amountOut, msg.sender);
+    //    uint256 amountOut =
+    _swap(swapData, msg.value);
+    //    address toToken = swapData[swapData.length - 1].toToken;
+    //    LibConcero.transferERC20(toToken, amountOut, msg.sender);
   }
 
   function swapAndBridge(
@@ -273,7 +274,7 @@ contract Concero is ConceroCCIP {
     validateBridgeData(bridgeData)
     validateSwapAndBridgeData(bridgeData, srcSwapData)
   {
-    _swap(srcSwapData);
+    _swap(srcSwapData, msg.value);
     _startBridge(bridgeData, dstSwapData);
   }
 

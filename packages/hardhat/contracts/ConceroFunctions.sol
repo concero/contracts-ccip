@@ -37,8 +37,6 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   bytes32 private s_srcJsHashSum;
   bytes32 private s_dstJsHashSum;
 
-  ConceroPool private s_pool;
-
   mapping(bytes32 => Transaction) public s_transactions;
   mapping(bytes32 => Request) public s_requests;
   mapping(uint64 => uint256) public s_lastGasPrices; // chain selector => last gas price in wei
@@ -101,15 +99,6 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     s_srcJsHashSum = _hashSum;
 
     emit SourceJsHashSumUpdated(previousValue, _hashSum);
-  }
-
-  //@New
-  function setConceroPoolAddress(address payable _pool) external onlyOwner {
-    address previousAddress = address(s_pool);
-
-    s_pool = ConceroPool(_pool);
-
-    emit ConceroPoolAddressUpdated(previousAddress, _pool);
   }
 
   //@audit if updated to bytes[] memory. We can remove this guys
@@ -207,7 +196,8 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
       if (tokenReceived == getToken(CCIPToken.bnm)) {
         //@audit hardcode for CCIP-BnM - Should be USDC
 
-        s_pool.orchestratorLoan(tokenReceived, amount, transaction.recipient);
+        ConceroPool conceroPool = ConceroPool(payable(s_conceroPools[CHAIN_SELECTOR]));
+        conceroPool.orchestratorLoan(tokenReceived, amount, transaction.recipient);
       } else {
         //@audit We need to call the DEX module here.
         // dexSwap.conceroEntry(passing the user address as receiver);

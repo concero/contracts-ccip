@@ -247,6 +247,7 @@ contract Concero is ConceroCCIP {
 
       //TODO: deal with FoT tokens.
       amountOut = balanceAfter - balanceBefore;
+      if(amountOut != fromAmount) revert Concero_FoTNotAllowedYet();
 
       dexSwap.conceroEntry(swapData, nativeAmount);
     }

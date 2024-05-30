@@ -6,27 +6,31 @@ import {Concero} from "../../src/Concero.sol";
 contract ConceroMock is Concero {
 
     constructor(
-        address _functionsRouter,
-        uint64 _donHostedSecretsVersion,
-        bytes32 _donId,
-        uint8 _donHostedSecretsSlotId,
-        uint64 _subscriptionId,
-        uint64 _chainSelector,
-        uint _chainIndex,
-        address _link,
-        address _ccipRouter,
-        PriceFeeds memory _priceFeeds
+            address _functionsRouter,
+            uint64 _donHostedSecretsVersion,
+            bytes32 _donId,
+            uint8 _donHostedSecretsSlotId,
+            uint64 _subscriptionId,
+            uint64 _chainSelector,
+            uint _chainIndex,
+            address _link,
+            address _ccipRouter,
+            address _dexSwap,
+            Concero.PriceFeeds memory _priceFeeds,
+            Concero.JsCodeHashSum memory jsCodeHashSum
     ) Concero(
-        _functionsRouter,
-        _donHostedSecretsVersion,
-        _donId,
-        _donHostedSecretsSlotId,
-        _subscriptionId,
-        _chainSelector,
-        _chainIndex,
-        _link,
-        _ccipRouter,
-        _priceFeeds
+            _functionsRouter,
+            _donHostedSecretsVersion,
+            _donId,
+            _donHostedSecretsSlotId,
+            _subscriptionId,
+            _chainSelector,
+            _chainIndex,
+            _link,
+            _ccipRouter,
+            _dexSwap,
+            _priceFeeds,
+            jsCodeHashSum
     ){}
 
     function externalFulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) external {

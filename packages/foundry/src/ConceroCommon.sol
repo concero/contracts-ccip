@@ -5,15 +5,14 @@ import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/Confir
 import {IConceroCommon} from "./IConcero.sol";
 
 contract ConceroCommon is ConfirmedOwner, IConceroCommon {
-
-  uint64 internal immutable i_chainSelector;
+  uint64 internal immutable CHAIN_SELECTOR;
   Chain internal immutable i_chainIndex;
 
   mapping(uint64 chainSelector => address conceroContract) internal s_conceroContracts;
   mapping(address messenger => bool allowed) internal s_messengerContracts;
 
   constructor(uint64 _chainSelector, uint _chainIndex) ConfirmedOwner(msg.sender) {
-    i_chainSelector = _chainSelector;
+    CHAIN_SELECTOR = _chainSelector;
     i_chainIndex = Chain(_chainIndex);
   }
 
@@ -24,8 +23,8 @@ contract ConceroCommon is ConfirmedOwner, IConceroCommon {
   }
 
   function setConceroMessenger(address _walletAddress) external onlyOwner {
-    if(_walletAddress == address(0)) revert InvalidAddress();
-    if(s_messengerContracts[_walletAddress] == true) revert AddressAlreadyAllowlisted();
+    if (_walletAddress == address(0)) revert InvalidAddress();
+    if (s_messengerContracts[_walletAddress] == true) revert AddressAlreadyAllowlisted();
 
     s_messengerContracts[_walletAddress] = true;
 
@@ -34,8 +33,8 @@ contract ConceroCommon is ConfirmedOwner, IConceroCommon {
 
   //@audit we can merge setConceroMessenger & removeConceroMessenger
   function removeConceroMessenger(address _walletAddress) external onlyOwner {
-    if(_walletAddress == address(0)) revert InvalidAddress();
-    if(s_messengerContracts[_walletAddress] == false) revert NotAllowlistedOrAlreadyRemoved();
+    if (_walletAddress == address(0)) revert InvalidAddress();
+    if (s_messengerContracts[_walletAddress] == false) revert NotAllowlistedOrAlreadyRemoved();
 
     s_messengerContracts[_walletAddress] = false;
 
@@ -55,8 +54,8 @@ contract ConceroCommon is ConfirmedOwner, IConceroCommon {
     tokens[1][1] = 0x036CbD53842c5426634e7929541eC2318f3dCF7e; // base
     tokens[1][2] = 0x5fd84259d66Cd46123540766Be93DFE6D43130D7; // opt
 
-    if(uint256(token) > tokens.length) revert TokenTypeOutOfBounds();
-    if(uint256(i_chainIndex) > tokens[uint256(token)].length) revert ChainIndexOutOfBounds();
+    if (uint256(token) > tokens.length) revert TokenTypeOutOfBounds();
+    if (uint256(i_chainIndex) > tokens[uint256(token)].length) revert ChainIndexOutOfBounds();
 
     return tokens[uint256(token)][uint256(i_chainIndex)];
   }

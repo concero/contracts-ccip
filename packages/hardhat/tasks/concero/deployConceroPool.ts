@@ -176,6 +176,7 @@ async function setPoolVariables(deployableChains: CNetwork[]) {
 
 task("deploy-concero-pool", "Deploy the concero pool")
   .addFlag("skipdeploy", "Skip deployment")
+  // .addFlag("all", "Deploy to all chains")
   .setAction(async taskArgs => {
     try {
       const hre: HardhatRuntimeEnvironment = require("hardhat");
@@ -183,6 +184,10 @@ task("deploy-concero-pool", "Deploy the concero pool")
       let deployableChains: CNetwork[] = liveChains;
 
       if (name !== "localhost" && name !== "hardhat") {
+        // if (taskArgs.all) {
+        //   deployableChains = liveChains;
+        // } else {
+        // }
         deployableChains = [CNetworks[name]];
       }
 

@@ -17,6 +17,7 @@ import "./LibConcero.sol";
 error DexSwap_CallerNotAllowed(address caller);
 error DexSwap_EmptyDexData();
 error DexSwap_RouterNotAllowed();
+error DexSwap_InvalidPath();
 
 contract DexSwap is IDexSwap, Ownable {
   using SafeERC20 for IERC20;
@@ -105,9 +106,9 @@ contract DexSwap is IDexSwap, Ownable {
         _swapUniV3Single(_swapData[i]);
       } else if (_swapData[i].dexType == DexType.SushiV3Single) {
         _swapSushiV3Single(_swapData[i]);
-      } else if(_swapData[i].dexType == DexType.UniswapV2){
+      } else if (_swapData[i].dexType == DexType.UniswapV2) {
         _swapUniV2Like(_swapData[i]);
-      }else if (_swapData[i].dexType == DexType.UniswapV2FoT) {
+      } else if (_swapData[i].dexType == DexType.UniswapV2FoT) {
         _swapUniV2LikeFoT(_swapData[i]);
       } else if (_swapData[i].dexType == DexType.SushiV3Multi) {
         _swapSushiV3Multi(_swapData[i]);
@@ -115,9 +116,9 @@ contract DexSwap is IDexSwap, Ownable {
         _swapUniV3Multi(_swapData[i]);
       } else if (_swapData[i].dexType == DexType.Aerodrome) {
         _swapDrome(_swapData[i]);
-      } else if(_swapData[i].dexType == DexType.AerodromeFoT){
+      } else if (_swapData[i].dexType == DexType.AerodromeFoT) {
         _swapDromeFoT(_swapData[i]);
-      }else if (_swapData[i].dexType == DexType.UniswapV2Ether) {
+      } else if (_swapData[i].dexType == DexType.UniswapV2Ether) {
         _swapEtherOnUniV2Like(_swapData[i], _amount);
       }
     }
@@ -129,13 +130,10 @@ contract DexSwap is IDexSwap, Ownable {
    * @dev This function can execute single or multi hop swaps
    */
   function _swapUniV2Like(IDexSwap.SwapData memory _swapData) private {
-    (address routerAddress, address[] memory path, address recipient, uint256 deadline) = abi.decode(
-      _swapData.dexData,
-      (address, address[], address, uint256)
-    );
+    (address routerAddress, address[] memory path, address recipient, uint256 deadline) = abi.decode(_swapData.dexData, (address, address[], address, uint256));
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
-    if(path[0] != _swapData.fromToken) revert DexSwap_InvalidPath();
+    if (path[0] != _swapData.fromToken) revert DexSwap_InvalidPath();
 
     IERC20(path[0]).approve(routerAddress, _swapData.fromAmount);
 
@@ -147,20 +145,22 @@ contract DexSwap is IDexSwap, Ownable {
    * @param _swapData the enconded swap data
    * @dev This function accept FoT tokens
    * @dev This function can execute single or multi hop swaps
-  */
+   */
   function _swapUniV2LikeFoT(IDexSwap.SwapData memory _swapData) private {
-    (address routerAddress, address[] memory path, address recipient, uint256 deadline) = abi.decode(
-      _swapData.dexData,
-      (address, address[], address, uint256)
-    );
+    (address routerAddress, address[] memory path, address recipient, uint256 deadline) = abi.decode(_swapData.dexData, (address, address[], address, uint256));
 
-    if(s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
-    if(path[0] != _swapData.fromToken) revert DexSwap_InvalidPath();
+    if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
+    if (path[0] != _swapData.fromToken) revert DexSwap_InvalidPath();
 
     IERC20(path[0]).approve(routerAddress, _swapData.fromAmount);
 
-    IUniswapV2Router02(routerAddress).swapExactTokensForTokensSupportingFeeOnTransferTokens(_swapData.fromAmount, _swapData.toAmountMin, path, recipient, deadline);
-
+    IUniswapV2Router02(routerAddress).swapExactTokensForTokensSupportingFeeOnTransferTokens(
+      _swapData.fromAmount,
+      _swapData.toAmountMin,
+      path,
+      recipient,
+      deadline
+    );
   }
 
   /**
@@ -169,13 +169,10 @@ contract DexSwap is IDexSwap, Ownable {
    * @dev This function can execute swap in any protocol compatible with UniV3 that implements the ISwapRouter
    */
   function _swapSushiV3Single(IDexSwap.SwapData memory _swapData) private {
-    (
-      address routerAddress,
-      uint24 fee,
-      address recipient,
-      uint256 deadline,
-      uint160 sqrtPriceLimitX96
-    ) = abi.decode(_swapData.dexData, (address, uint24, address, uint256, uint160));
+    (address routerAddress, uint24 fee, address recipient, uint256 deadline, uint160 sqrtPriceLimitX96) = abi.decode(
+      _swapData.dexData,
+      (address, uint24, address, uint256, uint160)
+    );
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 
@@ -201,25 +198,20 @@ contract DexSwap is IDexSwap, Ownable {
    * @dev This function can execute swap in any protocol compatible with UniV3 that implements the IV3SwapRouter
    */
   function _swapUniV3Single(IDexSwap.SwapData memory _swapData) private {
-    (
-        address routerAddress,
-        uint24 fee,
-        address recipient,
-        uint160 sqrtPriceLimitX96
-    ) = abi.decode(_swapData.dexData, (address, uint24, address, uint160));
+    (address routerAddress, uint24 fee, address recipient, uint160 sqrtPriceLimitX96) = abi.decode(_swapData.dexData, (address, uint24, address, uint160));
 
     if (s_routerAllowed[routerAddress] != APPROVED) {
-        revert DexSwap_RouterNotAllowed();
+      revert DexSwap_RouterNotAllowed();
     }
 
     IV3SwapRouter.ExactInputSingleParams memory dex = IV3SwapRouter.ExactInputSingleParams({
-        tokenIn: _swapData.fromToken,
-        tokenOut: _swapData.toToken,
-        fee: fee,
-        recipient: recipient,
-        amountIn: _swapData.fromAmount,
-        amountOutMinimum: _swapData.toAmountMin,
-        sqrtPriceLimitX96: sqrtPriceLimitX96
+      tokenIn: _swapData.fromToken,
+      tokenOut: _swapData.toToken,
+      fee: fee,
+      recipient: recipient,
+      amountIn: _swapData.fromAmount,
+      amountOutMinimum: _swapData.toAmountMin,
+      sqrtPriceLimitX96: sqrtPriceLimitX96
     });
 
     TransferHelper.safeApprove(_swapData.fromToken, routerAddress, _swapData.fromAmount);
@@ -233,10 +225,7 @@ contract DexSwap is IDexSwap, Ownable {
    * @dev This function can execute swap in any protocol compatible with ISwapRouter
    */
   function _swapSushiV3Multi(IDexSwap.SwapData memory _swapData) private returns (uint256 _amountOut) {
-    (address routerAddress, bytes memory path, address recipient, uint256 deadline) = abi.decode(
-      _swapData.dexData,
-      (address, bytes, address, uint256)
-    );
+    (address routerAddress, bytes memory path, address recipient, uint256 deadline) = abi.decode(_swapData.dexData, (address, bytes, address, uint256));
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 
@@ -259,11 +248,7 @@ contract DexSwap is IDexSwap, Ownable {
    * @dev This function can execute swap in any protocol compatible
    */
   function _swapUniV3Multi(IDexSwap.SwapData memory _swapData) private returns (uint256 _amountOut) {
-    (
-      address routerAddress,
-      bytes memory path,
-      address recipient
-    ) = abi.decode(_swapData.dexData, (address, bytes, address));
+    (address routerAddress, bytes memory path, address recipient) = abi.decode(_swapData.dexData, (address, bytes, address));
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 
@@ -322,10 +307,7 @@ contract DexSwap is IDexSwap, Ownable {
   function _swapEtherOnUniV2Like(IDexSwap.SwapData memory _swapData, uint256 _amount) private returns (uint256[] memory amounts) {
     if (_swapData.dexData.length < 1) revert DexSwap_EmptyDexData();
 
-    (address routerAddress, address[] memory path, address recipient, uint256 deadline) = abi.decode(
-      _swapData.dexData,
-      (address, address[], address, uint256)
-    );
+    (address routerAddress, address[] memory path, address recipient, uint256 deadline) = abi.decode(_swapData.dexData, (address, address[], address, uint256));
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 

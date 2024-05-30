@@ -245,8 +245,8 @@ contract Concero is ConceroCCIP {
       LibConcero.transferFromERC20(fromToken, msg.sender, address(dexSwap), fromAmount);
       uint256 balanceAfter = LibConcero.getBalance(fromToken, address(dexSwap));
 
-      //TODO: deal with FoT tokens.
       amountOut = balanceAfter - balanceBefore;
+      if(amountOut != fromAmount) revert Concero_FoTNotAllowedYet();
 
       dexSwap.conceroEntry(swapData, nativeAmount);
     }

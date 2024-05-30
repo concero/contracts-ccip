@@ -9,6 +9,7 @@ import {IDexSwap} from "../../src/Interfaces/IDexSwap.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
 import {DEXMock} from "../Mocks/DEXMock.sol";
+import {DEXMock2} from "../Mocks/DEXMock2.sol";
 import {USDC} from "../Mocks/USDC.sol";
 
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";

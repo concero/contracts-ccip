@@ -5,11 +5,13 @@ interface IDexSwap {
   ///@notice Concero Enum to track DEXes
   enum DexType {
     UniswapV2,
+    UniswapV2FoT,
     SushiV3Single,
     UniswapV3Single,
     SushiV3Multi,
     UniswapV3Multi,
     Aerodrome,
+    AerodromeFoT,
     UniswapV2Ether
   }
 

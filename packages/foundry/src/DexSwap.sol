@@ -98,13 +98,7 @@ contract DexSwap is IDexSwap, Ownable {
    */
   function conceroEntry(IDexSwap.SwapData[] memory _swapData, uint256 _amount) external payable {
     if (msg.sender != s_orchestrator) revert DexSwap_CallerNotAllowed(msg.sender);
-
-    //@audit I think we should stablish a threshold to revert here. like
-    // if(swapDataLength > 10) revert DEXSwap_InvalidTransaction();
-    // I don't see a scenario where we need to do that much tx's.
-    // but still can be used by an attacker
-    // Temporary proposal, maybe we can drop more this number.
-    if (_swapData.length < 1 || _swapData.length > 10) revert DexSwap_EmptyDexData();
+    if (_swapData.length < 1 || _swapData.length > 5) revert DexSwap_EmptyDexData();
 
     uint256 swapDataLength = _swapData.length;
 
@@ -114,9 +108,9 @@ contract DexSwap is IDexSwap, Ownable {
       } else if (_swapData[i].dexType == DexType.SushiV3Single) {
         _swapSushiV3Single(_swapData[i]);
       } else if(_swapData[i].dexType == DexType.UniswapV2){
-        _swapUniV2LikeFoT(_swapData[i]);
-      }else if (_swapData[i].dexType == DexType.UniswapV2) {
         _swapUniV2Like(_swapData[i]);
+      }else if (_swapData[i].dexType == DexType.UniswapV2FoT) {
+        _swapUniV2LikeFoT(_swapData[i]);
       } else if (_swapData[i].dexType == DexType.SushiV3Multi) {
         _swapSushiV3Multi(_swapData[i]);
       } else if (_swapData[i].dexType == DexType.UniswapV3Multi) {
@@ -145,23 +139,9 @@ contract DexSwap is IDexSwap, Ownable {
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
     if(path[0] != _swapData.fromToken) revert DexSwap_InvalidPath();
 
-    uint256 balanceBefore = IERC20(path[0]).balanceOf(address(this));
+    IERC20(path[0]).approve(routerAddress, _swapData.fromAmount);
 
-    IERC20(path[0]).safeTransferFrom(msg.sender, address(this), _swapData.fromAmount);
-
-    uint256 balanceAfter = IERC20(path[0]).balanceOf(address(this));
-
-    if ((balanceAfter - balanceBefore) == _swapData.fromAmount) {
-      IERC20(path[0]).approve(routerAddress, _swapData.fromAmount);
-
-      IUniswapV2Router02(routerAddress).swapExactTokensForTokens(_swapData.fromAmount, _swapData.toAmountMin, path, recipient, deadline);
-    } else {
-      uint256 amount = balanceAfter - balanceBefore;
-
-      IERC20(path[0]).approve(routerAddress, amount);
-
-      IUniswapV2Router02(routerAddress).swapExactTokensForTokensSupportingFeeOnTransferTokens(amount, _swapData.toAmountMin, path, recipient, deadline);
-    }
+    IUniswapV2Router02(routerAddress).swapExactTokensForTokens(_swapData.fromAmount, _swapData.toAmountMin, path, recipient, deadline);
   }
 
   /**
@@ -176,26 +156,13 @@ contract DexSwap is IDexSwap, Ownable {
       (address, address[], address, uint256)
     );
 
-    if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
+    if(s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
     if(path[0] != _swapData.fromToken) revert DexSwap_InvalidPath();
 
-    uint256 balanceBefore = IERC20(path[0]).balanceOf(address(this));
+    IERC20(path[0]).approve(routerAddress, _swapData.fromAmount);
 
-    IERC20(path[0]).safeTransferFrom(msg.sender, address(this), _swapData.fromAmount);
-
-    uint256 balanceAfter = IERC20(path[0]).balanceOf(address(this));
-
-    if ((balanceAfter - balanceBefore) == _swapData.fromAmount) {
-      IERC20(path[0]).approve(routerAddress, _swapData.fromAmount);
-
-      IUniswapV2Router02(routerAddress).swapExactTokensForTokens(_swapData.fromAmount, _swapData.toAmountMin, path, recipient, deadline);
-    } else {
-      uint256 amount = balanceAfter - balanceBefore;
-
-      IERC20(path[0]).approve(routerAddress, amount);
-
-      IUniswapV2Router02(routerAddress).swapExactTokensForTokensSupportingFeeOnTransferTokens(amount, _swapData.toAmountMin, path, recipient, deadline);
-    }
+    IUniswapV2Router02(routerAddress).swapExactTokensForTokensSupportingFeeOnTransferTokens(_swapData.fromAmount, _swapData.toAmountMin, path, recipient, deadline);
+  
   }
 
   /**
@@ -273,7 +240,7 @@ contract DexSwap is IDexSwap, Ownable {
       (address, bytes, address, uint256)
     );
 
-    if (s_routerAllowed[routerAddress] != 1) revert DexSwap_RouterNotAllowed();
+    if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 
     ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
       path: path,

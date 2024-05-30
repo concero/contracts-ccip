@@ -69,7 +69,7 @@ contract Concero is ConceroCCIP {
 
   modifier tokenAmountSufficiency(address token, uint256 amount) {
     if (LibConcero.isNativeToken(token)) {
-      if (msg.value >= amount) revert InvalidAmount();
+      if (msg.value != amount) revert InvalidAmount();
     } else {
       uint256 balance = LibConcero.getBalance(token, msg.sender);
       if (balance < amount) revert InvalidAmount();
@@ -238,17 +238,17 @@ contract Concero is ConceroCCIP {
     address fromToken = swapData[0].fromToken;
     uint256 fromAmount = swapData[0].fromAmount;
 
-    address toToken = swapData[swapData.length - 1].toToken;
-
-    // TODO: mb move check balance logic only inside swapAndBridge() function
     if(fromToken == address(0)){
       dexSwap.conceroEntry{value: nativeAmount}(swapData, nativeAmount);
     } else {
-      uint256 balanceBefore = LibConcero.getBalance(toToken, address(dexSwap));
+      uint256 balanceBefore = LibConcero.getBalance(fromToken, address(dexSwap));
       LibConcero.transferFromERC20(fromToken, msg.sender, address(dexSwap), fromAmount);
-      uint256 balanceAfter = LibConcero.getBalance(toToken, address(dexSwap));
+      uint256 balanceAfter = LibConcero.getBalance(fromToken, address(dexSwap));
 
+      //TODO: deal with FoT tokens.
       amountOut = balanceAfter - balanceBefore;
+
+      dexSwap.conceroEntry(swapData, nativeAmount);
     }
   }
 

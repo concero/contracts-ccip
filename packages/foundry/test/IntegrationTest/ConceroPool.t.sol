@@ -2,8 +2,8 @@
 pragma solidity ^0.8.19;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {ConceroPool} from "../src/ConceroPool.sol";
-import {ConceroPoolDeploy} from "../script/ConceroPoolDeploy.s.sol";
+import {ConceroPool} from "../../src/ConceroPool.sol";
+import {ConceroPoolDeploy} from "../../script/ConceroPoolDeploy.s.sol";
 
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
 import {CCIPLocalSimulator, IRouterClient, WETH9, LinkToken, BurnMintERC677Helper} from "@chainlink/local/src/ccip/CCIPLocalSimulator.sol";

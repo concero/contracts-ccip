@@ -14,6 +14,7 @@ interface IConceroCommon {
   error NotAllowlistedOrAlreadyRemoved();
   error TokenTypeOutOfBounds();
   error ChainIndexOutOfBounds();
+  error Concero_FoTNotAllowedYet();
 
   error InsufficientFundsForFees(uint256 amount, uint256 fee);
   error FundsLost(address token, uint256 balanceBefore, uint256 balanceAfter, uint256 amount);

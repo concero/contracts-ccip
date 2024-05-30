@@ -72,11 +72,6 @@ contract DexSwapTest is Test {
         dex = deploy.run();
         vm.makePersistent(address(dex));
 
-        ConceroFunctions.JsCodeHashSum memory jsCode = ConceroFunctions.JsCodeHashSum ({
-                src: 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124,
-                dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
-        });
-
         concero = deployConcero.run(
             0xf9B8fc078197181C841c296C876945aaa425B278, //address _functionsRouter
             0, //uint64 _donHostedSecretsVersion
@@ -94,7 +89,10 @@ contract DexSwapTest is Test {
                 nativeToUsdPriceFeeds: 0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70,
                 linkToNativePriceFeeds: 0xc5E65227fe3385B88468F9A01600017cDC9F3A12
             }),
-            jsCode
+            ConceroFunctions.JsCodeHashSum ({
+                src: 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124,
+                dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
+            })
         );
         
         vm.makePersistent(address(concero));
@@ -112,7 +110,6 @@ contract DexSwapTest is Test {
         dex.manageRouterAddress(address(uniswapV3), 1);
         dex.manageRouterAddress(address(sushiV3), 1);
         dex.manageRouterAddress(address(aerodromeRouter), 1);
-        concero.setDexSwap(address(dex));
 
         //Only to test dustCollector
         tUSDC = new ERC20Mock("Teste USDC", "tUSDC", Barba, INITIAL_BALANCE);

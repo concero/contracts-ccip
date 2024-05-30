@@ -6,6 +6,7 @@ import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-sol
 interface IConceroCommon {
   event ConceroContractUpdated(uint64 chainSelector, address conceroContract);
   event MessengerUpdated(address indexed walletAddress, bool status);
+  event ConceroPoolUpdated(uint64 chainSelector, address conceroPool);
 
   //  error TransferFailed(); //@audit not being used
   //  error InsufficientFee(); //@audit not being used

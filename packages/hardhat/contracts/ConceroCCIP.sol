@@ -16,19 +16,7 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
   IRouterClient internal immutable CCIP_ROUTER;
 
   modifier onlyAllowListedChain(uint64 _chainSelector) {
-    if (s_conceroContracts[_chainSelector] == address(0)) revert ChainNotAllowed(_chainSelector);
-    _;
-  }
-
-  modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
-    if (s_conceroContracts[_chainSelector] == address(0)) revert SourceChainNotAllowed(_chainSelector);
-    if (s_conceroContracts[_chainSelector] != _sender) revert SenderNotAllowed(_sender);
-    _;
-  }
-
-  //@audit we should remove it and relocate the if inside the function
-  modifier validateReceiver(address _receiver) {
-    if (_receiver == address(0)) revert InvalidReceiverAddress();
+    if (s_conceroPools[_chainSelector] == address(0)) revert ChainNotAllowed(_chainSelector);
     _;
   }
 
@@ -79,7 +67,7 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
 
     return
       Client.EVM2AnyMessage({
-        receiver: abi.encode(s_conceroContracts[_destinationChainSelector]),
+        receiver: abi.encode(s_conceroPools[_destinationChainSelector]),
         data: abi.encode(_lpFee),
         tokenAmounts: tokenAmounts,
         extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),

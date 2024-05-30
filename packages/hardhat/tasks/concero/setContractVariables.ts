@@ -142,4 +142,33 @@ async function addMessengerToAllowlist(deployableChain: CNetwork, abi: any) {
     }
   }
 }
+
+async function setConceroPool(deployableChain: CNetwork, abi: any) {
+  const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
+  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+  try {
+    const dcContract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[dcName]}`);
+    const poolAddress = getEnvVar(`CONCEROPOOL_${networkEnvKeys[dcName]}`);
+
+    const { request: setPoolReq } = await publicClient.simulateContract({
+      address: dcContract,
+      abi,
+      functionName: "setConceroPoolAddress",
+      account,
+      args: [poolAddress],
+      chain: dcViemChain,
+    });
+    const setPoolHash = await walletClient.writeContract(setPoolReq);
+    const { cumulativeGasUsed: setPoolGasUsed } = await publicClient.waitForTransactionReceipt({
+      hash: setPoolHash,
+    });
+    log(
+      `Set ${dcName}:${dcContract} pool[${poolAddress}]. Gas used: ${setPoolGasUsed.toString()}`,
+      "setContractVariables",
+    );
+  } catch (error) {
+    log(`Error for ${dcName}: ${error.message}`, "setContractVariables");
+  }
+}
+
 //todo: add set hash

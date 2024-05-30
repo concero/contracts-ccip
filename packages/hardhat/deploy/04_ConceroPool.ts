@@ -35,8 +35,10 @@ const deployConceroPool: DeployFunction = async function (
     autoMine: true,
   })) as Deployment;
 
-  log(`ConceroPool deployed to ${name} to: ${deployConceroPool.address}`, "deployConceroPool");
-  // updateEnvVariable(`ConceroPool ${networkEnvKeys[name]}`, deployConceroPool.address, "../../../.env.deployments")
+  if (name !== "hardhat" && name !== "localhost") {
+    log(`ConceroPool deployed to ${name} to: ${deployConceroPool.address}`, "deployConceroPool");
+    updateEnvVariable(`CONCEROPOOL_${networkEnvKeys[name]}`, deployConceroPool.address, "../../../.env.deployments");
+  }
 };
 
 export default deployConceroPool;

@@ -9,8 +9,8 @@ import log from "../../utils/log";
 import uploadDonSecrets from "../donSecrets/upload";
 import deployConcero from "../../deploy/02_Concero";
 import { execSync } from "child_process";
+import { liveChains } from "./liveChains";
 
-export const liveChains: CNetwork[] = [chains.baseSepolia, chains.arbitrumSepolia, chains.optimismSepolia];
 let deployableChains: CNetwork[] = liveChains;
 
 task("deploy-infra", "Deploy the CCIP infrastructure")

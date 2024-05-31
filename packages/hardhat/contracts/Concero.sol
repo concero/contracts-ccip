@@ -238,7 +238,7 @@ contract Concero is ConceroCCIP {
     address fromToken = swapData[0].fromToken;
     uint256 fromAmount = swapData[0].fromAmount;
 
-    if(fromToken == address(0)){
+    if (fromToken == address(0)) {
       dexSwap.conceroEntry{value: nativeAmount}(swapData, nativeAmount);
     } else {
       uint256 balanceBefore = LibConcero.getBalance(fromToken, address(dexSwap));
@@ -246,7 +246,7 @@ contract Concero is ConceroCCIP {
       uint256 balanceAfter = LibConcero.getBalance(fromToken, address(dexSwap));
 
       amountOut = balanceAfter - balanceBefore;
-      if(amountOut != fromAmount) revert Concero_FoTNotAllowedYet();
+      if (amountOut != fromAmount) revert Concero_FoTNotAllowedYet();
 
       dexSwap.conceroEntry(swapData, nativeAmount);
     }

@@ -3,7 +3,6 @@ import { SecretsManager } from "@chainlink/functions-toolkit";
 import chains, { networkEnvKeys } from "../../constants/CNetworks";
 import secrets from "../../constants/CLFSecrets";
 import updateEnvVariable from "../../utils/updateEnvVariable";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../types/CNetwork";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import log from "../../utils/log";

@@ -164,11 +164,21 @@ describe("startBatchTransactions\n", () => {
     let transactionPromises = [];
 
     for (let i = 0; i < transactionsCount; i++) {
+      const bridgeData = {
+        tokenType: 0n,
+        amount: BigInt(amount),
+        minAmount: BigInt(amount),
+        dstChainSelector: BigInt(dstChainSelector),
+        receiver: senderAddress,
+      };
+
+      console.log(bridgeData);
+
       const { request } = await srcPublicClient.simulateContract({
         abi: ConceroAbi,
-        functionName: "startTransaction",
+        functionName: "bridge",
         address: srcContractAddress as `0x${string}`,
-        args: [bnmTokenAddress, 0, BigInt(amount), BigInt(dstChainSelector), senderAddress],
+        args: [bridgeData, [0x0]],
         account: viemAccount as Account,
         // value,
         nonce: nonce++,

@@ -17,6 +17,7 @@ interface ConstructorArgs {
   conceroChainIndex?: number;
   linkToken?: string;
   ccipRouter?: string;
+  dexSwapModule?: string;
 }
 
 /* run with: yarn deploy --network avalancheFuji --tags Concero */
@@ -52,6 +53,8 @@ const deployConcero: DeployFunction = async function (
     conceroChainIndex: conceroChainIndex,
     linkToken: linkToken,
     ccipRouter: ccipRouter,
+    // TODO: Update this to the correct address
+    dexSwapModule: linkToken,
     priceFeed: priceFeed,
     jsCodeHashSum: {
       src: getHashSum(secrets.SRC_JS),
@@ -75,6 +78,7 @@ const deployConcero: DeployFunction = async function (
       args.conceroChainIndex,
       args.linkToken,
       args.ccipRouter,
+      args.dexSwapModule,
       args.priceFeed,
       args.jsCodeHashSum,
     ],

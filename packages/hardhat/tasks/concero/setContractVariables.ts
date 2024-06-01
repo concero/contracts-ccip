@@ -6,6 +6,7 @@ import { getEnvVar } from "../../utils/getEnvVar";
 import log from "../../utils/log";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import { SecretsManager } from "@chainlink/functions-toolkit";
+import { Address } from "viem";
 
 export async function setContractVariables(liveChains: CNetwork[], deployableChains: CNetwork[], slotId: number) {
   const { abi } = await load("../artifacts/contracts/Concero.sol/Concero.json");
@@ -46,6 +47,7 @@ export async function setContractVariables(liveChains: CNetwork[], deployableCha
   for (const deployableChain of deployableChains) {
     await setDonHostedSecretsVersion(deployableChain, slotId, abi);
     await addMessengerToAllowlist(deployableChain, abi);
+    await setConceroPool(deployableChain, abi, liveChains);
   }
 }
 
@@ -143,31 +145,40 @@ async function addMessengerToAllowlist(deployableChain: CNetwork, abi: any) {
   }
 }
 
-async function setConceroPool(deployableChain: CNetwork, abi: any) {
-  const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+async function setConceroPool(deployableChain: CNetwork, abi: any, liveChains: CNetwork[]) {
   try {
-    const dcContract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[dcName]}`);
-    const poolAddress = getEnvVar(`CONCEROPOOL_${networkEnvKeys[dcName]}`);
+    const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
+    const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+    const srcConceroPoolAddress = getEnvVar(`CONCEROCCIP_${networkEnvKeys[srcChainName]}`);
 
-    const { request: setPoolReq } = await publicClient.simulateContract({
-      address: dcContract,
-      abi,
-      functionName: "setConceroPoolAddress",
-      account,
-      args: [poolAddress],
-      chain: dcViemChain,
-    });
-    const setPoolHash = await walletClient.writeContract(setPoolReq);
-    const { cumulativeGasUsed: setPoolGasUsed } = await publicClient.waitForTransactionReceipt({
-      hash: setPoolHash,
-    });
-    log(
-      `Set ${dcName}:${dcContract} pool[${poolAddress}]. Gas used: ${setPoolGasUsed.toString()}`,
-      "setContractVariables",
-    );
+    for (const dstChain of liveChains) {
+      const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
+      const dstConceroPoolAddress = getEnvVar(`CONCEROPOOL_${networkEnvKeys[dstChainName]}`);
+
+      if (!dstChainSelector) {
+        log(`No chainSelector found for ${dstChainName}`, "setContractVariables");
+        continue;
+      }
+
+      const { request: setPoolReq } = await publicClient.simulateContract({
+        address: srcConceroPoolAddress as Address,
+        abi,
+        functionName: "setConceroPool",
+        account,
+        args: [dstChainSelector, dstConceroPoolAddress],
+        chain: dcViemChain,
+      });
+      const setPoolHash = await walletClient.writeContract(setPoolReq);
+      const { cumulativeGasUsed: setPoolGasUsed } = await publicClient.waitForTransactionReceipt({
+        hash: setPoolHash,
+      });
+      log(
+        `Set ${dstChainName}:${dstConceroPoolAddress} pool[${dstConceroPoolAddress}]. Gas used: ${setPoolGasUsed.toString()}`,
+        "setContractVariables",
+      );
+    }
   } catch (error) {
-    log(`Error for ${dcName}: ${error.message}`, "setContractVariables");
+    log(`Error ${error.message}`, "setContractVariables");
   }
 }
 

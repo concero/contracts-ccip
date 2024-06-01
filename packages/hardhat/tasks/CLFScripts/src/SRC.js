@@ -63,8 +63,7 @@ async function main() {
 
 	const sendTransaction = async (contract, signer, txOptions) => {
 		try {
-			const transaction = await contract.transactions(ccipMessageId);
-			if ((await contract.transactions(ccipMessageId))[1] !== '0x0000000000000000000000000000000000000000') return;
+			if ((await contract.s_transactions(ccipMessageId))[1] !== '0x0000000000000000000000000000000000000000') return;
 
 			await contract.addUnconfirmedTX(
 				ccipMessageId,
@@ -127,7 +126,7 @@ async function main() {
 		const signer = wallet.connect(provider);
 		const abi = [
 			'function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256) external',
-			'function transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool)',
+			'function s_transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool)',
 		];
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		const feeData = await provider.getFeeData();

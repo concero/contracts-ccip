@@ -87,14 +87,14 @@ contract Concero is ConceroCCIP {
   }
 
   modifier validateBridgeData(BridgeData calldata bridgeData) {
-    if (bridgeData.amount > 0) {
+    if (bridgeData.amount == 0) {
       revert InvalidAmount();
     }
     _;
   }
 
   modifier validateSwapData(IDexSwap.SwapData[] calldata swapData) {
-    if (swapData.length > 0) {
+    if (swapData.length == 0) {
       revert IDexSwap.InvalidSwapData();
     }
 

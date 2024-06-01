@@ -10,6 +10,8 @@ import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.s
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 
+import {Storage} from "./Libraries/Storage.sol";
+
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
@@ -34,18 +36,8 @@ error ConceroPool_DestinationNotAllowed();
 ///@notice error emitted when the contract doesn't have enought link balance
 error ConceroPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
 
-contract ConceroPool is CCIPReceiver, Ownable {
+contract ConceroPool is Storage, CCIPReceiver, Ownable {
   using SafeERC20 for IERC20;
-
-  struct WithdrawRequests {
-    uint256 condition;
-    uint256 amount;
-    bool isActiv;
-    bool isFulfilled;
-  }
-
-  address public s_conceroOrchestrator;
-  address public s_messengerAddress;
 
   ///@notice removing magic-numbers
   uint256 private constant APPROVED = 1;
@@ -55,20 +47,6 @@ contract ConceroPool is CCIPReceiver, Ownable {
   LinkTokenInterface private immutable i_linkToken;
   ///@notice Chainlink CCIP Router
   IRouterClient private immutable i_router;
-
-  //1 == True
-  ///@notice Mapping to keep track of allowed tokens
-  mapping(address token => uint256 isApproved) public s_isTokenSupported;
-  ///@notice Mapping to keep track of allowed senders on a given token
-  mapping(address token => address senderAllowed) public s_approvedSenders;
-  ///@notice Mapping to keep track of balances of user on a given token
-  mapping(address token => mapping(address user => uint256 balance)) public s_userBalances;
-  ///@notice Mapping to keep track of allowed pool senders
-  mapping(uint64 chainId => mapping(address poolAddress => uint256)) public s_allowedPool;
-  ///@notice Mapping to keep track of allowed pool receiver
-  mapping(uint64 chainId => address pool) public s_poolReceiver;
-  ///@notice Mapping to keep track of withdraw requests
-  mapping(address token => WithdrawRequests) private s_withdrawWaitlist;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////

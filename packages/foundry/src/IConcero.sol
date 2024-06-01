@@ -17,17 +17,6 @@ interface IConceroCommon {
   error InsufficientFundsForFees(uint256 amount, uint256 fee);
   error FundsLost(address token, uint256 balanceBefore, uint256 balanceAfter, uint256 amount);
   error InvalidAmount();
-
-  enum CCIPToken {
-    bnm,
-    usdc
-  }
-
-  enum Chain {
-    arb,
-    base,
-    opt
-  }
 }
 
 interface ICCIP is IConceroCommon {
@@ -45,19 +34,12 @@ interface ICCIP is IConceroCommon {
     bytes32 indexed ccipMessageId,
     address sender,
     address recipient,
-    CCIPToken token,
+    uint8 token,
     uint256 amount,
     uint64 dstChainSelector
   );
   event CLFPremiumFeeUpdated(uint64 chainSelector, uint256 previousValue, uint256 feeAmount);
 
-  struct BridgeData {
-    CCIPToken tokenType;
-    uint256 amount;
-    uint256 minAmount;
-    uint64 dstChainSelector;
-    address receiver;
-  }
 }
 
 interface IFunctions is IConceroCommon {
@@ -66,7 +48,7 @@ interface IFunctions is IConceroCommon {
     address sender,
     address recipient,
     uint256 amount,
-    CCIPToken token,
+    uint8 token,
     uint64 srcChainSelector
   );
   event UnconfirmedTXSent(
@@ -74,7 +56,7 @@ interface IFunctions is IConceroCommon {
     address sender,
     address recipient,
     uint256 amount,
-    CCIPToken token,
+    uint8 token,
     uint64 dstChainSelector
   );
   event TXConfirmed(
@@ -82,7 +64,7 @@ interface IFunctions is IConceroCommon {
     address indexed sender,
     address indexed recipient,
     uint256 amount,
-    CCIPToken token
+    uint8 token
   );
   event TXReleased(
     bytes32 indexed ccipMessageId,
@@ -114,25 +96,4 @@ interface IFunctions is IConceroCommon {
   error TxDoesNotExist();
   error TxAlreadyConfirmed();
   error AddressNotSet();
-
-  enum RequestType {
-    addUnconfirmedTxDst,
-    checkTxSrc
-  }
-
-  struct Request {
-    RequestType requestType;
-    bool isPending;
-    bytes32 ccipMessageId;
-  }
-
-  struct Transaction {
-    bytes32 ccipMessageId;
-    address sender;
-    address recipient;
-    uint256 amount;
-    CCIPToken token;
-    uint64 srcChainSelector;
-    bool isConfirmed;
-  }
 }

@@ -13,7 +13,7 @@ import {IRouter} from "@velodrome/contracts/interfaces/IRouter.sol";
 import {ISwapRouter02, IV3SwapRouter} from "./Interfaces/ISwapRouter02.sol";
 
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
-import "./LibConcero.sol";
+import "./Libraries/LibConcero.sol";
 
   error DexSwap_CallerNotAllowed(address caller);
   error DexSwap_EmptyDexData();
@@ -301,6 +301,11 @@ contract DexSwap is IDexSwap, Ownable {
     IRouter(routerAddress).swapExactTokensForTokens(_swapData.fromAmount, _swapData.toAmountMin, routes, recipient, deadline);
   }
 
+  /**
+   * @notice Function to execute swaps on Aerodrome and Velodrome Protocols
+   * @param _swapData the enconded swap data
+   * @dev This function accepts Fee on Transfer tokens
+   */
   function _swapDromeFoT(IDexSwap.SwapData memory _swapData) private {
     if (_swapData.dexData.length < 1) revert DexSwap_EmptyDexData();
 

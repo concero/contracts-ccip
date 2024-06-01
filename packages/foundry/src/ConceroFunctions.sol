@@ -7,8 +7,6 @@ import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/l
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IFunctions} from "./IConcero.sol";
-import {Concero} from "./Concero.sol";
-import {ConceroPool} from "./ConceroPool.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 
 error TxDoesNotExist();
@@ -24,33 +22,11 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   using Strings for address;
   using Strings for bytes32;
 
-  struct JsCodeHashSum {
-    bytes32 src;
-    bytes32 dst;
-  }
-
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
 
   bytes32 private immutable i_donId;
   uint64 private immutable i_subscriptionId;
-
-  uint8 private s_donHostedSecretsSlotId;
-  uint64 private s_donHostedSecretsVersion;
-
-  bytes32 private s_srcJsHashSum;
-  bytes32 private s_dstJsHashSum;
-
-  ConceroPool private s_pool;
-
-  mapping(bytes32 => Transaction) public s_transactions;
-  mapping(bytes32 => Request) public s_requests;
-  mapping(uint64 => uint256) public s_lastGasPrices; // chain selector => last gas price in wei
-
-  string private constant srcJsCode =
-    "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.SRC_JS, 'utf8').digest('hex'); if ('0x' + hash.toLowerCase() === args[0].toLowerCase()) { return await eval(secrets.SRC_JS); } else { throw new Error(`0x${hash.toLowerCase()} != ${args[0].toLowerCase()}`); } } catch (err) { throw new Error(err.message.slice(0, 255));}";
-  string private constant dstJsCode =
-    "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.DST_JS, 'utf8').digest('hex'); if ('0x' + hash.toLowerCase() === args[0].toLowerCase()) { return await eval(secrets.DST_JS); } else { throw new Error(`0x${hash.toLowerCase()} != ${args[0].toLowerCase()}`); } } catch (err) { throw new Error(err.message.slice(0, 255));}";
 
   modifier onlyMessenger() {
     if (!s_messengerContracts[msg.sender]) revert NotMessenger(msg.sender);

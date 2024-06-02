@@ -27,6 +27,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
+  uint8 private constant CL_SRC_RESPONSE_LENGTH = 96;
 
   bytes32 private immutable i_donId;
   uint64 private immutable i_subscriptionId;
@@ -69,57 +70,28 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     s_dstJsHashSum = jsCodeHashSum.dst;
   }
 
-  function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
+  function setDonHostedSecretsVersion(uint64 _version) external payable onlyOwner {
     uint64 previousValue = s_donHostedSecretsVersion;
-
     s_donHostedSecretsVersion = _version;
-
     emit DonSecretVersionUpdated(previousValue, _version);
   }
 
-  function setDonHostedSecretsSlotID(uint8 _donHostedSecretsSlotId) external onlyOwner {
+  function setDonHostedSecretsSlotID(uint8 _donHostedSecretsSlotId) external payable onlyOwner {
     uint8 previousValue = s_donHostedSecretsSlotId;
-
     s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
-
     emit DonSlotIdUpdated(previousValue, _donHostedSecretsSlotId);
   }
 
-  function setDstJsHashSum(bytes32 _hashSum) external onlyOwner {
+  function setDstJsHashSum(bytes32 _hashSum) external payable onlyOwner {
     bytes32 previousValue = s_dstJsHashSum;
-
     s_dstJsHashSum = _hashSum;
-
     emit DestinationJsHashSumUpdated(previousValue, _hashSum);
   }
 
-  function setSrcJsHashSum(bytes32 _hashSum) external onlyOwner {
+  function setSrcJsHashSum(bytes32 _hashSum) external payable onlyOwner {
     bytes32 previousValue = s_dstJsHashSum;
-
     s_srcJsHashSum = _hashSum;
-
     emit SourceJsHashSumUpdated(previousValue, _hashSum);
-  }
-
-  //@audit if updated to bytes[] memory. We can remove this guys
-  function bytesToBytes32(bytes memory b) internal pure returns (bytes32) {
-    bytes32 out;
-    for (uint i = 0; i < 32; i++) {
-      out |= bytes32(b[i] & 0xFF) >> (i * 8);
-    }
-    return out;
-  }
-
-  //@audit if updated to bytes[] memory. We can remove this guys
-  function bytes32ToString(bytes32 _bytes32) internal pure returns (string memory) {
-    bytes memory chars = "0123456789abcdef";
-    bytes memory str = new bytes(64);
-    for (uint256 i = 0; i < 32; i++) {
-      bytes1 b = _bytes32[i];
-      str[i * 2] = chars[uint8(b) >> 4];
-      str[i * 2 + 1] = chars[uint8(b) & 0x0f];
-    }
-    return string(abi.encodePacked("0x", str));
   }
 
   function addUnconfirmedTX(
@@ -136,20 +108,17 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
 
-    //@audit bytes[] memory args = new bytes[](9)
-    string[] memory args = new string[](10);
-    //todo: use bytes
-    //@audit = abi.encode(param);
-    args[0] = bytes32ToString(s_dstJsHashSum);
-    args[1] = Strings.toHexString(s_conceroContracts[srcChainSelector]);
-    args[2] = Strings.toString(srcChainSelector);
-    args[3] = Strings.toHexString(blockNumber);
-    args[4] = bytes32ToString(ccipMessageId);
-    args[5] = Strings.toHexString(sender);
-    args[6] = Strings.toHexString(recipient);
-    args[7] = Strings.toString(uint(token));
-    args[8] = Strings.toString(amount);
-    args[9] = Strings.toString(CHAIN_SELECTOR);
+    bytes[] memory args = new bytes[](10);
+    args[0] = abi.encodePacked(s_dstJsHashSum);
+    args[1] = abi.encodePacked(s_conceroContracts[srcChainSelector]);
+    args[2] = abi.encodePacked(srcChainSelector);
+    args[3] = abi.encodePacked(blockNumber);
+    args[4] = abi.encodePacked(ccipMessageId);
+    args[5] = abi.encodePacked(sender);
+    args[6] = abi.encodePacked(recipient);
+    args[7] = abi.encodePacked(uint(token));
+    args[8] = abi.encodePacked(amount);
+    args[9] = abi.encodePacked(CHAIN_SELECTOR);
 
     bytes32 reqId = sendRequest(args, dstJsCode);
 
@@ -160,13 +129,11 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     emit UnconfirmedTXAdded(ccipMessageId, sender, recipient, amount, token, srcChainSelector);
   }
 
-  //@audit I think we can send bytes[] memory args instead of string[] memory args.
-  //I just don't know yet if we need to pass anything different besides the setArgs function.
-  function sendRequest(string[] memory args, string memory jsCode) internal returns (bytes32) {
+  function sendRequest(bytes[] memory args, string memory jsCode) internal returns (bytes32) {
     FunctionsRequest.Request memory req;
     req.initializeRequestForInlineJavaScript(jsCode);
     req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
-    req.setArgs(args);
+    req.setBytesArgs(args);
     return _sendRequest(req.encodeCBOR(), i_subscriptionId, CL_FUNCTIONS_CALLBACK_GAS_LIMIT, i_donId);
   }
 
@@ -204,8 +171,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
         // dexSwap.conceroEntry(passing the user address as receiver);
       }
     } else if (request.requestType == RequestType.addUnconfirmedTxDst) {
-      //@audit what means this 96?
-      if (response.length != 96) {
+      if (response.length != CL_SRC_RESPONSE_LENGTH) {
         return;
       }
 
@@ -233,18 +199,17 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {
     if (s_conceroContracts[dstChainSelector] == address(0)) revert AddressNotSet();
 
-    string[] memory args = new string[](10);
-    //todo: Strings usage may not be required here. Consider ways of passing data without converting to string
-    args[0] = bytes32ToString(s_srcJsHashSum);
-    args[1] = Strings.toHexString(s_conceroContracts[dstChainSelector]);
-    args[2] = bytes32ToString(ccipMessageId);
-    args[3] = Strings.toHexString(sender);
-    args[4] = Strings.toHexString(recipient);
-    args[5] = Strings.toString(amount);
-    args[6] = Strings.toString(CHAIN_SELECTOR);
-    args[7] = Strings.toString(dstChainSelector);
-    args[8] = Strings.toString(uint256(token));
-    args[9] = Strings.toHexString(block.number);
+    bytes[] memory args = new bytes[](10);
+    args[0] = abi.encodePacked(s_srcJsHashSum);
+    args[1] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
+    args[2] = abi.encodePacked(ccipMessageId);
+    args[3] = abi.encodePacked(sender);
+    args[4] = abi.encodePacked(recipient);
+    args[5] = abi.encodePacked(amount);
+    args[6] = abi.encodePacked(CHAIN_SELECTOR);
+    args[7] = abi.encodePacked(dstChainSelector);
+    args[8] = abi.encodePacked(uint256(token));
+    args[9] = abi.encodePacked(block.number);
 
     bytes32 reqId = sendRequest(args, srcJsCode);
     s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;

@@ -16,6 +16,10 @@ import {LibConcero} from "./Libraries/LibConcero.sol";
 contract Concero is ConceroCCIP {
   using SafeERC20 for IERC20;
 
+  address internal s_dexSwap;
+  
+  mapping(uint64 => uint256) public clfPremiumFees;
+
   AggregatorV3Interface public immutable linkToUsdPriceFeeds;
   AggregatorV3Interface public immutable usdcToUsdPriceFeeds;
   AggregatorV3Interface public immutable nativeToUsdPriceFeeds;
@@ -52,21 +56,28 @@ contract Concero is ConceroCCIP {
     usdcToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.usdcToUsdPriceFeeds);
     nativeToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.nativeToUsdPriceFeeds);
     linkToNativePriceFeeds = AggregatorV3Interface(priceFeeds.linkToNativePriceFeeds);
-    dexSwap = IDexSwap(_dexSwap);
+    s_dexSwap = _dexSwap;
 
     clfPremiumFees[3478487238524512106] = 4000000000000000; // 0.004 link | arb
     clfPremiumFees[10344971235874465080] = 1847290640394088; // 0.0018 link | base // takes in usd mb price feed needed
     clfPremiumFees[5224473277236331295] = 2000000000000000; // 0.002 link | opt
   }
 
-  // setters
   function setDexSwap(address _dexSwap) external payable onlyOwner {
-    dexSwap = IDexSwap(_dexSwap);
+    s_dexSwap = _dexSwap;
   }
 
+  function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external onlyOwner {
+    //@audit we must limit this amount. If we don't, it Will trigger a lot of red flags in audits.
+    uint256 previousValue = clfPremiumFees[_chainSelector];
+    clfPremiumFees[_chainSelector] = feeAmount;
+
+    emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
+  }
+  
   function startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata dstSwapData) external {
 
-    address fromToken = getToken(bridgeData.tokenType);
+    address fromToken = getToken(bridgeData.tokenType, s_chainIndex);
 
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount);
     
@@ -84,6 +95,22 @@ contract Concero is ConceroCCIP {
     sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType);
   }
 
+  function withdraw(address _owner) external onlyOwner {
+    uint256 amount = address(this).balance;
+    if (amount == 0) revert NothingToWithdraw();
+    (bool sent, ) = _owner.call{value: amount}("");
+    if (!sent) revert FailedToWithdrawEth(msg.sender, _owner, amount);
+  }
+
+  function withdrawToken(address _owner, address _token) external onlyOwner {
+    uint256 amount = IERC20(_token).balanceOf(address(this));
+    if (amount == 0) revert NothingToWithdraw();
+    IERC20(_token).safeTransfer(_owner, amount);
+  }
+
+  /////////////////
+  ///VIEW & PURE///
+  /////////////////
   // fees module
   function getLinkToUsdcRate() public view returns (int256, uint8) {
     (, int256 linkToUsdRate, , , ) = linkToUsdPriceFeeds.latestRoundData();
@@ -165,7 +192,7 @@ contract Concero is ConceroCCIP {
 
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     // todo: instead of 0.1 ether, pass the actual fee into _buildCCIPMessage()
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType), 1 ether, 0.1 ether, dstChainSelector);
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, s_chainIndex), 1 ether, 0.1 ether, dstChainSelector);
 
     return CCIP_ROUTER.getFee(dstChainSelector, evm2AnyMessage);
   }
@@ -180,28 +207,5 @@ contract Concero is ConceroCCIP {
 
     uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector);
     return (ccpFeeInLink * uint256(linkToUsdcRate)) / 1 ether;
-  }
-
-  // setters
-  function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external onlyOwner {
-    //@audit we must limit this amount. If we don't, it Will trigger a lot of red flags in audits.
-    uint256 previousValue = clfPremiumFees[_chainSelector];
-    clfPremiumFees[_chainSelector] = feeAmount;
-
-    emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
-  }
-
-
-  function withdraw(address _owner) public onlyOwner {
-    uint256 amount = address(this).balance;
-    if (amount == 0) revert NothingToWithdraw();
-    (bool sent, ) = _owner.call{value: amount}("");
-    if (!sent) revert FailedToWithdrawEth(msg.sender, _owner, amount);
-  }
-
-  function withdrawToken(address _owner, address _token) public onlyOwner {
-    uint256 amount = IERC20(_token).balanceOf(address(this));
-    if (amount == 0) revert NothingToWithdraw();
-    IERC20(_token).safeTransfer(_owner, amount);
   }
 }

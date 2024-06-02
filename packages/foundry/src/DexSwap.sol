@@ -12,33 +12,42 @@ import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/Transfer
 import {IRouter} from "@velodrome/contracts/interfaces/IRouter.sol";
 import {ISwapRouter02, IV3SwapRouter} from "./Interfaces/ISwapRouter02.sol";
 
+import {Storage} from "./Libraries/Storage.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import "./Libraries/LibConcero.sol";
 
+  ////////////////////////////////////////////////////////
+  //////////////////////// ERRORS ////////////////////////
+  ////////////////////////////////////////////////////////
+  ///@notice error emitted when the caller is not allowed
   error DexSwap_CallerNotAllowed(address caller);
+  ///@notice error emitted when the swap data is empty
   error DexSwap_EmptyDexData();
+  ///@notice error emitted when the router is not allowed
   error DexSwap_RouterNotAllowed();
+  ///@notice error emitted when the path to swaps is invalid
   error DexSwap_InvalidPath();
 
-contract DexSwap is IDexSwap, Ownable {
+contract DexSwap is Storage, IDexSwap {
   using SafeERC20 for IERC20;
 
-  /////////////////////
-  ///STATE VARIABLES///
-  /////////////////////
-  address private s_orchestrator;
-
-  //////////////
-  ///CONSTANT///
-  //////////////
-  uint256 private constant APPROVED = 1;
-
-  event DexSwap_OrchestratorContractUpdated(address previousAddress, address orchestrator);
-  event DexSwap_NewRouterAdded(address router, uint256 isAllowed);
-  event DexSwap_RemovingDust(address receiver, uint256 amount);
-
+  /////////////
+  ///STORAGE///
+  /////////////
+  address internal s_orchestrator;
+  
   ///@notice mapping to keep track of allowed routers to perform swaps. 1 == Allowed.
-  mapping(address router => uint256 isAllowed) public s_routerAllowed;
+  mapping(address router => uint256 isAllowed) private s_routerAllowed;
+
+  ////////////////////////////////////////////////////////
+  //////////////////////// EVENTS ////////////////////////
+  ////////////////////////////////////////////////////////
+  ///@notice event emitted when the orchestrator address is updated
+  event DexSwap_OrchestratorContractUpdated(address previousAddress, address orchestrator);
+  ///@notice event emitted when the router address is approved
+  event DexSwap_NewRouterAdded(address router, uint256 isAllowed);
+  ///@notice event emitted when value locked in the contract is removed
+  event DexSwap_RemovingDust(address receiver, uint256 amount);
 
   /////////////////////////////////////////////////////////////////
   ////////////////////////////FUNCTIONS////////////////////////////
@@ -67,28 +76,6 @@ contract DexSwap is IDexSwap, Ownable {
     s_routerAllowed[_router] = _isApproved;
 
     emit DexSwap_NewRouterAdded(_router, _isApproved);
-  }
-
-  /**
-   * @notice function to withdraw any dust that may be stuck in this contract
-   * @param _token the address of the token to be withdraw
-   * @param _amount the amount of dust to be collected
-   */
-  function dustRemoval(address _token, uint256 _amount) external payable onlyOwner {
-    emit DexSwap_RemovingDust(msg.sender, _amount);
-
-    IERC20(_token).safeTransfer(msg.sender, _amount);
-  }
-
-  /**
-   * @notice function to withdraw any dust that may be stuck in this contract
-   * @param _receiver the address that will receive the amount
-   */
-  function dustEtherRemoval(address _receiver) external onlyOwner {
-    uint256 amount = address(this).balance;
-
-    (bool sent, ) = _receiver.call{value: amount}("");
-    if (sent = false) revert();
   }
 
   /**
@@ -337,6 +324,28 @@ contract DexSwap is IDexSwap, Ownable {
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 
     amounts = IUniswapV2Router02(routerAddress).swapExactETHForTokens{value: _amount}(_swapData.toAmountMin, path, recipient, deadline);
+  }
+  
+  /**
+   * @notice function to withdraw any dust that may be stuck in this contract
+   * @param _token the address of the token to be withdraw
+   * @param _amount the amount of dust to be collected
+   */
+  function dustRemoval(address _token, uint256 _amount) external payable onlyOwner {
+    emit DexSwap_RemovingDust(msg.sender, _amount);
+
+    IERC20(_token).safeTransfer(msg.sender, _amount);
+  }
+
+  /**
+   * @notice function to withdraw any dust that may be stuck in this contract
+   * @param _receiver the address that will receive the amount
+   */
+  function dustEtherRemoval(address _receiver) external onlyOwner {
+    uint256 amount = address(this).balance;
+
+    (bool sent, ) = _receiver.call{value: amount}("");
+    if (sent = false) revert();
   }
 }
 

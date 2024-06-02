@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IFunctions} from "./IConcero.sol";
-import {ConceroCommon} from "./ConceroCommon.sol";
 
-error TxDoesNotExist();
-error TxAlreadyConfirmed();
-error AddressNotSet();
+import {Storage} from "./Libraries/Storage.sol";
+import {IConceroPool} from "./Interfaces/IConceroPool.sol";
 
-contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
+
+contract ConceroFunctions is FunctionsClient, Storage {
   using SafeERC20 for IERC20;
 
   using FunctionsRequest for FunctionsRequest.Request;
@@ -22,16 +21,39 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   using Strings for address;
   using Strings for bytes32;
 
+  /////////////
+  ///STORAGE///
+  /////////////
+  address internal s_pool;
+
+  uint8 internal s_donHostedSecretsSlotId;
+  uint64 internal s_donHostedSecretsVersion;
+  bytes32 internal s_srcJsHashSum;
+  bytes32 internal s_dstJsHashSum;
+
+  mapping(uint64 chainSelector => address conceroContract) internal s_conceroContracts;
+  mapping(bytes32 => Transaction) public s_transactions;
+  mapping(bytes32 => Request) public s_requests;
+  mapping(uint64 => uint256) public s_lastGasPrices; // chain selector => last gas price in wei
+
+  ///////////////
+  ///CONSTANTS///
+  ///////////////
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
-
+  ///@notice JS Code for source checking
+  string internal constant srcJsCode =
+    "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.SRC_JS, 'utf8').digest('hex'); if ('0x' + hash.toLowerCase() === args[0].toLowerCase()) { return await eval(secrets.SRC_JS); } else { throw new Error(`0x${hash.toLowerCase()} != ${args[0].toLowerCase()}`); } } catch (err) { throw new Error(err.message.slice(0, 255));}";
+  ///@notice JS Code for destination checking
+  string internal constant dstJsCode =
+    "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.DST_JS, 'utf8').digest('hex'); if ('0x' + hash.toLowerCase() === args[0].toLowerCase()) { return await eval(secrets.DST_JS); } else { throw new Error(`0x${hash.toLowerCase()} != ${args[0].toLowerCase()}`); } } catch (err) { throw new Error(err.message.slice(0, 255));}";
+  
+  ////////////////
+  ///IMMUTABLES///
+  ////////////////
   bytes32 private immutable i_donId;
   uint64 private immutable i_subscriptionId;
-
-  modifier onlyMessenger() {
-    if (!s_messengerContracts[msg.sender]) revert NotMessenger(msg.sender);
-    _;
-  }
+  uint64 internal immutable CHAIN_SELECTOR;
 
   constructor(
     address _functionsRouter,
@@ -42,13 +64,32 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     uint64 _chainSelector,
     uint _chainIndex,
     JsCodeHashSum memory jsCodeHashSum
-  ) FunctionsClient(_functionsRouter) ConceroCommon(_chainSelector, _chainIndex) {
+  ) FunctionsClient(_functionsRouter){
     i_donId = _donId;
     i_subscriptionId = _subscriptionId;
     s_donHostedSecretsVersion = _donHostedSecretsVersion;
     s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
     s_srcJsHashSum = jsCodeHashSum.src;
     s_dstJsHashSum = jsCodeHashSum.dst;
+    CHAIN_SELECTOR = _chainSelector;
+    s_chainIndex = Chain(_chainIndex);
+  }
+
+  ///////////////////////////////////////////////////////////////
+  ///////////////////////////Functions///////////////////////////
+  ///////////////////////////////////////////////////////////////
+  function setConceroContract(uint64 _chainSelector, address _conceroContract) external onlyOwner {
+    s_conceroContracts[_chainSelector] = _conceroContract;
+
+    emit ConceroContractUpdated(_chainSelector, _conceroContract);
+  }
+
+  function setConceroPoolAddress(address payable _pool) external onlyOwner {
+    address previousAddress = address(s_pool);
+
+    s_pool = _pool;
+
+    emit ConceroPoolAddressUpdated(previousAddress, _pool);
   }
 
   function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
@@ -81,15 +122,6 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     s_srcJsHashSum = _hashSum;
 
     emit SourceJsHashSumUpdated(previousValue, _hashSum);
-  }
-
-  //@New
-  function setConceroPoolAddress(address payable _pool) external onlyOwner {
-    address previousAddress = address(s_pool);
-
-    s_pool = ConceroPool(_pool);
-
-    emit ConceroPoolAddressUpdated(previousAddress, _pool);
   }
 
   //@audit if updated to bytes[] memory. We can remove this guys
@@ -182,12 +214,12 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
       uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
-      address tokenReceived = getToken(transaction.token);
+      address tokenReceived = getToken(transaction.token, s_chainIndex);
 
-      if (tokenReceived == getToken(CCIPToken.bnm)) {
+      if (tokenReceived == getToken(CCIPToken.bnm, s_chainIndex)) {
         //@audit hardcode for CCIP-BnM - Should be USDC
 
-        s_pool.orchestratorLoan(tokenReceived, amount, transaction.recipient);
+        IConceroPool(s_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
       } else {
         //@audit We need to call the DEX module here.
         // dexSwap.conceroEntry(passing the user address as receiver);
@@ -203,11 +235,6 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
       s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice;
       s_lastGasPrices[uint64(dstChainSelector)] = dstGasPrice;
     }
-  }
-
-  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
-    return amount / 1000;
-    //@audit we can have loss of precision here?
   }
 
   function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
@@ -241,5 +268,10 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     s_requests[reqId].ccipMessageId = ccipMessageId;
 
     emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
+  }
+  
+  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
+    return amount / 1000;
+    //@audit we can have loss of precision here?
   }
 }

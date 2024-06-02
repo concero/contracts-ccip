@@ -2,15 +2,15 @@ async function main() {
 	try {
 		const ethers = await import('npm:ethers@6.10.0');
 		const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-		const [_, srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = args;
+		const [_, srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = bytesArgs;
 		const messageId = eventArgs[0];
 		const chainMap = {
-			'${CL_CCIP_CHAIN_SELECTOR_FUJI}': {
+			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 				urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 				confirmations: 3n,
 				chainId: '0xa869',
 			},
-			'${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}': {
+			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}').toString(16)}`]: {
 				urls: [
 					`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
 					'https://ethereum-sepolia-rpc.publicnode.com',
@@ -19,7 +19,7 @@ async function main() {
 				confirmations: 3n,
 				chainId: '0xaa36a7',
 			},
-			'${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}': {
+			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 				urls: [
 					`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
 					'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
@@ -28,7 +28,7 @@ async function main() {
 				confirmations: 3n,
 				chainId: '0x66eee',
 			},
-			'${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}': {
+			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`]: {
 				urls: [
 					`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
 					'https://base-sepolia.blockpi.network/v1/rpc/public',
@@ -37,7 +37,7 @@ async function main() {
 				confirmations: 3n,
 				chainId: '0x14a34',
 			},
-			'${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}': {
+			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
 				urls: [
 					`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
 					'https://optimism-sepolia.blockpi.network/v1/rpc/public',

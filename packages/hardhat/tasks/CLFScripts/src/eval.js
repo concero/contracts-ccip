@@ -1,9 +1,9 @@
 try {
 	await import('npm:ethers@6.10.0');
 	const crypto = await import('node:crypto');
-	const hash = crypto.createHash('sha256').update(secrets.SRC_JS, 'utf8').digest('hex');
+	const hash = crypto.createHash('sha256').update(secrets.DST_JS, 'utf8').digest('hex');
 	if ('0x' + hash.toLowerCase() === bytesArgs[0].toLowerCase()) {
-		return await eval(secrets.SRC_JS);
+		return await eval(secrets.DST_JS);
 	} else {
 		throw new Error(`0x${hash.toLowerCase()} != ${bytesArgs[0].toLowerCase()}`);
 	}

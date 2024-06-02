@@ -6,31 +6,13 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ICCIP} from "./IConcero.sol";
 import {ConceroFunctions} from "./ConceroFunctions.sol";
 
-contract ConceroCCIP is ICCIP, ConceroFunctions {
+contract ConceroCCIP is ConceroFunctions {
   using SafeERC20 for IERC20;
 
   LinkTokenInterface internal immutable LINK_TOKEN;
   IRouterClient internal immutable CCIP_ROUTER;
-
-  modifier onlyAllowListedChain(uint64 _chainSelector) {
-    if (s_conceroContracts[_chainSelector] == address(0)) revert ChainNotAllowed(_chainSelector);
-    _;
-  }
-
-  modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
-    if (s_conceroContracts[_chainSelector] == address(0)) revert SourceChainNotAllowed(_chainSelector);
-    if (s_conceroContracts[_chainSelector] != _sender) revert SenderNotAllowed(_sender);
-    _;
-  }
-
-  //@audit we should remove it and relocate the if inside the function
-  modifier validateReceiver(address _receiver) {
-    if (_receiver == address(0)) revert InvalidReceiverAddress();
-    _;
-  }
 
   constructor(
     address _functionsRouter,
@@ -48,6 +30,10 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
     CCIP_ROUTER = IRouterClient(_ccipRouter);
     s_messengerContracts[msg.sender] = true;
   }
+
+  ///////////////////////////////////////////////////////////////
+  ///////////////////////////Functions///////////////////////////
+  ///////////////////////////////////////////////////////////////
 
   function _sendTokenPayLink(
     uint64 _destinationChainSelector,
@@ -79,7 +65,7 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
 
     return
       Client.EVM2AnyMessage({
-        receiver: abi.encode(s_conceroContracts[_destinationChainSelector]),
+        receiver: abi.encode(s_poolReceiver[_destinationChainSelector]),
         data: abi.encode(_lpFee),
         tokenAmounts: tokenAmounts,
         extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),

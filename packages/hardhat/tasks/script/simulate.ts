@@ -12,9 +12,10 @@ const process = require("process");
 async function simulate(pathToFile, args) {
   if (!fs.existsSync(pathToFile)) return console.error(`File not found: ${pathToFile}`);
   console.log("Simulating script:", pathToFile);
+
   const { responseBytesHexstring, errorString, capturedTerminalOutput } = await simulateScript({
     source: fs.readFileSync(pathToFile, "utf8"),
-    args,
+    bytesArgs: args,
     secrets,
     ...CLFSimulationConfig,
   });
@@ -43,15 +44,15 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     execSync(`bunx hardhat clf-script-build --all`, { stdio: "inherit" });
 
     await simulate(path.join(__dirname, "../", "./CLFScripts/dist/eval.min.js"), [
-      "0x03cc5cac9e18fc6ac6d82664454770b1d8ebbb29258b80e57f587ee7ad2f4d75", // srcJsHashSum
+      "0xcff5e6742bafaf9614452c3fdae335e3f6ba59d5c96c76a2041e6f9d2fbc365e", // srcJsHashSum
       process.env.CONCEROCCIP_OPTIMISM_SEPOLIA, // contractAddress
       "0x5315f93854194ca639615651c5662cf39a77308927ebe7d31c9e970958687a49", // ccipMessageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
-      "100000000000000000", // amount
-      process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA, // srcChainSelector
-      process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA, // dstChainSelector
-      "0", // token
+      "0x" + 100000000000000000n.toString(16), // amount
+      "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA).toString(16), // srcChainSelector
+      "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA).toString(16), // dstChainSelector
+      "0x" + 0n.toString(16), // token
       "0xA65233", // blockNumber
     ]);
 

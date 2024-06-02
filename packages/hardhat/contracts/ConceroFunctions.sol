@@ -193,11 +193,12 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
       address tokenReceived = getToken(transaction.token);
 
+      //@audit hardcode for CCIP-BnM - Should be USDC
       if (tokenReceived == getToken(CCIPToken.bnm)) {
-        //@audit hardcode for CCIP-BnM - Should be USDC
-
         ConceroPool conceroPool = ConceroPool(payable(s_conceroPools[CHAIN_SELECTOR]));
         conceroPool.orchestratorLoan(tokenReceived, amount, transaction.recipient);
+
+        emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
       } else {
         //@audit We need to call the DEX module here.
         // dexSwap.conceroEntry(passing the user address as receiver);

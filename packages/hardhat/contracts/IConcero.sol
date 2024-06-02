@@ -95,7 +95,7 @@ interface IFunctions is IConceroCommon {
     address indexed recipient,
     address token,
     uint256 amount
-  ); //@audit unused
+  );
   event TXReleaseFailed(
     bytes32 indexed ccipMessageId,
     address sender,

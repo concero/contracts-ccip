@@ -12,8 +12,8 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   using FunctionsRequest for FunctionsRequest.Request;
 
   uint32 internal constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
-  uint256 internal constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
-  uint8 internal constant CL_SRC_RESPONSE_LENGTH = 96;
+  uint32 internal constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
+  uint8 internal constant CL_SRC_RESPONSE_LENGTH = 192;
   string internal constant JS_CODE =
     "try { await import('npm:ethers@6.10.0'); const c = BigInt(bytesArgs[1]) === 1n ? secrets.DST_JS : secrets.SRC_JS; const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(c)); const r = Array.from(new Uint8Array(h)) .map(b => ('0' + b.toString(16)).slice(-2).toLowerCase()) .join(''); const b = bytesArgs[0].toLowerCase(); if ('0x' + r === b) return await eval(c); throw new Error(`0x${r} != ${b}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 

@@ -15,7 +15,6 @@ import {Storage} from "./Libraries/Storage.sol";
   ////////////////////////////////////////////////////////
   //////////////////////// ERRORS ////////////////////////
   ////////////////////////////////////////////////////////
-
   ///@notice error emitted when the caller is not authorized
   error ConceroPool_Unauthorized();
   ///@notice error emitted when the balance is not sufficient
@@ -39,27 +38,10 @@ import {Storage} from "./Libraries/Storage.sol";
 
 contract ConceroPool is Storage, CCIPReceiver {
   using SafeERC20 for IERC20;
-
-  /////////////
-  ///STORAGE///
-  /////////////
-  ///@notice Mapping to keep track of allowed tokens
-  mapping(address token => uint256 isApproved) public s_isTokenSupported;
-  ///@notice Mapping to keep track of allowed senders on a given token
-  mapping(address token => address senderAllowed) public s_approvedSenders;
-  ///@notice Mapping to keep track of balances of user on a given token
-  mapping(address token => mapping(address user => uint256 balance)) public s_userBalances;
-  ///@notice Mapping to keep track of allowed pool senders
-  mapping(uint64 chainId => mapping(address poolAddress => uint256)) public s_allowedPool;
-  ///@notice Mapping to keep track of withdraw requests
-  mapping(address token => WithdrawRequests) internal s_withdrawWaitlist;
-
-  ///////////////
-  ///VARIABLES///
-  ///////////////
-  address internal s_messenger;
-  address internal s_concero;
-
+  
+  ///////////////////////////////////////////////////////////
+  //////////////////////// VARIABLES ////////////////////////
+  ///////////////////////////////////////////////////////////
   ////////////////
   ///IMMUTABLES///
   ////////////////
@@ -85,8 +67,6 @@ contract ConceroPool is Storage, CCIPReceiver {
   event ConceroPool_TokenSupportedUpdated(address token, uint256 isSupported);
   ///@notice event emitted when an approved sender is updated
   event ConceroPool_ApprovedSenderUpdated(address token, address indexed newSender);
-  ///@notice event emitted when a Concero contract is added
-  event ConceroPool_srcConceroContractUpdated(address previousAddress, address newConceroAddress);
   ///@notice evemt emitted when a allowed Cross-chain contract is updated
   event ConceroPool_ConceroContractUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
   ///@notice event emitted when a new withdraw request is made
@@ -139,17 +119,16 @@ contract ConceroPool is Storage, CCIPReceiver {
   }
 
   /**
-   * @notice function to manage the Concero contract address
-   * @param _concero the address from the Concero Contract
+   * @notice function to manage the Cross-chain ConceroPool contracts
+   * @param _chainSelector chain identifications
+   * @param _pool address of the Cross-chain ConceroPool contract
    * @dev only owner can call it
    * @dev it's payable to save some gas.
   */
-  function setConceroContract(address _concero) external payable onlyOwner{
-    address previousAddress = s_concero;
+  function setConceroPoolReceiver(uint64 _chainSelector, address _pool) external payable onlyOwner{
+    s_poolReceiver[_chainSelector] = _pool;
 
-    s_concero = _concero;
-
-    emit ConceroPool_srcConceroContractUpdated(previousAddress, _concero);
+    emit Storage_PoolReceiverUpdated(_chainSelector, _pool);
   }
 
   /**
@@ -165,7 +144,6 @@ contract ConceroPool is Storage, CCIPReceiver {
 
     emit ConceroPool_ConceroContractUpdated(_chainSelector, _contractAddress, _isAllowed);
   }
-
 
   /**
    * @notice function to manage supported tokens

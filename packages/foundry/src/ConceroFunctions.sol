@@ -11,31 +11,34 @@ import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/l
 import {Storage} from "./Libraries/Storage.sol";
 import {IConceroPool} from "./Interfaces/IConceroPool.sol";
 
+  ////////////////////////////////////////////////////////
+  //////////////////////// ERRORS ////////////////////////
+  ////////////////////////////////////////////////////////
+  ///@notice error emitted when a TX was already added
+  error TXAlreadyExists(bytes32 txHash, bool isConfirmed);
+  ///@notice error emitted when a unexpected ID is added
+  error UnexpectedRequestID(bytes32);
+  ///@notice error emitted when a transaction does not exist
+  error TxDoesNotExist();
+  ///@notice error emitted when a transaction was already confirmed
+  error TxAlreadyConfirmed();
+  ///@notice error emitted when function receive a call from a not allowed address
+  error AddressNotSet();
 
 contract ConceroFunctions is FunctionsClient, Storage {
+  ///////////////////////
+  ///TYPE DECLARATIONS///
+  ///////////////////////
   using SafeERC20 for IERC20;
-
   using FunctionsRequest for FunctionsRequest.Request;
   using Strings for uint256;
   using Strings for uint64;
   using Strings for address;
   using Strings for bytes32;
 
-  /////////////
-  ///STORAGE///
-  /////////////
-  address internal s_pool;
-
-  uint8 internal s_donHostedSecretsSlotId;
-  uint64 internal s_donHostedSecretsVersion;
-  bytes32 internal s_srcJsHashSum;
-  bytes32 internal s_dstJsHashSum;
-
-  mapping(uint64 chainSelector => address conceroContract) internal s_conceroContracts;
-  mapping(bytes32 => Transaction) public s_transactions;
-  mapping(bytes32 => Request) public s_requests;
-  mapping(uint64 => uint256) public s_lastGasPrices; // chain selector => last gas price in wei
-
+  ///////////////////////////////////////////////////////////
+  //////////////////////// VARIABLES ////////////////////////
+  ///////////////////////////////////////////////////////////
   ///////////////
   ///CONSTANTS///
   ///////////////
@@ -47,13 +50,57 @@ contract ConceroFunctions is FunctionsClient, Storage {
   ///@notice JS Code for destination checking
   string internal constant dstJsCode =
     "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.DST_JS, 'utf8').digest('hex'); if ('0x' + hash.toLowerCase() === args[0].toLowerCase()) { return await eval(secrets.DST_JS); } else { throw new Error(`0x${hash.toLowerCase()} != ${args[0].toLowerCase()}`); } } catch (err) { throw new Error(err.message.slice(0, 255));}";
-  
+
   ////////////////
   ///IMMUTABLES///
   ////////////////
   bytes32 private immutable i_donId;
   uint64 private immutable i_subscriptionId;
   uint64 internal immutable CHAIN_SELECTOR;
+
+  ////////////////////////////////////////////////////////
+  //////////////////////// EVENTS ////////////////////////
+  ////////////////////////////////////////////////////////
+  ///@notice emitted on source when a Unconfirmed TX is sent
+  event UnconfirmedTXSent(
+    bytes32 indexed ccipMessageId,
+    address sender,
+    address recipient,
+    uint256 amount,
+    CCIPToken token,
+    uint64 dstChainSelector
+  );
+  ///@notice emitted when a Unconfirmed TX is added by a cross-chain TX
+  event UnconfirmedTXAdded(
+    bytes32 indexed ccipMessageId,
+    address sender,
+    address recipient,
+    uint256 amount,
+    CCIPToken token,
+    uint64 srcChainSelector
+  );
+  ///@notice emitted when on destination when a TX is validated.
+  event TXConfirmed(
+    bytes32 indexed ccipMessageId,
+    address indexed sender,
+    address indexed recipient,
+    uint256 amount,
+    CCIPToken token
+  );
+  ///@notice emitted when a Function Request returns an error
+  event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
+  ///@notice emitted when the concero pool address is updated
+  event ConceroPoolAddressUpdated(address previousAddress, address pool);
+  ///@notice emitted when the secret version of Chainlink Function Don is updated
+  event DonSecretVersionUpdated(uint64 previousDonSecretVersion, uint64 newDonSecretVersion);
+  ///@notice emitted when the slot ID of Chainlink Function is updated
+  event DonSlotIdUpdated(uint8 previousDonSlot, uint8 newDonSlot);
+  ///@notice emitted when the source JS code of Chainlink Function is updated
+  event SourceJsHashSumUpdated(bytes32 previousSrcHashSum, bytes32 newSrcHashSum);
+  ///@notice emitted when the destination JS code of Chainlink Function is updated
+  event DestinationJsHashSumUpdated(bytes32 previousDstHashSum, bytes32 newDstHashSum);
+  ///@notice event emitted when the address for the Concero Contract is updated
+  event ConceroContractUpdated(uint64 chainSelector, address conceroContract);
 
   constructor(
     address _functionsRouter,

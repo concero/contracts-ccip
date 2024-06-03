@@ -3,26 +3,19 @@ pragma solidity ^0.8.19;
 
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IFunctions} from "./IConcero.sol";
 import {Concero} from "./Concero.sol";
 import {ConceroPool} from "./ConceroPool.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 
 contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
-  using SafeERC20 for IERC20;
-
   using FunctionsRequest for FunctionsRequest.Request;
 
-  struct JsCodeHashSum {
-    bytes32 src;
-    bytes32 dst;
-  }
-
-  uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
-  uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
-  uint8 private constant CL_SRC_RESPONSE_LENGTH = 96;
+  uint32 internal constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
+  uint256 internal constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
+  uint8 internal constant CL_SRC_RESPONSE_LENGTH = 96;
+  string internal constant JS_CODE =
+    "try { await import('npm:ethers@6.10.0'); const c = BigInt(bytesArgs[1]) === 1n ? secrets.DST_JS : secrets.SRC_JS; const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(c)); const r = Array.from(new Uint8Array(h)) .map(b => ('0' + b.toString(16)).slice(-2).toLowerCase()) .join(''); const b = bytesArgs[0].toLowerCase(); if ('0x' + r === b) return await eval(c); throw new Error(`0x${r} != ${b}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
   bytes32 private immutable i_donId;
   uint64 private immutable i_subscriptionId;
@@ -33,14 +26,13 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   bytes32 private s_srcJsHashSum;
   bytes32 private s_dstJsHashSum;
 
+  uint256 public s_latestLinkUsdcRate;
+  uint256 public s_latestNativeUsdcRate;
+  uint256 public s_latestLinkNativeRate;
+
   mapping(bytes32 => Transaction) public s_transactions;
   mapping(bytes32 => Request) public s_requests;
   mapping(uint64 => uint256) public s_lastGasPrices; // chain selector => last gas price in wei
-
-  string private constant srcJsCode =
-    "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.SRC_JS, 'utf8').digest('hex'); if ('0x' + hash.toLowerCase() === args[0].toLowerCase()) { return await eval(secrets.SRC_JS); } else { throw new Error(`0x${hash.toLowerCase()} != ${args[0].toLowerCase()}`); } } catch (err) { throw new Error(err.message.slice(0, 255));}";
-  string private constant dstJsCode =
-    "try { await import('npm:ethers@6.10.0'); const crypto = await import('node:crypto'); const hash = crypto.createHash('sha256').update(secrets.DST_JS, 'utf8').digest('hex'); if ('0x' + hash.toLowerCase() === args[0].toLowerCase()) { return await eval(secrets.DST_JS); } else { throw new Error(`0x${hash.toLowerCase()} != ${args[0].toLowerCase()}`); } } catch (err) { throw new Error(err.message.slice(0, 255));}";
 
   modifier onlyMessenger() {
     if (!s_messengerContracts[msg.sender]) revert NotMessenger(msg.sender);
@@ -103,19 +95,20 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
 
-    bytes[] memory args = new bytes[](10);
+    bytes[] memory args = new bytes[](11);
     args[0] = abi.encodePacked(s_dstJsHashSum);
-    args[1] = abi.encodePacked(s_conceroContracts[srcChainSelector]);
-    args[2] = abi.encodePacked(srcChainSelector);
-    args[3] = abi.encodePacked(blockNumber);
-    args[4] = abi.encodePacked(ccipMessageId);
-    args[5] = abi.encodePacked(sender);
-    args[6] = abi.encodePacked(recipient);
-    args[7] = abi.encodePacked(uint(token));
-    args[8] = abi.encodePacked(amount);
-    args[9] = abi.encodePacked(CHAIN_SELECTOR);
+    args[1] = abi.encodePacked(RequestType.checkTxSrc);
+    args[2] = abi.encodePacked(s_conceroContracts[srcChainSelector]);
+    args[3] = abi.encodePacked(srcChainSelector);
+    args[4] = abi.encodePacked(blockNumber);
+    args[5] = abi.encodePacked(ccipMessageId);
+    args[6] = abi.encodePacked(sender);
+    args[7] = abi.encodePacked(recipient);
+    args[8] = abi.encodePacked(uint8(token));
+    args[9] = abi.encodePacked(amount);
+    args[10] = abi.encodePacked(CHAIN_SELECTOR);
 
-    bytes32 reqId = sendRequest(args, dstJsCode);
+    bytes32 reqId = sendRequest(args, JS_CODE);
 
     s_requests[reqId].requestType = RequestType.checkTxSrc;
     s_requests[reqId].isPending = true;
@@ -132,20 +125,18 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     return _sendRequest(req.encodeCBOR(), i_subscriptionId, CL_FUNCTIONS_CALLBACK_GAS_LIMIT, i_donId);
   }
 
-  function _handleSrcFunctionsResponse(Request storage request) internal {
+  function _handleDstFunctionsResponse(Request storage request) internal {
     Transaction storage transaction = s_transactions[request.ccipMessageId];
 
     _confirmTX(request.ccipMessageId, transaction);
 
     uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
-
     address tokenReceived = getToken(transaction.token);
 
     //@audit hardcode for CCIP-BnM - Should be USDC
     if (tokenReceived == getToken(CCIPToken.bnm)) {
       ConceroPool conceroPool = ConceroPool(payable(s_conceroPools[CHAIN_SELECTOR]));
       conceroPool.orchestratorLoan(tokenReceived, amount, transaction.recipient);
-
       emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
     } else {
       //@audit We need to call the DEX module here.
@@ -153,15 +144,21 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     }
   }
 
-  function _handleDstFunctionsResponse(bytes memory response) internal {
+  function _handleSrcFunctionsResponse(bytes memory response) internal {
     if (response.length != CL_SRC_RESPONSE_LENGTH) {
       return;
     }
 
-    (uint256 dstGasPrice, uint256 srcGasPrice, uint256 dstChainSelector) = abi.decode(response, (uint256, uint256, uint256));
+    (uint256 dstGasPrice, uint256 srcGasPrice, uint256 dstChainSelector, uint256 linkUsdcRate, uint256 nativeUsdcRate, uint256 linkNativeRate) = abi.decode(
+      response,
+      (uint256, uint256, uint256, uint256, uint256, uint256)
+    );
 
     s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice;
     s_lastGasPrices[uint64(dstChainSelector)] = dstGasPrice;
+    s_latestLinkUsdcRate = linkUsdcRate;
+    s_latestNativeUsdcRate = nativeUsdcRate;
+    s_latestLinkNativeRate = linkNativeRate;
   }
 
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
@@ -179,9 +176,9 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     }
 
     if (request.requestType == RequestType.checkTxSrc) {
-      _handleSrcFunctionsResponse(request);
+      _handleSrcFunctionsResponse(response);
     } else if (request.requestType == RequestType.addUnconfirmedTxDst) {
-      _handleDstFunctionsResponse(response);
+      _handleDstFunctionsResponse(request);
     }
   }
 
@@ -202,19 +199,20 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {
     if (s_conceroContracts[dstChainSelector] == address(0)) revert AddressNotSet();
 
-    bytes[] memory args = new bytes[](10);
+    bytes[] memory args = new bytes[](11);
     args[0] = abi.encodePacked(s_srcJsHashSum);
-    args[1] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
-    args[2] = abi.encodePacked(ccipMessageId);
-    args[3] = abi.encodePacked(sender);
-    args[4] = abi.encodePacked(recipient);
-    args[5] = abi.encodePacked(amount);
-    args[6] = abi.encodePacked(CHAIN_SELECTOR);
-    args[7] = abi.encodePacked(dstChainSelector);
-    args[8] = abi.encodePacked(uint256(token));
-    args[9] = abi.encodePacked(block.number);
+    args[1] = abi.encodePacked(RequestType.addUnconfirmedTxDst);
+    args[2] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
+    args[3] = abi.encodePacked(ccipMessageId);
+    args[4] = abi.encodePacked(sender);
+    args[5] = abi.encodePacked(recipient);
+    args[6] = abi.encodePacked(amount);
+    args[7] = abi.encodePacked(CHAIN_SELECTOR);
+    args[8] = abi.encodePacked(dstChainSelector);
+    args[9] = abi.encodePacked(uint8(token));
+    args[10] = abi.encodePacked(block.number);
 
-    bytes32 reqId = sendRequest(args, srcJsCode);
+    bytes32 reqId = sendRequest(args, JS_CODE);
     s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;
     s_requests[reqId].isPending = true;
     s_requests[reqId].ccipMessageId = ccipMessageId;

@@ -44,9 +44,10 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     execSync(`bunx hardhat clf-script-build --all`, { stdio: "inherit" });
 
     await simulate(path.join(__dirname, "../", "./CLFScripts/dist/eval.min.js"), [
-      "0x8d7262d4ebe2a84a0e1a8bb80cd37d6233a89fc5f7b3f42b5f6db6ce3996a806", // srcJsHashSum
+      "0x4dbfb566996a9bd27e11e11848b867c78cd5d15b96a7571f9505e5ca13f109ec", // srcJsHashSum
+      "0x0",
       process.env.CONCEROCCIP_OPTIMISM_SEPOLIA, // contractAddress
-      "0x5315f94154194ca637615651c5662cf39a77308927ebe7d31c9e970958681a49", // ccipMessageId
+      "0x5315f93154194ca637615651c5662cf39a77308927ebe7d31c9e970958681a49", // ccipMessageId
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
       "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
       "0x" + 100000000000000000n.toString(16), // amount
@@ -58,6 +59,7 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
 
     // await simulate(path.join(__dirname, "../", "./CLFScripts/dist/eval.min.js"), [
     //   "0x4854727532b62cd628742e33218d1ff697177d69118503bad39dd84935030a3e",
+    // "0x1",
     //   process.env.CONCEROCCIP_BASE_SEPOLIA, // srcContractAddress
     //   "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA).toString(16), // srcChainSelector, chain to get logs from
     //   "0x92DA49", // blockNumber

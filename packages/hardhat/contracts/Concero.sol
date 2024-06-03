@@ -136,9 +136,8 @@ contract Concero is ConceroCCIP {
   function getFunctionsFeeInLink(uint64 dstChainSelector) public view returns (uint256) {
     (, int256 linkToNativeRate, , , ) = linkToNativePriceFeeds.latestRoundData();
 
-    // TODO: check what to do if rate is negative
     if (linkToNativeRate < 0) {
-      return 0;
+      linkToNativeRate = 0;
     }
 
     uint256 srcGasPrice = s_lastGasPrices[CHAIN_SELECTOR];
@@ -156,9 +155,8 @@ contract Concero is ConceroCCIP {
   function getFunctionsFeeInUsdc(uint64 dstChainSelector) public view returns (uint256) {
     (int256 linkToUsdcRate, ) = getLinkToUsdcRate();
 
-    // TODO: check what to do if rate is negative
     if (linkToUsdcRate < 0) {
-      return 0;
+      linkToUsdcRate = 0;
     }
 
     uint256 functionsFeeInLink = getFunctionsFeeInLink(dstChainSelector);
@@ -168,9 +166,8 @@ contract Concero is ConceroCCIP {
   function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) public view returns (uint256) {
     (int256 nativeToUsdcRate, ) = getNativeToUsdcRate();
 
-    // TODO: check what to do if rate is negative
     if (nativeToUsdcRate < 0) {
-      return 0;
+      nativeToUsdcRate = 0;
     }
 
     // cl functions fee
@@ -199,9 +196,8 @@ contract Concero is ConceroCCIP {
   function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     (int256 linkToUsdcRate, ) = getLinkToUsdcRate();
 
-    // TODO: check what to do if rate is negative
     if (linkToUsdcRate < 0) {
-      return 0;
+      linkToUsdcRate = 0;
     }
 
     uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector);
@@ -230,7 +226,6 @@ contract Concero is ConceroCCIP {
     //@audit we must limit this amount. If we don't, it Will trigger a lot of red flags in audits.
     uint256 previousValue = clfPremiumFees[_chainSelector];
     clfPremiumFees[_chainSelector] = feeAmount;
-
     emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
   }
 
@@ -241,6 +236,7 @@ contract Concero is ConceroCCIP {
     if (fromToken == address(0)) {
       dexSwap.conceroEntry{value: nativeAmount}(swapData, nativeAmount);
     } else {
+      // TODO: remove this balance check
       uint256 balanceBefore = LibConcero.getBalance(fromToken, address(dexSwap));
       LibConcero.transferFromERC20(fromToken, msg.sender, address(dexSwap), fromAmount);
       uint256 balanceAfter = LibConcero.getBalance(fromToken, address(dexSwap));

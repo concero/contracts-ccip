@@ -23,6 +23,12 @@ async function main() {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa869',
+			priceFeed: {
+				linkUsd: '',
+				usdcUsd: '',
+				nativeUsd: '',
+				linkNative: '',
+			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -31,6 +37,12 @@ async function main() {
 				'https://ethereum-sepolia.blockpi.network/v1/rpc/public',
 			],
 			chainId: '0xaa36a7',
+			priceFeed: {
+				linkUsd: '',
+				usdcUsd: '',
+				nativeUsd: '',
+				linkNative: '',
+			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -39,6 +51,12 @@ async function main() {
 				'https://arbitrum-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x66eee',
+			priceFeed: {
+				linkUsd: '${LINK_USD_PRICEFEED_ARBITRUM_SEPOLIA}',
+				usdcUsd: '${USDC_USD_PRICEFEED_ARBITRUM_SEPOLIA}',
+				nativeUsd: '${NATIVE_USD_PRICEFEED_ARBITRUM_SEPOLIA}',
+				linkNative: '${LINK_NATIVE_PRICEFEED_ARBITRUM_SEPOLIA}',
+			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -47,6 +65,12 @@ async function main() {
 				'https://base-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x14a34',
+			priceFeed: {
+				linkUsd: '${LINK_USD_PRICEFEED_BASE_SEPOLIA}',
+				usdcUsd: '${USDC_USD_PRICEFEED_BASE_SEPOLIA}',
+				nativeUsd: '${NATIVE_USD_PRICEFEED_BASE_SEPOLIA}',
+				linkNative: '${LINK_NATIVE_PRICEFEED_BASE_SEPOLIA}',
+			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -55,12 +79,48 @@ async function main() {
 				'https://optimism-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0xaa37dc',
+			priceFeed: {
+				linkUsd: '${LINK_USD_PRICEFEED_OPTIMISM_SEPOLIA}',
+				usdcUsd: '${USDC_USD_PRICEFEED_OPTIMISM_SEPOLIA}',
+				nativeUsd: '${NATIVE_USD_PRICEFEED_OPTIMISM_SEPOLIA}',
+				linkNative: '${LINK_NATIVE_PRICEFEED_OPTIMISM_SEPOLIA}',
+			},
 		},
 	};
 	const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+	const getPercent = (value, percent) => (BigInt(value) * BigInt(percent)) / 100n;
+	const getPriceRates = async (provider, chainSelector) => {
+		const priceFeedsAbi = ['function latestRoundData() external view returns (uint80, int256, uint256, uint256, uint80)'];
+		const linkUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.linkUsd, priceFeedsAbi, provider);
+		const usdcUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.usdcUsd, priceFeedsAbi, provider);
+		const nativeUsdContract = new ethers.Contract(
+			chainSelectors[chainSelector].priceFeed.nativeUsd,
+			priceFeedsAbi,
+			provider,
+		);
+		const linkNativeContract = new ethers.Contract(
+			chainSelectors[chainSelector].priceFeed.linkNative,
+			priceFeedsAbi,
+			provider,
+		);
+
+		const [linkUsd, usdcUsd, nativeUsd, linkNative] = await Promise.all([
+			linkUsdContract.latestRoundData(),
+			usdcUsdContract.latestRoundData(),
+			nativeUsdContract.latestRoundData(),
+			linkNativeContract.latestRoundData(),
+		]);
+
+		return {
+			linkUsdc: linkUsd[1] > 0n ? (linkUsd[1] * 10n ** 18n) / usdcUsd[1] : 0n,
+			nativeUsdc: nativeUsd[1] > 0n ? (nativeUsd[1] * 10n ** 18n) / usdcUsd[1] : 0n,
+			linkNative: linkNative[1] > 0 ? linkNative[1] : 0n,
+		};
+	};
 	let nonce = 0;
 	let retries = 0;
 	let gasPrice;
+	let maxPriorityFeePerGas;
 
 	const sendTransaction = async (contract, signer, txOptions) => {
 		try {
@@ -105,13 +165,17 @@ async function main() {
 					return [{jsonrpc: '2.0', id: payload.id, result: '0x1e8480'}];
 				}
 				if (payload.method === 'eth_chainId') {
-					return [{jsonrpc: '2.0', id: payload.id, result: chainSelectors[dstChainSelector].chainId}];
+					const _chainId = chainSelectors[srcChainSelector].urls.includes(this.url)
+						? chainSelectors[srcChainSelector].chainId
+						: chainSelectors[dstChainSelector].chainId;
+					return [{jsonrpc: '2.0', id: payload.id, result: _chainId}];
 				}
 				let resp = await fetch(this.url, {
 					method: 'POST',
 					headers: {'Content-Type': 'application/json'},
 					body: JSON.stringify(payload),
 				});
+				console.log(payload);
 				const res = await resp.json();
 				if (res.length === undefined) {
 					return [res];
@@ -130,24 +194,43 @@ async function main() {
 			'function s_transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool)',
 		];
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
-		const feeData = await provider.getFeeData();
-		nonce = await provider.getTransactionCount(wallet.address);
+		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
 		gasPrice = feeData.gasPrice;
+		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
-			gasPrice,
 			nonce,
+			maxPriorityFeePerGas: maxPriorityFeePerGas + getPercent(maxPriorityFeePerGas, 10),
+			maxFeePerGas: gasPrice + getPercent(gasPrice, 10),
 		});
 
 		const srcUrl =
 			chainSelectors[srcChainSelector].urls[Math.floor(Math.random() * chainSelectors[srcChainSelector].urls.length)];
 		const srcChainProvider = new FunctionsJsonRpcProvider(srcUrl);
-		const srcGasPrice = Functions.encodeUint256(BigInt((await srcChainProvider.getFeeData()).gasPrice || 0));
-		const dstGasPrice = Functions.encodeUint256(BigInt(gasPrice || 0));
-		const encodedDstChainSelector = Functions.encodeUint256(BigInt(dstChainSelector || 0));
-		const res = new Uint8Array(srcGasPrice.length + dstGasPrice.length + encodedDstChainSelector.length);
+		const [dstFeeData, srcPriceFeeds] = await Promise.all([
+			srcChainProvider.getFeeData(),
+			getPriceRates(srcChainProvider, srcChainSelector),
+		]);
+		console.log(srcPriceFeeds);
+		const srcGasPrice = Functions.encodeUint256(BigInt(dstFeeData.gasPrice));
+		const dstGasPrice = Functions.encodeUint256(BigInt(gasPrice));
+		const encodedDstChainSelector = Functions.encodeUint256(BigInt(dstChainSelector));
+		const linkUsdc = Functions.encodeUint256(srcPriceFeeds.linkUsdc);
+		const nativeUsdc = Functions.encodeUint256(srcPriceFeeds.nativeUsdc);
+		const linkNative = Functions.encodeUint256(srcPriceFeeds.linkNative);
+		const totalResLength =
+			srcGasPrice.length +
+			dstGasPrice.length +
+			encodedDstChainSelector.length +
+			linkUsdc.length +
+			nativeUsdc.length +
+			linkNative.length;
+		const res = new Uint8Array(totalResLength);
 		res.set(srcGasPrice);
 		res.set(dstGasPrice, srcGasPrice.length);
 		res.set(encodedDstChainSelector, srcGasPrice.length + dstGasPrice.length);
+		res.set(linkUsdc, srcGasPrice.length + dstGasPrice.length + encodedDstChainSelector.length);
+		res.set(nativeUsdc, srcGasPrice.length + dstGasPrice.length + encodedDstChainSelector.length + linkUsdc.length);
+		res.set(linkNative, totalResLength - linkNative.length);
 
 		return res;
 	} catch (error) {

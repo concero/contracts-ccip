@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
@@ -15,10 +14,6 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   using SafeERC20 for IERC20;
 
   using FunctionsRequest for FunctionsRequest.Request;
-  using Strings for uint256;
-  using Strings for uint64;
-  using Strings for address;
-  using Strings for bytes32;
 
   struct JsCodeHashSum {
     bytes32 src;
@@ -137,6 +132,38 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     return _sendRequest(req.encodeCBOR(), i_subscriptionId, CL_FUNCTIONS_CALLBACK_GAS_LIMIT, i_donId);
   }
 
+  function _handleSrcFunctionsResponse(Request storage request) internal {
+    Transaction storage transaction = s_transactions[request.ccipMessageId];
+
+    _confirmTX(request.ccipMessageId, transaction);
+
+    uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
+
+    address tokenReceived = getToken(transaction.token);
+
+    //@audit hardcode for CCIP-BnM - Should be USDC
+    if (tokenReceived == getToken(CCIPToken.bnm)) {
+      ConceroPool conceroPool = ConceroPool(payable(s_conceroPools[CHAIN_SELECTOR]));
+      conceroPool.orchestratorLoan(tokenReceived, amount, transaction.recipient);
+
+      emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
+    } else {
+      //@audit We need to call the DEX module here.
+      // dexSwap.conceroEntry(passing the user address as receiver);
+    }
+  }
+
+  function _handleDstFunctionsResponse(bytes memory response) internal {
+    if (response.length != CL_SRC_RESPONSE_LENGTH) {
+      return;
+    }
+
+    (uint256 dstGasPrice, uint256 srcGasPrice, uint256 dstChainSelector) = abi.decode(response, (uint256, uint256, uint256));
+
+    s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice;
+    s_lastGasPrices[uint64(dstChainSelector)] = dstGasPrice;
+  }
+
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
     Request storage request = s_requests[requestId];
 
@@ -152,33 +179,9 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     }
 
     if (request.requestType == RequestType.checkTxSrc) {
-      Transaction storage transaction = s_transactions[request.ccipMessageId];
-
-      _confirmTX(request.ccipMessageId, transaction);
-
-      uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
-
-      address tokenReceived = getToken(transaction.token);
-
-      //@audit hardcode for CCIP-BnM - Should be USDC
-      if (tokenReceived == getToken(CCIPToken.bnm)) {
-        ConceroPool conceroPool = ConceroPool(payable(s_conceroPools[CHAIN_SELECTOR]));
-        conceroPool.orchestratorLoan(tokenReceived, amount, transaction.recipient);
-
-        emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
-      } else {
-        //@audit We need to call the DEX module here.
-        // dexSwap.conceroEntry(passing the user address as receiver);
-      }
+      _handleSrcFunctionsResponse(request);
     } else if (request.requestType == RequestType.addUnconfirmedTxDst) {
-      if (response.length != CL_SRC_RESPONSE_LENGTH) {
-        return;
-      }
-
-      (uint256 dstGasPrice, uint256 srcGasPrice, uint256 dstChainSelector) = abi.decode(response, (uint256, uint256, uint256));
-
-      s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice;
-      s_lastGasPrices[uint64(dstChainSelector)] = dstGasPrice;
+      _handleDstFunctionsResponse(response);
     }
   }
 

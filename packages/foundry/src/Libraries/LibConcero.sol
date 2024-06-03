@@ -14,7 +14,7 @@ library LibConcero {
 
   function getBalance(address _token, address _contract) internal view returns (uint256) {
     if (_token == address(0)) {
-      return _contract.balance;
+      return address(_contract).balance; //can't check the contract balance. It can have our money
     } else {
       return IERC20(_token).balanceOf(_contract);
     }

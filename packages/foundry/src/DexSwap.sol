@@ -31,14 +31,6 @@ import "./Libraries/LibConcero.sol";
 contract DexSwap is Storage, IDexSwap {
   using SafeERC20 for IERC20;
 
-  /////////////
-  ///STORAGE///
-  /////////////
-  address internal s_orchestrator;
-  
-  ///@notice mapping to keep track of allowed routers to perform swaps. 1 == Allowed.
-  mapping(address router => uint256 isAllowed) private s_routerAllowed;
-
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
@@ -84,12 +76,15 @@ contract DexSwap is Storage, IDexSwap {
    * @dev only the Orchestrator contract should be able to call this function
    */
   function conceroEntry(IDexSwap.SwapData[] memory _swapData, uint256 _amount) external payable {
-    if (msg.sender != s_orchestrator) revert DexSwap_CallerNotAllowed(msg.sender);
+    if (address(this) != s_orchestrator) revert DexSwap_CallerNotAllowed(msg.sender);
     if (_swapData.length < 1 || _swapData.length > 5) revert DexSwap_EmptyDexData();
 
     uint256 swapDataLength = _swapData.length;
 
-    for (uint256 i; i < swapDataLength; ++i) {
+    for (uint256 i; i < swapDataLength;) {
+
+      uint256 previousBalance = IERC20(_swapData[i].fromToken).balanceOf(address(this));
+
       if (_swapData[i].dexType == DexType.UniswapV3Single) {
         _swapUniV3Single(_swapData[i]);
       } else if (_swapData[i].dexType == DexType.SushiV3Single) {
@@ -108,6 +103,16 @@ contract DexSwap is Storage, IDexSwap {
         _swapDromeFoT(_swapData[i]);
       }else if (_swapData[i].dexType == DexType.UniswapV2Ether) {
         _swapEtherOnUniV2Like(_swapData[i], _amount);
+      }
+
+      uint256 postBalance = IERC20(_swapData[i].fromToken).balanceOf(address(this));
+
+      if(swapDataLength > 1 && i + 1 <= swapDataLength){
+        _swapData[i + 1].fromAmount = postBalance - previousBalance;
+      }
+
+      unchecked {
+        ++i;
       }
     }
   }

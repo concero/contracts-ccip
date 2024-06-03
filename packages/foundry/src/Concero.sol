@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity 0.8.19;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -13,13 +13,33 @@ import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 
 import {LibConcero} from "./Libraries/LibConcero.sol";
 
+  ////////////////////////////////////////////////////////
+  //////////////////////// ERRORS ////////////////////////
+  ////////////////////////////////////////////////////////
+  ///@notice error emitted when the Messenger receive an address(0)
+  error InvalidAddress();
+  ///@notice error emitted when the Messenger were set already
+  error AddressAlreadyAllowlisted();
+  ///@notice error emitted when the Concero Messenger have been removed already
+  error NotAllowlistedOrAlreadyRemoved();
+  ///@notice error emitted when the token to be swaped has fee on transfers
+  error Concero_FoTNotAllowedYet();
+  ///@notice error emitted when the input amount is less than the fees
+  error InsufficientFundsForFees(uint256 amount, uint256 fee);
+  ///@notice error emitted when there is no ERC20 value to withdraw
+  error NothingToWithdraw();
+  ///@notice error emitted when there is no native value to withdraw
+  error FailedToWithdrawEth(address owner, address target, uint256 value);
+
 contract Concero is ConceroCCIP {
   using SafeERC20 for IERC20;
 
-  address internal s_dexSwap;
-  
-  mapping(uint64 => uint256) public clfPremiumFees;
-
+  ///////////////////////////////////////////////////////////
+  //////////////////////// VARIABLES ////////////////////////
+  ///////////////////////////////////////////////////////////
+  ////////////////
+  ///IMMUTABLES///
+  ////////////////
   AggregatorV3Interface public immutable linkToUsdPriceFeeds;
   AggregatorV3Interface public immutable usdcToUsdPriceFeeds;
   AggregatorV3Interface public immutable nativeToUsdPriceFeeds;
@@ -63,6 +83,9 @@ contract Concero is ConceroCCIP {
     clfPremiumFees[5224473277236331295] = 2000000000000000; // 0.002 link | opt
   }
 
+  ///////////////////////////////////////////////////////////////
+  ///////////////////////////Functions///////////////////////////
+  ///////////////////////////////////////////////////////////////
   function setDexSwap(address _dexSwap) external payable onlyOwner {
     s_dexSwap = _dexSwap;
   }
@@ -81,15 +104,16 @@ contract Concero is ConceroCCIP {
 
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount);
     
-    uint256 lpFee = bridgeData.amount / 1000;
+    uint256 mockedLpFee = getDstTotalFeeInUsdc(bridgeData.amount);
 
-    if (bridgeData.amount < totalSrcFee + lpFee) {
+    if (bridgeData.amount < totalSrcFee + mockedLpFee) {
       revert InsufficientFundsForFees(bridgeData.amount, totalSrcFee);
     }
     
     uint256 amount = bridgeData.amount - totalSrcFee;
+    uint256 actualLpFee = getDstTotalFeeInUsdc(amount);
 
-    bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, bridgeData.amount, lpFee);
+    bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, actualLpFee);
     emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
     // TODO: pass _dstSwapData to functions
     sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType);

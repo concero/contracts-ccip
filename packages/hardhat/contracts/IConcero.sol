@@ -140,4 +140,9 @@ interface IFunctions is IConceroCommon {
     uint64 srcChainSelector;
     bool isConfirmed;
   }
+
+  struct JsCodeHashSum {
+    bytes32 src;
+    bytes32 dst;
+  }
 }

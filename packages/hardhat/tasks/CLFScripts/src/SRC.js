@@ -9,6 +9,7 @@ async function main() {
 	const ethers = await import('npm:ethers@6.10.0');
 	const [
 		_,
+		__,
 		dstContractAddress,
 		ccipMessageId,
 		sender,
@@ -175,7 +176,6 @@ async function main() {
 					headers: {'Content-Type': 'application/json'},
 					body: JSON.stringify(payload),
 				});
-				console.log(payload);
 				const res = await resp.json();
 				if (res.length === undefined) {
 					return [res];
@@ -210,7 +210,6 @@ async function main() {
 			srcChainProvider.getFeeData(),
 			getPriceRates(srcChainProvider, srcChainSelector),
 		]);
-		console.log(srcPriceFeeds);
 		const srcGasPrice = Functions.encodeUint256(BigInt(dstFeeData.gasPrice));
 		const dstGasPrice = Functions.encodeUint256(BigInt(gasPrice));
 		const encodedDstChainSelector = Functions.encodeUint256(BigInt(dstChainSelector));

@@ -15,9 +15,10 @@ contract ConceroMock is Concero {
             uint _chainIndex,
             address _link,
             address _ccipRouter,
-            address _dexSwap,
             Concero.PriceFeeds memory _priceFeeds,
-            Concero.JsCodeHashSum memory jsCodeHashSum
+            Concero.JsCodeHashSum memory jsCodeHashSum,
+            address _dexSwap,
+            address _pool
     ) Concero(
             _functionsRouter,
             _donHostedSecretsVersion,
@@ -28,9 +29,10 @@ contract ConceroMock is Concero {
             _chainIndex,
             _link,
             _ccipRouter,
-            _dexSwap,
             _priceFeeds,
-            jsCodeHashSum
+            jsCodeHashSum,
+            _dexSwap,
+            _pool
     ){}
 
     function externalFulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) external {

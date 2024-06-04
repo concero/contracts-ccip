@@ -49,6 +49,7 @@ contract ConceroPool is Storage, CCIPReceiver {
   LinkTokenInterface private immutable i_linkToken;
   ///@notice Chainlink CCIP Router
   IRouterClient private immutable i_router;
+  ///@notice Immutable variable to hold orchestrator
   
   ///////////////
   ///CONSTANTS///
@@ -114,7 +115,7 @@ contract ConceroPool is Storage, CCIPReceiver {
    * @param _sender address of the sender contract
    */
   modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
-    if (s_allowedPool[_chainSelector][_sender] != APPROVED) revert ConceroPool_SenderNotAllowed(_sender);
+    if (s_allowedPool[_chainSelector][_sender] != 1) revert ConceroPool_SenderNotAllowed(_sender);
     _;
   }
 
@@ -281,8 +282,11 @@ contract ConceroPool is Storage, CCIPReceiver {
    * @param _amount amount of the token to be sent
    */
   function ccipSendToPool(uint64 _destinationChainSelector, address _token, uint256 _amount) external onlyMessenger onlyAllowListedChain(_destinationChainSelector) returns(bytes32 messageId) {
-
     if(s_poolReceiver[_destinationChainSelector] == address(0)) revert ConceroPool_DestinationNotAllowed();
+    address allowedSenderToCompoundLpFee = s_approvedSenders[_token];
+    if(_amount > s_userBalances[_token][allowedSenderToCompoundLpFee]) revert ConceroPool_InsufficientBalance();
+
+    s_userBalances[_token][allowedSenderToCompoundLpFee] = s_userBalances[_token][allowedSenderToCompoundLpFee] - _amount;
 
     Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
 
@@ -324,7 +328,7 @@ contract ConceroPool is Storage, CCIPReceiver {
    * @dev for ether transfer, the _receiver need to be known and trusted
   */
   function orchestratorLoan(address _token, uint256 _amount, address _receiver) external {
-    if(msg.sender != s_concero) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
+    if(address(this) != s_orchestrator) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
     if(_receiver == address(0)) revert ConceroPool_InvalidAddress();
 
     if(_token == address(0)){
@@ -357,7 +361,7 @@ contract ConceroPool is Storage, CCIPReceiver {
 
       s_userBalances[receivedToken][allowedSenderToCompoundLpFee] = s_userBalances[receivedToken][allowedSenderToCompoundLpFee] + receivedAmount;
     } else {
-      s_userBalances[receivedToken][s_messenger] = s_userBalances[receivedToken][s_messenger] + any2EvmMessage.destTokenAmounts[0].amount;
+      s_userBalances[receivedToken][allowedSenderToCompoundLpFee] = s_userBalances[receivedToken][allowedSenderToCompoundLpFee] + any2EvmMessage.destTokenAmounts[0].amount;
     }
     
     emit ConceroPool_CCIPReceived(

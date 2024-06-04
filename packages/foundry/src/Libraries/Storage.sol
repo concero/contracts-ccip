@@ -1,8 +1,7 @@
 //SPDX-License-Identificer: MIT
 pragma solidity 0.8.19;
 
-import {OwnableUpgradeable} from "@openzeppelin/upgradeable/contracts/access/OwnableUpgradeable.sol";
-
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IDexSwap} from "../Interfaces/IDexSwap.sol";
 
   ////////////////////////////////////////////////////////
@@ -21,7 +20,7 @@ import {IDexSwap} from "../Interfaces/IDexSwap.sol";
   ///@notice error emitted when the chain selector input is invalid
   error Storage_ChainNotAllowed(uint64 chainSelector);
 
-abstract contract Storage is OwnableUpgradeable{
+abstract contract Storage is Ownable{
   ///////////////////////
   ///TYPE DECLARATIONS///
   ///////////////////////
@@ -88,18 +87,9 @@ abstract contract Storage is OwnableUpgradeable{
   ///////////////
   ///VARIABLES///
   ///////////////
-  ///@notice Orchestrato: variable to store the Orchestrator address
-  address internal s_orchestratorImplementation;
-  ///@notice The address of messenger wallet who performs specific calls
-  address internal s_messenger;
-  ///@notice DexSwap: variable to store the DexSwap address
-  address internal s_dexSwap;
-  ///@notice variable to store the Orchestrator Proxy Address
-  address internal s_orchestrator;
-  ///@notice variable to store the Concero address
-  address internal s_concero;
-  ///@notice variable to store the ConceroPool address
-  address internal s_pool;
+  ///@notice Functions: variable to store the DexSwap address
+  address internal s_orchestrator; //@audit
+
   ///@notice ID of the deployed chain on getChain() function
   Chain internal s_chainIndex;
   ///@notice variable to store the Chainlink Function DON Slot ID
@@ -158,9 +148,11 @@ abstract contract Storage is OwnableUpgradeable{
   ///@notice event emitted when a Concero pool is added
   event Storage_PoolReceiverUpdated(uint64 chainSelector, address pool);
   ///@notice event emitted when a Concero contract is added
-  event Storage_srcConceroContractUpdated(address previousAddress, address newConceroAddress);
+  event Storage_OrchestratorContractUpdated(address previousAddress, address newConceroAddress);
   ///@notice event emitted when the Messenger address is updated
   event Storage_MessengerUpdated(address indexed walletAddress, uint256 status);
+  ///@notice event emitted when the router address is approved
+  event Storage_NewRouterAdded(address router, uint256 isAllowed);
 
   ///////////////
   ///MODIFIERS///
@@ -201,17 +193,17 @@ abstract contract Storage is OwnableUpgradeable{
   //////////////
 
   /**
-   * @notice function to manage the Concero contract address
-   * @param _concero the address from the Concero Contract
+   * @notice function to manage the Orchestrator contract address
+   * @param _orchestrator the address from the Orchestrator Contract
    * @dev only owner can call it
    * @dev it's payable to save some gas.
   */
-  function setConceroContract(address _concero) external payable onlyOwner{
-    address previousAddress = s_concero;
+  function setOrchestratorContract(address _orchestrator) external payable onlyOwner{
+    address previousAddress = s_orchestrator;
 
-    s_concero = _concero;
+    s_orchestrator = _orchestrator;
 
-    emit Storage_srcConceroContractUpdated(previousAddress, _concero);
+    emit Storage_OrchestratorContractUpdated(previousAddress, _orchestrator);
   }
 
   /**
@@ -224,9 +216,19 @@ abstract contract Storage is OwnableUpgradeable{
     if (_walletAddress == address(0)) revert Storage_InvalidAddress();
 
     s_messengerContracts[_walletAddress] = _approved;
-    s_messenger = _walletAddress;
 
     emit Storage_MessengerUpdated(_walletAddress, _approved);
+  }
+
+  /**
+   * @notice function to manage DEX routers addresses
+   * @param _router the address of the router
+   * @param _isApproved 1 == Approved | Any other value is not Approved.
+   */
+  function manageRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner {
+    s_routerAllowed[_router] = _isApproved;
+
+    emit Storage_NewRouterAdded(_router, _isApproved);
   }
 
   /////////////////
@@ -240,6 +242,7 @@ abstract contract Storage is OwnableUpgradeable{
   function getToken(CCIPToken token, Chain _chainIndex) internal pure returns (address) {
     address[3][2] memory tokens;
 
+    //@audit use the actual chain id and not 0 1 2
     // Initialize BNM addresses
     tokens[0][0] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
     tokens[0][1] = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e; // base

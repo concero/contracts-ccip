@@ -30,6 +30,8 @@ import {LibConcero} from "./Libraries/LibConcero.sol";
   error NothingToWithdraw();
   ///@notice error emitted when there is no native value to withdraw
   error FailedToWithdrawEth(address owner, address target, uint256 value);
+  ///@notice error emitted when a non orchestrator address call startBridge
+  error Concero_ItsNotOrchestrator(address caller);
 
 contract Concero is ConceroCCIP {
   using SafeERC20 for IERC20;
@@ -55,9 +57,10 @@ contract Concero is ConceroCCIP {
     uint _chainIndex,
     address _link,
     address _ccipRouter,
-    address _dexSwap,
     PriceFeeds memory priceFeeds,
-    JsCodeHashSum memory jsCodeHashSum
+    JsCodeHashSum memory jsCodeHashSum,
+    address _dexSwap,
+    address _pool
   )
     ConceroCCIP(
       _functionsRouter,
@@ -69,14 +72,15 @@ contract Concero is ConceroCCIP {
       _chainIndex,
       _link,
       _ccipRouter,
-      jsCodeHashSum
+      jsCodeHashSum,
+      _dexSwap,
+      _pool
     )
   {
     linkToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.linkToUsdPriceFeeds);
     usdcToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.usdcToUsdPriceFeeds);
     nativeToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.nativeToUsdPriceFeeds);
     linkToNativePriceFeeds = AggregatorV3Interface(priceFeeds.linkToNativePriceFeeds);
-    s_dexSwap = _dexSwap;
 
     clfPremiumFees[3478487238524512106] = 4000000000000000; // 0.004 link | arb
     clfPremiumFees[10344971235874465080] = 1847290640394088; // 0.0018 link | base // takes in usd mb price feed needed
@@ -86,10 +90,6 @@ contract Concero is ConceroCCIP {
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
-  function setDexSwap(address _dexSwap) external payable onlyOwner {
-    s_dexSwap = _dexSwap;
-  }
-
   function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external onlyOwner {
     //@audit we must limit this amount. If we don't, it Will trigger a lot of red flags in audits.
     uint256 previousValue = clfPremiumFees[_chainSelector];
@@ -99,6 +99,7 @@ contract Concero is ConceroCCIP {
   }
   
   function startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata dstSwapData) external {
+    if(address(this) != s_orchestrator) revert Concero_ItsNotOrchestrator(msg.sender);
 
     address fromToken = getToken(bridgeData.tokenType, s_chainIndex);
 

@@ -24,6 +24,8 @@ import {IConceroPool} from "./Interfaces/IConceroPool.sol";
   error TxAlreadyConfirmed();
   ///@notice error emitted when function receive a call from a not allowed address
   error AddressNotSet();
+  ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
+  error ConceroFunctions_ItsNotOrchestrator(address caller);
 
 contract ConceroFunctions is FunctionsClient, Storage {
   ///////////////////////
@@ -56,7 +58,12 @@ contract ConceroFunctions is FunctionsClient, Storage {
   ////////////////
   bytes32 private immutable i_donId;
   uint64 private immutable i_subscriptionId;
+  //@audit can't be immutable
   uint64 internal immutable CHAIN_SELECTOR;
+  ///@notice variable to store the DexSwap address
+  address immutable i_dexSwap;
+  ///@notice variable to store the ConceroPool address
+  address immutable i_pool;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -110,7 +117,9 @@ contract ConceroFunctions is FunctionsClient, Storage {
     uint64 _subscriptionId,
     uint64 _chainSelector,
     uint _chainIndex,
-    JsCodeHashSum memory jsCodeHashSum
+    JsCodeHashSum memory jsCodeHashSum,
+    address _dexSwap,
+    address _pool
   ) FunctionsClient(_functionsRouter){
     i_donId = _donId;
     i_subscriptionId = _subscriptionId;
@@ -120,6 +129,8 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_dstJsHashSum = jsCodeHashSum.dst;
     CHAIN_SELECTOR = _chainSelector;
     s_chainIndex = Chain(_chainIndex);
+    i_dexSwap = _dexSwap;
+    i_pool = _pool;
   }
 
   ///////////////////////////////////////////////////////////////
@@ -129,14 +140,6 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_conceroContracts[_chainSelector] = _conceroContract;
 
     emit ConceroContractUpdated(_chainSelector, _conceroContract);
-  }
-
-  function setConceroPoolAddress(address payable _pool) external onlyOwner {
-    address previousAddress = address(s_pool);
-
-    s_pool = _pool;
-
-    emit ConceroPoolAddressUpdated(previousAddress, _pool);
   }
 
   function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
@@ -240,6 +243,12 @@ contract ConceroFunctions is FunctionsClient, Storage {
     return _sendRequest(req.encodeCBOR(), i_subscriptionId, CL_FUNCTIONS_CALLBACK_GAS_LIMIT, i_donId);
   }
 
+  function fulfillRequestWrapper(bytes32 requestId, bytes memory response, bytes memory err) external {
+    if(address(this) != s_orchestrator) revert ConceroFunctions_ItsNotOrchestrator(msg.sender);
+    
+    fulfillRequest(requestId, response, err);
+  }
+
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
     Request storage request = s_requests[requestId];
 
@@ -266,10 +275,10 @@ contract ConceroFunctions is FunctionsClient, Storage {
       if (tokenReceived == getToken(CCIPToken.bnm, s_chainIndex)) {
         //@audit hardcode for CCIP-BnM - Should be USDC
 
-        IConceroPool(s_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
+        IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
       } else {
         //@audit We need to call the DEX module here.
-        // dexSwap.conceroEntry(passing the user address as receiver);
+        // i_dexSwap.conceroEntry(passing the user address as receiver);
       }
     } else if (request.requestType == RequestType.addUnconfirmedTxDst) {
       //@audit what means this 96?

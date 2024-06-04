@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {Script, console} from "forge-std/Script.sol";
 import {DexSwap} from "../src/DexSwap.sol";
 
-contract DexSwapScript is Script {
+contract DexSwapDeploy is Script {
     
     function run() public returns(DexSwap dexSwap){
         vm.startBroadcast();

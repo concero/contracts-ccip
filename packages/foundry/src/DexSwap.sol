@@ -20,7 +20,7 @@ import "./Libraries/LibConcero.sol";
   //////////////////////// ERRORS ////////////////////////
   ////////////////////////////////////////////////////////
   ///@notice error emitted when the caller is not allowed
-  error DexSwap_CallerNotAllowed(address caller);
+  error DexSwap_ItsNotOrchestrator(address caller);
   ///@notice error emitted when the swap data is empty
   error DexSwap_EmptyDexData();
   ///@notice error emitted when the router is not allowed
@@ -36,8 +36,6 @@ contract DexSwap is Storage, IDexSwap {
   ////////////////////////////////////////////////////////
   ///@notice event emitted when the orchestrator address is updated
   event DexSwap_OrchestratorContractUpdated(address previousAddress, address orchestrator);
-  ///@notice event emitted when the router address is approved
-  event DexSwap_NewRouterAdded(address router, uint256 isAllowed);
   ///@notice event emitted when value locked in the contract is removed
   event DexSwap_RemovingDust(address receiver, uint256 amount);
 
@@ -47,43 +45,21 @@ contract DexSwap is Storage, IDexSwap {
   constructor() {}
 
   /**
-   * @notice Function to manage the Orchestrator address
-   * @param _orchestrator the contract address
-   * @dev only the contract owner should be able to call it
-   */
-  function manageOrchestratorContract(address _orchestrator) external payable onlyOwner {
-    address previousAddress = s_orchestrator;
-
-    s_orchestrator = _orchestrator;
-
-    emit DexSwap_OrchestratorContractUpdated(previousAddress, s_orchestrator);
-  }
-
-  /**
-   * @notice function to manage DEX routers addresses
-   * @param _router the address of the router
-   * @param _isApproved 1 == Approved | Any other value is not Approved.
-   */
-  function manageRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner {
-    s_routerAllowed[_router] = _isApproved;
-
-    emit DexSwap_NewRouterAdded(_router, _isApproved);
-  }
-
-  /**
    * @notice Entry point function for the Orchestrator to take loans
    * @param _swapData a struct array that contains dex informations.
    * @dev only the Orchestrator contract should be able to call this function
    */
   function conceroEntry(IDexSwap.SwapData[] memory _swapData, uint256 _amount) external payable {
-    if (address(this) != s_orchestrator) revert DexSwap_CallerNotAllowed(msg.sender);
+    if (address(this) != s_orchestrator) revert DexSwap_ItsNotOrchestrator(address(this));
     if (_swapData.length < 1 || _swapData.length > 5) revert DexSwap_EmptyDexData();
 
     uint256 swapDataLength = _swapData.length;
 
     for (uint256 i; i < swapDataLength;) {
+      uint256 previousBalance;
+      uint256 postBalance;
 
-      uint256 previousBalance = IERC20(_swapData[i].fromToken).balanceOf(address(this));
+      previousBalance = _swapData[i].fromToken == address(0) ? address(this).balance : IERC20(_swapData[i].fromToken).balanceOf(address(this));
 
       if (_swapData[i].dexType == DexType.UniswapV3Single) {
         _swapUniV3Single(_swapData[i]);
@@ -105,10 +81,13 @@ contract DexSwap is Storage, IDexSwap {
         _swapEtherOnUniV2Like(_swapData[i], _amount);
       }
 
-      uint256 postBalance = IERC20(_swapData[i].fromToken).balanceOf(address(this));
+      postBalance = _swapData[i].fromToken == address(0) ? address(this).balance : IERC20(_swapData[i].fromToken).balanceOf(address(this));
 
       if(swapDataLength > 1 && i + 1 <= swapDataLength){
-        _swapData[i + 1].fromAmount = postBalance - previousBalance;
+        uint256 newBalance = postBalance - previousBalance;
+        if(_swapData[i + 1].fromAmount < newBalance){
+          _swapData[i + 1].fromAmount = newBalance;
+        }
       }
 
       unchecked {

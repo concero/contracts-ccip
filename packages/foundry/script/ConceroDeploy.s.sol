@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
-import {Concero} from "../src/Concero.sol";
+import {Concero} from "contracts/Concero.sol";
 
 contract ConceroDeploy is Script {
 
@@ -17,7 +17,6 @@ contract ConceroDeploy is Script {
             address _link,
             address _ccipRouter,
             address _dexSwap,
-            Concero.PriceFeeds memory _priceFeeds,
             Concero.JsCodeHashSum memory jsCodeHashSum
         ) public returns(Concero concero){
 
@@ -33,7 +32,6 @@ contract ConceroDeploy is Script {
             _link,
             _ccipRouter,
             _dexSwap,
-            _priceFeeds,
             jsCodeHashSum
         );
         vm.stopBroadcast();

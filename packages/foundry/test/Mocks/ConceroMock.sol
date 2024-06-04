@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.19;
 
-import {Concero} from "../../src/Concero.sol";
+import {Concero} from "contracts/Concero.sol";
 
 contract ConceroMock is Concero {
 
@@ -16,7 +16,6 @@ contract ConceroMock is Concero {
             address _link,
             address _ccipRouter,
             address _dexSwap,
-            Concero.PriceFeeds memory _priceFeeds,
             Concero.JsCodeHashSum memory jsCodeHashSum
     ) Concero(
             _functionsRouter,
@@ -29,7 +28,6 @@ contract ConceroMock is Concero {
             _link,
             _ccipRouter,
             _dexSwap,
-            _priceFeeds,
             jsCodeHashSum
     ){}
 

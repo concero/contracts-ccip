@@ -17,9 +17,10 @@ contract ConceroMockDeploy is Script {
             uint _chainIndex,
             address _link,
             address _ccipRouter,
-            address _dexSwap,
             Concero.PriceFeeds memory _priceFeeds,
-            Concero.JsCodeHashSum memory jsCodeHashSum
+            Concero.JsCodeHashSum memory jsCodeHashSum,
+            address _dexSwap,
+            address _pool
     ) public returns(ConceroMock concero){
 
         vm.startBroadcast();
@@ -33,9 +34,10 @@ contract ConceroMockDeploy is Script {
             _chainIndex,
             _link,
             _ccipRouter,
-            _dexSwap,
             _priceFeeds,
-            jsCodeHashSum
+            jsCodeHashSum,
+            _dexSwap,
+            _pool
         );
         vm.stopBroadcast();
     }

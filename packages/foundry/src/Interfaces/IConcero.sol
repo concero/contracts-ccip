@@ -24,4 +24,6 @@ interface IConcero{
   }
     
   function startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata dstSwapData) external;
+
+  function fulfillRequestWrapper(bytes32 requestId, bytes memory response, bytes memory err) external;
 }

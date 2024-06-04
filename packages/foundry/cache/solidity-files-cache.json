@@ -599,6 +599,55 @@
         }
       }
     },
+    "../hardhat/contracts/IConcero.sol": {
+      "lastModificationDate": 1717434403414,
+      "contentHash": "401c26f022ea407431c7516c59e44604",
+      "sourceName": "../hardhat/contracts/IConcero.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "useLiteralContent": false,
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ]
+            }
+          },
+          "evmVersion": "paris",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "lib/chainlink-local/lib/ccip/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol"
+      ],
+      "versionRequirement": "^0.8.19",
+      "artifacts": {
+        "ICCIP": {
+          "0.8.19+commit.7dd6d404.Darwin.appleclang": "IConcero.sol/ICCIP.json"
+        },
+        "IConceroCommon": {
+          "0.8.19+commit.7dd6d404.Darwin.appleclang": "IConcero.sol/IConceroCommon.json"
+        },
+        "IFunctions": {
+          "0.8.19+commit.7dd6d404.Darwin.appleclang": "IConcero.sol/IFunctions.json"
+        }
+      }
+    },
     "lib/chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsBilling.sol": {
       "lastModificationDate": 1717517269771,
       "contentHash": "617273a9ea35d4614b4a24cf49e6eb1e",
@@ -5282,6 +5331,108 @@
       "artifacts": {
         "HelperConfig": {
           "0.8.19+commit.7dd6d404.Darwin.appleclang": "HelperConfig.sol/HelperConfig.json"
+        }
+      }
+    },
+    "test/FeesModule/GasAbstraction.t.sol": {
+      "lastModificationDate": 1717522331858,
+      "contentHash": "2a3ae552a23558d342cc427b1aaab1d8",
+      "sourceName": "test/FeesModule/GasAbstraction.t.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "useLiteralContent": false,
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ]
+            }
+          },
+          "evmVersion": "paris",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "/Users/user/Documents/GitHub/scaffoldeth/packages/hardhat/contracts/Concero.sol",
+        "/Users/user/Documents/GitHub/scaffoldeth/packages/hardhat/contracts/ConceroCCIP.sol",
+        "/Users/user/Documents/GitHub/scaffoldeth/packages/hardhat/contracts/ConceroCommon.sol",
+        "/Users/user/Documents/GitHub/scaffoldeth/packages/hardhat/contracts/ConceroFunctions.sol",
+        "/Users/user/Documents/GitHub/scaffoldeth/packages/hardhat/contracts/ConceroPool.sol",
+        "/Users/user/Documents/GitHub/scaffoldeth/packages/hardhat/contracts/IConcero.sol",
+        "/Users/user/Documents/GitHub/scaffoldeth/packages/hardhat/contracts/IDexSwap.sol",
+        "/Users/user/Documents/GitHub/scaffoldeth/packages/hardhat/contracts/LibConcero.sol",
+        "../hardhat/contracts/Concero.sol",
+        "../hardhat/contracts/IConcero.sol",
+        "lib/chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol",
+        "lib/chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsClient.sol",
+        "lib/chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsRouter.sol",
+        "lib/chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol",
+        "lib/chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsResponse.sol",
+        "lib/chainlink/contracts/src/v0.8/shared/access/ConfirmedOwner.sol",
+        "lib/chainlink/contracts/src/v0.8/shared/access/ConfirmedOwnerWithProposal.sol",
+        "lib/chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol",
+        "lib/chainlink/contracts/src/v0.8/shared/interfaces/IOwnable.sol",
+        "lib/chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol",
+        "lib/chainlink/contracts/src/v0.8/vendor/@ensdomains/buffer/v0.1.0/Buffer.sol",
+        "lib/chainlink/contracts/src/v0.8/vendor/solidity-cborutils/v2.0.0/CBOR.sol",
+        "lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/applications/CCIPReceiver.sol",
+        "lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol",
+        "lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/interfaces/IRouterClient.sol",
+        "lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/libraries/Client.sol",
+        "lib/chainlink-local/lib/ccip/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol",
+        "lib/chainlink-local/lib/ccip/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/utils/introspection/IERC165.sol",
+        "lib/forge-std/src/Base.sol",
+        "lib/forge-std/src/StdAssertions.sol",
+        "lib/forge-std/src/StdChains.sol",
+        "lib/forge-std/src/StdCheats.sol",
+        "lib/forge-std/src/StdError.sol",
+        "lib/forge-std/src/StdInvariant.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/StdMath.sol",
+        "lib/forge-std/src/StdStorage.sol",
+        "lib/forge-std/src/StdStyle.sol",
+        "lib/forge-std/src/StdToml.sol",
+        "lib/forge-std/src/StdUtils.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
+        "lib/forge-std/src/interfaces/IERC165.sol",
+        "lib/forge-std/src/interfaces/IERC20.sol",
+        "lib/forge-std/src/interfaces/IERC721.sol",
+        "lib/forge-std/src/interfaces/IMulticall3.sol",
+        "lib/forge-std/src/mocks/MockERC20.sol",
+        "lib/forge-std/src/mocks/MockERC721.sol",
+        "lib/forge-std/src/safeconsole.sol",
+        "lib/openzeppelin-contracts/contracts/access/Ownable.sol",
+        "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol",
+        "lib/openzeppelin-contracts/contracts/token/ERC20/extensions/draft-IERC20Permit.sol",
+        "lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol",
+        "lib/openzeppelin-contracts/contracts/utils/Address.sol",
+        "lib/openzeppelin-contracts/contracts/utils/Context.sol"
+      ],
+      "versionRequirement": "^0.8.19",
+      "artifacts": {
+        "ConceroGasAbstractionTest": {
+          "0.8.19+commit.7dd6d404.Darwin.appleclang": "GasAbstraction.t.sol/ConceroGasAbstractionTest.json"
+        },
+        "ConceroMock": {
+          "0.8.19+commit.7dd6d404.Darwin.appleclang": "GasAbstraction.t.sol/ConceroMock.json"
         }
       }
     },

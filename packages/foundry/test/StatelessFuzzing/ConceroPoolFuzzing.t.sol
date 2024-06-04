@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {ConceroPool} from "../../src/ConceroPool.sol";
+import {ConceroPool} from "contracts/ConceroPool.sol";
 import {ConceroPoolDeploy} from "../../script/ConceroPoolDeploy.s.sol";
 
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
@@ -69,13 +69,13 @@ contract ConceroPoolFuzzing is Test {
     event ConceroPool_TokenSupportedUpdated(address token, uint256 isSupported);
     error OwnableUnauthorizedAccount(address _caller);
     function test_supportedToken(address _token, uint256 _isAllowed) public {
-        vm.prank(Barba);        
+        vm.prank(Barba);
         vm.expectEmit();
         emit ConceroPool_TokenSupportedUpdated(_token, _isAllowed);
         concero.setSupportedToken(_token, _isAllowed);
 
         assertEq(concero.s_isTokenSupported(_token), _isAllowed);
-        
+
         vm.expectRevert("Ownable: caller is not the owner");
         concero.setSupportedToken(_token, _isAllowed);
     }
@@ -84,7 +84,7 @@ contract ConceroPoolFuzzing is Test {
     error ConceroPool_TokenNotSupported();
     event ConceroPool_ApprovedSenderUpdated(address token, address indexed newSender);
     function test_approvedSender(address _token, address _approvedSender, uint256 _isAllowed) public {
-        vm.prank(Barba);        
+        vm.prank(Barba);
         vm.expectEmit();
         emit ConceroPool_TokenSupportedUpdated(_token, _isAllowed);
         concero.setSupportedToken(_token, _isAllowed);
@@ -93,7 +93,7 @@ contract ConceroPoolFuzzing is Test {
         concero.setApprovedSender(_token, _approvedSender);
 
         if(_isAllowed == APPROVED){
-            vm.prank(Barba);  
+            vm.prank(Barba);
             vm.expectEmit();
             emit ConceroPool_ApprovedSenderUpdated(_token, _approvedSender);
             concero.setApprovedSender(_token, _approvedSender);
@@ -102,7 +102,7 @@ contract ConceroPoolFuzzing is Test {
 
             assertEq(allowedSender, _approvedSender);
         } else {
-            vm.prank(Barba);  
+            vm.prank(Barba);
             vm.expectRevert(abi.encodeWithSelector(ConceroPool_TokenNotSupported.selector));
             concero.setApprovedSender(_token, _approvedSender);
         }

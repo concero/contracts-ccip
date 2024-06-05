@@ -43,7 +43,7 @@ async function setMessenger(chain: CNetwork, clients) {
   const { abi } = await load("../artifacts/contracts/ConceroPool.sol/ConceroPool.json");
   const { name: chainName, viemChain } = chain;
   if (!chainName) throw new Error("Chain name not found");
-  const messengerWallet = getEnvVar("MESSENGER_WALLET_ADDRESS");
+  const messengerWallet = getEnvVar("MESSENGER_ADDRESS");
   const conceroPool = getEnvVar(`CONCEROPOOL_${networkEnvKeys[chainName]}` as keyof env);
 
   const { request: setMessengerReq } = await publicClient.simulateContract({

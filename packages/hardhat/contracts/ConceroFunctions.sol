@@ -14,7 +14,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   uint32 internal constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   uint32 internal constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
   uint8 internal constant CL_SRC_RESPONSE_LENGTH = 192;
-  string internal constant JS_CODE =
+  string internal constant CL_JS_CODE =
     "try { await import('npm:ethers@6.10.0'); const c = BigInt(bytesArgs[1]) === 1n ? secrets.DST_JS : secrets.SRC_JS; const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(c)); const r = Array.from(new Uint8Array(h)) .map(b => ('0' + b.toString(16)).slice(-2).toLowerCase()) .join(''); const b = bytesArgs[0].toLowerCase(); if ('0x' + r === b) return await eval(c); throw new Error(`0x${r} != ${b}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
   bytes32 private immutable i_donId;
@@ -108,7 +108,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     args[9] = abi.encodePacked(amount);
     args[10] = abi.encodePacked(CHAIN_SELECTOR);
 
-    bytes32 reqId = sendRequest(args, JS_CODE);
+    bytes32 reqId = sendRequest(args, CL_JS_CODE);
 
     s_requests[reqId].requestType = RequestType.checkTxSrc;
     s_requests[reqId].isPending = true;
@@ -212,7 +212,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     args[9] = abi.encodePacked(uint8(token));
     args[10] = abi.encodePacked(block.number);
 
-    bytes32 reqId = sendRequest(args, JS_CODE);
+    bytes32 reqId = sendRequest(args, CL_JS_CODE);
     s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;
     s_requests[reqId].isPending = true;
     s_requests[reqId].ccipMessageId = ccipMessageId;

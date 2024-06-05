@@ -1,6 +1,7 @@
 import billing from "./unused/Functions-billing";
 import consumer from "./unused/Functions-consumer";
 import clfRequest from "./unused/Functions-consumer";
+import transfer from "./sub/transfer";
 import simulate from "./script/simulate";
 import build from "./script/build";
 import deployCCIPInfrastructure from "./concero/deployInfra";
@@ -9,10 +10,13 @@ import { fundContract } from "./concero/fundContract";
 import updateHashes from "./concero/updateHashes";
 import dripBnm from "./concero/dripBnm";
 import getHashSum from "./script/listHashes";
-
+import accept from "./sub/accept";
+import transferTokens from "./utils/transferTokens";
 export default {
   billing,
   consumer,
+  transfer,
+  accept,
   simulate,
   build,
   deployCCIPInfrastructure,
@@ -22,4 +26,5 @@ export default {
   clfRequest,
   getHashSum,
   updateHashes,
+  transferTokens,
 };

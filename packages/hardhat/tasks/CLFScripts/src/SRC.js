@@ -88,6 +88,7 @@ async function main() {
 			},
 		},
 	};
+	const UINT256_BYTES_LENGTH = 32;
 	const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 	const getPercent = (value, percent) => (BigInt(value) * BigInt(percent)) / 100n;
 	const getPriceRates = async (provider, chainSelector) => {
@@ -117,6 +118,19 @@ async function main() {
 			nativeUsdc: nativeUsd[1] > 0n ? (nativeUsd[1] * 10n ** 18n) / usdcUsd[1] : 0n,
 			linkNative: linkNative[1] > 0 ? linkNative[1] : 0n,
 		};
+	};
+	const constructResult = items => {
+		const encodedValues = items.map(value => Functions.encodeUint256(BigInt(value)));
+		const totalLength = encodedValues.length * UINT256_BYTES_LENGTH;
+		const result = new Uint8Array(totalLength);
+
+		let offset = 0;
+		for (const encoded of encodedValues) {
+			result.set(encoded, offset);
+			offset += UINT256_BYTES_LENGTH;
+		}
+
+		return result;
 	};
 	let nonce = 0;
 	let retries = 0;
@@ -210,28 +224,14 @@ async function main() {
 			srcChainProvider.getFeeData(),
 			getPriceRates(srcChainProvider, srcChainSelector),
 		]);
-		const srcGasPrice = Functions.encodeUint256(BigInt(dstFeeData.gasPrice));
-		const dstGasPrice = Functions.encodeUint256(BigInt(gasPrice));
-		const encodedDstChainSelector = Functions.encodeUint256(BigInt(dstChainSelector));
-		const linkUsdc = Functions.encodeUint256(srcPriceFeeds.linkUsdc);
-		const nativeUsdc = Functions.encodeUint256(srcPriceFeeds.nativeUsdc);
-		const linkNative = Functions.encodeUint256(srcPriceFeeds.linkNative);
-		const totalResLength =
-			srcGasPrice.length +
-			dstGasPrice.length +
-			encodedDstChainSelector.length +
-			linkUsdc.length +
-			nativeUsdc.length +
-			linkNative.length;
-		const res = new Uint8Array(totalResLength);
-		res.set(srcGasPrice);
-		res.set(dstGasPrice, srcGasPrice.length);
-		res.set(encodedDstChainSelector, srcGasPrice.length + dstGasPrice.length);
-		res.set(linkUsdc, srcGasPrice.length + dstGasPrice.length + encodedDstChainSelector.length);
-		res.set(nativeUsdc, srcGasPrice.length + dstGasPrice.length + encodedDstChainSelector.length + linkUsdc.length);
-		res.set(linkNative, totalResLength - linkNative.length);
-
-		return res;
+		return constructResult([
+			dstFeeData.gasPrice,
+			gasPrice,
+			dstChainSelector,
+			srcPriceFeeds.linkUsdc,
+			srcPriceFeeds.nativeUsdc,
+			srcPriceFeeds.linkNative,
+		]);
 	} catch (error) {
 		const {message} = error;
 		if (message?.includes('Exceeded maximum of 20 HTTP queries')) {

@@ -31,7 +31,7 @@ error ConceroPool_SenderNotAllowed(address _sender);
 error ConceroPool_ActivRequestNotFulfilledYet();
 ///@notice error emitted when an attempt to send value to a not allowed receiver is made
 error ConceroPool_DestinationNotAllowed();
-///@notice error emitted when the contract doesn't have enought link balance
+///@notice error emitted when the contract doesn't have enough link balance
 error ConceroPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
 
 contract ConceroPool is CCIPReceiver, Ownable {

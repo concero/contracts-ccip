@@ -1,6 +1,5 @@
 async function main() {
 	try {
-		const ethers = await import('npm:ethers@6.10.0');
 		const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 		const [_, __, srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = bytesArgs;
 		const messageId = eventArgs[0];

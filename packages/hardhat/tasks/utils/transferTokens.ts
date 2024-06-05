@@ -12,7 +12,7 @@ const { url } = chains["optimismSepolia"];
 const { signer, provider } = getEthersSignerAndProvider(url);
 const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
 const wallet = new ethers.Wallet(privateKey, provider);
-const targetAddress = "0xdddddb8a8e41c194ac6542a0ad7ba663a72741e0";
+const targetAddress = "0x";
 
 const tokenAddresses = ["0xE4aB69C077896252FAFBD49EFD26B5D171A32410"];
 

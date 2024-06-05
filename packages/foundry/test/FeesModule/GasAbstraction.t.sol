@@ -29,10 +29,7 @@ contract ConceroGasAbstractionTest is Test {
             0xE4aB69C077896252FAFBD49EFD26B5D171A32410,
             0xD3b06cEbF099CE7DA4AcCf578aaebFDBd6e88a93,
             0xD3b06cEbF099CE7DA4AcCf578aaebFDBd6e88a93,
-            IFunctions.JsCodeHashSum({
-                src: 0x0,
-                dst: 0x0
-            })
+            IFunctions.JsCodeHashSum({src: 0x0, dst: 0x0})
         );
 
         concero.setLastGasPrices(5224473277236331295, 1000263);
@@ -91,5 +88,11 @@ contract ConceroMock is Concero {
 
     function setLastGasPrices(uint64 _token, uint256 _price) public {
         s_lastGasPrices[_token] = _price;
+    }
+
+    function setLastPriceFeeds() public {
+        s_latestLinkUsdcRate = 0;
+		s_latestLinkNativeRate = 0;
+        s_latestNativeUsdcRate = 0;
     }
 }

@@ -55,7 +55,7 @@ const deployConcero: DeployFunction = async function (
     ccipRouter: ccipRouter,
     // TODO: Update this to the correct address
     dexSwapModule: linkToken,
-    priceFeed: priceFeed,
+    // priceFeed: priceFeed,
     jsCodeHashSum: {
       src: getHashSum(secrets.SRC_JS),
       dst: getHashSum(secrets.DST_JS),
@@ -79,7 +79,6 @@ const deployConcero: DeployFunction = async function (
       args.linkToken,
       args.ccipRouter,
       args.dexSwapModule,
-      args.priceFeed,
       args.jsCodeHashSum,
     ],
     autoMine: true,

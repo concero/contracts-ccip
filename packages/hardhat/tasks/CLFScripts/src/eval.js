@@ -1,6 +1,10 @@
 try {
 	const ethers = await import('https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.min.js');
-	const c = BigInt(bytesArgs[1]) === 1n ? secrets.DST_JS : secrets.SRC_JS;
+	const c = await (
+		await fetch(
+			`https://raw.githubusercontent.com/concero/contracts-ccip/full-infra-functions/packages/hardhat/tasks/CLFScripts/dist/${BigInt(bytesArgs[1]) === 1n ? 'DST.min.js' : 'SRC.min.js'}`,
+		)
+	).text();
 	const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(c));
 	const r = Array.from(new Uint8Array(h))
 		.map(b => ('0' + b.toString(16)).slice(-2).toLowerCase())

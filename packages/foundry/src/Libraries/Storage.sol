@@ -1,8 +1,8 @@
 //SPDX-License-Identificer: MIT
 pragma solidity 0.8.19;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IDexSwap} from "../Interfaces/IDexSwap.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
   ////////////////////////////////////////////////////////
   //////////////////////// ERRORS ////////////////////////
@@ -20,7 +20,7 @@ import {IDexSwap} from "../Interfaces/IDexSwap.sol";
   ///@notice error emitted when the chain selector input is invalid
   error Storage_ChainNotAllowed(uint64 chainSelector);
 
-abstract contract Storage is Ownable{
+abstract contract Storage is Ownable {
   ///////////////////////
   ///TYPE DECLARATIONS///
   ///////////////////////
@@ -87,9 +87,6 @@ abstract contract Storage is Ownable{
   ///////////////
   ///VARIABLES///
   ///////////////
-  ///@notice Functions: variable to store the DexSwap address
-  address internal s_orchestrator; //@audit
-
   ///@notice ID of the deployed chain on getChain() function
   Chain internal s_chainIndex;
   ///@notice variable to store the Chainlink Function DON Slot ID
@@ -193,20 +190,6 @@ abstract contract Storage is Ownable{
   //////////////
 
   /**
-   * @notice function to manage the Orchestrator contract address
-   * @param _orchestrator the address from the Orchestrator Contract
-   * @dev only owner can call it
-   * @dev it's payable to save some gas.
-  */
-  function setOrchestratorContract(address _orchestrator) external payable onlyOwner{
-    address previousAddress = s_orchestrator;
-
-    s_orchestrator = _orchestrator;
-
-    emit Storage_OrchestratorContractUpdated(previousAddress, _orchestrator);
-  }
-
-  /**
    * @notice Function to update Concero Messenger Addresses
    * @param _walletAddress the messenger address
    * @param _approved 1 == Approved | Any other value disapproved
@@ -224,7 +207,7 @@ abstract contract Storage is Ownable{
    * @notice function to manage DEX routers addresses
    * @param _router the address of the router
    * @param _isApproved 1 == Approved | Any other value is not Approved.
-   */
+  */
   function manageRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner {
     s_routerAllowed[_router] = _isApproved;
 

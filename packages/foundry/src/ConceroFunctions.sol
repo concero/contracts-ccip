@@ -59,11 +59,13 @@ contract ConceroFunctions is FunctionsClient, Storage {
   bytes32 private immutable i_donId;
   uint64 private immutable i_subscriptionId;
   //@audit can't be immutable
-  uint64 internal immutable CHAIN_SELECTOR;
+  uint64 immutable CHAIN_SELECTOR;
   ///@notice variable to store the DexSwap address
   address immutable i_dexSwap;
   ///@notice variable to store the ConceroPool address
   address immutable i_pool;
+  ///@notice Immutable variable to hold proxy address
+  address immutable i_proxy;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -119,7 +121,8 @@ contract ConceroFunctions is FunctionsClient, Storage {
     uint _chainIndex,
     JsCodeHashSum memory jsCodeHashSum,
     address _dexSwap,
-    address _pool
+    address _pool,
+    address _proxy
   ) FunctionsClient(_functionsRouter){
     i_donId = _donId;
     i_subscriptionId = _subscriptionId;
@@ -131,6 +134,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_chainIndex = Chain(_chainIndex);
     i_dexSwap = _dexSwap;
     i_pool = _pool;
+    i_proxy = _proxy;
   }
 
   ///////////////////////////////////////////////////////////////
@@ -244,7 +248,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
   }
 
   function fulfillRequestWrapper(bytes32 requestId, bytes memory response, bytes memory err) external {
-    if(address(this) != s_orchestrator) revert ConceroFunctions_ItsNotOrchestrator(msg.sender);
+    if(address(this) != i_proxy) revert ConceroFunctions_ItsNotOrchestrator(msg.sender);
     
     fulfillRequest(requestId, response, err);
   }

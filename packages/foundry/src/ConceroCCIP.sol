@@ -38,15 +38,6 @@ contract ConceroCCIP is ConceroFunctions {
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
-  ///@notice event emitted when a CCIP message is sent
-  event CCIPSent(
-    bytes32 indexed ccipMessageId,
-    address sender,
-    address recipient,
-    CCIPToken token,
-    uint256 amount,
-    uint64 dstChainSelector
-  );
   ///@notice event emitted when the Chainlink Function Fee is updated
   event CLFPremiumFeeUpdated(uint64 chainSelector, uint256 previousValue, uint256 feeAmount);
 
@@ -62,11 +53,12 @@ contract ConceroCCIP is ConceroFunctions {
     address _ccipRouter,
     JsCodeHashSum memory jsCodeHashSum,
     address _dexSwap,
-    address _pool
-  ) ConceroFunctions(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, jsCodeHashSum,_dexSwap, _pool) {
+    address _pool,
+    address _proxy
+  ) ConceroFunctions(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, jsCodeHashSum,_dexSwap, _pool, _proxy) {
     LINK_TOKEN = LinkTokenInterface(_link);
     CCIP_ROUTER = IRouterClient(_ccipRouter);
-    s_messengerContracts[msg.sender] = 1;
+    s_messengerContracts[msg.sender] = APPROVED;
   }
 
   ///////////////////////////////////////////////////////////////

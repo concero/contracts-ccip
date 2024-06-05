@@ -2,7 +2,6 @@
 pragma solidity 0.8.19;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
@@ -49,7 +48,9 @@ contract ConceroPool is Storage, CCIPReceiver {
   LinkTokenInterface private immutable i_linkToken;
   ///@notice Chainlink CCIP Router
   IRouterClient private immutable i_router;
-  ///@notice Immutable variable to hold orchestrator
+  ///@notice Immutable variable to hold proxy address
+  address private immutable i_proxy;
+
   
   ///////////////
   ///CONSTANTS///
@@ -80,13 +81,16 @@ contract ConceroPool is Storage, CCIPReceiver {
   event ConceroPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
   ///@notice event emitted when a Liquidity Provider add liquidity to our pool
   event ConceroPool_Deposited(address token,address liquidityProvider, uint256 amount);
+  ///@notice event emitted when the orchestrator 
+  event ConceroPool_OrchestratorContractUpdated(address previousAddress, address orchestrator);
 
   ///////////////
   ///MODIFIERS///
   ///////////////
-  constructor(address _link, address _ccipRouter)  CCIPReceiver(_ccipRouter){
+  constructor(address _link, address _ccipRouter, address _proxy)  CCIPReceiver(_ccipRouter){
       i_linkToken = LinkTokenInterface(_link);
       i_router = IRouterClient(_ccipRouter);
+      i_proxy = _proxy;
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -106,19 +110,20 @@ contract ConceroPool is Storage, CCIPReceiver {
     _;
   }
 
-  ////////////////////////
-  ///EXTERNAL FUNCTIONS///
-  ////////////////////////
   /**
    * @notice CCIP Modifier to check Chains And senders
    * @param _chainSelector Id of the source chain of the message
    * @param _sender address of the sender contract
    */
   modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
-    if (s_allowedPool[_chainSelector][_sender] != 1) revert ConceroPool_SenderNotAllowed(_sender);
+    if (s_allowedPool[_chainSelector][_sender] != APPROVED) revert ConceroPool_SenderNotAllowed(_sender);
     _;
   }
 
+
+  ////////////////////////
+  ///EXTERNAL FUNCTIONS///
+  ////////////////////////
   /**
    * @notice function to manage the Cross-chain ConceroPool contracts
    * @param _chainSelector chain identifications
@@ -328,7 +333,7 @@ contract ConceroPool is Storage, CCIPReceiver {
    * @dev for ether transfer, the _receiver need to be known and trusted
   */
   function orchestratorLoan(address _token, uint256 _amount, address _receiver) external {
-    if(address(this) != s_orchestrator) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
+    if(address(this) != i_proxy) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
     if(_receiver == address(0)) revert ConceroPool_InvalidAddress();
 
     if(_token == address(0)){

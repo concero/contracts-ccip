@@ -44,7 +44,7 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     execSync(`bunx hardhat clf-script-build --all`, { stdio: "inherit" });
 
     await simulate(path.join(__dirname, "../", "./CLFScripts/dist/eval.min.js"), [
-      "0x536eddd5b9f311b7eca709d26f4ff26e1d9dc2da4709a2ca3e1e6db26684e18a", // srcJsHashSum
+      "0x96ca8409f86bdec1dd077a6307c90a7d877c5f06d26fe44c0061c31da85ea51e", // srcJsHashSum
       "0x0",
       process.env.CONCEROCCIP_OPTIMISM_SEPOLIA, // contractAddress
       "0x5315f93154194ca637615651c5662cf39a77308927ebe7d31c9e970958681a49", // ccipMessageId

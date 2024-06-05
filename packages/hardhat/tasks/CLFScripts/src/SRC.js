@@ -5,8 +5,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
-async function main() {
-	const ethers = await import('npm:ethers@6.10.0');
+async function f() {
 	const [
 		_,
 		__,
@@ -241,4 +240,4 @@ async function main() {
 		}
 	}
 }
-main();
+f();

@@ -184,7 +184,6 @@ contract Orchestrator is Storage, IFunctionsClient {
 
     (bool fulfilled, bytes memory notFulfilled) = i_concero.delegatecall(
       abi.encodeWithSelector(
-        //@audit I had to create a wrapper to be able to call the final function.
         IConcero.fulfillRequestWrapper.selector,
         requestId,
         response,

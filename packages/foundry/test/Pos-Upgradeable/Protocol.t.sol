@@ -27,6 +27,7 @@ import {TransparentDeploy} from "../../script/TransparentDeploy.s.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import {ISwapRouter} from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
@@ -89,6 +90,7 @@ contract DexSwapTest is Test {
     string BASE_RPC_URL = vm.envString("BASE_RPC_URL");
     uint256 private constant INITIAL_BALANCE = 10 ether;
     uint256 private constant USDC_INITIAL_BALANCE = 10 * 10**6;
+    ERC721 SAFE_LOCK;
 
     function setUp() public {
         baseMainFork = vm.createFork(BASE_RPC_URL);
@@ -103,6 +105,7 @@ contract DexSwapTest is Test {
         wEth = IWETH(0x4200000000000000000000000000000000000006);
         mUSDC = IERC20(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913);
         AERO = ERC20Mock(0x940181a94A35A4569E4529A3CDfB74e38FD98631);
+        SAFE_LOCK = ERC721(0xde11Bc6a6c47EeaB0476C85672EA7f932f1a78Ed);
         
         dexDeploy = new DexSwapDeploy();
         poolDeploy = new ConceroPoolDeploy();
@@ -121,7 +124,7 @@ contract DexSwapTest is Test {
         );
         //====== Deploy the proxy with the Dummy Orch
         proxy = proxyDeploy.run(address(orchEmpty), Tester, "");
-        
+
         dex = dexDeploy.run(address(proxy));
         pool = poolDeploy.run(
             link,
@@ -217,16 +220,67 @@ contract DexSwapTest is Test {
     }
 
     //Moved the logic to setUp to ease the tests
-    // function test_canUpgradeTheImplementation() public {
-    //     vm.startPrank(Tester);
-    //     assertEq(proxy.implementation(), address(orchEmpty));
+    function test_canUpgradeTheImplementation() public {
+        vm.startPrank(Tester);
+        assertEq(proxy.implementation(), address(orch));
 
-    //     proxy.upgradeTo(address(orch));
+        proxy.upgradeTo(address(SAFE_LOCK));
 
-    //     assertEq(proxy.implementation(), address(orch));
-    //     vm.stopPrank();
+        assertEq(proxy.implementation(), address(SAFE_LOCK));
+        vm.stopPrank();
+    }
+
+    /// TEST SAFE LOCK ///
+    error TransparentUpgradeableProxy_ContractPaused();
+    //@audit not working as expected
+    // function test_safeLockAndRevertOnCall() public {
+    //     helper();
+
+    //     vm.prank(Tester);
+    //     proxy.upgradeTo(address(SAFE_LOCK));
+
+    //     op = Orchestrator(address(proxy));
+        
+    //     assertEq(proxy.implementation(), address(SAFE_LOCK));
+
+    //     uint amountIn = 1*10**17;
+    //     uint amountOutMin = 350*10**5;
+    //     address[] memory path = new address[](2);
+    //     path[0] = address(wEth);
+    //     path[1] = address(mUSDC);
+    //     address to = User;
+    //     uint deadline = block.timestamp + 1800;
+
+    //     vm.startPrank(User);
+    //     wEth.approve(address(concero), amountIn);
+
+    //     DexSwap.SwapData[] memory swapData = new DexSwap.SwapData[](1);
+    //     swapData[0] = IDexSwap.SwapData({
+    //                         dexType: IDexSwap.DexType.UniswapV2,
+    //                         fromToken: address(wEth),
+    //                         fromAmount: amountIn,
+    //                         toToken: address(mUSDC),
+    //                         toAmount: amountOutMin,
+    //                         toAmountMin: amountOutMin,
+    //                         dexData: abi.encode(sushiV2, path, to, deadline)
+    //                     });
+
+    //     // ==== Approve Transfer
+    //     vm.startPrank(User);
+    //     wEth.approve(address(op), 0.1 ether);
+
+    //     //==== Initiate transaction
+    //     vm.expectRevert(abi.encodeWithSelector(TransparentUpgradeableProxy_ContractPaused.selector));
+    //     op.swap(swapData);
+
+    //     assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
+    //     assertEq(wEth.balanceOf(address(op)), 0);
+    //     assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOutMin);
     // }
 
+    //////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////// SWAPING MODULE /////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
     //OK - Working
     function test_swapUniV2LikeMock() public {
         helper();
@@ -265,8 +319,6 @@ contract DexSwapTest is Test {
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOutMin);
     }
 
-    ///_swapSushiV3Single///
-    //OK - Working
     function test_swapSushiV3SingleMock() public {
         helper();
         uint256 amountIn = 1*10**17;
@@ -292,8 +344,6 @@ contract DexSwapTest is Test {
         assertTrue(mUSDC.balanceOf(address(User))> USDC_INITIAL_BALANCE + amountOut);
     }
 
-    ///_swapUniV3Single///
-    //OK - Working
     function test_swapUniV3SingleMock() public {
         helper();
         assertEq(wEth.balanceOf(address(dex)), 0);
@@ -323,8 +373,6 @@ contract DexSwapTest is Test {
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
     }
 
-    ///_swapSushiV3Multi///
-    //OK - Working
     function test_swapSushiV3MultiMock() public {
         helper();
 
@@ -357,8 +405,6 @@ contract DexSwapTest is Test {
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn + amountOut);
     }
 
-    ///_swapUniV3Multi///
-    //OK - Working
     function test_swapUniV3MultiMock() public {
         helper();
 
@@ -389,8 +435,6 @@ contract DexSwapTest is Test {
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn + amountOut);
     }
 
-    ///_swapDrome///
-    //OK - Working
     function test_swapDromeMock() public {
         helper();
 
@@ -431,8 +475,6 @@ contract DexSwapTest is Test {
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
     }
 
-    //_swapEtherOnUniV2Like//
-    //Ok - Working
     function test_swapEtherOnUniV2LikeMock() public {
         helper();
 

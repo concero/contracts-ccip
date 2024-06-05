@@ -3,8 +3,10 @@
 
 pragma solidity ^0.8.0;
 
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {ERC1967Proxy} from "./Proxy/ERC1967Proxy.sol";
 import {Storage} from "./Libraries/Storage.sol";
+
+error TransparentUpgradeableProxy_ContractPaused();
 
 /**
  * @dev This contract implements a proxy that is upgradeable by an admin.
@@ -28,6 +30,17 @@ import {Storage} from "./Libraries/Storage.sol";
  * you should think of the `ProxyAdmin` instance as the real administrative interface of your proxy.
  */
 contract TransparentUpgradeableProxy is ERC1967Proxy, Storage {
+    ///@dev audit: The only change here is to remove the storage use.
+    ///@dev audit: there is a lot of dead code that can be removed
+    ///@dev audit: but I don't touch on anything yet
+    ///@notice immutable variable to store the admin address
+    ///@dev getter now returns this variable.
+    address immutable i_admin;
+    ///@notice constant variable to hold a mock address to pause transactions.
+    ///@dev this will be used in a if statement on the fallback function
+    address constant SAFE_LOCK = 0xde11Bc6a6c47EeaB0476C85672EA7f932f1a78Ed;
+    //@audit need to adjust. Not working.
+    // if(_implementation() == SAFE_LOCK) revert TransparentUpgradeableProxy_ContractPaused();
 
     /**
      * @dev Initializes an upgradeable proxy managed by `_admin`, backed by the implementation at `_logic`, and
@@ -38,14 +51,14 @@ contract TransparentUpgradeableProxy is ERC1967Proxy, Storage {
         address admin_,
         bytes memory _data
     ) payable ERC1967Proxy(_logic, _data) {
-        _changeAdmin(admin_);
+        i_admin = admin_;
     }
 
     /**
      * @dev Modifier used internally that will delegate the call to the implementation unless the sender is the admin.
      */
     modifier ifAdmin() {
-        if (msg.sender == _getAdmin()) {
+        if (msg.sender == i_admin) {
             _;
         } else {
             _fallback();
@@ -62,7 +75,7 @@ contract TransparentUpgradeableProxy is ERC1967Proxy, Storage {
      * `0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103`
      */
     function admin() external ifAdmin returns (address admin_) {
-        admin_ = _getAdmin();
+        admin_ = _admin();
     }
 
     /**
@@ -76,17 +89,6 @@ contract TransparentUpgradeableProxy is ERC1967Proxy, Storage {
      */
     function implementation() external ifAdmin returns (address implementation_) {
         implementation_ = _implementation();
-    }
-
-    /**
-     * @dev Changes the admin of the proxy.
-     *
-     * Emits an {AdminChanged} event.
-     *
-     * NOTE: Only the admin can call this function. See {ProxyAdmin-changeProxyAdmin}.
-     */
-    function changeAdmin(address newAdmin) external virtual ifAdmin {
-        _changeAdmin(newAdmin);
     }
 
     /**
@@ -113,14 +115,14 @@ contract TransparentUpgradeableProxy is ERC1967Proxy, Storage {
      * @dev Returns the current admin.
      */
     function _admin() internal view virtual returns (address) {
-        return _getAdmin();
+        return i_admin;
     }
 
     /**
      * @dev Makes sure the admin cannot access the fallback function. See {Proxy-_beforeFallback}.
      */
     function _beforeFallback() internal virtual override {
-        require(msg.sender != _getAdmin(), "TransparentUpgradeableProxy: admin cannot fallback to proxy target");
+        require(msg.sender != i_admin, "TransparentUpgradeableProxy: admin cannot fallback to proxy target");
         super._beforeFallback();
     }
 }

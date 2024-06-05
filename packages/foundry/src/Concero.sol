@@ -42,10 +42,25 @@ contract Concero is ConceroCCIP {
   ////////////////
   ///IMMUTABLES///
   ////////////////
+  ///@notice Chainlink Price Feed Addresses
   AggregatorV3Interface public immutable linkToUsdPriceFeeds;
   AggregatorV3Interface public immutable usdcToUsdPriceFeeds;
   AggregatorV3Interface public immutable nativeToUsdPriceFeeds;
   AggregatorV3Interface public immutable linkToNativePriceFeeds;
+
+  ////////////////////////////////////////////////////////
+  //////////////////////// EVENTS ////////////////////////
+  ////////////////////////////////////////////////////////
+  event Concero_OrchestratorContractUpdated(address previousAddress, address orchestrator);
+  ///@notice event emitted when a CCIP message is sent
+  event CCIPSent(
+    bytes32 indexed ccipMessageId,
+    address sender,
+    address recipient,
+    CCIPToken token,
+    uint256 amount,
+    uint64 dstChainSelector
+  );
 
   constructor(
     address _functionsRouter,
@@ -60,7 +75,8 @@ contract Concero is ConceroCCIP {
     PriceFeeds memory priceFeeds,
     JsCodeHashSum memory jsCodeHashSum,
     address _dexSwap,
-    address _pool
+    address _pool,
+    address _proxy
   )
     ConceroCCIP(
       _functionsRouter,
@@ -74,7 +90,8 @@ contract Concero is ConceroCCIP {
       _ccipRouter,
       jsCodeHashSum,
       _dexSwap,
-      _pool
+      _pool,
+      _proxy
     )
   {
     linkToUsdPriceFeeds = AggregatorV3Interface(priceFeeds.linkToUsdPriceFeeds);
@@ -99,7 +116,7 @@ contract Concero is ConceroCCIP {
   }
   
   function startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata dstSwapData) external {
-    if(address(this) != s_orchestrator) revert Concero_ItsNotOrchestrator(msg.sender);
+    if(address(this) != i_proxy) revert Concero_ItsNotOrchestrator(msg.sender);
 
     address fromToken = getToken(bridgeData.tokenType, s_chainIndex);
 

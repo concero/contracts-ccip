@@ -2,7 +2,6 @@
 pragma solidity 0.8.19;
 pragma abicoder v2;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -31,6 +30,12 @@ import "./Libraries/LibConcero.sol";
 contract DexSwap is Storage, IDexSwap {
   using SafeERC20 for IERC20;
 
+  ///////////////
+  ///IMMUTABLE///
+  ///////////////
+  ///@notice Immutable variable to hold proxy address
+  address private immutable i_proxy;
+  
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
@@ -42,7 +47,9 @@ contract DexSwap is Storage, IDexSwap {
   /////////////////////////////////////////////////////////////////
   ////////////////////////////FUNCTIONS////////////////////////////
   /////////////////////////////////////////////////////////////////
-  constructor() {}
+  constructor(address _proxy) {
+    i_proxy = _proxy;
+  }
 
   /**
    * @notice Entry point function for the Orchestrator to take loans
@@ -50,7 +57,7 @@ contract DexSwap is Storage, IDexSwap {
    * @dev only the Orchestrator contract should be able to call this function
    */
   function conceroEntry(IDexSwap.SwapData[] memory _swapData, uint256 _amount) external payable {
-    if (address(this) != s_orchestrator) revert DexSwap_ItsNotOrchestrator(address(this));
+    if (address(this) != i_proxy) revert DexSwap_ItsNotOrchestrator(address(this));
     if (_swapData.length < 1 || _swapData.length > 5) revert DexSwap_EmptyDexData();
 
     uint256 swapDataLength = _swapData.length;

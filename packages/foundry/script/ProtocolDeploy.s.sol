@@ -20,12 +20,13 @@ contract ProtocolDeploy is Script {
             address _ccipRouter,
             Concero.PriceFeeds memory _priceFeeds,
             Concero.JsCodeHashSum memory jsCodeHashSum,
-            address _messenger
+            address _messenger,
+            address _proxy
         ) public returns(DexSwap dex, ConceroPool pool, Concero concero, Orchestrator orch){
 
         vm.startBroadcast();
-            dex = new DexSwap ();
-            pool = new ConceroPool(_link, _ccipRouter);
+            dex = new DexSwap (_proxy);
+            pool = new ConceroPool(_link, _ccipRouter, _proxy);
             concero = new Concero(
                 _functionsRouter,
                 _donHostedSecretsVersion,
@@ -39,14 +40,16 @@ contract ProtocolDeploy is Script {
                 _priceFeeds,
                 jsCodeHashSum,
                 address(dex),
-                address(pool)
+                address(pool),
+                _proxy
             );
             orch = new Orchestrator(
                 _functionsRouter,
                 _messenger,
                 address(dex),
                 address(concero),
-                address(pool)
+                address(pool),
+                _proxy
             );
 
         vm.stopBroadcast();

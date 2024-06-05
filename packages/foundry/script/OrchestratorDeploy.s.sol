@@ -11,7 +11,8 @@ contract OrchestratorDeploy is Script {
             address _messenger,
             address _dex,
             address _concero,
-            address _pool
+            address _pool,
+            address _proxy
     ) public returns(Orchestrator orch){
 
         vm.startBroadcast();
@@ -20,7 +21,8 @@ contract OrchestratorDeploy is Script {
             _messenger,
             _dex,
             _concero,
-            _pool
+            _pool,
+            _proxy
         );
         vm.stopBroadcast();
     }

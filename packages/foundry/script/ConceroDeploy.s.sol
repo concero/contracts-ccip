@@ -19,7 +19,8 @@ contract ConceroDeploy is Script {
             Concero.PriceFeeds memory _priceFeeds,
             Concero.JsCodeHashSum memory jsCodeHashSum,
             address _dexSwap,
-            address _pool
+            address _pool,
+            address _proxy
         ) public returns(Concero concero){
 
         vm.startBroadcast();
@@ -36,7 +37,8 @@ contract ConceroDeploy is Script {
             _priceFeeds,
             jsCodeHashSum,
             _dexSwap,
-            _pool
+            _pool,
+            _proxy
         );
         vm.stopBroadcast();
     }

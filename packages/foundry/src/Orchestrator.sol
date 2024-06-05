@@ -3,7 +3,6 @@ pragma solidity 0.8.19;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IFunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsClient.sol";
 
@@ -41,7 +40,8 @@ contract Orchestrator is Storage, IFunctionsClient {
   address immutable i_concero;
   ///@notice variable to store the ConceroPool address
   address immutable i_pool;
-
+  ///@notice variable to store the immutable Proxy Address
+  address immutable i_proxy;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -49,12 +49,13 @@ contract Orchestrator is Storage, IFunctionsClient {
   ///@notice emitted when the Functions router fulfills a request
   event Orchestrator_RequestFulfilled(bytes32 requestId);
 
-  constructor(address _router,address _messenger, address _dexSwap, address _concero, address _pool) {
+  constructor(address _router,address _messenger, address _dexSwap, address _concero, address _pool, address _proxy) {
     i_router = _router;
     i_messenger = _messenger;
     i_dexSwap = _dexSwap;
     i_concero = _concero;
     i_pool = _pool;
+    i_proxy = _proxy;
   }
 
   ///////////////

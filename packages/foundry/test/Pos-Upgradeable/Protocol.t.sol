@@ -8,6 +8,7 @@ import {DexSwap} from "../../src/DexSwap.sol";
 import {ConceroPool} from "../../src/ConceroPool.sol";
 import {Concero} from "../../src/Concero.sol";
 import {Orchestrator} from "../../src/Orchestrator.sol";
+import {TransparentUpgradeableProxy} from "../../src/TransparentUpgradeableProxy.sol";
 
 //Protocol Interfaces
 import {IDexSwap} from "../../src/Interfaces/IDexSwap.sol";
@@ -20,6 +21,7 @@ import {DexSwapDeploy} from "../../script/DexSwapDeploy.s.sol";
 import {ConceroPoolDeploy} from "../../script/ConceroPoolDeploy.s.sol";
 import {ConceroDeploy} from "../../script/ConceroDeploy.s.sol";
 import {OrchestratorDeploy} from "../../script/OrchestratorDeploy.s.sol";
+import {TransparentDeploy} from "../../script/TransparentDeploy.s.sol";
 
 //Mocks
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
@@ -44,11 +46,18 @@ contract DexSwapTest is Test {
     ConceroPool public pool;
     Concero public concero;
     Orchestrator public orch;
+    Orchestrator public orchEmpty;
+    TransparentUpgradeableProxy public proxy;
+
     //==== Instantiate Deploy Script
     DexSwapDeploy dexDeploy;
     ConceroPoolDeploy poolDeploy;
     ConceroDeploy conceroDeploy;
     OrchestratorDeploy orchDeploy;
+    TransparentDeploy proxyDeploy;
+
+    //==== Wrapped contract
+    Orchestrator op;
 
     //==== Create the instance to forked tokens
     IWETH wEth;
@@ -99,13 +108,26 @@ contract DexSwapTest is Test {
         poolDeploy = new ConceroPoolDeploy();
         conceroDeploy = new ConceroDeploy();
         orchDeploy = new OrchestratorDeploy();
-
-        dex = dexDeploy.run();
+        proxyDeploy = new TransparentDeploy();
+        
+        //DEPLOY AN EMPTY ORCH
+        orchEmpty = orchDeploy.run(
+            functionsRouter,
+            Messenger,
+            address(0),
+            address(0),
+            address(0),
+            address(0)
+        );
+        //====== Deploy the proxy with the Dummy Orch
+        proxy = proxyDeploy.run(address(orchEmpty), Tester, "");
+        
+        dex = dexDeploy.run(address(proxy));
         pool = poolDeploy.run(
             link,
-            ccipRouter
+            ccipRouter,
+            address(proxy)
         );
-        {
         concero = conceroDeploy.run(
             functionsRouter,
             0, //uint64 _donHostedSecretsVersion
@@ -127,18 +149,20 @@ contract DexSwapTest is Test {
                 dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
             }),
             Messenger,
-            address(pool)
+            address(pool),
+            address(proxy)
         );
-        }
 
         orch = orchDeploy.run(
             functionsRouter,
             Messenger,
             address(dex),
             address(concero),
-            address(pool)
+            address(pool),
+            address(proxy)
         );
         
+        vm.makePersistent(address(proxy));
         vm.makePersistent(address(dex));
         vm.makePersistent(address(pool));
         vm.makePersistent(address(concero));
@@ -149,21 +173,23 @@ contract DexSwapTest is Test {
         pool.transferOwnership(Tester);
         concero.transferOwnership(Tester);
         orch.transferOwnership(Tester);
+        proxy.transferOwnership(Tester);
         vm.stopPrank();
+        
+        //====== Update the proxy for the correct address
+        vm.prank(Tester);
+        proxy.upgradeTo(address(orch));
+        
+        //====== Wrap the proxy as the implementation
+        op = Orchestrator(address(proxy));
 
-        vm.startPrank(Tester);
         //====== Set the DEXes routers
-        orch.manageRouterAddress(address(uniswapV2), 1);
-        orch.manageRouterAddress(address(sushiV2), 1);
-        orch.manageRouterAddress(address(uniswapV3), 1);
-        orch.manageRouterAddress(address(sushiV3), 1);
-        orch.manageRouterAddress(address(aerodromeRouter), 1);
-
-        //====== Set Orchestrator to be allowed to execute calls
-        pool.setOrchestratorContract(address(orch));
-        dex.setOrchestratorContract(address(orch));
-        concero.setOrchestratorContract(address(orch));
-        orch.setOrchestratorContract(address(orch));
+        vm.startPrank(Tester);
+        op.manageRouterAddress(address(uniswapV2), 1);
+        op.manageRouterAddress(address(sushiV2), 1);
+        op.manageRouterAddress(address(uniswapV3), 1);
+        op.manageRouterAddress(address(sushiV3), 1);
+        op.manageRouterAddress(address(aerodromeRouter), 1);
 
         //====== Set the Messenger to be allowed to interact
         pool.setConceroMessenger(Messenger, 1);
@@ -189,6 +215,17 @@ contract DexSwapTest is Test {
         assertEq(vm.activeFork(), baseMainFork);
 
     }
+
+    //Moved the logic to setUp to ease the tests
+    // function test_canUpgradeTheImplementation() public {
+    //     vm.startPrank(Tester);
+    //     assertEq(proxy.implementation(), address(orchEmpty));
+
+    //     proxy.upgradeTo(address(orch));
+
+    //     assertEq(proxy.implementation(), address(orch));
+    //     vm.stopPrank();
+    // }
 
     //OK - Working
     function test_swapUniV2LikeMock() public {
@@ -218,13 +255,13 @@ contract DexSwapTest is Test {
 
         // ==== Approve Transfer
         vm.startPrank(User);
-        wEth.approve(address(orch), 0.1 ether);
+        wEth.approve(address(op), 0.1 ether);
 
         //==== Initiate transaction
-        orch.swap(swapData);
+        op.swap(swapData);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
-        assertEq(wEth.balanceOf(address(dex)), 0);
+        assertEq(wEth.balanceOf(address(op)), 0);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOutMin);
     }
 
@@ -246,12 +283,12 @@ contract DexSwapTest is Test {
                         });
 
         vm.startPrank(User);
-        wEth.approve(address(orch), 1 ether);
+        wEth.approve(address(op), 1 ether);
     
-        orch.swap(swapData);
+        op.swap(swapData);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
-        assertEq(wEth.balanceOf(address(orch)), 0);
+        assertEq(wEth.balanceOf(address(op)), 0);
         assertTrue(mUSDC.balanceOf(address(User))> USDC_INITIAL_BALANCE + amountOut);
     }
 
@@ -277,12 +314,12 @@ contract DexSwapTest is Test {
         });
 
         vm.startPrank(User);
-        wEth.approve(address(orch), amountIn);
+        wEth.approve(address(op), amountIn);
 
-        orch.swap(swapData);
+        op.swap(swapData);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
-        assertEq(wEth.balanceOf(address(orch)), 0);
+        assertEq(wEth.balanceOf(address(op)), 0);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
     }
 
@@ -309,14 +346,14 @@ contract DexSwapTest is Test {
         });
 
         vm.startPrank(User);
-        wEth.approve(address(orch), amountIn);
+        wEth.approve(address(op), amountIn);
 
         assertEq(wEth.balanceOf(User), INITIAL_BALANCE);
     
-        orch.swap(swapData);
+        op.swap(swapData);
         
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn);
-        assertEq(wEth.balanceOf(address(orch)), 0);
+        assertEq(wEth.balanceOf(address(op)), 0);
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn + amountOut);
     }
 
@@ -343,12 +380,12 @@ contract DexSwapTest is Test {
         });
 
         vm.startPrank(User);
-        wEth.approve(address(orch), amountIn);
+        wEth.approve(address(op), amountIn);
     
-        orch.swap(swapData);
+        op.swap(swapData);
 
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn);
-        assertEq(wEth.balanceOf(address(orch)), 0);
+        assertEq(wEth.balanceOf(address(op)), 0);
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn + amountOut);
     }
 
@@ -385,12 +422,12 @@ contract DexSwapTest is Test {
         });
 
         vm.startPrank(User);
-        wEth.approve(address(orch), amountIn);
+        wEth.approve(address(op), amountIn);
     
-        orch.swap(swapData);
+        op.swap(swapData);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
-        assertEq(wEth.balanceOf(address(orch)), 0);
+        assertEq(wEth.balanceOf(address(op)), 0);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
     }
 
@@ -430,12 +467,12 @@ contract DexSwapTest is Test {
 
         //===== Start transaction calling the function and passing the payload
         vm.startPrank(User);                    
-        orch.swap{value: amountIn}(swapData);
+        op.swap{value: amountIn}(swapData);
         vm.stopPrank();
 
         assertEq(User.balance, INITIAL_BALANCE - amountIn);
-        assertEq(wEth.balanceOf(address(orch)), 0);
-        assertEq(address(orch).balance, 0);
+        assertEq(wEth.balanceOf(address(op)), 0);
+        assertEq(address(op).balance, 0);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
     }
 }

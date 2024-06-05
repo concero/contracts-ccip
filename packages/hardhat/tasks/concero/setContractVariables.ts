@@ -119,7 +119,7 @@ async function addMessengerToAllowlist(deployableChain: CNetwork, abi: any) {
   try {
     const dcContract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[dcName]}`);
 
-    const messengerWallet = getEnvVar("MESSENGER_WALLET_ADDRESS");
+    const messengerWallet = getEnvVar("MESSENGER_ADDRESS");
     const { request: addToAllowlistReq } = await publicClient.simulateContract({
       address: dcContract,
       abi,

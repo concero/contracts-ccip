@@ -13,7 +13,7 @@ const isSimulation = process.argv.length === 3 && process.argv[2] === "functions
 const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 
 // TODO @dev - set this to run the accept.js task.
-const SECOND_PRIVATE_KEY = process.env.MESSENGER_WALLET_PRIVATE_KEY;
+const SECOND_PRIVATE_KEY = process.env.MESSENGER_PRIVATE_KEY;
 
 if (!isTestEnvironment && !isSimulation && !PRIVATE_KEY) {
   throw Error("Set the PRIVATE_KEY environment variable with your EVM wallet private key");

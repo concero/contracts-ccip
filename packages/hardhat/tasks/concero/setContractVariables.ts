@@ -7,6 +7,7 @@ import log from "../../utils/log";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import { SecretsManager } from "@chainlink/functions-toolkit";
 import { Address } from "viem";
+import getHashSum from "../../utils/getHashSum";
 
 export async function setContractVariables(liveChains: CNetwork[], deployableChains: CNetwork[], slotId: number) {
   const { abi } = await load("../artifacts/contracts/Concero.sol/Concero.json");
@@ -48,6 +49,7 @@ export async function setContractVariables(liveChains: CNetwork[], deployableCha
     await setDonHostedSecretsVersion(deployableChain, slotId, abi);
     await addMessengerToAllowlist(deployableChain, abi);
     await setConceroPool(deployableChain, abi, liveChains);
+    await setHashes(deployableChain, abi, liveChains);
   }
 }
 
@@ -177,6 +179,53 @@ async function setConceroPool(deployableChain: CNetwork, abi: any, liveChains: C
         "setContractVariables",
       );
     }
+  } catch (error) {
+    log(`Error ${error.message}`, "setContractVariables");
+  }
+}
+
+async function setHashes(deployableChain: CNetwork, abi: any, liveChains: CNetwork[]) {
+  try {
+    const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
+    const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+    const conceroContractAddress = getEnvVar(`CONCEROCCIP_${networkEnvKeys[srcChainName]}`);
+    const conceroDstCode = await (
+      await fetch(
+        "https://raw.githubusercontent.com/concero/contracts-ccip/full-infra-functions/packages/hardhat/tasks/CLFScripts/dist/DST.min.js",
+      )
+    ).text();
+    const conceroSrcCode = await (
+      await fetch(
+        "https://raw.githubusercontent.com/concero/contracts-ccip/full-infra-functions/packages/hardhat/tasks/CLFScripts/dist/SRC.min.js",
+      )
+    ).text();
+    const ethersCode = await (
+      await fetch("https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js")
+    ).text();
+
+    const setHash = async (hash, functionName) => {
+      const { request: setHashReq } = await publicClient.simulateContract({
+        address: conceroContractAddress as Address,
+        abi,
+        functionName,
+        account,
+        args: [hash],
+        chain: dcViemChain,
+      });
+      const setHashHash = await walletClient.writeContract(setHashReq);
+      const { cumulativeGasUsed: setHashGasUsed } = await publicClient.waitForTransactionReceipt({
+        hash: setHashHash,
+      });
+
+      log(
+        `Set ${srcChainName}:${conceroContractAddress} hash [${hash}]. Gas used: ${setHashGasUsed.toString()}`,
+        "setContractVariables",
+      );
+    };
+
+    await setHash(getHashSum(conceroDstCode), "setDstJsHashSum");
+    await setHash(getHashSum(conceroSrcCode), "setSrcJsHashSum");
+    await setHash(getHashSum(ethersCode), "setEthersHashSum");
   } catch (error) {
     log(`Error ${error.message}`, "setContractVariables");
   }

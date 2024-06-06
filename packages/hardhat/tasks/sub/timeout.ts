@@ -1,12 +1,11 @@
 import { task, types } from "hardhat/config";
-import { fetchRequestCommitment, SubscriptionManager } from "@chainlink/functions-toolkit";
-import chains from "../../../constants/CNetworks";
+import { fetchRequestCommitment, SubscriptionManager, TransactionOptions } from "@chainlink/functions-toolkit";
+import chains from "../../constants/CNetworks";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { JsonRpcProvider, Wallet } from "ethers";
-import hre from "hardhat";
-import { getEthersSignerAndProvider } from "../../utils/getEthersSignerAndProvider";
+import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
+import { Overrides } from "ethers";
 
-task("clf-sub-timeout-requests", "Times out expired Functions requests which have not been fulfilled within 5 minutes")
+task("clf-sub-timeout", "Times out expired Functions requests which have not been fulfilled within 5 minutes")
   .addParam("requestids", "1 or more request IDs to timeout separated by commas")
   .addOptionalParam("toblock", "Ending search block number (defaults to latest block)")
   .addOptionalParam("pastblockstosearch", "Number of past blocks to search", 1000, types.int)
@@ -21,8 +20,7 @@ task("clf-sub-timeout-requests", "Times out expired Functions requests which hav
     const pastBlocksToSearch = parseInt(taskArgs.pastblockstosearch);
     const { signer, provider } = getEthersSignerAndProvider(chains[name].url);
     const { linkToken, functionsRouter, functionsDonIdAlias, confirmations } = chains[name];
-
-    // const txOptions = { overrides: { gasLimit: 10000000 } };
+    const txOptions: TransactionOptions = { confirmations, overrides: { gasLimit: 500000n } };
 
     const sm = new SubscriptionManager({
       signer,

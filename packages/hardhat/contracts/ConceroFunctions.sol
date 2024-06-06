@@ -25,6 +25,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
   bytes32 private s_srcJsHashSum;
   bytes32 private s_dstJsHashSum;
+  bytes32 private s_ethersHashSum;
 
   uint256 public s_latestLinkUsdcRate;
   uint256 public s_latestNativeUsdcRate;
@@ -47,7 +48,8 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     uint64 _subscriptionId,
     uint64 _chainSelector,
     uint _chainIndex,
-    JsCodeHashSum memory jsCodeHashSum
+    JsCodeHashSum memory jsCodeHashSum,
+    bytes32 memory ethersHashSum
   ) FunctionsClient(_functionsRouter) ConceroCommon(_chainSelector, _chainIndex) {
     i_donId = _donId;
     i_subscriptionId = _subscriptionId;
@@ -55,6 +57,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
     s_srcJsHashSum = jsCodeHashSum.src;
     s_dstJsHashSum = jsCodeHashSum.dst;
+    s_ethersHashSum = ethersHashSum;
   }
 
   function setDonHostedSecretsVersion(uint64 _version) external payable onlyOwner {
@@ -79,6 +82,12 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     bytes32 previousValue = s_dstJsHashSum;
     s_srcJsHashSum = _hashSum;
     emit SourceJsHashSumUpdated(previousValue, _hashSum);
+  }
+
+  function setEthersHashSum(bytes32 _hashSum) external payable onlyOwner {
+    bytes32 previousValue = s_ethersHashSum;
+    s_ethersHashSum = _hashSum;
+    emit EthersHashSumUpdated(previousValue, _hashSum);
   }
 
   function addUnconfirmedTX(

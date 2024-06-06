@@ -15,7 +15,6 @@ try {
 				.join('')
 		);
 	};
-	console.log(c);
 	const r = await g(c);
 	const x = await g(e);
 	const b = bytesArgs[0].toLowerCase();

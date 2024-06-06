@@ -110,6 +110,7 @@ interface IFunctions is IConceroCommon {
   event DonSlotIdUpdated(uint8 previousDonSlot, uint8 newDonSlot);
   event DestinationJsHashSumUpdated(bytes32 previousDstHashSum, bytes32 newDstHashSum);
   event SourceJsHashSumUpdated(bytes32 previousSrcHashSum, bytes32 newSrcHashSum);
+  event EthersHashSumUpdated(bytes32 previousEthersHashSum, bytes32 newEthersHashSum);
 
   error NotMessenger(address);
   error TXAlreadyExists(bytes32 txHash, bool isConfirmed);

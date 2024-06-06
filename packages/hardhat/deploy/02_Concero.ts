@@ -4,7 +4,9 @@ import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import addCLFConsumer from "../tasks/sub/add";
 import log from "../utils/log";
-import secrets from "../constants/CLFSecrets";
+import getHashSum from "../utils/getHashSum";
+import path from "path";
+import fs from "fs";
 
 interface ConstructorArgs {
   slotId?: number;
@@ -16,12 +18,7 @@ interface ConstructorArgs {
   conceroChainIndex?: number;
   linkToken?: string;
   ccipRouter?: string;
-}
-
-function getHashSum(sourceCode: string) {
-  const hash = require("crypto").createHash("sha256");
-  hash.update(sourceCode, "utf8");
-  return hash.digest("hex");
+  dexSwapModule?: string;
 }
 
 /* run with: yarn deploy --network avalancheFuji --tags Concero */
@@ -32,11 +29,9 @@ const deployConcero: DeployFunction = async function (
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
+
   if (!chains[name]) throw new Error(`Chain ${name} not supported`);
 
-  console.log(secrets.SRC_JS);
-  console.log(getHashSum(secrets.SRC_JS), getHashSum(secrets.DST_JS));
-  return;
   const {
     functionsRouter,
     donHostedSecretsVersion,
@@ -49,21 +44,41 @@ const deployConcero: DeployFunction = async function (
     priceFeed,
   } = chains[name];
 
+  const jsPath = "./tasks/CLFScripts";
+
+  function getJS(jsPath: string, type: string): string {
+    // const source = path.join(jsPath, "src", `${type}.js`);
+    const dist = path.join(jsPath, "dist", `${type}.min.js`);
+    //
+    // if (!fs.existsSync(dist)) {
+    //   log(`File not found: ${dist}, building...`, "getJS");
+    //   buildScript(source);
+    // }
+
+    return fs.readFileSync(dist, "utf8");
+  }
+
   const defaultArgs = {
-    slotId: 0,
     functionsRouter: functionsRouter,
     donHostedSecretsVersion: donHostedSecretsVersion,
     functionsDonId: functionsDonId,
+    slotId: 0,
     functionsSubId: functionsSubIds[0],
     chainSelector: chainSelector,
     conceroChainIndex: conceroChainIndex,
     linkToken: linkToken,
     ccipRouter: ccipRouter,
-    priceFeed: priceFeed,
+    // TODO: Update this to the correct address
+    dexSwapModule: linkToken,
     jsCodeHashSum: {
-      src: "0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124",
-      dst: "0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173",
+      src: getHashSum(getJS(jsPath, "SRC")),
+      dst: getHashSum(getJS(jsPath, "DST")),
     },
+    ethersHashSum: getHashSum(
+      await (
+        await fetch("https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js")
+      ).text(),
+    ),
   };
 
   // Merge defaultArgs with constructorArgs
@@ -82,8 +97,9 @@ const deployConcero: DeployFunction = async function (
       args.conceroChainIndex,
       args.linkToken,
       args.ccipRouter,
-      args.priceFeed,
+      args.dexSwapModule,
       args.jsCodeHashSum,
+      args.ethersHashSum,
     ],
     autoMine: true,
   })) as Deployment;

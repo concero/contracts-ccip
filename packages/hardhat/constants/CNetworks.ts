@@ -10,7 +10,7 @@ if (!deployerPK) {
   throw new Error("DEPLOYER_PRIVATE_KEY is not set");
 }
 
-export const networkEnvKeys = {
+export const networkEnvKeys: Record<string, string> = {
   // mainnets
   mainnet: "MAINNET",
   arbitrum: "ARBITRUM",

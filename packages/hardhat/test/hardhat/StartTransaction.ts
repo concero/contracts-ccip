@@ -6,7 +6,7 @@ import { Chain } from "viem/types/chain";
 import type { Account } from "viem/accounts/types";
 import { RpcSchema } from "viem/types/eip1193";
 import { privateKeyToAccount } from "viem/accounts";
-import { createPublicClient, createWalletClient, decodeEventLog, http, PrivateKeyAccount } from "viem";
+import { Address, createPublicClient, createWalletClient, decodeEventLog, http, PrivateKeyAccount } from "viem";
 import { arbitrumSepolia, baseSepolia, optimismSepolia } from "viem/chains";
 import ERC20ABI from "../../abi/ERC20.json";
 import { PublicClient } from "viem/clients/createPublicClient";
@@ -29,15 +29,14 @@ const chainsMap = {
   },
 };
 
-const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA;
-const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
+const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
+const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA;
 const senderAddress = process.env.TESTS_WALLET_ADDRESS;
 const amount = "3000000000000000000";
-const bnmTokenAddress = process.env.CCIPBNM_ARBITRUM_SEPOLIA;
-// const linkTokenAddress = process.env.LINK_BASE_SEPOLIA;
+const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
 const transactionsCount = 1;
-const srcContractAddress = process.env.CONCEROCCIP_ARBITRUM_SEPOLIA;
-const dstContractAddress = process.env.CONCEROCCIP_BASE_SEPOLIA;
+const srcContractAddress = process.env.CONCEROCCIP_BASE_SEPOLIA;
+const dstContractAddress = process.env.CONCEROPOOL_OPTIMISM_SEPOLIA;
 
 describe("startBatchTransactions\n", () => {
   let Concero: Concero;
@@ -93,10 +92,7 @@ describe("startBatchTransactions\n", () => {
     const bnmHash = await approveToken(bnmTokenAddress);
     // const linkHash = await approveToken(linkTokenAddress);
 
-    await Promise.all([
-      srcPublicClient.waitForTransactionReceipt({ hash: bnmHash }),
-      // srcPublicClient.waitForTransactionReceipt({ hash: linkHash }),
-    ]);
+    await Promise.all([srcPublicClient.waitForTransactionReceipt({ hash: bnmHash })]);
   };
 
   const checkTransactionStatus = async (transactionHash: string, fromSrcBlockNumber: string, fromDstBlock: string) => {
@@ -164,13 +160,20 @@ describe("startBatchTransactions\n", () => {
     let transactionPromises = [];
 
     for (let i = 0; i < transactionsCount; i++) {
+      const bridgeData = {
+        tokenType: 0n,
+        amount: BigInt(amount),
+        minAmount: BigInt(amount),
+        dstChainSelector: BigInt(dstChainSelector),
+        receiver: senderAddress,
+      };
+
       const { request } = await srcPublicClient.simulateContract({
         abi: ConceroAbi,
-        functionName: "startTransaction",
-        address: srcContractAddress as `0x${string}`,
-        args: [bnmTokenAddress, 0, BigInt(amount), BigInt(dstChainSelector), senderAddress],
+        functionName: "bridge",
+        address: srcContractAddress as Address,
+        args: [bridgeData, []],
         account: viemAccount as Account,
-        // value,
         nonce: nonce++,
       });
       transactionPromises.push(walletClient.writeContract(request));

@@ -1,18 +1,34 @@
 import billing from "./unused/Functions-billing";
 import consumer from "./unused/Functions-consumer";
+import clfRequest from "./unused/Functions-consumer";
+import transfer from "./sub/transfer";
 import simulate from "./script/simulate";
 import build from "./script/build";
 import deployCCIPInfrastructure from "./concero/deployInfra";
+import deployConceroPool from "./concero/deployConceroPool";
 import { fundContract } from "./concero/fundContract";
+import updateHashes from "./concero/updateHashes";
 import dripBnm from "./concero/dripBnm";
-import clfRequest from "./unused/Functions-consumer";
+import getHashSum from "./script/listHashes";
+import accept from "./sub/accept";
+import transferTokens from "./utils/transferTokens";
+import remove from "./sub/remove";
+import timeout from "./sub/timeout";
 export default {
   billing,
   consumer,
+  transfer,
+  accept,
   simulate,
   build,
   deployCCIPInfrastructure,
+  deployConceroPool,
   fundContract,
   dripBnm,
   clfRequest,
+  getHashSum,
+  updateHashes,
+  transferTokens,
+  remove,
+  timeout,
 };

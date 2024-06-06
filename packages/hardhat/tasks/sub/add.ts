@@ -5,8 +5,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../types/CNetwork";
 
 import log from "../../utils/log";
-import updateEnvVariable from "../../utils/updateEnvVariable";
-import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import { Address } from "viem";
 
 // run with: bunx hardhat clf-consumer-add --subid 5810 --contract 0x... --network avalancheFuji
@@ -30,7 +28,7 @@ task("clf-sub-consumer-add", "Adds a consumer contract to the Functions billing 
 
 async function addCLFConsumer(chain: CNetwork, consumerAddresses: Address[], subscriptionId: number) {
   const { linkToken, functionsRouter, confirmations, name, url } = chain;
-  const signer = await hre.ethers.getSigner(process.env.WALLET_ADDRESS);
+  const signer = await hre.ethers.getSigner(process.env.DEPLOYER_ADDRESS);
   for (const consumerAddress of consumerAddresses) {
     const txOptions = { confirmations };
     log(`Adding ${consumerAddress} to sub ${subscriptionId} on ${name}`, "addCLFConsumer");

@@ -20,8 +20,13 @@ node_modules
 .idea
 
 # cli
-dist
+.env.*
 .env
+!.env.deployments
+!.env.clf
+!.env.tokens
+!.env.clccip
 
 packages/hardhat/deployments
 packages/hardhat/test/forge/lib/
+packages/foundry/lib

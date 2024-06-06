@@ -1,5 +1,5 @@
 try {
-	const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.min.js';
+	const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';
 	const [t, p] = await Promise.all([
 		fetch(u),
 		fetch(
@@ -20,7 +20,7 @@ try {
 	const b = bytesArgs[0].toLowerCase();
 	const o = bytesArgs[1].toLowerCase();
 	if (r === b && x === o) {
-		const ethers = await import(u);
+		const ethers = new Function(e + '; return ethers;')();
 		return await eval(c);
 	}
 	throw new Error(`${r}!=${b}||${x}!=${o}`);

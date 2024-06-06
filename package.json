@@ -43,6 +43,7 @@
     "slither": "yarn workspace @se-2/hardhat slither",
     "size-contracts": "yarn workspace @se-2/hardhat size-contracts",
     "deploy-infra": "yarn workspace @se-2/hardhat deploy-infra",
+    "deploy-pool": "yarn workspace @se-2/hardhat deploy-pool",
     "clf-list-hashes" : "yarn workspace @se-2/hardhat clf-list-hashes",
     "clf-update-hashes" : "yarn workspace @se-2/hardhat clf-update-hashes",
     "clf-script-build": "yarn workspace @se-2/hardhat clf-script-build",

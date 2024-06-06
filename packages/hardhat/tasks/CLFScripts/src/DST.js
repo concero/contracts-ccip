@@ -1,7 +1,7 @@
 async function main() {
 	try {
 		const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-		const [_, __, srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = bytesArgs;
+		const [_, __, ___, srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = bytesArgs;
 		const messageId = eventArgs[0];
 		const chainMap = {
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {

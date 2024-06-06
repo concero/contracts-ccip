@@ -80,7 +80,7 @@ contract ConceroPool is Storage, CCIPReceiver {
   ///@notice event emitted when a Cross-chain message is sent.
   event ConceroPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
   ///@notice event emitted when a Liquidity Provider add liquidity to our pool
-  event ConceroPool_Deposited(address token,address liquidityProvider, uint256 amount);
+  event ConceroPool_Deposited(address token, address liquidityProvider, uint256 amount);
   ///@notice event emitted when the orchestrator 
   event ConceroPool_OrchestratorContractUpdated(address previousAddress, address orchestrator);
 
@@ -229,7 +229,7 @@ contract ConceroPool is Storage, CCIPReceiver {
             s_withdrawWaitlist[_token].isActiv = false;
             s_withdrawWaitlist[_token].isFulfilled = true;
 
-            _withdrawEther(_amount);
+            _withdrawEther(request.amount);
           } else {
             revert ConceroPool_ActivRequestNotFulfilledYet();
           }
@@ -252,12 +252,12 @@ contract ConceroPool is Storage, CCIPReceiver {
       } else {
         uint256 erc20Balance = IERC20(_token).balanceOf(address(this));
         if(request.isActiv){
-          if( erc20Balance >= request.condition){
+          if(erc20Balance >= request.condition){
 
             s_withdrawWaitlist[_token].isActiv = false;
             s_withdrawWaitlist[_token].isFulfilled = true;
 
-            _withdrawToken(_token, _amount);
+            _withdrawToken(_token, request.amount);
           } else {
             revert ConceroPool_ActivRequestNotFulfilledYet();
           }
@@ -429,6 +429,34 @@ contract ConceroPool is Storage, CCIPReceiver {
     }else {
       _contractBalance = IERC20(_token).balanceOf(address(this));
     }    
+  }
+
+  /**
+   * @notice getter function to keep track of the contract balances
+   * @param _token the address of the token
+   * @return _availableBalance in the momento of the call.
+   * @dev to access ether, _token must be address(0).
+   * @dev if the last request is still pending, the return value will be 0.
+  */
+  function availableToWithdraw(address _token) external view returns(uint256 _availableBalance){
+    WithdrawRequests memory request = s_withdrawWaitlist[_token];
+    uint256 balanceNow;
+
+    if(_token == address(0)){
+      balanceNow = address(this).balance;
+      if(request.isActiv == true){
+        _availableBalance = balanceNow > request.condition ? request.amount : 0 ;
+      } else {
+        _availableBalance = ((balanceNow * WITHDRAW_THRESHOLD)/100);
+      }
+    }else {
+      balanceNow = IERC20(_token).balanceOf(address(this));
+      if(request.isActiv == true){
+        _availableBalance = balanceNow > request.condition ? request.amount : 0 ;
+      } else {
+        _availableBalance = ((balanceNow * WITHDRAW_THRESHOLD)/100);
+      }
+    }   
   }
   
   //@audit can remove this later

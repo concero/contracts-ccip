@@ -191,12 +191,12 @@ async function setHashes(deployableChain: CNetwork, abi: any, liveChains: CNetwo
     const conceroContractAddress = getEnvVar(`CONCEROCCIP_${networkEnvKeys[srcChainName]}`);
     const conceroDstCode = await (
       await fetch(
-        "https://raw.githubusercontent.com/concero/contracts-ccip/full-infra-functions/packages/hardhat/tasks/CLFScripts/dist/DST.min.js",
+        "https://raw.githubusercontent.com/concero/contracts-ccip/release/packages/hardhat/tasks/CLFScripts/dist/DST.min.js",
       )
     ).text();
     const conceroSrcCode = await (
       await fetch(
-        "https://raw.githubusercontent.com/concero/contracts-ccip/full-infra-functions/packages/hardhat/tasks/CLFScripts/dist/SRC.min.js",
+        "https://raw.githubusercontent.com/concero/contracts-ccip/release/packages/hardhat/tasks/CLFScripts/dist/SRC.min.js",
       )
     ).text();
     const ethersCode = await (

@@ -15,12 +15,11 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   uint32 internal constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
   uint8 internal constant CL_SRC_RESPONSE_LENGTH = 192;
   string internal constant CL_JS_CODE =
-    "try { await import('npm:ethers@6.10.0'); const c = BigInt(bytesArgs[1]) === 1n ? secrets.DST_JS : secrets.SRC_JS; const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(c)); const r = Array.from(new Uint8Array(h)) .map(b => ('0' + b.toString(16)).slice(-2).toLowerCase()) .join(''); const b = bytesArgs[0].toLowerCase(); if ('0x' + r === b) return await eval(c); throw new Error(`0x${r} != ${b}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
+    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( `https://raw.githubusercontent.com/concero/contracts-ccip/full-infra-functions/packages/hardhat/tasks/CLFScripts/dist/${bytesArgs[2] === '0x1' ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = await import(u); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
   bytes32 private immutable i_donId;
-  uint64 private immutable i_subscriptionId;
-
   uint8 private s_donHostedSecretsSlotId;
+  uint64 private immutable i_subscriptionId;
   uint64 private s_donHostedSecretsVersion;
 
   bytes32 private s_srcJsHashSum;
@@ -49,7 +48,7 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
     uint64 _chainSelector,
     uint _chainIndex,
     JsCodeHashSum memory jsCodeHashSum,
-    bytes32 memory ethersHashSum
+    bytes32 ethersHashSum
   ) FunctionsClient(_functionsRouter) ConceroCommon(_chainSelector, _chainIndex) {
     i_donId = _donId;
     i_subscriptionId = _subscriptionId;
@@ -104,18 +103,19 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
 
     s_transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
 
-    bytes[] memory args = new bytes[](11);
+    bytes[] memory args = new bytes[](12);
     args[0] = abi.encodePacked(s_dstJsHashSum);
-    args[1] = abi.encodePacked(RequestType.checkTxSrc);
-    args[2] = abi.encodePacked(s_conceroContracts[srcChainSelector]);
-    args[3] = abi.encodePacked(srcChainSelector);
-    args[4] = abi.encodePacked(blockNumber);
-    args[5] = abi.encodePacked(ccipMessageId);
-    args[6] = abi.encodePacked(sender);
-    args[7] = abi.encodePacked(recipient);
-    args[8] = abi.encodePacked(uint8(token));
-    args[9] = abi.encodePacked(amount);
-    args[10] = abi.encodePacked(CHAIN_SELECTOR);
+    args[1] = abi.encodePacked(s_ethersHashSum);
+    args[2] = abi.encodePacked(RequestType.checkTxSrc);
+    args[3] = abi.encodePacked(s_conceroContracts[srcChainSelector]);
+    args[4] = abi.encodePacked(srcChainSelector);
+    args[5] = abi.encodePacked(blockNumber);
+    args[6] = abi.encodePacked(ccipMessageId);
+    args[7] = abi.encodePacked(sender);
+    args[8] = abi.encodePacked(recipient);
+    args[9] = abi.encodePacked(uint8(token));
+    args[10] = abi.encodePacked(amount);
+    args[11] = abi.encodePacked(CHAIN_SELECTOR);
 
     bytes32 reqId = sendRequest(args, CL_JS_CODE);
 
@@ -208,18 +208,19 @@ contract ConceroFunctions is FunctionsClient, IFunctions, ConceroCommon {
   function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {
     if (s_conceroContracts[dstChainSelector] == address(0)) revert AddressNotSet();
 
-    bytes[] memory args = new bytes[](11);
+    bytes[] memory args = new bytes[](12);
     args[0] = abi.encodePacked(s_srcJsHashSum);
-    args[1] = abi.encodePacked(RequestType.addUnconfirmedTxDst);
-    args[2] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
-    args[3] = abi.encodePacked(ccipMessageId);
-    args[4] = abi.encodePacked(sender);
-    args[5] = abi.encodePacked(recipient);
-    args[6] = abi.encodePacked(amount);
-    args[7] = abi.encodePacked(CHAIN_SELECTOR);
-    args[8] = abi.encodePacked(dstChainSelector);
-    args[9] = abi.encodePacked(uint8(token));
-    args[10] = abi.encodePacked(block.number);
+    args[1] = abi.encodePacked(s_ethersHashSum);
+    args[2] = abi.encodePacked(RequestType.addUnconfirmedTxDst);
+    args[3] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
+    args[4] = abi.encodePacked(ccipMessageId);
+    args[5] = abi.encodePacked(sender);
+    args[6] = abi.encodePacked(recipient);
+    args[7] = abi.encodePacked(amount);
+    args[8] = abi.encodePacked(CHAIN_SELECTOR);
+    args[9] = abi.encodePacked(dstChainSelector);
+    args[10] = abi.encodePacked(uint8(token));
+    args[11] = abi.encodePacked(block.number);
 
     bytes32 reqId = sendRequest(args, CL_JS_CODE);
     s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;

@@ -16,7 +16,7 @@ require("hardhat-gas-reporter");
 require("hardhat-contract-sizer");
 require("solidity-coverage");
 require("@chainlink/hardhat-chainlink");
-const CNetworks_1 = __importDefault(require("./constants/CNetworks"));
+const CNetworks_2 = __importDefault(require("./constants/CNetworks"));
 require("./tasks");
 const hardhat_tenderly_1 = require("@tenderly/hardhat-tenderly");
 // const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY ?? process.exit(1);
@@ -53,7 +53,7 @@ const config = {
             default: 1,
         },
     },
-    networks: CNetworks_1.default,
+    networks: CNetworks_2.default,
     etherscan: {
         apiKey: {
             avalancheFuji: "snowtrace",

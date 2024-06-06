@@ -3,28 +3,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const config_1 = require("hardhat/config");
-const functions_toolkit_1 = require("@chainlink/functions-toolkit");
-const CNetworks_1 = __importDefault(require("../../constants/CNetworks"));
+const config_2 = require("hardhat/config");
+const functions_toolkit_2 = require("@chainlink/functions-toolkit");
+const CNetworks_2 = __importDefault(require("../../constants/CNetworks"));
 const viem_1 = require("viem");
 // run with: bunx hardhat clf-sub-fund --amount 0.01 --subid 5810 --network avalancheFuji
-(0, config_1.task)("clf-sub-fund", "Funds a billing subscription for Functions consumer contracts")
+(0, config_2.task)("clf-sub-fund", "Funds a billing subscription for Functions consumer contracts")
     .addParam("amount", "Amount to fund subscription in LINK")
     .addParam("subid", "Subscription ID to fund")
     .setAction(async (taskArgs) => {
     const hre = require("hardhat");
     const { name } = hre.network;
     const subId = parseInt(taskArgs.subid, 10);
-    if (!CNetworks_1.default[name])
+    if (!CNetworks_2.default[name])
         throw new Error(`Network ${name} not supported`);
     const signer = await hre.ethers.getSigner();
-    const { linkToken, functionsRouter, confirmations, functionsSubIds } = CNetworks_1.default[name];
+    const { linkToken, functionsRouter, confirmations, functionsSubIds } = CNetworks_2.default[name];
     if (!functionsSubIds.includes(subId.toString()))
         throw new Error(`Subscription ID ${taskArgs.subid} not present on network ${name}`);
     const txOptions = { confirmations };
     const linkAmount = taskArgs.amount;
     const juelsAmount = hre.ethers.utils.parseUnits(linkAmount, 18).toString();
-    const sm = new functions_toolkit_1.SubscriptionManager({
+    const sm = new functions_toolkit_2.SubscriptionManager({
         signer,
         linkTokenAddress: linkToken,
         functionsRouterAddress: functionsRouter,

@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const config_1 = require("hardhat/config");
+const config_2 = require("hardhat/config");
 const { types } = require("hardhat/config");
 const CLFnetworks_1 = require("../../../constants/CLFnetworks");
-(0, config_1.task)("clf-deploy-consumer", "Deploys the FunctionsConsumer contract")
+(0, config_2.task)("clf-deploy-consumer", "Deploys the FunctionsConsumer contract")
     .addOptionalParam("verify", "Set to true to verify contract", false, types.boolean)
     .setAction(async (taskArgs) => {
     const hre = require("hardhat");

@@ -49,7 +49,7 @@ export async function setContractVariables(liveChains: CNetwork[], deployableCha
     await setDonHostedSecretsVersion(deployableChain, slotId, abi);
     await addMessengerToAllowlist(deployableChain, abi);
     await setConceroPool(deployableChain, abi, liveChains);
-    await setHashes(deployableChain, abi, liveChains);
+    await setJsHashes(deployableChain, abi, liveChains);
   }
 }
 
@@ -184,7 +184,7 @@ async function setConceroPool(deployableChain: CNetwork, abi: any, liveChains: C
   }
 }
 
-async function setHashes(deployableChain: CNetwork, abi: any, liveChains: CNetwork[]) {
+async function setJsHashes(deployableChain: CNetwork, abi: any, liveChains: CNetwork[]) {
   try {
     const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
@@ -218,7 +218,7 @@ async function setHashes(deployableChain: CNetwork, abi: any, liveChains: CNetwo
       });
 
       log(
-        `Set ${srcChainName}:${conceroContractAddress} hash [${hash}]. Gas used: ${setHashGasUsed.toString()}`,
+        `Set ${srcChainName}:${conceroContractAddress} jshash[${hash}]. Gas used: ${setHashGasUsed.toString()}`,
         "setContractVariables",
       );
     };

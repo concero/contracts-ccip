@@ -74,7 +74,11 @@ const deployConcero: DeployFunction = async function (
       src: getHashSum(getJS(jsPath, "SRC")),
       dst: getHashSum(getJS(jsPath, "DST")),
     },
-    ethersHashSum: "0x47194641c621f2e78f919eb37feffb32b594e300c567750c7f4424dc07d2d049",
+    ethersHashSum: getHashSum(
+      await (
+        await fetch("https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js")
+      ).text(),
+    ),
   };
 
   // Merge defaultArgs with constructorArgs

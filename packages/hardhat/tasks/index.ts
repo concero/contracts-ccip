@@ -12,6 +12,8 @@ import dripBnm from "./concero/dripBnm";
 import getHashSum from "./script/listHashes";
 import accept from "./sub/accept";
 import transferTokens from "./utils/transferTokens";
+import remove from "./sub/remove";
+import timeout from "./sub/timeout";
 export default {
   billing,
   consumer,
@@ -27,4 +29,6 @@ export default {
   getHashSum,
   updateHashes,
   transferTokens,
+  remove,
+  timeout,
 };

@@ -5,8 +5,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../types/CNetwork";
 
 import log from "../../utils/log";
-import updateEnvVariable from "../../utils/updateEnvVariable";
-import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import { Address } from "viem";
 
 // run with: bunx hardhat clf-consumer-add --subid 5810 --contract 0x... --network avalancheFuji

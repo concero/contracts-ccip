@@ -59,7 +59,7 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     // ]);
 
     await simulate(path.join(__dirname, "../", "./CLFScripts/dist/eval.min.js"), [
-      "0xd374600ba406e9ca63bdba9dbc4d5e3eaec0fab8f5fbbf72eab9a165eb5c04f4",
+      "0x814507c2fbbd1cc9277ae7a9e20b72edb571b976312aa808edd9af2e88176490",
       "0x47194641c621f2e78f919eb37feffb32b594e300c567750c7f4424dc07d2d049", // ethers hash sum
       "0x1",
       process.env.CONCEROCCIP_BASE_SEPOLIA, // srcContractAddress

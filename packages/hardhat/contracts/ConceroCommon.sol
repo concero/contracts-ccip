@@ -5,31 +5,45 @@ import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/Confir
 import {IConceroCommon} from "./IConcero.sol";
 
 contract ConceroCommon is ConfirmedOwner, IConceroCommon {
-  uint64 internal immutable chainSelector;
-  Chain internal immutable chainIndex;
-  mapping(uint64 => address) internal conceroContracts;
-  mapping(address => bool) internal messengerContracts;
+  uint64 internal immutable CHAIN_SELECTOR;
+  Chain internal immutable i_chainIndex;
+
+  mapping(uint64 chainSelector => address conceroContract) internal s_conceroContracts;
+  mapping(uint64 chainSelector => address conceroPool) internal s_conceroPools;
+  mapping(address messenger => bool allowed) internal s_messengerContracts;
 
   constructor(uint64 _chainSelector, uint _chainIndex) ConfirmedOwner(msg.sender) {
-    chainSelector = _chainSelector;
-    chainIndex = Chain(_chainIndex);
+    CHAIN_SELECTOR = _chainSelector;
+    i_chainIndex = Chain(_chainIndex);
   }
 
-  function setConceroContract(uint64 _chainSelector, address _conceroContract) external onlyOwner {
-    conceroContracts[_chainSelector] = _conceroContract;
+  function setConceroContract(uint64 _chainSelector, address _conceroContract) external payable onlyOwner {
+    s_conceroContracts[_chainSelector] = _conceroContract;
+
+    emit ConceroContractUpdated(_chainSelector, _conceroContract);
   }
 
-  function setConceroMessenger(address _walletAddress) external onlyOwner {
-    require(_walletAddress != address(0), "Invalid address");
-    require(!messengerContracts[_walletAddress], "Address already in allowlist");
-    messengerContracts[_walletAddress] = true;
+  function setConceroMessenger(address _walletAddress) external payable onlyOwner {
+    if (_walletAddress == address(0)) revert InvalidAddress();
+    if (s_messengerContracts[_walletAddress] == true) revert AddressAlreadyAllowlisted();
+
+    s_messengerContracts[_walletAddress] = true;
+
     emit MessengerUpdated(_walletAddress, true);
   }
 
+  function setConceroPool(uint64 _chainSelector, address _conceroPool) external payable onlyOwner {
+    s_conceroPools[_chainSelector] = _conceroPool;
+    emit ConceroPoolUpdated(_chainSelector, _conceroPool);
+  }
+
+  //@audit we can merge setConceroMessenger & removeConceroMessenger
   function removeConceroMessenger(address _walletAddress) external onlyOwner {
-    require(_walletAddress != address(0), "Invalid address");
-    require(messengerContracts[_walletAddress], "Address not in messengerContracts");
-    messengerContracts[_walletAddress] = false;
+    if (_walletAddress == address(0)) revert InvalidAddress();
+    if (s_messengerContracts[_walletAddress] == false) revert NotAllowlistedOrAlreadyRemoved();
+
+    s_messengerContracts[_walletAddress] = false;
+
     emit MessengerUpdated(_walletAddress, true);
   }
 
@@ -46,9 +60,9 @@ contract ConceroCommon is ConfirmedOwner, IConceroCommon {
     tokens[1][1] = 0x036CbD53842c5426634e7929541eC2318f3dCF7e; // base
     tokens[1][2] = 0x5fd84259d66Cd46123540766Be93DFE6D43130D7; // opt
 
-    require(uint(token) < tokens.length, "Token type out of bounds");
-    require(uint(chainIndex) < tokens[uint(token)].length, "Chain index out of bounds");
+    if (uint256(token) > tokens.length) revert TokenTypeOutOfBounds();
+    if (uint256(i_chainIndex) > tokens[uint256(token)].length) revert ChainIndexOutOfBounds();
 
-    return tokens[uint(token)][uint(chainIndex)];
+    return tokens[uint256(token)][uint256(i_chainIndex)];
   }
 }

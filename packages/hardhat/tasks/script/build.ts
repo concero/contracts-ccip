@@ -1,9 +1,9 @@
 /*
 Replaces environment variables in a file and saves the result to a dist folder.
+run with: yarn hardhat clf-build-script --path ./CLFScripts/DST.js
  */
 
 import { task, types } from "hardhat/config";
-
 export const pathToScript = [__dirname, "../", "CLFScripts"];
 const fs = require("fs");
 const path = require("path");
@@ -62,9 +62,12 @@ function minifyFile(content) {
     .replace(/\s\s+/g, " "); // Replace multiple spaces with a single space
 }
 
-function buildScript(file: string) {
-  if (!file) return console.error("Path to Functions script file is required.");
-  const fileToBuild = path.join(...pathToScript, "src", file);
+export function buildScript(fileToBuild: string) {
+  if (!fileToBuild) {
+    console.error("Path to Functions script file is required.");
+    return;
+  }
+
   checkFileAccessibility(fileToBuild);
 
   try {
@@ -89,10 +92,19 @@ task("clf-script-build", "Builds the JavaScript source code")
     if (taskArgs.all) {
       const files = fs.readdirSync(path.join(...pathToScript, "src"));
       files.forEach(file => {
-        if (file.endsWith(".js")) buildScript(file);
+        if (file.endsWith(".js")) {
+          const fileToBuild = path.join(...pathToScript, "src", file);
+          buildScript(fileToBuild);
+        }
       });
       return;
     }
-    buildScript(taskArgs.file);
+    if (taskArgs.file) {
+      const fileToBuild = path.join(...pathToScript, "src", taskArgs.file);
+      buildScript(fileToBuild);
+    } else {
+      console.error("No file specified.");
+      process.exit(1);
+    }
   });
 export default {};

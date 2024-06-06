@@ -1,0 +1,7 @@
+{
+  "name": "CLFScripts",
+  "packageManager": "yarn@3.2.3",
+  "devDependencies": {
+    "prettier": "^3.2.5"
+  }
+}

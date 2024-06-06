@@ -9,6 +9,7 @@ async function f() {
 	const [
 		_,
 		__,
+		___,
 		dstContractAddress,
 		ccipMessageId,
 		sender,

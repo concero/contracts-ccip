@@ -3,36 +3,36 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const CNetworks_1 = __importDefault(require("../../constants/CNetworks"));
-const config_1 = require("hardhat/config");
-const functions_toolkit_1 = require("@chainlink/functions-toolkit");
-(0, config_1.task)("clf-sub-consumer-rm", "Removes consumer contracts from a Functions billing subscription")
-    .addOptionalParam("subid", "Subscription ID", undefined, config_1.types.int)
+const CNetworks_2 = __importDefault(require("../../constants/CNetworks"));
+const config_2 = require("hardhat/config");
+const functions_toolkit_2 = require("@chainlink/functions-toolkit");
+(0, config_2.task)("clf-sub-consumer-rm", "Removes consumer contracts from a Functions billing subscription")
+    .addOptionalParam("subid", "Subscription ID", undefined, config_2.types.int)
     .addOptionalParam("contract", "Address(es) of the consumer contract to remove or keep")
-    .addOptionalParam("onlykeepcontract", "If specified, removes all except this address", undefined, config_1.types.string)
-    .setAction(async ({ subid, contract, onlykeepcontract }, { ethers, network }) => {
+    .addOptionalParam("onlykeepcontracts", "If specified, removes all except this address", undefined, config_2.types.string)
+    .setAction(async ({ subid, contract, onlykeepcontracts }, { ethers, network }) => {
     ensureSupportedChain(network.name);
     const signer = await ethers.getSigner();
     const chainConfig = getChainConfig(network.name);
     const subscriptionId = subid || chainConfig.functionsSubIds[0];
     const sm = await initializeSubscriptionManager(signer, chainConfig);
-    if (onlykeepcontract) {
-        await handleSelectiveRemoval(sm, subscriptionId, onlykeepcontract);
+    if (onlykeepcontracts) {
+        await handleSelectiveRemoval(sm, subscriptionId, onlykeepcontracts);
     }
     else {
         await handleDirectRemoval(sm, subscriptionId, contract.split(","));
     }
 });
 function ensureSupportedChain(chainName) {
-    if (!CNetworks_1.default[chainName]) {
+    if (!CNetworks_2.default[chainName]) {
         throw new Error(`Chain ${chainName} not supported`);
     }
 }
 function getChainConfig(chainName) {
-    return CNetworks_1.default[chainName];
+    return CNetworks_2.default[chainName];
 }
 async function initializeSubscriptionManager(signer, { linkToken, functionsRouter, confirmations }) {
-    const sm = new functions_toolkit_1.SubscriptionManager({
+    const sm = new functions_toolkit_2.SubscriptionManager({
         signer,
         linkTokenAddress: linkToken,
         functionsRouterAddress: functionsRouter,
@@ -40,11 +40,11 @@ async function initializeSubscriptionManager(signer, { linkToken, functionsRoute
     await sm.initialize();
     return sm;
 }
-async function handleSelectiveRemoval(sm, subscriptionId, onlykeepcontract) {
+async function handleSelectiveRemoval(sm, subscriptionId, onlykeepcontracts) {
     const subInfo = await sm.getSubscriptionInfo(subscriptionId);
-    const consumersToKeep = [onlykeepcontract.toLowerCase()];
+    const consumersToKeep = onlykeepcontracts.split(",").map(consumer => consumer.toLowerCase());
     const consumersToRemove = subInfo.consumers.filter(consumer => !consumersToKeep.includes(consumer.toLowerCase()));
-    console.log(`Removing consumers: ${consumersToRemove.join(", ")}, keeping: ${onlykeepcontract}`);
+    console.log(`Removing consumers: ${consumersToRemove.join(", ")}, keeping: ${onlykeepcontracts}`);
     for (const consumerAddress of consumersToRemove) {
         await removeConsumer(sm, subscriptionId, consumerAddress);
     }
@@ -55,8 +55,13 @@ async function handleDirectRemoval(sm, subscriptionId, consumerAddresses) {
     }
 }
 async function removeConsumer(sm, subscriptionId, consumerAddress) {
-    console.log(`Removing ${consumerAddress} from subscription ${subscriptionId}...`);
-    const removeConsumerTx = await sm.removeConsumer({ subscriptionId, consumerAddress });
-    console.log(`Removed ${consumerAddress} from subId ${subscriptionId}. Tx: ${removeConsumerTx.transactionHash}`);
+    try {
+        console.log(`Removing ${consumerAddress} from subscription ${subscriptionId}...`);
+        const removeConsumerTx = await sm.removeConsumer({ subscriptionId, consumerAddress });
+        console.log(`Removed ${consumerAddress} from subId ${subscriptionId}. Tx: ${removeConsumerTx.transactionHash}`);
+    }
+    catch (error) {
+        console.error(`Failed to remove ${consumerAddress} from subscription ${subscriptionId}: ${error.message}`);
+    }
 }
 exports.default = {};

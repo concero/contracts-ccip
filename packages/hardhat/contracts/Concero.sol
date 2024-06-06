@@ -24,7 +24,8 @@ contract Concero is ConceroCCIP {
     address _link,
     address _ccipRouter,
     address _dexSwap,
-    JsCodeHashSum memory jsCodeHashSum
+    JsCodeHashSum memory jsCodeHashSum,
+    bytes32 ethersHashSum
   )
     ConceroCCIP(
       _functionsRouter,
@@ -36,7 +37,8 @@ contract Concero is ConceroCCIP {
       _chainIndex,
       _link,
       _ccipRouter,
-      jsCodeHashSum
+      jsCodeHashSum,
+      ethersHashSum
     )
   {
     dexSwap = IDexSwap(_dexSwap);

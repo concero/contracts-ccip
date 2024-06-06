@@ -4,8 +4,9 @@ import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import addCLFConsumer from "../tasks/sub/add";
 import log from "../utils/log";
-import secrets from "../constants/CLFSecrets";
 import getHashSum from "../utils/getHashSum";
+import path from "path";
+import fs from "fs";
 
 interface ConstructorArgs {
   slotId?: number;
@@ -43,6 +44,20 @@ const deployConcero: DeployFunction = async function (
     priceFeed,
   } = chains[name];
 
+  const jsPath = "./tasks/CLFScripts";
+
+  function getJS(jsPath: string, type: string): string {
+    // const source = path.join(jsPath, "src", `${type}.js`);
+    const dist = path.join(jsPath, "dist", `${type}.min.js`);
+    //
+    // if (!fs.existsSync(dist)) {
+    //   log(`File not found: ${dist}, building...`, "getJS");
+    //   buildScript(source);
+    // }
+
+    return fs.readFileSync(dist, "utf8");
+  }
+
   const defaultArgs = {
     functionsRouter: functionsRouter,
     donHostedSecretsVersion: donHostedSecretsVersion,
@@ -55,11 +70,11 @@ const deployConcero: DeployFunction = async function (
     ccipRouter: ccipRouter,
     // TODO: Update this to the correct address
     dexSwapModule: linkToken,
-    // priceFeed: priceFeed,
     jsCodeHashSum: {
-      src: getHashSum(secrets.SRC_JS),
-      dst: getHashSum(secrets.DST_JS),
+      src: getHashSum(getJS(jsPath, "SRC")),
+      dst: getHashSum(getJS(jsPath, "DST")),
     },
+    ethersHashSum: "0x47194641c621f2e78f919eb37feffb32b594e300c567750c7f4424dc07d2d049",
   };
 
   // Merge defaultArgs with constructorArgs
@@ -80,6 +95,7 @@ const deployConcero: DeployFunction = async function (
       args.ccipRouter,
       args.dexSwapModule,
       args.jsCodeHashSum,
+      args.ethersHashSum,
     ],
     autoMine: true,
   })) as Deployment;

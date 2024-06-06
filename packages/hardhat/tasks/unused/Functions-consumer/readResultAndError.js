@@ -26,12 +26,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const config_1 = require("hardhat/config");
-const functions_toolkit_1 = require("@chainlink/functions-toolkit");
+const config_2 = require("hardhat/config");
+const functions_toolkit_2 = require("@chainlink/functions-toolkit");
 const path_1 = __importDefault(require("path"));
 const process_1 = __importDefault(require("process"));
 // run with: bunx hardhat clf-read --contract 0x...
-(0, config_1.task)("clf-read", "Reads the latest response (or error) returned to a FunctionsConsumer or AutomatedFunctionsConsumer consumer contract")
+(0, config_2.task)("clf-read", "Reads the latest response (or error) returned to a FunctionsConsumer or AutomatedFunctionsConsumer consumer contract")
     .addParam("contract", "Address of the consumer contract to read")
     // .addOptionalParam("configpath", "Path to Functions request config file", `${__dirname}/../../Functions-request-config.js`, types.string)
     .setAction(async (taskArgs) => {
@@ -50,7 +50,7 @@ const process_1 = __importDefault(require("process"));
             ? taskArgs.configpath
             : path_1.default.join(process_1.default.cwd(), taskArgs.configpath);
         const requestConfig = await Promise.resolve(`${configPath}`).then(s => __importStar(require(s))); // Dynamically import the config file
-        const decodedResult = (0, functions_toolkit_1.decodeResult)(latestResponse, requestConfig.expectedReturnType).toString();
+        const decodedResult = (0, functions_toolkit_2.decodeResult)(latestResponse, requestConfig.expectedReturnType).toString();
         console.log(`\nOn-chain response represented as a hex string: ${latestResponse}\nDecoded response: ${decodedResult}`);
     }
     else if (latestResponse === "0x") {

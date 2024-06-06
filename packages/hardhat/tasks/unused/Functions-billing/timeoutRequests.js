@@ -3,27 +3,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const config_1 = require("hardhat/config");
-const functions_toolkit_1 = require("@chainlink/functions-toolkit");
-const CNetworks_1 = __importDefault(require("../../../constants/CNetworks"));
+const config_2 = require("hardhat/config");
+const functions_toolkit_2 = require("@chainlink/functions-toolkit");
+const CNetworks_2 = __importDefault(require("../../../constants/CNetworks"));
 const getEthersSignerAndProvider_1 = require("../../utils/getEthersSignerAndProvider");
-(0, config_1.task)("clf-sub-timeout-requests", "Times out expired Functions requests which have not been fulfilled within 5 minutes")
+(0, config_2.task)("clf-sub-timeout-requests", "Times out expired Functions requests which have not been fulfilled within 5 minutes")
     .addParam("requestids", "1 or more request IDs to timeout separated by commas")
     .addOptionalParam("toblock", "Ending search block number (defaults to latest block)")
-    .addOptionalParam("pastblockstosearch", "Number of past blocks to search", 1000, config_1.types.int)
+    .addOptionalParam("pastblockstosearch", "Number of past blocks to search", 1000, config_2.types.int)
     .setAction(async (taskArgs) => {
     const hre = require("hardhat");
     const { name } = hre.network;
-    if (!CNetworks_1.default[name])
+    if (!CNetworks_2.default[name])
         throw new Error(`Chain ${name} not supported`);
     const requestIdsToTimeout = taskArgs.requestids.split(",");
     console.log(`Timing out requests ${requestIdsToTimeout} on ${name}`);
     const toBlock = taskArgs.toblock ? Number(taskArgs.toblock) : "latest";
     const pastBlocksToSearch = parseInt(taskArgs.pastblockstosearch);
-    const { signer, provider } = (0, getEthersSignerAndProvider_1.getEthersSignerAndProvider)(CNetworks_1.default[name].url);
-    const { linkToken, functionsRouter, functionsDonIdAlias, confirmations } = CNetworks_1.default[name];
+    const { signer, provider } = (0, getEthersSignerAndProvider_1.getEthersSignerAndProvider)(CNetworks_2.default[name].url);
+    const { linkToken, functionsRouter, functionsDonIdAlias, confirmations } = CNetworks_2.default[name];
     // const txOptions = { overrides: { gasLimit: 10000000 } };
-    const sm = new functions_toolkit_1.SubscriptionManager({
+    const sm = new functions_toolkit_2.SubscriptionManager({
         signer,
         linkTokenAddress: linkToken,
         functionsRouterAddress: functionsRouter,
@@ -32,7 +32,7 @@ const getEthersSignerAndProvider_1 = require("../../utils/getEthersSignerAndProv
     const requestCommitments = [];
     for (const requestId of requestIdsToTimeout) {
         try {
-            const requestCommitment = await (0, functions_toolkit_1.fetchRequestCommitment)({
+            const requestCommitment = await (0, functions_toolkit_2.fetchRequestCommitment)({
                 requestId,
                 provider,
                 functionsRouterAddress: functionsRouter,

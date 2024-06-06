@@ -30,8 +30,21 @@ contract ConceroCCIP is ICCIP, ConceroFunctions {
     uint _chainIndex,
     address _link,
     address _ccipRouter,
-    JsCodeHashSum memory jsCodeHashSum
-  ) ConceroFunctions(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, jsCodeHashSum) {
+    JsCodeHashSum memory jsCodeHashSum,
+    bytes32 ethersHashSum
+  )
+    ConceroFunctions(
+      _functionsRouter,
+      _donHostedSecretsVersion,
+      _donId,
+      _donHostedSecretsSlotId,
+      _subscriptionId,
+      _chainSelector,
+      _chainIndex,
+      jsCodeHashSum,
+      ethersHashSum
+    )
+  {
     LINK_TOKEN = LinkTokenInterface(_link);
     CCIP_ROUTER = IRouterClient(_ccipRouter);
     s_messengerContracts[msg.sender] = true;

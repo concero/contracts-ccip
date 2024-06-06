@@ -16,8 +16,8 @@ const secrets: CLFSecrets = {
   WALLET_PRIVATE_KEY: process.env.MESSENGER_PRIVATE_KEY,
   INFURA_API_KEY: process.env.INFURA_API_KEY,
   ALCHEMY_API_KEY: process.env.ALCHEMY_API_KEY,
-  SRC_JS: getJS(jsPath, "SRC"),
-  DST_JS: getJS(jsPath, "DST"),
+  // SRC_JS: getJS(jsPath, "SRC"),
+  // DST_JS: getJS(jsPath, "DST"),
 };
 
 export default secrets;

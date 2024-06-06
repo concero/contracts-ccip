@@ -3,7 +3,7 @@ try {
 	const [t, p] = await Promise.all([
 		fetch(u),
 		fetch(
-			`https://raw.githubusercontent.com/concero/contracts-ccip/full-infra-functions/packages/hardhat/tasks/CLFScripts/dist/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`,
+			`https://raw.githubusercontent.com/concero/contracts-ccip/full-infra-functions/packages/hardhat/tasks/CLFScripts/dist/${bytesArgs[2] === '0x1' ? 'DST' : 'SRC'}.min.js`,
 		),
 	]);
 	const [e, c] = await Promise.all([t.text(), p.text()]);
@@ -15,6 +15,7 @@ try {
 				.join('')
 		);
 	};
+	console.log(c);
 	const r = await g(c);
 	const x = await g(e);
 	const b = bytesArgs[0].toLowerCase();

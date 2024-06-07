@@ -149,7 +149,7 @@ contract Concero is ConceroCCIP {
 
     uint256 amount = bridgeData.amount - totalSrcFee;
 
-    bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, bridgeData.amount, lpFee);
+    bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, lpFee);
     emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
     // TODO: pass _dstSwapData to functions
     sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType);

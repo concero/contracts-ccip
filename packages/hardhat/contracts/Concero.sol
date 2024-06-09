@@ -9,6 +9,8 @@ import {IDexSwap} from "./IDexSwap.sol";
 import {LibConcero} from "./LibConcero.sol";
 
 contract Concero is ConceroCCIP {
+  uint16 private constant CONCERO_FEE_FACTOR = 1000;
+
   mapping(uint64 => uint256) public clfPremiumFees;
 
   IDexSwap private dexSwap;
@@ -59,7 +61,7 @@ contract Concero is ConceroCCIP {
     _;
   }
 
-  modifier validateSwapAndBridgeData(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata srcSwapData) {
+  modifier validateSwapAndBridgeData(BridgeData calldata bridgeData, IDexSwap.SwapData[] memory srcSwapData) {
     address swapDataToToken = srcSwapData[srcSwapData.length - 1].toToken;
     if (swapDataToToken == getToken(bridgeData.tokenType)) {
       revert InvalidBridgeData();
@@ -74,7 +76,7 @@ contract Concero is ConceroCCIP {
     _;
   }
 
-  modifier validateSwapData(IDexSwap.SwapData[] calldata swapData) {
+  modifier validateSwapData(IDexSwap.SwapData[] memory swapData) {
     if (swapData.length == 0) {
       revert IDexSwap.InvalidSwapData();
     }
@@ -89,6 +91,13 @@ contract Concero is ConceroCCIP {
 
   function setDexSwap(address _dexSwap) external onlyOwner {
     dexSwap = IDexSwap(_dexSwap);
+  }
+
+  function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external onlyOwner {
+    //@audit we must limit this amount. If we don't, it Will trigger a lot of red flags in audits.
+    uint256 previousValue = clfPremiumFees[_chainSelector];
+    clfPremiumFees[_chainSelector] = feeAmount;
+    emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
   }
 
   // fees module
@@ -119,7 +128,7 @@ contract Concero is ConceroCCIP {
     uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector);
 
     // concero fee
-    uint256 conceroFee = amount / 1000; //@audit 1_000? == 0.1?
+    uint256 conceroFee = amount / CONCERO_FEE_FACTOR; //@audit 1_000? == 0.1?
 
     // gas fee
     uint256 functionsGasFeeInNative = (750_000 * s_lastGasPrices[CHAIN_SELECTOR]) + (750_000 * s_lastGasPrices[dstChainSelector]);
@@ -141,47 +150,45 @@ contract Concero is ConceroCCIP {
   function _startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata dstSwapData) internal {
     address fromToken = getToken(bridgeData.tokenType);
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount);
-    uint256 lpFee = bridgeData.amount / 1000;
+    uint256 lpFee = bridgeData.amount / CONCERO_FEE_FACTOR;
 
     if (bridgeData.amount < totalSrcFee + lpFee) {
       revert InsufficientFundsForFees(bridgeData.amount, totalSrcFee);
     }
 
     uint256 amount = bridgeData.amount - totalSrcFee;
-
     bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, lpFee);
     emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
     // TODO: pass _dstSwapData to functions
     sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType);
   }
 
-  // setters
-  function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external onlyOwner {
-    //@audit we must limit this amount. If we don't, it Will trigger a lot of red flags in audits.
-    uint256 previousValue = clfPremiumFees[_chainSelector];
-    clfPremiumFees[_chainSelector] = feeAmount;
-    emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
-  }
-
-  function _swap(IDexSwap.SwapData[] calldata swapData, uint256 nativeAmount) internal {
+  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount, bool isFeeCollected) internal {
     address fromToken = swapData[0].fromToken;
-    uint256 fromAmount = swapData[0].fromAmount;
 
-    if (fromToken == address(0)) {
+    if (LibConcero.isNativeToken(fromToken)) {
+      if (isFeeCollected) {
+        nativeAmount -= (nativeAmount / CONCERO_FEE_FACTOR);
+        swapData[0].fromAmount -= (swapData[0].fromAmount / CONCERO_FEE_FACTOR);
+      }
       dexSwap.conceroEntry{value: nativeAmount}(swapData, nativeAmount);
     } else {
-      LibConcero.transferFromERC20(fromToken, msg.sender, address(dexSwap), fromAmount);
+      LibConcero.transferFromERC20(fromToken, msg.sender, address(this), swapData[0].fromAmount);
+      if (isFeeCollected) {
+        swapData[0].fromAmount -= (swapData[0].fromAmount / CONCERO_FEE_FACTOR);
+      }
+      // delegate call
       dexSwap.conceroEntry(swapData, nativeAmount);
     }
   }
 
-  function swap(IDexSwap.SwapData[] calldata swapData) external payable tokenAmountSufficiency(swapData[0].fromToken, swapData[0].fromAmount) {
-    _swap(swapData, msg.value);
+  function swap(IDexSwap.SwapData[] memory swapData) external payable tokenAmountSufficiency(swapData[0].fromToken, swapData[0].fromAmount) {
+    _swap(swapData, msg.value, true);
   }
 
   function swapAndBridge(
     BridgeData calldata bridgeData,
-    IDexSwap.SwapData[] calldata srcSwapData,
+    IDexSwap.SwapData[] memory srcSwapData,
     IDexSwap.SwapData[] calldata dstSwapData
   )
     external
@@ -191,7 +198,7 @@ contract Concero is ConceroCCIP {
     validateBridgeData(bridgeData)
     validateSwapAndBridgeData(bridgeData, srcSwapData)
   {
-    _swap(srcSwapData, msg.value);
+    _swap(srcSwapData, msg.value, false);
     _startBridge(bridgeData, dstSwapData);
   }
 

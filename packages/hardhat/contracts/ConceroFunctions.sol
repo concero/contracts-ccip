@@ -121,11 +121,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
   event EthersHashSumUpdated(bytes32 previousValue, bytes32 hashSum);
 
   constructor(
-    address _functionsRouter,
-    uint64 _donHostedSecretsVersion,
-    bytes32 _donId,
-    uint8 _donHostedSecretsSlotId,
-    uint64 _subscriptionId,
+    FunctionsVariables memory _variables,
     uint64 _chainSelector,
     uint _chainIndex,
     JsCodeHashSum memory jsCodeHashSum,
@@ -133,11 +129,11 @@ contract ConceroFunctions is FunctionsClient, Storage {
     address _dexSwap,
     address _pool,
     address _proxy
-  ) FunctionsClient(_functionsRouter){
-    i_donId = _donId;
-    i_subscriptionId = _subscriptionId;
-    s_donHostedSecretsVersion = _donHostedSecretsVersion;
-    s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
+  ) FunctionsClient(_variables.functionsRouter){
+    i_donId = _variables.donId;
+    i_subscriptionId = _variables.subscriptionId;
+    s_donHostedSecretsVersion = _variables.donHostedSecretsVersion;
+    s_donHostedSecretsSlotId = _variables.donHostedSecretsSlotId;
     s_srcJsHashSum = jsCodeHashSum.src;
     s_dstJsHashSum = jsCodeHashSum.dst;
     CHAIN_SELECTOR = _chainSelector;

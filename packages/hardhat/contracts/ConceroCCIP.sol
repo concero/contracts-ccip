@@ -42,11 +42,7 @@ contract ConceroCCIP is ConceroFunctions {
   event CLFPremiumFeeUpdated(uint64 chainSelector, uint256 previousValue, uint256 feeAmount);
 
   constructor(
-    address _functionsRouter,
-    uint64 _donHostedSecretsVersion,
-    bytes32 _donId,
-    uint8 _donHostedSecretsSlotId,
-    uint64 _subscriptionId,
+    FunctionsVariables memory _variables,
     uint64 _chainSelector,
     uint _chainIndex,
     address _link,
@@ -58,11 +54,7 @@ contract ConceroCCIP is ConceroFunctions {
     address _proxy
   ) 
     ConceroFunctions(
-      _functionsRouter, 
-      _donHostedSecretsVersion, 
-      _donId, 
-      _donHostedSecretsSlotId, 
-      _subscriptionId, 
+      _variables,
       _chainSelector, 
       _chainIndex, 
       jsCodeHashSum,

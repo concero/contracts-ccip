@@ -3,15 +3,12 @@ pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
 import {Concero} from "contracts/Concero.sol";
+import {Storage} from "contracts/Libraries/Storage.sol";
 
 contract ConceroDeploy is Script {
 
     function run(
-            address _functionsRouter,
-            uint64 _donHostedSecretsVersion,
-            bytes32 _donId,
-            uint8 _donHostedSecretsSlotId,
-            uint64 _subscriptionId,
+            Storage.FunctionsVariables memory _variables,
             uint64 _chainSelector,
             uint _chainIndex,
             address _link,
@@ -25,11 +22,7 @@ contract ConceroDeploy is Script {
 
         vm.startBroadcast();
         concero = new Concero(
-            _functionsRouter,
-            _donHostedSecretsVersion,
-            _donId,
-            _donHostedSecretsSlotId,
-            _subscriptionId,
+            _variables,
             _chainSelector,
             _chainIndex,
             _link,

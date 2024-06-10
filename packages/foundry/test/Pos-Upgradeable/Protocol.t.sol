@@ -215,11 +215,13 @@ contract ProtocolTest is Test {
             address(proxy)
         );
         concero = conceroDeploy.run(
-            functionsRouterBase,
-            0, //uint64 _donHostedSecretsVersion
-            donIdBase,
-            2, //uint8 _donHostedSecretsSlotId
-            0, //uint64 _subscriptionId,
+            Storage.FunctionsVariables ({
+                donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
+                donHostedSecretsVersion: 0, //uint64 _donHostedSecretsVersion
+                subscriptionId: 0, //uint64 _subscriptionId,
+                donId: donIdBase,
+                functionsRouter: functionsRouterBase
+            }),         
             ccipChainSelectorBase,
             1, //uint _chainIndex,
             linkBase,
@@ -311,11 +313,13 @@ contract ProtocolTest is Test {
             address(proxyDst)
         );
         conceroDst = conceroDeploy.run(
-            functionsRouterArb,
-            0, //uint64 _donHostedSecretsVersion
-            donIdArb,
-            2, //uint8 _donHostedSecretsSlotId
-            0, //uint64 _subscriptionId,
+            Storage.FunctionsVariables ({
+                donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
+                donHostedSecretsVersion: 0, //uint64 _donHostedSecretsVersion
+                subscriptionId: 0, //uint64 _subscriptionId,
+                donId: donIdArb,
+                functionsRouter: functionsRouterArb
+            }),
             ccipChainSelectorArb,
             1, //uint _chainIndex,
             linkArb,

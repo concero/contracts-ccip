@@ -34,6 +34,8 @@ import {Storage} from "./Libraries/Storage.sol";
   error ConceroPool_DestinationNotAllowed();
   ///@notice error emitted when the contract doesn't have enought link balance
   error ConceroPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
+  ///@notice error emitted when a LP try to deposit liquidity on the contract without pools
+  error ConceroPool_ThereIsNoPoolToDistribute();
 
 contract ConceroPool is Storage, CCIPReceiver {
   using SafeERC20 for IERC20;
@@ -132,6 +134,12 @@ contract ConceroPool is Storage, CCIPReceiver {
    * @dev it's payable to save some gas.
   */
   function setConceroPoolReceiver(uint64 _chainSelector, address _pool) external payable onlyOwner{
+    Pools memory pool = Pools({
+      chainSelector: _chainSelector,
+      poolAddress: _pool
+    });
+
+    poolsToDistribute.push(pool);
     s_poolReceiver[_chainSelector] = _pool;
 
     emit Storage_PoolReceiverUpdated(_chainSelector, _pool);
@@ -199,12 +207,19 @@ contract ConceroPool is Storage, CCIPReceiver {
    * @dev only approved address can call this function
   */
   function depositToken(address _token, uint256 _amount) external onlyApprovedSender(_token) {
+    uint256 distributionRatio = poolsToDistribute.length + 1;
 
-    s_userBalances[_token][msg.sender] = s_userBalances[_token][msg.sender] + _amount;
+    if(distributionRatio < 2) revert ConceroPool_ThereIsNoPoolToDistribute();
+
+    uint256 amountToDistribute = _amount / distributionRatio;
+
+    s_userBalances[_token][msg.sender] = s_userBalances[_token][msg.sender] + amountToDistribute;
     
     emit ConceroPool_Deposited(_token, msg.sender, _amount);
 
     IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+
+    ccipSend(distributionRatio, _token, amountToDistribute);
   }
 
   /**
@@ -219,65 +234,36 @@ contract ConceroPool is Storage, CCIPReceiver {
 
     WithdrawRequests memory request = s_withdrawWaitlist[_token];
 
-      if(_token == address(0)){
+    uint256 tokenBalance;
 
-        uint256 etherBalance = address(this).balance;
+    if(_token != address(0)){
+      tokenBalance = IERC20(_token).balanceOf(address(this));
+    } else {
+      tokenBalance = address(this).balance;
+    }
 
-        if(request.isActiv){
-          if(etherBalance >= request.condition){
+    if(request.isActiv){
+      if(tokenBalance >= request.condition){
+        s_withdrawWaitlist[_token].isActiv = false;
 
-            s_withdrawWaitlist[_token].isActiv = false;
-            s_withdrawWaitlist[_token].isFulfilled = true;
-
-            _withdrawEther(request.amount);
-          } else {
-            revert ConceroPool_ActivRequestNotFulfilledYet();
-          }
-        }else{
-          if(_amount > (etherBalance * WITHDRAW_THRESHOLD)/100){
-
-            uint256 condition = (etherBalance - ((etherBalance * WITHDRAW_THRESHOLD)/100)) + _amount;
-
-            s_withdrawWaitlist[_token] = WithdrawRequests({
-              condition: condition,
-              amount: _amount,
-              isActiv: true,
-              isFulfilled: false
-            });
-            emit ConceroPool_WithdrawRequest(msg.sender, _token, condition, _amount); //CLF will listen to this.
-          } else{
-            _withdrawEther(_amount);
-          }
+        if(_token != address(0)){
+          _withdrawToken(_token, request.amount);
+        } else {
+          _withdrawEther(request.amount);
         }
       } else {
-        uint256 erc20Balance = IERC20(_token).balanceOf(address(this));
-        if(request.isActiv){
-          if(erc20Balance >= request.condition){
+        revert ConceroPool_ActivRequestNotFulfilledYet();
+      }
+    }else{
+      uint256 condition = (tokenBalance - ((tokenBalance * WITHDRAW_THRESHOLD)/100)) + _amount;
 
-            s_withdrawWaitlist[_token].isActiv = false;
-            s_withdrawWaitlist[_token].isFulfilled = true;
-
-            _withdrawToken(_token, request.amount);
-          } else {
-            revert ConceroPool_ActivRequestNotFulfilledYet();
-          }
-        } else {
-          if(_amount > (erc20Balance * WITHDRAW_THRESHOLD)/100){
-
-            uint256 condition = (erc20Balance - ((erc20Balance * WITHDRAW_THRESHOLD)/100)) + _amount;
-
-            s_withdrawWaitlist[_token] = WithdrawRequests({
-              condition: condition,
-              amount: _amount,
-              isActiv: true,
-              isFulfilled: false
-            });
-            emit ConceroPool_WithdrawRequest(msg.sender, _token, condition, _amount); //CLF will listen to this.
-          } else{
-            _withdrawToken(_token, _amount);
-          }
-        }
-    }
+      s_withdrawWaitlist[_token] = WithdrawRequests({
+        condition: condition,
+        amount: _amount,
+        isActiv: true
+      });
+      emit ConceroPool_WithdrawRequest(msg.sender, _token, condition, _amount); //CLF will listen to this.
+    }    
   }
 
   /**
@@ -287,8 +273,9 @@ contract ConceroPool is Storage, CCIPReceiver {
    * @param _amount amount of the token to be sent
    */
   function ccipSendToPool(uint64 _destinationChainSelector, address _token, uint256 _amount) external onlyMessenger onlyAllowListedChain(_destinationChainSelector) returns(bytes32 messageId) {
-    if(s_poolReceiver[_destinationChainSelector] == address(0)) revert ConceroPool_DestinationNotAllowed();
     address allowedSenderToCompoundLpFee = s_approvedSenders[_token];
+
+    if(s_poolReceiver[_destinationChainSelector] == address(0)) revert ConceroPool_DestinationNotAllowed();
     if(_amount > s_userBalances[_token][allowedSenderToCompoundLpFee]) revert ConceroPool_InsufficientBalance();
 
     s_userBalances[_token][allowedSenderToCompoundLpFee] = s_userBalances[_token][allowedSenderToCompoundLpFee] - _amount;
@@ -376,6 +363,51 @@ contract ConceroPool is Storage, CCIPReceiver {
       any2EvmMessage.destTokenAmounts[0].token,
       any2EvmMessage.destTokenAmounts[0].amount
     );
+  }
+
+  /**
+   * @notice Function to distribute funds automatically right after LP deposits into the pool
+   * @dev this function will only be called internally.
+   */
+  function ccipSend(uint256 _distributionRatio, address _token, uint256 _amountToDistribute) internal returns(bytes32 messageId) {
+
+    Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
+
+    Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({
+        token: _token,
+        amount: _amountToDistribute
+    });
+
+    tokenAmounts[0] = tokenAmount;
+
+    for(uint256 i; i < _distributionRatio; ){
+      Pools memory pool = poolsToDistribute[i];
+
+      Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
+          receiver: abi.encode(pool.poolAddress),
+          data: "",
+          tokenAmounts: tokenAmounts,
+          extraArgs: Client._argsToBytes(
+              Client.EVMExtraArgsV1({gasLimit: 300_000})
+          ),
+          feeToken: address(i_linkToken)
+      });
+
+      uint256 fees = i_router.getFee(pool.chainSelector, evm2AnyMessage);
+
+      if (fees > i_linkToken.balanceOf(address(this))) revert ConceroPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
+
+      IERC20(_token).safeApprove(address(i_router), _amountToDistribute);
+      i_linkToken.approve(address(i_router), fees);
+      
+      emit ConceroPool_MessageSent(messageId, pool.chainSelector, pool.poolAddress, address(i_linkToken), fees);
+
+      messageId = i_router.ccipSend(pool.chainSelector, evm2AnyMessage);
+
+      unchecked {
+        ++i;
+      }
+    }
   }
 
   ///////////////

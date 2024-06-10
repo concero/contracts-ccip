@@ -49,7 +49,6 @@ contract ConceroPoolAndBridge is Helpers {
         assertEq(request.condition, (poolBalance - (poolBalance * WITHDRAW_THRESHOLD)/100) + amountToWithdraw +1);
         assertEq(request.amount, amountToWithdraw + 1);
         assertEq(request.isActiv, true);
-        assertEq(request.isFulfilled, false);
 
         //======= Lets check how much is available to withdraw
         uint256 amountToWithdrawAfterRequest = pool.availableToWithdraw(address(mUSDC));
@@ -58,6 +57,7 @@ contract ConceroPoolAndBridge is Helpers {
 
     //Pool depositToken | availableToWithdraw | withdrawLiquidityRequest
     //Storage s_userBalances
+    event WillRevertAfterThis();
     function test_LiquidityProvidersDepositAndWithdraws() public {
         vm.selectFork(baseMainFork);
 
@@ -68,6 +68,7 @@ contract ConceroPoolAndBridge is Helpers {
         //======= LP Deposits USDC on the Main Pool
         vm.startPrank(LP);
         mUSDC.approve(address(pool), lpBalance);
+        emit WillRevertAfterThis();
         pool.depositToken(address(mUSDC), lpBalance);
         vm.stopPrank();
         

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
-import {Orchestrator} from "../src/Orchestrator.sol";
+import {Orchestrator} from "contracts/Orchestrator.sol";
 
 contract OrchestratorDeploy is Script {
 

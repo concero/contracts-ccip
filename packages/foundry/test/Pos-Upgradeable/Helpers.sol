@@ -6,7 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {DexSwapForked} from "./DexSwapForked.t.sol";
 
 //Protocol Interfaces
-import {IDexSwap} from "../../src/Interfaces/IDexSwap.sol";
+import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 
 contract Helpers is DexSwapForked {
 
@@ -18,7 +18,7 @@ contract Helpers is DexSwapForked {
         vm.startPrank(User);
         wEth.deposit{value: INITIAL_BALANCE}();
         vm.stopPrank();
-        
+
         vm.startPrank(LP);
         wEth.deposit{value: LP_INITIAL_BALANCE}();
         vm.stopPrank();
@@ -65,7 +65,7 @@ contract Helpers is DexSwapForked {
         vm.startPrank(User);
         arbWEth.deposit{value: INITIAL_BALANCE}();
         vm.stopPrank();
-        
+
         vm.startPrank(LP);
         arbWEth.deposit{value: LP_INITIAL_BALANCE}();
         vm.stopPrank();

@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
-import {DexSwap} from "../src/DexSwap.sol";
-import {ConceroPool} from "../src/ConceroPool.sol";
-import {Concero} from "../src/Concero.sol";
-import {Orchestrator} from "../src/Orchestrator.sol";
+import {DexSwap} from "contracts/DexSwap.sol";
+import {ConceroPool} from "contracts/ConceroPool.sol";
+import {Concero} from "contracts/Concero.sol";
+import {Orchestrator} from "contracts/Orchestrator.sol";
 
 contract ProtocolDeploy is Script {
     function run(

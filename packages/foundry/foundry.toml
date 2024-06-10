@@ -2,20 +2,21 @@
 solc = "0.8.19"
 src = "src"
 out = "out"
-libs = ["lib"]
+libs = ["lib", "../hardhat/contracts/"]
 
 remappings = [
-              "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
-              "@openzeppelin/upgradeable/contracts/=lib/openzeppelin-contracts-upgradeable/contracts/",
-              "@uniswap/v2-periphery/contracts/=lib/v2-periphery/contracts/",
-              "@uniswap/v3-periphery/contracts/=lib/v3-periphery/contracts/",
-              "@uniswap/v3-core/contracts/=lib/v3-core/contracts",
-              "@velodrome/contracts/=lib/contracts/contracts/",
-              "@uniswap/contracts/=lib/swap-router-contracts/contracts/",
-              "@sushiSwap/v3-periphery/contracts/=node_modules/sushiswap-v3-periphery/contracts/",
-              "@chainlink/contracts/=lib/chainlink/contracts/",
-              "@starterKit/=lib/foundry-starter-kit"
-              ]
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/upgradeable/contracts/=lib/openzeppelin-contracts-upgradeable/contracts/",
+    "@uniswap/v2-periphery/contracts/=lib/v2-periphery/contracts/",
+    "@uniswap/v3-periphery/contracts/=lib/v3-periphery/contracts/",
+    "@uniswap/v3-core/contracts/=lib/v3-core/contracts",
+    "@velodrome/contracts/=lib/contracts/contracts/",
+    "@uniswap/contracts/=lib/swap-router-contracts/contracts/",
+    "@sushiSwap/v3-periphery/contracts/=node_modules/sushiswap-v3-periphery/contracts/",
+    "@chainlink/contracts/=lib/chainlink/contracts/",
+    "@starterKit/=lib/foundry-starter-kit",
+    "contracts/=../hardhat/contracts/"
+]
 
 
 

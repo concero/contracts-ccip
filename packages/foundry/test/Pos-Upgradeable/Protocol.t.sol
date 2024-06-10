@@ -203,7 +203,6 @@ contract ProtocolTest is Test {
             address(0),
             address(0),
             address(0),
-            address(0),
             address(0)
         );
         //====== Deploy the proxy with the Dummy Orch
@@ -225,23 +224,17 @@ contract ProtocolTest is Test {
             1, //uint _chainIndex,
             linkBase,
             ccipRouterBase,
-            Storage.PriceFeeds ({
-                linkToUsdPriceFeeds: 0x17CAb8FE31E32f08326e5E27412894e49B0f9D65,
-                usdcToUsdPriceFeeds: 0x7e860098F58bBFC8648a4311b374B1D669a2bc6B,
-                nativeToUsdPriceFeeds: 0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70,
-                linkToNativePriceFeeds: 0xc5E65227fe3385B88468F9A01600017cDC9F3A12
-            }),
+            address(dex),
             Storage.JsCodeHashSum ({
                 src: 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124,
                 dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
             }),
-            Messenger,
+            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
             address(pool),
             address(proxy)
         );
         orch = orchDeploy.run(
             functionsRouterBase,
-            Messenger,
             address(dex),
             address(concero),
             address(pool),
@@ -306,7 +299,6 @@ contract ProtocolTest is Test {
             address(0),
             address(0),
             address(0),
-            address(0),
             address(0)
         );
         //====== Deploy the proxy with the Dummy Orch
@@ -328,24 +320,18 @@ contract ProtocolTest is Test {
             1, //uint _chainIndex,
             linkArb,
             ccipRouterArb,
-            Storage.PriceFeeds ({
-                linkToUsdPriceFeeds: 0x86E53CF1B870786351Da77A57575e79CB55812CB,
-                usdcToUsdPriceFeeds: 0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3,
-                nativeToUsdPriceFeeds: 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612,
-                linkToNativePriceFeeds: 0xb7c8Fb1dB45007F98A68Da0588e1AA524C317f27
-            }),
+            address(dexDst),
             Storage.JsCodeHashSum ({
                 src: 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124,
                 dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
             }),
-            Messenger,
+            0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_ethersHashSum
             address(poolDst),
             address(proxyDst)
         );
 
         orchDst = orchDeploy.run(
             functionsRouterArb,
-            Messenger,
             address(dexDst),
             address(conceroDst),
             address(poolDst),

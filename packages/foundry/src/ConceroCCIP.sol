@@ -32,8 +32,8 @@ contract ConceroCCIP is ConceroFunctions {
   ////////////////
   ///IMMUTABLES///
   ////////////////
-  LinkTokenInterface internal immutable LINK_TOKEN;
-  IRouterClient internal immutable CCIP_ROUTER;
+  LinkTokenInterface internal immutable i_linkToken;
+  IRouterClient internal immutable i_ccipRouter;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -52,12 +52,27 @@ contract ConceroCCIP is ConceroFunctions {
     address _link,
     address _ccipRouter,
     JsCodeHashSum memory jsCodeHashSum,
+    bytes32 ethersHashSum,
     address _dexSwap,
     address _pool,
     address _proxy
-  ) ConceroFunctions(_functionsRouter, _donHostedSecretsVersion, _donId, _donHostedSecretsSlotId, _subscriptionId, _chainSelector, _chainIndex, jsCodeHashSum,_dexSwap, _pool, _proxy) {
-    LINK_TOKEN = LinkTokenInterface(_link);
-    CCIP_ROUTER = IRouterClient(_ccipRouter);
+  ) 
+    ConceroFunctions(
+      _functionsRouter, 
+      _donHostedSecretsVersion, 
+      _donId, 
+      _donHostedSecretsSlotId, 
+      _subscriptionId, 
+      _chainSelector, 
+      _chainIndex, 
+      jsCodeHashSum,
+      ethersHashSum,
+      _dexSwap,
+      _pool,
+      _proxy
+  ) {
+    i_linkToken = LinkTokenInterface(_link);
+    i_ccipRouter = IRouterClient(_ccipRouter);
     s_messengerContracts[msg.sender] = APPROVED;
   }
 
@@ -73,14 +88,14 @@ contract ConceroCCIP is ConceroFunctions {
   ) internal onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_token, _amount, _lpFee, _destinationChainSelector);
 
-    uint256 fees = CCIP_ROUTER.getFee(_destinationChainSelector, evm2AnyMessage);
+    uint256 fees = i_ccipRouter.getFee(_destinationChainSelector, evm2AnyMessage);
 
-    if (fees > LINK_TOKEN.balanceOf(address(this))) revert NotEnoughLinkBalance(LINK_TOKEN.balanceOf(address(this)), fees);
+    if (fees > i_linkToken.balanceOf(address(this))) revert NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
-    LINK_TOKEN.approve(address(CCIP_ROUTER), fees);
-    IERC20(_token).approve(address(CCIP_ROUTER), _amount);
+    i_linkToken.approve(address(i_ccipRouter), fees);
+    IERC20(_token).approve(address(i_ccipRouter), _amount);
 
-    messageId = CCIP_ROUTER.ccipSend(_destinationChainSelector, evm2AnyMessage);
+    messageId = i_ccipRouter.ccipSend(_destinationChainSelector, evm2AnyMessage);
   }
 
   function _buildCCIPMessage(
@@ -98,7 +113,7 @@ contract ConceroCCIP is ConceroFunctions {
         data: abi.encode(_lpFee),
         tokenAmounts: tokenAmounts,
         extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
-        feeToken: address(LINK_TOKEN)
+        feeToken: address(i_linkToken)
       });
   }
 }

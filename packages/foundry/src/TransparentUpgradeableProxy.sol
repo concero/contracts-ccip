@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
 import {ERC1967Proxy} from "./Proxy/ERC1967Proxy.sol";
 import {Storage} from "./Libraries/Storage.sol";
 
-error TransparentUpgradeableProxy_ContractPaused();
+error Proxy_ContractPaused();
 
 /**
  * @dev This contract implements a proxy that is upgradeable by an admin.
@@ -30,17 +30,14 @@ error TransparentUpgradeableProxy_ContractPaused();
  * you should think of the `ProxyAdmin` instance as the real administrative interface of your proxy.
  */
 contract TransparentUpgradeableProxy is ERC1967Proxy, Storage {
-    ///@dev audit: The only change here is to remove the storage use.
-    ///@dev audit: there is a lot of dead code that can be removed
-    ///@dev audit: but I don't touch on anything yet
-    ///@notice immutable variable to store the admin address
-    ///@dev getter now returns this variable.
-    address immutable i_admin;
     ///@notice constant variable to hold a mock address to pause transactions.
     ///@dev this will be used in a if statement on the fallback function
     address constant SAFE_LOCK = 0xde11Bc6a6c47EeaB0476C85672EA7f932f1a78Ed;
     //@audit need to adjust. Not working.
-    // if(_implementation() == SAFE_LOCK) revert TransparentUpgradeableProxy_ContractPaused();
+    ///@dev audit: We changed it to remove the storage use.
+    ///@dev getter now returns this variable.
+    ///@notice immutable variable to store the admin address
+    address immutable i_admin;
 
     /**
      * @dev Initializes an upgradeable proxy managed by `_admin`, backed by the implementation at `_logic`, and
@@ -122,6 +119,7 @@ contract TransparentUpgradeableProxy is ERC1967Proxy, Storage {
      * @dev Makes sure the admin cannot access the fallback function. See {Proxy-_beforeFallback}.
      */
     function _beforeFallback() internal virtual override {
+        if(address(_implementation()) == address(SAFE_LOCK) && msg.sender != i_admin) revert Proxy_ContractPaused();
         require(msg.sender != i_admin, "TransparentUpgradeableProxy: admin cannot fallback to proxy target");
         super._beforeFallback();
     }

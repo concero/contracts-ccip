@@ -119,7 +119,8 @@ contract TransparentUpgradeableProxy is ERC1967Proxy, Storage {
      * @dev Makes sure the admin cannot access the fallback function. See {Proxy-_beforeFallback}.
      */
     function _beforeFallback() internal virtual override {
-        if(address(_implementation()) == address(SAFE_LOCK) && msg.sender != i_admin) revert Proxy_ContractPaused();
+        //@audit maybe we can remove this i_admin check from the if statement. Need to confirm with tests.
+        if(address(_implementation()) == address(SAFE_LOCK)) revert Proxy_ContractPaused();
         require(msg.sender != i_admin, "TransparentUpgradeableProxy: admin cannot fallback to proxy target");
         super._beforeFallback();
     }

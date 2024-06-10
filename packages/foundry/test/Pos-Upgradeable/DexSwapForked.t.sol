@@ -4,17 +4,17 @@ pragma solidity 0.8.19;
 import {ProtocolTest} from "./Protocol.t.sol";
 
 //Protocol Interfaces
-import {IDexSwap} from "../../src/Interfaces/IDexSwap.sol";
+import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 
 //DEXes routers
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import {ISwapRouter} from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import {IRouter} from "@velodrome/contracts/interfaces/IRouter.sol";
 import {TransferHelper} from '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
-import {ISwapRouter02, IV3SwapRouter} from "../../src/Interfaces/ISwapRouter02.sol";
+import {ISwapRouter02, IV3SwapRouter} from "contracts/Interfaces/ISwapRouter02.sol";
 
 contract DexSwapForked is ProtocolTest {
-    
+
     //////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////// SWAPING MODULE /////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ contract DexSwapForked is ProtocolTest {
 
         vm.startPrank(User);
         wEth.approve(address(op), 1 ether);
-    
+
         op.swap(swapData);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
@@ -83,7 +83,7 @@ contract DexSwapForked is ProtocolTest {
     function test_swapUniV3SingleMock() public {
         helper();
         assertEq(wEth.balanceOf(address(dex)), 0);
-        
+
         uint256 amountIn = 1*10**17;
         uint256 amountOut = 350*10*6;
 
@@ -133,9 +133,9 @@ contract DexSwapForked is ProtocolTest {
         wEth.approve(address(op), amountIn);
 
         assertEq(wEth.balanceOf(User), INITIAL_BALANCE);
-    
+
         op.swap(swapData);
-        
+
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn);
         assertEq(wEth.balanceOf(address(op)), 0);
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn + amountOut);
@@ -163,7 +163,7 @@ contract DexSwapForked is ProtocolTest {
 
         vm.startPrank(User);
         wEth.approve(address(op), amountIn);
-    
+
         op.swap(swapData);
 
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn);
@@ -175,7 +175,7 @@ contract DexSwapForked is ProtocolTest {
         helper();
 
         assertEq(wEth.balanceOf(User), INITIAL_BALANCE);
-        
+
         uint256 amountIn = 1*10**17;
         uint256 amountOut = 350*10*6;
 
@@ -203,7 +203,7 @@ contract DexSwapForked is ProtocolTest {
 
         vm.startPrank(User);
         wEth.approve(address(op), amountIn);
-    
+
         op.swap(swapData);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
@@ -244,7 +244,7 @@ contract DexSwapForked is ProtocolTest {
         });
 
         //===== Start transaction calling the function and passing the payload
-        vm.startPrank(User);                    
+        vm.startPrank(User);
         op.swap{value: amountIn}(swapData);
         vm.stopPrank();
 

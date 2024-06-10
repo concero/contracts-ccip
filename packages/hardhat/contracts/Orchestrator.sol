@@ -32,8 +32,6 @@ contract Orchestrator is Storage, IFunctionsClient {
   ///////////////
   ///@notice the address of Functions router
   address immutable i_router;
-  ///@notice The address of messenger wallet who performs specific calls
-  address immutable i_messenger;
   ///@notice variable to store the DexSwap address
   address immutable i_dexSwap;
   ///@notice variable to store the Concero address
@@ -49,9 +47,8 @@ contract Orchestrator is Storage, IFunctionsClient {
   ///@notice emitted when the Functions router fulfills a request
   event Orchestrator_RequestFulfilled(bytes32 requestId);
 
-  constructor(address _router,address _messenger, address _dexSwap, address _concero, address _pool, address _proxy) {
+  constructor(address _router, address _dexSwap, address _concero, address _pool, address _proxy) {
     i_router = _router;
-    i_messenger = _messenger;
     i_dexSwap = _dexSwap;
     i_concero = _concero;
     i_pool = _pool;
@@ -62,11 +59,11 @@ contract Orchestrator is Storage, IFunctionsClient {
   ///MODIFIERS///
   ///////////////
   modifier tokenAmountSufficiency(address token, uint256 amount) {
-    if (token == address(0)) {
-      if (msg.value != amount) revert Orchestrator_InvalidAmount();
-    } else {
+    if (token != address(0)) {
       uint256 balance = IERC20(token).balanceOf(msg.sender);
       if (balance < amount) revert Orchestrator_InvalidAmount();
+    } else {
+      if (msg.value != amount) revert Orchestrator_InvalidAmount();
     }
     _;
   }
@@ -114,6 +111,7 @@ contract Orchestrator is Storage, IFunctionsClient {
     if(bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
   }
 
+  //@audit adjust the modifier
   function swap(IDexSwap.SwapData[] calldata _swapData) external payable tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount)
     validateSwapData(_swapData) {
 
@@ -136,41 +134,39 @@ contract Orchestrator is Storage, IFunctionsClient {
             dstSwapData
         )
     );
-
     if(bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
   }
   
   //////////////////////////
   /// INTERNAL FUNCTIONS ///
   //////////////////////////
-  function _swap(IDexSwap.SwapData[] calldata _srcSwapData, uint256 nativeAmount) internal returns (uint256 amountReceived) {
-    address fromToken = _srcSwapData[0].fromToken;
-    uint256 fromAmount = _srcSwapData[0].fromAmount;
+  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount) internal returns (uint256 amountReceived) {
+    address fromToken = swapData[0].fromToken;
+    uint256 fromAmount = swapData[0].fromAmount;
 
-    if(fromToken == address(0)){
-        (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-            abi.encodeWithSelector(
-                IDexSwap.conceroEntry.selector,
-                _srcSwapData,
-                nativeAmount
-            )
-        );
-        if(swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
-    } else {
+    if(fromToken != address(0)){
         uint256 balanceBefore = IERC20(fromToken).balanceOf(address(this));
         IERC20(fromToken).safeTransferFrom(msg.sender, address(this), fromAmount);
         uint256 balanceAfter = IERC20(fromToken).balanceOf(address(this));
 
         //TODO: deal with FoT tokens.
         amountReceived = balanceAfter - balanceBefore;
-
         if(amountReceived != fromAmount) revert Orchestrator_FoTNotAllowedYet();
 
         (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
             abi.encodeWithSelector(
                 IDexSwap.conceroEntry.selector,
-                _srcSwapData,
-                nativeAmount
+                fromAmount -= (fromAmount / CONCERO_FEE_FACTOR),
+                0
+            )
+        );
+        if(swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
+    } else {
+        (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
+            abi.encodeWithSelector(
+                IDexSwap.conceroEntry.selector,
+                swapData,
+                nativeAmount -= (nativeAmount / CONCERO_FEE_FACTOR)
             )
         );
         if(swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);

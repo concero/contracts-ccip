@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.19;
 
-import {Concero} from "../../src/Concero.sol";
+import {Concero} from "contracts/Concero.sol";
 
 contract ConceroMock is Concero {
 

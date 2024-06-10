@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
 import {ConceroMock} from "../test/Mocks/ConceroMock.sol";
-import {Concero} from "../src/Concero.sol";
+import {Concero} from "contracts/Concero.sol";
 
 contract ConceroMockDeploy is Script {
 

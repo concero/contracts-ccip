@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {Script, console} from "forge-std/Script.sol";
-import {DexSwap} from "../src/DexSwap.sol";
+import {DexSwap} from "contracts/DexSwap.sol";
 
 contract DexSwapDeploy is Script {
 

@@ -5,17 +5,17 @@ pragma solidity 0.8.19;
 import {Test, console} from "forge-std/Test.sol";
 
 //Protocol Contacts
-import {DexSwap} from "../../src/DexSwap.sol";
-import {ConceroPool} from "../../src/ConceroPool.sol";
-import {Concero} from "../../src/Concero.sol";
-import {Orchestrator} from "../../src/Orchestrator.sol";
-import {TransparentUpgradeableProxy} from "../../src/TransparentUpgradeableProxy.sol";
+import {DexSwap} from "contracts/DexSwap.sol";
+import {ConceroPool} from "contracts/ConceroPool.sol";
+import {Concero} from "contracts/Concero.sol";
+import {Orchestrator} from "contracts/Orchestrator.sol";
+import {TransparentUpgradeableProxy} from "contracts/TransparentUpgradeableProxy.sol";
 
 //Interfaces
-import {IDexSwap} from "../../src/Interfaces/IDexSwap.sol";
+import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 
 //Protocol Storage
-import {Storage} from "../../src/Libraries/Storage.sol";
+import {Storage} from "contracts/Libraries/Storage.sol";
 
 //Deploy Scripts
 import {DexSwapDeploy} from "../../script/DexSwapDeploy.s.sol";
@@ -36,7 +36,7 @@ import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUn
 import {ISwapRouter} from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import {IRouter} from "@velodrome/contracts/interfaces/IRouter.sol";
 import {TransferHelper} from '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
-import {ISwapRouter02, IV3SwapRouter} from "../../src/Interfaces/ISwapRouter02.sol";
+import {ISwapRouter02, IV3SwapRouter} from "contracts/Interfaces/ISwapRouter02.sol";
 
 //Chainlink
 import {CCIPLocalSimulatorFork, Register} from "@chainlink/local/src/ccip/CCIPLocalSimulatorFork.sol";
@@ -188,7 +188,7 @@ contract ProtocolTest is Test {
         aUSDC = IERC20(0xaf88d065e77c8cC2239327C5EDb3A432268e5831);
         AERO = ERC20Mock(0x940181a94A35A4569E4529A3CDfB74e38FD98631);
         SAFE_LOCK = ERC721(0xde11Bc6a6c47EeaB0476C85672EA7f932f1a78Ed);
-        
+
         dexDeploy = new DexSwapDeploy();
         poolDeploy = new ConceroPoolDeploy();
         conceroDeploy = new ConceroDeploy();
@@ -257,11 +257,11 @@ contract ProtocolTest is Test {
         orch.transferOwnership(Tester);
         proxy.transferOwnership(Tester);
         vm.stopPrank();
-        
+
         //====== Update the proxy for the correct address
         vm.prank(Tester);
         proxy.upgradeTo(address(orch));
-        
+
         //====== Wrap the proxy as the implementation
         op = Orchestrator(address(proxy));
 
@@ -281,10 +281,10 @@ contract ProtocolTest is Test {
 
         pool.setConceroContractSender(arbChainSelector, address(poolDst), 1);
         pool.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
-        
+
         pool.setSupportedToken(address(mUSDC), 1);
         pool.setApprovedSender(address(mUSDC), LP);
-        
+
         concero.setConceroContract(arbChainSelector, address(proxyDst));
         vm.stopPrank();
         }
@@ -337,7 +337,7 @@ contract ProtocolTest is Test {
             address(poolDst),
             address(proxyDst)
         );
-        
+
         //=== Arbitrum Contracts
         vm.makePersistent(address(proxyDst));
         vm.makePersistent(address(dexDst));
@@ -354,11 +354,11 @@ contract ProtocolTest is Test {
         orchDst.transferOwnership(Tester);
         proxyDst.transferOwnership(Tester);
         vm.stopPrank();
-        
+
         //====== Update the proxy for the correct address
         vm.prank(Tester);
         proxyDst.upgradeTo(address(orchDst));
-        
+
         //====== Wrap the proxy as the implementation
         opDst = Orchestrator(address(proxyDst));
 
@@ -383,7 +383,7 @@ contract ProtocolTest is Test {
         poolDst.setApprovedSender(address(mUSDC), LP);
         poolDst.setSupportedToken(address(aUSDC), 1);
         poolDst.setApprovedSender(address(aUSDC), LP);
-        
+
         conceroDst.setConceroContract(baseChainSelector, address(proxy));
         vm.stopPrank();
         }
@@ -396,7 +396,7 @@ contract ProtocolTest is Test {
         vm.startPrank(User);
         wEth.deposit{value: INITIAL_BALANCE}();
         vm.stopPrank();
-        
+
         vm.startPrank(LP);
         wEth.deposit{value: LP_INITIAL_BALANCE}();
         vm.stopPrank();
@@ -440,7 +440,7 @@ contract ProtocolTest is Test {
 
         assertEq(proxy.implementation(), address(SAFE_LOCK));
         vm.stopPrank();
-        
+
         op = Orchestrator(address(proxy));
 
         uint amountIn = 1*10**17;

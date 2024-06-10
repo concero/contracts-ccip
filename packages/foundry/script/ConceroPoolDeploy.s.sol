@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Script, console2} from "../lib/forge-std/src/Script.sol";
-import {ConceroPool} from "src/ConceroPool.sol";
+import {ConceroPool} from "contracts/ConceroPool.sol";
 
 contract ConceroPoolDeploy is Script {
 

@@ -97,10 +97,18 @@ abstract contract Storage is Ownable {
   uint8 internal s_donHostedSecretsSlotId;
   ///@notice variable to store the Chainlink Function DON Secret Version
   uint64 internal s_donHostedSecretsVersion;
-  ///@notice variable to store the Chainlink Function Source JS Code
+  ///@notice variable to store the Chainlink Function Source Hashsum
   bytes32 internal s_srcJsHashSum;
-  ///@notice variable to store the Chainlink Function Destination JS Code
+  ///@notice variable to store the Chainlink Function Destination Hashsum
   bytes32 internal s_dstJsHashSum;
+  ///@notice variable to store Ethers Hashsum
+  bytes32 internal s_ethersHashSum;
+  ///@notice Variable to store the Link to USDC latest rate
+  uint256 public s_latestLinkUsdcRate;
+  ///@notice Variable to store the Native to USDC latest rate
+  uint256 public s_latestNativeUsdcRate;
+  ///@notice Variable to store the Link to Native latest rate
+  uint256 public s_latestLinkNativeRate;
   ///@notice gap to reserve storage in the contract for future variable additions
   uint256[50] __gap;
 
@@ -109,6 +117,8 @@ abstract contract Storage is Ownable {
   ///////////////
   ///@notice removing magic-numbers
   uint256 internal constant APPROVED = 1;
+  ///@notice Removing magic numbers from calculations
+  uint16 internal constant CONCERO_FEE_FACTOR = 1000;
 
   /////////////
   ///STORAGE///
@@ -151,8 +161,6 @@ abstract contract Storage is Ownable {
   ////////////////////////////////////////////////////////
   ///@notice event emitted when a Concero pool is added
   event Storage_PoolReceiverUpdated(uint64 chainSelector, address pool);
-  ///@notice event emitted when a Concero contract is added
-  event Storage_OrchestratorContractUpdated(address previousAddress, address newConceroAddress);
   ///@notice event emitted when the Messenger address is updated
   event Storage_MessengerUpdated(address indexed walletAddress, uint256 status);
   ///@notice event emitted when the router address is approved

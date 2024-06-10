@@ -2,8 +2,8 @@
 pragma solidity 0.8.19;
 
 import {Helpers} from "./Helpers.sol";
-import {IConcero, IDexSwap} from "../../src/Interfaces/IConcero.sol";
-import {Storage} from "../../src/Libraries/Storage.sol";
+import {IConcero, IDexSwap} from "contracts/Interfaces/IConcero.sol";
+import {Storage} from "contracts/Libraries/Storage.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ConceroPoolAndBridge is Helpers {
@@ -27,7 +27,7 @@ contract ConceroPoolAndBridge is Helpers {
         mUSDC.approve(address(pool), lpBalance);
         pool.depositToken(address(mUSDC), lpBalance);
         vm.stopPrank();
-        
+
         //======= We check the pool balance;
                     //Here, the LP Fees will be compounding directly for the LP address
         uint256 poolBalance = mUSDC.balanceOf(address(pool));
@@ -71,7 +71,7 @@ contract ConceroPoolAndBridge is Helpers {
         emit WillRevertAfterThis();
         pool.depositToken(address(mUSDC), lpBalance);
         vm.stopPrank();
-        
+
         //======= We check the pool balance;
                     //Here, the LP Fees will be compounding directly for the LP address
         uint256 poolBalance = mUSDC.balanceOf(address(pool));
@@ -96,7 +96,7 @@ contract ConceroPoolAndBridge is Helpers {
         uint256 amountToWithdrawAfterRequest = pool.availableToWithdraw(address(mUSDC));
         assertEq(amountToWithdrawAfterRequest, (((lpBalance - (amountToWithdraw - 1))* WITHDRAW_THRESHOLD)/100));
     }
-    
+
     function test_ccipSendToPool() public {
         vm.selectFork(arbitrumMainFork);
 

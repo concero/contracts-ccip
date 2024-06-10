@@ -2,13 +2,12 @@
 pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
-import {Orchestrator} from "../src/Orchestrator.sol";
+import {Orchestrator} from "contracts/Orchestrator.sol";
 
 contract OrchestratorDeploy is Script {
 
     function run(
             address _functionsRouter,
-            address _messenger,
             address _dex,
             address _concero,
             address _pool,
@@ -18,7 +17,6 @@ contract OrchestratorDeploy is Script {
         vm.startBroadcast();
         orch = new Orchestrator(
             _functionsRouter,
-            _messenger,
             _dex,
             _concero,
             _pool,

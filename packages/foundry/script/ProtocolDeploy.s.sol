@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
-import {DexSwap} from "../src/DexSwap.sol";
-import {ConceroPool} from "../src/ConceroPool.sol";
-import {Concero} from "../src/Concero.sol";
-import {Orchestrator} from "../src/Orchestrator.sol";
+import {DexSwap} from "contracts/DexSwap.sol";
+import {ConceroPool} from "contracts/ConceroPool.sol";
+import {Concero} from "contracts/Concero.sol";
+import {Orchestrator} from "contracts/Orchestrator.sol";
 
 contract ProtocolDeploy is Script {
     function run(
@@ -18,8 +18,8 @@ contract ProtocolDeploy is Script {
             uint _chainIndex,
             address _link,
             address _ccipRouter,
-            Concero.PriceFeeds memory _priceFeeds,
             Concero.JsCodeHashSum memory jsCodeHashSum,
+            bytes32 _ethersHashSum,
             address _messenger,
             address _proxy
         ) public returns(DexSwap dex, ConceroPool pool, Concero concero, Orchestrator orch){
@@ -37,15 +37,14 @@ contract ProtocolDeploy is Script {
                 _chainIndex,
                 _link,
                 _ccipRouter,
-                _priceFeeds,
                 jsCodeHashSum,
+                _ethersHashSum,
                 address(dex),
                 address(pool),
                 _proxy
             );
             orch = new Orchestrator(
                 _functionsRouter,
-                _messenger,
                 address(dex),
                 address(concero),
                 address(pool),

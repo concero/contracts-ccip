@@ -59,7 +59,11 @@ abstract contract Storage is Ownable {
     uint256 condition;
     uint256 amount;
     bool isActiv;
-    bool isFulfilled;
+  }
+  ///@notice `ccipSend` to distribute liquidity
+  struct Pools{
+    uint64 chainSelector;
+    address poolAddress;
   }
   ///@notice Functions Js Code
   struct JsCodeHashSum {
@@ -109,6 +113,9 @@ abstract contract Storage is Ownable {
   /////////////
   ///STORAGE///
   /////////////
+  ///@notice array of Pools to receive Liquidity through `ccipSend` function
+  Pools[] poolsToDistribute;
+
   ///@notice Concero: Mapping to keep track of CLF fees for different chains
   mapping(uint64 => uint256) public clfPremiumFees;
   

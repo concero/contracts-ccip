@@ -6,14 +6,11 @@ import {DexSwap} from "contracts/DexSwap.sol";
 import {ConceroPool} from "contracts/ConceroPool.sol";
 import {Concero} from "contracts/Concero.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
+import {Storage} from "contracts/Libraries/Storage.sol";
 
 contract ProtocolDeploy is Script {
     function run(
-            address _functionsRouter,
-            uint64 _donHostedSecretsVersion,
-            bytes32 _donId,
-            uint8 _donHostedSecretsSlotId,
-            uint64 _subscriptionId,
+            Storage.FunctionsVariables memory _variables,
             uint64 _chainSelector,
             uint _chainIndex,
             address _link,
@@ -28,11 +25,7 @@ contract ProtocolDeploy is Script {
             dex = new DexSwap (_proxy);
             pool = new ConceroPool(_link, _ccipRouter, _proxy);
             concero = new Concero(
-                _functionsRouter,
-                _donHostedSecretsVersion,
-                _donId,
-                _donHostedSecretsSlotId,
-                _subscriptionId,
+                _variables,
                 _chainSelector,
                 _chainIndex,
                 _link,
@@ -44,7 +37,7 @@ contract ProtocolDeploy is Script {
                 _proxy
             );
             orch = new Orchestrator(
-                _functionsRouter,
+                _variables.functionsRouter,
                 address(dex),
                 address(concero),
                 address(pool),

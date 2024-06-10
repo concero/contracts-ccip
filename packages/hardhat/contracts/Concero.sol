@@ -56,11 +56,7 @@ contract Concero is ConceroCCIP {
   event Concero_StuckAmountWithdraw(address owner, address token, uint256 amount);
 
   constructor(
-    address _functionsRouter,
-    uint64 _donHostedSecretsVersion,
-    bytes32 _donId,
-    uint8 _donHostedSecretsSlotId,
-    uint64 _subscriptionId,
+    FunctionsVariables memory _variables,
     uint64 _chainSelector,
     uint _chainIndex,
     address _link,
@@ -72,11 +68,7 @@ contract Concero is ConceroCCIP {
     address _proxy
   )
     ConceroCCIP(
-      _functionsRouter,
-      _donHostedSecretsVersion,
-      _donId,
-      _donHostedSecretsSlotId,
-      _subscriptionId,
+      _variables,
       _chainSelector,
       _chainIndex,
       _link,

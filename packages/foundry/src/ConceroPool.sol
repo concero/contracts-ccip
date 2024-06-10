@@ -58,7 +58,7 @@ contract ConceroPool is Storage, CCIPReceiver {
   ///CONSTANTS///
   ///////////////
   ///@notice the maximum percentage a direct withdraw can take.
-  uint256 private constant WITHDRAW_THRESHOLD = 10; //@audit not defined yet
+  uint256 private constant WITHDRAW_THRESHOLD = 20; //@audit not defined yet
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -243,17 +243,16 @@ contract ConceroPool is Storage, CCIPReceiver {
     }
 
     if(request.isActiv){
-      if(tokenBalance >= request.condition){
-        s_withdrawWaitlist[_token].isActiv = false;
+      if(tokenBalance < request.condition) revert ConceroPool_ActivRequestNotFulfilledYet();
 
-        if(_token != address(0)){
-          _withdrawToken(_token, request.amount);
-        } else {
-          _withdrawEther(request.amount);
-        }
+      s_withdrawWaitlist[_token].isActiv = false;
+
+      if(_token != address(0)){
+        _withdrawToken(_token, request.amount);
       } else {
-        revert ConceroPool_ActivRequestNotFulfilledYet();
+        _withdrawEther(request.amount);
       }
+
     }else{
       uint256 condition = (tokenBalance - ((tokenBalance * WITHDRAW_THRESHOLD)/100)) + _amount;
 
@@ -474,21 +473,17 @@ contract ConceroPool is Storage, CCIPReceiver {
     WithdrawRequests memory request = s_withdrawWaitlist[_token];
     uint256 balanceNow;
 
-    if(_token == address(0)){
-      balanceNow = address(this).balance;
-      if(request.isActiv == true){
-        _availableBalance = balanceNow > request.condition ? request.amount : 0 ;
-      } else {
-        _availableBalance = ((balanceNow * WITHDRAW_THRESHOLD)/100);
-      }
-    }else {
+    if(_token != address(0)){
       balanceNow = IERC20(_token).balanceOf(address(this));
-      if(request.isActiv == true){
-        _availableBalance = balanceNow > request.condition ? request.amount : 0 ;
-      } else {
-        _availableBalance = ((balanceNow * WITHDRAW_THRESHOLD)/100);
-      }
+    }else {
+      balanceNow = address(this).balance;
     }   
+
+    if(request.isActiv == true && balanceNow > request.condition){
+      _availableBalance = request.amount;
+    } else {
+      _availableBalance = 0;
+    }
   }
   
   //@audit can remove this later

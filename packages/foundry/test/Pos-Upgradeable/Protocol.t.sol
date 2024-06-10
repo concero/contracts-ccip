@@ -3,12 +3,16 @@ pragma solidity 0.8.19;
 
 //Foundry
 import {Test, console} from "forge-std/Test.sol";
+
 //Protocol Contacts
 import {DexSwap} from "../../src/DexSwap.sol";
 import {ConceroPool} from "../../src/ConceroPool.sol";
 import {Concero} from "../../src/Concero.sol";
 import {Orchestrator} from "../../src/Orchestrator.sol";
 import {TransparentUpgradeableProxy} from "../../src/TransparentUpgradeableProxy.sol";
+
+//Interfaces
+import {IDexSwap} from "../../src/Interfaces/IDexSwap.sol";
 
 //Protocol Storage
 import {Storage} from "../../src/Libraries/Storage.sol";
@@ -425,6 +429,9 @@ contract ProtocolTest is Test {
 
     //Moved the logic to setUp to ease the tests
     function test_canUpgradeTheImplementation() public {
+        vm.selectFork(baseMainFork);
+        assertEq(vm.activeFork(), baseMainFork);
+
         vm.startPrank(Tester);
         assertEq(proxy.implementation(), address(orch));
 
@@ -435,52 +442,73 @@ contract ProtocolTest is Test {
     }
 
     /// TEST SAFE LOCK ///
-    error TransparentUpgradeableProxy_ContractPaused();
-    //@audit not working as expected
-    // function test_safeLockAndRevertOnCall() public {
-    //     helper();
+    error Proxy_ContractPaused();
+    function test_safeLockAndRevertOnCall() public {
+        vm.selectFork(baseMainFork);
+        assertEq(vm.activeFork(), baseMainFork);
 
-    //     vm.prank(Tester);
-    //     proxy.upgradeTo(address(SAFE_LOCK));
+        vm.startPrank(Tester);
+        assertEq(proxy.implementation(), address(orch));
 
-    //     op = Orchestrator(address(proxy));
+        proxy.upgradeTo(address(SAFE_LOCK));
+
+        assertEq(proxy.implementation(), address(SAFE_LOCK));
+        vm.stopPrank();
         
-    //     assertEq(proxy.implementation(), address(SAFE_LOCK));
+        op = Orchestrator(address(proxy));
 
-    //     uint amountIn = 1*10**17;
-    //     uint amountOutMin = 350*10**5;
-    //     address[] memory path = new address[](2);
-    //     path[0] = address(wEth);
-    //     path[1] = address(mUSDC);
-    //     address to = User;
-    //     uint deadline = block.timestamp + 1800;
+        uint amountIn = 1*10**17;
+        uint amountOutMin = 350*10**5;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(mUSDC);
+        address to = User;
+        uint deadline = block.timestamp + 1800;
 
-    //     vm.startPrank(User);
-    //     wEth.approve(address(concero), amountIn);
+        vm.startPrank(User);
+        wEth.approve(address(concero), amountIn);
 
-    //     DexSwap.SwapData[] memory swapData = new DexSwap.SwapData[](1);
-    //     swapData[0] = IDexSwap.SwapData({
-    //                         dexType: IDexSwap.DexType.UniswapV2,
-    //                         fromToken: address(wEth),
-    //                         fromAmount: amountIn,
-    //                         toToken: address(mUSDC),
-    //                         toAmount: amountOutMin,
-    //                         toAmountMin: amountOutMin,
-    //                         dexData: abi.encode(sushiV2, path, to, deadline)
-    //                     });
+        DexSwap.SwapData[] memory swapData = new DexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(sushiV2, path, to, deadline)
+                        });
 
-    //     // ==== Approve Transfer
-    //     vm.startPrank(User);
-    //     wEth.approve(address(op), 0.1 ether);
+        // ==== Approve Transfer
+        vm.startPrank(User);
+        wEth.approve(address(op), 0.1 ether);
 
-    //     //==== Initiate transaction
-    //     vm.expectRevert(abi.encodeWithSelector(TransparentUpgradeableProxy_ContractPaused.selector));
-    //     op.swap(swapData);
+        //==== Initiate transaction
+        vm.expectRevert(abi.encodeWithSelector(Proxy_ContractPaused.selector));
+        op.swap(swapData);
+    }
 
-    //     assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
-    //     assertEq(wEth.balanceOf(address(op)), 0);
-    //     assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOutMin);
-    // }
+    function test_AdminCanUpdatedImplementationAfterSafeLock() public {
+        //====== Chose the Fork Network
+        vm.selectFork(baseMainFork);
+        assertEq(vm.activeFork(), baseMainFork);
 
-    
+        vm.startPrank(Tester);
+        //====== Checks for the initial implementation
+        assertEq(proxy.implementation(), address(orch));
+
+        //====== Upgrades it to SAFE_LOCK
+        proxy.upgradeTo(address(SAFE_LOCK));
+
+        //====== Verify if the upgrade happen as expected
+        assertEq(proxy.implementation(), address(SAFE_LOCK));
+
+        //====== Upgrades it again to a valid address
+        proxy.upgradeTo(address(orch));
+
+        //====== Checks if the upgrade happens as expected
+        assertEq(proxy.implementation(), address(orch));
+
+        vm.stopPrank();
+    }
 }

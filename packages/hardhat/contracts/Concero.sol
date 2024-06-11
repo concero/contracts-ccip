@@ -90,7 +90,7 @@ contract Concero is ConceroCCIP {
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
   function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external onlyOwner {
-    //@audit we must limit this amount. If we don't, it Will trigger a lot of red flags in audits.
+    //@audit we must limit this amount. If we don't, it Will trigger red flags in audits.
     uint256 previousValue = clfPremiumFees[_chainSelector];
     clfPremiumFees[_chainSelector] = feeAmount;
 

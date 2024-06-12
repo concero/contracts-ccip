@@ -48,7 +48,7 @@ const config: HardhatUserConfig = {
     deployer: {
       default: 0,
     },
-    nikita: {
+    proxyDeployer: {
       default: 1,
     },
   },

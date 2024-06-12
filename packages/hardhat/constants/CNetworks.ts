@@ -5,9 +5,14 @@ import { arbitrumSepolia, avalancheFuji, baseSepolia, optimismSepolia, sepolia }
 
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
 const deployerPK = process.env.DEPLOYER_PRIVATE_KEY;
+const proxyDeployerPK = process.env.PROXY_DEPLOYER_PRIVATE_KEY;
 
 if (!deployerPK) {
   throw new Error("DEPLOYER_PRIVATE_KEY is not set");
+}
+
+if (!proxyDeployerPK) {
+  throw new Error("PROXY_DEPLOYER_PRIVATE_KEY is not set");
 }
 
 export const networkEnvKeys: Record<string, string> = {
@@ -121,7 +126,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   optimismSepolia: {
     chainId: 11155420,
     url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-    accounts: [deployerPK],
+    accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_OPTIMISM_SEPOLIA,
     functionsDonIdAlias: process.env.CLF_DONID_OPTIMISM_SEPOLIA_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_OPTIMISM_SEPOLIA,

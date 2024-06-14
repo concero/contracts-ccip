@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {Script, console} from "forge-std/Script.sol";
-import {TransparentUpgradeableProxy} from "contracts/TransparentUpgradeableProxy.sol";
+import {ConceroProxy} from "contracts/ConceroProxy.sol";
 
 contract TransparentDeploy is Script {
 
@@ -10,10 +10,10 @@ contract TransparentDeploy is Script {
         address _logic,
         address _admin,
         bytes memory _data
-    ) public returns(TransparentUpgradeableProxy proxy){
+    ) public returns(ConceroProxy proxy){
 
         vm.startBroadcast();
-        proxy = new TransparentUpgradeableProxy(
+        proxy = new ConceroProxy(
             _logic,
             _admin,
             _data

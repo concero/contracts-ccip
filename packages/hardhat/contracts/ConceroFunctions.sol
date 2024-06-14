@@ -66,6 +66,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
   address immutable i_pool;
   ///@notice Immutable variable to hold proxy address
   address immutable i_proxy;
+  Chain immutable i_chainIndex;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -81,18 +82,6 @@ contract ConceroFunctions is FunctionsClient, Storage {
   event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
   ///@notice emitted when the concero pool address is updated
   event ConceroPoolAddressUpdated(address previousAddress, address pool);
-  ///@notice emitted when the secret version of Chainlink Function Don is updated
-  event DonSecretVersionUpdated(uint64 previousDonSecretVersion, uint64 newDonSecretVersion);
-  ///@notice emitted when the slot ID of Chainlink Function is updated
-  event DonSlotIdUpdated(uint8 previousDonSlot, uint8 newDonSlot);
-  ///@notice emitted when the source JS code of Chainlink Function is updated
-  event SourceJsHashSumUpdated(bytes32 previousSrcHashSum, bytes32 newSrcHashSum);
-  ///@notice emitted when the destination JS code of Chainlink Function is updated
-  event DestinationJsHashSumUpdated(bytes32 previousDstHashSum, bytes32 newDstHashSum);
-  ///@notice event emitted when the address for the Concero Contract is updated
-  event ConceroContractUpdated(uint64 chainSelector, address conceroContract);
-  ///@notice event emitted when the Ethers HashSum is updated
-  event EthersHashSumUpdated(bytes32 previousValue, bytes32 hashSum);
 
   ///////////////
   ///MODIFIERS///
@@ -124,7 +113,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_dstJsHashSum = _jsCodeHashSum.dst;
     s_ethersHashSum = _ethersHashSum;
     CHAIN_SELECTOR = _chainSelector;
-    s_chainIndex = Chain(_chainIndex);
+    i_chainIndex = Chain(_chainIndex);
     i_dexSwap = _dexSwap;
     i_pool = _pool;
     i_proxy = _proxy;
@@ -133,40 +122,6 @@ contract ConceroFunctions is FunctionsClient, Storage {
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
-  function setConceroContract(uint64 _chainSelector, address _conceroContract) external onlyOwner {
-    s_conceroContracts[_chainSelector] = _conceroContract;
-    emit ConceroContractUpdated(_chainSelector, _conceroContract);
-  }
-
-  function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
-    uint64 previousValue = s_donHostedSecretsVersion;
-    s_donHostedSecretsVersion = _version;
-    emit DonSecretVersionUpdated(previousValue, _version);
-  }
-
-  function setDonHostedSecretsSlotID(uint8 _donHostedSecretsSlotId) external onlyOwner {
-    uint8 previousValue = s_donHostedSecretsSlotId;
-    s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
-    emit DonSlotIdUpdated(previousValue, _donHostedSecretsSlotId);
-  }
-
-  function setDstJsHashSum(bytes32 _hashSum) external onlyOwner {
-    bytes32 previousValue = s_dstJsHashSum;
-    s_dstJsHashSum = _hashSum;
-    emit DestinationJsHashSumUpdated(previousValue, _hashSum);
-  }
-
-  function setSrcJsHashSum(bytes32 _hashSum) external onlyOwner {
-    bytes32 previousValue = s_dstJsHashSum;
-    s_srcJsHashSum = _hashSum;
-    emit SourceJsHashSumUpdated(previousValue, _hashSum);
-  }
-
-  function setEthersHashSum(bytes32 _hashSum) external payable onlyOwner {
-    bytes32 previousValue = s_ethersHashSum;
-    s_ethersHashSum = _hashSum;
-    emit EthersHashSumUpdated(previousValue, _hashSum);
-  }
 
   function addUnconfirmedTX(
     bytes32 ccipMessageId,
@@ -288,11 +243,11 @@ contract ConceroFunctions is FunctionsClient, Storage {
     _confirmTX(request.ccipMessageId, transaction);
 
     uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
-    address tokenReceived = getToken(transaction.token, s_chainIndex);
+    address tokenReceived = getToken(transaction.token, i_chainIndex);
 
     //@audit hardcode for CCIP-BnM - Should be USDC
     //@audit s_chainIndex should be this way? Is there a better way to do it?
-    if (tokenReceived == getToken(CCIPToken.bnm, s_chainIndex)) {
+    if (tokenReceived == getToken(CCIPToken.bnm, i_chainIndex)) {
       IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
 
       emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);

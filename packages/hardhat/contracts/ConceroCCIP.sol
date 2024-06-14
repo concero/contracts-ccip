@@ -36,12 +36,6 @@ contract ConceroCCIP is ConceroFunctions {
   LinkTokenInterface internal immutable i_linkToken;
   IRouterClient internal immutable i_ccipRouter;
 
-  ////////////////////////////////////////////////////////
-  //////////////////////// EVENTS ////////////////////////
-  ////////////////////////////////////////////////////////
-  ///@notice event emitted when the Chainlink Function Fee is updated
-  event CLFPremiumFeeUpdated(uint64 chainSelector, uint256 previousValue, uint256 feeAmount);
-
   ///////////////
   ///MODIFIERS///
   ///////////////

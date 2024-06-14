@@ -9,7 +9,7 @@ import {DexSwap} from "contracts/DexSwap.sol";
 import {ConceroPool} from "contracts/ConceroPool.sol";
 import {Concero} from "contracts/Concero.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
-import {TransparentUpgradeableProxy} from "contracts/TransparentUpgradeableProxy.sol";
+import {ConceroProxy} from "contracts/ConceroProxy.sol";
 
 //Interfaces
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
@@ -55,7 +55,7 @@ contract ProtocolTest is Test {
     Concero public concero;
     Orchestrator public orch;
     Orchestrator public orchEmpty;
-    TransparentUpgradeableProxy public proxy;
+	ConceroProxy public proxy;
 
     //==== Instantiate Arbitrum Contracts
     DexSwap public dexDst;
@@ -63,7 +63,7 @@ contract ProtocolTest is Test {
     Concero public conceroDst;
     Orchestrator public orchDst;
     Orchestrator public orchEmptyDst;
-    TransparentUpgradeableProxy public proxyDst;
+	ConceroProxy public proxyDst;
 
     //==== Instantiate Deploy Script
     DexSwapDeploy dexDeploy;
@@ -221,7 +221,7 @@ contract ProtocolTest is Test {
                 subscriptionId: 0, //uint64 _subscriptionId,
                 donId: donIdBase,
                 functionsRouter: functionsRouterBase
-            }),         
+            }),
             ccipChainSelectorBase,
             1, //uint _chainIndex,
             linkBase,

@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import {IDexSwap} from "../Interfaces/IDexSwap.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IStorage} from "../Interfaces/IStorage.sol";
+import "../ConceroCCIP.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -21,8 +22,7 @@ abstract contract Storage is IStorage, Ownable {
   ///////////////
   ///VARIABLES///
   ///////////////
-  ///@notice ID of the deployed chain on getChain() function
-  Chain internal s_chainIndex;
+
   ///@notice variable to store the Chainlink Function DON Slot ID
   uint8 internal s_donHostedSecretsSlotId;
   ///@notice variable to store the Chainlink Function DON Secret Version
@@ -42,14 +42,6 @@ abstract contract Storage is IStorage, Ownable {
   ///@notice gap to reserve storage in the contract for future variable additions
   uint256[50] __gap;
 
-  ///////////////
-  ///CONSTANTS///
-  ///////////////
-  ///@notice removing magic-numbers
-  uint256 internal constant APPROVED = 1;
-  ///@notice Removing magic numbers from calculations
-  uint16 internal constant CONCERO_FEE_FACTOR = 1000;
-
   /////////////
   ///STORAGE///
   /////////////
@@ -58,12 +50,10 @@ abstract contract Storage is IStorage, Ownable {
 
   ///@notice Concero: Mapping to keep track of CLF fees for different chains
   mapping(uint64 => uint256) public clfPremiumFees;
-
   ///@notice Mapping to keep track of messenger addresses
   mapping(address messenger => uint256 allowed) internal s_messengerContracts;
   ///@notice DexSwap: mapping to keep track of allowed routers to perform swaps. 1 == Allowed.
   mapping(address router => uint256 isAllowed) internal s_routerAllowed;
-
   ///@notice ConceroPool: Mapping to keep track of allowed pool receiver
   mapping(uint64 chainId => address pool) public s_poolReceiver;
   ///@notice ConceroPool: Mapping to keep track of allowed tokens
@@ -76,7 +66,6 @@ abstract contract Storage is IStorage, Ownable {
   mapping(uint64 chainId => mapping(address poolAddress => uint256)) public s_allowedPool;
   ///@notice ConceroPool: Mapping to keep track of withdraw requests
   mapping(address token => WithdrawRequests) internal s_withdrawWaitlist;
-
   ///@notice Functions: Mapping to keep track of Concero.sol contracts to send cross-chain Chainlink Functions messages
   mapping(uint64 chainSelector => address conceroContract) internal s_conceroContracts;
   ///@notice Functions: Mapping to keep track of cross-chain transactions
@@ -85,6 +74,14 @@ abstract contract Storage is IStorage, Ownable {
   mapping(bytes32 => Request) public s_requests;
   ///@notice Functions: Mapping to keep track of cross-chain gas prices
   mapping(uint64 chainSelector => uint256 lasGasPrice) public s_lastGasPrices;
+
+  ///////////////
+  ///CONSTANTS///
+  ///////////////
+  ///@notice removing magic-numbers
+  uint256 internal constant APPROVED = 1;
+  ///@notice Removing magic numbers from calculations
+  uint16 internal constant CONCERO_FEE_FACTOR = 1000;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -95,6 +92,13 @@ abstract contract Storage is IStorage, Ownable {
   event Storage_MessengerUpdated(address indexed walletAddress, uint256 status);
   ///@notice event emitted when the router address is approved
   event Storage_NewRouterAdded(address router, uint256 isAllowed);
+  event CLFPremiumFeeUpdated(uint64 chainSelector, uint256 previousValue, uint256 feeAmount);
+  event ConceroContractUpdated(uint64 chainSelector, address conceroContract);
+  event DonSecretVersionUpdated(uint64 previousDonSecretVersion, uint64 newDonSecretVersion);
+  event DonSlotIdUpdated(uint8 previousDonSlot, uint8 newDonSlot);
+  event DestinationJsHashSumUpdated(bytes32 previousDstHashSum, bytes32 newDstHashSum);
+  event SourceJsHashSumUpdated(bytes32 previousSrcHashSum, bytes32 newSrcHashSum);
+  event EthersHashSumUpdated(bytes32 previousValue, bytes32 hashSum);
 
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
@@ -124,6 +128,48 @@ abstract contract Storage is IStorage, Ownable {
   function manageRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner {
     s_routerAllowed[_router] = _isApproved;
     emit Storage_NewRouterAdded(_router, _isApproved);
+  }
+
+  function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external payable onlyOwner {
+    //@audit we must limit this amount. If we don't, it Will trigger red flags in audits.
+    uint256 previousValue = clfPremiumFees[_chainSelector];
+    clfPremiumFees[_chainSelector] = feeAmount;
+    emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
+  }
+
+  function setConceroContract(uint64 _chainSelector, address _conceroContract) external onlyOwner {
+    s_conceroContracts[_chainSelector] = _conceroContract;
+    emit ConceroContractUpdated(_chainSelector, _conceroContract);
+  }
+
+  function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
+    uint64 previousValue = s_donHostedSecretsVersion;
+    s_donHostedSecretsVersion = _version;
+    emit DonSecretVersionUpdated(previousValue, _version);
+  }
+
+  function setDonHostedSecretsSlotID(uint8 _donHostedSecretsSlotId) external onlyOwner {
+    uint8 previousValue = s_donHostedSecretsSlotId;
+    s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
+    emit DonSlotIdUpdated(previousValue, _donHostedSecretsSlotId);
+  }
+
+  function setDstJsHashSum(bytes32 _hashSum) external onlyOwner {
+    bytes32 previousValue = s_dstJsHashSum;
+    s_dstJsHashSum = _hashSum;
+    emit DestinationJsHashSumUpdated(previousValue, _hashSum);
+  }
+
+  function setSrcJsHashSum(bytes32 _hashSum) external onlyOwner {
+    bytes32 previousValue = s_dstJsHashSum;
+    s_srcJsHashSum = _hashSum;
+    emit SourceJsHashSumUpdated(previousValue, _hashSum);
+  }
+
+  function setEthersHashSum(bytes32 _hashSum) external payable onlyOwner {
+    bytes32 previousValue = s_ethersHashSum;
+    s_ethersHashSum = _hashSum;
+    emit EthersHashSumUpdated(previousValue, _hashSum);
   }
 
   /////////////////

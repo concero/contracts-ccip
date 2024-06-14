@@ -11,12 +11,12 @@ const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEn
   const { name } = hre.network;
 
   console.log("Deploying ConceroProxy...");
-  const conceroProxyDeployment = (await deploy("TransparentUpgradeableProxy", {
+  const conceroProxyDeployment = (await deploy("ConceroProxy", {
     from: proxyDeployer,
-    args: ["0x68bF17c2c22A90489163c9717ae2ad8eAa9d43aE", proxyDeployer, 0x0],
+    args: ["0x3055cC530B8cF18fD996545EC025C4e677a1dAa3", proxyDeployer, "0x"],
     log: true,
     autoMine: true,
-    gasLimit: 300_000,
+    gasLimit: 2_000_000,
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {

@@ -3,99 +3,21 @@ pragma solidity 0.8.19;
 
 import {IDexSwap} from "../Interfaces/IDexSwap.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IStorage} from "../Interfaces/IStorage.sol";
 
-  ////////////////////////////////////////////////////////
-  //////////////////////// ERRORS ////////////////////////
-  ////////////////////////////////////////////////////////
-  ///@notice error emitted when bridge data is empty
-  error Storage_InvalidBridgeData();
-  ///@notice error emited when the choosen token is not allowed
-  error Storage_TokenTypeOutOfBounds();
-  ///@notice error emitted when the chain index is incorrect
-  error Storage_ChainIndexOutOfBounds();
-  ///@notice error emitted when the caller is not the messenger
-  error Storage_NotMessenger(address caller);
-  ///@notice error emitted when the input is the address(0)
-  error Storage_InvalidAddress();
-  ///@notice error emitted when the chain selector input is invalid
-  error Storage_ChainNotAllowed(uint64 chainSelector);
+////////////////////////////////////////////////////////
+//////////////////////// ERRORS ////////////////////////
+////////////////////////////////////////////////////////
+///@notice error emitted when bridge data is empty
+error Storage_InvalidBridgeData();
+///@notice error emited when the choosen token is not allowed
+error Storage_TokenTypeOutOfBounds();
+///@notice error emitted when the chain index is incorrect
+error Storage_ChainIndexOutOfBounds();
+///@notice error emitted when the input is the address(0)
+error Storage_InvalidAddress();
 
-abstract contract Storage is Ownable {
-  ///////////////////////
-  ///TYPE DECLARATIONS///
-  ///////////////////////
-  ///@notice Chainlink Functions Request Type
-  enum RequestType {
-    addUnconfirmedTxDst,
-    checkTxSrc
-  }
-  ///@notice CCIP Compatible Tokens
-  enum CCIPToken {
-    bnm,
-    usdc
-  }
-  ///@notice Operational Chains
-  enum Chain {
-    arb,
-    base,
-    opt
-  }
-  ///@notice Function Request
-  struct Request {
-    RequestType requestType;
-    bool isPending;
-    bytes32 ccipMessageId;
-  }
-  ///@notice CCIP Data to Bridge
-  struct BridgeData {
-    CCIPToken tokenType;
-    uint256 amount;
-    uint256 minAmount;
-    uint64 dstChainSelector;
-    address receiver;
-  }
-  ///@notice ConceroPool Request 
-  struct WithdrawRequests {
-    uint256 condition;
-    uint256 amount;
-    bool isActiv;
-  }
-  ///@notice `ccipSend` to distribute liquidity
-  struct Pools{
-    uint64 chainSelector;
-    address poolAddress;
-  }
-  ///@notice Functions Js Code
-  struct JsCodeHashSum {
-    bytes32 src;
-    bytes32 dst;
-  }
-  ///@notice Chainlink Functions Transaction
-  struct Transaction {
-    bytes32 ccipMessageId;
-    address sender;
-    address recipient;
-    uint256 amount;
-    CCIPToken token;
-    uint64 srcChainSelector;
-    bool isConfirmed;
-  }
-  ///@notice Chainlink Price Feeds
-  struct PriceFeeds {
-    address linkToUsdPriceFeeds;
-    address usdcToUsdPriceFeeds;
-    address nativeToUsdPriceFeeds;
-    address linkToNativePriceFeeds;
-  }
-  ///@notice Chainlink Functions Variables
-  struct FunctionsVariables{
-    uint8 donHostedSecretsSlotId;
-    uint64 donHostedSecretsVersion;
-    uint64 subscriptionId;
-    bytes32 donId;
-    address functionsRouter;
-  }
-
+abstract contract Storage is IStorage, Ownable {
   ///////////////
   ///VARIABLES///
   ///////////////
@@ -136,7 +58,7 @@ abstract contract Storage is Ownable {
 
   ///@notice Concero: Mapping to keep track of CLF fees for different chains
   mapping(uint64 => uint256) public clfPremiumFees;
-  
+
   ///@notice Mapping to keep track of messenger addresses
   mapping(address messenger => uint256 allowed) internal s_messengerContracts;
   ///@notice DexSwap: mapping to keep track of allowed routers to perform swaps. 1 == Allowed.
@@ -174,36 +96,6 @@ abstract contract Storage is Ownable {
   ///@notice event emitted when the router address is approved
   event Storage_NewRouterAdded(address router, uint256 isAllowed);
 
-  ///////////////
-  ///MODIFIERS///
-  ///////////////
-  //@audit Unused in the moment
-  modifier validateSwapAndBridgeData(BridgeData calldata _bridgeData, IDexSwap.SwapData[] calldata _srcSwapData, uint64 _chainIndex) {
-    address swapDataToToken = _srcSwapData[_srcSwapData.length - 1].toToken;
-
-    if (swapDataToToken == getToken(_bridgeData.tokenType, s_chainIndex)) {
-      revert Storage_InvalidBridgeData();
-    }
-    _;
-  }
-
-  /**
-   * @notice modifier to check if the caller is the an approved messenger
-   */
-  modifier onlyMessenger() {
-    if (s_messengerContracts[msg.sender] != APPROVED) revert Storage_NotMessenger(msg.sender);
-    _;
-  }
-
-  /**
-   * @notice CCIP Modifier to check receivers for a specific chain
-   * @param _chainSelector Id of the destination chain
-   */
-  modifier onlyAllowListedChain(uint64 _chainSelector) {
-    if (s_poolReceiver[_chainSelector] == address(0)) revert Storage_ChainNotAllowed(_chainSelector);
-    _;
-  }
-
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
@@ -220,9 +112,7 @@ abstract contract Storage is Ownable {
   //@changed
   function setConceroMessenger(address _walletAddress, uint256 _approved) external onlyOwner {
     if (_walletAddress == address(0)) revert Storage_InvalidAddress();
-
     s_messengerContracts[_walletAddress] = _approved;
-
     emit Storage_MessengerUpdated(_walletAddress, _approved);
   }
 
@@ -230,10 +120,9 @@ abstract contract Storage is Ownable {
    * @notice function to manage DEX routers addresses
    * @param _router the address of the router
    * @param _isApproved 1 == Approved | Any other value is not Approved.
-  */
+   */
   function manageRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner {
     s_routerAllowed[_router] = _isApproved;
-
     emit Storage_NewRouterAdded(_router, _isApproved);
   }
 

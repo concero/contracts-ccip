@@ -11,21 +11,22 @@ import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/l
 import {Storage} from "./Libraries/Storage.sol";
 import {IConceroPool} from "./Interfaces/IConceroPool.sol";
 
-  ////////////////////////////////////////////////////////
-  //////////////////////// ERRORS ////////////////////////
-  ////////////////////////////////////////////////////////
-  ///@notice error emitted when a TX was already added
-  error TXAlreadyExists(bytes32 txHash, bool isConfirmed);
-  ///@notice error emitted when a unexpected ID is added
-  error UnexpectedRequestID(bytes32);
-  ///@notice error emitted when a transaction does not exist
-  error TxDoesNotExist();
-  ///@notice error emitted when a transaction was already confirmed
-  error TxAlreadyConfirmed();
-  ///@notice error emitted when function receive a call from a not allowed address
-  error AddressNotSet();
-  ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
-  error ConceroFunctions_ItsNotOrchestrator(address caller);
+////////////////////////////////////////////////////////
+//////////////////////// ERRORS ////////////////////////
+////////////////////////////////////////////////////////
+///@notice error emitted when a TX was already added
+error TXAlreadyExists(bytes32 txHash, bool isConfirmed);
+///@notice error emitted when a unexpected ID is added
+error UnexpectedRequestID(bytes32);
+///@notice error emitted when a transaction does not exist
+error TxDoesNotExist();
+///@notice error emitted when a transaction was already confirmed
+error TxAlreadyConfirmed();
+///@notice error emitted when function receive a call from a not allowed address
+error AddressNotSet();
+///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
+error ConceroFunctions_ItsNotOrchestrator(address caller);
+error ConceroFunctions_NotMessenger(address caller);
 
 contract ConceroFunctions is FunctionsClient, Storage {
   ///////////////////////
@@ -49,7 +50,6 @@ contract ConceroFunctions is FunctionsClient, Storage {
   ///@notice JS Code for Chainlink Functions
   string internal constant CL_JS_CODE =
     "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( `https://raw.githubusercontent.com/concero/contracts-ccip/full-infra-functions/packages/hardhat/tasks/CLFScripts/dist/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
-  
 
   ////////////////
   ///IMMUTABLES///
@@ -71,38 +71,12 @@ contract ConceroFunctions is FunctionsClient, Storage {
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
   ///@notice emitted on source when a Unconfirmed TX is sent
-  event UnconfirmedTXSent(
-    bytes32 indexed ccipMessageId,
-    address sender,
-    address recipient,
-    uint256 amount,
-    CCIPToken token,
-    uint64 dstChainSelector
-  );
+  event UnconfirmedTXSent(bytes32 indexed ccipMessageId, address sender, address recipient, uint256 amount, CCIPToken token, uint64 dstChainSelector);
   ///@notice emitted when a Unconfirmed TX is added by a cross-chain TX
-  event UnconfirmedTXAdded(
-    bytes32 indexed ccipMessageId,
-    address sender,
-    address recipient,
-    uint256 amount,
-    CCIPToken token,
-    uint64 srcChainSelector
-  );
-  event TXReleased(
-    bytes32 indexed ccipMessageId,
-    address indexed sender,
-    address indexed recipient,
-    address token,
-    uint256 amount
-  );
+  event UnconfirmedTXAdded(bytes32 indexed ccipMessageId, address sender, address recipient, uint256 amount, CCIPToken token, uint64 srcChainSelector);
+  event TXReleased(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, address token, uint256 amount);
   ///@notice emitted when on destination when a TX is validated.
-  event TXConfirmed(
-    bytes32 indexed ccipMessageId,
-    address indexed sender,
-    address indexed recipient,
-    uint256 amount,
-    CCIPToken token
-  );
+  event TXConfirmed(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, uint256 amount, CCIPToken token);
   ///@notice emitted when a Function Request returns an error
   event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
   ///@notice emitted when the concero pool address is updated
@@ -120,6 +94,18 @@ contract ConceroFunctions is FunctionsClient, Storage {
   ///@notice event emitted when the Ethers HashSum is updated
   event EthersHashSumUpdated(bytes32 previousValue, bytes32 hashSum);
 
+  ///////////////
+  ///MODIFIERS///
+  ///////////////
+
+  /**
+   * @notice modifier to check if the caller is the an approved messenger
+   */
+  modifier onlyMessenger() {
+    if (s_messengerContracts[msg.sender] != APPROVED) revert ConceroFunctions_NotMessenger(msg.sender);
+    _;
+  }
+
   constructor(
     FunctionsVariables memory _variables,
     uint64 _chainSelector,
@@ -129,13 +115,13 @@ contract ConceroFunctions is FunctionsClient, Storage {
     address _dexSwap,
     address _pool,
     address _proxy
-  ) FunctionsClient(_variables.functionsRouter){
+  ) FunctionsClient(_variables.functionsRouter) {
     i_donId = _variables.donId;
     i_subscriptionId = _variables.subscriptionId;
     s_donHostedSecretsVersion = _variables.donHostedSecretsVersion;
     s_donHostedSecretsSlotId = _variables.donHostedSecretsSlotId;
-    s_srcJsHashSum = jsCodeHashSum.src;
-    s_dstJsHashSum = jsCodeHashSum.dst;
+    s_srcJsHashSum = _jsCodeHashSum.src;
+    s_dstJsHashSum = _jsCodeHashSum.dst;
     s_ethersHashSum = _ethersHashSum;
     CHAIN_SELECTOR = _chainSelector;
     s_chainIndex = Chain(_chainIndex);
@@ -149,39 +135,30 @@ contract ConceroFunctions is FunctionsClient, Storage {
   ///////////////////////////////////////////////////////////////
   function setConceroContract(uint64 _chainSelector, address _conceroContract) external onlyOwner {
     s_conceroContracts[_chainSelector] = _conceroContract;
-
     emit ConceroContractUpdated(_chainSelector, _conceroContract);
   }
 
   function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
     uint64 previousValue = s_donHostedSecretsVersion;
-
     s_donHostedSecretsVersion = _version;
-
     emit DonSecretVersionUpdated(previousValue, _version);
   }
 
   function setDonHostedSecretsSlotID(uint8 _donHostedSecretsSlotId) external onlyOwner {
     uint8 previousValue = s_donHostedSecretsSlotId;
-
     s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
-
     emit DonSlotIdUpdated(previousValue, _donHostedSecretsSlotId);
   }
 
   function setDstJsHashSum(bytes32 _hashSum) external onlyOwner {
     bytes32 previousValue = s_dstJsHashSum;
-
     s_dstJsHashSum = _hashSum;
-
     emit DestinationJsHashSumUpdated(previousValue, _hashSum);
   }
 
   function setSrcJsHashSum(bytes32 _hashSum) external onlyOwner {
     bytes32 previousValue = s_dstJsHashSum;
-
     s_srcJsHashSum = _hashSum;
-
     emit SourceJsHashSumUpdated(previousValue, _hashSum);
   }
 
@@ -242,8 +219,8 @@ contract ConceroFunctions is FunctionsClient, Storage {
   }
 
   function fulfillRequestWrapper(bytes32 requestId, bytes memory response, bytes memory err) external {
-    if(address(this) != i_proxy) revert ConceroFunctions_ItsNotOrchestrator(msg.sender);
-    
+    if (address(this) != i_proxy) revert ConceroFunctions_ItsNotOrchestrator(msg.sender);
+
     fulfillRequest(requestId, response, err);
   }
 
@@ -341,7 +318,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_latestNativeUsdcRate = nativeUsdcRate;
     s_latestLinkNativeRate = linkNativeRate;
   }
-  
+
   function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
     return amount / 1000;
     //@audit we can have loss of precision here?

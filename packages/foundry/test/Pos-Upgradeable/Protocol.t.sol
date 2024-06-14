@@ -13,6 +13,7 @@ import {ConceroProxy} from "contracts/ConceroProxy.sol";
 
 //Interfaces
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
+import {IStorage} from "contracts/Interfaces/IStorage.sol";
 
 //Protocol Storage
 import {Storage} from "contracts/Libraries/Storage.sol";
@@ -216,7 +217,7 @@ contract ProtocolTest is Test {
             address(mUSDC)
         );
         concero = conceroDeploy.run(
-            Storage.FunctionsVariables ({
+            IStorage.FunctionsVariables ({
                 donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
                 donHostedSecretsVersion: 0, //uint64 _donHostedSecretsVersion
                 subscriptionId: 0, //uint64 _subscriptionId,
@@ -228,7 +229,7 @@ contract ProtocolTest is Test {
             linkBase,
             ccipRouterBase,
             address(dex),
-            Storage.JsCodeHashSum ({
+            IStorage.JsCodeHashSum ({
                 src: 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124,
                 dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
             }),
@@ -278,7 +279,7 @@ contract ProtocolTest is Test {
 
         //====== Set the Messenger to be allowed to interact
         pool.setConceroMessenger(Messenger, 1);
-        concero.setConceroMessenger(Messenger, 1);
+        op.setConceroMessenger(Messenger, 1);
 
         pool.setConceroPoolReceiver(arbChainSelector ,address(poolDst));
 
@@ -288,7 +289,7 @@ contract ProtocolTest is Test {
         pool.setSupportedToken(address(mUSDC), 1);
         pool.setApprovedSender(address(mUSDC), LP);
 
-        concero.setConceroContract(arbChainSelector, address(proxyDst));
+        op.setConceroContract(arbChainSelector, address(proxyDst));
         vm.stopPrank();
         }
 
@@ -315,7 +316,7 @@ contract ProtocolTest is Test {
             address(aUSDC)
         );
         conceroDst = conceroDeploy.run(
-            Storage.FunctionsVariables ({
+            IStorage.FunctionsVariables ({
                 donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
                 donHostedSecretsVersion: 0, //uint64 _donHostedSecretsVersion
                 subscriptionId: 0, //uint64 _subscriptionId,
@@ -327,7 +328,7 @@ contract ProtocolTest is Test {
             linkArb,
             ccipRouterArb,
             address(dexDst),
-            Storage.JsCodeHashSum ({
+            IStorage.JsCodeHashSum ({
                 src: 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124,
                 dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
             }),
@@ -377,8 +378,8 @@ contract ProtocolTest is Test {
         opDst.manageRouterAddress(address(aerodromeRouterArb), 1);
 
         //====== Set the Messenger to be allowed to interact
+        opDst.setConceroMessenger(Messenger, 1);
         poolDst.setConceroMessenger(Messenger, 1);
-        conceroDst.setConceroMessenger(Messenger, 1);
 
         poolDst.setConceroPoolReceiver(baseChainSelector ,address(pool));
 
@@ -390,7 +391,7 @@ contract ProtocolTest is Test {
         poolDst.setSupportedToken(address(aUSDC), 1);
         poolDst.setApprovedSender(address(aUSDC), LP);
 
-        conceroDst.setConceroContract(baseChainSelector, address(proxy));
+        opDst.setConceroContract(baseChainSelector, address(proxy));
         vm.stopPrank();
         }
     }

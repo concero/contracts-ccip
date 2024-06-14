@@ -35,12 +35,6 @@ contract ConceroCCIP is ConceroFunctions {
   LinkTokenInterface internal immutable i_linkToken;
   IRouterClient internal immutable i_ccipRouter;
 
-  ////////////////////////////////////////////////////////
-  //////////////////////// EVENTS ////////////////////////
-  ////////////////////////////////////////////////////////
-  ///@notice event emitted when the Chainlink Function Fee is updated
-  event CLFPremiumFeeUpdated(uint64 chainSelector, uint256 previousValue, uint256 feeAmount);
-
   constructor(
     FunctionsVariables memory _variables,
     uint64 _chainSelector,
@@ -55,7 +49,7 @@ contract ConceroCCIP is ConceroFunctions {
   ) ConceroFunctions(_variables, _chainSelector, _chainIndex, jsCodeHashSum, ethersHashSum, _dexSwap, _pool, _proxy) {
     i_linkToken = LinkTokenInterface(_link);
     i_ccipRouter = IRouterClient(_ccipRouter);
-    s_messengerContracts[msg.sender] = APPROVED;
+    s_messengerAddresses[msg.sender] = APPROVED;
   }
 
   ///////////////////////////////////////////////////////////////

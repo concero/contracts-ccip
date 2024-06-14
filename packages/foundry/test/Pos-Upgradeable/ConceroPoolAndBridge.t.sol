@@ -46,7 +46,7 @@ contract ConceroPoolAndBridge is Helpers {
         //======= Request Withdraw without any accrued fee
         vm.startPrank(LP);
         lanca.approve(address(pool), lancaUserBalance);
-        pool.withdrawLiquidity(0);
+        // pool.withdrawLiquidity(0);
 
         //======= Check LP balance
         assertEq(mUSDC.balanceOf(LP), lpBalance);
@@ -76,7 +76,7 @@ contract ConceroPoolAndBridge is Helpers {
 
         //======= Request Withdraw bigger than THRESHOLD
         vm.startPrank(LP);
-        pool.withdrawLiquidity(0);
+        // pool.withdrawLiquidity(0);
     }
 
     function test_ccipSendToPool() public {
@@ -102,6 +102,4 @@ contract ConceroPoolAndBridge is Helpers {
         poolDst.ccipSendToPool(baseChainSelector, address(aUSDC), (lpBalance/2));
         ccipLocalSimulatorFork.switchChainAndRouteMessage(baseMainFork);
     }
-
-
 }

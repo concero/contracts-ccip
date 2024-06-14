@@ -68,14 +68,6 @@ contract Concero is ConceroCCIP {
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
-  function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external onlyOwner {
-    //@audit we must limit this amount. If we don't, it Will trigger red flags in audits.
-    uint256 previousValue = clfPremiumFees[_chainSelector];
-    clfPremiumFees[_chainSelector] = feeAmount;
-
-    emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
-  }
-
   function startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata _dstSwapData) external {
     if (address(this) != i_proxy) revert Concero_ItsNotOrchestrator(msg.sender);
 
@@ -102,7 +94,10 @@ contract Concero is ConceroCCIP {
   /////////////////
   ///VIEW & PURE///
   /////////////////
-  // fees module
+  /**
+   * @notice Function to get the total amount of fees charged by Chainlink functions in Link
+   * @param dstChainSelector the destination blockchain chain selector
+   */
   function getFunctionsFeeInLink(uint64 dstChainSelector) public view returns (uint256) {
     uint256 srcGasPrice = s_lastGasPrices[CHAIN_SELECTOR];
     uint256 dstGasPrice = s_lastGasPrices[dstChainSelector];
@@ -116,11 +111,21 @@ contract Concero is ConceroCCIP {
     return srsClFeeInLink + dstClFeeInLink;
   }
 
+  /**
+   * @notice Function to get the total amount of fees charged by Chainlink functions in USDC
+   * @param dstChainSelector the destination blockchain chain selector
+   */
   function getFunctionsFeeInUsdc(uint64 dstChainSelector) public view returns (uint256) {
     uint256 functionsFeeInLink = getFunctionsFeeInLink(dstChainSelector);
     return (functionsFeeInLink * s_latestLinkUsdcRate) / 1 ether;
   }
 
+  /**
+   * @notice Function to get the total amount of fees on the source
+   * @param tokenType the position of the CCIPToken enum
+   * @param dstChainSelector the destination blockchain chain selector
+   * @param amount the amount of value the fees will calculated over.
+   */
   function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) public view returns (uint256) {
     // cl functions fee
     uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
@@ -138,12 +143,22 @@ contract Concero is ConceroCCIP {
     return functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + functionsGasFeeInUsdc;
   }
 
+  /**
+   * @notice Function to get the total amount of CCIP fees in Link
+   * @param tokenType the position of the CCIPToken enum
+   * @param dstChainSelector the destination blockchain chain selector
+   */
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     // todo: instead of 0.1 ether, pass the actual fee into _buildCCIPMessage()
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, s_chainIndex), 1 ether, 0.1 ether, dstChainSelector);
     return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
   }
 
+  /**
+   * @notice Function to get the total amount of CCIP fees in USDC
+   * @param tokenType the position of the CCIPToken enum
+   * @param dstChainSelector the destination blockchain chain selector
+   */
   function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector);
     return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / 1 ether;

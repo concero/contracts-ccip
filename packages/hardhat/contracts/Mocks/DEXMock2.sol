@@ -5,8 +5,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-import {IRouter} from "@velodrome/contracts/interfaces/IRouter.sol";
-import {ISwapRouter02, IV3SwapRouter} from "contracts/Interfaces/ISwapRouter02.sol";
+import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
+import {ISwapRouter02, IV3SwapRouter} from "../Interfaces/ISwapRouter02.sol";
 
 contract DEXMock2 {
     using SafeERC20 for IERC20;
@@ -29,7 +29,7 @@ contract DEXMock2 {
         USDC = _usdc;
     }
 
-    //Sushi Single
+    //Sushi Single 
     function exactInputSingle(ISwapRouter.ExactInputSingleParams memory _params) external returns(uint256 amount){
 
         IERC20(_params.tokenIn).safeTransferFrom(msg.sender, address(this), _params.amountIn);

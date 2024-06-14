@@ -9,7 +9,7 @@ import {DexSwap} from "contracts/DexSwap.sol";
 import {ConceroPool} from "contracts/ConceroPool.sol";
 import {Concero} from "contracts/Concero.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
-import {TransparentUpgradeableProxy} from "contracts/TransparentUpgradeableProxy.sol";
+import {ConceroProxy} from "contracts/ConceroProxy.sol";
 
 //Interfaces
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
@@ -34,7 +34,7 @@ import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 //DEXes routers
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import {ISwapRouter} from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-import {IRouter} from "@velodrome/contracts/interfaces/IRouter.sol";
+import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
 import {TransferHelper} from '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 import {ISwapRouter02, IV3SwapRouter} from "contracts/Interfaces/ISwapRouter02.sol";
 
@@ -55,7 +55,7 @@ contract ProtocolTest is Test {
     Concero public concero;
     Orchestrator public orch;
     Orchestrator public orchEmpty;
-    TransparentUpgradeableProxy public proxy;
+    ConceroProxy public proxy;
 
     //==== Instantiate Arbitrum Contracts
     DexSwap public dexDst;
@@ -63,7 +63,7 @@ contract ProtocolTest is Test {
     Concero public conceroDst;
     Orchestrator public orchDst;
     Orchestrator public orchEmptyDst;
-    TransparentUpgradeableProxy public proxyDst;
+    ConceroProxy public proxyDst;
 
     //==== Instantiate Deploy Script
     DexSwapDeploy dexDeploy;
@@ -212,7 +212,8 @@ contract ProtocolTest is Test {
         pool = poolDeploy.run(
             linkBase,
             ccipRouterBase,
-            address(proxy)
+            address(proxy),
+            address(mUSDC)
         );
         concero = conceroDeploy.run(
             Storage.FunctionsVariables ({
@@ -310,7 +311,8 @@ contract ProtocolTest is Test {
         poolDst = poolDeploy.run(
             linkArb,
             ccipRouterArb,
-            address(proxyDst)
+            address(proxyDst),
+            address(aUSDC)
         );
         conceroDst = conceroDeploy.run(
             Storage.FunctionsVariables ({
@@ -394,6 +396,8 @@ contract ProtocolTest is Test {
     }
 
     function helper() public {
+        vm.selectFork(baseMainFork);
+        
         vm.deal(User, INITIAL_BALANCE);
         vm.deal(LP, LP_INITIAL_BALANCE);
 

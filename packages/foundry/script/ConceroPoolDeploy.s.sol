@@ -6,9 +6,9 @@ import {ConceroPool} from "contracts/ConceroPool.sol";
 
 contract ConceroPoolDeploy is Script {
 
-    function run(address _link,address _ccipRouter, address _proxy) public returns(ConceroPool pool){
+    function run(address _link,address _ccipRouter, address _proxy, address _usdcAddress) public returns(ConceroPool pool){
         vm.startBroadcast();
-        pool = new ConceroPool(_link, _ccipRouter, _proxy);
+        pool = new ConceroPool(_link, _ccipRouter, _proxy, _usdcAddress);
         vm.stopBroadcast();
     }
 }

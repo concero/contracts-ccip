@@ -136,6 +136,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_donHostedSecretsSlotId = _variables.donHostedSecretsSlotId;
     s_srcJsHashSum = jsCodeHashSum.src;
     s_dstJsHashSum = jsCodeHashSum.dst;
+    s_ethersHashSum = ethersHashSum;
     CHAIN_SELECTOR = _chainSelector;
     s_chainIndex = Chain(_chainIndex);
     i_dexSwap = _dexSwap;

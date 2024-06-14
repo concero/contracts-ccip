@@ -4,21 +4,21 @@ pragma solidity 0.8.19;
 import {IDexSwap} from "../Interfaces/IDexSwap.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-  ////////////////////////////////////////////////////////
-  //////////////////////// ERRORS ////////////////////////
-  ////////////////////////////////////////////////////////
-  ///@notice error emitted when bridge data is empty
-  error Storage_InvalidBridgeData();
-  ///@notice error emited when the choosen token is not allowed
-  error Storage_TokenTypeOutOfBounds();
-  ///@notice error emitted when the chain index is incorrect
-  error Storage_ChainIndexOutOfBounds();
-  ///@notice error emitted when the caller is not the messenger
-  error Storage_NotMessenger(address caller);
-  ///@notice error emitted when the input is the address(0)
-  error Storage_InvalidAddress();
-  ///@notice error emitted when the chain selector input is invalid
-  error Storage_ChainNotAllowed(uint64 chainSelector);
+////////////////////////////////////////////////////////
+//////////////////////// ERRORS ////////////////////////
+////////////////////////////////////////////////////////
+///@notice error emitted when bridge data is empty
+error Storage_InvalidBridgeData();
+///@notice error emited when the choosen token is not allowed
+error Storage_TokenTypeOutOfBounds();
+///@notice error emitted when the chain index is incorrect
+error Storage_ChainIndexOutOfBounds();
+///@notice error emitted when the caller is not the messenger
+error Storage_NotMessenger(address caller);
+///@notice error emitted when the input is the address(0)
+error Storage_InvalidAddress();
+///@notice error emitted when the chain selector input is invalid
+error Storage_ChainNotAllowed(uint64 chainSelector);
 
 abstract contract Storage is Ownable {
   ///////////////////////
@@ -54,14 +54,14 @@ abstract contract Storage is Ownable {
     uint64 dstChainSelector;
     address receiver;
   }
-  ///@notice ConceroPool Request 
+  ///@notice ConceroPool Request
   struct WithdrawRequests {
     uint256 condition;
     uint256 amount;
     bool isActiv;
   }
   ///@notice `ccipSend` to distribute liquidity
-  struct Pools{
+  struct Pools {
     uint64 chainSelector;
     address poolAddress;
   }
@@ -88,12 +88,18 @@ abstract contract Storage is Ownable {
     address linkToNativePriceFeeds;
   }
   ///@notice Chainlink Functions Variables
-  struct FunctionsVariables{
+  struct FunctionsVariables {
     uint8 donHostedSecretsSlotId;
     uint64 donHostedSecretsVersion;
     uint64 subscriptionId;
     bytes32 donId;
     address functionsRouter;
+  }
+  ///@notice User deposit lock period
+  struct Deposit {
+    uint256 amountDeposited;
+    uint256 lpTokenMinted;
+    bool isWithdrawable;
   }
 
   ///////////////
@@ -117,6 +123,12 @@ abstract contract Storage is Ownable {
   uint256 public s_latestNativeUsdcRate;
   ///@notice Variable to store the Link to Native latest rate
   uint256 public s_latestLinkNativeRate;
+  ///@notice variable to store the total value deposited
+  uint256 internal s_usdcPoolReserve;
+  ///@notice variable to store the total amount of liquidity fees
+  uint256 internal s_totalFees;
+  ///@notice variable to store the value that will be temporary used by Chainlink Functions
+  uint256 internal s_usdcUsageCLF;
   ///@notice gap to reserve storage in the contract for future variable additions
   uint256[50] __gap;
 
@@ -136,7 +148,7 @@ abstract contract Storage is Ownable {
 
   ///@notice Concero: Mapping to keep track of CLF fees for different chains
   mapping(uint64 => uint256) public clfPremiumFees;
-  
+
   ///@notice Mapping to keep track of messenger addresses
   mapping(address messenger => uint256 allowed) internal s_messengerContracts;
   ///@notice DexSwap: mapping to keep track of allowed routers to perform swaps. 1 == Allowed.
@@ -148,8 +160,6 @@ abstract contract Storage is Ownable {
   mapping(address token => uint256 isApproved) public s_isTokenSupported;
   ///@notice ConceroPool: Mapping to keep track of allowed senders on a given token
   mapping(address token => address senderAllowed) public s_approvedSenders;
-  ///@notice ConceroPool: Mapping to keep track of balances of user on a given token
-  mapping(address token => mapping(address user => uint256 balance)) public s_userBalances;
   ///@notice ConceroPool: Mapping to keep track of allowed pool senders
   mapping(uint64 chainId => mapping(address poolAddress => uint256)) public s_allowedPool;
   ///@notice ConceroPool: Mapping to keep track of withdraw requests
@@ -163,6 +173,8 @@ abstract contract Storage is Ownable {
   mapping(bytes32 => Request) public s_requests;
   ///@notice Functions: Mapping to keep track of cross-chain gas prices
   mapping(uint64 chainSelector => uint256 lasGasPrice) public s_lastGasPrices;
+  ///@notice Mapping to store the Lock structure by deposit
+  mapping(address user => LockPeriod[]) public s_poolLock;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -178,7 +190,11 @@ abstract contract Storage is Ownable {
   ///MODIFIERS///
   ///////////////
   //@audit Unused in the moment
-  modifier validateSwapAndBridgeData(BridgeData calldata _bridgeData, IDexSwap.SwapData[] calldata _srcSwapData, uint64 _chainIndex) {
+  modifier validateSwapAndBridgeData(
+    BridgeData calldata _bridgeData,
+    IDexSwap.SwapData[] calldata _srcSwapData,
+    uint64 _chainIndex
+  ) {
     address swapDataToToken = _srcSwapData[_srcSwapData.length - 1].toToken;
 
     if (swapDataToToken == getToken(_bridgeData.tokenType, s_chainIndex)) {
@@ -230,7 +246,7 @@ abstract contract Storage is Ownable {
    * @notice function to manage DEX routers addresses
    * @param _router the address of the router
    * @param _isApproved 1 == Approved | Any other value is not Approved.
-  */
+   */
   function manageRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner {
     s_routerAllowed[_router] = _isApproved;
 

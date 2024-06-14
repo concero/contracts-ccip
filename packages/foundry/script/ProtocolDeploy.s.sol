@@ -17,13 +17,13 @@ contract ProtocolDeploy is Script {
             address _ccipRouter,
             Concero.JsCodeHashSum memory jsCodeHashSum,
             bytes32 _ethersHashSum,
-            address _messenger,
-            address _proxy
+            address _proxy,
+            address _usdc
         ) public returns(DexSwap dex, ConceroPool pool, Concero concero, Orchestrator orch){
 
         vm.startBroadcast();
             dex = new DexSwap (_proxy);
-            pool = new ConceroPool(_link, _ccipRouter, _proxy);
+            pool = new ConceroPool(_link, _ccipRouter, _proxy, _usdc);
             concero = new Concero(
                 _variables,
                 _chainSelector,

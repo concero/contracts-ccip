@@ -13,25 +13,25 @@ import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 
 import {LibConcero} from "./Libraries/LibConcero.sol";
 
-  ////////////////////////////////////////////////////////
-  //////////////////////// ERRORS ////////////////////////
-  ////////////////////////////////////////////////////////
-  ///@notice error emitted when the Messenger receive an address(0)
-  error InvalidAddress();
-  ///@notice error emitted when the Messenger were set already
-  error AddressAlreadyAllowlisted();
-  ///@notice error emitted when the Concero Messenger have been removed already
-  error NotAllowlistedOrAlreadyRemoved();
-  ///@notice error emitted when the token to be swaped has fee on transfers
-  error Concero_FoTNotAllowedYet();
-  ///@notice error emitted when the input amount is less than the fees
-  error InsufficientFundsForFees(uint256 amount, uint256 fee);
-  ///@notice error emitted when there is no ERC20 value to withdraw
-  error NothingToWithdraw();
-  ///@notice error emitted when there is no native value to withdraw
-  error FailedToWithdrawEth(address owner, address target, uint256 value);
-  ///@notice error emitted when a non orchestrator address call startBridge
-  error Concero_ItsNotOrchestrator(address caller);
+////////////////////////////////////////////////////////
+//////////////////////// ERRORS ////////////////////////
+////////////////////////////////////////////////////////
+///@notice error emitted when the Messenger receive an address(0)
+error InvalidAddress();
+///@notice error emitted when the Messenger were set already
+error AddressAlreadyAllowlisted();
+///@notice error emitted when the Concero Messenger have been removed already
+error NotAllowlistedOrAlreadyRemoved();
+///@notice error emitted when the token to be swaped has fee on transfers
+error Concero_FoTNotAllowedYet();
+///@notice error emitted when the input amount is less than the fees
+error InsufficientFundsForFees(uint256 amount, uint256 fee);
+///@notice error emitted when there is no ERC20 value to withdraw
+error NothingToWithdraw();
+///@notice error emitted when there is no native value to withdraw
+error FailedToWithdrawEth(address owner, address target, uint256 value);
+///@notice error emitted when a non orchestrator address call startBridge
+error Concero_ItsNotOrchestrator(address caller);
 
 contract Concero is ConceroCCIP {
   using SafeERC20 for IERC20;
@@ -44,14 +44,7 @@ contract Concero is ConceroCCIP {
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
   ///@notice event emitted when a CCIP message is sent
-  event CCIPSent(
-    bytes32 indexed ccipMessageId,
-    address sender,
-    address recipient,
-    CCIPToken token,
-    uint256 amount,
-    uint64 dstChainSelector
-  );
+  event CCIPSent(bytes32 indexed ccipMessageId, address sender, address recipient, CCIPToken token, uint256 amount, uint64 dstChainSelector);
   ///@notice event emitted when a stuck amount is withdraw
   event Concero_StuckAmountWithdraw(address owner, address token, uint256 amount);
 
@@ -66,21 +59,7 @@ contract Concero is ConceroCCIP {
     address _dexSwap,
     address _pool,
     address _proxy
-  )
-    ConceroCCIP(
-      _variables,
-      _chainSelector,
-      _chainIndex,
-      _link,
-      _ccipRouter,
-      _jsCodeHashSum,
-      _ethersHashSum,
-      _dexSwap,
-      _pool,
-      _proxy
-    )
-  {
-
+  ) ConceroCCIP(_variables, _chainSelector, _chainIndex, _link, _ccipRouter, _jsCodeHashSum, _ethersHashSum, _dexSwap, _pool, _proxy) {
     clfPremiumFees[3478487238524512106] = 4000000000000000; // 0.004 link | arb
     clfPremiumFees[10344971235874465080] = 1847290640394088; // 0.0018 link | base // takes in usd mb price feed needed
     clfPremiumFees[5224473277236331295] = 2000000000000000; // 0.002 link | opt
@@ -96,20 +75,20 @@ contract Concero is ConceroCCIP {
 
     emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
   }
-  
+
   function startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata _dstSwapData) external {
-    if(address(this) != i_proxy) revert Concero_ItsNotOrchestrator(msg.sender);
+    if (address(this) != i_proxy) revert Concero_ItsNotOrchestrator(msg.sender);
 
     address fromToken = getToken(bridgeData.tokenType, s_chainIndex);
 
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount);
-    
+
     uint256 mockedLpFee = getDstTotalFeeInUsdc(bridgeData.amount);
 
     if (bridgeData.amount < totalSrcFee + mockedLpFee) {
       revert InsufficientFundsForFees(bridgeData.amount, totalSrcFee);
     }
-    
+
     uint256 amount = bridgeData.amount - totalSrcFee;
     uint256 actualLpFee = getDstTotalFeeInUsdc(amount);
 

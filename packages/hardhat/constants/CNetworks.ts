@@ -39,7 +39,7 @@ export const functionsGatewayUrls = {
 
 const CNetworks: Record<CNetworkNames, CNetwork> = {
   localhost: {
-    accounts: [deployerPK],
+    accounts: [deployerPK, proxyDeployerPK],
     // mock CLF data
     functionsDonId: process.env.CLF_DONID_SEPOLIA,
     functionsDonIdAlias: process.env.CLF_DONID_SEPOLIA_ALIAS,
@@ -88,7 +88,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   sepolia: {
     chainId: 11155111,
     url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-    accounts: [deployerPK],
+    accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_SEPOLIA,
     functionsDonIdAlias: process.env.CLF_DONID_SEPOLIA_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_SEPOLIA,
@@ -107,7 +107,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   avalancheFuji: {
     chainId: 43113,
     url: `https://avalanche-fuji.infura.io/v3/${process.env.INFURA_API_KEY}`,
-    accounts: [deployerPK],
+    accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_FUJI,
     functionsDonIdAlias: process.env.CLF_DONID_FUJI_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_FUJI,
@@ -152,7 +152,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   arbitrumSepolia: {
     chainId: 421614,
     url: `https://arbitrum-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-    accounts: [deployerPK],
+    accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_ARBITRUM_SEPOLIA,
     functionsDonIdAlias: process.env.CLF_DONID_ARBITRUM_SEPOLIA_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_ARBITRUM_SEPOLIA,
@@ -178,7 +178,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   baseSepolia: {
     chainId: 84532,
     url: `https://base-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
-    accounts: [deployerPK],
+    accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_BASE_SEPOLIA,
     functionsDonIdAlias: process.env.CLF_DONID_BASE_SEPOLIA_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_BASE_SEPOLIA,

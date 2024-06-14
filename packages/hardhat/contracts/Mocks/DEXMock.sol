@@ -6,8 +6,8 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
-import {IRouter} from "@velodrome/contracts/interfaces/IRouter.sol";
-import {ISwapRouter02, IV3SwapRouter} from "contracts/Interfaces/ISwapRouter02.sol";
+import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
+import {ISwapRouter02, IV3SwapRouter} from "../Interfaces/ISwapRouter02.sol";
 
 error DidntReceiveAnyValue();
 
@@ -53,7 +53,7 @@ contract DEXMock {
         emit DexMock_Transferred();
     }
 
-
+    
     //Sushi & Uniswap Forks V3 Multi//
     // function exactInput(ISwapRouter.ExactInputParams calldata _params) external payable returns (uint256 amountOut){
 

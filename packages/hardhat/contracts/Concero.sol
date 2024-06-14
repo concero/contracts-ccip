@@ -1,107 +1,106 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity 0.8.19;
 
-import {ConceroCCIP} from "./ConceroCCIP.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
-import {IDexSwap} from "./IDexSwap.sol";
-import {LibConcero} from "./LibConcero.sol";
+
+import {ConceroCCIP} from "./ConceroCCIP.sol";
+import {IDexSwap} from "./Interfaces/IDexSwap.sol";
+
+import {LibConcero} from "./Libraries/LibConcero.sol";
+
+////////////////////////////////////////////////////////
+//////////////////////// ERRORS ////////////////////////
+////////////////////////////////////////////////////////
+///@notice error emitted when the Messenger receive an address(0)
+error InvalidAddress();
+///@notice error emitted when the Messenger were set already
+error AddressAlreadyAllowlisted();
+///@notice error emitted when the Concero Messenger have been removed already
+error NotAllowlistedOrAlreadyRemoved();
+///@notice error emitted when the token to be swaped has fee on transfers
+error Concero_FoTNotAllowedYet();
+///@notice error emitted when the input amount is less than the fees
+error InsufficientFundsForFees(uint256 amount, uint256 fee);
+///@notice error emitted when there is no ERC20 value to withdraw
+error NothingToWithdraw();
+///@notice error emitted when there is no native value to withdraw
+error FailedToWithdrawEth(address owner, address target, uint256 value);
+///@notice error emitted when a non orchestrator address call startBridge
+error Concero_ItsNotOrchestrator(address caller);
 
 contract Concero is ConceroCCIP {
-  uint16 private constant CONCERO_FEE_FACTOR = 1000;
+  using SafeERC20 for IERC20;
 
-  mapping(uint64 => uint256) public clfPremiumFees;
+  ///////////////////////////////////////////////////////////
+  //////////////////////// VARIABLES ////////////////////////
+  ///////////////////////////////////////////////////////////
 
-  IDexSwap private dexSwap;
+  ////////////////////////////////////////////////////////
+  //////////////////////// EVENTS ////////////////////////
+  ////////////////////////////////////////////////////////
+  ///@notice event emitted when a CCIP message is sent
+  event CCIPSent(bytes32 indexed ccipMessageId, address sender, address recipient, CCIPToken token, uint256 amount, uint64 dstChainSelector);
+  ///@notice event emitted when a stuck amount is withdraw
+  event Concero_StuckAmountWithdraw(address owner, address token, uint256 amount);
 
   constructor(
-    address _functionsRouter,
-    uint64 _donHostedSecretsVersion,
-    bytes32 _donId,
-    uint8 _donHostedSecretsSlotId,
-    uint64 _subscriptionId,
+    FunctionsVariables memory _variables,
     uint64 _chainSelector,
     uint _chainIndex,
     address _link,
     address _ccipRouter,
+    JsCodeHashSum memory _jsCodeHashSum,
+    bytes32 _ethersHashSum,
     address _dexSwap,
-    JsCodeHashSum memory jsCodeHashSum,
-    bytes32 ethersHashSum
-  )
-    ConceroCCIP(
-      _functionsRouter,
-      _donHostedSecretsVersion,
-      _donId,
-      _donHostedSecretsSlotId,
-      _subscriptionId,
-      _chainSelector,
-      _chainIndex,
-      _link,
-      _ccipRouter,
-      jsCodeHashSum,
-      ethersHashSum
-    )
-  {
-    dexSwap = IDexSwap(_dexSwap);
-
+    address _pool,
+    address _proxy
+  ) ConceroCCIP(_variables, _chainSelector, _chainIndex, _link, _ccipRouter, _jsCodeHashSum, _ethersHashSum, _dexSwap, _pool, _proxy) {
     clfPremiumFees[3478487238524512106] = 4000000000000000; // 0.004 link | arb
     clfPremiumFees[10344971235874465080] = 1847290640394088; // 0.0018 link | base // takes in usd mb price feed needed
     clfPremiumFees[5224473277236331295] = 2000000000000000; // 0.002 link | opt
   }
 
-  modifier tokenAmountSufficiency(address token, uint256 amount) {
-    if (LibConcero.isNativeToken(token)) {
-      if (msg.value != amount) revert InvalidAmount();
-    } else {
-      uint256 balance = LibConcero.getBalance(token, msg.sender);
-      if (balance < amount) revert InvalidAmount();
-    }
-
-    _;
-  }
-
-  modifier validateSwapAndBridgeData(BridgeData calldata bridgeData, IDexSwap.SwapData[] memory srcSwapData) {
-    address swapDataToToken = srcSwapData[srcSwapData.length - 1].toToken;
-    if (swapDataToToken == getToken(bridgeData.tokenType)) {
-      revert InvalidBridgeData();
-    }
-    _;
-  }
-
-  modifier validateBridgeData(BridgeData calldata bridgeData) {
-    if (bridgeData.amount == 0) {
-      revert InvalidAmount();
-    }
-    _;
-  }
-
-  modifier validateSwapData(IDexSwap.SwapData[] memory swapData) {
-    if (swapData.length == 0) {
-      revert IDexSwap.InvalidSwapData();
-    }
-
-    if (LibConcero.isNativeToken(swapData[0].fromToken)) {
-      if (swapData[0].fromAmount != msg.value) revert IDexSwap.InvalidSwapData();
-    }
-    _;
-  }
-
-  // setters
-
-  function setDexSwap(address _dexSwap) external onlyOwner {
-    dexSwap = IDexSwap(_dexSwap);
-  }
-
+  ///////////////////////////////////////////////////////////////
+  ///////////////////////////Functions///////////////////////////
+  ///////////////////////////////////////////////////////////////
   function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external onlyOwner {
-    //@audit we must limit this amount. If we don't, it Will trigger a lot of red flags in audits.
+    //@audit we must limit this amount. If we don't, it Will trigger red flags in audits.
     uint256 previousValue = clfPremiumFees[_chainSelector];
     clfPremiumFees[_chainSelector] = feeAmount;
+
     emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
   }
 
-  // fees module
+  function startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata _dstSwapData) external {
+    if (address(this) != i_proxy) revert Concero_ItsNotOrchestrator(msg.sender);
 
+    address fromToken = getToken(bridgeData.tokenType, s_chainIndex);
+    uint256 totalSrcFee = getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount);
+    uint256 mockedLpFee = getDstTotalFeeInUsdc(bridgeData.amount);
+
+    if (bridgeData.amount < totalSrcFee + mockedLpFee) {
+      revert InsufficientFundsForFees(bridgeData.amount, totalSrcFee);
+    }
+
+    uint256 amount = bridgeData.amount - totalSrcFee;
+    uint256 actualLpFee = getDstTotalFeeInUsdc(amount);
+
+    bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, actualLpFee);
+    emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
+    //@audit destinationSwapData is not being trasminted through functions
+    // TODO: pass _dstSwapData to functions
+    sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType);
+  }
+
+  /////////////////
+  ///VIEW & PURE///
+  /////////////////
+  // fees module
   function getFunctionsFeeInLink(uint64 dstChainSelector) public view returns (uint256) {
     uint256 srcGasPrice = s_lastGasPrices[CHAIN_SELECTOR];
     uint256 dstGasPrice = s_lastGasPrices[dstChainSelector];
@@ -138,89 +137,13 @@ contract Concero is ConceroCCIP {
   }
 
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType), 1 ether, 0.1 ether, dstChainSelector);
-    return CCIP_ROUTER.getFee(dstChainSelector, evm2AnyMessage);
+    // todo: instead of 0.1 ether, pass the actual fee into _buildCCIPMessage()
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, s_chainIndex), 1 ether, 0.1 ether, dstChainSelector);
+    return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
   }
 
   function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector);
     return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / 1 ether;
-  }
-
-  function _startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata dstSwapData) internal {
-    address fromToken = getToken(bridgeData.tokenType);
-    uint256 totalSrcFee = getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount);
-    uint256 lpFee = bridgeData.amount / CONCERO_FEE_FACTOR;
-
-    if (bridgeData.amount < totalSrcFee + lpFee) {
-      revert InsufficientFundsForFees(bridgeData.amount, totalSrcFee);
-    }
-
-    uint256 amount = bridgeData.amount - totalSrcFee;
-    bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, lpFee);
-    emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
-    // TODO: pass _dstSwapData to functions
-    sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType);
-  }
-
-  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount, bool isFeeCollected) internal {
-    address fromToken = swapData[0].fromToken;
-
-    if (LibConcero.isNativeToken(fromToken)) {
-      if (isFeeCollected) {
-        nativeAmount -= (nativeAmount / CONCERO_FEE_FACTOR);
-        swapData[0].fromAmount -= (swapData[0].fromAmount / CONCERO_FEE_FACTOR);
-      }
-      dexSwap.conceroEntry{value: nativeAmount}(swapData, nativeAmount);
-    } else {
-      LibConcero.transferFromERC20(fromToken, msg.sender, address(this), swapData[0].fromAmount);
-      if (isFeeCollected) {
-        swapData[0].fromAmount -= (swapData[0].fromAmount / CONCERO_FEE_FACTOR);
-      }
-      // delegate call
-      dexSwap.conceroEntry(swapData, nativeAmount);
-    }
-  }
-
-  function swap(IDexSwap.SwapData[] memory swapData) external payable tokenAmountSufficiency(swapData[0].fromToken, swapData[0].fromAmount) {
-    _swap(swapData, msg.value, true);
-  }
-
-  function swapAndBridge(
-    BridgeData calldata bridgeData,
-    IDexSwap.SwapData[] memory srcSwapData,
-    IDexSwap.SwapData[] calldata dstSwapData
-  )
-    external
-    payable
-    tokenAmountSufficiency(srcSwapData[0].fromToken, srcSwapData[0].fromAmount)
-    validateSwapData(srcSwapData)
-    validateBridgeData(bridgeData)
-    validateSwapAndBridgeData(bridgeData, srcSwapData)
-  {
-    _swap(srcSwapData, msg.value, false);
-    _startBridge(bridgeData, dstSwapData);
-  }
-
-  function bridge(
-    BridgeData calldata bridgeData,
-    IDexSwap.SwapData[] calldata dstSwapData
-  ) external payable tokenAmountSufficiency(getToken(bridgeData.tokenType), bridgeData.amount) validateBridgeData(bridgeData) {
-    address fromToken = getToken(bridgeData.tokenType);
-    LibConcero.transferFromERC20(fromToken, msg.sender, address(this), bridgeData.amount);
-    _startBridge(bridgeData, dstSwapData);
-  }
-
-  function withdraw(address _owner) public onlyOwner {
-    uint256 amount = address(this).balance;
-    if (amount == 0) revert NothingToWithdraw();
-    (bool sent, ) = _owner.call{value: amount}("");
-    if (!sent) revert FailedToWithdrawEth(msg.sender, _owner, amount);
-  }
-
-  function withdrawToken(address _owner, address _token) public onlyOwner {
-    uint256 amount = LibConcero.getBalance(_token, address(this));
-    if (amount == 0) revert NothingToWithdraw();
-    LibConcero.transferERC20(_token, amount, _owner);
   }
 }

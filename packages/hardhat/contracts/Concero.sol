@@ -36,10 +36,6 @@ error Concero_ItsNotOrchestrator(address caller);
 contract Concero is ConceroCCIP {
   using SafeERC20 for IERC20;
 
-  ///////////////////////////////////////////////////////////
-  //////////////////////// VARIABLES ////////////////////////
-  ///////////////////////////////////////////////////////////
-
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
@@ -68,18 +64,11 @@ contract Concero is ConceroCCIP {
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
-  function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external onlyOwner {
-    //@audit we must limit this amount. If we don't, it Will trigger red flags in audits.
-    uint256 previousValue = clfPremiumFees[_chainSelector];
-    clfPremiumFees[_chainSelector] = feeAmount;
-
-    emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
-  }
 
   function startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata _dstSwapData) external {
     if (address(this) != i_proxy) revert Concero_ItsNotOrchestrator(msg.sender);
 
-    address fromToken = getToken(bridgeData.tokenType, s_chainIndex);
+    address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount);
     uint256 mockedLpFee = getDstTotalFeeInUsdc(bridgeData.amount);
 
@@ -138,7 +127,7 @@ contract Concero is ConceroCCIP {
 
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     // todo: instead of 0.1 ether, pass the actual fee into _buildCCIPMessage()
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, s_chainIndex), 1 ether, 0.1 ether, dstChainSelector);
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, i_chainIndex), 1 ether, 0.1 ether, dstChainSelector);
     return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
   }
 

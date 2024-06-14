@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {IDexSwap} from "../Interfaces/IDexSwap.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IStorage} from "../Interfaces/IStorage.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -20,87 +21,7 @@ error Storage_InvalidAddress();
 ///@notice error emitted when the chain selector input is invalid
 error Storage_ChainNotAllowed(uint64 chainSelector);
 
-abstract contract Storage is Ownable {
-  ///////////////////////
-  ///TYPE DECLARATIONS///
-  ///////////////////////
-  ///@notice Chainlink Functions Request Type
-  enum RequestType {
-    addUnconfirmedTxDst,
-    checkTxSrc
-  }
-  ///@notice CCIP Compatible Tokens
-  enum CCIPToken {
-    bnm,
-    usdc
-  }
-  ///@notice Operational Chains
-  enum Chain {
-    arb,
-    base,
-    opt
-  }
-  ///@notice Function Request
-  struct Request {
-    RequestType requestType;
-    bool isPending;
-    bytes32 ccipMessageId;
-  }
-  ///@notice CCIP Data to Bridge
-  struct BridgeData {
-    CCIPToken tokenType;
-    uint256 amount;
-    uint256 minAmount;
-    uint64 dstChainSelector;
-    address receiver;
-  }
-  ///@notice ConceroPool Request
-  struct WithdrawRequests {
-    uint256 condition;
-    uint256 amount;
-    bool isActiv;
-  }
-  ///@notice `ccipSend` to distribute liquidity
-  struct Pools {
-    uint64 chainSelector;
-    address poolAddress;
-  }
-  ///@notice Functions Js Code
-  struct JsCodeHashSum {
-    bytes32 src;
-    bytes32 dst;
-  }
-  ///@notice Chainlink Functions Transaction
-  struct Transaction {
-    bytes32 ccipMessageId;
-    address sender;
-    address recipient;
-    uint256 amount;
-    CCIPToken token;
-    uint64 srcChainSelector;
-    bool isConfirmed;
-  }
-  ///@notice Chainlink Price Feeds
-  struct PriceFeeds {
-    address linkToUsdPriceFeeds;
-    address usdcToUsdPriceFeeds;
-    address nativeToUsdPriceFeeds;
-    address linkToNativePriceFeeds;
-  }
-  ///@notice Chainlink Functions Variables
-  struct FunctionsVariables {
-    uint8 donHostedSecretsSlotId;
-    uint64 donHostedSecretsVersion;
-    uint64 subscriptionId;
-    bytes32 donId;
-    address functionsRouter;
-  }
-  ///@notice User deposit lock period
-  struct Deposit {
-    uint256 amountDeposited;
-    uint256 lpTokenMinted;
-    bool isWithdrawable;
-  }
+abstract contract Storage is IStorage, Ownable {
 
   ///////////////
   ///VARIABLES///
@@ -123,12 +44,6 @@ abstract contract Storage is Ownable {
   uint256 public s_latestNativeUsdcRate;
   ///@notice Variable to store the Link to Native latest rate
   uint256 public s_latestLinkNativeRate;
-  ///@notice variable to store the total value deposited
-  uint256 internal s_usdcPoolReserve;
-  ///@notice variable to store the total amount of liquidity fees
-  uint256 internal s_totalFees;
-  ///@notice variable to store the value that will be temporary used by Chainlink Functions
-  uint256 internal s_usdcUsageCLF;
   ///@notice gap to reserve storage in the contract for future variable additions
   uint256[50] __gap;
 
@@ -143,27 +58,13 @@ abstract contract Storage is Ownable {
   /////////////
   ///STORAGE///
   /////////////
-  ///@notice array of Pools to receive Liquidity through `ccipSend` function
-  Pools[] poolsToDistribute;
 
   ///@notice Concero: Mapping to keep track of CLF fees for different chains
   mapping(uint64 => uint256) public clfPremiumFees;
-
   ///@notice Mapping to keep track of messenger addresses
-  mapping(address messenger => uint256 allowed) internal s_messengerContracts;
+  mapping(address messenger => uint256 allowed) internal s_messengerAddresses;
   ///@notice DexSwap: mapping to keep track of allowed routers to perform swaps. 1 == Allowed.
   mapping(address router => uint256 isAllowed) internal s_routerAllowed;
-
-  ///@notice ConceroPool: Mapping to keep track of allowed pool receiver
-  mapping(uint64 chainId => address pool) public s_poolReceiver;
-  ///@notice ConceroPool: Mapping to keep track of allowed tokens
-  mapping(address token => uint256 isApproved) public s_isTokenSupported;
-  ///@notice ConceroPool: Mapping to keep track of allowed senders on a given token
-  mapping(address token => address senderAllowed) public s_approvedSenders;
-  ///@notice ConceroPool: Mapping to keep track of allowed pool senders
-  mapping(uint64 chainId => mapping(address poolAddress => uint256)) public s_allowedPool;
-  ///@notice ConceroPool: Mapping to keep track of withdraw requests
-  mapping(address token => WithdrawRequests) internal s_withdrawWaitlist;
 
   ///@notice Functions: Mapping to keep track of Concero.sol contracts to send cross-chain Chainlink Functions messages
   mapping(uint64 chainSelector => address conceroContract) internal s_conceroContracts;
@@ -173,8 +74,9 @@ abstract contract Storage is Ownable {
   mapping(bytes32 => Request) public s_requests;
   ///@notice Functions: Mapping to keep track of cross-chain gas prices
   mapping(uint64 chainSelector => uint256 lasGasPrice) public s_lastGasPrices;
-  ///@notice Mapping to store the Lock structure by deposit
-  mapping(address user => LockPeriod[]) public s_poolLock;
+
+  ///@notice Mapping to keep track of allowed pool receiver
+  mapping(uint64 chainId => address pool) public s_poolReceiver;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -185,6 +87,22 @@ abstract contract Storage is Ownable {
   event Storage_MessengerUpdated(address indexed walletAddress, uint256 status);
   ///@notice event emitted when the router address is approved
   event Storage_NewRouterAdded(address router, uint256 isAllowed);
+  ///@notice Concero CCIP: event emitted when the Chainlink Function Fee is updated
+  event CLFPremiumFeeUpdated(uint64 chainSelector, uint256 previousValue, uint256 feeAmount);
+  ///@notice Concero Functions: emitted when the concero pool address is updated
+  event ConceroPoolAddressUpdated(address previousAddress, address pool);
+  ///@notice Concero Functions: emitted when the secret version of Chainlink Function Don is updated
+  event DonSecretVersionUpdated(uint64 previousDonSecretVersion, uint64 newDonSecretVersion);
+  ///@notice Concero Functions: emitted when the slot ID of Chainlink Function is updated
+  event DonSlotIdUpdated(uint8 previousDonSlot, uint8 newDonSlot);
+  ///@notice Concero Functions: emitted when the source JS code of Chainlink Function is updated
+  event SourceJsHashSumUpdated(bytes32 previousSrcHashSum, bytes32 newSrcHashSum);
+  ///@notice Concero Functions: emitted when the destination JS code of Chainlink Function is updated
+  event DestinationJsHashSumUpdated(bytes32 previousDstHashSum, bytes32 newDstHashSum);
+  ///@notice Concero Functions: emitted when the address for the Concero Contract is updated
+  event ConceroContractUpdated(uint64 chainSelector, address conceroContract);
+  ///@notice Concero Functions: emitted when the Ethers HashSum is updated
+  event EthersHashSumUpdated(bytes32 previousValue, bytes32 hashSum);
 
   ///////////////
   ///MODIFIERS///
@@ -207,7 +125,7 @@ abstract contract Storage is Ownable {
    * @notice modifier to check if the caller is the an approved messenger
    */
   modifier onlyMessenger() {
-    if (s_messengerContracts[msg.sender] != APPROVED) revert Storage_NotMessenger(msg.sender);
+    if (s_messengerAddresses[msg.sender] != APPROVED) revert Storage_NotMessenger(msg.sender);
     _;
   }
 
@@ -237,7 +155,7 @@ abstract contract Storage is Ownable {
   function setConceroMessenger(address _walletAddress, uint256 _approved) external onlyOwner {
     if (_walletAddress == address(0)) revert Storage_InvalidAddress();
 
-    s_messengerContracts[_walletAddress] = _approved;
+    s_messengerAddresses[_walletAddress] = _approved;
 
     emit Storage_MessengerUpdated(_walletAddress, _approved);
   }
@@ -251,6 +169,94 @@ abstract contract Storage is Ownable {
     s_routerAllowed[_router] = _isApproved;
 
     emit Storage_NewRouterAdded(_router, _isApproved);
+  }
+
+  /**
+   * @notice Function to set the Chainlink Functions Fee
+   * @param _chainSelector The blockchain chains selector to update the variable
+   * @param feeAmount The total amount of fees charged.
+   */
+  function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external onlyOwner {
+    //@audit we must limit this amount. If we don't, it Will trigger red flags in audits.
+    uint256 previousValue = clfPremiumFees[_chainSelector];
+    clfPremiumFees[_chainSelector] = feeAmount;
+
+    emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
+  }
+
+  /**
+   * @notice function to set the Concero Contract Address that Chainlink Functions will use
+   * @param _chainSelector the blockchain selector
+   * @param _conceroContract the address of the destination contract
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setConceroContract(uint64 _chainSelector, address _conceroContract) external onlyOwner {
+    s_conceroContracts[_chainSelector] = _conceroContract;
+
+    emit ConceroContractUpdated(_chainSelector, _conceroContract);
+  }
+
+  /**
+   * @notice Function to set the Don Secrects Version from Chainlink Functions
+   * @param _version the version
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
+    uint64 previousValue = s_donHostedSecretsVersion;
+
+    s_donHostedSecretsVersion = _version;
+
+    emit DonSecretVersionUpdated(previousValue, _version);
+  }
+
+  /**
+   * @notice Function to set the Don Secrects Slot ID from Chainlink Functions
+   * @param _donHostedSecretsSlotId the slot number
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setDonHostedSecretsSlotID(uint8 _donHostedSecretsSlotId) external onlyOwner {
+    uint8 previousValue = s_donHostedSecretsSlotId;
+
+    s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
+
+    emit DonSlotIdUpdated(previousValue, _donHostedSecretsSlotId);
+  }
+
+  /**
+   * @notice Function to set the Destination JS code for Chainlink Functions
+   * @param _hashSum the JsCode
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setDstJsHashSum(bytes32 _hashSum) external onlyOwner {
+    bytes32 previousValue = s_dstJsHashSum;
+
+    s_dstJsHashSum = _hashSum;
+
+    emit DestinationJsHashSumUpdated(previousValue, _hashSum);
+  }
+
+  /**
+   * @notice Function to set the Source JS code for Chainlink Functions
+   * @param _hashSum  the JsCode
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setSrcJsHashSum(bytes32 _hashSum) external onlyOwner {
+    bytes32 previousValue = s_dstJsHashSum;
+
+    s_srcJsHashSum = _hashSum;
+
+    emit SourceJsHashSumUpdated(previousValue, _hashSum);
+  }
+
+  /**
+   * @notice Function to set the Ethers JS code for Chainlink Functions
+   * @param _hashSum the JsCode
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setEthersHashSum(bytes32 _hashSum) external payable onlyOwner {
+    bytes32 previousValue = s_ethersHashSum;
+    s_ethersHashSum = _hashSum;
+    emit EthersHashSumUpdated(previousValue, _hashSum);
   }
 
   /////////////////

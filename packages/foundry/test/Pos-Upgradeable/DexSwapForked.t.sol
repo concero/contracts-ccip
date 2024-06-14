@@ -9,7 +9,7 @@ import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 //DEXes routers
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import {ISwapRouter} from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-import {IRouter} from "@velodrome/contracts/interfaces/IRouter.sol";
+import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
 import {TransferHelper} from '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 import {ISwapRouter02, IV3SwapRouter} from "contracts/Interfaces/ISwapRouter02.sol";
 
@@ -250,7 +250,7 @@ contract DexSwapForked is ProtocolTest {
 
         assertEq(User.balance, INITIAL_BALANCE - amountIn);
         assertEq(wEth.balanceOf(address(op)), 0);
-        assertEq(address(op).balance, 0);
+        assertEq(address(op).balance, amountIn / 1000);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
     }
 }

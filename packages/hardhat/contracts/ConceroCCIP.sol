@@ -8,19 +8,19 @@ import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-sol
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ConceroFunctions} from "./ConceroFunctions.sol";
 
-  ////////////////////////////////////////////////////////
-  //////////////////////// ERRORS ////////////////////////
-  ////////////////////////////////////////////////////////
-  ///@notice error emitted when the destination chain is not allowed
-  error ChainNotAllowed(uint64 ChainSelector);
-  ///@notice error emitted when the source chain is not allowed
-  error SourceChainNotAllowed(uint64 sourceChainSelector);
-  ///@notice error emitted when the sender of the message is not allowed
-  error SenderNotAllowed(address sender);
-  ///@notice error emitted when the receiver address is invalid
-  error InvalidReceiverAddress();
-  ///@notice error emitted when the link balance is not enough to send the message
-  error NotEnoughLinkBalance(uint256 fees, uint256 feeToken);
+////////////////////////////////////////////////////////
+//////////////////////// ERRORS ////////////////////////
+////////////////////////////////////////////////////////
+///@notice error emitted when the destination chain is not allowed
+error ChainNotAllowed(uint64 ChainSelector);
+///@notice error emitted when the source chain is not allowed
+error SourceChainNotAllowed(uint64 sourceChainSelector);
+///@notice error emitted when the sender of the message is not allowed
+error SenderNotAllowed(address sender);
+///@notice error emitted when the receiver address is invalid
+error InvalidReceiverAddress();
+///@notice error emitted when the link balance is not enough to send the message
+error NotEnoughLinkBalance(uint256 fees, uint256 feeToken);
 
 contract ConceroCCIP is ConceroFunctions {
   using SafeERC20 for IERC20;
@@ -28,7 +28,7 @@ contract ConceroCCIP is ConceroFunctions {
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
-  
+
   ////////////////
   ///IMMUTABLES///
   ////////////////
@@ -52,17 +52,7 @@ contract ConceroCCIP is ConceroFunctions {
     address _dexSwap,
     address _pool,
     address _proxy
-  ) 
-    ConceroFunctions(
-      _variables,
-      _chainSelector, 
-      _chainIndex, 
-      jsCodeHashSum,
-      ethersHashSum,
-      _dexSwap,
-      _pool,
-      _proxy
-  ) {
+  ) ConceroFunctions(_variables, _chainSelector, _chainIndex, jsCodeHashSum, ethersHashSum, _dexSwap, _pool, _proxy) {
     i_linkToken = LinkTokenInterface(_link);
     i_ccipRouter = IRouterClient(_ccipRouter);
     s_messengerContracts[msg.sender] = APPROVED;

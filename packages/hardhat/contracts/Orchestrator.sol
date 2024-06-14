@@ -78,7 +78,7 @@ contract Orchestrator is Storage, IFunctionsClient {
   modifier validateSwapData(IDexSwap.SwapData[] calldata _srcSwapData) {
     if (_srcSwapData.length == 0) {
       revert IDexSwap.InvalidSwapData();
-    } 
+    }
 
     if (_srcSwapData[0].fromToken == address(0)) {
       if (_srcSwapData[0].fromAmount != msg.value) revert IDexSwap.InvalidSwapData();
@@ -93,28 +93,19 @@ contract Orchestrator is Storage, IFunctionsClient {
     BridgeData calldata _bridgeData,
     IDexSwap.SwapData[] calldata _srcSwapData,
     IDexSwap.SwapData[] calldata _dstSwapData
-  )
-    external
-    payable
-  {
+  ) external payable {
     uint256 amountToSwap = msg.value;
-    
+
     _swap(_srcSwapData, amountToSwap);
 
-    (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(
-        abi.encodeWithSelector(
-            IConcero.startBridge.selector,
-            _bridgeData,
-            _dstSwapData
-        )
-    );
-    if(bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
+    (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, _bridgeData, _dstSwapData));
+    if (bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
   }
 
   //@audit adjust the modifier
-  function swap(IDexSwap.SwapData[] calldata _swapData) external payable tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount)
-    validateSwapData(_swapData) {
-
+  function swap(
+    IDexSwap.SwapData[] calldata _swapData
+  ) external payable tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount) validateSwapData(_swapData) {
     _swap(_swapData, msg.value);
   }
 
@@ -122,54 +113,40 @@ contract Orchestrator is Storage, IFunctionsClient {
     BridgeData calldata bridgeData,
     IDexSwap.SwapData[] calldata dstSwapData
   ) external payable tokenAmountSufficiency(getToken(bridgeData.tokenType, s_chainIndex), bridgeData.amount) validateBridgeData(bridgeData) {
-
     address fromToken = getToken(bridgeData.tokenType, s_chainIndex);
 
-    IERC20(fromToken).safeTransferFrom(msg.sender, address(this), bridgeData.amount);    
-    
-    (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(
-        abi.encodeWithSelector(
-            IConcero.startBridge.selector,
-            bridgeData,
-            dstSwapData
-        )
-    );
-    if(bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
+    IERC20(fromToken).safeTransferFrom(msg.sender, address(this), bridgeData.amount);
+
+    (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData));
+    if (bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
   }
-  
+
   //////////////////////////
   /// INTERNAL FUNCTIONS ///
   //////////////////////////
+  event Log(string);
   function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount) internal returns (uint256 amountReceived) {
     address fromToken = swapData[0].fromToken;
     uint256 fromAmount = swapData[0].fromAmount;
 
-    if(fromToken != address(0)){
-        uint256 balanceBefore = IERC20(fromToken).balanceOf(address(this));
-        IERC20(fromToken).safeTransferFrom(msg.sender, address(this), fromAmount);
-        uint256 balanceAfter = IERC20(fromToken).balanceOf(address(this));
+    if (fromToken != address(0)) {
+      uint256 balanceBefore = IERC20(fromToken).balanceOf(address(this));
+      IERC20(fromToken).safeTransferFrom(msg.sender, address(this), fromAmount);
+      uint256 balanceAfter = IERC20(fromToken).balanceOf(address(this));
+      //TODO: deal with FoT tokens.
+      amountReceived = balanceAfter - balanceBefore;
+      if (amountReceived < fromAmount) revert Orchestrator_FoTNotAllowedYet();
 
-        //TODO: deal with FoT tokens.
-        amountReceived = balanceAfter - balanceBefore;
-        if(amountReceived != fromAmount) revert Orchestrator_FoTNotAllowedYet();
-
-        (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-            abi.encodeWithSelector(
-                IDexSwap.conceroEntry.selector,
-                fromAmount -= (fromAmount / CONCERO_FEE_FACTOR),
-                0
-            )
-        );
-        if(swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
+      emit Log("here");
+      (bool swapSuccess, bytes memory data) = i_dexSwap.delegatecall(
+        abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, fromAmount -= (fromAmount / CONCERO_FEE_FACTOR))
+      );
+      if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(data);
     } else {
-        (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-            abi.encodeWithSelector(
-                IDexSwap.conceroEntry.selector,
-                swapData,
-                nativeAmount -= (nativeAmount / CONCERO_FEE_FACTOR)
-            )
-        );
-        if(swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
+      (bool swapSuccess, bytes memory data) = i_dexSwap.delegatecall(
+        abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, nativeAmount -= (nativeAmount / CONCERO_FEE_FACTOR))
+      );
+      if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(data);
     }
   }
 
@@ -179,15 +156,10 @@ contract Orchestrator is Storage, IFunctionsClient {
     }
 
     (bool fulfilled, bytes memory notFulfilled) = i_concero.delegatecall(
-      abi.encodeWithSelector(
-        IConcero.fulfillRequestWrapper.selector,
-        requestId,
-        response,
-        err
-      )
+      abi.encodeWithSelector(IConcero.fulfillRequestWrapper.selector, requestId, response, err)
     );
 
-    if(fulfilled == false) revert Orchestrator_UnableToCompleteDelegateCall(notFulfilled);
+    if (fulfilled == false) revert Orchestrator_UnableToCompleteDelegateCall(notFulfilled);
 
     emit Orchestrator_RequestFulfilled(requestId);
   }

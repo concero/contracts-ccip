@@ -14,7 +14,7 @@ export async function setContractVariables(liveChains: CNetwork[], deployableCha
   for (const chain of liveChains) {
     const { viemChain, url, name } = chain;
     try {
-      const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
+      const contract = getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`);
       const { walletClient, publicClient, account } = getClients(viemChain, url);
 
       // set dstChain contracts for each contract
@@ -65,7 +65,7 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
     name: dcName,
   } = deployableChain;
   try {
-    const dcContract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[dcName]}`);
+    const conceroProxy = getEnvVar(`CONCEROPROXY_${networkEnvKeys[dcName]}`);
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
 
     // // fetch slotId from contract
@@ -94,7 +94,7 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
     if (!rowBySlotId) return log(`No secrets found for ${dcName} at slot ${slotId}.`, "updateContract");
 
     const { request: setDstConceroContractReq } = await publicClient.simulateContract({
-      address: dcContract,
+      address: conceroProxy,
       abi,
       functionName: "setDonHostedSecretsVersion",
       account,
@@ -107,7 +107,7 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
       hash: setDstConceroContractHash,
     });
     log(
-      `Set ${dcName}:${dcContract} donHostedSecretsVersion[${rowBySlotId.version}]. Gas used: ${setDstConceroContractGasUsed.toString()}`,
+      `Set ${dcName}:${conceroProxy} donHostedSecretsVersion[${rowBySlotId.version}]. Gas used: ${setDstConceroContractGasUsed.toString()}`,
       "setContractVariables",
     );
   } catch (error) {
@@ -119,11 +119,11 @@ async function addMessengerToAllowlist(deployableChain: CNetwork, abi: any) {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
   const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
   try {
-    const dcContract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[dcName]}`);
+    const conceroProxy = getEnvVar(`CONCEROPROXY_${networkEnvKeys[dcName]}`);
 
     const messengerWallet = getEnvVar("MESSENGER_ADDRESS");
     const { request: addToAllowlistReq } = await publicClient.simulateContract({
-      address: dcContract,
+      address: conceroProxy,
       abi,
       functionName: "setConceroMessenger",
       account,
@@ -135,7 +135,7 @@ async function addMessengerToAllowlist(deployableChain: CNetwork, abi: any) {
       hash: addToAllowlistHash,
     });
     log(
-      `Set ${dcName}:${dcContract} allowlist[${messengerWallet}]. Gas used: ${addToAllowlistGasUsed.toString()}`,
+      `Set ${dcName}:${conceroProxy} allowlist[${messengerWallet}]. Gas used: ${addToAllowlistGasUsed.toString()}`,
       "setContractVariables",
     );
   } catch (error) {
@@ -188,7 +188,7 @@ async function setJsHashes(deployableChain: CNetwork, abi: any, liveChains: CNet
   try {
     const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
-    const conceroContractAddress = getEnvVar(`CONCEROCCIP_${networkEnvKeys[srcChainName]}`);
+    const conceroProxyAddress = getEnvVar(`CONCEROPROXY_${networkEnvKeys[srcChainName]}`);
     const conceroDstCode = await (
       await fetch(
         "https://raw.githubusercontent.com/concero/contracts-ccip/release/packages/hardhat/tasks/CLFScripts/dist/DST.min.js",
@@ -205,7 +205,7 @@ async function setJsHashes(deployableChain: CNetwork, abi: any, liveChains: CNet
 
     const setHash = async (hash, functionName) => {
       const { request: setHashReq } = await publicClient.simulateContract({
-        address: conceroContractAddress as Address,
+        address: conceroProxyAddress as Address,
         abi,
         functionName,
         account,
@@ -218,7 +218,7 @@ async function setJsHashes(deployableChain: CNetwork, abi: any, liveChains: CNet
       });
 
       log(
-        `Set ${srcChainName}:${conceroContractAddress} jshash[${hash}]. Gas used: ${setHashGasUsed.toString()}`,
+        `Set ${srcChainName}:${conceroProxyAddress} jshash[${hash}]. Gas used: ${setHashGasUsed.toString()}`,
         "setContractVariables",
       );
     };

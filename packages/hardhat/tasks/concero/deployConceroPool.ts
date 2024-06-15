@@ -169,14 +169,11 @@ async function setPoolVariables(deployableChains: CNetwork[]) {
 
     await setConceroContractSenders(chain, clients);
     await setReceivers(chain, clients);
-
-    // TODO: how to set approved senders?
   }
 }
 
 task("deploy-pool", "Deploy the concero pool")
   .addFlag("skipdeploy", "Skip deployment")
-
   .setAction(async taskArgs => {
     try {
       const hre: HardhatRuntimeEnvironment = require("hardhat");

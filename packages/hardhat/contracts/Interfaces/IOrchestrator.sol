@@ -1,25 +1,10 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IDexSwap} from "../Interfaces/IDexSwap.sol";
 import {IStorage} from "./IStorage.sol";
 
 interface IOrchestrator is IStorage {
-  ///@notice CCIP Compatible Tokens
-  //  enum CCIPToken {
-  //    bnm,
-  //    usdc
-  //  }
-
-  ///@notice CCIP Data to Bridge
-  //  struct BridgeData {
-  //    CCIPToken tokenType;
-  //    uint256 amount;
-  //    uint256 minAmount;
-  //    uint64 dstChainSelector;
-  //    address receiver;
-  //  }
-
   function swapAndBridge(
     BridgeData calldata _bridgeData,
     IDexSwap.SwapData[] calldata _srcSwapData,

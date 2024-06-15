@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IFunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsClient.sol";
 import {IConcero} from "./Interfaces/IConcero.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
-import {Storage} from "./Libraries/Storage.sol";
+import {StorageSetters} from "./Libraries/StorageSetters.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 
 ///////////////////////////////
@@ -23,7 +23,7 @@ error Orchestrator_InvalidAmount();
 ///@notice FUNCTIONS ERROR
 error Orchestrator_OnlyRouterCanFulfill();
 
-contract Orchestrator is Storage, IFunctionsClient {
+contract Orchestrator is StorageSetters, IFunctionsClient {
   using SafeERC20 for IERC20;
 
   ///////////////
@@ -47,7 +47,7 @@ contract Orchestrator is Storage, IFunctionsClient {
   ///@notice emitted when the Functions router fulfills a request
   event Orchestrator_RequestFulfilled(bytes32 requestId);
 
-  constructor(address _functionsRouter, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex) {
+  constructor(address _functionsRouter, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex) StorageSetters(msg.sender) {
     i_functionsRouter = _functionsRouter;
     i_dexSwap = _dexSwap;
     i_concero = _concero;

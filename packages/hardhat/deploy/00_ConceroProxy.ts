@@ -6,7 +6,7 @@ import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
 
 const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { proxyDeployer } = await hre.getNamedAccounts();
+  const { deployer, proxyDeployer } = await hre.getNamedAccounts();
 
   const { deploy } = hre.deployments;
   const { name } = hre.network;
@@ -15,14 +15,14 @@ const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEn
   console.log("Deploying ConceroProxy...");
   const conceroProxyDeployment = (await deploy("ConceroProxy", {
     from: proxyDeployer,
-    args: [implementationAddress, proxyDeployer, "0x"],
+    args: [implementationAddress, proxyDeployer, "0x", deployer],
     log: true,
     autoMine: true,
     gasLimit: 2_000_000,
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {
-    log(`ConceroPool deployed to ${name} to: ${conceroProxyDeployment.address}`, "deployConceroProxy");
+    log(`ConceroProxy deployed to ${name} to: ${conceroProxyDeployment.address}`, "deployConceroProxy");
     updateEnvVariable(
       `CONCEROPROXY_${networkEnvKeys[name]}`,
       conceroProxyDeployment.address,

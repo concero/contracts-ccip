@@ -13,6 +13,7 @@ import {ConceroProxy} from "contracts/ConceroProxy.sol";
 
 //Interfaces
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
+import {IStorage} from "contracts/Interfaces/IStorage.sol";
 
 //Protocol Storage
 import {Storage} from "contracts/Libraries/Storage.sol";
@@ -34,7 +35,7 @@ import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 //DEXes routers
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import {ISwapRouter} from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-import {IRouter} from "@velodrome/contracts/interfaces/IRouter.sol";
+import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
 import {TransferHelper} from '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 import {ISwapRouter02, IV3SwapRouter} from "contracts/Interfaces/ISwapRouter02.sol";
 
@@ -203,7 +204,9 @@ contract ProtocolTest is Test {
             address(0),
             address(0),
             address(0),
-            address(0)
+            address(0),
+            1,
+            0
         );
         //====== Deploy the proxy with the Dummy Orch
         proxy = proxyDeploy.run(address(orchEmpty), Tester, "");
@@ -215,7 +218,7 @@ contract ProtocolTest is Test {
             address(proxy)
         );
         concero = conceroDeploy.run(
-            Storage.FunctionsVariables ({
+           IStorage.FunctionsVariables ({
                 donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
                 donHostedSecretsVersion: 0, //uint64 _donHostedSecretsVersion
                 subscriptionId: 0, //uint64 _subscriptionId,
@@ -227,7 +230,7 @@ contract ProtocolTest is Test {
             linkBase,
             ccipRouterBase,
             address(dex),
-            Storage.JsCodeHashSum ({
+           IStorage.JsCodeHashSum ({
                 src: 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124,
                 dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
             }),
@@ -240,7 +243,9 @@ contract ProtocolTest is Test {
             address(dex),
             address(concero),
             address(pool),
-            address(proxy)
+            address(proxy),
+            1,
+            ccipChainSelectorBase
         );
 
         //=== Base Contracts
@@ -301,7 +306,9 @@ contract ProtocolTest is Test {
             address(0),
             address(0),
             address(0),
-            address(0)
+            address(0),
+            0,
+            0
         );
         //====== Deploy the proxy with the Dummy Orch
         proxyDst = proxyDeploy.run(address(orchEmptyDst), Tester, "");
@@ -313,7 +320,7 @@ contract ProtocolTest is Test {
             address(proxyDst)
         );
         conceroDst = conceroDeploy.run(
-            Storage.FunctionsVariables ({
+           IStorage.FunctionsVariables ({
                 donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
                 donHostedSecretsVersion: 0, //uint64 _donHostedSecretsVersion
                 subscriptionId: 0, //uint64 _subscriptionId,
@@ -325,7 +332,7 @@ contract ProtocolTest is Test {
             linkArb,
             ccipRouterArb,
             address(dexDst),
-            Storage.JsCodeHashSum ({
+           IStorage.JsCodeHashSum ({
                 src: 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124,
                 dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
             }),
@@ -339,7 +346,9 @@ contract ProtocolTest is Test {
             address(dexDst),
             address(conceroDst),
             address(poolDst),
-            address(proxyDst)
+            address(proxyDst),
+            0,
+            ccipChainSelectorArb
         );
 
         //=== Arbitrum Contracts
@@ -394,6 +403,9 @@ contract ProtocolTest is Test {
     }
 
     function helper() public {
+        // select the fork
+        vm.selectFork(baseMainFork);
+        
         vm.deal(User, INITIAL_BALANCE);
         vm.deal(LP, LP_INITIAL_BALANCE);
 

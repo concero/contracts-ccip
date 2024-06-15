@@ -9,19 +9,12 @@ import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/Fu
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 
 import {Storage} from "./Libraries/Storage.sol";
-import {IConceroPool} from "./Interfaces/IConceroPool.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
 ///@notice error emitted when a TX was already added
 error TXAlreadyExists(bytes32 txHash, bool isConfirmed);
-///@notice error emitted when a unexpected ID is added
-error UnexpectedRequestID(bytes32);
-///@notice error emitted when a transaction does not exist
-error TxDoesNotExist();
-///@notice error emitted when a transaction was already confirmed
-error TxAlreadyConfirmed();
 ///@notice error emitted when function receive a call from a not allowed address
 error AddressNotSet();
 ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
@@ -45,8 +38,6 @@ contract ConceroFunctions is FunctionsClient, Storage {
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   ///@notice
   uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
-  ///@notice
-  uint8 internal constant CL_SRC_RESPONSE_LENGTH = 192;
   ///@notice JS Code for Chainlink Functions
   string internal constant CL_JS_CODE =
     "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( `https://raw.githubusercontent.com/concero/contracts-ccip/full-infra-functions/packages/hardhat/tasks/CLFScripts/dist/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
@@ -58,15 +49,16 @@ contract ConceroFunctions is FunctionsClient, Storage {
   bytes32 private immutable i_donId;
   ///@notice Chainlink Functions Protocol Subscription ID
   uint64 private immutable i_subscriptionId;
-  //@audit can't be immutable
-  uint64 immutable CHAIN_SELECTOR;
   ///@notice variable to store the DexSwap address
   address immutable i_dexSwap;
   ///@notice variable to store the ConceroPool address
   address immutable i_pool;
   ///@notice Immutable variable to hold proxy address
   address immutable i_proxy;
+  ///@notice the Chain Index on the getToken function
   Chain immutable i_chainIndex;
+  ///@notice src chain selector
+  uint64 immutable CHAIN_SELECTOR;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -75,11 +67,6 @@ contract ConceroFunctions is FunctionsClient, Storage {
   event UnconfirmedTXSent(bytes32 indexed ccipMessageId, address sender, address recipient, uint256 amount, CCIPToken token, uint64 dstChainSelector);
   ///@notice emitted when a Unconfirmed TX is added by a cross-chain TX
   event UnconfirmedTXAdded(bytes32 indexed ccipMessageId, address sender, address recipient, uint256 amount, CCIPToken token, uint64 srcChainSelector);
-  event TXReleased(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, address token, uint256 amount);
-  ///@notice emitted when on destination when a TX is validated.
-  event TXConfirmed(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, uint256 amount, CCIPToken token);
-  ///@notice emitted when a Function Request returns an error
-  event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
   ///@notice emitted when the concero pool address is updated
   event ConceroPoolAddressUpdated(address previousAddress, address pool);
 
@@ -180,37 +167,12 @@ contract ConceroFunctions is FunctionsClient, Storage {
   }
 
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
-    Request storage request = s_requests[requestId];
-
-    if (!request.isPending) {
-      revert UnexpectedRequestID(requestId);
-    }
-
-    request.isPending = false;
-
-    if (err.length > 0) {
-      emit FunctionsRequestError(request.ccipMessageId, requestId, uint8(request.requestType));
-      return;
-    }
-
-    if (request.requestType == RequestType.checkTxSrc) {
-      _handleDstFunctionsResponse(request);
-    } else if (request.requestType == RequestType.addUnconfirmedTxDst) {
-      _handleSrcFunctionsResponse(response);
-    }
+    
   }
 
   ////////////////////////
   ///INTERNAL FUNCTIONS///
   ////////////////////////
-  function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
-    if (transaction.sender == address(0)) revert TxDoesNotExist();
-    if (transaction.isConfirmed == true) revert TxAlreadyConfirmed();
-
-    transaction.isConfirmed = true;
-
-    emit TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
-  }
 
   function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {
     if (s_conceroContracts[dstChainSelector] == address(0)) revert AddressNotSet();
@@ -235,47 +197,5 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_requests[reqId].ccipMessageId = ccipMessageId;
 
     emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
-  }
-
-  function _handleDstFunctionsResponse(Request storage request) internal {
-    Transaction storage transaction = s_transactions[request.ccipMessageId];
-
-    _confirmTX(request.ccipMessageId, transaction);
-
-    uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
-    address tokenReceived = getToken(transaction.token, i_chainIndex);
-
-    //@audit hardcode for CCIP-BnM - Should be USDC
-    //@audit s_chainIndex should be this way? Is there a better way to do it?
-    if (tokenReceived == getToken(CCIPToken.bnm, i_chainIndex)) {
-      IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
-
-      emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
-    } else {
-      //@audit We need to call the DEX module here.
-      // i_dexSwap.conceroEntry(passing the user address as receiver);
-    }
-  }
-
-  function _handleSrcFunctionsResponse(bytes memory response) internal {
-    if (response.length != CL_SRC_RESPONSE_LENGTH) {
-      return;
-    }
-
-    (uint256 dstGasPrice, uint256 srcGasPrice, uint256 dstChainSelector, uint256 linkUsdcRate, uint256 nativeUsdcRate, uint256 linkNativeRate) = abi.decode(
-      response,
-      (uint256, uint256, uint256, uint256, uint256, uint256)
-    );
-
-    s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice;
-    s_lastGasPrices[uint64(dstChainSelector)] = dstGasPrice;
-    s_latestLinkUsdcRate = linkUsdcRate;
-    s_latestNativeUsdcRate = nativeUsdcRate;
-    s_latestLinkNativeRate = linkNativeRate;
-  }
-
-  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
-    return amount / 1000;
-    //@audit we can have loss of precision here?
   }
 }

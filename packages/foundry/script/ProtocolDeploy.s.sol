@@ -12,14 +12,13 @@ contract ProtocolDeploy is Script {
     function run(
             Storage.FunctionsVariables memory _variables,
             uint64 _chainSelector,
-            uint _chainIndex,
+            uint8 _chainIndex,
             address _link,
             address _ccipRouter,
             Concero.JsCodeHashSum memory jsCodeHashSum,
             bytes32 _ethersHashSum,
-            address _messenger,
             address _proxy
-        ) public returns(DexSwap dex, ConceroPool pool, Concero concero, Orchestrator orch){
+        ) public returns(DexSwap dex, ConceroPool pool, Concero concero){
 
         vm.startBroadcast();
             dex = new DexSwap (_proxy);
@@ -36,14 +35,6 @@ contract ProtocolDeploy is Script {
                 address(pool),
                 _proxy
             );
-            orch = new Orchestrator(
-                _variables.functionsRouter,
-                address(dex),
-                address(concero),
-                address(pool),
-                _proxy
-            );
-
         vm.stopBroadcast();
     }
 }

@@ -199,4 +199,9 @@ abstract contract Storage is IStorage, Ownable {
 
     return tokens[uint256(token)][uint256(_chainIndex)];
   }
+
+  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
+    return amount / 1000;
+    //@audit we can have loss of precision here?
+  }
 }

@@ -233,7 +233,7 @@ contract ConceroPool is Storage, CCIPReceiver {
 
     IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
 
-    ccipSend(distributionRatio, _token, amountToDistribute);
+    // ccipSend(distributionRatio, _token, amountToDistribute);
   }
 
   /**

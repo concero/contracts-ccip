@@ -3,9 +3,13 @@ pragma solidity 0.8.19;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import {IFunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsClient.sol";
+
 import {IConcero} from "./Interfaces/IConcero.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
+import {IConceroPool} from "./Interfaces/IConceroPool.sol";
+
 import {Storage} from "./Libraries/Storage.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 
@@ -22,9 +26,21 @@ error Orchestrator_FoTNotAllowedYet();
 error Orchestrator_InvalidAmount();
 ///@notice FUNCTIONS ERROR
 error Orchestrator_OnlyRouterCanFulfill();
+///@notice error emitted when a transaction does not exist
+error TxDoesNotExist();
+///@notice error emitted when a transaction was already confirmed
+error TxAlreadyConfirmed();
+///@notice error emitted when a unexpected ID is added
+error UnexpectedRequestID(bytes32);
 
 contract Orchestrator is Storage, IFunctionsClient {
   using SafeERC20 for IERC20;
+
+  ///////////////
+  ///CONSTANTS///
+  ///////////////
+  ///@notice magic number removal
+  uint8 internal constant CL_SRC_RESPONSE_LENGTH = 192;  
 
   ///////////////
   ///IMMUTABLE///
@@ -39,21 +55,30 @@ contract Orchestrator is Storage, IFunctionsClient {
   address immutable i_pool;
   ///@notice variable to store the immutable Proxy Address
   address immutable i_proxy;
-  Chain internal immutable i_chainIndex;
+  ///@notice src chain selector
+  uint64 immutable i_chainSelector;
+  ///@notice the Chain Index on the getToken function
+  Chain immutable i_chainIndex;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
   ///@notice emitted when the Functions router fulfills a request
   event Orchestrator_RequestFulfilled(bytes32 requestId);
+  ///@notice emitted when on destination when a TX is validated.
+  event TXConfirmed(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, uint256 amount, CCIPToken token);
+  ///@notice emitted when a Function Request returns an error
+  event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
+  event TXReleased(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, address token, uint256 amount);
 
-  constructor(address _functionsRouter, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex) {
+  constructor(address _functionsRouter, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex, uint64 _chainSelector){
     i_functionsRouter = _functionsRouter;
     i_dexSwap = _dexSwap;
     i_concero = _concero;
     i_pool = _pool;
     i_proxy = _proxy;
     i_chainIndex = Chain(_chainIndex);
+    i_chainSelector = _chainSelector;
   }
 
   ///////////////
@@ -127,11 +152,24 @@ contract Orchestrator is Storage, IFunctionsClient {
       revert Orchestrator_OnlyRouterCanFulfill();
     }
 
-    (bool fulfilled, bytes memory notFulfilled) = i_concero.delegatecall(
-      abi.encodeWithSelector(IConcero.fulfillRequestWrapper.selector, requestId, response, err)
-    );
+    Request storage request = s_requests[requestId];
 
-    if (fulfilled == false) revert Orchestrator_UnableToCompleteDelegateCall(notFulfilled);
+    if (err.length > 0) {
+      emit FunctionsRequestError(request.ccipMessageId, requestId, uint8(request.requestType));
+      return;
+    }
+
+    if (!request.isPending) {
+      revert UnexpectedRequestID(requestId);
+    }
+
+    request.isPending = false;
+
+    if (request.requestType == RequestType.checkTxSrc) {
+      _handleDstFunctionsResponse(request);
+    } else if (request.requestType == RequestType.addUnconfirmedTxDst) {
+      _handleSrcFunctionsResponse(response);
+    }
 
     emit Orchestrator_RequestFulfilled(requestId);
   }
@@ -148,7 +186,7 @@ contract Orchestrator is Storage, IFunctionsClient {
       LibConcero.transferFromERC20(fromToken, msg.sender, address(this), fromAmount);
 
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-        abi.encodeWithSelector(IDexSwap.conceroEntry.selector, fromAmount -= (fromAmount / CONCERO_FEE_FACTOR), 0)
+        abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, fromAmount -= (fromAmount / CONCERO_FEE_FACTOR))
       );
       if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
     } else {
@@ -157,5 +195,53 @@ contract Orchestrator is Storage, IFunctionsClient {
       );
       if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
     }
+  }
+
+  function _handleDstFunctionsResponse(Request storage request) internal {
+    Transaction storage transaction = s_transactions[request.ccipMessageId];
+
+    _confirmTX(request.ccipMessageId, transaction);
+
+    uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
+    address tokenReceived = getToken(transaction.token, i_chainIndex);
+
+    if (tokenReceived == getToken(CCIPToken.bnm, i_chainIndex)) {
+      IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
+
+      emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
+    } else {
+      IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, address(this));
+      
+      // (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
+      //   abi.encodeWithSelector(IDexSwap.conceroEntry.selector, amount)
+      // );
+      // if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
+    }
+  }
+
+  function _handleSrcFunctionsResponse(bytes memory response) internal {
+    if (response.length != CL_SRC_RESPONSE_LENGTH) {
+      return;
+    }
+
+    (uint256 dstGasPrice, uint256 srcGasPrice, uint256 dstChainSelector, uint256 linkUsdcRate, uint256 nativeUsdcRate, uint256 linkNativeRate) = abi.decode(
+      response,
+      (uint256, uint256, uint256, uint256, uint256, uint256)
+    );
+
+    s_lastGasPrices[i_chainSelector] = srcGasPrice;
+    s_lastGasPrices[uint64(dstChainSelector)] = dstGasPrice;
+    s_latestLinkUsdcRate = linkUsdcRate;
+    s_latestNativeUsdcRate = nativeUsdcRate;
+    s_latestLinkNativeRate = linkNativeRate;
+  }
+
+  function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
+    if (transaction.sender == address(0)) revert TxDoesNotExist();
+    if (transaction.isConfirmed == true) revert TxAlreadyConfirmed();
+
+    transaction.isConfirmed = true;
+
+    emit TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
   }
 }

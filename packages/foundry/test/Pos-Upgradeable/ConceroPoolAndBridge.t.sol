@@ -39,14 +39,18 @@ contract ConceroPoolAndBridge is Helpers {
         uint256 poolBalance = mUSDC.balanceOf(address(pool));
         assertEq(poolBalance, lpBalance);
         uint256 lancaUserBalance = lanca.balanceOf(LP);
-        assertEq(lancaUserBalance, (lpBalance / 10**6)* 10**18);
-        //======= No operations are made. Advance time
-        vm.warp(31 days);
+        assertEq(lancaUserBalance, (lpBalance * 10**18) / 10**6);
 
         //======= Request Withdraw without any accrued fee
         vm.startPrank(LP);
         lanca.approve(address(pool), lancaUserBalance);
-        // pool.withdrawLiquidity(0);
+        pool.withdrawLiquidityRequest(0);
+
+        //======= No operations are made. Advance time
+        vm.warp(8 days);
+
+        //======= Withdraw after the lock period
+        pool.claimWithdraw();
 
         //======= Check LP balance
         assertEq(mUSDC.balanceOf(LP), lpBalance);

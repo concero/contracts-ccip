@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
-
 import {Storage} from "./Libraries/Storage.sol";
 
 ////////////////////////////////////////////////////////
@@ -90,7 +88,7 @@ contract ConceroPool is Storage, CCIPReceiver {
   ///////////////
   ///MODIFIERS///
   ///////////////
-  constructor(address _link, address _ccipRouter, address _proxy) CCIPReceiver(_ccipRouter) {
+  constructor(address _link, address _ccipRouter, address _proxy) CCIPReceiver(_ccipRouter) Storage(msg.sender) {
     i_linkToken = LinkTokenInterface(_link);
     i_router = IRouterClient(_ccipRouter);
     i_proxy = _proxy;
@@ -310,7 +308,7 @@ contract ConceroPool is Storage, CCIPReceiver {
 
     if (fees > i_linkToken.balanceOf(address(this))) revert ConceroPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
-    IERC20(_token).safeApprove(address(i_router), _amount);
+    IERC20(_token).forceApprove(address(i_router), _amount);
     i_linkToken.approve(address(i_router), fees);
 
     emit ConceroPool_MessageSent(messageId, _destinationChainSelector, s_poolReceiver[_destinationChainSelector], address(i_linkToken), fees);
@@ -401,7 +399,7 @@ contract ConceroPool is Storage, CCIPReceiver {
 
       if (fees > i_linkToken.balanceOf(address(this))) revert ConceroPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
-      IERC20(_token).safeApprove(address(i_router), _amountToDistribute);
+      IERC20(_token).forceApprove(address(i_router), _amountToDistribute);
       i_linkToken.approve(address(i_router), fees);
 
       emit ConceroPool_MessageSent(messageId, pool.chainSelector, pool.poolAddress, address(i_linkToken), fees);

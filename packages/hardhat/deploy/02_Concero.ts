@@ -2,11 +2,11 @@ import { DeployFunction, Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
-import addCLFConsumer from "../tasks/sub/add";
 import log from "../utils/log";
 import getHashSum from "../utils/getHashSum";
 import path from "path";
 import fs from "fs";
+import { getEnvVar } from "../utils/getEnvVar";
 
 interface ConstructorArgs {
   slotId?: number;
@@ -59,17 +59,11 @@ const deployConcero: DeployFunction = async function (
   }
 
   const defaultArgs = {
-    functionsRouter: functionsRouter,
-    donHostedSecretsVersion: donHostedSecretsVersion,
-    functionsDonId: functionsDonId,
-    slotId: 0,
-    functionsSubId: functionsSubIds[0],
     chainSelector: chainSelector,
     conceroChainIndex: conceroChainIndex,
     linkToken: linkToken,
     ccipRouter: ccipRouter,
-    // TODO: Update this to the correct address
-    dexSwapModule: linkToken,
+    dexSwapModule: getEnvVar(`CONCERO_DEX_SWAP_${networkEnvKeys[name]}`),
     jsCodeHashSum: {
       src: getHashSum(getJS(jsPath, "SRC")),
       dst: getHashSum(getJS(jsPath, "DST")),
@@ -79,6 +73,15 @@ const deployConcero: DeployFunction = async function (
         await fetch("https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js")
       ).text(),
     ),
+    functionsVars: {
+      donHostedSecretsSlotId: constructorArgs.soltid || 0,
+      donHostedSecretsVersion: donHostedSecretsVersion,
+      subscriptionId: functionsSubIds[0],
+      donId: functionsDonId,
+      functionsRouter: functionsRouter,
+    },
+    conceroPoolAddress: getEnvVar(`CONCEROPOOL_${networkEnvKeys[name]}`),
+    conceroProxyAddress: getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`),
   };
 
   // Merge defaultArgs with constructorArgs
@@ -88,18 +91,16 @@ const deployConcero: DeployFunction = async function (
     from: deployer,
     log: true,
     args: [
-      args.functionsRouter,
-      args.donHostedSecretsVersion,
-      args.functionsDonId,
-      args.slotId,
-      args.functionsSubId,
+      args.functionsVars,
       args.chainSelector,
       args.conceroChainIndex,
       args.linkToken,
       args.ccipRouter,
-      args.dexSwapModule,
       args.jsCodeHashSum,
       args.ethersHashSum,
+      args.dexSwapModule,
+      args.conceroPoolAddress,
+      args.conceroProxyAddress,
     ],
     autoMine: true,
   })) as Deployment;
@@ -107,7 +108,6 @@ const deployConcero: DeployFunction = async function (
   if (name !== "hardhat" && name !== "localhost") {
     log(`Contract Concero deployed to ${name} at ${deployment.address}`, "deployConcero");
     updateEnvVariable(`CONCEROCCIP_${networkEnvKeys[name]}`, deployment.address, "../../../.env.deployments");
-    await addCLFConsumer(chains[name], [deployment.address], args.functionsSubId);
   }
 };
 

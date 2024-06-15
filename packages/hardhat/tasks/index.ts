@@ -15,6 +15,8 @@ import transferTokens from "./utils/transferTokens";
 import remove from "./sub/remove";
 import timeout from "./sub/timeout";
 import deployConceroProxy from "./concero/deployProxy";
+import deployConceroDexSwap from "./concero/deployConceroDexSwap";
+import deployConceroOrchestrator from "./concero/deployConceroOrchestrator";
 
 export default {
   billing,
@@ -26,6 +28,8 @@ export default {
   deployCCIPInfrastructure,
   deployConceroPool,
   deployConceroProxy,
+  deployConceroDexSwap,
+  deployConceroOrchestrator,
   fundContract,
   dripBnm,
   clfRequest,

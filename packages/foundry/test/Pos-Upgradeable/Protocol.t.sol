@@ -286,9 +286,6 @@ contract ProtocolTest is Test {
         pool.setConceroContractSender(arbChainSelector, address(poolDst), 1);
         pool.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
 
-        pool.setSupportedToken(address(mUSDC), 1);
-        pool.setApprovedSender(address(mUSDC), LP);
-
         op.setConceroContract(arbChainSelector, address(proxyDst));
         vm.stopPrank();
         }
@@ -385,11 +382,6 @@ contract ProtocolTest is Test {
 
         poolDst.setConceroContractSender(baseChainSelector, address(pool), 1);
         poolDst.setConceroContractSender(baseChainSelector, address(concero), 1);
-
-        poolDst.setSupportedToken(address(mUSDC), 1);
-        poolDst.setApprovedSender(address(mUSDC), LP);
-        poolDst.setSupportedToken(address(aUSDC), 1);
-        poolDst.setApprovedSender(address(aUSDC), LP);
 
         opDst.setConceroContract(baseChainSelector, address(proxy));
         vm.stopPrank();

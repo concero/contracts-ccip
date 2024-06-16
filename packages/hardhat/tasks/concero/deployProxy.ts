@@ -3,11 +3,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { execSync } from "child_process";
 import deployConceroProxy from "../../deploy/00_ConceroProxy";
 
-const transferImplementationOwnership = async (hre: HardhatRuntimeEnvironment) => {
-  const { name } = hre.network;
-  const { deployer, proxyDeployer } = await hre.getNamedAccounts();
-};
-
 task("deploy-proxy", "Deploy the concero proxy")
   .addFlag("skipdeploy", "Skip deployment")
 
@@ -21,7 +16,6 @@ task("deploy-proxy", "Deploy the concero proxy")
       } else {
         execSync("yarn compile", { stdio: "inherit" });
         await deployConceroProxy(hre);
-        await transferImplementationOwnership(hre);
       }
     } catch (e) {
       console.error(e);

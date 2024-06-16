@@ -11,33 +11,6 @@ import load from "../../utils/load";
 import log from "../../utils/log";
 import env from "../../types/env";
 
-async function setOrchestrator(chain: CNetwork, clients) {
-  const { publicClient, account, walletClient } = clients;
-  const { abi } = await load("../artifacts/contracts/ConceroPool.sol/ConceroPool.json");
-  const { name: chainName, viemChain } = chain;
-  if (!chainName) throw new Error("Chain name not found");
-  const orchestrator = getEnvVar(`CONCEROCCIP_${networkEnvKeys[chainName]}` as keyof env);
-  const conceroPool = getEnvVar(`CONCEROPOOL_${networkEnvKeys[chainName]}` as keyof env);
-
-  const { request: setOrchestratorReq } = await publicClient.simulateContract({
-    address: conceroPool,
-    functionName: "setConceroOrchestrator",
-    args: [orchestrator],
-    abi,
-    account,
-    viemChain,
-  });
-  const setOrchestratorHash = await walletClient.writeContract(setOrchestratorReq);
-  const { cumulativeGasUsed: setOrchestratorGasUsed } = await publicClient.waitForTransactionReceipt({
-    hash: setOrchestratorHash,
-  });
-
-  log(
-    `Set ${chainName}:${conceroPool} orchestrator[${orchestrator}]. Gas used: ${setOrchestratorGasUsed.toString()}`,
-    "setOrchestrator",
-  );
-}
-
 async function setMessenger(chain: CNetwork, clients) {
   const { publicClient, account, walletClient } = clients;
   const { abi } = await load("../artifacts/contracts/ConceroPool.sol/ConceroPool.json");
@@ -48,8 +21,8 @@ async function setMessenger(chain: CNetwork, clients) {
 
   const { request: setMessengerReq } = await publicClient.simulateContract({
     address: conceroPool,
-    functionName: "setMessenger",
-    args: [messengerWallet],
+    functionName: "setConceroMessenger",
+    args: [messengerWallet, 1n],
     abi,
     account,
     viemChain,
@@ -61,7 +34,7 @@ async function setMessenger(chain: CNetwork, clients) {
 
   log(
     `Set ${chainName}:${conceroPool} messenger[${messengerWallet}]. Gas used: ${setMessengerGasUsed.toString()}`,
-    "setMessenger",
+    "setConceroMessenger",
   );
 }
 
@@ -163,7 +136,6 @@ async function setPoolVariables(deployableChains: CNetwork[]) {
     const { viemChain, url } = chain;
     const clients = getClients(viemChain, url);
 
-    await setOrchestrator(chain, clients);
     await setMessenger(chain, clients);
     await setSupportedTokens(chain, clients);
 

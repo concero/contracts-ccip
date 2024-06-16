@@ -54,8 +54,8 @@ abstract contract Storage is IStorage, Ownable {
   mapping(address messenger => uint256 allowed) internal s_messengerContracts;
   ///@notice DexSwap: mapping to keep track of allowed routers to perform swaps. 1 == Allowed.
   mapping(address router => uint256 isAllowed) internal s_routerAllowed;
-  ///@notice ConceroPool: Mapping to keep track of allowed pool receiver
-  mapping(uint64 chainId => address pool) public s_poolReceiver;
+  ///@notice ConceroPool a: Mapping to keep track of allowed pool receiver
+  mapping(uint64 chainSelector => address pool) public s_poolReceiver;
   ///@notice ConceroPool: Mapping to keep track of allowed tokens
   mapping(address token => uint256 isApproved) public s_isTokenSupported;
   ///@notice ConceroPool: Mapping to keep track of allowed senders on a given token
@@ -63,7 +63,7 @@ abstract contract Storage is IStorage, Ownable {
   ///@notice ConceroPool: Mapping to keep track of balances of user on a given token
   mapping(address token => mapping(address user => uint256 balance)) public s_userBalances;
   ///@notice ConceroPool: Mapping to keep track of allowed pool senders
-  mapping(uint64 chainId => mapping(address poolAddress => uint256)) public s_allowedPool;
+  mapping(uint64 chainSelector => mapping(address poolAddress => uint256)) public s_allowedPool;
   ///@notice ConceroPool: Mapping to keep track of withdraw requests
   mapping(address token => WithdrawRequests) internal s_withdrawWaitlist;
   ///@notice Functions: Mapping to keep track of Concero.sol contracts to send cross-chain Chainlink Functions messages

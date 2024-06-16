@@ -1,5 +1,5 @@
 import { SubscriptionManager } from "@chainlink/functions-toolkit";
-import chains, { networkEnvKeys } from "../../constants/CNetworks";
+import chains from "../../constants/CNetworks";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../types/CNetwork";
@@ -44,7 +44,7 @@ async function addCLFConsumer(chain: CNetwork, consumerAddresses: Address[], sub
       const addConsumerTx = await sm.addConsumer({ subscriptionId, consumerAddress, txOptions });
       log(`Successfully added ${consumerAddress} to sub ${subscriptionId} on ${name}.`, "addCLFConsumer");
     } catch (error) {
-      if (error.message.includes("is already authorized to use subscription")) log(error.message, "deployConcero");
+      if (error.message.includes("is already authorized to use subscription")) log(error.message, "addCLFConsumer");
       else console.error(error);
     }
   }

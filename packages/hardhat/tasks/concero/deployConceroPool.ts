@@ -1,7 +1,7 @@
 import { task } from "hardhat/config";
 import { execSync } from "child_process";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import deployConceroPool from "../../deploy/04_ConceroPool";
+import deployConceroPool from "../../deploy/01_ConceroPool";
 import { liveChains } from "./liveChains";
 import { CNetwork } from "../../types/CNetwork";
 import { getClients } from "../utils/switchChain";

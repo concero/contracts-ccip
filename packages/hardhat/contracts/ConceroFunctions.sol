@@ -177,6 +177,10 @@ contract ConceroFunctions is FunctionsClient, Storage {
     fulfillRequest(requestId, response, err);
   }
 
+  ////////////////////////
+  ///INTERNAL FUNCTIONS///
+  ////////////////////////
+
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
     Request storage request = s_requests[requestId];
 
@@ -198,9 +202,6 @@ contract ConceroFunctions is FunctionsClient, Storage {
     }
   }
 
-  ////////////////////////
-  ///INTERNAL FUNCTIONS///
-  ////////////////////////
   function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
     if (transaction.sender == address(0)) revert TxDoesNotExist();
     if (transaction.isConfirmed == true) revert TxAlreadyConfirmed();

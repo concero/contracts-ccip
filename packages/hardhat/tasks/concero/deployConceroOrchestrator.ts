@@ -4,7 +4,7 @@ import { CNetwork } from "../../types/CNetwork";
 import { liveChains } from "./liveChains";
 import CNetworks from "../../constants/CNetworks";
 import { execSync } from "child_process";
-import deployConceroOrchestrator from "../../deploy/01_ConceroOrchestrator";
+import deployConceroOrchestrator from "../../deploy/04_ConceroOrchestrator";
 
 task("deploy-orchestrator", "Deploy the concero orchestrator").setAction(async taskArgs => {
   try {

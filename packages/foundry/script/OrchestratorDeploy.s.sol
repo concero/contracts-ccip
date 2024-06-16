@@ -3,24 +3,27 @@ pragma solidity ^0.8.0;
 
 import {Script, console} from "forge-std/Script.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
+import {IStorage} from "contracts/Interfaces/IStorage.sol";
 
 contract OrchestratorDeploy is Script {
 
     function run(
-            address _functionsRouter,
-            address _dex,
+            address _router,
+            address _dexSwap,
             address _concero,
             address _pool,
-            address _proxy
+            address _proxy,
+            uint8 _chainIndex
     ) public returns(Orchestrator orch){
 
         vm.startBroadcast();
         orch = new Orchestrator(
-            _functionsRouter,
-            _dex,
+            _router,
+            _dexSwap,
             _concero,
             _pool,
-            _proxy
+            _proxy,
+            _chainIndex
         );
         vm.stopBroadcast();
     }

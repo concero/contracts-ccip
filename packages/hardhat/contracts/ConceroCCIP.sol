@@ -86,7 +86,7 @@ contract ConceroCCIP is ConceroFunctions {
     return
       Client.EVM2AnyMessage({
         receiver: abi.encode(s_poolReceiver[_destinationChainSelector]),
-        data: abi.encode(_lpFee),
+        data: abi.encode(address(0), _lpFee),
         tokenAmounts: tokenAmounts,
         extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
         feeToken: address(i_linkToken)

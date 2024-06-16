@@ -68,10 +68,10 @@ contract Concero is ConceroCCIP {
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
-  function startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata _dstSwapData) external {
+  function startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata _dstSwapData, Chain _chainIndex) external {
     if (address(this) != i_proxy) revert Concero_ItsNotOrchestrator(msg.sender);
 
-    address fromToken = getToken(bridgeData.tokenType, s_chainIndex);
+    address fromToken = getToken(bridgeData.tokenType, _chainIndex);
 
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount);
 
@@ -150,7 +150,7 @@ contract Concero is ConceroCCIP {
    */
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     // todo: instead of 0.1 ether, pass the actual fee into _buildCCIPMessage()
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, s_chainIndex), 1 ether, 0.1 ether, dstChainSelector);
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, i_chainIndex), 1 ether, 0.1 ether, dstChainSelector);
     return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
   }
 

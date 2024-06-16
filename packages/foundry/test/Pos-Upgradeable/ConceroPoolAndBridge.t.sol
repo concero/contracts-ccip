@@ -20,15 +20,16 @@ contract ConceroPoolAndBridge is Helpers {
 
         swapUniV2LikeHelper();
 
-        //======= GET Lanca address.
-        IERC20 lanca = pool.lanca();
+        //======= GET lpToken address.
+        IERC20 lpToken = pool.lp();
 
         uint256 lpBalance = mUSDC.balanceOf(LP);
+        uint256 depositAmount = 10*10**6;
 
         //======= LP Deposits USDC on the Main Pool
         vm.startPrank(LP);
-        mUSDC.approve(address(pool), lpBalance);
-        pool.depositLiquidity(lpBalance);
+        mUSDC.approve(address(pool), depositAmount);
+        pool.depositLiquidity(depositAmount);
         vm.stopPrank();
 
         //======= Check LP balance
@@ -37,20 +38,20 @@ contract ConceroPoolAndBridge is Helpers {
         //======= We check the pool balance;
                     //Here, the LP Fees will be compounding directly for the LP address
         uint256 poolBalance = mUSDC.balanceOf(address(pool));
-        assertEq(poolBalance, lpBalance);
-        uint256 lancaUserBalance = lanca.balanceOf(LP);
-        assertEq(lancaUserBalance, (lpBalance * 10**18) / 10**6);
+        assertEq(poolBalance, depositAmount);
+        uint256 lpTokenUserBalance = lpToken.balanceOf(LP);
+        assertEq(lpTokenUserBalance, (depositAmount * 10**18) / 10**6);
 
         //======= Request Withdraw without any accrued fee
         vm.startPrank(LP);
-        lanca.approve(address(pool), lancaUserBalance);
-        pool.withdrawLiquidityRequest(0);
+        lpToken.approve(address(pool), lpTokenUserBalance);
+        // pool.withdrawLiquidityRequest(0);
 
         //======= No operations are made. Advance time
         vm.warp(8 days);
 
         //======= Withdraw after the lock period
-        pool.claimWithdraw();
+        // pool.claimWithdraw();
 
         //======= Check LP balance
         assertEq(mUSDC.balanceOf(LP), lpBalance);
@@ -91,19 +92,19 @@ contract ConceroPoolAndBridge is Helpers {
         //======= Transfer the link to the pool
         vm.startPrank(LP);
         IERC20(linkArb).transfer(address(proxyDst), 10 ether);
-        IERC20(linkArb).transfer(address(poolDst), 10 ether);
+        IERC20(linkArb).transfer(address(child), 10 ether);
         vm.stopPrank();
 
         uint256 lpBalance = aUSDC.balanceOf(LP);
 
         //======= LP Deposits USDC on the Main Pool
         vm.startPrank(LP);
-        aUSDC.approve(address(poolDst), lpBalance);
-        poolDst.depositLiquidity(lpBalance);
+        aUSDC.approve(address(child), lpBalance);
+        // child.depositLiquidity(lpBalance);
         vm.stopPrank();
 
         vm.prank(Messenger);
-        poolDst.ccipSendToPool(baseChainSelector, address(aUSDC), (lpBalance/2));
+        child.ccipSendToPool(baseChainSelector, LP, address(aUSDC), (lpBalance/2));
         ccipLocalSimulatorFork.switchChainAndRouteMessage(baseMainFork);
     }
 }

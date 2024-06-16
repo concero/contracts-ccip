@@ -26,8 +26,6 @@ abstract contract Storage is IStorage, Ownable {
   ///////////////
   ///VARIABLES///
   ///////////////
-  ///@notice ID of the deployed chain on getChain() function
-  Chain internal s_chainIndex;
   ///@notice variable to store the Chainlink Function DON Slot ID
   uint8 internal s_donHostedSecretsSlotId;
   ///@notice variable to store the Chainlink Function DON Secret Version
@@ -108,18 +106,18 @@ abstract contract Storage is IStorage, Ownable {
   ///MODIFIERS///
   ///////////////
   //@audit Unused in the moment
-  modifier validateSwapAndBridgeData(
-    BridgeData calldata _bridgeData,
-    IDexSwap.SwapData[] calldata _srcSwapData,
-    uint64 _chainIndex
-  ) {
-    address swapDataToToken = _srcSwapData[_srcSwapData.length - 1].toToken;
+  // modifier validateSwapAndBridgeData(
+  //   BridgeData calldata _bridgeData,
+  //   IDexSwap.SwapData[] calldata _srcSwapData,
+  //   uint64 _chainIndex
+  // ) {
+  //   address swapDataToToken = _srcSwapData[_srcSwapData.length - 1].toToken;
 
-    if (swapDataToToken == getToken(_bridgeData.tokenType, s_chainIndex)) {
-      revert Storage_InvalidBridgeData();
-    }
-    _;
-  }
+  //   if (swapDataToToken == getToken(_bridgeData.tokenType, s_chainIndex)) {
+  //     revert Storage_InvalidBridgeData();
+  //   }
+  //   _;
+  // }
 
   /**
    * @notice modifier to check if the caller is the an approved messenger
@@ -145,7 +143,6 @@ abstract contract Storage is IStorage, Ownable {
   //////////////
   ///EXTERNAL///
   //////////////
-
   /**
    * @notice Function to update Concero Messenger Addresses
    * @param _walletAddress the messenger address

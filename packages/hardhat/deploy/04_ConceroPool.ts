@@ -3,6 +3,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
+import { getEnvVar } from "../utils/getEnvVar";
 
 interface ConstructorArgs {
   linkToken?: string;
@@ -22,6 +23,7 @@ const deployConceroPool: DeployFunction = async function (
   const defaultArgs = {
     linkToken: linkToken,
     ccipRouter: ccipRouter,
+    conceroProxyAddress: getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`),
   };
 
   // Merge defaultArgs with constructorArgs
@@ -30,7 +32,7 @@ const deployConceroPool: DeployFunction = async function (
   console.log("Deploying ConceroPool...");
   const deployConceroPool = (await deploy("ConceroPool", {
     from: deployer,
-    args: [args.linkToken, args.ccipRouter],
+    args: [args.linkToken, args.ccipRouter, args.conceroProxyAddress],
     log: true,
     autoMine: true,
   })) as Deployment;

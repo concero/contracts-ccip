@@ -199,6 +199,10 @@ contract ConceroPool is Storage, CCIPReceiver {
     emit ConceroPool_ApprovedSenderUpdated(_token, _approvedSender);
   }
 
+  function setConceroMessenger(address _walletAddress, uint256 _approved) external payable onlyOwner {
+    s_messengerContracts[_walletAddress] = _approved;
+  }
+
   /**
    * @notice function to deposit Ether
    * @dev The address(0) is hardcode as ether

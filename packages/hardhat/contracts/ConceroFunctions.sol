@@ -66,6 +66,8 @@ contract ConceroFunctions is FunctionsClient, Storage {
   address immutable i_pool;
   ///@notice Immutable variable to hold proxy address
   address immutable i_proxy;
+  ///@notice ID of the deployed chain on getChain() function
+  Chain immutable i_chainIndex;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -124,7 +126,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_dstJsHashSum = jsCodeHashSum.dst;
     s_ethersHashSum = ethersHashSum;
     CHAIN_SELECTOR = _chainSelector;
-    s_chainIndex = Chain(_chainIndex);
+    i_chainIndex = Chain(_chainIndex);
     i_dexSwap = _dexSwap;
     i_pool = _pool;
     i_proxy = _proxy;
@@ -253,11 +255,10 @@ contract ConceroFunctions is FunctionsClient, Storage {
     _confirmTX(request.ccipMessageId, transaction);
 
     uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
-    address tokenReceived = getToken(transaction.token, s_chainIndex);
+    address tokenReceived = getToken(transaction.token, i_chainIndex);
 
     //@audit hardcode for CCIP-BnM - Should be USDC
-    //@audit s_chainIndex should be this way? Is there a better way to do it?
-    if (tokenReceived == getToken(CCIPToken.bnm, s_chainIndex)) {
+    if (tokenReceived == getToken(CCIPToken.bnm, i_chainIndex)) {
       IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
 
       emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);

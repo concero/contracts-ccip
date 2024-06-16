@@ -10,8 +10,10 @@ import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.s
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 
-import {Storage} from "./Libraries/Storage.sol";
-import {LancaPool} from "./LancaPool.sol";
+import {IConceroPool} from "contracts/Interfaces/IConceroPool.sol";
+
+import {ConceroAutomation} from "./ConceroAutomation.sol";
+import {LPToken} from "./LPToken.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -20,34 +22,30 @@ import {LancaPool} from "./LancaPool.sol";
 error ConceroPool_Unauthorized();
 ///@notice error emitted when the balance is not sufficient
 error ConceroPool_InsufficientBalance();
-///@notice error emitted when the transfer revert
-error ConceroPool_TransferFailed();
-///@notice error emitted when the user input an unsupported token
-error ConceroPool_TokenNotSupported();
-///@notice error emitted when the caller is not an Orchestrator
-error ConceroPool_ItsNotAnOrchestrator(address caller);
 ///@notice error emitted when the receiver is the address(0)
 error ConceroPool_InvalidAddress();
 ///@notice error emitted when the CCIP message sender is not allowed.
 error ConceroPool_SenderNotAllowed(address _sender);
 ///@notice error emitted when an attempt to create a new request is made while other is still active.
-error ConceroPool_ActivRequestNotFulfilledYet();
+error ConceroPool_ActiveRequestNotFulfilledYet();
 ///@notice error emitted when an attempt to send value to a not allowed receiver is made
 error ConceroPool_DestinationNotAllowed();
-///@notice error emitted when the contract doesn't have enought link balance
+///@notice error emitted when the contract doesn't have enough link balance
 error ConceroPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
 ///@notice error emitted when a LP try to deposit liquidity on the contract without pools
 error ConceroPool_ThereIsNoPoolToDistribute();
-///@notice emitted in depositLiquidty when the input amount is not enough
+///@notice emitted in depositLiquidity when the input amount is not enough
 error ConceroPool_EmptyDepositedIsNotAllowed(uint256 amount);
-///@notice emitted in withdrawLiquidity when the amount to withdras is bigger than the balance
-error ConceroPool_LockPeriodNotEndedYet(uint256 releaseDate);
+///@notice emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
+error ConceroPool_AmountNotAvailableYet(uint256 amountAvailable);
 ///@notice emitted in depositLiquidity when the input token is not allowed
 error ConceroPool_TokenNotAllowed(address token);
 ///@notice error emitted when the caller is not the messenger
 error ConceroPool_NotMessenger(address caller);
 ///@notice error emitted when the chain selector input is invalid
 error ConceroPool_ChainNotAllowed(uint64 chainSelector);
+///@notice error emitted when the caller is not the Orchestrator
+error ConceroPool_ItsNotAnOrchestrator(address caller);
 
 contract ConceroPool is CCIPReceiver, Ownable {
   using SafeERC20 for IERC20;
@@ -55,22 +53,6 @@ contract ConceroPool is CCIPReceiver, Ownable {
   ///////////////////////
   ///TYPE DECLARATIONS///
   ///////////////////////
-  ///@notice User deposit lock period
-  struct Deposit {
-    uint256 amountDeposited;
-    uint256 lpTokenMinted;
-    bool isWithdrawable;
-  }
-
-  ///@notice ConceroPool Request
-  struct WithdrawRequests {
-    uint256 amount;
-    uint256 amountToBurn;
-    IERC20 token;
-    address sender;
-    uint256 deadline;
-  }
-
   ///@notice `ccipSend` to distribute liquidity
   struct Pools {
     uint64 chainSelector;
@@ -81,13 +63,13 @@ contract ConceroPool is CCIPReceiver, Ownable {
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
   ///@notice variable to store the total value deposited
-  uint256 internal s_usdcPoolReserve;
-  ///@notice variable to store the total amount of liquidity fees
-  uint256 internal s_totalFees;
+  uint256 private s_usdcPoolReserve;
   ///@notice variable to store the value that will be temporary used by Chainlink Functions
-  uint256 internal s_usdcUsageCLF;
-  ///@notice variable to store the automation keeper address
-  address internal s_AutomationKeeper;
+  uint256 private s_commit;
+  ///@notice variable to store the amount distributed to child pools
+  uint256 private s_valueDistributed; //@audit need to be decrease when a withdraw is processed.
+  ///@notice variable to store the concero contract address
+  address private s_concero;
 
   ////////////////
   ///IMMUTABLES///
@@ -96,12 +78,12 @@ contract ConceroPool is CCIPReceiver, Ownable {
   LinkTokenInterface private immutable i_linkToken;
   ///@notice Chainlink CCIP Router
   IRouterClient private immutable i_router;
-  ///@notice Immutable variable to hold proxy address
-  address private immutable i_proxy;
-  ///@notice Pool sTaking token
-  LancaPool public immutable lanca;
-  ///@notice Address os USDC for the deployed chain
-  IERC20 private immutable USDC;
+  ///@notice immutable variable to store the USDC address.
+  IERC20 immutable i_USDC;
+  ///@notice Pool liquidity token
+  LPToken public immutable lp;
+  ///@notice Concero Automation contract
+  ConceroAutomation private immutable automation;
 
   ///////////////
   ///CONSTANTS///
@@ -109,14 +91,13 @@ contract ConceroPool is CCIPReceiver, Ownable {
   ///@notice Magic Number Removal
   uint256 private constant ALLOWED = 1;
   uint256 private constant USDC_DECIMALS = 10 ** 6;
-  uint256 private constant LANCA_DECIMALS = 10 ** 18;
+  uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
 
   /////////////
   ///STORAGE///
   /////////////
   ///@notice array of Pools to receive Liquidity through `ccipSend` function
   Pools[] poolsToDistribute;
-  WithdrawRequests[] withdrawRequests;
 
   ///@notice Mapping to keep track of messenger addresses
   mapping(address messenger => uint256 allowed) internal s_messengerAddresses;
@@ -124,8 +105,8 @@ contract ConceroPool is CCIPReceiver, Ownable {
   mapping(uint64 chainId => address pool) public s_poolToSendTo;
   ///@notice Mapping to keep track of allowed pool senders
   mapping(uint64 chainId => mapping(address poolAddress => uint256)) public s_poolToReceiveFrom;
-  ///@notice Mapping to store the data structure for deposits
-  mapping(address user => Deposit[]) public s_depositRegister;
+  ///@notice Mapping to keep track of Liquidity Providers withdraw requests
+  mapping(address _liquidityProvider => IConceroPool.WithdrawRequests) public s_pendingWithdrawRequests;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -134,8 +115,6 @@ contract ConceroPool is CCIPReceiver, Ownable {
   event ConceroPool_MessengerUpdated(address messengerAddress, uint256 allowed);
   ///@notice event emitted when a Concero pool is added
   event ConceroPool_PoolReceiverUpdated(uint64 chainSelector, address pool);
-  ///@notice event emitted when an approved sender is updated
-  event ConceroPool_ApprovedSenderUpdated(address token, address indexed newSender);
   ///@notice event emitted when a allowed Cross-chain contract is updated
   event ConceroPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
   ///@notice event emitted when a new withdraw request is made
@@ -146,14 +125,10 @@ contract ConceroPool is CCIPReceiver, Ownable {
   event ConceroPool_CCIPReceived(bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain message is sent.
   event ConceroPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
-  ///@notice event emitted when a Liquidity Provider add liquidity to our pool
-  event ConceroPool_Deposited(address token, address liquidityProvider, uint256 amount);
-  ///@notice event emitted when the orchestrator
-  event ConceroPool_OrchestratorContractUpdated(address orchestrator);
-  ///@notice event emitted in depositLiquidty when a deposit is successful executed
-  event ConceroPool_SuccessfullDeposited(address liquidityProvider, uint256 _amount, IERC20 _token);
-  ///@notice event emitted when the Automation Keeper is updated;
-  event ConceroPool_KeeperUpdated(address keeper);
+  ///@notice event emitted in depositLiquidity when a deposit is successful executed
+  event ConceroPool_SuccessfulDeposited(address liquidityProvider, uint256 _amount, IERC20 _token);
+  ///@notice event emitted in setConceroContract when the address is emitted
+  event ConceroPool_ConceroContractUpdated(address concero);
 
   ///////////////
   ///MODIFIERS///
@@ -190,12 +165,12 @@ contract ConceroPool is CCIPReceiver, Ownable {
   /////////////////////////////////////////////////////////////////////////////
   receive() external payable {}
 
-  constructor(address _link, address _ccipRouter, address _proxy, address _usdcAddress) CCIPReceiver(_ccipRouter) {
+  constructor(address _link, address _ccipRouter, address _usdc, address _lpToken, address _automation) CCIPReceiver(_ccipRouter) {
     i_linkToken = LinkTokenInterface(_link);
     i_router = IRouterClient(_ccipRouter);
-    i_proxy = _proxy;
-    USDC = IERC20(_usdcAddress);
-    lanca = new LancaPool("Lanca Pool", "sLanca");
+    i_USDC = IERC20(_usdc);
+    lp = LPToken(_lpToken);
+    automation = ConceroAutomation(_automation);
   }
 
   ////////////////////////
@@ -225,9 +200,8 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @dev this functions is used on ConceroPool.sol
    */
   function setConceroPoolReceiver(uint64 _chainSelector, address _pool) external payable onlyOwner {
-    Pools memory pool = Pools({chainSelector: _chainSelector, poolAddress: _pool});
+    poolsToDistribute.push(Pools({chainSelector: _chainSelector, poolAddress: _pool}));
 
-    poolsToDistribute.push(pool);
     s_poolToSendTo[_chainSelector] = _pool;
 
     emit ConceroPool_PoolReceiverUpdated(_chainSelector, _pool);
@@ -246,88 +220,10 @@ contract ConceroPool is CCIPReceiver, Ownable {
     emit ConceroPool_MessengerUpdated(_walletAddress, _approved);
   }
 
-  /**
-   * @notice Function to update automation Keeper
-   * @param _keeper the address of keeper
-   */
-  function setAutomationKeeper(address _keeper) external onlyOwner{
-    s_AutomationKeeper = _keeper;
+  function setConceroContract(address _concero) external onlyOwner{
+    s_concero = _concero;
 
-    emit ConceroPool_KeeperUpdated(_keeper);
-  }
-
-  /**
-   * @notice Function for user to deposit liquidity of allowed tokens
-   * @param _amount the amount to be deposited
-   */
-  function depositLiquidity(uint256 _amount) external {
-    if (_amount < 1 * USDC_DECIMALS) revert ConceroPool_EmptyDepositedIsNotAllowed(_amount);
-
-    uint256 lpTokenSupply = lanca.totalSupply();
-
-    //N° lpTokens = (((Total Liq + user deposit) * Total sToken) / Total USDC Liq) - Total sToken
-    uint256 lpTokensToMint = lpTokenSupply >= ALLOWED
-    ? ((adjustUSDCAmount((s_usdcPoolReserve + _amount)) * lpTokenSupply) / adjustUSDCAmount(s_usdcPoolReserve)) - lpTokenSupply
-    : adjustUSDCAmount(_amount);
-
-    s_usdcPoolReserve = s_usdcPoolReserve + _amount;
-
-    s_depositRegister[msg.sender].push(Deposit({amountDeposited: _amount, lpTokenMinted: lpTokensToMint, isWithdrawable: false}));
-
-    emit ConceroPool_SuccessfullDeposited(msg.sender, _amount, USDC);
-
-    USDC.safeTransferFrom(msg.sender, address(this), _amount);
-
-    lanca.mint(msg.sender, lpTokensToMint);
-  }
-
-  /**
-   * @notice Function to allow Liquidity Providers to Withdraw their USDC deposited
-   * @param _index the array index of the specific lock to withdraw
-   */
-  function withdrawLiquidityRequest(uint256 _index) external {
-    Deposit memory register = s_depositRegister[msg.sender][_index];
-
-    //We calculate the total amount to be withdraw. Using 18 decimals to reduce loss of precision
-    ///@audit need to convert to 18 dec and return back to 6 dec
-
-    //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_DEPOSIT / TOTAL_LP)
-    uint256 amountToWithdraw = s_usdcPoolReserve * (register.lpTokenMinted / lanca.totalSupply());
-
-    withdrawRequests.push(WithdrawRequests({
-      amount: amountToWithdraw,
-      amountToBurn: register.lpTokenMinted,
-      token: USDC,
-      sender: msg.sender,
-      deadline: block.timestamp + 7 days
-    }));
-
-    emit ConceroPool_WithdrawRequest(msg.sender, USDC, block.timestamp + 7 days, amountToWithdraw);
-    //@audit YET TO FINISH
-  }
-
-  function claimWithdraw() external {
-    //@audit YET TO FINISH
-    uint256 requestsArrayLength = withdrawRequests.length;
-
-    for(uint256 i; i < requestsArrayLength; ++i){
-      uint256 amount = withdrawRequests[i].amount;
-      uint256 amountToBurn = withdrawRequests[i].amountToBurn;
-
-      if(withdrawRequests[i].sender == msg.sender){
-
-        //@audit must improve this check, it will revert if the balance is less than the usage
-        if (amount > USDC.balanceOf(address(this)) - s_usdcUsageCLF) revert ConceroPool_InsufficientBalance();
-
-        s_usdcPoolReserve = s_usdcPoolReserve - amount;
-
-        IERC20(lanca).safeTransferFrom(msg.sender, address(this), amountToBurn);
-
-        lanca.burn(amountToBurn);
-
-        USDC.safeTransfer(msg.sender, amount);
-      }
-    }
+    emit ConceroPool_ConceroContractUpdated(_concero);
   }
 
   /**
@@ -379,12 +275,95 @@ contract ConceroPool is CCIPReceiver, Ownable {
    * @dev for ether transfer, the _receiver need to be known and trusted
    */
   function orchestratorLoan(address _token, uint256 _amount, address _receiver) external {
-    if (msg.sender != i_proxy) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
+    if (msg.sender != s_concero) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
     if (_receiver == address(0)) revert ConceroPool_InvalidAddress();
+
+    s_commit = s_commit + _amount;
+
     //@audit need to check if we can remove this check. If I am not mistaken, the SafeERC checks for balance and revert if it's bigger than balance.
     if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
 
     IERC20(_token).safeTransfer(_receiver, _amount);
+  }
+
+  /**
+   * @notice Function for user to deposit liquidity of allowed tokens
+   * @param _amount the amount to be deposited
+   */
+  function depositLiquidity(uint256 _amount) external {
+    if (_amount < 1 * USDC_DECIMALS) revert ConceroPool_EmptyDepositedIsNotAllowed(_amount);
+
+    uint256 lpTokenSupply = lp.totalSupply();
+    uint256 numberOfPools = poolsToDistribute.length + 1;
+    uint256 usdcReserve = s_usdcPoolReserve;
+
+    if (numberOfPools < 2) revert ConceroPool_ThereIsNoPoolToDistribute();
+
+    //N° lpTokens = (((Total Liq + user deposit) * Total sToken) / Total USDC Liq) - Total sToken
+    uint256 lpTokensToMint = lpTokenSupply >= ALLOWED
+    ? ((adjustUSDCAmount((usdcReserve + _amount)) * lpTokenSupply) / adjustUSDCAmount(usdcReserve)) - lpTokenSupply
+    : adjustUSDCAmount(_amount);
+
+    s_usdcPoolReserve = usdcReserve + _amount;
+
+    emit ConceroPool_SuccessfulDeposited(msg.sender, _amount, i_USDC);
+
+    i_USDC.safeTransferFrom(msg.sender, address(this), _amount);
+
+    lp.mint(msg.sender, lpTokensToMint);
+
+    if(s_usdcPoolReserve - (s_valueDistributed * numberOfPools) > 30 * USDC_DECIMALS){
+      uint256 amountToDistribute = (s_usdcPoolReserve - (s_valueDistributed * numberOfPools)) / numberOfPools;
+
+      _ccipSend(numberOfPools, amountToDistribute);
+    }
+  }
+
+  /**
+   * @notice Function to allow Liquidity Providers to start the Withdraw of their USDC deposited
+   * @param _lpAmount the amount of lp token the user wants to burn to get USDC back.
+   */
+  function startWithdrawal(uint256 _lpAmount) external {
+    if(lp.balanceOf(msg.sender) < _lpAmount) revert ConceroPool_InsufficientBalance();
+    if(s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ConceroPool_ActiveRequestNotFulfilledYet();
+
+    //We calculate the total amount to be withdraw. Using 18 decimals to reduce loss of precision
+    ///@audit need to convert to 18 dec and return back to 6 dec
+
+    //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_DEPOSIT / TOTAL_LP)
+    uint256 amountToWithdraw = s_usdcPoolReserve * (_lpAmount / lp.totalSupply());
+
+    IConceroPool.WithdrawRequests memory request = IConceroPool.WithdrawRequests({
+      amount: amountToWithdraw,
+      amountToBurn: _lpAmount,
+      receivedAmount: 0,
+      token: address(i_USDC),
+      sender: msg.sender,
+      deadline: block.timestamp + 597_600 //6days & 22h
+    });
+
+    automation.addPendingWithdrawal(request);
+    s_pendingWithdrawRequests[msg.sender] = request;
+
+    emit ConceroPool_WithdrawRequest(msg.sender, i_USDC, block.timestamp + 597_600, amountToWithdraw);
+  }
+
+  function completeWithdrawal() external {
+    IConceroPool.WithdrawRequests memory withdraw = s_pendingWithdrawRequests[msg.sender];
+    if(withdraw.receivedAmount < withdraw.amount) revert ConceroPool_AmountNotAvailableYet(withdraw.receivedAmount);
+    //@audit must improve this check, it will revert if the balance is less than the usage
+    if (withdraw.amount > i_USDC.balanceOf(address(this)) - s_commit) revert ConceroPool_InsufficientBalance();
+
+    s_usdcPoolReserve = s_usdcPoolReserve - withdraw.amount;
+    delete s_pendingWithdrawRequests[msg.sender];
+
+    emit ConceroPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amount);
+
+    IERC20(lp).safeTransferFrom(msg.sender, address(this), withdraw.amountToBurn);
+
+    lp.burn(withdraw.amountToBurn);
+
+    i_USDC.safeTransfer(msg.sender, withdraw.amount);
   }
 
   ////////////////
@@ -398,14 +377,19 @@ contract ConceroPool is CCIPReceiver, Ownable {
   function _ccipReceive(
     Client.Any2EVMMessage memory any2EvmMessage
   ) internal override onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address))) {
-    address receivedToken = any2EvmMessage.destTokenAmounts[0].token;
+    //2 scenarios in which we will receive data
+    //1. Fee of cross-chains transactions
+    //2. Transfers of amounts to be withdraw
+    (address _liquidityProvider, uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address,uint256));
 
-    if (any2EvmMessage.data.length > 0) {
-      uint256 receivedAmount = abi.decode(any2EvmMessage.data, (uint256));
-
-      s_totalFees = s_totalFees + receivedAmount;
-    } else {
-      //@audit What we will do here?
+    if (receivedFee > 0) {
+      //compound the transaction fee on totalAmount
+      s_usdcPoolReserve = s_usdcPoolReserve + receivedFee;
+      //subtract the amount from the committed total amount
+      s_commit = s_commit - (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
+    } else if (_liquidityProvider != address(0)){
+      //update the corresponding withdraw request
+      s_pendingWithdrawRequests[_liquidityProvider].receivedAmount = s_pendingWithdrawRequests[_liquidityProvider].receivedAmount + any2EvmMessage.destTokenAmounts[0].amount;
     }
 
     emit ConceroPool_CCIPReceived(
@@ -417,6 +401,45 @@ contract ConceroPool is CCIPReceiver, Ownable {
     );
   }
 
+  /**
+   * @notice Function to distribute funds automatically right after LP deposits into the pool
+   * @dev this function will only be called internally.
+   */
+  function _ccipSend(uint256 _numberOfPools, uint256 _amountToDistribute) internal returns (bytes32 messageId) {
+    Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
+
+    Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({token: address(i_USDC), amount: _amountToDistribute});
+
+    tokenAmounts[0] = tokenAmount;
+
+    for (uint256 i; i < _numberOfPools; ) {
+      Pools memory pool = poolsToDistribute[i];
+
+      Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
+        receiver: abi.encode(pool.poolAddress),
+        data: "",
+        tokenAmounts: tokenAmounts,
+        extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
+        feeToken: address(i_linkToken)
+      });
+
+      uint256 fees = i_router.getFee(pool.chainSelector, evm2AnyMessage);
+
+      if (fees > i_linkToken.balanceOf(address(this))) revert ConceroPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
+
+      i_USDC.safeApprove(address(i_router), _amountToDistribute);
+      i_linkToken.approve(address(i_router), fees);
+
+      emit ConceroPool_MessageSent(messageId, pool.chainSelector, pool.poolAddress, address(i_linkToken), fees);
+
+      messageId = i_router.ccipSend(pool.chainSelector, evm2AnyMessage);
+
+      unchecked {
+        ++i;
+      }
+    }
+  }
+
   ///////////////
   /// PRIVATE ///
   ///////////////
@@ -425,6 +448,6 @@ contract ConceroPool is CCIPReceiver, Ownable {
   ///VIEW & PURE FUNCTIONS///
   ///////////////////////////
   function adjustUSDCAmount(uint256 _usdcAmount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = (_usdcAmount * LANCA_DECIMALS) / USDC_DECIMALS;
+    _adjustedAmount = (_usdcAmount * LP_TOKEN_DECIMALS ) / USDC_DECIMALS;
   }
 }

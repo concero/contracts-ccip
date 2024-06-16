@@ -7,9 +7,12 @@ import {Test, console} from "forge-std/Test.sol";
 //Protocol Contacts
 import {DexSwap} from "contracts/DexSwap.sol";
 import {ConceroPool} from "contracts/ConceroPool.sol";
+import {ConceroChildPool} from "contracts/ConceroChildPool.sol";
 import {Concero} from "contracts/Concero.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
 import {ConceroProxy} from "contracts/ConceroProxy.sol";
+import {LPToken} from "contracts/LPToken.sol";
+import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
 
 //Interfaces
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
@@ -21,9 +24,12 @@ import {Storage} from "contracts/Libraries/Storage.sol";
 //Deploy Scripts
 import {DexSwapDeploy} from "../../script/DexSwapDeploy.s.sol";
 import {ConceroPoolDeploy} from "../../script/ConceroPoolDeploy.s.sol";
+import {ChildPoolDeploy} from "../../script/ChildPoolDeploy.s.sol";
 import {ConceroDeploy} from "../../script/ConceroDeploy.s.sol";
 import {OrchestratorDeploy} from "../../script/OrchestratorDeploy.s.sol";
 import {TransparentDeploy} from "../../script/TransparentDeploy.s.sol";
+import {LPTokenDeploy} from "../../script/LPTokenDeploy.s.sol";
+import {AutomationDeploy} from "../../script/AutomationDeploy.s.sol";
 
 //Mocks
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
@@ -57,21 +63,32 @@ contract ProtocolTest is Test {
     Orchestrator public orch;
     Orchestrator public orchEmpty;
     ConceroProxy public proxy;
+    LPToken public lp;
+    ConceroAutomation public automation;
+
+    //==== Instantiate Deploy Script Base
+    DexSwapDeploy dexDeployBase;
+    ConceroPoolDeploy poolDeployBase;
+    ConceroDeploy conceroDeployBase;
+    OrchestratorDeploy orchDeployBase;
+    TransparentDeploy proxyDeployBase;
+    LPTokenDeploy lpDeployBase;
+    AutomationDeploy autoDeployBase;
 
     //==== Instantiate Arbitrum Contracts
     DexSwap public dexDst;
-    ConceroPool public poolDst;
+    ConceroChildPool public child;
     Concero public conceroDst;
     Orchestrator public orchDst;
     Orchestrator public orchEmptyDst;
     ConceroProxy public proxyDst;
-
-    //==== Instantiate Deploy Script
-    DexSwapDeploy dexDeploy;
-    ConceroPoolDeploy poolDeploy;
-    ConceroDeploy conceroDeploy;
-    OrchestratorDeploy orchDeploy;
-    TransparentDeploy proxyDeploy;
+        
+    //==== Instantiate Deploy Script Arbitrum
+    TransparentDeploy proxyDeployArbitrum;
+    DexSwapDeploy dexDeployArbitrum;
+    ChildPoolDeploy childDeployArbitrum;
+    ConceroDeploy conceroDeployArbitrum;
+    OrchestratorDeploy orchDeployArbitrum;
 
     //==== Wrapped contract
     Orchestrator op;
@@ -110,7 +127,7 @@ contract ProtocolTest is Test {
     address functionsRouterBase = 0xf9B8fc078197181C841c296C876945aaa425B278;
     bytes32 donIdBase = 0x66756e2d626173652d6d61696e6e65742d310000000000000000000000000000;
 
-    //Base Mainnet variables
+    //Arb Mainnet variables
     address linkArb = 0xf97f4df75117a78c1A5a0DBb814Af92458539FB4;
     address ccipRouterArb = 0x141fa059441E0ca23ce184B6A78bafD2A517DdE8;
     uint64 ccipChainSelectorArb = 4949039107694359620;
@@ -170,6 +187,8 @@ contract ProtocolTest is Test {
             arbitrum
         );
 
+        vm.selectFork(baseMainFork);
+
         //Base Routers
         uniswapV2 = IUniswapV2Router02(0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24);
         sushiV2 = IUniswapV2Router02(0x6BDED42c6DA8FBf0d2bA55B2fa120C5e0c8D7891);
@@ -177,46 +196,46 @@ contract ProtocolTest is Test {
         sushiV3 = ISwapRouter(0xFB7eF66a7e61224DD6FcD0D7d9C3be5C8B049b9f);
         aerodromeRouter = IRouter(0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43);
 
-        //Arbitrum Routers
-        uniswapV2Arb = IUniswapV2Router02(0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24);
-        sushiV2Arb = IUniswapV2Router02(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506);
-        uniswapV3Arb = ISwapRouter02(0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45);
-        sushiV3Arb = ISwapRouter(0x8A21F6768C1f8075791D08546Dadf6daA0bE820c);
-
         wEth = IWETH(0x4200000000000000000000000000000000000006);
-        arbWEth = IWETH(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
         mUSDC = IERC20(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913);
-        aUSDC = IERC20(0xaf88d065e77c8cC2239327C5EDb3A432268e5831);
         AERO = ERC20Mock(0x940181a94A35A4569E4529A3CDfB74e38FD98631);
         SAFE_LOCK = ERC721(0xde11Bc6a6c47EeaB0476C85672EA7f932f1a78Ed);
 
-        dexDeploy = new DexSwapDeploy();
-        poolDeploy = new ConceroPoolDeploy();
-        conceroDeploy = new ConceroDeploy();
-        orchDeploy = new OrchestratorDeploy();
-        proxyDeploy = new TransparentDeploy();
+        dexDeployBase = new DexSwapDeploy();
+        poolDeployBase = new ConceroPoolDeploy();
+        conceroDeployBase = new ConceroDeploy();
+        orchDeployBase = new OrchestratorDeploy();
+        proxyDeployBase = new TransparentDeploy();
+        lpDeployBase = new LPTokenDeploy();
+        autoDeployBase = new AutomationDeploy();
 
         {
-        vm.selectFork(baseMainFork);
-        //DEPLOY AN EMPTY ORCH
-        orchEmpty = orchDeploy.run(
+        //DEPLOY AN DUMMY ORCH
+        orchEmpty = orchDeployBase.run(
             address(0),
             address(0),
             address(0),
             address(0),
-            address(0)
+            address(0),
+            1
         );
-        //====== Deploy the proxy with the Dummy Orch
-        proxy = proxyDeploy.run(address(orchEmpty), Tester, "");
 
-        dex = dexDeploy.run(address(proxy));
-        pool = poolDeploy.run(
+        //====== Deploy the proxy with the dummy Orch to get the address
+        proxy = proxyDeployBase.run(address(orchEmpty), Tester, "");
+
+        //===== Deploy the protocol with the proxy address
+        lp = lpDeployBase.run(Tester, address(0));
+        automation = autoDeployBase.run(address(0));//@audit functions
+        dex = dexDeployBase.run(address(proxy));
+        pool = poolDeployBase.run(
             linkBase,
             ccipRouterBase,
-            address(proxy),
-            address(mUSDC)
+            address(mUSDC),
+            address(lp),
+            address(automation)
         );
-        concero = conceroDeploy.run(
+
+        concero = conceroDeployBase.run(
             IStorage.FunctionsVariables ({
                 donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
                 donHostedSecretsVersion: 0, //uint64 _donHostedSecretsVersion
@@ -237,12 +256,14 @@ contract ProtocolTest is Test {
             address(pool),
             address(proxy)
         );
-        orch = orchDeploy.run(
+        //====== Deploy a new Orch that will e set as implementation to the proxy.
+        orch = orchDeployBase.run(
             functionsRouterBase,
             address(dex),
             address(concero),
             address(pool),
-            address(proxy)
+            address(proxy),
+            1
         );
 
         //=== Base Contracts
@@ -266,6 +287,10 @@ contract ProtocolTest is Test {
         vm.prank(Tester);
         proxy.upgradeTo(address(orch));
 
+        //====== Update the MINTER on the LP Token
+        vm.prank(Tester);
+        lp.grantRole(keccak256("MINTER_ROLE"), address(pool));
+
         //====== Wrap the proxy as the implementation
         op = Orchestrator(address(proxy));
 
@@ -276,43 +301,50 @@ contract ProtocolTest is Test {
         op.manageRouterAddress(address(uniswapV3), 1);
         op.manageRouterAddress(address(sushiV3), 1);
         op.manageRouterAddress(address(aerodromeRouter), 1);
-
-        //====== Set the Messenger to be allowed to interact
-        pool.setConceroMessenger(Messenger, 1);
-        op.setConceroMessenger(Messenger, 1);
-
-        pool.setConceroPoolReceiver(arbChainSelector ,address(poolDst));
-
-        pool.setConceroContractSender(arbChainSelector, address(poolDst), 1);
-        pool.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
-
-        op.setConceroContract(arbChainSelector, address(proxyDst));
         vm.stopPrank();
         }
 
         //================ SWITCH CHAINS ====================\\
+        vm.selectFork(arbitrumMainFork);
+
+        //===== Arbitrum Routers
+        uniswapV2Arb = IUniswapV2Router02(0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24);
+        sushiV2Arb = IUniswapV2Router02(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506);
+        uniswapV3Arb = ISwapRouter02(0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45);
+        sushiV3Arb = ISwapRouter(0x8A21F6768C1f8075791D08546Dadf6daA0bE820c);
+
+        //===== Arbitrum Tokens
+        arbWEth = IWETH(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
+        aUSDC = IERC20(0xaf88d065e77c8cC2239327C5EDb3A432268e5831);
 
         {
-        vm.selectFork(arbitrumMainFork);
-        //DEPLOY AN EMPTY ORCH
-        orchEmptyDst = orchDeploy.run(
-            address(0),
-            address(0),
-            address(0),
-            address(0),
-            address(0)
-        );
-        //====== Deploy the proxy with the Dummy Orch
-        proxyDst = proxyDeploy.run(address(orchEmptyDst), Tester, "");
+        //===== Deploy Arbitrum Scripts    
+        proxyDeployArbitrum = new TransparentDeploy();
+        dexDeployArbitrum = new DexSwapDeploy();
+        childDeployArbitrum = new ChildPoolDeploy();
+        conceroDeployArbitrum = new ConceroDeploy();
+        orchDeployArbitrum = new OrchestratorDeploy();
 
-        dexDst = dexDeploy.run(address(proxyDst));
-        poolDst = poolDeploy.run(
+        //DEPLOY AN DUMMY ORCH
+        orchEmptyDst = orchDeployArbitrum.run(
+            address(0),
+            address(0),
+            address(0),
+            address(0),
+            address(0),
+            1
+        );
+
+        //====== Deploy the proxy with the dummy Orch
+        proxyDst = proxyDeployArbitrum.run(address(orchEmptyDst), Tester, "");
+
+        dexDst = dexDeployArbitrum.run(address(proxyDst));
+        child = childDeployArbitrum.run(
             linkArb,
             ccipRouterArb,
-            address(proxyDst),
             address(aUSDC)
         );
-        conceroDst = conceroDeploy.run(
+        conceroDst = conceroDeployArbitrum.run(
             IStorage.FunctionsVariables ({
                 donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
                 donHostedSecretsVersion: 0, //uint64 _donHostedSecretsVersion
@@ -330,22 +362,23 @@ contract ProtocolTest is Test {
                 dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
             }),
             0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_ethersHashSum
-            address(poolDst),
+            address(child),
             address(proxyDst)
         );
 
-        orchDst = orchDeploy.run(
+        orchDst = orchDeployArbitrum.run(
             functionsRouterArb,
             address(dexDst),
             address(conceroDst),
-            address(poolDst),
-            address(proxyDst)
+            address(child),
+            address(proxyDst),
+            1
         );
 
         //=== Arbitrum Contracts
         vm.makePersistent(address(proxyDst));
         vm.makePersistent(address(dexDst));
-        vm.makePersistent(address(poolDst));
+        vm.makePersistent(address(child));
         vm.makePersistent(address(conceroDst));
         vm.makePersistent(address(orchDst));
         vm.makePersistent(address(ccipLocalSimulatorFork));
@@ -353,7 +386,7 @@ contract ProtocolTest is Test {
         //=== Transfer ownership to Tester
         vm.startPrank(defaultSender);
         dexDst.transferOwnership(Tester);
-        poolDst.transferOwnership(Tester);
+        child.transferOwnership(Tester);
         conceroDst.transferOwnership(Tester);
         orchDst.transferOwnership(Tester);
         proxyDst.transferOwnership(Tester);
@@ -374,15 +407,29 @@ contract ProtocolTest is Test {
         opDst.manageRouterAddress(address(sushiV3Arb), 1);
         opDst.manageRouterAddress(address(aerodromeRouterArb), 1);
 
+        //================ SWITCH CHAINS ====================\\
+        //BASE
+        vm.selectFork(baseMainFork);
         //====== Set the Messenger to be allowed to interact
+        vm.startPrank(Tester);
+        pool.setConceroMessenger(Messenger, 1);
+        op.setConceroMessenger(Messenger, 1);
+        pool.setConceroPoolReceiver(arbChainSelector ,address(child));
+        pool.setConceroContractSender(arbChainSelector, address(child), 1);
+        pool.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
+        op.setConceroContract(arbChainSelector, address(proxyDst));
+        vm.stopPrank();
+
+        //================ SWITCH CHAINS ====================\\
+        //ARBITRUM
+        vm.selectFork(arbitrumMainFork);
+        //====== Set the Messenger to be allowed to interact
+        vm.startPrank(Tester);
         opDst.setConceroMessenger(Messenger, 1);
-        poolDst.setConceroMessenger(Messenger, 1);
-
-        poolDst.setConceroPoolReceiver(baseChainSelector ,address(pool));
-
-        poolDst.setConceroContractSender(baseChainSelector, address(pool), 1);
-        poolDst.setConceroContractSender(baseChainSelector, address(concero), 1);
-
+        child.setConceroMessenger(Messenger, 1);
+        child.setConceroPoolReceiver(baseChainSelector ,address(pool));
+        child.setConceroContractSender(baseChainSelector, address(pool), 1);
+        child.setConceroContractSender(baseChainSelector, address(concero), 1);
         opDst.setConceroContract(baseChainSelector, address(proxy));
         vm.stopPrank();
         }

@@ -80,4 +80,8 @@ contract StorageSetters is Storage {
     s_ethersHashSum = _hashSum;
     emit EthersHashSumUpdated(previousValue, _hashSum);
   }
+
+  function setDstConceroPool(uint64 _chainSelector, address _pool) external payable onlyOwner {
+    s_poolReceiver[_chainSelector] = _pool;
+  }
 }

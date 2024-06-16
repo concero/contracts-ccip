@@ -7,21 +7,22 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../types/CNetwork";
 import log from "../../utils/log";
 import uploadDonSecrets from "../donSecrets/upload";
-import deployConcero from "../../deploy/02_Concero";
+import deployConcero from "../../deploy/03_Concero";
 import { execSync } from "child_process";
 import { liveChains } from "./liveChains";
 import { setProxyImplementation } from "./setProxyImplementation";
-import deployConceroDexSwap from "../../deploy/03_ConceroDexSwap";
-import deployConceroOrchestrator from "../../deploy/01_ConceroOrchestrator";
+import deployConceroDexSwap from "../../deploy/02_ConceroDexSwap";
+import deployConceroOrchestrator from "../../deploy/04_ConceroOrchestrator";
 import addCLFConsumer from "../sub/add";
 import { getEnvVar } from "../../utils/getEnvVar";
+import deployConceroProxy from "../../deploy/00_ConceroProxy";
 
 let deployableChains: CNetwork[] = liveChains;
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
-  .addOptionalParam("deployproxy", "Deploy the proxy", false, types.boolean)
+  .addFlag("deployproxy", "Deploy the proxy")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
@@ -32,11 +33,11 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     }
 
     if (taskArgs.deployproxy) {
-      execSync(`yarn hardhat deploy-proxy --network ${name}`, { stdio: "inherit" });
-      await setConceroProxyDstContracts(liveChains);
+      await deployConceroProxy(hre);
       const proxyAddress = getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`);
       const { functionsSubIds } = chains[name];
       await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
+      await setConceroProxyDstContracts(liveChains);
     }
 
     if (taskArgs.skipdeploy) {

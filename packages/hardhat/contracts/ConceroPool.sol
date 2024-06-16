@@ -329,7 +329,7 @@ contract ConceroPool is Storage, CCIPReceiver {
    * @dev for ether transfer, the _receiver need to be known and trusted
    */
   function orchestratorLoan(address _token, uint256 _amount, address _receiver) external {
-    if (address(this) != i_proxy) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
+    if (msg.sender != i_proxy) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
     if (_receiver == address(0)) revert ConceroPool_InvalidAddress();
 
     if (_token == address(0)) {

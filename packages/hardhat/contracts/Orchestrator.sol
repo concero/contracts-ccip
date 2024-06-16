@@ -122,6 +122,21 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
     if (bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
   }
 
+  function addUnconfirmedTX(
+    bytes32 ccipMessageId,
+    address sender,
+    address recipient,
+    uint256 amount,
+    uint64 srcChainSelector,
+    CCIPToken token,
+    uint256 blockNumber
+  ) external {
+    (bool success, bytes memory data) = i_concero.delegatecall(
+      abi.encodeWithSelector(IConcero.addUnconfirmedTX.selector, ccipMessageId, sender, recipient, amount, srcChainSelector, token, blockNumber)
+    );
+    if (success == false) revert Orchestrator_UnableToCompleteDelegateCall(data);
+  }
+
   function handleOracleFulfillment(bytes32 requestId, bytes memory response, bytes memory err) external {
     if (msg.sender != address(i_functionsRouter)) {
       revert Orchestrator_OnlyRouterCanFulfill();

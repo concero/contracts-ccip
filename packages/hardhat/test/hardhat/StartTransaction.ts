@@ -11,6 +11,7 @@ import { arbitrumSepolia, baseSepolia, optimismSepolia } from "viem/chains";
 import ERC20ABI from "../../abi/ERC20.json";
 import { PublicClient } from "viem/clients/createPublicClient";
 import { abi as ConceroAbi } from "../../artifacts/contracts/Concero.sol/Concero.json";
+import { abi as ConceroOrchestratorAbi } from "../../artifacts/contracts/Orchestrator.sol/Orchestrator.json";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -32,11 +33,11 @@ const chainsMap = {
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
 const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA;
 const senderAddress = process.env.TESTS_WALLET_ADDRESS;
-const amount = "3000000000000000000";
+const amount = "2000000000000000000";
 const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
 const transactionsCount = 1;
-const srcContractAddress = process.env.CONCEROCCIP_BASE_SEPOLIA;
-const dstContractAddress = process.env.CONCEROPOOL_OPTIMISM_SEPOLIA;
+const srcContractAddress = process.env.CONCEROPROXY_BASE_SEPOLIA;
+const dstContractAddress = process.env.CONCEROPROXY_OPTIMISM_SEPOLIA;
 
 describe("startBatchTransactions\n", () => {
   let Concero: Concero;
@@ -168,15 +169,26 @@ describe("startBatchTransactions\n", () => {
         receiver: senderAddress,
       };
 
-      const { request } = await srcPublicClient.simulateContract({
-        abi: ConceroAbi,
+      // const { request } = await srcPublicClient.simulateContract({
+      //   abi: ConceroOrchestratorAbi,
+      //   functionName: "bridge",
+      //   address: srcContractAddress as Address,
+      //   args: [bridgeData, []],
+      //   account: viemAccount as Account,
+      //   nonce: nonce++,
+      // });
+      // transactionPromises.push(walletClient.writeContract(request));
+
+      const transactionHash = walletClient.writeContract({
+        abi: ConceroOrchestratorAbi,
         functionName: "bridge",
         address: srcContractAddress as Address,
         args: [bridgeData, []],
-        account: viemAccount as Account,
         nonce: nonce++,
+        gas: 4_000_000n,
       });
-      transactionPromises.push(walletClient.writeContract(request));
+
+      transactionPromises.push(transactionHash);
     }
 
     const transactionHashes = await Promise.all(transactionPromises);

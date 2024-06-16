@@ -8,12 +8,15 @@ import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider"
 import { SecretsManager } from "@chainlink/functions-toolkit";
 import { Address } from "viem";
 import getHashSum from "../../utils/getHashSum";
+import { liveChains } from "./liveChains";
 
 export async function setContractVariables(liveChains: CNetwork[], deployableChains: CNetwork[], slotId: number) {
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
   for (const deployableChain of deployableChains) {
+    await setDstConceroPools(deployableChain, abi);
     await setDonHostedSecretsVersion(deployableChain, slotId, abi);
+    await setDonSecretsSlotId(deployableChain, slotId, abi);
     await addMessengerToAllowlist(deployableChain, abi); // once
     await setJsHashes(deployableChain, abi, liveChains);
   }
@@ -98,11 +101,6 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
     });
     const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
 
-    // const conceroProxyContract = new ethers.Contract(conceroProxy, abi, dcSigner);
-    // const setDstConceroContractHash = await conceroProxyContract.setDonHostedSecretsVersion(rowBySlotId.version, {
-    //   gasLimit: 1_000_000,
-    // });
-
     const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({
       hash: setDstConceroContractHash,
     });
@@ -141,7 +139,7 @@ async function addMessengerToAllowlist(deployableChain: CNetwork, abi: any) {
     );
   } catch (error) {
     if (error.message.includes("Address already in allowlist")) {
-      log(`${messengerWallet} was already added to allowlist of ${dcContract}`, "setConceroMessenger");
+      log(`${messengerWallet} was already added to allowlist of ${conceroProxy}`, "setConceroMessenger");
     } else {
       log(`Error for ${dcName}: ${error.message}`, "setConceroMessenger");
     }
@@ -192,5 +190,63 @@ async function setJsHashes(deployableChain: CNetwork, abi: any, liveChains: CNet
     await setHash(getHashSum(ethersCode), "setEthersHashSum");
   } catch (error) {
     log(`Error ${error.message}`, "setHashSum");
+  }
+}
+
+export async function setDstConceroPools(deployableChain: CNetwork, abi: any) {
+  const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
+  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+  const conceroProxy = getEnvVar(`CONCEROPROXY_${networkEnvKeys[dcName]}`);
+
+  try {
+    for (const chain of liveChains) {
+      const { name: dstChainName, chainSelector: dstChainSelector } = chain;
+      const dstConceroPool = getEnvVar(`CONCEROPOOL_${networkEnvKeys[dstChainName]}`);
+      const { request: setDstConceroPoolReq } = await publicClient.simulateContract({
+        address: conceroProxy as Address,
+        abi,
+        functionName: "setDstConceroPool",
+        account,
+        args: [dstChainSelector, dstConceroPool],
+        chain: dcViemChain,
+      });
+      const setDstConceroPoolHash = await walletClient.writeContract(setDstConceroPoolReq);
+      const { cumulativeGasUsed: setDstConceroPoolGasUsed } = await publicClient.waitForTransactionReceipt({
+        hash: setDstConceroPoolHash,
+      });
+      log(
+        `Set ${dcName}:${conceroProxy} dstConceroPool[${dstChainName}:${dstConceroPool}]. Gas used: ${setDstConceroPoolGasUsed.toString()}`,
+        "setDstConceroPool",
+      );
+    }
+  } catch (error) {
+    log(`Error for ${dcName}: ${error.message}`, "setDstConceroPool");
+  }
+}
+
+export async function setDonSecretsSlotId(deployableChain: CNetwork, slotId: number, abi: any) {
+  const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
+  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+  const conceroProxy = getEnvVar(`CONCEROPROXY_${networkEnvKeys[dcName]}`);
+
+  try {
+    const { request: setDonSecretsSlotIdReq } = await publicClient.simulateContract({
+      address: conceroProxy as Address,
+      abi,
+      functionName: "setDonHostedSecretsSlotID",
+      account,
+      args: [slotId],
+      chain: dcViemChain,
+    });
+    const setDonSecretsSlotIdHash = await walletClient.writeContract(setDonSecretsSlotIdReq);
+    const { cumulativeGasUsed: setDonSecretsSlotIdGasUsed } = await publicClient.waitForTransactionReceipt({
+      hash: setDonSecretsSlotIdHash,
+    });
+    log(
+      `Set ${dcName}:${conceroProxy} donSecretsSlotId[${slotId}]. Gas used: ${setDonSecretsSlotIdGasUsed.toString()}`,
+      "setDonHostedSecretsSlotID",
+    );
+  } catch (error) {
+    log(`Error for ${dcName}: ${error.message}`, "setDonHostedSecretsSlotID");
   }
 }

@@ -79,8 +79,6 @@ contract ConceroPool is CCIPReceiver {
   ////////////////
   ///@notice Chainlink Link Token interface
   LinkTokenInterface private immutable i_linkToken;
-  ///@notice Chainlink CCIP Router
-  IRouterClient private immutable i_ccipRouter;
   ///@notice immutable variable to store the USDC address.
   IERC20 immutable i_USDC;
   ///@notice Pool liquidity token
@@ -123,7 +121,7 @@ contract ConceroPool is CCIPReceiver {
   ///@notice event emitted when a allowed Cross-chain contract is updated
   event ConceroPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
   ///@notice event emitted when a new withdraw request is made
-  event ConceroPool_WithdrawRequest(address caller, IERC20 token, uint256 deadline, uint256 amount);
+  event ConceroPool_WithdrawRequest(address caller, IERC20 token, uint256 deadline);
   ///@notice event emitted when a value is withdraw from the contract
   event ConceroPool_Withdrawn(address to, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain tx is received.
@@ -134,6 +132,8 @@ contract ConceroPool is CCIPReceiver {
   event ConceroPool_SuccessfulDeposited(address liquidityProvider, uint256 _amount, IERC20 _token);
   ///@notice event emitted in setConceroContract when the address is emitted
   event ConceroPool_ConceroContractUpdated(address concero);
+  ///@notice event emitted when a request is updated with the total USDC to withdraw
+  event ConceroPool_RequestUpdated(address liquidityProvider);
 
   ///////////////
   ///MODIFIERS///
@@ -177,7 +177,6 @@ contract ConceroPool is CCIPReceiver {
 
   constructor(address _link, address _ccipRouter, address _usdc, address _lpToken, address _automation, address _owner) CCIPReceiver(_ccipRouter){
     i_linkToken = LinkTokenInterface(_link);
-    i_ccipRouter = IRouterClient(_ccipRouter);
     i_USDC = IERC20(_usdc);
     i_lp = LPToken(_lpToken);
     i_automation = ConceroAutomation(_automation);
@@ -244,51 +243,11 @@ contract ConceroPool is CCIPReceiver {
    * @param _concero the address of Concero Contract
    * @dev The address will be use to control access on `orchestratorLoan`
    */
-  function setConceroContract(address _concero) external onlyOwner{
+  function setConceroContract(address _concero) external payable onlyOwner{
     //@audit let's add some address(0) checks?
     s_concero = _concero;
 
     emit ConceroPool_ConceroContractUpdated(_concero);
-  }
-
-  /**
-   * @notice Function to Distribute Liquidity accross Concero Pools
-   * @param _destinationChainSelector Chain Id of the chain that will receive the amount
-   * @param _token  address of the token to be sent
-   * @param _amount amount of the token to be sent
-   */
-  function ccipSendToPool(
-    uint64 _destinationChainSelector,
-    address _token,
-    uint256 _amount
-  ) external onlyMessenger onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
-    if (s_poolToSendTo[_destinationChainSelector] == address(0)) revert ConceroPool_DestinationNotAllowed();
-    if (_amount > s_usdcPoolReserve) revert ConceroPool_InsufficientBalance();
-
-    Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
-
-    Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({token: _token, amount: _amount});
-
-    tokenAmounts[0] = tokenAmount;
-
-    Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
-      receiver: abi.encode(s_poolToSendTo[_destinationChainSelector]),
-      data: "",
-      tokenAmounts: tokenAmounts,
-      extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
-      feeToken: address(i_linkToken)
-    });
-
-    uint256 fees = i_ccipRouter.getFee(_destinationChainSelector, evm2AnyMessage);
-
-    if (fees > i_linkToken.balanceOf(address(this))) revert ConceroPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
-
-    IERC20(_token).approve(address(i_ccipRouter), _amount);
-    i_linkToken.approve(address(i_ccipRouter), fees);
-
-    emit ConceroPool_MessageSent(messageId, _destinationChainSelector, s_poolToSendTo[_destinationChainSelector], address(i_linkToken), fees);
-
-    messageId = i_ccipRouter.ccipSend(_destinationChainSelector, evm2AnyMessage);
   }
 
   /**
@@ -314,6 +273,8 @@ contract ConceroPool is CCIPReceiver {
    * @param _amount the amount to be deposited
    */
   function depositLiquidity(uint256 _amount) external {
+    //@audit We need to implement the CAP for deposits.
+    //It will require a new storage variable to be updated at times.
     if (_amount < 1 * USDC_DECIMALS) revert ConceroPool_EmptyDepositedIsNotAllowed(_amount);
 
     uint256 lpTokenSupply = i_lp.totalSupply();
@@ -323,9 +284,13 @@ contract ConceroPool is CCIPReceiver {
     if (numberOfPools < 2) revert ConceroPool_ThereIsNoPoolToDistribute();
 
     //N° lpTokens = (((Total Liq + user deposit) * Total sToken) / Total USDC Liq) - Total sToken
+    //@audit PROBLEMs
+    //1. We don't know how much usdc are in all pools in this moment. We can calculate over usdc_deposited. Without fees
+    //2. By doing that, we will need to have another state variable to track fees a part from the total_usdc in MasterPool.
+    //3. Or think in something different
     uint256 lpTokensToMint = lpTokenSupply >= ALLOWED
-    ? ((adjustUSDCAmount((usdcReserve + _amount)) * lpTokenSupply) / adjustUSDCAmount(usdcReserve)) - lpTokenSupply
-    : adjustUSDCAmount(_amount);
+    ? ((_convertToLPTokenDecimals((usdcReserve + _amount)) * lpTokenSupply) / _convertToLPTokenDecimals(usdcReserve)) - lpTokenSupply
+    : _convertToLPTokenDecimals(_amount);
 
     s_usdcPoolReserve = usdcReserve + _amount;
 
@@ -335,6 +300,11 @@ contract ConceroPool is CCIPReceiver {
 
     i_lp.mint(msg.sender, lpTokensToMint);
 
+    //@audit PROBLEM
+    //To limit the min amount that will initiate the cross-chain distribution,
+    //we need to maintain an storage variable that will be updated every time
+    //a new distribution occurs. So, we will always check how much each pool has,
+    //and subtract by the amount on the MasterPool to check if the threshold is reached.
     if(s_usdcPoolReserve - (s_valueDistributed * numberOfPools) > 30 * USDC_DECIMALS){
       uint256 amountToDistribute = (s_usdcPoolReserve - (s_valueDistributed * numberOfPools)) / numberOfPools;
 
@@ -350,14 +320,8 @@ contract ConceroPool is CCIPReceiver {
     if(i_lp.balanceOf(msg.sender) < _lpAmount) revert ConceroPool_InsufficientBalance();
     if(s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ConceroPool_ActiveRequestNotFulfilledYet();
 
-    //We calculate the total amount to be withdraw. Using 18 decimals to reduce loss of precision
-    ///@audit need to convert to 18 dec and return back to 6 dec
-
-    //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_DEPOSIT / TOTAL_LP)
-    uint256 amountToWithdraw = s_usdcPoolReserve * (_lpAmount / i_lp.totalSupply());
-
     IConceroPool.WithdrawRequests memory request = IConceroPool.WithdrawRequests({
-      amount: amountToWithdraw,
+      amount: 0,
       amountToBurn: _lpAmount,
       receivedAmount: 0,
       token: address(i_USDC),
@@ -368,9 +332,33 @@ contract ConceroPool is CCIPReceiver {
     i_automation.addPendingWithdrawal(request);
     s_pendingWithdrawRequests[msg.sender] = request;
 
-    emit ConceroPool_WithdrawRequest(msg.sender, i_USDC, block.timestamp + 597_600, amountToWithdraw);
+    emit ConceroPool_WithdrawRequest(msg.sender, i_USDC, block.timestamp + 597_600);
   }
 
+  /**
+   * @notice Function to updated cross-chain rewards will be paid to liquidity providers in the end of
+   * withdraw period.
+   * @param _liquidityProvider Liquidity Provider address to update info.
+   * @param _totalUSDC USDC total amount
+   * @dev This function must be called only by an allowed Messenger & must not revert
+   */
+  function updateUsdcAmountEarned(address _liquidityProvider, uint256 _totalUSDC) external onlyMessenger {
+    IConceroPool.WithdrawRequests memory request = s_pendingWithdrawRequests[_liquidityProvider];
+
+    //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
+    uint256 amountToWithdraw = _convertToLPTokenDecimals(_totalUSDC) * (request.amountToBurn / i_lp.totalSupply());
+
+    s_pendingWithdrawRequests[_liquidityProvider].amount = _convertToUSDCTokenDecimals(amountToWithdraw);
+
+    emit ConceroPool_RequestUpdated(_liquidityProvider);
+  }
+
+  /**
+   * @notice Function called to finalize the withdraw process.
+   * @dev The msg.sender will be used to load the withdraw request data
+   * if the request received the total amount requested from other pools,
+   * the withdraw will be finalize. If not, it must revert
+   */
   function completeWithdrawal() external {
     IConceroPool.WithdrawRequests memory withdraw = s_pendingWithdrawRequests[msg.sender];
     if(withdraw.receivedAmount < withdraw.amount) revert ConceroPool_AmountNotAvailableYet(withdraw.receivedAmount);
@@ -379,6 +367,8 @@ contract ConceroPool is CCIPReceiver {
     if (withdraw.amount > i_USDC.balanceOf(address(this)) - s_commit) revert ConceroPool_InsufficientBalance();
 
     s_usdcPoolReserve = s_usdcPoolReserve - withdraw.amount;
+    s_valueDistributed = s_valueDistributed - withdraw.amount;
+
     delete s_pendingWithdrawRequests[msg.sender];
 
     emit ConceroPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amount);
@@ -413,6 +403,8 @@ contract ConceroPool is CCIPReceiver {
       s_commit = s_commit - (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
     } else if (_liquidityProvider != address(0)){
       //update the corresponding withdraw request
+      //@audit receivedAmount will never be equal to the amount to withdrawal because the 1 portion of the total is already here.
+      //Need to improve the condition logic
       s_pendingWithdrawRequests[_liquidityProvider].receivedAmount = s_pendingWithdrawRequests[_liquidityProvider].receivedAmount + any2EvmMessage.destTokenAmounts[0].amount;
     }
 
@@ -447,7 +439,7 @@ contract ConceroPool is CCIPReceiver {
         feeToken: address(i_linkToken)
       });
 
-      uint256 fees = i_ccipRouter.getFee(pool.chainSelector, evm2AnyMessage);
+      uint256 fees = IRouterClient(i_ccipRouter).getFee(pool.chainSelector, evm2AnyMessage);
 
       if (fees > i_linkToken.balanceOf(address(this))) revert ConceroPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
@@ -456,7 +448,7 @@ contract ConceroPool is CCIPReceiver {
 
       emit ConceroPool_MessageSent(messageId, pool.chainSelector, pool.poolAddress, address(i_linkToken), fees);
 
-      messageId = i_ccipRouter.ccipSend(pool.chainSelector, evm2AnyMessage);
+      messageId = IRouterClient(i_ccipRouter).ccipSend(pool.chainSelector, evm2AnyMessage);
 
       unchecked {
         ++i;
@@ -471,25 +463,43 @@ contract ConceroPool is CCIPReceiver {
   ///////////////////////////
   ///VIEW & PURE FUNCTIONS///
   ///////////////////////////
-  function adjustUSDCAmount(uint256 _usdcAmount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = (_usdcAmount * LP_TOKEN_DECIMALS ) / USDC_DECIMALS;
+  /**
+   * @notice Internal function to convert USDC Decimals to LP Decimals
+   * @param _usdcAmount the amount of USDC
+   * @return _adjustedAmount the adjusted amount
+   */
+  function _convertToLPTokenDecimals(uint256 _usdcAmount) internal pure returns (uint256 _adjustedAmount) {
+    _adjustedAmount = _usdcAmount * (LP_TOKEN_DECIMALS - USDC_DECIMALS);
   }
 
+  /**
+   * @notice Internal function to convert LP Decimals to USDC Decimals
+   * @param _lpAmount the amount of LP
+   * @return _adjustedAmount the adjusted amount
+   */
+  function _convertToUSDCTokenDecimals(uint256 _lpAmount) internal pure returns (uint256 _adjustedAmount) {
+    _adjustedAmount = _lpAmount / (LP_TOKEN_DECIMALS - USDC_DECIMALS);
+  }
+
+  /**
+   * @notice Function to check if a caller address is an allowed messenger
+   * @param _messenger the address of the caller
+   */
   function getMessengers(address _messenger) internal pure returns(bool isMessenger){
     address[] memory messengers = new address[](4); //Number of messengers. To define.
-    [0] = address(0);
-    [1] = address(0);
-    [2] = address(0);
-    [3] = address(0);
+    messengers[0] = address(0);
+    messengers[1] = address(0);
+    messengers[2] = address(0);
+    messengers[3] = address(0);
 
     for(uint256 i; i < messengers.length; ){
       if(_messenger == messengers[i]){
-        isMessenger = true;
-        break;
+        return true;
       }
       unchecked{
         ++i;
       }
     }
+    return false;
   }
 }

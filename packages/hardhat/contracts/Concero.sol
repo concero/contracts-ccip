@@ -22,7 +22,7 @@ error InvalidAddress();
 error AddressAlreadyAllowlisted();
 ///@notice error emitted when the Concero Messenger have been removed already
 error NotAllowlistedOrAlreadyRemoved();
-///@notice error emitted when the token to be swaped has fee on transfers
+///@notice error emitted when the token to be swapped has fee on transfers
 error Concero_FoTNotAllowedYet();
 ///@notice error emitted when the input amount is less than the fees
 error InsufficientFundsForFees(uint256 amount, uint256 fee);
@@ -87,7 +87,7 @@ contract Concero is ConceroCCIP {
 
     bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, actualLpFee);
     emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
-    //@audit destinationSwapData is not being trasminted through functions
+    //@audit destinationSwapData is not being transmitted through functions
     // TODO: pass _dstSwapData to functions
     sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType);
   }

@@ -24,6 +24,7 @@ error DexSwap_EmptyDexData();
 error DexSwap_RouterNotAllowed();
 ///@notice error emitted when the path to swaps is invalid
 error DexSwap_InvalidPath();
+error DexSwap_CallableOnlyByOwner(address caller, address owner);
 
 contract DexSwap is Storage, IDexSwap {
   using SafeERC20 for IERC20;
@@ -47,6 +48,11 @@ contract DexSwap is Storage, IDexSwap {
   /////////////////////////////////////////////////////////////////
   constructor(address _proxy) Storage(msg.sender) {
     i_proxy = _proxy;
+  }
+
+  modifier onlyOwner() {
+    if (msg.sender != i_owner) revert DexSwap_CallableOnlyByOwner(msg.sender, i_owner);
+    _;
   }
 
   /**

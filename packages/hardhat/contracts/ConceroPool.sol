@@ -36,6 +36,7 @@ error ConceroPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
 error ConceroPool_ThereIsNoPoolToDistribute();
 error ConceroPool_ChainNotAllowed(uint64 chainSelector);
 error ConceroPool_NotMessenger(address messenger);
+error ConceroPool_CallableOnlyByOwner(address caller, address owner);
 
 contract ConceroPool is Storage, CCIPReceiver {
   using SafeERC20 for IERC20;
@@ -135,6 +136,11 @@ contract ConceroPool is Storage, CCIPReceiver {
    */
   modifier onlyAllowListedChain(uint64 _chainSelector) {
     if (s_poolReceiver[_chainSelector] == address(0)) revert ConceroPool_ChainNotAllowed(_chainSelector);
+    _;
+  }
+
+  modifier onlyOwner() {
+    if (msg.sender != i_owner) revert ConceroPool_CallableOnlyByOwner(msg.sender, i_owner);
     _;
   }
 

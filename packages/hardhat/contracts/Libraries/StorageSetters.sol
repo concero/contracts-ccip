@@ -6,6 +6,7 @@ import {Storage} from "./Storage.sol";
 contract StorageSetters is Storage {
   ///@notice error emitted when the input is the address(0)
   error Storage_InvalidAddress();
+  error Storage_CallableOnlyByOwner(address msgSender, address owner);
 
   event CLFPremiumFeeUpdated(uint64 chainSelector, uint256 previousValue, uint256 feeAmount);
   event ConceroContractUpdated(uint64 chainSelector, address conceroContract);
@@ -16,6 +17,11 @@ contract StorageSetters is Storage {
   event EthersHashSumUpdated(bytes32 previousValue, bytes32 hashSum);
 
   constructor(address _initialOwner) Storage(_initialOwner) {}
+
+  modifier onlyOwner() {
+    if (msg.sender != i_owner) revert Storage_CallableOnlyByOwner(msg.sender, i_owner);
+    _;
+  }
 
   /**
    * @notice Function to update Concero Messenger Addresses

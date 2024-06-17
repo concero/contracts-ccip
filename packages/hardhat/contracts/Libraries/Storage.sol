@@ -16,8 +16,12 @@ error Storage_TokenTypeOutOfBounds();
 ///@notice error emitted when the chain index is incorrect
 error Storage_ChainIndexOutOfBounds();
 
-abstract contract Storage is IStorage, Ownable {
-  constructor(address _initialOwner) Ownable(_initialOwner) {}
+abstract contract Storage is IStorage {
+  address internal immutable i_owner;
+
+  constructor(address _initialOwner) {
+    i_owner = _initialOwner;
+  }
 
   ///////////////
   ///VARIABLES///

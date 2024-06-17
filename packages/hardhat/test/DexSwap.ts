@@ -6,11 +6,10 @@ import { Chain } from "viem/types/chain";
 import type { Account } from "viem/accounts/types";
 import { RpcSchema } from "viem/types/eip1193";
 import { privateKeyToAccount } from "viem/accounts";
-import { Address, createPublicClient, createWalletClient, decodeEventLog, http, PrivateKeyAccount } from "viem";
+import { Address, createPublicClient, createWalletClient, encodeAbiParameters, http, PrivateKeyAccount } from "viem";
 import { arbitrumSepolia, baseSepolia, optimismSepolia } from "viem/chains";
 import ERC20ABI from "../abi/ERC20.json";
 import { PublicClient } from "viem/clients/createPublicClient";
-import { abi as ConceroAbi } from "../artifacts/contracts/Concero.sol/Concero.json";
 import { abi as ConceroOrchestratorAbi } from "../artifacts/contracts/Orchestrator.sol/Orchestrator.json";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -35,6 +34,7 @@ const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA;
 const senderAddress = process.env.TESTS_WALLET_ADDRESS;
 const amount = "10000";
 const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
+const usdTokenAddress = process.env.USDC_BASE_SEPOLIA;
 const transactionsCount = 1;
 const srcContractAddress = process.env.CONCEROPROXY_BASE_SEPOLIA;
 const dstContractAddress = process.env.CONCEROPROXY_OPTIMISM_SEPOLIA;
@@ -68,8 +68,19 @@ describe("swap\n", () => {
     );
   });
 
-  const approveBnmAndLink = async () => {
+  const callApprovals = async () => {
     const approveToken = async (tokenAddress: string) => {
+      const tokenAlowance = await srcPublicClient.readContract({
+        abi: ERC20ABI,
+        functionName: "allowance",
+        address: tokenAddress as `0x${string}`,
+        args: [senderAddress, srcContractAddress],
+      });
+
+      if (tokenAlowance >= BigInt(amount)) {
+        return;
+      }
+
       const tokenAmount = await srcPublicClient.readContract({
         abi: ERC20ABI,
         functionName: "balanceOf",
@@ -90,122 +101,66 @@ describe("swap\n", () => {
       return tokenHash;
     };
 
-    const bnmHash = await approveToken(bnmTokenAddress);
-    // const linkHash = await approveToken(linkTokenAddress);
+    const usdcHash = await approveToken(usdTokenAddress);
 
-    await Promise.all([srcPublicClient.waitForTransactionReceipt({ hash: bnmHash })]);
-  };
-
-  const checkTransactionStatus = async (transactionHash: string, fromSrcBlockNumber: string, fromDstBlock: string) => {
-    await srcPublicClient.waitForTransactionReceipt({ hash: transactionHash });
-
-    const getLog = async (
-      id: string,
-      eventName: string,
-      contractAddress: string,
-      viemPublicClient: any,
-      fromBlock: string,
-    ): Promise<any | null> => {
-      const logs = await viemPublicClient.getLogs({
-        address: contractAddress,
-        abi: ConceroAbi,
-        fromBlock: fromBlock,
-        toBlock: "latest",
-      });
-
-      const filteredLog = logs.find((log: any) => {
-        const decodedLog: any = decodeEventLog({
-          abi: ConceroAbi,
-          data: log.data,
-          topics: log.topics,
-        });
-
-        const logId = eventName === "CCIPSent" ? log.transactionHash : decodedLog.args.ccipMessageId;
-        return logId?.toLowerCase() === id.toLowerCase() && decodedLog.eventName === eventName;
-      });
-
-      if (!filteredLog) {
-        return null;
-      }
-
-      return decodeEventLog({
-        abi: ConceroAbi,
-        data: filteredLog.data,
-        topics: filteredLog.topics,
-      });
-    };
-
-    const ccipMessageId = (
-      await getLog(transactionHash, "CCIPSent", srcContractAddress, srcPublicClient, fromSrcBlockNumber)
-    ).args.ccipMessageId;
-
-    console.log("ccipMessageId: ", ccipMessageId);
-
-    let dstLog = null;
-    while (dstLog === null) {
-      dstLog = await getLog(ccipMessageId, "TXReleased", dstContractAddress, dstPublicClient, fromDstBlock);
-      if (dstLog) {
-        console.log("dstLogs: ", dstLog);
-      }
-      await sleep(5000);
+    if (!usdcHash) {
+      return;
     }
 
-    return dstLog;
+    await Promise.all([srcPublicClient.waitForTransactionReceipt({ hash: usdcHash })]);
   };
 
   it("should swap", async () => {
-    await approveBnmAndLink();
+    try {
+      await callApprovals();
 
-    const fromSrcBlockNumber = await srcPublicClient.getBlockNumber();
-    const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
-    let transactionPromises = [];
-    const USD_BASE = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
+      const fromSrcBlockNumber = await srcPublicClient.getBlockNumber();
+      const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
+      const dexRouterAddress = "0xB015a6318f1D19DC3E135C8cEBa4bda00845c9Be";
 
-    const swapData = [
-      {
-        dexType: 0,
-        fromToken: USD_BASE,
-        formAmount: BigInt(amount),
-        toToken: process.env.CCIPBNM_BASE_SEPOLIA,
-        toAmount: BigInt(amount),
-        toAmountMin: BigInt(amount),
-        dexData: "",
-      },
-    ];
+      const dexData = encodeAbiParameters(
+        [
+          {
+            type: "address",
+          },
+          {
+            type: "address[]",
+          },
+          {
+            type: "address",
+          },
+          {
+            type: "uint256",
+          },
+        ],
+        [dexRouterAddress, [usdTokenAddress, process.env.CCIPBNM_BASE_SEPOLIA], senderAddress, 100n],
+      );
 
-    for (let i = 0; i < transactionsCount; i++) {
-      const bridgeData = {
-        tokenType: 0n,
-        amount: BigInt(amount),
-        minAmount: BigInt(amount),
-        dstChainSelector: BigInt(dstChainSelector),
-        receiver: senderAddress,
-      };
+      const swapData = [
+        {
+          dexType: 0n,
+          fromToken: usdTokenAddress,
+          fromAmount: BigInt(amount),
+          toToken: bnmTokenAddress,
+          toAmount: BigInt(amount),
+          toAmountMin: BigInt(amount),
+          dexData,
+        },
+      ];
 
-      const transactionHash = walletClient.writeContract({
+      const transactionHash = await walletClient.writeContract({
         abi: ConceroOrchestratorAbi,
         functionName: "swap",
         address: srcContractAddress as Address,
         args: [swapData],
-        nonce: nonce++,
         gas: 1_000_000n,
       });
 
-      transactionPromises.push(transactionHash);
+      console.log("transactionHash: ", transactionHash);
+
+      await srcPublicClient.waitForTransactionReceipt({ hash: transactionHash });
+    } catch (error) {
+      console.error("Error: ", error);
     }
-
-    const transactionHashes = await Promise.all(transactionPromises);
-    console.log("transactionHashes: ", transactionHashes);
-
-    // const txStatusPromises = transactionHashes.map(txHash => {
-    //   return checkTransactionStatus(
-    //     txHash,
-    //     "0x" + fromSrcBlockNumber.toString(16),
-    //     "0x" + fromDstBlockNumber.toString(16),
-    //   );
-    // });
-    //
-    // const txStatuses = await Promise.all(txStatusPromises);
-    // console.log("txStatuses: ", txStatuses);
   }).timeout(0);
 });

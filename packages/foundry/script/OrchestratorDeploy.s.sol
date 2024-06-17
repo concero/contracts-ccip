@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.20;
 
 import {Script, console} from "forge-std/Script.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
@@ -13,7 +13,8 @@ contract OrchestratorDeploy is Script {
             address _concero,
             address _pool,
             address _proxy,
-            uint8 _chainIndex
+            uint8 _chainIndex,
+            address _owner
     ) public returns(Orchestrator orch){
 
         vm.startBroadcast();
@@ -23,7 +24,8 @@ contract OrchestratorDeploy is Script {
             _concero,
             _pool,
             _proxy,
-            _chainIndex
+            _chainIndex,
+            _owner
         );
         vm.stopBroadcast();
     }

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
@@ -116,8 +116,9 @@ contract ConceroFunctions is FunctionsClient, Storage {
     bytes32 ethersHashSum,
     address _dexSwap,
     address _pool,
-    address _proxy
-  ) FunctionsClient(_variables.functionsRouter){
+    address _proxy,
+    address _owner
+  ) FunctionsClient(_variables.functionsRouter) Storage(_owner){
     i_donId = _variables.donId;
     i_subscriptionId = _variables.subscriptionId;
     s_donHostedSecretsVersion = _variables.donHostedSecretsVersion;

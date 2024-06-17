@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {Script, console} from "forge-std/Script.sol";
-import {ConceroProxy} from "contracts/ConceroProxy.sol";
+import {InfraProxy} from "contracts/Proxy/InfraProxy.sol";
 
-contract TransparentDeploy is Script {
+contract InfraProxyDeploy is Script {
 
     function run(
         address _logic,
         address _admin,
         bytes memory _data
-    ) public returns(ConceroProxy proxy){
+    ) public returns(InfraProxy proxy){
 
         vm.startBroadcast();
-        proxy = new ConceroProxy(
+        proxy = new InfraProxy(
             _logic,
             _admin,
             _data

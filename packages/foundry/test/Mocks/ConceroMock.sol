@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {Concero} from "contracts/Concero.sol";
 import {Storage} from "contracts/Libraries/Storage.sol";
@@ -16,7 +16,8 @@ contract ConceroMock is Concero {
             bytes32 _ethersHashSum,
             address _dexSwap,
             address _pool,
-            address _proxy
+            address _proxy,
+            address _owner
     ) Concero(
             _variables,
             _chainSelector,
@@ -27,7 +28,8 @@ contract ConceroMock is Concero {
             _ethersHashSum,
             _dexSwap,
             _pool,
-            _proxy
+            _proxy,
+            _owner
     ){}
 
     function externalFulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) external {

@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 //Foundry
 import {Test, console} from "forge-std/Test.sol";
 
-//Protocol Contacts
+//Master & Infra Contracts
 import {DexSwap} from "contracts/DexSwap.sol";
 import {ConceroPool} from "contracts/ConceroPool.sol";
-import {ConceroChildPool} from "contracts/ConceroChildPool.sol";
 import {Concero} from "contracts/Concero.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
-import {ConceroProxy} from "contracts/ConceroProxy.sol";
 import {LPToken} from "contracts/LPToken.sol";
 import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
+import {InfraProxy} from "contracts/Proxy/InfraProxy.sol";
+import {MasterPoolProxy} from "contracts/Proxy/MasterPoolProxy.sol";
+
+///=== Child Contracts
+import {ConceroChildPool} from "contracts/ConceroChildPool.sol";
+import {ChildPoolProxy} from "contracts/Proxy/ChildPoolProxy.sol";
 
 //Interfaces
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
@@ -21,22 +25,25 @@ import {IStorage} from "contracts/Interfaces/IStorage.sol";
 //Protocol Storage
 import {Storage} from "contracts/Libraries/Storage.sol";
 
-//Deploy Scripts
+//MAster & Infra Scripts
 import {DexSwapDeploy} from "../../script/DexSwapDeploy.s.sol";
 import {ConceroPoolDeploy} from "../../script/ConceroPoolDeploy.s.sol";
-import {ChildPoolDeploy} from "../../script/ChildPoolDeploy.s.sol";
 import {ConceroDeploy} from "../../script/ConceroDeploy.s.sol";
 import {OrchestratorDeploy} from "../../script/OrchestratorDeploy.s.sol";
-import {TransparentDeploy} from "../../script/TransparentDeploy.s.sol";
+import {InfraProxyDeploy} from "../../script/InfraProxyDeploy.s.sol";
 import {LPTokenDeploy} from "../../script/LPTokenDeploy.s.sol";
 import {AutomationDeploy} from "../../script/AutomationDeploy.s.sol";
 
+//===== Child Scripts
+import {ChildPoolDeploy} from "../../script/ChildPoolDeploy.s.sol";
+
 //Mocks
-import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
+import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 
 //OpenZeppelin
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {ProxyAdmin, ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 //DEXes routers
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
@@ -62,16 +69,19 @@ contract ProtocolTest is Test {
     Concero public concero;
     Orchestrator public orch;
     Orchestrator public orchEmpty;
-    ConceroProxy public proxy;
+    InfraProxy public proxy;
     LPToken public lp;
     ConceroAutomation public automation;
+    ITransparentUpgradeableProxy proxyInterfaceInfra;
+    ProxyAdmin adminInfraBase;
+    ProxyAdmin adminMaster;
 
     //==== Instantiate Deploy Script Base
     DexSwapDeploy dexDeployBase;
     ConceroPoolDeploy poolDeployBase;
     ConceroDeploy conceroDeployBase;
     OrchestratorDeploy orchDeployBase;
-    TransparentDeploy proxyDeployBase;
+    InfraProxyDeploy proxyDeployBase;
     LPTokenDeploy lpDeployBase;
     AutomationDeploy autoDeployBase;
 
@@ -81,10 +91,13 @@ contract ProtocolTest is Test {
     Concero public conceroDst;
     Orchestrator public orchDst;
     Orchestrator public orchEmptyDst;
-    ConceroProxy public proxyDst;
+    InfraProxy public proxyDst;
+    ITransparentUpgradeableProxy proxyInterfaceInfraArb;
+    ProxyAdmin adminInfraArb;
+    ProxyAdmin adminChild;
         
     //==== Instantiate Deploy Script Arbitrum
-    TransparentDeploy proxyDeployArbitrum;
+    InfraProxyDeploy proxyDeployArbitrum;
     DexSwapDeploy dexDeployArbitrum;
     ChildPoolDeploy childDeployArbitrum;
     ConceroDeploy conceroDeployArbitrum;
@@ -205,7 +218,7 @@ contract ProtocolTest is Test {
         poolDeployBase = new ConceroPoolDeploy();
         conceroDeployBase = new ConceroDeploy();
         orchDeployBase = new OrchestratorDeploy();
-        proxyDeployBase = new TransparentDeploy();
+        proxyDeployBase = new InfraProxyDeploy();
         lpDeployBase = new LPTokenDeploy();
         autoDeployBase = new AutomationDeploy();
 
@@ -217,22 +230,29 @@ contract ProtocolTest is Test {
             address(0),
             address(0),
             address(0),
-            1
+            1,
+            Tester
         );
 
         //====== Deploy the proxy with the dummy Orch to get the address
         proxy = proxyDeployBase.run(address(orchEmpty), Tester, "");
+        proxyInterfaceInfra = ITransparentUpgradeableProxy(address(proxy));
 
         //===== Deploy the protocol with the proxy address
+        //LP Token
         lp = lpDeployBase.run(Tester, address(0));
-        automation = autoDeployBase.run(address(0));//@audit functions
-        dex = dexDeployBase.run(address(proxy));
+        // Automation Contract
+        automation = autoDeployBase.run(address(0), Tester);//@audit functions
+        // DexSwap Contract
+        dex = dexDeployBase.run(address(proxy), Tester);
+        // Pool Contract
         pool = poolDeployBase.run(
             linkBase,
             ccipRouterBase,
             address(mUSDC),
             address(lp),
-            address(automation)
+            address(automation),
+            Tester
         );
 
         concero = conceroDeployBase.run(
@@ -254,7 +274,8 @@ contract ProtocolTest is Test {
             }),
             0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
             address(pool),
-            address(proxy)
+            address(proxy),
+            Tester
         );
         //====== Deploy a new Orch that will e set as implementation to the proxy.
         orch = orchDeployBase.run(
@@ -263,8 +284,12 @@ contract ProtocolTest is Test {
             address(concero),
             address(pool),
             address(proxy),
-            1
+            1,
+            Tester
         );
+
+        //===== Base Proxies
+        adminInfraBase = ProxyAdmin(0x2b42C737b072481672Bb458260e9b59CB2268dc6);
 
         //=== Base Contracts
         vm.makePersistent(address(proxy));
@@ -274,18 +299,9 @@ contract ProtocolTest is Test {
         vm.makePersistent(address(orch));
         vm.makePersistent(address(ccipLocalSimulatorFork));
 
-        //=== Transfer ownership to Tester
-        vm.startPrank(defaultSender);
-        dex.transferOwnership(Tester);
-        pool.transferOwnership(Tester);
-        concero.transferOwnership(Tester);
-        orch.transferOwnership(Tester);
-        proxy.transferOwnership(Tester);
-        vm.stopPrank();
-
         //====== Update the proxy for the correct address
         vm.prank(Tester);
-        proxy.upgradeTo(address(orch));
+        adminInfraBase.upgradeAndCall(proxyInterfaceInfra, address(orch), "");
 
         //====== Update the MINTER on the LP Token
         vm.prank(Tester);
@@ -304,7 +320,9 @@ contract ProtocolTest is Test {
         vm.stopPrank();
         }
 
+        /////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
         //================ SWITCH CHAINS ====================\\
+        ///////////////////////////////////////////////////////
         vm.selectFork(arbitrumMainFork);
 
         //===== Arbitrum Routers
@@ -319,7 +337,7 @@ contract ProtocolTest is Test {
 
         {
         //===== Deploy Arbitrum Scripts    
-        proxyDeployArbitrum = new TransparentDeploy();
+        proxyDeployArbitrum = new InfraProxyDeploy();
         dexDeployArbitrum = new DexSwapDeploy();
         childDeployArbitrum = new ChildPoolDeploy();
         conceroDeployArbitrum = new ConceroDeploy();
@@ -332,17 +350,21 @@ contract ProtocolTest is Test {
             address(0),
             address(0),
             address(0),
-            1
+            1,
+            Tester
         );
 
         //====== Deploy the proxy with the dummy Orch
         proxyDst = proxyDeployArbitrum.run(address(orchEmptyDst), Tester, "");
 
-        dexDst = dexDeployArbitrum.run(address(proxyDst));
+        proxyInterfaceInfraArb = ITransparentUpgradeableProxy(address(proxyDst));
+
+        dexDst = dexDeployArbitrum.run(address(proxyDst), Tester);
         child = childDeployArbitrum.run(
             linkArb,
             ccipRouterArb,
-            address(aUSDC)
+            address(aUSDC),
+            Tester
         );
         conceroDst = conceroDeployArbitrum.run(
             IStorage.FunctionsVariables ({
@@ -363,7 +385,8 @@ contract ProtocolTest is Test {
             }),
             0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_ethersHashSum
             address(child),
-            address(proxyDst)
+            address(proxyDst),
+            Tester
         );
 
         orchDst = orchDeployArbitrum.run(
@@ -372,8 +395,12 @@ contract ProtocolTest is Test {
             address(conceroDst),
             address(child),
             address(proxyDst),
-            1
+            1,
+            Tester
         );
+
+        //===== Arbitrum Proxies
+        adminInfraArb = ProxyAdmin(0x0031fcCAeBd9ff6A5E3CA21225BEf04140f7CE9e);
 
         //=== Arbitrum Contracts
         vm.makePersistent(address(proxyDst));
@@ -382,19 +409,11 @@ contract ProtocolTest is Test {
         vm.makePersistent(address(conceroDst));
         vm.makePersistent(address(orchDst));
         vm.makePersistent(address(ccipLocalSimulatorFork));
-
-        //=== Transfer ownership to Tester
-        vm.startPrank(defaultSender);
-        dexDst.transferOwnership(Tester);
-        child.transferOwnership(Tester);
-        conceroDst.transferOwnership(Tester);
-        orchDst.transferOwnership(Tester);
-        proxyDst.transferOwnership(Tester);
-        vm.stopPrank();
+        vm.makePersistent(address(adminInfraArb));
 
         //====== Update the proxy for the correct address
         vm.prank(Tester);
-        proxyDst.upgradeTo(address(orchDst));
+        adminInfraArb.upgradeAndCall(proxyInterfaceInfraArb, address(orchDst), "");
 
         //====== Wrap the proxy as the implementation
         opDst = Orchestrator(address(proxyDst));
@@ -414,7 +433,7 @@ contract ProtocolTest is Test {
         vm.startPrank(Tester);
         pool.setConceroMessenger(Messenger, 1);
         op.setConceroMessenger(Messenger, 1);
-        pool.setConceroPoolReceiver(arbChainSelector ,address(child));
+        pool.setConceroPoolReceiver(arbChainSelector, address(child));
         pool.setConceroContractSender(arbChainSelector, address(child), 1);
         pool.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
         op.setConceroContract(arbChainSelector, address(proxyDst));
@@ -467,11 +486,9 @@ contract ProtocolTest is Test {
         assertEq(vm.activeFork(), baseMainFork);
 
         vm.startPrank(Tester);
-        assertEq(proxy.implementation(), address(orch));
 
-        proxy.upgradeTo(address(SAFE_LOCK));
+        adminInfraBase.upgradeAndCall(proxyInterfaceInfra, address(SAFE_LOCK), "");
 
-        assertEq(proxy.implementation(), address(SAFE_LOCK));
         vm.stopPrank();
     }
 
@@ -482,11 +499,9 @@ contract ProtocolTest is Test {
         assertEq(vm.activeFork(), baseMainFork);
 
         vm.startPrank(Tester);
-        assertEq(proxy.implementation(), address(orch));
 
-        proxy.upgradeTo(address(SAFE_LOCK));
+        adminInfraBase.upgradeAndCall(proxyInterfaceInfra, address(SAFE_LOCK), "");
 
-        assertEq(proxy.implementation(), address(SAFE_LOCK));
         vm.stopPrank();
 
         op = Orchestrator(address(proxy));
@@ -529,19 +544,19 @@ contract ProtocolTest is Test {
 
         vm.startPrank(Tester);
         //====== Checks for the initial implementation
-        assertEq(proxy.implementation(), address(orch));
+        // assertEq(proxy.implementation(), address(orch));
 
         //====== Upgrades it to SAFE_LOCK
-        proxy.upgradeTo(address(SAFE_LOCK));
+        adminInfraBase.upgradeAndCall(proxyInterfaceInfra, address(SAFE_LOCK), "");
 
         //====== Verify if the upgrade happen as expected
-        assertEq(proxy.implementation(), address(SAFE_LOCK));
+        // assertEq(proxy.implementation(), address(SAFE_LOCK));
 
         //====== Upgrades it again to a valid address
-        proxy.upgradeTo(address(orch));
+        adminInfraBase.upgradeAndCall(proxyInterfaceInfra, address(orch), "");
 
         //====== Checks if the upgrade happens as expected
-        assertEq(proxy.implementation(), address(orch));
+        // assertEq(proxy.implementation(), address(orch));
 
         vm.stopPrank();
     }

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IFunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsClient.sol";
 
@@ -49,7 +50,7 @@ contract Orchestrator is Storage, IFunctionsClient {
   ///@notice emitted when the Functions router fulfills a request
   event Orchestrator_RequestFulfilled(bytes32 requestId);
 
-  constructor(address _router, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex) {
+  constructor(address _router, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex, address _owner) Storage(_owner){
     i_router = _router;
     i_dexSwap = _dexSwap;
     i_concero = _concero;
@@ -140,7 +141,6 @@ contract Orchestrator is Storage, IFunctionsClient {
       amountReceived = balanceAfter - balanceBefore;
       if (amountReceived < fromAmount) revert Orchestrator_FoTNotAllowedYet();
 
-      emit Log("here");
       (bool swapSuccess, bytes memory data) = i_dexSwap.delegatecall(
         abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, fromAmount -= (fromAmount / CONCERO_FEE_FACTOR))
       );

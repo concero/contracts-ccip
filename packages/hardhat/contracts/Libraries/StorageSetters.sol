@@ -34,7 +34,7 @@ contract StorageSetters is Storage {
    * @param _router the address of the router
    * @param _isApproved 1 == Approved | Any other value is not Approved.
    */
-  function manageRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner {
+  function setDexRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner {
     s_routerAllowed[_router] = _isApproved;
     emit Storage_NewRouterAdded(_router, _isApproved);
   }

@@ -22,6 +22,7 @@ error Orchestrator_FoTNotAllowedYet();
 error Orchestrator_InvalidAmount();
 ///@notice FUNCTIONS ERROR
 error Orchestrator_OnlyRouterCanFulfill();
+error Orchestrator_FailedToStartBridge(uint256 receivedAmount, uint256 minAmount);
 
 contract Orchestrator is StorageSetters, IFunctionsClient {
   using SafeERC20 for IERC20;
@@ -67,6 +68,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
     } else {
       if (msg.value != amount) revert Orchestrator_InvalidAmount();
     }
+
     _;
   }
 
@@ -91,20 +93,18 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   ////////////////////
   ///DELEGATE CALLS///
   ////////////////////
-  function swapAndBridge(
-    BridgeData calldata _bridgeData,
-    IDexSwap.SwapData[] calldata _srcSwapData,
-    IDexSwap.SwapData[] calldata _dstSwapData
-  ) external payable {
+  function swapAndBridge(BridgeData memory _bridgeData, IDexSwap.SwapData[] calldata _srcSwapData, IDexSwap.SwapData[] calldata _dstSwapData) external payable {
     uint256 amountToSwap = msg.value;
+    uint256 receivedAmount = _swap(_srcSwapData, amountToSwap, false);
 
-    _swap(_srcSwapData, amountToSwap, false);
+    if (receivedAmount < _bridgeData.minAmount) revert Orchestrator_FailedToStartBridge(receivedAmount, _bridgeData.minAmount);
+
+    _bridgeData.amount = receivedAmount;
 
     (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, _bridgeData, _dstSwapData));
     if (bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
   }
 
-  //@audit adjust the modifier
   function swap(
     IDexSwap.SwapData[] calldata _swapData
   ) external payable tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount) validateSwapData(_swapData) {
@@ -155,9 +155,12 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   //////////////////////////
   /// INTERNAL FUNCTIONS ///
   //////////////////////////
-  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount, bool isFeesNeeded) internal {
+  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount, bool isFeesNeeded) internal returns (uint256) {
     address fromToken = swapData[0].fromToken;
     uint256 fromAmount = swapData[0].fromAmount;
+    address toToken = swapData[swapData.length - 1].toToken;
+
+    uint256 toTokenBalanceBefore = IERC20(toToken).balanceOf(address(this));
 
     if (fromToken != address(0)) {
       //TODO: deal with FoT tokens.
@@ -174,5 +177,8 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
     if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
 
     emit Orchestrator_SwapSuccess();
+
+    uint256 toTokenBalanceAfter = IERC20(toToken).balanceOf(address(this));
+    return toTokenBalanceAfter - toTokenBalanceBefore;
   }
 }

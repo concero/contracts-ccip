@@ -155,7 +155,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   //////////////////////////
   /// INTERNAL FUNCTIONS ///
   //////////////////////////
-  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount) internal returns (uint256 amountReceived) {
+  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount) internal {
     address fromToken = swapData[0].fromToken;
     uint256 fromAmount = swapData[0].fromAmount;
 
@@ -163,9 +163,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
       //TODO: deal with FoT tokens.
       LibConcero.transferFromERC20(fromToken, msg.sender, address(this), fromAmount);
 
-      (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-        abi.encodeWithSelector(IDexSwap.conceroEntry.selector, fromAmount -= (fromAmount / CONCERO_FEE_FACTOR), 0)
-      );
+      (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, 0));
       if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
 
       emit Orchestrator_SwapSuccess();

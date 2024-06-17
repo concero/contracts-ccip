@@ -35,7 +35,7 @@ const config = {
         tests: "test",
     },
     solidity: {
-        version: "0.8.19",
+        version: "0.8.20",
         settings: {
             // evmVersion: "paris",
             optimizer: {
@@ -49,7 +49,7 @@ const config = {
         deployer: {
             default: 0,
         },
-        nikita: {
+        proxyDeployer: {
             default: 1,
         },
     },

@@ -45,7 +45,7 @@ async function addCLFConsumer(chain, consumerAddresses, subscriptionId) {
         }
         catch (error) {
             if (error.message.includes("is already authorized to use subscription"))
-                (0, log_1.default)(error.message, "deployConcero");
+                (0, log_1.default)(error.message, "addCLFConsumer");
             else
                 console.error(error);
         }

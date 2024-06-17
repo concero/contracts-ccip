@@ -98,7 +98,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   ) external payable {
     uint256 amountToSwap = msg.value;
 
-    _swap(_srcSwapData, amountToSwap);
+    _swap(_srcSwapData, amountToSwap, false);
 
     (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, _bridgeData, _dstSwapData));
     if (bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
@@ -108,7 +108,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   function swap(
     IDexSwap.SwapData[] calldata _swapData
   ) external payable tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount) validateSwapData(_swapData) {
-    _swap(_swapData, msg.value);
+    _swap(_swapData, msg.value, true);
   }
 
   function bridge(
@@ -117,7 +117,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   ) external payable tokenAmountSufficiency(getToken(bridgeData.tokenType, i_chainIndex), bridgeData.amount) validateBridgeData(bridgeData) {
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
 
-    IERC20(fromToken).safeTransferFrom(msg.sender, address(this), bridgeData.amount);
+    LibConcero.transferFromERC20(fromToken, msg.sender, address(this), bridgeData.amount);
 
     (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData));
     if (bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
@@ -155,7 +155,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   //////////////////////////
   /// INTERNAL FUNCTIONS ///
   //////////////////////////
-  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount) internal {
+  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount, bool isFeesNeeded) internal {
     address fromToken = swapData[0].fromToken;
     uint256 fromAmount = swapData[0].fromAmount;
 
@@ -163,14 +163,21 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
       //TODO: deal with FoT tokens.
       LibConcero.transferFromERC20(fromToken, msg.sender, address(this), fromAmount);
 
+      if (isFeesNeeded) {
+        swapData[0].fromAmount -= (fromAmount / CONCERO_FEE_FACTOR);
+      }
+
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, 0));
       if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
 
       emit Orchestrator_SwapSuccess();
     } else {
-      (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-        abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, nativeAmount -= (nativeAmount / CONCERO_FEE_FACTOR))
-      );
+      if (isFeesNeeded) {
+        swapData[0].fromAmount -= (nativeAmount / CONCERO_FEE_FACTOR);
+        swapData[0].fromAmount -= (fromAmount / CONCERO_FEE_FACTOR);
+      }
+
+      (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, nativeAmount));
       if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
 
       emit Orchestrator_SwapSuccess();

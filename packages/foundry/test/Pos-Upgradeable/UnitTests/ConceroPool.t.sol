@@ -72,7 +72,7 @@ contract ConceroPoolTest is Test {
         emit ConceroPool_ConceroSendersUpdated(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
         pool.setConceroContractSender(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
 
-        assertEq(pool.s_poolToReceiveFrom(mockDestinationChainSelector, address(mockChildPoolAddress)), 1);
+        assertEq(pool.s_contractsToReceiveFrom(mockDestinationChainSelector, address(mockChildPoolAddress)), 1);
     }
 
     error NotContractOwner();
@@ -87,35 +87,14 @@ contract ConceroPoolTest is Test {
         vm.prank(Tester);
         vm.expectEmit();
         emit ConceroPool_PoolReceiverUpdated(mockDestinationChainSelector, address(mockChildPoolAddress));
-        pool.setConceroPoolReceiver(mockDestinationChainSelector, address(mockChildPoolAddress));
+        pool.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
 
         assertEq(pool.s_poolToSendTo(mockDestinationChainSelector), address(mockChildPoolAddress));
     }
 
     function test_revertSetConceroPoolReceiver() public {
         vm.expectRevert(abi.encodeWithSelector(NotContractOwner.selector));
-        pool.setConceroPoolReceiver(mockDestinationChainSelector, address(mockChildPoolAddress));
-    }
-
-    ///setConceroMessenger///
-    event ConceroPool_MessengerUpdated(address walletAddress, uint256 approved);
-    function test_setConceroMessenger() public {
-        vm.prank(Tester);
-        vm.expectEmit();
-        emit ConceroPool_MessengerUpdated(Puka, 1);
-        pool.setConceroMessenger(Puka, 1);
-
-        assertEq(pool.s_messengerAddresses(Puka), 1);
-    }
-
-    error ConceroPool_InvalidAddress();
-    function test_setConceroMessengerRevert() public {
-        vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ConceroPool_InvalidAddress.selector));
-        pool.setConceroMessenger(address(0), 1);
-
-        vm.expectRevert(abi.encodeWithSelector(NotContractOwner.selector));
-        pool.setConceroMessenger(Puka, 1);
+        pool.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
     }
 
     ///setConceroContract///
@@ -135,6 +114,7 @@ contract ConceroPoolTest is Test {
     ///orchestratorLoan///
     error ConceroPool_ItsNotConcero(address);
     error ConceroPool_InsufficientBalance();
+    error ConceroPool_InvalidAddress();
     function test_orchestratorLoanRevert() external {
         //====== Update Concero Address to test the revert
         vm.startPrank(Tester);

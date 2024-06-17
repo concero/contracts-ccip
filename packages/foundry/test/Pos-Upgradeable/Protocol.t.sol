@@ -431,9 +431,7 @@ contract ProtocolTest is Test {
         vm.selectFork(baseMainFork);
         //====== Set the Messenger to be allowed to interact
         vm.startPrank(Tester);
-        pool.setConceroMessenger(Messenger, 1);
-        op.setConceroMessenger(Messenger, 1);
-        pool.setConceroPoolReceiver(arbChainSelector, address(child));
+        pool.setPoolsToSend(arbChainSelector, address(child));
         pool.setConceroContractSender(arbChainSelector, address(child), 1);
         pool.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
         op.setConceroContract(arbChainSelector, address(proxyDst));

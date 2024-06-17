@@ -21,7 +21,7 @@ contract ConceroPoolAndBridge is Helpers {
         swapUniV2LikeHelper();
 
         //======= GET lpToken address.
-        IERC20 lpToken = pool.lp();
+        IERC20 lpToken = pool.i_lp();
 
         uint256 lpBalance = mUSDC.balanceOf(LP);
         uint256 depositAmount = 10*10**6;

@@ -1,4 +1,4 @@
-import { Concero } from "../../typechain-types";
+import { Concero } from "../typechain-types";
 import "@nomicfoundation/hardhat-chai-matchers";
 import { WalletClient } from "viem/clients/createWalletClient";
 import { HttpTransport } from "viem/clients/transports/http";
@@ -8,10 +8,10 @@ import { RpcSchema } from "viem/types/eip1193";
 import { privateKeyToAccount } from "viem/accounts";
 import { Address, createPublicClient, createWalletClient, decodeEventLog, http, PrivateKeyAccount } from "viem";
 import { arbitrumSepolia, baseSepolia, optimismSepolia } from "viem/chains";
-import ERC20ABI from "../../abi/ERC20.json";
+import ERC20ABI from "../abi/ERC20.json";
 import { PublicClient } from "viem/clients/createPublicClient";
-import { abi as ConceroAbi } from "../../artifacts/contracts/Concero.sol/Concero.json";
-import { abi as ConceroOrchestratorAbi } from "../../artifacts/contracts/Orchestrator.sol/Orchestrator.json";
+import { abi as ConceroAbi } from "../artifacts/contracts/Concero.sol/Concero.json";
+import { abi as ConceroOrchestratorAbi } from "../artifacts/contracts/Orchestrator.sol/Orchestrator.json";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -33,13 +33,13 @@ const chainsMap = {
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
 const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA;
 const senderAddress = process.env.TESTS_WALLET_ADDRESS;
-const amount = "2000000000000000000";
+const amount = "10000";
 const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
 const transactionsCount = 1;
 const srcContractAddress = process.env.CONCEROPROXY_BASE_SEPOLIA;
 const dstContractAddress = process.env.CONCEROPROXY_OPTIMISM_SEPOLIA;
 
-describe("startBatchTransactions\n", () => {
+describe("swap\n", () => {
   let Concero: Concero;
   let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
     chain: chainsMap[srcChainSelector].viemChain,
@@ -153,12 +153,25 @@ describe("startBatchTransactions\n", () => {
     return dstLog;
   };
 
-  it("should start transactions", async () => {
+  it("should swap", async () => {
     await approveBnmAndLink();
 
     const fromSrcBlockNumber = await srcPublicClient.getBlockNumber();
     const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
     let transactionPromises = [];
+    const USD_BASE = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
+
+    const swapData = [
+      {
+        dexType: 0,
+        fromToken: USD_BASE,
+        formAmount: BigInt(amount),
+        toToken: process.env.CCIPBNM_BASE_SEPOLIA,
+        toAmount: BigInt(amount),
+        toAmountMin: BigInt(amount),
+        dexData: "",
+      },
+    ];
 
     for (let i = 0; i < transactionsCount; i++) {
       const bridgeData = {
@@ -169,23 +182,13 @@ describe("startBatchTransactions\n", () => {
         receiver: senderAddress,
       };
 
-      // const { request } = await srcPublicClient.simulateContract({
-      //   abi: ConceroOrchestratorAbi,
-      //   functionName: "bridge",
-      //   address: srcContractAddress as Address,
-      //   args: [bridgeData, []],
-      //   account: viemAccount as Account,
-      //   nonce: nonce++,
-      // });
-      // transactionPromises.push(walletClient.writeContract(request));
-
       const transactionHash = walletClient.writeContract({
         abi: ConceroOrchestratorAbi,
-        functionName: "bridge",
+        functionName: "swap",
         address: srcContractAddress as Address,
-        args: [bridgeData, []],
+        args: [swapData],
         nonce: nonce++,
-        gas: 4_000_000n,
+        gas: 1_000_000n,
       });
 
       transactionPromises.push(transactionHash);
@@ -194,15 +197,15 @@ describe("startBatchTransactions\n", () => {
     const transactionHashes = await Promise.all(transactionPromises);
     console.log("transactionHashes: ", transactionHashes);
 
-    const txStatusPromises = transactionHashes.map(txHash => {
-      return checkTransactionStatus(
-        txHash,
-        "0x" + fromSrcBlockNumber.toString(16),
-        "0x" + fromDstBlockNumber.toString(16),
-      );
-    });
-
-    const txStatuses = await Promise.all(txStatusPromises);
-    console.log("txStatuses: ", txStatuses);
+    // const txStatusPromises = transactionHashes.map(txHash => {
+    //   return checkTransactionStatus(
+    //     txHash,
+    //     "0x" + fromSrcBlockNumber.toString(16),
+    //     "0x" + fromDstBlockNumber.toString(16),
+    //   );
+    // });
+    //
+    // const txStatuses = await Promise.all(txStatusPromises);
+    // console.log("txStatuses: ", txStatuses);
   }).timeout(0);
 });

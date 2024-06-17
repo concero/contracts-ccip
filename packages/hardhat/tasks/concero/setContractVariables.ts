@@ -14,6 +14,7 @@ export async function setContractVariables(liveChains: CNetwork[], deployableCha
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
   for (const deployableChain of deployableChains) {
+    await setDexSwapAllowedRouters(deployableChain, abi); // once
     await setDstConceroPools(deployableChain, abi);
     await setDonHostedSecretsVersion(deployableChain, slotId, abi);
     await setDonSecretsSlotId(deployableChain, slotId, abi);
@@ -248,5 +249,33 @@ export async function setDonSecretsSlotId(deployableChain: CNetwork, slotId: num
     );
   } catch (error) {
     log(`Error for ${dcName}: ${error.message}`, "setDonHostedSecretsSlotID");
+  }
+}
+
+export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: any) {
+  const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
+  const conceroProxy = getEnvVar(`CONCEROPROXY_${networkEnvKeys[dcName]}`);
+  const allowedRouter = "0xF8908a808F1c04396B16A5a5f0A14064324d0EdA";
+  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+
+  try {
+    const { request: setDexRouterReq } = await publicClient.simulateContract({
+      address: conceroProxy as Address,
+      abi,
+      functionName: "setDexRouterAddress",
+      account,
+      args: [allowedRouter, 1n],
+      chain: dcViemChain,
+    });
+    const setDexRouterHash = await walletClient.writeContract(setDexRouterReq);
+    const { cumulativeGasUsed: setDexRouterGasUsed } = await publicClient.waitForTransactionReceipt({
+      hash: setDexRouterHash,
+    });
+    log(
+      `Set ${dcName}:${conceroProxy} dexRouterAddress[0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D]. Gas used: ${setDexRouterGasUsed.toString()}`,
+      "setDexRouterAddress",
+    );
+  } catch (error) {
+    log(`Error for ${dcName}: ${error.message}`, "setDexRouterAddress");
   }
 }

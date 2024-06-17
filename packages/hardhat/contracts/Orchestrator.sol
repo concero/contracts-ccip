@@ -46,6 +46,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   ////////////////////////////////////////////////////////
   ///@notice emitted when the Functions router fulfills a request
   event Orchestrator_RequestFulfilled(bytes32 requestId);
+  event Orchestrator_SwapSuccess();
 
   constructor(address _functionsRouter, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex) StorageSetters(msg.sender) {
     i_functionsRouter = _functionsRouter;
@@ -166,11 +167,15 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
         abi.encodeWithSelector(IDexSwap.conceroEntry.selector, fromAmount -= (fromAmount / CONCERO_FEE_FACTOR), 0)
       );
       if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
+
+      emit Orchestrator_SwapSuccess();
     } else {
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
         abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, nativeAmount -= (nativeAmount / CONCERO_FEE_FACTOR))
       );
       if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
+
+      emit Orchestrator_SwapSuccess();
     }
   }
 }

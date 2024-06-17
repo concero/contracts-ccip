@@ -31,8 +31,10 @@ error ConceroChildPool_NotMessenger(address caller);
 error ConceroChildPool_ChainNotAllowed(uint64 chainSelector);
 ///@notice error emitted when the caller is not the Orchestrator
 error ConceroChildPool_ItsNotAnOrchestrator(address caller);
+///@notice error emitted when the caller is not the owner of the contract
+error NotContractOwner();
 
-contract ConceroChildPool is CCIPReceiver, Ownable {
+contract ConceroChildPool is CCIPReceiver {
   using SafeERC20 for IERC20;
 
   ///////////////////////////////////////////////////////////
@@ -46,12 +48,16 @@ contract ConceroChildPool is CCIPReceiver, Ownable {
   ////////////////
   ///IMMUTABLES///
   ////////////////
+  ///@notice Child Pool proxy address
+  address private immutable i_childPool;
   ///@notice Chainlink Link Token interface
   LinkTokenInterface private immutable i_linkToken;
   ///@notice Chainlink CCIP Router
   IRouterClient private immutable i_router;
   ///@notice immutable variable to store the USDC address.
   IERC20 immutable i_USDC;
+  ///@notice Contract Owner
+  address immutable i_owner;
 
   ///////////////
   ///CONSTANTS///
@@ -119,15 +125,22 @@ contract ConceroChildPool is CCIPReceiver, Ownable {
     _;
   }
 
+  modifier onlyOwner(){
+    if(msg.sender != i_owner) revert NotContractOwner();
+    _;
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////FUNCTIONS//////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   receive() external payable {}
 
-  constructor(address _link, address _ccipRouter, address _usdc, address _owner) CCIPReceiver(_ccipRouter) Ownable(_owner) {
+  constructor(address _childPool, address _link, address _ccipRouter, address _usdc, address _owner) CCIPReceiver(_ccipRouter) {
+    i_childPool = _childPool;
     i_linkToken = LinkTokenInterface(_link);
     i_router = IRouterClient(_ccipRouter);
     i_USDC = IERC20(_usdc);
+    i_owner = _owner;
   }
 
   ////////////////////////

@@ -8,13 +8,14 @@ contract ChildPoolDeploy is Script {
 
     
     function run(
+        address _proxy,
         address _link,
         address _ccipRouter,
         address _usdc,
         address _owner
     ) public returns(ConceroChildPool child){
         vm.startBroadcast();
-        child = new ConceroChildPool(_link, _ccipRouter, _usdc, _owner);
+        child = new ConceroChildPool(_proxy, _link, _ccipRouter, _usdc, _owner);
         vm.stopBroadcast();
     }
 }

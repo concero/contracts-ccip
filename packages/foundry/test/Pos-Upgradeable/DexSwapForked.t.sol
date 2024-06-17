@@ -41,7 +41,7 @@ contract DexSwapForked is ProtocolTest {
                             toAmount: amountOutMin,
                             toAmountMin: amountOutMin,
                             dexData: abi.encode(sushiV2, path, to, deadline)
-                        });
+        });
 
         // ==== Approve Transfer
         vm.startPrank(User);

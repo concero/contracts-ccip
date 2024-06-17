@@ -1,36 +1,38 @@
 // // SPDX-License-Identifier: UNLICENSED
-// pragma solidity 0.8.19;
+// pragma solidity 0.8.20;
 
 // import {Test, console} from "forge-std/Test.sol";
 
-// import {Concero} from "../../src/Concero.sol";
-// import {ConceroFunctions} from "../../src/ConceroFunctions.sol";
-// import {DexSwap} from "../../src/DexSwap.sol";
+// import {Concero} from "contracts/Concero.sol";
+// import {ConceroFunctions} from "contracts/ConceroFunctions.sol";
+// import {DexSwap} from "contracts/DexSwap.sol";
+// import {InfraProxy} from "contracts/Proxy/InfraProxy.sol";
 
-// import {IDexSwap} from "../../src/Interfaces/IDexSwap.sol";
+// import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 
 // import {ConceroMock} from "../Mocks/ConceroMock.sol";
 
 // import {ConceroMockDeploy} from "../../script/ConceroMockDeploy.s.sol";
-// import {DexSwapScript} from "../../script/DexSwapScript.s.sol";
+// import {DexSwapDeploy} from "../../script/DexSwapDeploy.s.sol";
+// import {InfraProxyDeploy} from "../../script/InfraProxyDeploy.s.sol";
 
 // import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-// import {ERC20Mock} from "@openzeppelin/contracts/mocks/ERC20Mock.sol";
+// import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 // import {DEXMock} from "../Mocks/DEXMock.sol";
 // import {DEXMock2} from "../Mocks/DEXMock2.sol";
 // import {USDC} from "../Mocks/USDC.sol";
 
 // import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 // import {ISwapRouter} from '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
-// import {IRouter} from "@velodrome/contracts/interfaces/IRouter.sol";
+// import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
 // import {TransferHelper} from '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
-// import {ISwapRouter02, IV3SwapRouter} from "../../src/Interfaces/ISwapRouter02.sol";
+// import {ISwapRouter02, IV3SwapRouter} from "contracts/Interfaces/ISwapRouter02.sol";
 
 // contract DexSwapTest is Test {
 //     DexSwap public dex;
 //     ConceroMock public concero;
 
-//     DexSwapScript public deploy;
+//     DexSwapDeploy public deploy;
 //     ConceroMockDeploy public deployConcero;
 
 //     ERC20Mock wEth;
@@ -50,21 +52,21 @@
 
 //     function setUp() public {
 
-//         wEth = new ERC20Mock("Test Wrapped Ether", "wEth", Barba, 2 * PT_INITIAL_BALANCE);
-//         AERO = new ERC20Mock("Test AERO", "AERO", Barba, 2 * PT_INITIAL_BALANCE);
+//         wEth = new ERC20Mock();
+//         AERO = new ERC20Mock();
 //         mUSDC = new USDC("USDC", "mUSDC", Barba, 2 * USDC_INITIAL_BALANCE);
 
-//         dexMock = new DEXMock(address(mUSDC));
-//         dexMock2 = new DEXMock2(address(mUSDC));
+//         dexMock = new DEXMock();
+//         dexMock2 = new DEXMock2();
 
 //         wEth.mint(User, ORCH_BALANCE);
 //         AERO.mint(User, ORCH_BALANCE);
 //         mUSDC.mint(User, ORCH_USDC_BALANCE);
 
-//         deploy = new DexSwapScript();
+//         deploy = new DexSwapDeploy();
 //         deployConcero = new ConceroMockDeploy();
 
-//         dex = deploy.run();
+//         dex = deploy.run(_proxy, Tester);
 //         concero = deployConcero.run(
 //             0xf9B8fc078197181C841c296C876945aaa425B278, //address _functionsRouter
 //             0, //uint64 _donHostedSecretsVersion

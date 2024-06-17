@@ -33,9 +33,11 @@ import {OrchestratorDeploy} from "../../script/OrchestratorDeploy.s.sol";
 import {InfraProxyDeploy} from "../../script/InfraProxyDeploy.s.sol";
 import {LPTokenDeploy} from "../../script/LPTokenDeploy.s.sol";
 import {AutomationDeploy} from "../../script/AutomationDeploy.s.sol";
+import {MasterPoolProxyDeploy} from "../../script/MasterPoolProxyDeploy.s.sol";
 
 //===== Child Scripts
 import {ChildPoolDeploy} from "../../script/ChildPoolDeploy.s.sol";
+import {ChildPoolProxyDeploy} from "../../script/ChildPoolProxyDeploy.s.sol";
 
 //Mocks
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
@@ -84,6 +86,8 @@ contract ProtocolTest is Test {
     InfraProxyDeploy proxyDeployBase;
     LPTokenDeploy lpDeployBase;
     AutomationDeploy autoDeployBase;
+    MasterPoolProxy masterProxy;
+    MasterPoolProxyDeploy masterProxyDeploy;
 
     //==== Instantiate Arbitrum Contracts
     DexSwap public dexDst;
@@ -92,14 +96,17 @@ contract ProtocolTest is Test {
     Orchestrator public orchDst;
     Orchestrator public orchEmptyDst;
     InfraProxy public proxyDst;
+    ChildPoolProxy public childProxy;
     ITransparentUpgradeableProxy proxyInterfaceInfraArb;
     ProxyAdmin adminInfraArb;
     ProxyAdmin adminChild;
         
     //==== Instantiate Deploy Script Arbitrum
     InfraProxyDeploy proxyDeployArbitrum;
+    ChildPoolProxyDeploy childProxyDeploy;
+
     DexSwapDeploy dexDeployArbitrum;
-    ChildPoolDeploy childDeployArbitrum;
+    ChildPoolDeploy childDeployArbitrum;    
     ConceroDeploy conceroDeployArbitrum;
     OrchestratorDeploy orchDeployArbitrum;
 
@@ -221,6 +228,7 @@ contract ProtocolTest is Test {
         proxyDeployBase = new InfraProxyDeploy();
         lpDeployBase = new LPTokenDeploy();
         autoDeployBase = new AutomationDeploy();
+        masterProxyDeploy = new MasterPoolProxyDeploy();
 
         {
         //DEPLOY AN DUMMY ORCH
@@ -233,6 +241,7 @@ contract ProtocolTest is Test {
             1,
             Tester
         );
+        masterProxy = masterProxyDeploy.run(address(0), Tester, "");
 
         //====== Deploy the proxy with the dummy Orch to get the address
         proxy = proxyDeployBase.run(address(orchEmpty), Tester, "");
@@ -247,6 +256,7 @@ contract ProtocolTest is Test {
         dex = dexDeployBase.run(address(proxy), Tester);
         // Pool Contract
         pool = poolDeployBase.run(
+            address(adminMaster),
             linkBase,
             ccipRouterBase,
             address(mUSDC),
@@ -342,6 +352,7 @@ contract ProtocolTest is Test {
         childDeployArbitrum = new ChildPoolDeploy();
         conceroDeployArbitrum = new ConceroDeploy();
         orchDeployArbitrum = new OrchestratorDeploy();
+        childProxyDeploy = new ChildPoolProxyDeploy();
 
         //DEPLOY AN DUMMY ORCH
         orchEmptyDst = orchDeployArbitrum.run(
@@ -353,7 +364,8 @@ contract ProtocolTest is Test {
             1,
             Tester
         );
-
+        childProxy = childProxyDeploy.run(address(0), Tester, "");
+        
         //====== Deploy the proxy with the dummy Orch
         proxyDst = proxyDeployArbitrum.run(address(orchEmptyDst), Tester, "");
 
@@ -361,6 +373,7 @@ contract ProtocolTest is Test {
 
         dexDst = dexDeployArbitrum.run(address(proxyDst), Tester);
         child = childDeployArbitrum.run(
+            address(adminChild),
             linkArb,
             ccipRouterArb,
             address(aUSDC),

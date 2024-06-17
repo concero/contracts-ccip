@@ -8,6 +8,7 @@ import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/Fu
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {Storage} from "./Libraries/Storage.sol";
 import {IConceroPool} from "./Interfaces/IConceroPool.sol";
+import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -25,6 +26,7 @@ error AddressNotSet();
 ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
 error ConceroFunctions_ItsNotOrchestrator(address caller);
 error ConceroFunctions_NotMessenger(address caller);
+error TXReleasedFailed(bytes error);
 
 contract ConceroFunctions is FunctionsClient, Storage {
   ///////////////////////
@@ -121,6 +123,11 @@ contract ConceroFunctions is FunctionsClient, Storage {
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
 
+  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
+    return amount / 1000;
+    //@audit we can have loss of precision here?
+  }
+
   function addUnconfirmedTX(
     bytes32 ccipMessageId,
     address sender,
@@ -128,12 +135,13 @@ contract ConceroFunctions is FunctionsClient, Storage {
     uint256 amount,
     uint64 srcChainSelector,
     CCIPToken token,
-    uint256 blockNumber
+    uint256 blockNumber,
+    bytes calldata dstSwapData
   ) external onlyMessenger {
     Transaction memory transaction = s_transactions[ccipMessageId];
     if (transaction.sender != address(0)) revert TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
 
-    s_transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
+    s_transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false, dstSwapData);
 
     bytes[] memory args = new bytes[](12);
     args[0] = abi.encodePacked(s_dstJsHashSum);
@@ -211,10 +219,18 @@ contract ConceroFunctions is FunctionsClient, Storage {
     emit TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
   }
 
-  function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {
+  function sendUnconfirmedTX(
+    bytes32 ccipMessageId,
+    address sender,
+    address recipient,
+    uint256 amount,
+    uint64 dstChainSelector,
+    CCIPToken token,
+    IDexSwap.SwapData[] calldata dstSwapData
+  ) internal {
     if (s_conceroContracts[dstChainSelector] == address(0)) revert AddressNotSet();
 
-    bytes[] memory args = new bytes[](12);
+    bytes[] memory args = new bytes[](13);
     args[0] = abi.encodePacked(s_srcJsHashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
     args[2] = abi.encodePacked(RequestType.addUnconfirmedTxDst);
@@ -227,6 +243,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
     args[9] = abi.encodePacked(dstChainSelector);
     args[10] = abi.encodePacked(uint8(token));
     args[11] = abi.encodePacked(block.number);
+    args[12] = _swapDataToBytes(dstSwapData);
 
     bytes32 reqId = sendRequest(args, CL_JS_CODE);
     s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;
@@ -236,24 +253,39 @@ contract ConceroFunctions is FunctionsClient, Storage {
     emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
   }
 
+  function _swapDataToBytes(IDexSwap.SwapData[] calldata swapData) private pure returns (bytes memory packedData) {
+    for (uint256 i = 0; i < swapData.length; i++) {
+      packedData = abi.encodePacked(
+        packedData,
+        swapData[i].dexType,
+        swapData[i].fromToken,
+        swapData[i].fromAmount,
+        swapData[i].toToken,
+        swapData[i].toAmount,
+        swapData[i].toAmountMin,
+        swapData[i].dexData
+      );
+    }
+  }
+
   function _handleDstFunctionsResponse(Request storage request) internal {
     Transaction storage transaction = s_transactions[request.ccipMessageId];
 
     _confirmTX(request.ccipMessageId, transaction);
 
-    uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
     address tokenReceived = getToken(transaction.token, i_chainIndex);
+    uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
-    //@audit hardcode for CCIP-BnM - Should be USDC
-    //@audit s_chainIndex should be this way? Is there a better way to do it?
-    if (tokenReceived == getToken(CCIPToken.bnm, i_chainIndex)) {
-      IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
-
-      emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
+    if (transaction.dstSwapData.length != 0) {
+      IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, address(this));
+      IDexSwap.SwapData[] memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData[]));
+      (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, 0));
+      if (swapSuccess == false) revert TXReleasedFailed(swapError);
     } else {
-      //@audit We need to call the DEX module here.
-      // i_dexSwap.conceroEntry(passing the user address as receiver);
+      IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
     }
+
+    emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
   }
 
   function _handleSrcFunctionsResponse(bytes memory response) internal {
@@ -271,10 +303,5 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_latestLinkUsdcRate = linkUsdcRate;
     s_latestNativeUsdcRate = nativeUsdcRate;
     s_latestLinkNativeRate = linkNativeRate;
-  }
-
-  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
-    return amount / 1000;
-    //@audit we can have loss of precision here?
   }
 }

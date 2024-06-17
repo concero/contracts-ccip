@@ -161,26 +161,18 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
 
     if (fromToken != address(0)) {
       //TODO: deal with FoT tokens.
+      if (isFeesNeeded) swapData[0].fromAmount -= (fromAmount / CONCERO_FEE_FACTOR);
       LibConcero.transferFromERC20(fromToken, msg.sender, address(this), fromAmount);
-
-      if (isFeesNeeded) {
-        swapData[0].fromAmount -= (fromAmount / CONCERO_FEE_FACTOR);
-      }
-
-      (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, 0));
-      if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
-
-      emit Orchestrator_SwapSuccess();
     } else {
       if (isFeesNeeded) {
         swapData[0].fromAmount -= (nativeAmount / CONCERO_FEE_FACTOR);
         swapData[0].fromAmount -= (fromAmount / CONCERO_FEE_FACTOR);
       }
-
-      (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, nativeAmount));
-      if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
-
-      emit Orchestrator_SwapSuccess();
     }
+
+    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, nativeAmount));
+    if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
+
+    emit Orchestrator_SwapSuccess();
   }
 }

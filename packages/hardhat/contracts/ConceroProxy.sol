@@ -7,8 +7,7 @@ import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.s
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IERC1967} from "@openzeppelin/contracts/interfaces/IERC1967.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-
-import {Storage} from "../Libraries/Storage.sol";
+import {Storage} from "./Libraries/Storage.sol";
 
 /**
  * @dev Interface for {TransparentUpgradeableProxy}. In order to implement transparency, {TransparentUpgradeableProxy}
@@ -82,8 +81,13 @@ contract ConceroProxy is ERC1967Proxy, Storage {
    * backed by the implementation at `_logic`, and optionally initialized with `_data` as explained in
    * {ERC1967Proxy-constructor}.
    */
-  constructor(address _logic, address initialOwner, bytes memory _data) payable ERC1967Proxy(_logic, _data) Storage(initialOwner) {
-    _admin = address(new ProxyAdmin(initialOwner));
+  constructor(
+    address _logic,
+    address proxyOwner,
+    bytes memory _data,
+    address implementationOwner
+  ) payable ERC1967Proxy(_logic, _data) Storage(implementationOwner) {
+    _admin = address(new ProxyAdmin(proxyOwner));
     // Set the storage value and emit an event for ERC-1967 compatibility
     ERC1967Utils.changeAdmin(_proxyAdmin());
   }

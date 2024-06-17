@@ -2,9 +2,6 @@
 pragma solidity 0.8.20;
 
 interface IStorage {
-  ///////////////////////
-  ///TYPE DECLARATIONS///
-  ///////////////////////
   ///@notice Chainlink Functions Request Type
   enum RequestType {
     addUnconfirmedTxDst,
@@ -23,12 +20,14 @@ interface IStorage {
     base,
     opt
   }
+
   ///@notice Function Request
   struct Request {
     RequestType requestType;
     bool isPending;
     bytes32 ccipMessageId;
   }
+
   ///@notice CCIP Data to Bridge
   struct BridgeData {
     CCIPToken tokenType;
@@ -37,22 +36,26 @@ interface IStorage {
     uint64 dstChainSelector;
     address receiver;
   }
+
   ///@notice ConceroPool Request
   struct WithdrawRequests {
     uint256 condition;
     uint256 amount;
     bool isActiv;
   }
+
   ///@notice `ccipSend` to distribute liquidity
   struct Pools {
     uint64 chainSelector;
     address poolAddress;
   }
+
   ///@notice Functions Js Code
   struct JsCodeHashSum {
     bytes32 src;
     bytes32 dst;
   }
+
   ///@notice Chainlink Functions Transaction
   struct Transaction {
     bytes32 ccipMessageId;
@@ -62,7 +65,9 @@ interface IStorage {
     CCIPToken token;
     uint64 srcChainSelector;
     bool isConfirmed;
+    bytes dstSwapData;
   }
+
   ///@notice Chainlink Price Feeds
   struct PriceFeeds {
     address linkToUsdPriceFeeds;
@@ -70,6 +75,7 @@ interface IStorage {
     address nativeToUsdPriceFeeds;
     address linkToNativePriceFeeds;
   }
+
   ///@notice Chainlink Functions Variables
   struct FunctionsVariables {
     uint8 donHostedSecretsSlotId;

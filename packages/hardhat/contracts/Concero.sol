@@ -80,7 +80,7 @@ contract Concero is ConceroCCIP {
     emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
     //@audit destinationSwapData is not being trasminted through functions
     // TODO: pass _dstSwapData to functions
-    sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType);
+    sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType, _dstSwapData);
   }
 
   /////////////////

@@ -14,6 +14,8 @@ import {IConceroPool} from "contracts/Interfaces/IConceroPool.sol";
 import {ConceroAutomation} from "./ConceroAutomation.sol";
 import {LPToken} from "./LPToken.sol";
 
+import {MasterStorage} from "./Libraries/MasterStorage.sol";
+
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
@@ -34,7 +36,7 @@ error ConceroPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
 ///@notice error emitted when a LP try to deposit liquidity on the contract without pools
 error ConceroPool_ThereIsNoPoolToDistribute();
 ///@notice emitted in depositLiquidity when the input amount is not enough
-error ConceroPool_EmptyDepositedIsNotAllowed(uint256 amount);
+error ConceroPool_AmountBelowMinimum(uint256 minAmount);
 ///@notice emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
 error ConceroPool_AmountNotAvailableYet(uint256 amountAvailable);
 ///@notice emitted in depositLiquidity when the input token is not allowed
@@ -50,17 +52,8 @@ error NotContractOwner();
 ///@notice error emitted when the owner tries to add an receiver that was already added.
 error ConceroPool_DuplicatedAddress();
 
-contract ConceroPool is CCIPReceiver {
+contract ConceroPool is CCIPReceiver, MasterStorage {
   using SafeERC20 for IERC20;
-
-  ///////////////////////
-  ///TYPE DECLARATIONS///
-  ///////////////////////
-  ///@notice `ccipSend` to distribute liquidity
-  struct Pools {
-    uint64 chainSelector;
-    address poolAddress;
-  }
 
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
@@ -77,6 +70,8 @@ contract ConceroPool is CCIPReceiver {
   ////////////////
   ///IMMUTABLES///
   ////////////////
+  ///@notice ParentPool proxy address
+  address private immutable i_concero_pool_proxy;
   ///@notice Chainlink Link Token interface
   LinkTokenInterface private immutable i_linkToken;
   ///@notice immutable variable to store the USDC address.
@@ -85,8 +80,6 @@ contract ConceroPool is CCIPReceiver {
   LPToken public immutable i_lp;
   ///@notice Concero Automation contract
   ConceroAutomation private immutable i_automation;
-  ///@notice Contract Owner
-  address immutable i_owner;
 
   ///////////////
   ///CONSTANTS///
@@ -95,6 +88,7 @@ contract ConceroPool is CCIPReceiver {
   uint256 private constant ALLOWED = 1;
   uint256 private constant USDC_DECIMALS = 10 ** 6;
   uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
+  uint256 private constant MIN_DEPOSIT = 100 * 10**6;
 
   /////////////
   ///STORAGE///
@@ -175,12 +169,12 @@ contract ConceroPool is CCIPReceiver {
   /////////////////////////////////////////////////////////////////////////////
   receive() external payable {}
 
-  constructor(address _link, address _ccipRouter, address _usdc, address _lpToken, address _automation, address _owner) CCIPReceiver(_ccipRouter){
+  constructor(address _parentProxy, address _link, address _ccipRouter, address _usdc, address _lpToken, address _automation, address _owner) CCIPReceiver(_ccipRouter) MasterStorage(_owner){
+    i_concero_pool_proxy = _parentProxy;
     i_linkToken = LinkTokenInterface(_link);
     i_USDC = IERC20(_usdc);
     i_lp = LPToken(_lpToken);
     i_automation = ConceroAutomation(_automation);
-    i_owner = _owner;
   }
 
   ////////////////////////
@@ -273,43 +267,39 @@ contract ConceroPool is CCIPReceiver {
    * @param _amount the amount to be deposited
    */
   function depositLiquidity(uint256 _amount) external {
+    if(_amount < MIN_DEPOSIT) revert ConceroPool_AmountBelowMinimum(MIN_DEPOSIT);
     //@audit We need to implement the CAP for deposits.
     //It will require a new storage variable to be updated at times.
-    if (_amount < 1 * USDC_DECIMALS) revert ConceroPool_EmptyDepositedIsNotAllowed(_amount);
-
-    uint256 lpTokenSupply = i_lp.totalSupply();
     uint256 numberOfPools = poolsToDistribute.length + 1;
-    uint256 usdcReserve = s_usdcPoolReserve;
 
     if (numberOfPools < 2) revert ConceroPool_ThereIsNoPoolToDistribute();
 
-    //N° lpTokens = (((Total Liq + user deposit) * Total sToken) / Total USDC Liq) - Total sToken
-    //@audit PROBLEMs
-    //1. We don't know how much usdc are in all pools in this moment. We can calculate over usdc_deposited. Without fees
-    //2. By doing that, we will need to have another state variable to track fees a part from the total_usdc in MasterPool.
-    //3. Or think in something different
-    uint256 lpTokensToMint = lpTokenSupply >= ALLOWED
-    ? ((_convertToLPTokenDecimals((usdcReserve + _amount)) * lpTokenSupply) / _convertToLPTokenDecimals(usdcReserve)) - lpTokenSupply
-    : _convertToLPTokenDecimals(_amount);
+    uint256 amountToDistribute = _amount / numberOfPools;
 
-    s_usdcPoolReserve = usdcReserve + _amount;
+    s_usdcPoolReserve = s_usdcPoolReserve + _amount;
 
     emit ConceroPool_SuccessfulDeposited(msg.sender, _amount, i_USDC);
 
     i_USDC.safeTransferFrom(msg.sender, address(this), _amount);
 
-    i_lp.mint(msg.sender, lpTokensToMint);
+    _ccipSend(numberOfPools, amountToDistribute);
 
-    //@audit PROBLEM
-    //To limit the min amount that will initiate the cross-chain distribution,
-    //we need to maintain an storage variable that will be updated every time
-    //a new distribution occurs. So, we will always check how much each pool has,
-    //and subtract by the amount on the MasterPool to check if the threshold is reached.
-    if(s_usdcPoolReserve - (s_valueDistributed * numberOfPools) > 30 * USDC_DECIMALS){
-      uint256 amountToDistribute = (s_usdcPoolReserve - (s_valueDistributed * numberOfPools)) / numberOfPools;
+    ///@audit need to call `CLF`, one of the arguments must be MSG.SENDER;
+  }
 
-      _ccipSend(numberOfPools, amountToDistribute);
-    }
+  //@audit CALLED BY FULFILL REQUEST
+  function updateDepositInfoAndMintLPTokens(uint256 _liquidityProvider, uint256 _crossChainBalance) external onlyMessenger {
+    //@audit This way? Check with Oleg.
+    uint256 usdcReserve = s_usdcPoolReserve + _crossChainBalance;
+    uint256 lpTokenSupply = i_lp.totalSupply();
+
+    //N° lpTokens = (((Total Liq + user deposit) * Total sToken) / Total USDC Liq) - Total sToken
+    uint256 lpTokensToMint = lpTokenSupply >= ALLOWED
+    ? ((_convertToLPTokenDecimals((usdcReserve + _amount)) * lpTokenSupply) / _convertToLPTokenDecimals(usdcReserve)) - lpTokenSupply
+    : _convertToLPTokenDecimals(_amount);
+
+    i_lp.mint(_liquidityProvider, lpTokensToMint);
+
   }
 
   /**

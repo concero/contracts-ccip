@@ -19,7 +19,7 @@
 //     uint256 private constant INITIAL_BALANCE = 10 ether;
 //     uint256 private constant APPROVED = 1;
 
-//     address Barba = makeAddr("Barba");
+//     address Tester = makeAddr("Tester");
 //     address Puka = makeAddr("Puka");
 //     address Athena = makeAddr("Athena");
 //     address Exploiter = makeAddr("Exploiter");
@@ -37,17 +37,17 @@
 //             BurnMintERC677Helper ccipLnM
 //         ) = ccipLocalSimulator.configuration();
 
-//         mockUSDC = new ERC20Mock("mockUSDC", "mUSDC", Barba, INITIAL_BALANCE);
-//         mockUSDT = new ERC20Mock("mockUSDT", "mUSDT", Barba, INITIAL_BALANCE);
-//         fakeCoin = new ERC20Mock("fakeCoin", "fCOIN", Barba, INITIAL_BALANCE);
+//         mockUSDC = new ERC20Mock("mockUSDC", "mUSDC", Tester, INITIAL_BALANCE);
+//         mockUSDT = new ERC20Mock("mockUSDT", "mUSDT", Tester, INITIAL_BALANCE);
+//         fakeCoin = new ERC20Mock("fakeCoin", "fCOIN", Tester, INITIAL_BALANCE);
 
 //         deploy = new ConceroPoolDeploy();
 //         concero = deploy.run(address(linkToken), address(destinationRouter));
 
 //         vm.prank(0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38);
-//         concero.transferOwnership(Barba);
+//         concero.transferOwnership(Tester);
 
-//         vm.deal(Barba, INITIAL_BALANCE);
+//         vm.deal(Tester, INITIAL_BALANCE);
 //         vm.deal(Puka, INITIAL_BALANCE);
 //         vm.deal(Athena, INITIAL_BALANCE);
 
@@ -59,7 +59,7 @@
 
 //     function auth(address _token, address _caller) public{
 //         vm.assume(_caller != address(0) && _caller != address(concero));
-//         vm.startPrank(Barba);
+//         vm.startPrank(Tester);
 //         concero.setSupportedToken(_token, APPROVED);
 //         concero.setApprovedSender(_token, _caller);
 //         vm.stopPrank();
@@ -69,7 +69,7 @@
 //     event ConceroPool_TokenSupportedUpdated(address token, uint256 isSupported);
 //     error OwnableUnauthorizedAccount(address _caller);
 //     function test_supportedToken(address _token, uint256 _isAllowed) public {
-//         vm.prank(Barba);
+//         vm.prank(Tester);
 //         vm.expectEmit();
 //         emit ConceroPool_TokenSupportedUpdated(_token, _isAllowed);
 //         concero.setSupportedToken(_token, _isAllowed);
@@ -84,7 +84,7 @@
 //     error ConceroPool_TokenNotSupported();
 //     event ConceroPool_ApprovedSenderUpdated(address token, address indexed newSender);
 //     function test_approvedSender(address _token, address _approvedSender, uint256 _isAllowed) public {
-//         vm.prank(Barba);
+//         vm.prank(Tester);
 //         vm.expectEmit();
 //         emit ConceroPool_TokenSupportedUpdated(_token, _isAllowed);
 //         concero.setSupportedToken(_token, _isAllowed);
@@ -93,7 +93,7 @@
 //         concero.setApprovedSender(_token, _approvedSender);
 
 //         if(_isAllowed == APPROVED){
-//             vm.prank(Barba);
+//             vm.prank(Tester);
 //             vm.expectEmit();
 //             emit ConceroPool_ApprovedSenderUpdated(_token, _approvedSender);
 //             concero.setApprovedSender(_token, _approvedSender);
@@ -102,7 +102,7 @@
 
 //             assertEq(allowedSender, _approvedSender);
 //         } else {
-//             vm.prank(Barba);
+//             vm.prank(Tester);
 //             vm.expectRevert(abi.encodeWithSelector(ConceroPool_TokenNotSupported.selector));
 //             concero.setApprovedSender(_token, _approvedSender);
 //         }
@@ -114,7 +114,7 @@
 
 //         vm.assume(_caller != address(0) && _caller != address(concero));
 
-//         vm.startPrank(Barba);
+//         vm.startPrank(Tester);
 //         concero.setSupportedToken(address(0), APPROVED);
 //         concero.setApprovedSender(address(0), _caller);
 //         vm.stopPrank();
@@ -146,7 +146,7 @@
 //     //     vm.assume(_caller != address(0) && _caller != address(concero));
 
 
-//     //     vm.startPrank(Barba);
+//     //     vm.startPrank(Tester);
 //     //     concero.setSupportedToken(address(0), APPROVED);
 //     //     concero.setApprovedSender(address(0), _caller);
 //     //     vm.stopPrank();
@@ -170,7 +170,7 @@
 //     function test_tokenDeposit(address _caller, uint256 _amount) public {
 //         vm.assume(_amount < type(uint128).max);
 //         vm.assume(_caller != address(0) && _caller != address(concero));
-//         vm.startPrank(Barba);
+//         vm.startPrank(Tester);
 //         concero.setSupportedToken(address(mockUSDC), APPROVED);
 //         concero.setApprovedSender(address(mockUSDC), _caller);
 //         vm.stopPrank();
@@ -194,7 +194,7 @@
 //     //     vm.assume(_amount < type(uint128).max);
 //     //     vm.assume(_caller != address(0) && _caller != address(concero));
 
-//     //     vm.startPrank(Barba);
+//     //     vm.startPrank(Tester);
 //     //     concero.setSupportedToken(address(mockUSDC), APPROVED);
 //     //     concero.setApprovedSender(address(mockUSDC), _caller);
 //     //     vm.stopPrank();

@@ -2,13 +2,13 @@
 pragma solidity 0.8.20;
 
 import {Script, console} from "forge-std/Script.sol";
-import {DexSwap} from "contracts/DexSwap.sol";
+import {DEXMock} from "../test/Mocks/DEXMock.sol";
 
 contract DexSwapDeploy is Script {
 
-    function run(address _proxy, address _owner) public returns(DexSwap dexSwap){
+    function run() public returns(DEXMock dexSwap){
         vm.startBroadcast();
-        dexSwap = new DexSwap(_proxy, _owner);
+        dexSwap = new DEXMock();
         vm.stopBroadcast();
     }
 }

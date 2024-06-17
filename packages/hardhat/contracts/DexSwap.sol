@@ -1,9 +1,10 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 pragma abicoder v2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
@@ -47,13 +48,13 @@ contract DexSwap is Storage, IDexSwap {
   /////////////////////////////////////////////////////////////////
   ////////////////////////////FUNCTIONS////////////////////////////
   /////////////////////////////////////////////////////////////////
-  constructor(address _proxy) {
+  constructor(address _proxy, address _owner) Storage(_owner){
     i_proxy = _proxy;
   }
 
   /**
    * @notice Entry point function for the Orchestrator to take loans
-   * @param _swapData a struct array that contains dex informations.
+   * @param _swapData a struct array that contains dex information.
    * @dev only the Orchestrator contract should be able to call this function
    */
   function conceroEntry(IDexSwap.SwapData[] memory _swapData, uint256 _amount) external payable {
@@ -105,7 +106,7 @@ contract DexSwap is Storage, IDexSwap {
 
   /**
    * @notice Function to execute swap accordingly to UniswapV2
-   * @param _swapData the enconded swap data
+   * @param _swapData the encoded swap data
    * @dev This function can execute single or multi hop swaps
    */
   function _swapUniV2Like(IDexSwap.SwapData memory _swapData) private {
@@ -121,7 +122,7 @@ contract DexSwap is Storage, IDexSwap {
 
   /**
    * @notice Function to execute swap accordingly to UniswapV2
-   * @param _swapData the enconded swap data
+   * @param _swapData the encoded swap data
    * @dev This function accept FoT tokens
    * @dev This function can execute single or multi hop swaps
    */
@@ -144,7 +145,7 @@ contract DexSwap is Storage, IDexSwap {
 
   /**
    * @notice Function to execute swap
-   * @param _swapData the enconded swap data
+   * @param _swapData the encoded swap data
    * @dev This function can execute swap in any protocol compatible with UniV3 that implements the ISwapRouter
    */
   function _swapSushiV3Single(IDexSwap.SwapData memory _swapData) private {
@@ -173,7 +174,7 @@ contract DexSwap is Storage, IDexSwap {
 
   /**
    * @notice UniswapV3 function that executes single hop swaps
-   * @param _swapData the enconded swap data
+   * @param _swapData the encoded swap data
    * @dev This function can execute swap in any protocol compatible with UniV3 that implements the IV3SwapRouter
    */
   function _swapUniV3Single(IDexSwap.SwapData memory _swapData) private {
@@ -200,7 +201,7 @@ contract DexSwap is Storage, IDexSwap {
 
   /**
    * @notice SushiSwapV3 function that executes multi hop swaps
-   * @param _swapData the enconded swap data
+   * @param _swapData the encoded swap data
    * @dev This function can execute swap in any protocol compatible with ISwapRouter
    */
   function _swapSushiV3Multi(IDexSwap.SwapData memory _swapData) private returns (uint256 _amountOut) {
@@ -223,7 +224,7 @@ contract DexSwap is Storage, IDexSwap {
 
   /**
    * @notice UniswapV3 function that executes multi hop swaps
-   * @param _swapData the enconded swap data
+   * @param _swapData the encoded swap data
    * @dev This function can execute swap in any protocol compatible
    */
   function _swapUniV3Multi(IDexSwap.SwapData memory _swapData) private returns (uint256 _amountOut) {
@@ -245,7 +246,7 @@ contract DexSwap is Storage, IDexSwap {
 
   /**
    * @notice Function to execute swaps on Aerodrome and Velodrome Protocols
-   * @param _swapData the enconded swap data
+   * @param _swapData the encoded swap data
    * @dev This function accepts regular and Fee on Transfer tokens
    */
   function _swapDrome(IDexSwap.SwapData memory _swapData) private {
@@ -265,7 +266,7 @@ contract DexSwap is Storage, IDexSwap {
 
   /**
    * @notice Function to execute swaps on Aerodrome and Velodrome Protocols
-   * @param _swapData the enconded swap data
+   * @param _swapData the encoded swap data
    * @dev This function accepts Fee on Transfer tokens
    */
   function _swapDromeFoT(IDexSwap.SwapData memory _swapData) private {
@@ -285,7 +286,7 @@ contract DexSwap is Storage, IDexSwap {
 
   /**
    * @notice This function can be used with any Uniswap forked router
-   * @param _swapData the enconded swap data
+   * @param _swapData the encoded swap data
    * @param _amount the ether amount to swap
    */
   function _swapEtherOnUniV2Like(IDexSwap.SwapData memory _swapData, uint256 _amount) private returns (uint256[] memory amounts) {

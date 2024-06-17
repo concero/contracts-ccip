@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -58,8 +58,9 @@ contract Concero is ConceroCCIP {
     bytes32 _ethersHashSum,
     address _dexSwap,
     address _pool,
-    address _proxy
-  ) ConceroCCIP(_variables, _chainSelector, _chainIndex, _link, _ccipRouter, _jsCodeHashSum, _ethersHashSum, _dexSwap, _pool, _proxy) {
+    address _proxy,
+    address _owner
+  ) ConceroCCIP(_variables, _chainSelector, _chainIndex, _link, _ccipRouter, _jsCodeHashSum, _ethersHashSum, _dexSwap, _pool, _proxy, _owner) {
     clfPremiumFees[3478487238524512106] = 4000000000000000; // 0.004 link | arb
     clfPremiumFees[10344971235874465080] = 1847290640394088; // 0.0018 link | base // takes in usd mb price feed needed
     clfPremiumFees[5224473277236331295] = 2000000000000000; // 0.002 link | opt

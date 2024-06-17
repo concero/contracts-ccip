@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
@@ -45,8 +45,9 @@ contract ConceroCCIP is ConceroFunctions {
     bytes32 ethersHashSum,
     address _dexSwap,
     address _pool,
-    address _proxy
-  ) ConceroFunctions(_variables, _chainSelector, _chainIndex, jsCodeHashSum, ethersHashSum, _dexSwap, _pool, _proxy) {
+    address _proxy,
+    address _owner
+  ) ConceroFunctions(_variables, _chainSelector, _chainIndex, jsCodeHashSum, ethersHashSum, _dexSwap, _pool, _proxy, _owner) {
     i_linkToken = LinkTokenInterface(_link);
     i_ccipRouter = IRouterClient(_ccipRouter);
     s_messengerAddresses[msg.sender] = APPROVED;

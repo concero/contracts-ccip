@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.19;
+pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -124,7 +124,7 @@ contract ConceroChildPool is CCIPReceiver, Ownable {
   /////////////////////////////////////////////////////////////////////////////
   receive() external payable {}
 
-  constructor(address _link, address _ccipRouter, address _usdc) CCIPReceiver(_ccipRouter) {
+  constructor(address _link, address _ccipRouter, address _usdc, address _owner) CCIPReceiver(_ccipRouter) Ownable(_owner) {
     i_linkToken = LinkTokenInterface(_link);
     i_router = IRouterClient(_ccipRouter);
     i_USDC = IERC20(_usdc);
@@ -216,7 +216,7 @@ contract ConceroChildPool is CCIPReceiver, Ownable {
 
     if (fees > i_linkToken.balanceOf(address(this))) revert ConceroChildPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
-    IERC20(_token).safeApprove(address(i_router), _amount);
+    IERC20(_token).approve(address(i_router), _amount);
     i_linkToken.approve(address(i_router), fees);
 
     emit ConceroChildPool_MessageSent(messageId, _destinationChainSelector, s_poolToSendTo[_destinationChainSelector], address(i_linkToken), fees);

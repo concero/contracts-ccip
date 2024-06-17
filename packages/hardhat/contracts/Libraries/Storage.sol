@@ -1,8 +1,7 @@
-//SPDX-License-Identificer: MIT
-pragma solidity 0.8.19;
+//SPDX-License-Identifier: MIT
+pragma solidity 0.8.20;
 
 import {IDexSwap} from "../Interfaces/IDexSwap.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IStorage} from "../Interfaces/IStorage.sol";
 
 ////////////////////////////////////////////////////////
@@ -10,7 +9,7 @@ import {IStorage} from "../Interfaces/IStorage.sol";
 ////////////////////////////////////////////////////////
 ///@notice error emitted when bridge data is empty
 error Storage_InvalidBridgeData();
-///@notice error emited when the choosen token is not allowed
+///@notice error emitted when the chosen token is not allowed
 error Storage_TokenTypeOutOfBounds();
 ///@notice error emitted when the chain index is incorrect
 error Storage_ChainIndexOutOfBounds();
@@ -20,8 +19,10 @@ error Storage_NotMessenger(address caller);
 error Storage_InvalidAddress();
 ///@notice error emitted when the chain selector input is invalid
 error Storage_ChainNotAllowed(uint64 chainSelector);
+///@notice error emitted when the caller is not the owner
+error NotContractOwner();
 
-abstract contract Storage is IStorage, Ownable {
+abstract contract Storage is IStorage {
 
   ///////////////
   ///VARIABLES///
@@ -44,6 +45,11 @@ abstract contract Storage is IStorage, Ownable {
   uint256 public s_latestLinkNativeRate;
   ///@notice gap to reserve storage in the contract for future variable additions
   uint256[50] __gap;
+
+  ////////////////
+  ///IMMUTABLES///
+  ////////////////
+  address immutable i_owner;
 
   ///////////////
   ///CONSTANTS///
@@ -136,9 +142,17 @@ abstract contract Storage is IStorage, Ownable {
     _;
   }
 
+  modifier onlyOwner(){
+    if(msg.sender != i_owner) revert NotContractOwner();
+    _;
+  }
+
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
+  constructor(address _owner){
+    i_owner = _owner;
+  }
 
   //////////////
   ///EXTERNAL///

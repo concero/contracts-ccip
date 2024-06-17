@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.20;
 
 import {Script, console} from "forge-std/Script.sol";
 import {Concero} from "contracts/Concero.sol";
@@ -17,7 +17,8 @@ contract ConceroDeploy is Script {
             Concero.JsCodeHashSum memory jsCodeHashSum,
             bytes32 _ethersHashSum,
             address _pool,
-            address _proxy
+            address _proxy,
+            address _owner
         ) public returns(Concero concero){
 
         vm.startBroadcast();
@@ -31,7 +32,8 @@ contract ConceroDeploy is Script {
             _ethersHashSum,
             _dexSwap,
             _pool,
-            _proxy
+            _proxy,
+            _owner
         );
         vm.stopBroadcast();
     }

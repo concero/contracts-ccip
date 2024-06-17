@@ -119,20 +119,7 @@ describe("swap\n", () => {
       const dexRouterAddress = "0xB015a6318f1D19DC3E135C8cEBa4bda00845c9Be";
 
       const dexData = encodeAbiParameters(
-        [
-          {
-            type: "address",
-          },
-          {
-            type: "address[]",
-          },
-          {
-            type: "address",
-          },
-          {
-            type: "uint256",
-          },
-        ],
+        [{ type: "address" }, { type: "address[]" }, { type: "address" }, { type: "uint256" }],
         [dexRouterAddress, [usdTokenAddress, process.env.CCIPBNM_BASE_SEPOLIA], senderAddress, 100n],
       );
 
@@ -147,6 +134,8 @@ describe("swap\n", () => {
           dexData,
         },
       ];
+
+      console.log("swapData: ", swapData);
 
       const transactionHash = await walletClient.writeContract({
         abi: ConceroOrchestratorAbi,

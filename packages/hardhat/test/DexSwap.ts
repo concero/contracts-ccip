@@ -31,10 +31,10 @@ const chainsMap = {
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
 const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA;
-const senderAddress = process.env.TESTS_WALLET_ADDRESS;
+const senderAddress = process.env.TESTS_WALLET_ADDRESS as Address;
 const amount = "10000";
-const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
-const usdTokenAddress = process.env.USDC_BASE_SEPOLIA;
+const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA as Address;
+const usdTokenAddress = process.env.USDC_BASE_SEPOLIA as Address;
 const transactionsCount = 1;
 const srcContractAddress = process.env.CONCEROPROXY_BASE_SEPOLIA;
 const dstContractAddress = process.env.CONCEROPROXY_OPTIMISM_SEPOLIA;
@@ -116,11 +116,11 @@ describe("swap\n", () => {
 
       const fromSrcBlockNumber = await srcPublicClient.getBlockNumber();
       const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
-      const dexRouterAddress = "0xB015a6318f1D19DC3E135C8cEBa4bda00845c9Be";
+      const dexRouterAddress = "0xF8908a808F1c04396B16A5a5f0A14064324d0EdA";
 
       const dexData = encodeAbiParameters(
         [{ type: "address" }, { type: "address[]" }, { type: "address" }, { type: "uint256" }],
-        [dexRouterAddress, [usdTokenAddress, process.env.CCIPBNM_BASE_SEPOLIA], senderAddress, 100n],
+        [dexRouterAddress, [usdTokenAddress, bnmTokenAddress], senderAddress, 100n],
       );
 
       const swapData = [

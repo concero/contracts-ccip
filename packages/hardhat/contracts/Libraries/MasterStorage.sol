@@ -23,17 +23,40 @@ contract MasterStorage {
     address poolAddress;
   }
 
+  ///@notice Struct to track Functions Requests Type
+  enum RequestType {
+    GetTotalUSDC, //Deposits
+    PerformWithdrawal //Start Withdrawals
+  }
+  
+  struct CLARequest {
+    RequestType requestType;
+    address liquidityProvider; //address to check and pool the index from the array
+    uint256 usdcBeforeDeposit;
+    uint256 amount; //USDC or LP according to the request
+  }
+
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
+  ///@notice variable to store the total value deposited
+  // uint256 internal s_usdcPoolReserve; REMOVE
   ///@notice variable to store the max value that can be deposited on this pool
   uint256 internal s_maxDeposit;
-  ///@notice variable to store the total value deposited
-  uint256 internal s_usdcPoolReserve;
   ///@notice variable to store the value that will be temporary used by Chainlink Functions
   uint256 internal s_commit;
   ///@notice variable to store the concero contract address
   address internal s_concero;
+  ///@notice variable to store the Chainlink Function DON Slot ID
+  uint8 internal s_donHostedSecretsSlotId;
+  ///@notice variable to store the Chainlink Function DON Secret Version
+  uint64 internal s_donHostedSecretsVersion;
+  ///@notice variable to store the Chainlink Function Source Hashsum
+  bytes32 internal s_srcJsHashSum;
+  ///@notice variable to store the Chainlink Function Destination Hashsum
+  bytes32 internal s_dstJsHashSum;
+  ///@notice variable to store Ethers Hashsum
+  bytes32 internal s_ethersHashSum;
 
   ////////////////
   ///IMMUTABLES///
@@ -55,6 +78,8 @@ contract MasterStorage {
   mapping(uint64 chainSelector => mapping(address poolAddress => uint256)) public s_contractsToReceiveFrom;
   ///@notice Mapping to keep track of Liquidity Providers withdraw requests
   mapping(address _liquidityProvider => IConceroPool.WithdrawRequests) public s_pendingWithdrawRequests;
+  ///@notice Mapping to keep track of Chainlink Functions requests
+  mapping(bytes32 requestId => CLARequest) public s_requests;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////

@@ -21,6 +21,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ///////////////////////
   using FunctionsRequest for FunctionsRequest.Request;
 
+  //@audit REFACTOR
   enum RequestType {
     GetTotalUSDC, //Deposits & Start Withdrawals
     PerformWithdrawal
@@ -37,11 +38,11 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ///////////////
   ///CONSTANTS///
   ///////////////
-  ///@notice
+  ///@notice Chainlink Functions Gas Limit
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
-  ///@notice
+  ///@notice Chainlink Function Gas Overhead
   uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
-  ///@notice
+  ///@notice Chainlink Src Response Length
   uint8 internal constant CL_SRC_RESPONSE_LENGTH = 192;
   ///@notice JS Code for Chainlink Functions
   string internal constant PERFORM_JS_CODE =
@@ -107,9 +108,9 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     bytes32 _srcJsHashSum,
     bytes32 _dstJsHashSum,
     bytes32 _ethersHashSum,
-    address _router,
+    address _functionsRouter,
     address _owner
-  ) FunctionsClient(_router) Ownable(_owner) {
+  ) FunctionsClient(_functionsRouter) Ownable(_owner) {
     i_donId = _donId;
     i_subscriptionId = _subscriptionId;
     s_donHostedSecretsSlotId = _slotId;

@@ -49,7 +49,8 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
       await deployConceroOrchestrator(hre);
       await setProxyImplementation(hre, liveChains);
 
-      if (taskArgs.deployproxy) await setConceroProxyDstContracts(liveChains);
+      // if (taskArgs.deployproxy)
+      await setConceroProxyDstContracts(liveChains);
     }
 
     await uploadDonSecrets(deployableChains, slotId, 4320);

@@ -130,10 +130,11 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
     uint256 amount,
     uint64 srcChainSelector,
     CCIPToken token,
-    uint256 blockNumber
+    uint256 blockNumber,
+    bytes calldata dstSwapData
   ) external {
     (bool success, bytes memory data) = i_concero.delegatecall(
-      abi.encodeWithSelector(IConcero.addUnconfirmedTX.selector, ccipMessageId, sender, recipient, amount, srcChainSelector, token, blockNumber)
+      abi.encodeWithSelector(IConcero.addUnconfirmedTX.selector, ccipMessageId, sender, recipient, amount, srcChainSelector, token, blockNumber, dstSwapData)
     );
     if (success == false) revert Orchestrator_UnableToCompleteDelegateCall(data);
   }

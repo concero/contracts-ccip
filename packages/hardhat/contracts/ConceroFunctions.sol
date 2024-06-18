@@ -253,7 +253,10 @@ contract ConceroFunctions is FunctionsClient, Storage {
     emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
   }
 
-  function _swapDataToBytes(IDexSwap.SwapData[] calldata swapData) private pure returns (bytes memory packedData) {
+  function _swapDataToBytes(IDexSwap.SwapData[] calldata swapData) private pure returns (bytes memory) {
+    if (swapData.length == 0) return abi.encodePacked(uint(0));
+
+    bytes memory packedData;
     for (uint256 i = 0; i < swapData.length; i++) {
       packedData = abi.encodePacked(
         packedData,
@@ -266,6 +269,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
         swapData[i].dexData
       );
     }
+    return packedData;
   }
 
   function _handleDstFunctionsResponse(Request storage request) internal {
@@ -276,7 +280,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
     address tokenReceived = getToken(transaction.token, i_chainIndex);
     uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
-    if (transaction.dstSwapData.length != 0) {
+    if (transaction.dstSwapData.length > 1) {
       IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, address(this));
       IDexSwap.SwapData[] memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData[]));
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, 0));

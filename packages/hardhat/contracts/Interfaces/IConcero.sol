@@ -16,6 +16,7 @@ interface IConcero is IStorage {
     uint256 amount,
     uint64 srcChainSelector,
     CCIPToken token,
-    uint256 blockNumber
+    uint256 blockNumber,
+    bytes calldata dstSwapData
   ) external;
 }

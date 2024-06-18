@@ -30,14 +30,15 @@ const chainsMap = {
 };
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
-const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA;
+const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA!;
 const senderAddress = process.env.TESTS_WALLET_ADDRESS as Address;
-const amount = "10000";
+const usdcAmount = "10000";
+const bnmAmount = "1500000000000000000";
 const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA as Address;
 const usdTokenAddress = process.env.USDC_BASE_SEPOLIA as Address;
 const transactionsCount = 1;
-const srcContractAddress = process.env.CONCEROPROXY_BASE_SEPOLIA;
-const dstContractAddress = process.env.CONCEROPROXY_OPTIMISM_SEPOLIA;
+const srcContractAddress = process.env.CONCEROPROXY_BASE_SEPOLIA as Address;
+const dstContractAddress = process.env.CONCEROPROXY_OPTIMISM_SEPOLIA as Address;
 
 describe("swap\n", () => {
   let Concero: Concero;
@@ -69,7 +70,7 @@ describe("swap\n", () => {
   });
 
   const callApprovals = async () => {
-    const approveToken = async (tokenAddress: string) => {
+    const approveToken = async (tokenAddress: string, amount: string) => {
       const tokenAlowance = await srcPublicClient.readContract({
         abi: ERC20ABI,
         functionName: "allowance",
@@ -101,7 +102,7 @@ describe("swap\n", () => {
       return tokenHash;
     };
 
-    const usdcHash = await approveToken(usdTokenAddress);
+    const usdcHash = await approveToken(usdTokenAddress, usdcAmount);
 
     if (!usdcHash) {
       return;
@@ -110,39 +111,86 @@ describe("swap\n", () => {
     await Promise.all([srcPublicClient.waitForTransactionReceipt({ hash: usdcHash })]);
   };
 
-  it("should swap", async () => {
+  // it("should swap", async () => {
+  //   try {
+  //     await callApprovals();
+  //
+  //     const fromSrcBlockNumber = await srcPublicClient.getBlockNumber();
+  //     const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
+  //     const dexRouterAddress = "0xF8908a808F1c04396B16A5a5f0A14064324d0EdA";
+  //
+  //     const dexData = encodeAbiParameters(
+  //       [{ type: "address" }, { type: "address[]" }, { type: "address" }, { type: "uint256" }],
+  //       [dexRouterAddress, [usdTokenAddress, bnmTokenAddress], senderAddress, 100n],
+  //     );
+  //
+  //     const swapData = [
+  //       {
+  //         dexType: 0n,
+  //         fromToken: usdTokenAddress,
+  //         fromAmount: BigInt(amount),
+  //         toToken: bnmTokenAddress,
+  //         toAmount: BigInt(amount),
+  //         toAmountMin: BigInt(amount),
+  //         dexData,
+  //       },
+  //     ];
+  //
+  //     console.log("swapData: ", swapData);
+  //
+  //     const transactionHash = await walletClient.writeContract({
+  //       abi: ConceroOrchestratorAbi,
+  //       functionName: "swap",
+  //       address: srcContractAddress as Address,
+  //       args: [swapData],
+  //       gas: 1_000_000n,
+  //     });
+  //
+  //     console.log("transactionHash: ", transactionHash);
+  //
+  //     await srcPublicClient.waitForTransactionReceipt({ hash: transactionHash });
+  //   } catch (error) {
+  //     console.error("Error: ", error);
+  //   }
+  // }).timeout(0);
+
+  it("should swapAndBridge", async () => {
     try {
       await callApprovals();
 
-      const fromSrcBlockNumber = await srcPublicClient.getBlockNumber();
-      const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
       const dexRouterAddress = "0xF8908a808F1c04396B16A5a5f0A14064324d0EdA";
 
       const dexData = encodeAbiParameters(
         [{ type: "address" }, { type: "address[]" }, { type: "address" }, { type: "uint256" }],
-        [dexRouterAddress, [usdTokenAddress, bnmTokenAddress], senderAddress, 100n],
+        [dexRouterAddress, [usdTokenAddress, bnmTokenAddress], srcContractAddress, 100n],
       );
 
       const swapData = [
         {
           dexType: 0n,
           fromToken: usdTokenAddress,
-          fromAmount: BigInt(amount),
+          fromAmount: BigInt(usdcAmount),
           toToken: bnmTokenAddress,
-          toAmount: BigInt(amount),
-          toAmountMin: BigInt(amount),
+          toAmount: BigInt(bnmAmount),
+          toAmountMin: BigInt(bnmAmount),
           dexData,
         },
       ];
 
-      console.log("swapData: ", swapData);
+      const bridgeData = {
+        tokenType: 0n,
+        amount: BigInt(bnmAmount),
+        minAmount: BigInt(bnmAmount),
+        dstChainSelector: BigInt(dstChainSelector),
+        receiver: senderAddress,
+      };
 
       const transactionHash = await walletClient.writeContract({
         abi: ConceroOrchestratorAbi,
-        functionName: "swap",
+        functionName: "swapAndBridge",
         address: srcContractAddress as Address,
-        args: [swapData],
-        gas: 1_000_000n,
+        args: [bridgeData, swapData, []],
+        gas: 4_000_000n,
       });
 
       console.log("transactionHash: ", transactionHash);

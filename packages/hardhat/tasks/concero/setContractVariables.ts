@@ -9,6 +9,7 @@ import { SecretsManager } from "@chainlink/functions-toolkit";
 import { Address } from "viem";
 import getHashSum from "../../utils/getHashSum";
 import { liveChains } from "./liveChains";
+import { dstJsCodeUrl, ethersV6CodeUrl, srcJsCodeUrl } from "../../constants/functionsJsCodeUrls";
 
 export async function setContractVariables(liveChains: CNetwork[], deployableChains: CNetwork[], slotId: number) {
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
@@ -152,19 +153,9 @@ async function setJsHashes(deployableChain: CNetwork, abi: any, liveChains: CNet
     const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
     const conceroProxyAddress = getEnvVar(`CONCEROPROXY_${networkEnvKeys[srcChainName]}`);
-    const conceroDstCode = await (
-      await fetch(
-        "https://raw.githubusercontent.com/concero/contracts-ccip/release/packages/hardhat/tasks/CLFScripts/dist/DST.min.js",
-      )
-    ).text();
-    const conceroSrcCode = await (
-      await fetch(
-        "https://raw.githubusercontent.com/concero/contracts-ccip/release/packages/hardhat/tasks/CLFScripts/dist/SRC.min.js",
-      )
-    ).text();
-    const ethersCode = await (
-      await fetch("https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js")
-    ).text();
+    const conceroSrcCode = await (await fetch(srcJsCodeUrl)).text();
+    const conceroDstCode = await (await fetch(dstJsCodeUrl)).text();
+    const ethersCode = await (await fetch(ethersV6CodeUrl)).text();
 
     const setHash = async (hash: string, functionName: string) => {
       const { request: setHashReq } = await publicClient.simulateContract({

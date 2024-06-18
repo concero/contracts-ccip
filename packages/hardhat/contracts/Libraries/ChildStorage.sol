@@ -10,10 +10,17 @@ error ChildStorage_NotContractOwner();
 error ChildStorage_InvalidAddress();
 
 contract ChildStorage {
-
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
+
+  ///////////
+  ///STATE///
+  ///////////
+  ///@notice variable to store the value that will be temporary used by Chainlink Functions
+  uint256 public s_commits;
+  ///@notice variable to store the concero contract address
+  address internal s_concero;
 
   ////////////////
   ///IMMUTABLES///
@@ -24,13 +31,6 @@ contract ChildStorage {
   /////////////
   ///STORAGE///
   /////////////
-  ///@notice variable to store the value that will be temporary used by Chainlink Functions
-  uint256 public s_commits;
-  ///@notice variable to store the concero contract address
-  address internal s_concero;
-
-  ///@notice Mapping to keep track of messenger addresses
-  mapping(address messenger => uint256 allowed) internal s_messengerAddresses;
   ///@notice Mapping to keep track of allowed pool receiver
   mapping(uint64 chainId => address pool) public s_poolToSendTo;
   ///@notice Mapping to keep track of allowed pool senders
@@ -49,21 +49,21 @@ contract ChildStorage {
   ///////////////
   ///MODIFIERS///
   ///////////////
-  modifier onlyOwner(){
-    if(msg.sender != i_owner) revert ChildStorage_NotContractOwner();
+  modifier onlyOwner() {
+    if (msg.sender != i_owner) revert ChildStorage_NotContractOwner();
     _;
   }
 
   /////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////FUNCTIONS//////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  constructor(address _owner){
+  constructor(address _owner) {
     i_owner = _owner;
   }
 
-  ////////////////////////
-  ///EXTERNAL FUNCTIONS///
-  ////////////////////////
+  ///////////////////////
+  ///SETTERS FUNCTIONS///
+  ///////////////////////
   /**
    * @notice function to manage the Cross-chains Concero contracts
    * @param _chainSelector chain identifications
@@ -95,7 +95,7 @@ contract ChildStorage {
     emit ChildStorage_PoolReceiverUpdated(_chainSelector, _pool);
   }
 
-  function setConceroContract(address _concero) external onlyOwner{
+  function setConceroContract(address _concero) external onlyOwner {
     if (_concero == address(0)) revert ChildStorage_InvalidAddress();
     s_concero = _concero;
 

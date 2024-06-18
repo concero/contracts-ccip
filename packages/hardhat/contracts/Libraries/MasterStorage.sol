@@ -14,7 +14,6 @@ error MasterStorage_NotContractOwner();
 error MasterStorage_DuplicatedAddress();
 
 contract MasterStorage {
-
   ///////////////////////
   ///TYPE DECLARATIONS///
   ///////////////////////
@@ -68,22 +67,22 @@ contract MasterStorage {
   event MasterStorage_ConceroContractUpdated(address concero);
   ///@notice event emitted when a contract is removed from the distribution array
   event MasterStorage_ChainAndAddressRemoved(uint64 _chainSelector, address poolAddress);
-  
+
   ///////////////
   ///MODIFIERS///
   ///////////////
-  modifier onlyOwner(){
-    if(msg.sender != i_owner) revert MasterStorage_NotContractOwner();
+  modifier onlyOwner() {
+    if (msg.sender != i_owner) revert MasterStorage_NotContractOwner();
     _;
   }
 
-  constructor(address _owner){
+  constructor(address _owner) {
     i_owner = _owner;
   }
 
-  ////////////////////////
-  ///EXTERNAL FUNCTIONS///
-  ////////////////////////
+  ///////////////////////
+  ///SETTERS FUNCTIONS///
+  ///////////////////////
   /**
    * @notice function to manage the Cross-chains Concero contracts
    * @param _chainSelector chain identifications
@@ -94,7 +93,7 @@ contract MasterStorage {
    * @dev this functions is used on ConceroPool.sol
    */
   function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable onlyOwner {
-    if(_contractAddress == address(0)) revert MasterStorage_InvalidAddress();
+    if (_contractAddress == address(0)) revert MasterStorage_InvalidAddress();
     s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
 
     emit MasterStorage_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
@@ -109,7 +108,7 @@ contract MasterStorage {
    * @dev this functions is used on ConceroPool.sol
    */
   function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
-    if(s_poolToSendTo[_chainSelector] != address(0)) revert MasterStorage_DuplicatedAddress();
+    if (s_poolToSendTo[_chainSelector] != address(0)) revert MasterStorage_DuplicatedAddress();
     poolsToDistribute.push(Pools({chainSelector: _chainSelector, poolAddress: _pool}));
 
     s_poolToSendTo[_chainSelector] = _pool;
@@ -121,10 +120,10 @@ contract MasterStorage {
    * @notice Function to remove Cross-chain address disapproving transfers
    * @param _chainSelector the CCIP chainSelector for the specific chain
    */
-  function removePoolsFromListOfSenders(uint64 _chainSelector) external payable onlyOwner{
+  function removePoolsFromListOfSenders(uint64 _chainSelector) external payable onlyOwner {
     uint256 arrayLength = poolsToDistribute.length;
-    for(uint256 i; i < arrayLength; ) {
-      if(poolsToDistribute[i].chainSelector == _chainSelector){
+    for (uint256 i; i < arrayLength; ) {
+      if (poolsToDistribute[i].chainSelector == _chainSelector) {
         poolsToDistribute[i] = poolsToDistribute[poolsToDistribute.length - 1];
         poolsToDistribute.pop();
         delete s_poolToSendTo[_chainSelector];
@@ -141,8 +140,8 @@ contract MasterStorage {
    * @param _concero the address of Concero Contract
    * @dev The address will be use to control access on `orchestratorLoan`
    */
-  function setConceroContract(address _concero) external payable onlyOwner{
-    if(_concero == address(0)) revert MasterStorage_InvalidAddress();
+  function setConceroContract(address _concero) external payable onlyOwner {
+    if (_concero == address(0)) revert MasterStorage_InvalidAddress();
 
     s_concero = _concero;
 

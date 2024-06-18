@@ -50,7 +50,7 @@ contract Orchestrator is Storage, IFunctionsClient {
   ///@notice emitted when the Functions router fulfills a request
   event Orchestrator_RequestFulfilled(bytes32 requestId);
 
-  constructor(address _router, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex, address _owner) Storage(_owner){
+  constructor(address _router, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex, address _owner) Storage(_owner) {
     i_router = _router;
     i_dexSwap = _dexSwap;
     i_concero = _concero;
@@ -121,7 +121,9 @@ contract Orchestrator is Storage, IFunctionsClient {
 
     IERC20(fromToken).safeTransferFrom(msg.sender, address(this), bridgeData.amount);
 
-    (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData, i_chainIndex));
+    (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(
+      abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData, i_chainIndex)
+    );
     if (bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
   }
 

@@ -6,9 +6,29 @@ import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
 
 contract AutomationDeploy is Script {
     
-    function run(address _functions, address _owner) public returns(ConceroAutomation automation){
+    function run(
+        bytes32 _donId,
+        uint64 _subscriptionId,
+        uint8 _slotId,
+        uint64 _secretsVersion,
+        bytes32 _srcJsHashSum,
+        bytes32 _dstJsHashSum,
+        bytes32 _ethersHashSum,
+        address _router,
+        address _owner
+    ) public returns(ConceroAutomation automation){
         vm.startBroadcast();
-        automation = new ConceroAutomation(_functions, _owner);
+        automation = new ConceroAutomation(
+            _donId,
+            _subscriptionId,
+            _slotId,
+            _secretsVersion,
+            _srcJsHashSum,
+            _dstJsHashSum,
+            _ethersHashSum,
+            _router,
+            _owner
+        );
         vm.stopBroadcast();
     }
 }

@@ -3,14 +3,12 @@ pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 
-import {IConceroPool} from "contracts/Interfaces/IConceroPool.sol";
 import {ChildStorage} from "contracts/Libraries/ChildStorage.sol";
 
 ////////////////////////////////////////////////////////
@@ -19,7 +17,7 @@ import {ChildStorage} from "contracts/Libraries/ChildStorage.sol";
 ///@notice error emitted when the balance is not sufficient
 error ConceroChildPool_InsufficientBalance();
 ///@notice error emitted when the CCIP message sender is not allowed.
-error ConceroChildPool_SenderNotAllowed(address _sender);
+error ConceroChildPool_SenderNotAllowed(address sender);
 ///@notice error emitted when an attempt to send value to a not allowed receiver is made
 error ConceroChildPool_DestinationNotAllowed();
 ///@notice error emitted when the contract doesn't have enough link balance
@@ -29,7 +27,9 @@ error ConceroChildPool_NotMessenger(address caller);
 ///@notice error emitted when the chain selector input is invalid
 error ConceroChildPool_ChainNotAllowed(uint64 chainSelector);
 ///@notice error emitted when the caller is not the Orchestrator
-error ConceroChildPool_ItsNotAnOrchestrator(address caller);
+error ConceroChildPool_CallerIsNotTheProxy(address delegatedCaller);
+///@notice error emitted when a not-concero address call orchestratorLoan
+error ConceroChildPool_CallerIsNotConcero(address caller);
 ///@notice error emitted when the receiver is the address(0)
 error ConceroChildPool_InvalidAddress();
 
@@ -57,8 +57,6 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
   ///////////////
   ///@notice Magic Number Removal
   uint256 private constant ALLOWED = 1;
-  uint256 private constant USDC_DECIMALS = 10 ** 6;
-  uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -87,7 +85,7 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
    * @notice modifier to check if the caller is the an approved messenger
    */
   modifier onlyMessenger() {
-    if (s_messengerAddresses[msg.sender] != ALLOWED) revert ConceroChildPool_NotMessenger(msg.sender);
+    if (getMessengers(msg.sender) == false) revert ConceroChildPool_NotMessenger(msg.sender);
     _;
   }
 
@@ -97,6 +95,11 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
    */
   modifier onlyAllowListedChain(uint64 _chainSelector) {
     if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroChildPool_ChainNotAllowed(_chainSelector);
+    _;
+  }
+
+  modifier isProxy() {
+    if (address(this) != i_childProxy) revert ConceroChildPool_CallerIsNotTheProxy(address(this));
     _;
   }
 
@@ -112,23 +115,26 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
     i_USDC = IERC20(_usdc);
   }
 
+  //@Oleg How to fit the withdraw requests in here?
+
   ////////////////////////
   ///EXTERNAL FUNCTIONS///
   ////////////////////////
 
   /**
-   * @notice Function to Distribute Liquidity accross Concero Pools
+   * @notice Function to Distribute Liquidity across Concero Pools
    * @param _destinationChainSelector Chain Id of the chain that will receive the amount
+   * @param _liquidityProviderAddress The liquidity provider that requested Withdraw
    * @param _token  address of the token to be sent
    * @param _amount amount of the token to be sent
-   * @dev This function will sent the address of the user as data. This address will be used to update the mapping on DST.
+   * @dev This function will sent the address of the user as data. This address will be used to update the mapping on MasterPool.
    */
   function ccipSendToPool(
     uint64 _destinationChainSelector,
     address _liquidityProviderAddress,
     address _token,
     uint256 _amount
-  ) external onlyMessenger onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
+  ) external onlyMessenger isProxy onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
     if (s_poolToSendTo[_destinationChainSelector] == address(0)) revert ConceroChildPool_DestinationNotAllowed();
     if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
 
@@ -140,7 +146,7 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
 
     Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
       receiver: abi.encode(s_poolToSendTo[_destinationChainSelector]),
-      data: abi.encode(_liquidityProviderAddress, 0),
+      data: abi.encode(_liquidityProviderAddress, 0), //0== lp fee. It will always be zero because here we just process withdraws
       tokenAmounts: tokenAmounts,
       extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
       feeToken: address(i_linkToken)
@@ -166,8 +172,8 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
    * @dev only the Orchestrator contract should be able to call this function
    * @dev for ether transfer, the _receiver need to be known and trusted
    */
-  function orchestratorLoan(address _token, uint256 _amount, address _receiver) external {
-    if (msg.sender != s_concero) revert ConceroChildPool_ItsNotAnOrchestrator(msg.sender);
+  function orchestratorLoan(address _token, uint256 _amount, address _receiver) external isProxy {
+    if (msg.sender != s_concero) revert ConceroChildPool_CallerIsNotConcero(msg.sender);
     if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
     if (_receiver == address(0)) revert ConceroChildPool_InvalidAddress();
 
@@ -189,8 +195,7 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
   function _ccipReceive(
     Client.Any2EVMMessage memory any2EvmMessage
   ) internal override onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address))) {
-
-    (address liquidityProvider, uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address,uint256));
+    (/*address liquidityProvider*/, uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address, uint256));
 
     if (receivedFee > 0) {
       //subtract the amount from the committed total amount
@@ -213,4 +218,26 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
   ///////////////////////////
   ///VIEW & PURE FUNCTIONS///
   ///////////////////////////
+
+  /**
+   * @notice Function to check if a caller address is an allowed messenger
+   * @param _messenger the address of the caller
+   */
+  function getMessengers(address _messenger) internal pure returns (bool isMessenger) {
+    address[] memory messengers = new address[](4); //Number of messengers. To define.
+    messengers[0] = address(0);
+    messengers[1] = address(0);
+    messengers[2] = address(0);
+    messengers[3] = address(0);
+
+    for (uint256 i; i < messengers.length; ) {
+      if (_messenger == messengers[i]) {
+        return true;
+      }
+      unchecked {
+        ++i;
+      }
+    }
+    return false;
+  }
 }

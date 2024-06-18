@@ -23,7 +23,6 @@ error Storage_ChainNotAllowed(uint64 chainSelector);
 error NotContractOwner();
 
 abstract contract Storage is IStorage {
-
   ///////////////
   ///VARIABLES///
   ///////////////
@@ -142,15 +141,15 @@ abstract contract Storage is IStorage {
     _;
   }
 
-  modifier onlyOwner(){
-    if(msg.sender != i_owner) revert NotContractOwner();
+  modifier onlyOwner() {
+    if (msg.sender != i_owner) revert NotContractOwner();
     _;
   }
 
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
-  constructor(address _owner){
+  constructor(address _owner) {
     i_owner = _owner;
   }
 

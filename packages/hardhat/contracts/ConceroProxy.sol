@@ -83,11 +83,11 @@ contract ConceroProxy is ERC1967Proxy, Storage {
    */
   constructor(
     address _logic,
-    address proxyOwner,
+    address _proxyOwner,
     bytes memory _data,
-    address implementationOwner
-  ) payable ERC1967Proxy(_logic, _data) Storage(implementationOwner) {
-    _admin = address(new ProxyAdmin(proxyOwner));
+    address _implementationOwner
+  ) payable ERC1967Proxy(_logic, _data) Storage(_implementationOwner) {
+    _admin = _proxyOwner;
     // Set the storage value and emit an event for ERC-1967 compatibility
     ERC1967Utils.changeAdmin(_proxyAdmin());
   }

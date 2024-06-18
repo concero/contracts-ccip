@@ -455,8 +455,6 @@ contract ProtocolTest is Test {
         vm.selectFork(arbitrumMainFork);
         //====== Set the Messenger to be allowed to interact
         vm.startPrank(Tester);
-        opDst.setConceroMessenger(Messenger, 1);
-        child.setConceroMessenger(Messenger, 1);
         child.setConceroPoolReceiver(baseChainSelector ,address(pool));
         child.setConceroContractSender(baseChainSelector, address(pool), 1);
         child.setConceroContractSender(baseChainSelector, address(concero), 1);

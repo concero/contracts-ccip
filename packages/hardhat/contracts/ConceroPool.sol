@@ -9,12 +9,12 @@ import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.s
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 
-import {IConceroPool} from "contracts/Interfaces/IConceroPool.sol";
-
 import {ConceroAutomation} from "./ConceroAutomation.sol";
 import {LPToken} from "./LPToken.sol";
 
-import {MasterStorage} from "./Libraries/MasterStorage.sol";
+import {IConceroPool} from "contracts/Interfaces/IConceroPool.sol";
+
+import {MasterStorage} from "contracts/Libraries/MasterStorage.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -47,10 +47,8 @@ error ConceroPool_NotMessenger(address caller);
 error ConceroPool_ChainNotAllowed(uint64 chainSelector);
 ///@notice error emitted when the caller is not the Orchestrator
 error ConceroPool_ItsNotConcero(address caller);
-///@notice error emitted when the caller is not the owner
-error NotContractOwner();
-///@notice error emitted when the owner tries to add an receiver that was already added.
-error ConceroPool_DuplicatedAddress();
+///@notice error emitted when the max amount accepted by the pool is reached
+error ConceroPool_MaxCapReached(uint256 maxCap);
 
 contract ConceroPool is CCIPReceiver, MasterStorage {
   using SafeERC20 for IERC20;
@@ -58,14 +56,6 @@ contract ConceroPool is CCIPReceiver, MasterStorage {
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
-  ///@notice variable to store the total value deposited
-  uint256 private s_usdcPoolReserve;
-  ///@notice variable to store the value that will be temporary used by Chainlink Functions
-  uint256 private s_commit;
-  ///@notice variable to store the amount distributed to child pools
-  uint256 private s_valueDistributed; //@audit need to be decrease when a withdraw is processed.
-  ///@notice variable to store the concero contract address
-  address private s_concero;
 
   ////////////////
   ///IMMUTABLES///
@@ -90,30 +80,9 @@ contract ConceroPool is CCIPReceiver, MasterStorage {
   uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
   uint256 private constant MIN_DEPOSIT = 100 * 10**6;
 
-  /////////////
-  ///STORAGE///
-  /////////////
-  ///@notice array of Pools to receive Liquidity through `ccipSend` function
-  Pools[] poolsToDistribute;
-
-  ///@notice Mapping to keep track of messenger addresses
-  mapping(address messenger => uint256 allowed) public s_messengerAddresses;
-  ///@notice Mapping to keep track of allowed pool receiver
-  mapping(uint64 chainSelector => address pool) public s_poolToSendTo;
-  ///@notice Mapping to keep track of allowed pool senders
-  mapping(uint64 chainSelector => mapping(address poolAddress => uint256)) public s_contractsToReceiveFrom;
-  ///@notice Mapping to keep track of Liquidity Providers withdraw requests
-  mapping(address _liquidityProvider => IConceroPool.WithdrawRequests) public s_pendingWithdrawRequests;
-
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
-  ///@notice event emitted when the Messenger address is updated
-  event ConceroPool_MessengerUpdated(address messengerAddress, uint256 allowed);
-  ///@notice event emitted when a Concero pool is added
-  event ConceroPool_PoolReceiverUpdated(uint64 chainSelector, address pool);
-  ///@notice event emitted when a allowed Cross-chain contract is updated
-  event ConceroPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
   ///@notice event emitted when a new withdraw request is made
   event ConceroPool_WithdrawRequest(address caller, IERC20 token, uint256 deadline);
   ///@notice event emitted when a value is withdraw from the contract
@@ -124,8 +93,6 @@ contract ConceroPool is CCIPReceiver, MasterStorage {
   event ConceroPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
   ///@notice event emitted in depositLiquidity when a deposit is successful executed
   event ConceroPool_SuccessfulDeposited(address liquidityProvider, uint256 _amount, IERC20 _token);
-  ///@notice event emitted in setConceroContract when the address is emitted
-  event ConceroPool_ConceroContractUpdated(address concero);
   ///@notice event emitted when a request is updated with the total USDC to withdraw
   event ConceroPool_RequestUpdated(address liquidityProvider);
 
@@ -159,11 +126,6 @@ contract ConceroPool is CCIPReceiver, MasterStorage {
     _;
   }
 
-  modifier onlyOwner(){
-    if(msg.sender != i_owner) revert NotContractOwner();
-    _;
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////FUNCTIONS//////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
@@ -180,70 +142,6 @@ contract ConceroPool is CCIPReceiver, MasterStorage {
   ////////////////////////
   ///EXTERNAL FUNCTIONS///
   ////////////////////////
-  /**
-   * @notice function to manage the Cross-chains Concero contracts
-   * @param _chainSelector chain identifications
-   * @param _contractAddress address of the Cross-chains Concero contracts
-   * @param _isAllowed 1 == allowed | Any other value == not allowed
-   * @dev only owner can call it
-   * @dev it's payable to save some gas.
-   * @dev this functions is used on ConceroPool.sol
-   */
-  function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable onlyOwner {
-    //@audit let's add some address(0) checks?
-    s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
-
-    emit ConceroPool_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
-  }
-
-  /**
-   * @notice function to manage the Cross-chain ConceroPool contracts
-   * @param _chainSelector chain identifications
-   * @param _pool address of the Cross-chain ConceroPool contract
-   * @dev only owner can call it
-   * @dev it's payable to save some gas.
-   * @dev this functions is used on ConceroPool.sol
-   */
-  function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
-    if(s_poolToSendTo[_chainSelector] != address(0)) revert ConceroPool_DuplicatedAddress();
-    //@audit let's add some address(0) checks?
-    poolsToDistribute.push(Pools({chainSelector: _chainSelector, poolAddress: _pool}));
-
-    s_poolToSendTo[_chainSelector] = _pool;
-
-    emit ConceroPool_PoolReceiverUpdated(_chainSelector, _pool);
-  }
-
-  /**
-   * @notice Function to remove Cross-chain address disapproving transfers
-   * @param _chainSelector the CCIP chainSelector for the specific chain
-   */
-  function removePoolsFromListOfSenders(uint64 _chainSelector) external payable onlyOwner{
-    uint256 arrayLength = poolsToDistribute.length;
-    for(uint256 i; i < arrayLength; ) {
-      if(poolsToDistribute[i].chainSelector == _chainSelector){
-        poolsToDistribute[i] = poolsToDistribute[poolsToDistribute.length - 1];
-        poolsToDistribute.pop();
-        delete s_poolToSendTo[_chainSelector];
-      }
-      unchecked {
-        ++i;
-      }
-    }
-  }
-
-  /**
-   * @notice function to add Concero Contract address to storage
-   * @param _concero the address of Concero Contract
-   * @dev The address will be use to control access on `orchestratorLoan`
-   */
-  function setConceroContract(address _concero) external payable onlyOwner{
-    //@audit let's add some address(0) checks?
-    s_concero = _concero;
-
-    emit ConceroPool_ConceroContractUpdated(_concero);
-  }
-
   /**
    * @notice function to the Concero Orchestrator contract take loans
    * @param _token address of the token being loaned
@@ -268,8 +166,8 @@ contract ConceroPool is CCIPReceiver, MasterStorage {
    */
   function depositLiquidity(uint256 _amount) external {
     if(_amount < MIN_DEPOSIT) revert ConceroPool_AmountBelowMinimum(MIN_DEPOSIT);
-    //@audit We need to implement the CAP for deposits.
-    //It will require a new storage variable to be updated at times.
+    if(s_maxDeposit < _amount + s_usdcPoolReserve) revert ConceroPool_MaxCapReached(s_maxDeposit);
+
     uint256 numberOfPools = poolsToDistribute.length + 1;
 
     if (numberOfPools < 2) revert ConceroPool_ThereIsNoPoolToDistribute();
@@ -284,22 +182,21 @@ contract ConceroPool is CCIPReceiver, MasterStorage {
 
     _ccipSend(numberOfPools, amountToDistribute);
 
-    ///@audit need to call `CLF`, one of the arguments must be MSG.SENDER;
+    ///@audit need to call `CLF`, one of the arguments must be MSG.SENDER, the Others is the depositedAmount;
   }
 
   //@audit CALLED BY FULFILL REQUEST
-  function updateDepositInfoAndMintLPTokens(uint256 _liquidityProvider, uint256 _crossChainBalance) external onlyMessenger {
+  function updateDepositInfoAndMintLPTokens(address _liquidityProvider, uint256 _depositedAmount, uint256 _crossChainBalance) external onlyMessenger {
     //@audit This way? Check with Oleg.
     uint256 usdcReserve = s_usdcPoolReserve + _crossChainBalance;
     uint256 lpTokenSupply = i_lp.totalSupply();
 
     //N° lpTokens = (((Total Liq + user deposit) * Total sToken) / Total USDC Liq) - Total sToken
     uint256 lpTokensToMint = lpTokenSupply >= ALLOWED
-    ? ((_convertToLPTokenDecimals((usdcReserve + _amount)) * lpTokenSupply) / _convertToLPTokenDecimals(usdcReserve)) - lpTokenSupply
-    : _convertToLPTokenDecimals(_amount);
+    ? ((_convertToLPTokenDecimals((usdcReserve + _depositedAmount)) * lpTokenSupply) / _convertToLPTokenDecimals(usdcReserve)) - lpTokenSupply
+    : _convertToLPTokenDecimals(_depositedAmount);
 
     i_lp.mint(_liquidityProvider, lpTokensToMint);
-
   }
 
   /**

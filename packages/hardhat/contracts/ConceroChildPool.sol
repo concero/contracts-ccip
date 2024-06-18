@@ -11,14 +11,13 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 
 import {IConceroPool} from "contracts/Interfaces/IConceroPool.sol";
+import {ChildStorage} from "contracts/Libraries/ChildStorage.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
 ///@notice error emitted when the balance is not sufficient
 error ConceroChildPool_InsufficientBalance();
-///@notice error emitted when the receiver is the address(0)
-error ConceroChildPool_InvalidAddress();
 ///@notice error emitted when the CCIP message sender is not allowed.
 error ConceroChildPool_SenderNotAllowed(address _sender);
 ///@notice error emitted when an attempt to send value to a not allowed receiver is made
@@ -31,33 +30,27 @@ error ConceroChildPool_NotMessenger(address caller);
 error ConceroChildPool_ChainNotAllowed(uint64 chainSelector);
 ///@notice error emitted when the caller is not the Orchestrator
 error ConceroChildPool_ItsNotAnOrchestrator(address caller);
-///@notice error emitted when the caller is not the owner of the contract
-error NotContractOwner();
+///@notice error emitted when the receiver is the address(0)
+error ConceroChildPool_InvalidAddress();
 
-contract ConceroChildPool is CCIPReceiver {
+contract ConceroChildPool is CCIPReceiver, ChildStorage {
   using SafeERC20 for IERC20;
 
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
-  ///@notice variable to store the value that will be temporary used by Chainlink Functions
-  uint256 public s_commit;
-  ///@notice variable to store the concero contract address
-  address private s_concero;
 
   ////////////////
   ///IMMUTABLES///
   ////////////////
   ///@notice Child Pool proxy address
-  address private immutable i_childPool;
+  address private immutable i_childProxy;
   ///@notice Chainlink Link Token interface
   LinkTokenInterface private immutable i_linkToken;
   ///@notice Chainlink CCIP Router
   IRouterClient private immutable i_router;
   ///@notice immutable variable to store the USDC address.
   IERC20 immutable i_USDC;
-  ///@notice Contract Owner
-  address immutable i_owner;
 
   ///////////////
   ///CONSTANTS///
@@ -67,31 +60,13 @@ contract ConceroChildPool is CCIPReceiver {
   uint256 private constant USDC_DECIMALS = 10 ** 6;
   uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
 
-  /////////////
-  ///STORAGE///
-  /////////////
-  ///@notice Mapping to keep track of messenger addresses
-  mapping(address messenger => uint256 allowed) internal s_messengerAddresses;
-  ///@notice Mapping to keep track of allowed pool receiver
-  mapping(uint64 chainId => address pool) public s_poolToSendTo;
-  ///@notice Mapping to keep track of allowed pool senders
-  mapping(uint64 chainId => mapping(address poolAddress => uint256)) public s_poolToReceiveFrom;
-
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
-  ///@notice event emitted when the Messenger address is updated
-  event ConceroChildPool_MessengerUpdated(address messengerAddress, uint256 allowed);
-  ///@notice event emitted when a Concero pool is added
-  event ConceroChildPool_PoolReceiverUpdated(uint64 chainSelector, address pool);
-  ///@notice event emitted when a allowed Cross-chain contract is updated
-  event ConceroChildPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
   ///@notice event emitted when a Cross-chain tx is received.
   event ConceroChildPool_CCIPReceived(bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain message is sent.
   event ConceroChildPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
-  ///@notice event emitted in setConceroContract when the address is emitted
-  event ConceroChildPool_ConceroContractUpdated(address concero);
   ///@notice event emitted in OrchestratorLoan when a loan is taken
   event ConceroChildPool_LoanTaken(address receiver, uint256 amount);
 
@@ -125,75 +100,21 @@ contract ConceroChildPool is CCIPReceiver {
     _;
   }
 
-  modifier onlyOwner(){
-    if(msg.sender != i_owner) revert NotContractOwner();
-    _;
-  }
-
   /////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////FUNCTIONS//////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   receive() external payable {}
 
-  constructor(address _childPool, address _link, address _ccipRouter, address _usdc, address _owner) CCIPReceiver(_ccipRouter) {
-    i_childPool = _childPool;
+  constructor(address _childPool, address _link, address _ccipRouter, address _usdc, address _owner) CCIPReceiver(_ccipRouter) ChildStorage(_owner) {
+    i_childProxy = _childPool;
     i_linkToken = LinkTokenInterface(_link);
     i_router = IRouterClient(_ccipRouter);
     i_USDC = IERC20(_usdc);
-    i_owner = _owner;
   }
 
   ////////////////////////
   ///EXTERNAL FUNCTIONS///
   ////////////////////////
-  /**
-   * @notice function to manage the Cross-chains Concero contracts
-   * @param _chainSelector chain identifications
-   * @param _contractAddress address of the Cross-chains Concero contracts
-   * @param _isAllowed 1 == allowed | Any other value == not allowed
-   * @dev only owner can call it
-   * @dev it's payable to save some gas.
-   * @dev this functions is used on ConceroPool.sol
-   */
-  function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable onlyOwner {
-    s_poolToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
-
-    emit ConceroChildPool_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
-  }
-
-  /**
-   * @notice function to manage the Cross-chain ConceroPool contracts
-   * @param _chainSelector chain identifications
-   * @param _pool address of the Cross-chain ConceroPool contract
-   * @dev only owner can call it
-   * @dev it's payable to save some gas.
-   * @dev this functions is used on ConceroPool.sol
-   */
-  function setConceroPoolReceiver(uint64 _chainSelector, address _pool) external payable onlyOwner {
-
-    s_poolToSendTo[_chainSelector] = _pool;
-
-    emit ConceroChildPool_PoolReceiverUpdated(_chainSelector, _pool);
-  }
-
-  /**
-   * @notice Function to update Concero Messenger Addresses
-   * @param _walletAddress the messenger address
-   * @param _approved 1 == Approved | Any other value disapproved
-   */
-  function setConceroMessenger(address _walletAddress, uint256 _approved) external onlyOwner {
-    if (_walletAddress == address(0)) revert ConceroChildPool_InvalidAddress();
-
-    s_messengerAddresses[_walletAddress] = _approved;
-
-    emit ConceroChildPool_MessengerUpdated(_walletAddress, _approved);
-  }
-
-  function setConceroContract(address _concero) external onlyOwner{
-    s_concero = _concero;
-
-    emit ConceroChildPool_ConceroContractUpdated(_concero);
-  }
 
   /**
    * @notice Function to Distribute Liquidity accross Concero Pools
@@ -250,7 +171,7 @@ contract ConceroChildPool is CCIPReceiver {
     if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
     if (_receiver == address(0)) revert ConceroChildPool_InvalidAddress();
 
-    s_commit = s_commit + _amount;
+    s_commits = s_commits + _amount;
 
     IERC20(_token).safeTransfer(_receiver, _amount);
 
@@ -273,7 +194,7 @@ contract ConceroChildPool is CCIPReceiver {
 
     if (receivedFee > 0) {
       //subtract the amount from the committed total amount
-      s_commit = s_commit - (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
+      s_commits = s_commits - (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
     }
 
     emit ConceroChildPool_CCIPReceived(
@@ -292,7 +213,4 @@ contract ConceroChildPool is CCIPReceiver {
   ///////////////////////////
   ///VIEW & PURE FUNCTIONS///
   ///////////////////////////
-  function adjustUSDCAmount(uint256 _usdcAmount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = (_usdcAmount * LP_TOKEN_DECIMALS ) / USDC_DECIMALS;
-  }
 }

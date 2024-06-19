@@ -1,7 +1,7 @@
 // Purpose: To have a single source of truth for networks across the project
 import { type CNetwork, CNetworkNames } from "../types/CNetwork";
 import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
-import { arbitrumSepolia, avalancheFuji, baseSepolia, optimismSepolia, sepolia } from "viem/chains";
+import { arbitrumSepolia, avalancheFuji, base, baseSepolia, optimismSepolia, sepolia } from "viem/chains";
 
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
 const deployerPK = process.env.DEPLOYER_PRIVATE_KEY;
@@ -202,6 +202,58 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     },
   },
   // MAINNETS
+  base: {
+    chainId: 8453,
+    url: `https://base.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+    accounts: [deployerPK, proxyDeployerPK],
+    functionsDonId: process.env.CLF_DONID_BASE,
+    functionsDonIdAlias: process.env.CLF_DONID_BASE,
+    functionsRouter: process.env.CLF_ROUTER_BASE,
+    functionsSubIds: [process.env.CLF_SUBID_BASE],
+    functionsGatewayUrls: functionsGatewayUrls.mainnet,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_BASE,
+    chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_BASE,
+    conceroChainIndex: "1",
+    confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
+    linkToken: process.env.LINK_BASE,
+    linkPriceFeed: process.env.LINK_PRICEFEED_BASE,
+    ccipBnmToken: process.env.CCIPBNM_BASE_SEPOLIA,
+    ccipRouter: process.env.CL_CCIP_ROUTER_BASE,
+    viemChain: base,
+    name: "base",
+    priceFeed: {
+      linkToUsdPriceFeeds: process.env.LINK_USD_PRICEFEED_BASE!,
+      usdcToUsdPriceFeeds: process.env.USDC_USD_PRICEFEED_BASE!,
+      nativeToUsdPriceFeeds: process.env.NATIVE_USD_PRICEFEED_BASE!,
+      linkToNativePriceFeeds: process.env.LINK_NATIVE_PRICEFEED_BASE!,
+    },
+  },
+  arbitrum: {
+    chainId: 42161,
+    url: `https://arbitrum.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    accounts: [deployerPK, proxyDeployerPK],
+    functionsDonId: process.env.CLF_DONID_ARBITRUM,
+    functionsDonIdAlias: process.env.CLF_DONID_ARBITRUM_ALIAS,
+    functionsRouter: process.env.CLF_ROUTER_ARBITRUM,
+    functionsSubIds: [process.env.CLF_SUBID_ARBITRUM],
+    functionsGatewayUrls: functionsGatewayUrls.testnet,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_ARBITRUM,
+    chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM,
+    conceroChainIndex: "0",
+    confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
+    linkToken: process.env.LINK_ARBITRUM,
+    linkPriceFeed: process.env.LINK_PRICEFEED_ARBITRUM,
+    ccipBnmToken: process.env.CCIPBNM_ARBITRUM,
+    ccipRouter: process.env.CL_CCIP_ROUTER_ARBITRUM,
+    viemChain: arbitrumSepolia,
+    name: "arbitrumSepolia",
+    priceFeed: {
+      linkToUsdPriceFeeds: process.env.LINK_USD_PRICEFEED_ARBITRUM!,
+      usdcToUsdPriceFeeds: process.env.USDC_USD_PRICEFEED_ARBITRUM!,
+      nativeToUsdPriceFeeds: process.env.NATIVE_USD_PRICEFEED_ARBITRUM!,
+      linkToNativePriceFeeds: process.env.LINK_NATIVE_PRICEFEED_ARBITRUM!,
+    },
+  },
   // mainnet: {
   //   url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
   //   accounts: [deployerPrivateKey],

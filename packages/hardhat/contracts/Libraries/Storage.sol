@@ -104,6 +104,11 @@ abstract contract Storage is IStorage {
   /////////////////
   ///VIEW & PURE///
   /////////////////
+
+  address private constant USDC_ARBITRUM = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
+  address private constant USDC_BASE = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
+  address private constant USDC_OPTIMISM = 0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85;
+
   /**
    * @notice Function to check for allowed tokens on specific networks
    * @param token The enum flag of the token
@@ -114,14 +119,14 @@ abstract contract Storage is IStorage {
 
     //@audit use the actual chain id and not 0 1 2
     // Initialize BNM addresses
-    tokens[0][0] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
-    tokens[0][1] = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e; // base
-    tokens[0][2] = 0x8aF4204e30565DF93352fE8E1De78925F6664dA7; // opt
+    //    tokens[0][0] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
+    //    tokens[0][1] = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e; // base
+    //    tokens[0][2] = 0x8aF4204e30565DF93352fE8E1De78925F6664dA7; // opt
 
     // Initialize USDC addresses
-    tokens[1][0] = 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d; // arb
-    tokens[1][1] = 0x036CbD53842c5426634e7929541eC2318f3dCF7e; // base
-    tokens[1][2] = 0x5fd84259d66Cd46123540766Be93DFE6D43130D7; // opt
+    tokens[uint(CCIPToken.usdc)][uint(Chain.arb)] = USDC_ARBITRUM; // arb
+    tokens[uint(CCIPToken.usdc)][uint(Chain.base)] = USDC_BASE; // base
+    tokens[uint(CCIPToken.usdc)][uint(Chain.opt)] = USDC_OPTIMISM; // opt
 
     if (uint256(token) > tokens.length) revert Storage_TokenTypeOutOfBounds();
     if (uint256(_chainIndex) > tokens[uint256(token)].length) revert Storage_ChainIndexOutOfBounds();

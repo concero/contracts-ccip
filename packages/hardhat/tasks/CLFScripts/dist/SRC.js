@@ -81,6 +81,33 @@ async function f() {
 				linkNative: '0x98EeB02BC20c5e7079983e8F0D0D839dFc8F74fA',
 			},
 		},
+		[`0x${BigInt('15971525489660198786').toString(16)}`]: {
+			urls: [
+				'https://base.blockpi.network/v1/rpc/public',
+				'https://base-rpc.publicnode.com',
+			],
+			chainId: '0x2105',
+			priceFeed: {
+				linkUsd: '0x17CAb8FE31E32f08326e5E27412894e49B0f9D65',
+				usdcUsd: '0x7e860098F58bBFC8648a4311b374B1D669a2bc6B',
+				nativeUsd: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70',
+				linkNative: '0xc5E65227fe3385B88468F9A01600017cDC9F3A12',
+			},
+		},
+		[`0x${BigInt('4949039107694359620').toString(16)}`]: {
+			urls: [
+				`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://arbitrum.blockpi.network/v1/rpc/public',
+				'https://arbitrum-rpc.publicnode.com',
+			],
+			chainId: '0xa4b1',
+			priceFeed: {
+				linkUsd: '0x86E53CF1B870786351Da77A57575e79CB55812CB',
+				usdcUsd: '0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3',
+				nativeUsd: '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612',
+				linkNative: '0xb7c8Fb1dB45007F98A68Da0588e1AA524C317f27',
+			},
+		},
 	};
 	const UINT256_BYTES_LENGTH = 32;
 	const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));

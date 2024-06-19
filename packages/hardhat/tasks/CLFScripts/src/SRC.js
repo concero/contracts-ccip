@@ -88,6 +88,34 @@ async function f() {
 				linkNative: '${LINK_NATIVE_PRICEFEED_OPTIMISM_SEPOLIA}',
 			},
 		},
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
+			urls: [
+				// `https://base.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
+				'https://base.blockpi.network/v1/rpc/public',
+				'https://base-rpc.publicnode.com',
+			],
+			chainId: '0x2105',
+			priceFeed: {
+				linkUsd: '${LINK_USD_PRICEFEED_BASE}',
+				usdcUsd: '${USDC_USD_PRICEFEED_BASE}',
+				nativeUsd: '${NATIVE_USD_PRICEFEED_BASE}',
+				linkNative: '${LINK_NATIVE_PRICEFEED_BASE}',
+			},
+		},
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
+			urls: [
+				`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://arbitrum.blockpi.network/v1/rpc/public',
+				'https://arbitrum-rpc.publicnode.com',
+			],
+			chainId: '0xa4b1',
+			priceFeed: {
+				linkUsd: '${LINK_USD_PRICEFEED_ARBITRUM}',
+				usdcUsd: '${USDC_USD_PRICEFEED_ARBITRUM}',
+				nativeUsd: '${NATIVE_USD_PRICEFEED_ARBITRUM}',
+				linkNative: '${LINK_NATIVE_PRICEFEED_ARBITRUM}',
+			},
+		},
 	};
 	const UINT256_BYTES_LENGTH = 32;
 	const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));

@@ -5,6 +5,7 @@ import {IDexSwap} from "../Interfaces/IDexSwap.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IStorage} from "../Interfaces/IStorage.sol";
 import {ConceroCCIP} from "../ConceroCCIP.sol";
+import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM} from "../Constants.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -104,10 +105,6 @@ abstract contract Storage is IStorage {
   /////////////////
   ///VIEW & PURE///
   /////////////////
-
-  address private constant USDC_ARBITRUM = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
-  address private constant USDC_BASE = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
-  address private constant USDC_OPTIMISM = 0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85;
 
   /**
    * @notice Function to check for allowed tokens on specific networks

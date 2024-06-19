@@ -9,6 +9,7 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {ConceroCCIP} from "./ConceroCCIP.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
+import {CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM} from "./Constants.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -36,9 +37,9 @@ contract Concero is ConceroCCIP {
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
-  ///@notice event emitted when a CCIP message is sent
+  /// @notice event emitted when a CCIP message is sent
   event CCIPSent(bytes32 indexed ccipMessageId, address sender, address recipient, CCIPToken token, uint256 amount, uint64 dstChainSelector);
-  ///@notice event emitted when a stuck amount is withdraw
+  /// @notice event emitted when a stuck amount is withdraw
   event Concero_StuckAmountWithdraw(address owner, address token, uint256 amount);
 
   constructor(
@@ -53,9 +54,9 @@ contract Concero is ConceroCCIP {
     address _pool,
     address _proxy
   ) ConceroCCIP(_variables, _chainSelector, _chainIndex, _link, _ccipRouter, _jsCodeHashSum, _ethersHashSum, _dexSwap, _pool, _proxy) {
-    clfPremiumFees[3478487238524512106] = 4000000000000000; // 0.004 link | arb
-    clfPremiumFees[10344971235874465080] = 1847290640394088; // 0.0018 link | base // takes in usd mb price feed needed
-    clfPremiumFees[5224473277236331295] = 2000000000000000; // 0.002 link | opt
+    clfPremiumFees[CHAIN_SELECTOR_ARBITRUM] = 4000000000000000; // 0.004 link | arb
+    clfPremiumFees[CHAIN_SELECTOR_BASE] = 2000000000000000; // 0.002 link | base // takes in usd mb price feed needed
+    clfPremiumFees[CHAIN_SELECTOR_OPTIMISM] = 2000000000000000; // 0.002 link | opt
   }
 
   ///////////////////////////////////////////////////////////////
@@ -78,8 +79,6 @@ contract Concero is ConceroCCIP {
 
     bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, actualLpFee);
     emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
-    //@audit destinationSwapData is not being trasminted through functions
-    // TODO: pass _dstSwapData to functions
     sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType, _dstSwapData);
   }
 
@@ -106,24 +105,24 @@ contract Concero is ConceroCCIP {
   }
 
   function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) public view returns (uint256) {
-    // cl functions fee
+    // @notice cl functions fee
     uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
 
-    // cl ccip fee
+    // @notice cl ccip fee
     uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector);
 
-    // concero fee
+    // @notice concero fee
     uint256 conceroFee = amount / CONCERO_FEE_FACTOR; //@audit 1_000? == 0.1?
 
-    // gas fee
+    // @notice gas fee
     uint256 functionsGasFeeInNative = (750_000 * s_lastGasPrices[CHAIN_SELECTOR]) + (750_000 * s_lastGasPrices[dstChainSelector]);
     uint256 functionsGasFeeInUsdc = (functionsGasFeeInNative * s_latestNativeUsdcRate) / 1 ether;
 
-    return functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + functionsGasFeeInUsdc;
+    // @notice: converting to 6 decimals
+    return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + functionsGasFeeInUsdc) / 1e12;
   }
 
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
-    // todo: instead of 0.1 ether, pass the actual fee into _buildCCIPMessage()
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, i_chainIndex), 1 ether, 0.1 ether, dstChainSelector);
     return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
   }

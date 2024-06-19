@@ -51,6 +51,7 @@ contract ConceroPoolAndBridge is Helpers {
         vm.expectEmit();
         emit ConceroPool_SuccessfulDeposited(LP, depositEnoughAmount, address(mUSDC));
         wMaster.depositLiquidity(depositEnoughAmount);
+        // ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumMainFork);
         vm.stopPrank();
 
         //======= Check LP balance
@@ -58,74 +59,44 @@ contract ConceroPoolAndBridge is Helpers {
 
         //======= We check the pool balance;
                     //Here, the LP Fees will be compounding directly for the LP address
-        uint256 poolBalance = mUSDC.balanceOf(address(pool));
-        assertEq(poolBalance, depositEnoughAmount);
-        // uint256 lpTokenUserBalance = lpToken.balanceOf(LP);
-        // assertEq(lpTokenUserBalance, (depositEnoughAmount * 10**18) / 10**6);
+        uint256 poolBalance = mUSDC.balanceOf(address(wMaster));
+        assertEq(poolBalance, depositEnoughAmount/2);
 
-        // //======= Request Withdraw without any accrued fee
-        // vm.startPrank(LP);
-        // lpToken.approve(address(pool), lpTokenUserBalance);
-        // // pool.withdrawLiquidityRequest(0);
+        //======= Switch to Arbitrum
+        vm.selectFork(baseMainFork);
 
-        // //======= No operations are made. Advance time
-        // vm.warp(8 days);
+        //======= Mock the Functions call
+        vm.prank(address(wMaster));
+        wMaster.updateUSDCAmountManually(LP, depositEnoughAmount, 0);
 
-        // //======= Withdraw after the lock period
-        // // pool.claimWithdraw();
+        uint256 lpTokenUserBalance = lp.balanceOf(LP);
+        assertEq(lpTokenUserBalance, (depositEnoughAmount * 10**18) / 10**6);
+
+        //======= Request Withdraw without any accrued fee
+        vm.startPrank(LP);
+        wMaster.startWithdrawal(lpTokenUserBalance);
+        vm.stopPrank();
+
+        //======= No operations are made. Advance time
+        vm.warp(7 days);
+
+        //======= Switch to Arbitrum
+        vm.selectFork(arbitrumMainFork);
+
+        //======= Calls ChildPool to send the money
+        vm.prank(Messenger);
+        wChild.ccipSendToPool(baseChainSelector, LP, depositEnoughAmount/2);
+        // ccipLocalSimulatorFork.switchChainAndRouteMessage(baseMainFork);
+
+        wMaster.updateUSDCAmountEarned(LP, depositEnoughAmount/2);
+
+        //======= Withdraw after the lock period and cross-chain transference
+        vm.startPrank(LP);
+        lp.approve(address(pool), lpTokenUserBalance);
+        wMaster.completeWithdrawal();
+        vm.stopPrank();
 
         // //======= Check LP balance
         // assertEq(mUSDC.balanceOf(LP), lpBalance);
-    }
-
-    //Pool depositToken | availableToWithdraw | withdrawLiquidityRequest
-    //Storage s_userBalances
-    event WillRevertAfterThis();
-    function test_LiquidityProvidersDepositAndWithdraws() public {
-        vm.selectFork(baseMainFork);
-
-        swapUniV2LikeHelper();
-
-        uint256 lpBalance = mUSDC.balanceOf(LP);
-
-        //======= LP Deposits USDC on the Main Pool
-        vm.startPrank(LP);
-        mUSDC.approve(address(pool), lpBalance);
-        emit WillRevertAfterThis();
-        pool.depositLiquidity(lpBalance);
-        vm.stopPrank();
-
-        //======= We check the pool balance;
-                    //Here, the LP Fees will be compounding directly for the LP address
-        uint256 poolBalance = mUSDC.balanceOf(address(pool));
-        assertEq(poolBalance, lpBalance);
-
-        //======= Request Withdraw bigger than THRESHOLD
-        vm.startPrank(LP);
-        // pool.withdrawLiquidity(0);
-    }
-
-    function test_ccipSendToPool() public {
-        vm.selectFork(arbitrumMainFork);
-
-        arbSwapUniV2Link();
-
-        //======= Transfer the link to the pool
-        vm.startPrank(LP);
-        IERC20(linkArb).transfer(address(proxyDst), 10 ether);
-        IERC20(linkArb).transfer(address(child), 10 ether);
-        vm.stopPrank();
-
-        uint256 lpBalance = aUSDC.balanceOf(LP);
-
-        //======= LP Deposits USDC on the Main Pool
-        vm.startPrank(LP);
-        aUSDC.approve(address(child), lpBalance);
-        // child.depositLiquidity(lpBalance);
-        vm.stopPrank();
-
-        vm.prank(Messenger);
-        child.ccipSendToPool(baseChainSelector, LP, address(aUSDC), (lpBalance/2));
-        ccipLocalSimulatorFork.switchChainAndRouteMessage(baseMainFork);
     }
 }

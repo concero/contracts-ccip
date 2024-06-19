@@ -58,6 +58,7 @@ import {ISwapRouter02, IV3SwapRouter} from "contracts/Interfaces/ISwapRouter02.s
 import {CCIPLocalSimulatorFork, Register} from "@chainlink/local/src/ccip/CCIPLocalSimulatorFork.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {FunctionsRouter} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsRouter.sol";
+import {LinkToken} from "@chainlink/contracts/src/v0.8/shared/token/ERC677/LinkToken.sol";
 
 interface IWETH is IERC20 {
     function deposit() external payable;
@@ -145,18 +146,15 @@ contract ProtocolTest is Test {
     //Base Mainnet variables
     address linkBase = 0x88Fb150BDc53A65fe94Dea0c9BA0a6dAf8C6e196;
     address ccipRouterBase = 0x881e3A65B4d4a04dD529061dd0071cf975F58bCD;
-    uint64 ccipChainSelectorBase = 15971525489660198786;
     FunctionsRouter functionsRouterBase = FunctionsRouter(0xf9B8fc078197181C841c296C876945aaa425B278);
     bytes32 donIdBase = 0x66756e2d626173652d6d61696e6e65742d310000000000000000000000000000;
+    address linkOwnerBase = 0x7B0328745A01634c32eFAf041d91432a075B308D;
 
     //Arb Mainnet variables
     address linkArb = 0xf97f4df75117a78c1A5a0DBb814Af92458539FB4;
     address ccipRouterArb = 0x141fa059441E0ca23ce184B6A78bafD2A517DdE8;
-    uint64 ccipChainSelectorArb = 4949039107694359620;
     address functionsRouterArb = 0x97083E831F8F0638855e2A515c90EdCF158DF238;
     bytes32 donIdArb = 0x66756e2d617262697472756d2d6d61696e6e65742d3100000000000000000000;
-
-    ERC20Mock tUSDC;
 
     address User = makeAddr("User");
     address Tester = makeAddr("Tester");
@@ -263,12 +261,47 @@ contract ProtocolTest is Test {
             0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_srcJsHashSum
             0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_dstJsHashSum
             0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
-            address(functionsRouterBase), //_router
+            address(functionsRouterBase), //_router,
+            address(masterProxy),
             Tester //_owner
         );
 
         // DexSwap Contract
         dex = dexDeployBase.run(address(proxy), Tester);
+
+        concero = conceroDeployBase.run(
+            IStorage.FunctionsVariables ({
+                donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
+                donHostedSecretsVersion: 0, //uint64 _donHostedSecretsVersion
+                subscriptionId: 15, //uint64 _subscriptionId,
+                donId: donIdBase,
+                functionsRouter: address(functionsRouterBase)
+            }),         
+            baseChainSelector,
+            1, //uint _chainIndex,
+            linkBase,
+            ccipRouterBase,
+            address(dex),
+            IStorage.JsCodeHashSum ({
+                src: 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124,
+                dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
+            }),
+            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
+            address(masterProxy),
+            address(proxy),
+            Tester
+        );
+        //====== Deploy a new Orch that will e set as implementation to the proxy.
+        orch = orchDeployBase.run(
+            address(functionsRouterBase),
+            address(dex),
+            address(concero),
+            address(masterProxy),
+            address(proxy),
+            1,
+            Tester
+        );
+
         // Pool Contract
         pool = poolDeployBase.run(
             address(masterProxy),
@@ -280,39 +313,7 @@ contract ProtocolTest is Test {
             address(mUSDC),
             address(lp),
             address(automation),
-            Tester
-        );
-
-        concero = conceroDeployBase.run(
-            IStorage.FunctionsVariables ({
-                donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
-                donHostedSecretsVersion: 0, //uint64 _donHostedSecretsVersion
-                subscriptionId: 15, //uint64 _subscriptionId,
-                donId: donIdBase,
-                functionsRouter: address(functionsRouterBase)
-            }),         
-            ccipChainSelectorBase,
-            1, //uint _chainIndex,
-            linkBase,
-            ccipRouterBase,
-            address(dex),
-            IStorage.JsCodeHashSum ({
-                src: 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124,
-                dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
-            }),
-            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
-            address(pool),
-            address(proxy),
-            Tester
-        );
-        //====== Deploy a new Orch that will e set as implementation to the proxy.
-        orch = orchDeployBase.run(
-            address(functionsRouterBase),
-            address(dex),
-            address(concero),
-            address(pool),
-            address(proxy),
-            1,
+            address(orch),
             Tester
         );
 
@@ -341,7 +342,7 @@ contract ProtocolTest is Test {
 
         //====== Update the MINTER on the LP Token
         vm.prank(Tester);
-        lp.grantRole(keccak256("MINTER_ROLE"), address(pool));
+        lp.grantRole(keccak256("MINTER_ROLE"), address(wMaster));
 
         //====== Wrap the proxy as the implementation
         op = Orchestrator(address(proxy));
@@ -355,6 +356,13 @@ contract ProtocolTest is Test {
         op.manageRouterAddress(address(aerodromeRouter), 1);
         vm.stopPrank();
         }
+
+        vm.prank(linkOwnerBase);
+        LinkToken(linkBase).grantMintRole(Tester);
+        vm.prank(Tester);
+        LinkToken(linkBase).mint(address(op), 10*10**18);
+        vm.prank(Tester);
+        LinkToken(linkBase).mint(address(wMaster), 10*10**18);
 
         /////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
         //================ SWITCH CHAINS ====================\\
@@ -398,14 +406,11 @@ contract ProtocolTest is Test {
         proxyInterfaceInfraArb = ITransparentUpgradeableProxy(address(proxyDst));
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
 
-        dexDst = dexDeployArbitrum.run(address(proxyDst), Tester);
-        child = childDeployArbitrum.run(
-            address(childProxy),
-            linkArb,
-            ccipRouterArb,
-            address(aUSDC),
+        dexDst = dexDeployArbitrum.run(
+            address(proxyDst), 
             Tester
         );
+
         conceroDst = conceroDeployArbitrum.run(
             IStorage.FunctionsVariables ({
                 donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
@@ -414,7 +419,7 @@ contract ProtocolTest is Test {
                 donId: donIdArb,
                 functionsRouter: functionsRouterArb
             }),
-            ccipChainSelectorArb,
+            arbChainSelector,
             1, //uint _chainIndex,
             linkArb,
             ccipRouterArb,
@@ -424,7 +429,7 @@ contract ProtocolTest is Test {
                 dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
             }),
             0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_ethersHashSum
-            address(child),
+            address(proxyInterfaceChild),
             address(proxyDst),
             Tester
         );
@@ -433,9 +438,19 @@ contract ProtocolTest is Test {
             functionsRouterArb,
             address(dexDst),
             address(conceroDst),
-            address(child),
+            address(childProxy),
             address(proxyDst),
             1,
+            Tester
+        );
+
+        child = childDeployArbitrum.run(
+            address(childProxy),
+            linkArb,
+            ccipRouterArb,
+            address(aUSDC),
+            address(orchDst),
+            address(masterProxy),
             Tester
         );
 
@@ -453,6 +468,8 @@ contract ProtocolTest is Test {
         //====== Update the proxy for the correct address
         vm.prank(Tester);
         proxyInterfaceInfraArb.upgradeToAndCall(address(orchDst), "");
+        vm.prank(Tester);
+        proxyInterfaceChild.upgradeToAndCall(address(child), "");
 
         //====== Wrap the proxy as the implementation
         opDst = Orchestrator(address(proxyDst));
@@ -468,23 +485,35 @@ contract ProtocolTest is Test {
         //================ SWITCH CHAINS ====================\\
         //BASE
         vm.selectFork(baseMainFork);
-        //====== Set the Messenger to be allowed to interact
+
+        //====== Setters
         vm.startPrank(Tester);
-        wMaster.setPoolsToSend(arbChainSelector, address(child));
-        wMaster.setConceroContractSender(arbChainSelector, address(child), 1);
+        wMaster.setPoolsToSend(arbChainSelector, address(childProxy));
+        assertEq(wMaster.s_poolToSendTo(arbChainSelector), address(wChild));
+
+        wMaster.setConceroContractSender(arbChainSelector, address(wChild), 1);
+        assertEq(wMaster.s_poolToReceiveFrom(arbChainSelector, address(wChild)), 1);
+
         wMaster.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
-        op.setConceroContract(arbChainSelector, address(proxyDst));
+        assertEq(wMaster.s_poolToReceiveFrom(arbChainSelector, address(conceroDst)), 1);
+
         vm.stopPrank();
 
         //================ SWITCH CHAINS ====================\\
         //ARBITRUM
         vm.selectFork(arbitrumMainFork);
-        //====== Set the Messenger to be allowed to interact
+        //====== Setters
         vm.startPrank(Tester);
-        wChild.setConceroPoolReceiver(baseChainSelector ,address(pool));
-        wChild.setConceroContractSender(baseChainSelector, address(pool), 1);
+        
+        wChild.setPoolsToSend(baseChainSelector, address(masterProxy));
+        assertEq(wChild.s_poolToSendTo(baseChainSelector), address(wMaster));
+
+        wChild.setConceroContractSender(baseChainSelector, address(wMaster), 1);
+        assertEq(wChild.s_poolToReceiveFrom(baseChainSelector, address(wMaster)), 1);
+
         wChild.setConceroContractSender(baseChainSelector, address(concero), 1);
-        opDst.setConceroContract(baseChainSelector, address(proxy));
+        assertEq(wChild.s_poolToReceiveFrom(baseChainSelector, address(concero)), 1);
+
         vm.stopPrank();
         }
     }

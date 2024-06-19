@@ -16,16 +16,8 @@ import {ChildStorage} from "contracts/Libraries/ChildStorage.sol";
 ////////////////////////////////////////////////////////
 ///@notice error emitted when the balance is not sufficient
 error ConceroChildPool_InsufficientBalance();
-///@notice error emitted when the CCIP message sender is not allowed.
-error ConceroChildPool_SenderNotAllowed(address sender);
-///@notice error emitted when an attempt to send value to a not allowed receiver is made
-error ConceroChildPool_DestinationNotAllowed();
 ///@notice error emitted when the contract doesn't have enough link balance
 error ConceroChildPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
-///@notice error emitted when the caller is not the messenger
-error ConceroChildPool_NotMessenger(address caller);
-///@notice error emitted when the chain selector input is invalid
-error ConceroChildPool_ChainNotAllowed(uint64 chainSelector);
 ///@notice error emitted when the caller is not the Orchestrator
 error ConceroChildPool_CallerIsNotTheProxy(address delegatedCaller);
 ///@notice error emitted when a not-concero address call orchestratorLoan
@@ -33,7 +25,7 @@ error ConceroChildPool_CallerIsNotConcero(address caller);
 ///@notice error emitted when the receiver is the address(0)
 error ConceroChildPool_InvalidAddress();
 
-contract ConceroChildPool is CCIPReceiver, ChildStorage {
+contract ConceroChildPool is ChildStorage, CCIPReceiver {
   using SafeERC20 for IERC20;
 
   ///////////////////////////////////////////////////////////
@@ -51,12 +43,10 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
   IRouterClient private immutable i_router;
   ///@notice immutable variable to store the USDC address.
   IERC20 immutable i_USDC;
-
-  ///////////////
-  ///CONSTANTS///
-  ///////////////
-  ///@notice Magic Number Removal
-  uint256 private constant ALLOWED = 1;
+  ///@notice immutable variable to store the orchestrator address
+  address private immutable i_concero_orchestrator;
+  ///@notice immutable variable to store the MasterPool address
+  address private immutable i_concero_masterPool;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -71,33 +61,6 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
   ///////////////
   ///MODIFIERS///
   ///////////////
-  /**
-   * @notice CCIP Modifier to check Chains And senders
-   * @param _chainSelector Id of the source chain of the message
-   * @param _sender address of the sender contract
-   */
-  modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
-    if (s_poolToReceiveFrom[_chainSelector][_sender] != ALLOWED) revert ConceroChildPool_SenderNotAllowed(_sender);
-    _;
-  }
-
-  /**
-   * @notice modifier to check if the caller is the an approved messenger
-   */
-  modifier onlyMessenger() {
-    if (getMessengers(msg.sender) == false) revert ConceroChildPool_NotMessenger(msg.sender);
-    _;
-  }
-
-  /**
-   * @notice CCIP Modifier to check receivers for a specific chain
-   * @param _chainSelector Id of the destination chain
-   */
-  modifier onlyAllowListedChain(uint64 _chainSelector) {
-    if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroChildPool_ChainNotAllowed(_chainSelector);
-    _;
-  }
-
   modifier isProxy() {
     if (address(this) != i_childProxy) revert ConceroChildPool_CallerIsNotTheProxy(address(this));
     _;
@@ -108,11 +71,13 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
   /////////////////////////////////////////////////////////////////////////////
   receive() external payable {}
 
-  constructor(address _childPool, address _link, address _ccipRouter, address _usdc, address _owner) CCIPReceiver(_ccipRouter) ChildStorage(_owner) {
+  constructor(address _childPool, address _link, address _ccipRouter, address _usdc, address _orchestrator, address _masterPool, address _owner) CCIPReceiver(_ccipRouter) ChildStorage(_owner) {
     i_childProxy = _childPool;
     i_linkToken = LinkTokenInterface(_link);
     i_router = IRouterClient(_ccipRouter);
     i_USDC = IERC20(_usdc);
+    i_concero_orchestrator = _orchestrator;
+    i_concero_masterPool = _masterPool;
   }
 
   //@Oleg How to fit the withdraw requests in here?
@@ -125,22 +90,19 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
    * @notice Function to Distribute Liquidity across Concero Pools
    * @param _destinationChainSelector Chain Id of the chain that will receive the amount
    * @param _liquidityProviderAddress The liquidity provider that requested Withdraw
-   * @param _token  address of the token to be sent
    * @param _amount amount of the token to be sent
    * @dev This function will sent the address of the user as data. This address will be used to update the mapping on MasterPool.
    */
   function ccipSendToPool(
     uint64 _destinationChainSelector,
     address _liquidityProviderAddress,
-    address _token,
     uint256 _amount
   ) external onlyMessenger isProxy onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
-    if (s_poolToSendTo[_destinationChainSelector] == address(0)) revert ConceroChildPool_DestinationNotAllowed();
-    if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
+    if (_amount > i_USDC.balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
 
     Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
 
-    Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({token: _token, amount: _amount});
+    Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({token: address(i_USDC), amount: _amount});
 
     tokenAmounts[0] = tokenAmount;
 
@@ -156,7 +118,7 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
 
     if (fees > i_linkToken.balanceOf(address(this))) revert ConceroChildPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
-    IERC20(_token).approve(address(i_router), _amount);
+    i_USDC.approve(address(i_router), _amount);
     i_linkToken.approve(address(i_router), fees);
 
     emit ConceroChildPool_MessageSent(messageId, _destinationChainSelector, s_poolToSendTo[_destinationChainSelector], address(i_linkToken), fees);
@@ -173,7 +135,7 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
    * @dev for ether transfer, the _receiver need to be known and trusted
    */
   function orchestratorLoan(address _token, uint256 _amount, address _receiver) external isProxy {
-    if (msg.sender != s_concero) revert ConceroChildPool_CallerIsNotConcero(msg.sender);
+    if (msg.sender != i_concero_orchestrator) revert ConceroChildPool_CallerIsNotConcero(msg.sender);
     if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
     if (_receiver == address(0)) revert ConceroChildPool_InvalidAddress();
 
@@ -214,30 +176,4 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
   ///////////////
   /// PRIVATE ///
   ///////////////
-
-  ///////////////////////////
-  ///VIEW & PURE FUNCTIONS///
-  ///////////////////////////
-
-  /**
-   * @notice Function to check if a caller address is an allowed messenger
-   * @param _messenger the address of the caller
-   */
-  function getMessengers(address _messenger) internal pure returns (bool isMessenger) {
-    address[] memory messengers = new address[](4); //Number of messengers. To define.
-    messengers[0] = address(0);
-    messengers[1] = address(0);
-    messengers[2] = address(0);
-    messengers[3] = address(0);
-
-    for (uint256 i; i < messengers.length; ) {
-      if (_messenger == messengers[i]) {
-        return true;
-      }
-      unchecked {
-        ++i;
-      }
-    }
-    return false;
-  }
 }

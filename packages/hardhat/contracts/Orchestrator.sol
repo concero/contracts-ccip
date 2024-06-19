@@ -23,6 +23,7 @@ error Orchestrator_InvalidAmount();
 ///@notice FUNCTIONS ERROR
 error Orchestrator_OnlyRouterCanFulfill();
 error Orchestrator_FailedToStartBridge(uint256 receivedAmount, uint256 minAmount);
+error Orchestrator_FailedToWithdrawEth(address owner, address target, uint256 value);
 
 contract Orchestrator is StorageSetters, IFunctionsClient {
   using SafeERC20 for IERC20;
@@ -151,6 +152,17 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
     if (fulfilled == false) revert Orchestrator_UnableToCompleteDelegateCall(notFulfilled);
 
     emit Orchestrator_RequestFulfilled(requestId);
+  }
+
+  function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
+    uint256 balance = LibConcero.getBalance(token, address(this));
+    if (balance < amount) revert Orchestrator_InvalidAmount();
+
+    if (token != address(0)) {
+      LibConcero.transferERC20(token, amount, recipient);
+    } else {
+      payable(recipient).transfer(amount);
+    }
   }
 
   //////////////////////////

@@ -30,9 +30,11 @@ const deployConceroPool: DeployFunction = async function (
   const args = { ...defaultArgs, ...constructorArgs };
 
   console.log("Deploying ConceroPool...");
-  const deployConceroPool = (await deploy("ConceroPool", {
+  // const deployConceroPool = (await deploy("ConceroPool", {
+  const deployConceroPool = (await deploy("FakePool", {
     from: deployer,
-    args: [args.linkToken, args.ccipRouter, args.conceroProxyAddress],
+    // args: [args.linkToken, args.ccipRouter, args.conceroProxyAddress],
+    args: [args.ccipRouter, args.conceroProxyAddress],
     log: true,
     autoMine: true,
   })) as Deployment;

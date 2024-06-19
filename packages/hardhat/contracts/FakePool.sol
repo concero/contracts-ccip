@@ -4,8 +4,10 @@ pragma solidity 0.8.20;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
+import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import {LibConcero} from "./Libraries/LibConcero.sol";
 
-contract ConceroPool is CCIPReceiver {
+contract FakePool is CCIPReceiver {
   using SafeERC20 for IERC20;
 
   error ConceroPool_CallableOnlyByOwner(address caller, address owner);
@@ -42,6 +44,17 @@ contract ConceroPool is CCIPReceiver {
     IERC20(_token).safeTransfer(_receiver, _amount);
   }
 
+  function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
+    uint256 balance = LibConcero.getBalance(token, address(this));
+    if (balance < amount) revert ConceroPool_InsufficientBalance();
+
+    if (token != address(0)) {
+      LibConcero.transferERC20(token, amount, recipient);
+    } else {
+      payable(recipient).transfer(amount);
+    }
+  }
+
   ////////////////
   /// INTERNAL ///
   ////////////////
@@ -50,5 +63,5 @@ contract ConceroPool is CCIPReceiver {
    * @param any2EvmMessage the CCIP message
    * @dev only allowed chains and sender must be able to deliver a message in this function.
    */
-  //  function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {}
+  function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {}
 }

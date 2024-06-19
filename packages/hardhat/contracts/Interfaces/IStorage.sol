@@ -10,8 +10,8 @@ interface IStorage {
 
   ///@notice CCIP Compatible Tokens
   enum CCIPToken {
-    usdc,
-    bnm
+    bnm,
+    usdc
   }
 
   ///@notice Operational Chains

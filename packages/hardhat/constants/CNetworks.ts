@@ -204,7 +204,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   // MAINNETS
   base: {
     chainId: 8453,
-    url: `https://base.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+    url: "https://base-rpc.publicnode.com",
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_BASE,
     functionsDonIdAlias: process.env.CLF_DONID_BASE,

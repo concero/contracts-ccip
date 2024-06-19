@@ -15,7 +15,7 @@ export async function setContractVariables(liveChains: CNetwork[], deployableCha
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
   for (const deployableChain of deployableChains) {
-    await setDexSwapAllowedRouters(deployableChain, abi); // once
+    // await setDexSwapAllowedRouters(deployableChain, abi); // once
     await setDstConceroPools(deployableChain, abi);
     await setDonHostedSecretsVersion(deployableChain, slotId, abi);
     await setDonSecretsSlotId(deployableChain, slotId, abi);

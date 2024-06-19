@@ -57,6 +57,7 @@ import {ISwapRouter02, IV3SwapRouter} from "contracts/Interfaces/ISwapRouter02.s
 //Chainlink
 import {CCIPLocalSimulatorFork, Register} from "@chainlink/local/src/ccip/CCIPLocalSimulatorFork.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
+import {FunctionsRouter} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsRouter.sol";
 
 interface IWETH is IERC20 {
     function deposit() external payable;
@@ -75,8 +76,7 @@ contract ProtocolTest is Test {
     LPToken public lp;
     ConceroAutomation public automation;
     ITransparentUpgradeableProxy proxyInterfaceInfra;
-    ProxyAdmin adminInfraBase;
-    ProxyAdmin adminMaster;
+    ITransparentUpgradeableProxy proxyInterfaceMaster;
 
     //==== Instantiate Deploy Script Base
     DexSwapDeploy dexDeployBase;
@@ -98,8 +98,7 @@ contract ProtocolTest is Test {
     InfraProxy public proxyDst;
     ChildPoolProxy public childProxy;
     ITransparentUpgradeableProxy proxyInterfaceInfraArb;
-    ProxyAdmin adminInfraArb;
-    ProxyAdmin adminChild;
+    ITransparentUpgradeableProxy proxyInterfaceChild;
         
     //==== Instantiate Deploy Script Arbitrum
     InfraProxyDeploy proxyDeployArbitrum;
@@ -113,6 +112,9 @@ contract ProtocolTest is Test {
     //==== Wrapped contract
     Orchestrator op;
     Orchestrator opDst;
+    ConceroPool wMaster;
+    ConceroChildPool wChild;
+
 
     //==== Create the instance to forked tokens
     IWETH wEth;
@@ -144,7 +146,7 @@ contract ProtocolTest is Test {
     address linkBase = 0x88Fb150BDc53A65fe94Dea0c9BA0a6dAf8C6e196;
     address ccipRouterBase = 0x881e3A65B4d4a04dD529061dd0071cf975F58bCD;
     uint64 ccipChainSelectorBase = 15971525489660198786;
-    address functionsRouterBase = 0xf9B8fc078197181C841c296C876945aaa425B278;
+    FunctionsRouter functionsRouterBase = FunctionsRouter(0xf9B8fc078197181C841c296C876945aaa425B278);
     bytes32 donIdBase = 0x66756e2d626173652d6d61696e6e65742d310000000000000000000000000000;
 
     //Arb Mainnet variables
@@ -241,11 +243,12 @@ contract ProtocolTest is Test {
             1,
             Tester
         );
-        masterProxy = masterProxyDeploy.run(address(0), Tester, "");
 
         //====== Deploy the proxy with the dummy Orch to get the address
         proxy = proxyDeployBase.run(address(orchEmpty), Tester, "");
+        masterProxy = masterProxyDeploy.run(address(orchEmpty), Tester, "");
         proxyInterfaceInfra = ITransparentUpgradeableProxy(address(proxy));
+        proxyInterfaceMaster = ITransparentUpgradeableProxy(address(masterProxy));
 
         //===== Deploy the protocol with the proxy address
         //LP Token
@@ -254,13 +257,13 @@ contract ProtocolTest is Test {
         // Automation Contract
         automation = autoDeployBase.run(
             donIdBase, //_donId
-            0, //_subscriptionId
+            15, //_subscriptionId
             2, //_slotId
             0, //_secretsVersion
             0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_srcJsHashSum
             0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_dstJsHashSum
             0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
-            functionsRouterBase, //_router
+            address(functionsRouterBase), //_router
             Tester //_owner
         );
 
@@ -268,8 +271,11 @@ contract ProtocolTest is Test {
         dex = dexDeployBase.run(address(proxy), Tester);
         // Pool Contract
         pool = poolDeployBase.run(
-            address(adminMaster),
+            address(masterProxy),
             linkBase,
+            donIdBase,
+            15,
+            address(functionsRouterBase),
             ccipRouterBase,
             address(mUSDC),
             address(lp),
@@ -281,9 +287,9 @@ contract ProtocolTest is Test {
             IStorage.FunctionsVariables ({
                 donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
                 donHostedSecretsVersion: 0, //uint64 _donHostedSecretsVersion
-                subscriptionId: 0, //uint64 _subscriptionId,
+                subscriptionId: 15, //uint64 _subscriptionId,
                 donId: donIdBase,
-                functionsRouter: functionsRouterBase
+                functionsRouter: address(functionsRouterBase)
             }),         
             ccipChainSelectorBase,
             1, //uint _chainIndex,
@@ -301,7 +307,7 @@ contract ProtocolTest is Test {
         );
         //====== Deploy a new Orch that will e set as implementation to the proxy.
         orch = orchDeployBase.run(
-            functionsRouterBase,
+            address(functionsRouterBase),
             address(dex),
             address(concero),
             address(pool),
@@ -311,7 +317,13 @@ contract ProtocolTest is Test {
         );
 
         //===== Base Proxies
-        adminInfraBase = ProxyAdmin(0x2b42C737b072481672Bb458260e9b59CB2268dc6);
+        //====== Update the proxy for the correct address
+        vm.prank(Tester);
+        proxyInterfaceInfra.upgradeToAndCall(address(orch), "");
+        vm.prank(Tester);
+        proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
+
+        wMaster = ConceroPool(payable(address(masterProxy)));
 
         //=== Base Contracts
         vm.makePersistent(address(proxy));
@@ -320,10 +332,12 @@ contract ProtocolTest is Test {
         vm.makePersistent(address(concero));
         vm.makePersistent(address(orch));
         vm.makePersistent(address(ccipLocalSimulatorFork));
+        vm.makePersistent(address(wMaster));
 
-        //====== Update the proxy for the correct address
-        vm.prank(Tester);
-        adminInfraBase.upgradeAndCall(proxyInterfaceInfra, address(orch), "");
+        vm.prank(0xB015a6318f1D19DC3E135C8cEBa4bda00845c9Be);
+        functionsRouterBase.addConsumer(15, address(proxy));
+        vm.prank(0xB015a6318f1D19DC3E135C8cEBa4bda00845c9Be);
+        functionsRouterBase.addConsumer(15, address(wMaster));
 
         //====== Update the MINTER on the LP Token
         vm.prank(Tester);
@@ -376,16 +390,17 @@ contract ProtocolTest is Test {
             1,
             Tester
         );
-        childProxy = childProxyDeploy.run(address(0), Tester, "");
+        childProxy = childProxyDeploy.run(address(orchEmptyDst), Tester, "");
         
         //====== Deploy the proxy with the dummy Orch
         proxyDst = proxyDeployArbitrum.run(address(orchEmptyDst), Tester, "");
 
         proxyInterfaceInfraArb = ITransparentUpgradeableProxy(address(proxyDst));
+        proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
 
         dexDst = dexDeployArbitrum.run(address(proxyDst), Tester);
         child = childDeployArbitrum.run(
-            address(adminChild),
+            address(childProxy),
             linkArb,
             ccipRouterArb,
             address(aUSDC),
@@ -424,8 +439,7 @@ contract ProtocolTest is Test {
             Tester
         );
 
-        //===== Arbitrum Proxies
-        adminInfraArb = ProxyAdmin(0x0031fcCAeBd9ff6A5E3CA21225BEf04140f7CE9e);
+        wChild = ConceroChildPool(payable(address(childProxy)));
 
         //=== Arbitrum Contracts
         vm.makePersistent(address(proxyDst));
@@ -434,11 +448,11 @@ contract ProtocolTest is Test {
         vm.makePersistent(address(conceroDst));
         vm.makePersistent(address(orchDst));
         vm.makePersistent(address(ccipLocalSimulatorFork));
-        vm.makePersistent(address(adminInfraArb));
+        vm.makePersistent(address(wChild));
 
         //====== Update the proxy for the correct address
         vm.prank(Tester);
-        adminInfraArb.upgradeAndCall(proxyInterfaceInfraArb, address(orchDst), "");
+        proxyInterfaceInfraArb.upgradeToAndCall(address(orchDst), "");
 
         //====== Wrap the proxy as the implementation
         opDst = Orchestrator(address(proxyDst));
@@ -456,9 +470,9 @@ contract ProtocolTest is Test {
         vm.selectFork(baseMainFork);
         //====== Set the Messenger to be allowed to interact
         vm.startPrank(Tester);
-        pool.setPoolsToSend(arbChainSelector, address(child));
-        pool.setConceroContractSender(arbChainSelector, address(child), 1);
-        pool.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
+        wMaster.setPoolsToSend(arbChainSelector, address(child));
+        wMaster.setConceroContractSender(arbChainSelector, address(child), 1);
+        wMaster.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
         op.setConceroContract(arbChainSelector, address(proxyDst));
         vm.stopPrank();
 
@@ -467,9 +481,9 @@ contract ProtocolTest is Test {
         vm.selectFork(arbitrumMainFork);
         //====== Set the Messenger to be allowed to interact
         vm.startPrank(Tester);
-        child.setConceroPoolReceiver(baseChainSelector ,address(pool));
-        child.setConceroContractSender(baseChainSelector, address(pool), 1);
-        child.setConceroContractSender(baseChainSelector, address(concero), 1);
+        wChild.setConceroPoolReceiver(baseChainSelector ,address(pool));
+        wChild.setConceroContractSender(baseChainSelector, address(pool), 1);
+        wChild.setConceroContractSender(baseChainSelector, address(concero), 1);
         opDst.setConceroContract(baseChainSelector, address(proxy));
         vm.stopPrank();
         }
@@ -507,8 +521,7 @@ contract ProtocolTest is Test {
         assertEq(vm.activeFork(), baseMainFork);
 
         vm.startPrank(Tester);
-
-        adminInfraBase.upgradeAndCall(proxyInterfaceInfra, address(SAFE_LOCK), "");
+        proxyInterfaceInfra.upgradeToAndCall(address(SAFE_LOCK), "");
 
         vm.stopPrank();
     }
@@ -521,7 +534,7 @@ contract ProtocolTest is Test {
 
         vm.startPrank(Tester);
 
-        adminInfraBase.upgradeAndCall(proxyInterfaceInfra, address(SAFE_LOCK), "");
+        proxyInterfaceInfra.upgradeToAndCall(address(SAFE_LOCK), "");
 
         vm.stopPrank();
 
@@ -568,13 +581,13 @@ contract ProtocolTest is Test {
         // assertEq(proxy.implementation(), address(orch));
 
         //====== Upgrades it to SAFE_LOCK
-        adminInfraBase.upgradeAndCall(proxyInterfaceInfra, address(SAFE_LOCK), "");
+        proxyInterfaceInfra.upgradeToAndCall(address(SAFE_LOCK), "");
 
         //====== Verify if the upgrade happen as expected
         // assertEq(proxy.implementation(), address(SAFE_LOCK));
 
         //====== Upgrades it again to a valid address
-        adminInfraBase.upgradeAndCall(proxyInterfaceInfra, address(orch), "");
+        proxyInterfaceInfra.upgradeToAndCall(address(orch), "");
 
         //====== Checks if the upgrade happens as expected
         // assertEq(proxy.implementation(), address(orch));

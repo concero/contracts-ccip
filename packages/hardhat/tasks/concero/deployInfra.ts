@@ -1,7 +1,7 @@
 import { task, types } from "hardhat/config";
 import { fundSubscription } from "./fundSubscription";
 import chains, { networkEnvKeys } from "../../constants/CNetworks";
-import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
+import { setContractVariables } from "./setContractVariables";
 import { fundContract } from "./fundContract";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../types/CNetwork";
@@ -49,7 +49,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
       await deployConceroOrchestrator(hre);
       await setProxyImplementation(hre, liveChains);
 
-      if (taskArgs.deployproxy) await setConceroProxyDstContracts(liveChains);
+      // if (taskArgs.deployproxy) await setConceroProxyDstContracts(liveChains);
     }
 
     await uploadDonSecrets(deployableChains, slotId, 4320);

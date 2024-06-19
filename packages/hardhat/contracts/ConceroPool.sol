@@ -11,6 +11,7 @@ import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interface
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 
+
 import {ConceroAutomation} from "./ConceroAutomation.sol";
 import {LPToken} from "./LPToken.sol";
 
@@ -196,6 +197,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     IERC20(_token).safeTransfer(_receiver, _amount);
   }
 
+  event Log(string);
   /**
    * @notice Function for user to deposit liquidity of allowed tokens
    * @param _amount the amount to be deposited
@@ -203,7 +205,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
   function depositLiquidity(uint256 _amount) external {
     if (_amount < MIN_DEPOSIT) revert ConceroPool_AmountBelowMinimum(MIN_DEPOSIT);
     if (s_maxDeposit < _amount + i_USDC.balanceOf(address(this)) + s_commit) revert ConceroPool_MaxCapReached(s_maxDeposit);
-
+    
     uint256 numberOfPools = poolsToDistribute.length + 1;
 
     if (numberOfPools < 2) revert ConceroPool_ThereIsNoPoolToDistribute();
@@ -217,7 +219,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     ///@Nikita
     //What I am missing here?
     bytes[] memory args = new bytes[](1);
-    args[1] = abi.encodePacked(address(0)); //It is possible to pass an array Pools[{chainSelector,poolAddress}]?
+    args[0] = abi.encodePacked(address(0)); //It is possible to pass an array Pools[{chainSelector,poolAddress}]?
 
     bytes32 requestId = _sendRequest(args, DEPOSIT_JS_CODE);
 

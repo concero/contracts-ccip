@@ -92,6 +92,8 @@ contract MasterStorage {
   event MasterStorage_ConceroContractUpdated(address concero);
   ///@notice event emitted when a contract is removed from the distribution array
   event MasterStorage_ChainAndAddressRemoved(uint64 _chainSelector, address poolAddress);
+  ///@notice event emitted when the MasterPool Cap is increased
+  event MasterStorage_MasterPoolCapUpdated(uint256 _newCap);
 
   ///////////////
   ///MODIFIERS///
@@ -171,5 +173,11 @@ contract MasterStorage {
     s_concero = _concero;
 
     emit MasterStorage_ConceroContractUpdated(_concero);
+  }
+
+  function setPoolCap(uint256 _newCap) external payable onlyOwner{
+    s_maxDeposit = _newCap;
+
+    emit MasterStorage_MasterPoolCapUpdated(_newCap);
   }
 }

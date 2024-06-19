@@ -10,6 +10,9 @@ contract ConceroPoolDeploy is Script {
     function run(
         address _proxy,
         address _link,
+        bytes32 _donId,
+        uint64 _subscriptionId,
+        address _functionsRouter,
         address _ccipRouter,
         address _usdc, 
         address _lpToken, 
@@ -17,7 +20,18 @@ contract ConceroPoolDeploy is Script {
         address _owner
     ) public returns(ConceroPool pool){
         vm.startBroadcast();
-        pool = new ConceroPool(_proxy, _link, _ccipRouter, _usdc, _lpToken, _automation, _owner);
+        pool = new ConceroPool(
+            _proxy,
+            _link,
+            _donId,
+            _subscriptionId,
+            _functionsRouter,
+            _ccipRouter,
+            _usdc,
+            _lpToken,
+            _automation,
+            _owner
+        );
         vm.stopBroadcast();
     }
 }

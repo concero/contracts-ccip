@@ -15,6 +15,7 @@ contract AutomationDeploy is Script {
         bytes32 _dstJsHashSum,
         bytes32 _ethersHashSum,
         address _router,
+        address _masterPool,
         address _owner
     ) public returns(ConceroAutomation automation){
         vm.startBroadcast();
@@ -27,6 +28,7 @@ contract AutomationDeploy is Script {
             _dstJsHashSum,
             _ethersHashSum,
             _router,
+            _masterPool,
             _owner
         );
         vm.stopBroadcast();

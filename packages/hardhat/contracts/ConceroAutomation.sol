@@ -21,15 +21,10 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ///////////////////////
   using FunctionsRequest for FunctionsRequest.Request;
 
-  //@audit REFACTOR
-  enum RequestType {
-    GetTotalUSDC, //Deposits & Start Withdrawals
-    PerformWithdrawal
-  }
-
   struct PerformWithdrawRequest {
-    RequestType requestType;
-    address liquidityProvider; //address to check and pool the index from the array
+    address liquidityProvider;
+    uint256 amount;
+    address token;
   }
 
   ///////////////////////////////////////////////////////////
@@ -55,16 +50,16 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   bytes32 private immutable i_donId;
   ///@notice Chainlink Functions Protocol Subscription ID
   uint64 private immutable i_subscriptionId;
+  ///@notice MasterPool address
+  address private immutable i_masterPool;
+  ///@notice variable to store the Chainlink Function DON Slot ID
+  uint8 private immutable i_donHostedSecretsSlotId;
 
   /////////////////////
   ///STATE VARIABLES///
   /////////////////////
-  ///@notice variable to store the Concero Pool address
-  address private s_conceroPool;
   ///@notice variable to store the automation keeper address
   address public s_forwarderAddress;
-  ///@notice variable to store the Chainlink Function DON Slot ID
-  uint8 internal s_donHostedSecretsSlotId;
   ///@notice variable to store the Chainlink Function DON Secret Version
   uint64 internal s_donHostedSecretsVersion;
   ///@notice variable to store the Chainlink Function Source Hashsum
@@ -93,9 +88,11 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ///@notice event emitted when the Keeper Address is updated
   event ConceroAutomation_ForwarderAddressUpdated(address forwarderAddress);
   ///@notice event emitted when a Chainlink Functions request is not fulfilled
-  event FunctionsRequestError(bytes32 requestId, RequestType requestType);
+  event FunctionsRequestError(bytes32 requestId);
   ///@notice event emitted when an upkeep is performed
   event ConceroAutomation_UpkeepPerformed(bytes32 reqId);
+  ///@notice event emitted when the Don Secret is Updated
+  event ConceroAutomation_DonSecretVersionUpdated(uint64 version);
 
   /////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////FUNCTIONS//////////////////////////////////
@@ -109,26 +106,17 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     bytes32 _dstJsHashSum,
     bytes32 _ethersHashSum,
     address _functionsRouter,
+    address _masterPool,
     address _owner
   ) FunctionsClient(_functionsRouter) Ownable(_owner) {
     i_donId = _donId;
     i_subscriptionId = _subscriptionId;
-    s_donHostedSecretsSlotId = _slotId;
+    i_donHostedSecretsSlotId = _slotId;
+    i_masterPool = _masterPool;
     s_donHostedSecretsVersion = _secretsVersion;
     s_srcJsHashSum = _srcJsHashSum;
     s_dstJsHashSum = _dstJsHashSum;
     s_ethersHashSum = _ethersHashSum;
-  }
-
-  /**
-   * @notice Function to set the Pool address
-   * @param _pool Pool address
-   * @dev this address will be use to check the call inside revert statements.
-   */
-  function setPoolAddress(address _pool) external onlyOwner {
-    s_conceroPool = _pool;
-
-    emit ConceroAutomation_PoolAddressUpdated(_pool);
   }
 
   /**
@@ -143,12 +131,23 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   }
 
   /**
+   * @notice Function to set the Don Secrects Version from Chainlink Functions
+   * @param _version the version
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
+    s_donHostedSecretsVersion = _version;
+
+    emit ConceroAutomation_DonSecretVersionUpdated(_version);
+  }
+
+  /**
    * @notice Function to add new withdraw requests to CLA monitoring system
    * @param _request the WithdrawRequests populated struct
    * @dev this function should only be called by the ConceroPool.sol
    */
   function addPendingWithdrawal(IConceroPool.WithdrawRequests memory _request) external {
-    if (s_conceroPool != msg.sender) revert ConceroAutomation_CallerNotAllowed(msg.sender);
+    if (i_masterPool != msg.sender) revert ConceroAutomation_CallerNotAllowed(msg.sender);
 
     s_pendingWithdrawRequestsCLA.push(_request);
 
@@ -189,14 +188,12 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
     (address sender, uint256 amount, address token) = abi.decode(_performData, (address, uint256, address));
 
-    bytes[] memory args = new bytes[](3);
-    args[0] = abi.encodePacked(sender);
-    args[1] = abi.encodePacked(amount);
-    args[2] = abi.encodePacked(token);
+    bytes[] memory args = new bytes[](3); //@Nikita. What we will send here?
+    args[0] = abi.encodePacked(sender); //eg
 
-    bytes32 reqId = sendRequest(args, PERFORM_JS_CODE); //@Oleg Need to define this guy
+    bytes32 reqId = sendRequest(args, PERFORM_JS_CODE); //@Nikita
 
-    s_requests[reqId] = PerformWithdrawRequest({requestType: RequestType.PerformWithdrawal, liquidityProvider: sender});
+    s_requests[reqId] = PerformWithdrawRequest({liquidityProvider: sender, amount: amount, token: token});
 
     emit ConceroAutomation_UpkeepPerformed(reqId);
   }
@@ -209,7 +206,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   function sendRequest(bytes[] memory _args, string memory _jsCode) internal returns (bytes32) {
     FunctionsRequest.Request memory req;
     req.initializeRequestForInlineJavaScript(_jsCode);
-    req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
+    req.addDONHostedSecrets(i_donHostedSecretsSlotId, s_donHostedSecretsVersion);
     req.setBytesArgs(_args);
     return _sendRequest(req.encodeCBOR(), i_subscriptionId, CL_FUNCTIONS_CALLBACK_GAS_LIMIT, i_donId);
   }
@@ -225,18 +222,20 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     PerformWithdrawRequest storage request = s_requests[requestId];
 
     if (err.length > 0) {
-      emit FunctionsRequestError(requestId, request.requestType);
+      emit FunctionsRequestError(requestId);
       return;
     }
 
+    bool fulfilled = abi.decode(response, (bool));
     //@Oleg what we will receive back from `response` ?
+    if (fulfilled == true) {
+      uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
 
-    uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
-
-    for (uint256 i; i < requestsNumber; ++i) {
-      if (s_pendingWithdrawRequestsCLA[i].sender == request.liquidityProvider) {
-        s_pendingWithdrawRequestsCLA[i] = s_pendingWithdrawRequestsCLA[s_pendingWithdrawRequestsCLA.length - 1];
-        s_pendingWithdrawRequestsCLA.pop();
+      for (uint256 i; i < requestsNumber; ++i) {
+        if (s_pendingWithdrawRequestsCLA[i].sender == request.liquidityProvider) {
+          s_pendingWithdrawRequestsCLA[i] = s_pendingWithdrawRequestsCLA[s_pendingWithdrawRequestsCLA.length - 1];
+          s_pendingWithdrawRequestsCLA.pop();
+        }
       }
     }
   }

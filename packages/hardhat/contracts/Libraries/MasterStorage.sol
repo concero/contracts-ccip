@@ -43,10 +43,6 @@ contract MasterStorage {
   // uint256 internal s_usdcPoolReserve; REMOVE
   ///@notice variable to store the max value that can be deposited on this pool
   uint256 internal s_maxDeposit;
-  ///@notice variable to store the value that will be temporary used by Chainlink Functions
-  uint256 internal s_commit;
-  ///@notice variable to store the concero contract address
-  address internal s_concero;
   ///@notice variable to store the Chainlink Function DON Slot ID
   uint8 internal s_donHostedSecretsSlotId;
   ///@notice variable to store the Chainlink Function DON Secret Version
@@ -57,6 +53,8 @@ contract MasterStorage {
   bytes32 internal s_dstJsHashSum;
   ///@notice variable to store Ethers Hashsum
   bytes32 internal s_ethersHashSum;
+  ///@notice variable to store the value that will be temporary used by Chainlink Functions
+  uint256 public s_commit;
 
   ////////////////
   ///IMMUTABLES///
@@ -70,12 +68,10 @@ contract MasterStorage {
   ///@notice array of Pools to receive Liquidity through `ccipSend` function
   Pools[] poolsToDistribute;
 
-  ///@notice Mapping to keep track of messenger addresses
-  mapping(address messenger => uint256 allowed) public s_messengerAddresses;
   ///@notice Mapping to keep track of allowed pool receiver
   mapping(uint64 chainSelector => address pool) public s_poolToSendTo;
   ///@notice Mapping to keep track of allowed pool senders
-  mapping(uint64 chainSelector => mapping(address poolAddress => uint256)) public s_contractsToReceiveFrom;
+  mapping(uint64 chainSelector => mapping(address poolAddress => uint256)) public s_poolToReceiveFrom;
   ///@notice Mapping to keep track of Liquidity Providers withdraw requests
   mapping(address _liquidityProvider => IConceroPool.WithdrawRequests) public s_pendingWithdrawRequests;
   ///@notice Mapping to keep track of Chainlink Functions requests
@@ -91,7 +87,7 @@ contract MasterStorage {
   ///@notice event emitted in setConceroContract when the address is emitted
   event MasterStorage_ConceroContractUpdated(address concero);
   ///@notice event emitted when a contract is removed from the distribution array
-  event MasterStorage_ChainAndAddressRemoved(uint64 _chainSelector, address poolAddress);
+  event MasterStorage_ChainAndAddressRemoved(uint64 _chainSelector);
   ///@notice event emitted when the MasterPool Cap is increased
   event MasterStorage_MasterPoolCapUpdated(uint256 _newCap);
 
@@ -121,7 +117,7 @@ contract MasterStorage {
    */
   function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable onlyOwner {
     if (_contractAddress == address(0)) revert MasterStorage_InvalidAddress();
-    s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
+    s_poolToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
 
     emit MasterStorage_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
   }
@@ -159,22 +155,13 @@ contract MasterStorage {
         ++i;
       }
     }
-    emit MasterStorage_ChainAndAddressRemoved(_chainSelector, s_poolToSendTo[_chainSelector]);
+    emit MasterStorage_ChainAndAddressRemoved(_chainSelector);
   }
 
   /**
-   * @notice function to add Concero Contract address to storage
-   * @param _concero the address of Concero Contract
-   * @dev The address will be use to control access on `orchestratorLoan`
+   * @notice Function to set the Cap of the Master pool.
+   * @param _newCap The new Cap of the pool
    */
-  function setConceroContract(address _concero) external payable onlyOwner {
-    if (_concero == address(0)) revert MasterStorage_InvalidAddress();
-
-    s_concero = _concero;
-
-    emit MasterStorage_ConceroContractUpdated(_concero);
-  }
-
   function setPoolCap(uint256 _newCap) external payable onlyOwner{
     s_maxDeposit = _newCap;
 

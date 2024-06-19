@@ -17,6 +17,7 @@ contract ConceroPoolDeploy is Script {
         address _usdc, 
         address _lpToken, 
         address _automation,
+        address _orchestrator,
         address _owner
     ) public returns(ConceroPool pool){
         vm.startBroadcast();
@@ -30,6 +31,7 @@ contract ConceroPoolDeploy is Script {
             _usdc,
             _lpToken,
             _automation,
+            _orchestrator,
             _owner
         );
         vm.stopBroadcast();

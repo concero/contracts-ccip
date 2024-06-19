@@ -61,7 +61,7 @@ error Proxy_ContractPaused();
  * function and the functions declared in {ITransparentUpgradeableProxy} will be resolved in favor of the new one. This
  * could render the `upgradeToAndCall` function inaccessible, preventing upgradeability and compromising transparency.
  */
-contract ChildPoolProxy is ERC1967Proxy, ChildStorage {
+contract ChildPoolProxy is ChildStorage, ERC1967Proxy {
   // An immutable address for the admin to avoid unnecessary SLOADs before each call
   // at the expense of removing the ability to change the admin once it's set.
   // This is acceptable if the admin is always a ProxyAdmin instance or similar contract

@@ -1,7 +1,7 @@
 // Purpose: To have a single source of truth for networks across the project
 import { type CNetwork, CNetworkNames } from "../types/CNetwork";
 import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
-import { arbitrumSepolia, avalancheFuji, base, baseSepolia, optimismSepolia, sepolia } from "viem/chains";
+import { arbitrum, arbitrumSepolia, avalancheFuji, base, baseSepolia, optimismSepolia, sepolia } from "viem/chains";
 
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
 const deployerPK = process.env.DEPLOYER_PRIVATE_KEY;
@@ -230,13 +230,13 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   },
   arbitrum: {
     chainId: 42161,
-    url: `https://arbitrum.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    url: `https://arbitrum-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_ARBITRUM,
     functionsDonIdAlias: process.env.CLF_DONID_ARBITRUM_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_ARBITRUM,
     functionsSubIds: [process.env.CLF_SUBID_ARBITRUM],
-    functionsGatewayUrls: functionsGatewayUrls.testnet,
+    functionsGatewayUrls: functionsGatewayUrls.mainnet,
     donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_ARBITRUM,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM,
     conceroChainIndex: "0",
@@ -245,8 +245,8 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     linkPriceFeed: process.env.LINK_PRICEFEED_ARBITRUM,
     ccipBnmToken: process.env.CCIPBNM_ARBITRUM,
     ccipRouter: process.env.CL_CCIP_ROUTER_ARBITRUM,
-    viemChain: arbitrumSepolia,
-    name: "arbitrumSepolia",
+    viemChain: arbitrum,
+    name: "arbitrum",
     priceFeed: {
       linkToUsdPriceFeeds: process.env.LINK_USD_PRICEFEED_ARBITRUM!,
       usdcToUsdPriceFeeds: process.env.USDC_USD_PRICEFEED_ARBITRUM!,

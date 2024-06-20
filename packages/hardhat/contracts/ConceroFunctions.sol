@@ -231,13 +231,11 @@ contract ConceroFunctions is FunctionsClient, Storage {
     uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
     address tokenReceived = getToken(transaction.token, i_chainIndex);
 
-    //@audit hardcode for CCIP-BnM - Should be USDC
     if (tokenReceived == getToken(CCIPToken.bnm, i_chainIndex)) {
       IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
 
       emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
     } else {
-      //@audit We need to call the DEX module here.
       // i_dexSwap.conceroEntry(passing the user address as receiver);
     }
   }

@@ -37,7 +37,7 @@ contract ConceroPoolTest is Test {
     USDC public usdc;
 
     uint256 private constant INITIAL_BALANCE = 10 ether;
-    uint256 private constant USDC_INITIAL_BALANCE = 10 * 10**6;
+    uint256 private constant USDC_INITIAL_BALANCE = 150 * 10**6;
 
     address proxyOwner = makeAddr("owner");
     address Tester = makeAddr("Tester");
@@ -145,6 +145,7 @@ contract ConceroPoolTest is Test {
     error ConceroPool_ItsNotOrchestrator(address);
     error ConceroPool_InsufficientBalance();
     error ConceroPool_InvalidAddress();
+    event ConceroPool_SuccessfulDeposited(address, uint256, address);
     function test_orchestratorLoanRevert() external {
 
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_ItsNotOrchestrator.selector, address(this)));
@@ -160,6 +161,25 @@ contract ConceroPoolTest is Test {
         vm.stopPrank();
     }
 
+    //It will revert because of ccip call
+    //The purpose of the test is fulfilled.
+    function test_depositLiquidityWithZeroCap() public {
+        uint256 allowedAmountToDeposit = 150*10**6;
+        
+        //===== Add a Fake pool
+        vm.prank(Tester);
+        wMaster.setPoolsToSend(mockDestinationChainSelector, mockChildPoolAddress);
+
+        //===== Cap is Zero
+        vm.prank(Tester);
+        usdc.approve(address(wMaster), allowedAmountToDeposit);
+
+        vm.prank(Tester);
+        vm.expectEmit();
+        emit ConceroPool_SuccessfulDeposited(Tester, allowedAmountToDeposit, address(usdc));
+        wMaster.depositLiquidity(allowedAmountToDeposit);
+    }
+
     error ConceroPool_AmountBelowMinimum(uint256 amount);
     error ConceroPool_ThereIsNoPoolToDistribute();
     error ConceroPool_MaxCapReached(uint256);
@@ -170,16 +190,19 @@ contract ConceroPoolTest is Test {
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_AmountBelowMinimum.selector, 100*10**6));
         wMaster.depositLiquidity(amountToDeposit);
 
-        uint256 allowedAmountToDeposit = 100*10**6;
+        uint256 allowedAmountToDeposit = 150*10**6;
 
         vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ConceroPool_MaxCapReached.selector, 0));
+        wMaster.setPoolCap(120 *10**6);
+
+        vm.prank(Tester);
+        vm.expectRevert(abi.encodeWithSelector(ConceroPool_MaxCapReached.selector, 120 *10**6));
         wMaster.depositLiquidity(allowedAmountToDeposit);
 
         vm.prank(Tester);
         vm.expectEmit();
-        emit MasterStorage_MasterPoolCapUpdated(100*10**6);
-        wMaster.setPoolCap(100*10**6);
+        emit MasterStorage_MasterPoolCapUpdated(allowedAmountToDeposit);
+        wMaster.setPoolCap(allowedAmountToDeposit);
         
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_ThereIsNoPoolToDistribute.selector));

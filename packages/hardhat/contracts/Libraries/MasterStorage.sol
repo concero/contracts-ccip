@@ -28,7 +28,7 @@ contract MasterStorage {
     GetTotalUSDC, //Deposits
     PerformWithdrawal //Start Withdrawals
   }
-  
+
   struct CLARequest {
     RequestType requestType;
     address liquidityProvider; //address to check and pool the index from the array
@@ -162,7 +162,7 @@ contract MasterStorage {
    * @notice Function to set the Cap of the Master pool.
    * @param _newCap The new Cap of the pool
    */
-  function setPoolCap(uint256 _newCap) external payable onlyOwner{
+  function setPoolCap(uint256 _newCap) external payable onlyOwner {
     s_maxDeposit = _newCap;
 
     emit MasterStorage_MasterPoolCapUpdated(_newCap);

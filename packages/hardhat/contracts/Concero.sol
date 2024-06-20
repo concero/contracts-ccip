@@ -87,8 +87,7 @@ contract Concero is ConceroCCIP {
 
     bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, actualLpFee);
     emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
-    //@audit destinationSwapData is not being transmitted through functions
-    // TODO: pass _dstSwapData to functions
+
     sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType);
   }
 
@@ -135,7 +134,7 @@ contract Concero is ConceroCCIP {
     uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector);
 
     // concero fee
-    uint256 conceroFee = amount / CONCERO_FEE_FACTOR; //@audit 1_000? == 0.1?
+    uint256 conceroFee = amount / CONCERO_FEE_FACTOR;
 
     // gas fee
     uint256 functionsGasFeeInNative = (750_000 * s_lastGasPrices[CHAIN_SELECTOR]) + (750_000 * s_lastGasPrices[dstChainSelector]);

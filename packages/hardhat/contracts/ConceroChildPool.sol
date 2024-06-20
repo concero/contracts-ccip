@@ -160,7 +160,7 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
    */
   function _ccipReceive(
     Client.Any2EVMMessage memory any2EvmMessage
-  ) internal override onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address))) {
+  ) internal override /*onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address)))*/ {
     (, /*address liquidityProvider*/ uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address, uint256));
 
     if (receivedFee > 0) {

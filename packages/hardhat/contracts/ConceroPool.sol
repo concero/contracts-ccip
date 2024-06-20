@@ -220,7 +220,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     args[0] = abi.encodePacked(poolsToDistribute[0].chainSelector); //This will take too much code and, if a new pool enters
     args[1] = abi.encodePacked(poolsToDistribute[0].poolAddress); //It will give an 'array out of bounds' error. Because it's 'hardcoded'
 
-    bytes32 requestId = _sendRequest(args, DEPOSIT_JS_CODE); // No JS code yet.
+    bytes32 requestId/* = _sendRequest(args, DEPOSIT_JS_CODE)*/; // No JS code yet.
 
     s_requests[requestId] = CLARequest({
       requestType: RequestType.GetTotalUSDC,
@@ -245,7 +245,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     if (s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ConceroPool_ActiveRequestNotFulfilledYet();
 
     s_pendingWithdrawRequests[msg.sender] = IConceroPool.WithdrawRequests({
-      amount: 0,
+      amount: 0, //@audit Not being updated correctly..
       amountToBurn: _lpAmount,
       receivedAmount: 0,
       token: address(i_USDC),
@@ -274,16 +274,16 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
    */
   function completeWithdrawal() external {
     IConceroPool.WithdrawRequests memory withdraw = s_pendingWithdrawRequests[msg.sender];
-    uint256 numberOfPools = poolsToDistribute.length + 1;
+    uint256 numberOfPools = poolsToDistribute.length ;
 
     //@Oleg AMOUNT RECEIVED FOR WITHDRAWALS ISSUE
-    if (withdraw.receivedAmount < ((withdraw.amount / numberOfPools) * numberOfPools - 1)) revert ConceroPool_AmountNotAvailableYet(withdraw.receivedAmount);
+    if (withdraw.receivedAmount < ((withdraw.amount * numberOfPools) / (numberOfPools + 1))) revert ConceroPool_AmountNotAvailableYet(withdraw.receivedAmount);
 
     if (withdraw.amount + s_commit > i_USDC.balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
 
-    delete s_pendingWithdrawRequests[msg.sender];
-
     emit ConceroPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amount);
+
+    delete s_pendingWithdrawRequests[msg.sender];
 
     IERC20(i_lp).safeTransferFrom(msg.sender, address(this), withdraw.amountToBurn);
 
@@ -343,9 +343,9 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
 
       Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
         receiver: abi.encode(pool.poolAddress),
-        data: "",
+        data: abi.encode(address(0), 0), //How can we refactor this?
         tokenAmounts: tokenAmounts,
-        extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
+        extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 350_000})),
         feeToken: address(i_linkToken)
       });
 
@@ -356,9 +356,9 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
       i_USDC.approve(address(i_ccipRouter), _amountToDistribute);
       i_linkToken.approve(address(i_ccipRouter), fees);
 
-      emit ConceroPool_MessageSent(messageId, pool.chainSelector, pool.poolAddress, address(i_linkToken), fees);
-
       messageId = IRouterClient(i_ccipRouter).ccipSend(pool.chainSelector, evm2AnyMessage);
+
+      emit ConceroPool_MessageSent(messageId, pool.chainSelector, pool.poolAddress, address(i_linkToken), fees);
 
       unchecked {
         ++i;
@@ -430,6 +430,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     i_lp.mint(_liquidityProvider, lpTokensToMint);
   }
 
+  event Log(string);
   /**
    * @notice Function to updated cross-chain rewards will be paid to liquidity providers in the end of
    * withdraw period.
@@ -446,6 +447,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
 
     request.amount = _convertToUSDCTokenDecimals(amountToWithdraw);
 
+    emit Log("here");
     i_automation.addPendingWithdrawal(request);
 
     emit ConceroPool_RequestUpdated(_liquidityProvider);

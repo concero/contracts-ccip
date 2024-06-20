@@ -88,6 +88,20 @@ async function f() {
 				linkNative: '${LINK_NATIVE_PRICEFEED_OPTIMISM_SEPOLIA}',
 			},
 		},
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY}').toString(16)}`]: {
+			urls: [
+				`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://polygon-amoy.blockpi.network/v1/rpc/public',
+				'https://polygon-amoy-bor-rpc.publicnode.com',
+			],
+			chainId: '0x13882',
+			priceFeed: {
+				linkUsd: '${LINK_USD_PRICEFEED_POLYGON_AMOY}',
+				usdcUsd: '${USDC_USD_PRICEFEED_POLYGON_AMOY}',
+				nativeUsd: '${NATIVE_USD_PRICEFEED_POLYGON_AMOY}',
+				linkNative: '${LINK_NATIVE_PRICEFEED_POLYGON_AMOY}',
+			},
+		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
 			urls: [
 				// `https://base.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,

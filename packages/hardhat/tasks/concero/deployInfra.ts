@@ -14,6 +14,7 @@ import deployConceroOrchestrator from "../../deploy/04_ConceroOrchestrator";
 import addCLFConsumer from "../sub/add";
 import { getEnvVar } from "../../utils/getEnvVar";
 import deployConceroProxy from "../../deploy/00_ConceroProxy";
+import { fundSubscription } from "./fundSubscription";
 
 let deployableChains: CNetwork[] = liveChains;
 
@@ -48,14 +49,13 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
       await deployConceroOrchestrator(hre);
       await setProxyImplementation(hre, liveChains);
 
-      // if (taskArgs.deployproxy)
-      await setConceroProxyDstContracts(liveChains);
+      if (taskArgs.deployproxy) await setConceroProxyDstContracts(liveChains);
     }
 
     if (!taskArgs.skipsetvars) {
       await uploadDonSecrets(deployableChains, slotId, 4320);
       await setContractVariables(liveChains, deployableChains, slotId);
-      // await fundSubscription(liveChains);
+      await fundSubscription(liveChains);
       // await fundContract(deployableChains);
     }
   });

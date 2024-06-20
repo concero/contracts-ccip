@@ -57,6 +57,7 @@ contract Concero is ConceroCCIP {
     clfPremiumFees[CHAIN_SELECTOR_ARBITRUM] = 4000000000000000; // 0.004 link | arb
     clfPremiumFees[CHAIN_SELECTOR_BASE] = 2000000000000000; // 0.002 link | base // takes in usd mb price feed needed
     clfPremiumFees[CHAIN_SELECTOR_OPTIMISM] = 2000000000000000; // 0.002 link | opt
+    clfPremiumFees[CHAIN_SELECTOR_OPTIMISM] = 2000000000000000; // 0.002 link | opt
   }
 
   ///////////////////////////////////////////////////////////////

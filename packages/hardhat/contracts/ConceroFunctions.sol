@@ -254,7 +254,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
   }
 
   function _swapDataToBytes(IDexSwap.SwapData[] calldata swapData) private pure returns (bytes memory) {
-    if (swapData.length == 0) return abi.encodePacked(uint(0));
+    if (swapData.length == 0) return new bytes(1);
 
     bytes memory packedData;
     for (uint256 i = 0; i < swapData.length; i++) {

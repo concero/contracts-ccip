@@ -12,12 +12,11 @@ contract ChildPoolDeploy is Script {
         address _link,
         address _ccipRouter,
         address _usdc, 
-        address _orchestrator, 
-        address _masterPool, 
+        address _orchestrator,
         address _owner
     ) public returns(ConceroChildPool child){
         vm.startBroadcast();
-        child = new ConceroChildPool(_proxy, _link, _ccipRouter, _usdc, _orchestrator, _masterPool,  _owner);
+        child = new ConceroChildPool(_proxy, _link, _ccipRouter, _usdc, _orchestrator, _owner);
         vm.stopBroadcast();
     }
 }

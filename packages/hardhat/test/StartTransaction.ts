@@ -7,7 +7,7 @@ import type { Account } from "viem/accounts/types";
 import { RpcSchema } from "viem/types/eip1193";
 import { privateKeyToAccount } from "viem/accounts";
 import { Address, createPublicClient, createWalletClient, decodeEventLog, http, PrivateKeyAccount } from "viem";
-import { arbitrumSepolia, baseSepolia, optimismSepolia } from "viem/chains";
+import { arbitrumSepolia, baseSepolia, optimismSepolia, polygonAmoy } from "viem/chains";
 import ERC20ABI from "../abi/ERC20.json";
 import { PublicClient } from "viem/clients/createPublicClient";
 import { abi as ConceroAbi } from "../artifacts/contracts/Concero.sol/Concero.json";
@@ -28,15 +28,19 @@ const chainsMap = {
     viemChain: arbitrumSepolia,
     viemTransport: http(),
   },
+  [process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY]: {
+    viemChain: polygonAmoy,
+    viemTransport: http(),
+  },
 };
 
-const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
+const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY;
 const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA;
-const senderAddress = process.env.TESTS_WALLET_ADDRESS;
-const amount = "2000000000000000000";
-const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA;
+const senderAddress = process.env.DEPLOYER_ADDRESS;
+const amount = "1000000000000000000";
+const bnmTokenAddress = process.env.CCIPBNM_POLYGON_AMOY;
 const transactionsCount = 1;
-const srcContractAddress = process.env.CONCEROPROXY_BASE_SEPOLIA;
+const srcContractAddress = process.env.CONCEROPROXY_POLYGON_AMOY;
 const dstContractAddress = process.env.CONCEROPROXY_OPTIMISM_SEPOLIA;
 
 describe("startBatchTransactions\n", () => {
@@ -50,9 +54,7 @@ describe("startBatchTransactions\n", () => {
     transport: chainsMap[dstChainSelector].viemTransport,
   });
 
-  let viemAccount: PrivateKeyAccount = privateKeyToAccount(
-    ("0x" + process.env.TESTS_WALLET_PRIVATE_KEY) as `0x${string}`,
-  );
+  let viemAccount: PrivateKeyAccount = privateKeyToAccount(("0x" + process.env.DEPLOYER_PRIVATE_KEY) as `0x${string}`);
   let nonce: BigInt;
   let walletClient: WalletClient<HttpTransport, Chain, Account, RpcSchema> = createWalletClient({
     chain: chainsMap[srcChainSelector].viemChain,
@@ -70,6 +72,17 @@ describe("startBatchTransactions\n", () => {
 
   const approveBnmAndLink = async () => {
     const approveToken = async (tokenAddress: string) => {
+      const tokenAllowance = await srcPublicClient.readContract({
+        abi: ERC20ABI,
+        functionName: "allowance",
+        address: tokenAddress as `0x${string}`,
+        args: [senderAddress, srcContractAddress],
+      });
+
+      if (tokenAllowance >= BigInt(amount)) {
+        return null;
+      }
+
       const tokenAmount = await srcPublicClient.readContract({
         abi: ERC20ABI,
         functionName: "balanceOf",
@@ -92,6 +105,8 @@ describe("startBatchTransactions\n", () => {
 
     const bnmHash = await approveToken(bnmTokenAddress);
     // const linkHash = await approveToken(linkTokenAddress);
+
+    if (!bnmHash) return;
 
     await Promise.all([srcPublicClient.waitForTransactionReceipt({ hash: bnmHash })]);
   };

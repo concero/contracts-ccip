@@ -20,7 +20,7 @@ export async function setContractVariables(liveChains: CNetwork[], deployableCha
     await setDonHostedSecretsVersion(deployableChain, slotId, abi);
     await setDonSecretsSlotId(deployableChain, slotId, abi);
     await addMessengerToAllowlist(deployableChain, abi); // once
-    await setJsHashes(deployableChain, abi, liveChains);
+    await setJsHashes(deployableChain, abi);
   }
 }
 
@@ -148,7 +148,7 @@ async function addMessengerToAllowlist(deployableChain: CNetwork, abi: any) {
   }
 }
 
-async function setJsHashes(deployableChain: CNetwork, abi: any, liveChains: CNetwork[]) {
+async function setJsHashes(deployableChain: CNetwork, abi: any) {
   try {
     const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);

@@ -81,6 +81,20 @@ async function f() {
 				linkNative: '0x98EeB02BC20c5e7079983e8F0D0D839dFc8F74fA',
 			},
 		},
+		[`0x${BigInt('16281711391670634445').toString(16)}`]: {
+			urls: [
+				`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://polygon-amoy.blockpi.network/v1/rpc/public',
+				'https://polygon-amoy-bor-rpc.publicnode.com',
+			],
+			chainId: '0x13882',
+			priceFeed: {
+				linkUsd: '0xc2e2848e28B9fE430Ab44F55a8437a33802a219C',
+				usdcUsd: '0x1b8739bB4CdF0089d07097A9Ae5Bd274b29C6F16',
+				nativeUsd: '0x001382149eBa3441043c1c66972b4772963f5D43',
+				linkNative: '0x408D97c89c141e60872C0835e18Dd1E670CD8781',
+			},
+		},
 		[`0x${BigInt('15971525489660198786').toString(16)}`]: {
 			urls: [
 				'https://base.blockpi.network/v1/rpc/public',

@@ -112,13 +112,13 @@ abstract contract Storage is IStorage {
    * @param _chainIndex the index of the chain
    */
   function getToken(CCIPToken token, Chain _chainIndex) internal pure returns (address) {
-    address[3][2] memory tokens;
+    address[4][2] memory tokens;
 
-    //@audit use the actual chain id and not 0 1 2
     // Initialize BNM addresses
     tokens[uint(CCIPToken.bnm)][uint(Chain.arb)] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
     tokens[uint(CCIPToken.bnm)][uint(Chain.base)] = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e; // base
     tokens[uint(CCIPToken.bnm)][uint(Chain.opt)] = 0x8aF4204e30565DF93352fE8E1De78925F6664dA7; // opt
+    tokens[uint(CCIPToken.bnm)][uint(Chain.pol)] = 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4; // pol
 
     // Initialize USDC addresses
     tokens[uint(CCIPToken.usdc)][uint(Chain.arb)] = USDC_ARBITRUM; // arb

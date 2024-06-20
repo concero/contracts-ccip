@@ -36,7 +36,8 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
       console.error("No secrets to upload.");
       return;
     }
-    // console.log("Uploading secrets to DON for network:", name);
+
+    console.log("Uploading secrets to DON for network:", name);
     const encryptedSecretsObj = await secretsManager.encryptSecrets(secrets);
 
     const {

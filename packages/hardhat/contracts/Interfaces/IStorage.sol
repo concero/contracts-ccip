@@ -18,7 +18,8 @@ interface IStorage {
   enum Chain {
     arb,
     base,
-    opt
+    opt,
+    pol
   }
 
   ///@notice Function Request

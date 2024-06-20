@@ -1,7 +1,16 @@
 // Purpose: To have a single source of truth for networks across the project
 import { type CNetwork, CNetworkNames } from "../types/CNetwork";
 import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
-import { arbitrum, arbitrumSepolia, avalancheFuji, base, baseSepolia, optimismSepolia, sepolia } from "viem/chains";
+import {
+  arbitrum,
+  arbitrumSepolia,
+  avalancheFuji,
+  base,
+  baseSepolia,
+  optimismSepolia,
+  polygonAmoy,
+  sepolia,
+} from "viem/chains";
 
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
 const deployerPK = process.env.DEPLOYER_PRIVATE_KEY;
@@ -30,6 +39,7 @@ export const networkEnvKeys: Record<string, string> = {
   arbitrumSepolia: "ARBITRUM_SEPOLIA",
   avalancheFuji: "FUJI",
   baseSepolia: "BASE_SEPOLIA",
+  polygonAmoy: "POLYGON_AMOY",
 };
 
 export const functionsGatewayUrls = {
@@ -201,13 +211,39 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
       linkToNativePriceFeeds: process.env.LINK_NATIVE_PRICEFEED_BASE_SEPOLIA!,
     },
   },
+  polygonAmoy: {
+    chainId: 80002,
+    url: `https://polygon-amoy.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    accounts: [deployerPK, proxyDeployerPK],
+    functionsDonId: process.env.CLF_DONID_POLYGON_AMOY,
+    functionsDonIdAlias: process.env.CLF_DONID_POLYGON_AMOY_ALIAS,
+    functionsRouter: process.env.CLF_ROUTER_POLYGON_AMOY,
+    functionsSubIds: [process.env.CLF_SUBID_POLYGON_AMOY],
+    functionsGatewayUrls: functionsGatewayUrls.testnet,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_POLYGON_AMOY,
+    chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY,
+    conceroChainIndex: "3",
+    confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
+    linkToken: process.env.LINK_POLYGON_AMOY,
+    linkPriceFeed: process.env.LINK_PRICEFEED_POLYGON_AMOY,
+    ccipBnmToken: process.env.CCIPBNM_POLYGON_AMOY,
+    ccipRouter: process.env.CL_CCIP_ROUTER_POLYGON_AMOY,
+    viemChain: polygonAmoy,
+    name: "polygonAmoy",
+    priceFeed: {
+      linkToUsdPriceFeeds: process.env.LINK_USD_PRICEFEED_POLYGON_AMOY!,
+      usdcToUsdPriceFeeds: process.env.USDC_USD_PRICEFEED_POLYGON_AMOY!,
+      nativeToUsdPriceFeeds: process.env.NATIVE_USD_PRICEFEED_POLYGON_AMOY!,
+      linkToNativePriceFeeds: process.env.LINK_NATIVE_PRICEFEED_POLYGON_AMOY!,
+    },
+  },
   // MAINNETS
   base: {
     chainId: 8453,
     url: "https://base-rpc.publicnode.com",
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_BASE,
-    functionsDonIdAlias: process.env.CLF_DONID_BASE,
+    functionsDonIdAlias: process.env.CLF_DONID_BASE_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_BASE,
     functionsSubIds: [process.env.CLF_SUBID_BASE],
     functionsGatewayUrls: functionsGatewayUrls.mainnet,

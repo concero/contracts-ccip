@@ -69,13 +69,17 @@ contract PoolsTesting is Test{
 
     //====== Instantiate Mocks
     USDC usdc;
-    uint256 private constant USDC_INITIAL_BALANCE = 150 * 10**6;
+    uint256 private constant USDC_INITIAL_BALANCE = 500 * 10**6;
 
     address proxyOwner = makeAddr("owner");
     address Tester = makeAddr("Tester");
+    address LiquidityProvider = makeAddr("LiquidityProvider");
     address Athena = makeAddr("Athena");
+    address Concero = makeAddr("Concero");
+    address ConceroDst = makeAddr("ConceroDst");
     address Orchestrator = makeAddr("Orchestrator");
     address Messenger = makeAddr("Messenger");
+    address Forwarder = makeAddr("Forwarder");
     
     address mockFunctionsRouter = makeAddr("0x08");
 
@@ -120,6 +124,20 @@ contract PoolsTesting is Test{
 
         lp = lpDeploy.run(Tester, address(masterProxy));
 
+        //====== Deploy Automation contract
+        automation = autoDeploy.run(
+            0x66756e2d626173652d6d61696e6e65742d310000000000000000000000000000, //_donId
+            15, //_subscriptionId
+            2, //_slotId
+            0, //_secretsVersion
+            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_srcJsHashSum
+            0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_dstJsHashSum
+            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
+            0xf9B8fc078197181C841c296C876945aaa425B278, //_router,
+            address(masterProxy),
+            Tester //_owner
+        );
+
         master = masterDeploy.run(
             address(masterProxy),
             address(linkToken),
@@ -136,6 +154,7 @@ contract PoolsTesting is Test{
 
         //Dummy address initially
         childProxy = childProxyDeploy.run(address(usdc), proxyOwner, Tester, "");
+        childInterface = ITransparentUpgradeableProxy(address(childProxy));
         child = childDeploy.run(
             address(childProxy),
             address(linkToken),
@@ -143,20 +162,6 @@ contract PoolsTesting is Test{
             address(usdc),
             Orchestrator,
             Tester
-        );
-
-        //====== Deploy Automation contract
-        automation = autoDeploy.run(
-            0x66756e2d626173652d6d61696e6e65742d310000000000000000000000000000, //_donId
-            15, //_subscriptionId
-            2, //_slotId
-            0, //_secretsVersion
-            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_srcJsHashSum
-            0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_dstJsHashSum
-            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
-            0xf9B8fc078197181C841c296C876945aaa425B278, //_router,
-            address(masterProxy),
-            Tester //_owner
         );
 
         ///////////////////////////////////////////////
@@ -180,7 +185,123 @@ contract PoolsTesting is Test{
         //////////////////////////////////////////////////////
         wMaster = ConceroPool(payable(address(masterProxy)));
         wChild = ConceroChildPool(payable(address(childProxy)));
+
+        /// FAUCET
+        ccipLocalSimulator.requestLinkFromFaucet(address(wMaster), 10 * 10**18);
+        ccipLocalSimulator.requestLinkFromFaucet(address(wChild), 10 * 10**18);
+        ccipLocalSimulator.supportNewToken(address(usdc));
+        usdc.mint(LiquidityProvider, USDC_INITIAL_BALANCE);
     }
 
-    
+    modifier setters {
+        //====== Master Setters
+        vm.startPrank(Tester);
+        wMaster.setPoolsToSend(chainSelector, address(wChild));
+        assertEq(wMaster.s_poolToSendTo(chainSelector), address(wChild));
+
+        wMaster.setConceroContractSender(chainSelector, address(wChild), 1);
+        assertEq(wMaster.s_poolToReceiveFrom(chainSelector, address(wChild)), 1);
+
+        wMaster.setConceroContractSender(chainSelector, address(ConceroDst), 1);
+        assertEq(wMaster.s_poolToReceiveFrom(chainSelector, address(ConceroDst)), 1);
+
+        wMaster.setPoolCap(USDC_INITIAL_BALANCE);
+
+        //====== Child Setters
+
+        wChild.setPoolsToSend(chainSelector, address(wMaster));
+        assertEq(wChild.s_poolToSendTo(chainSelector), address(wMaster));
+
+        wChild.setConceroContractSender(chainSelector, address(masterProxy), 1);
+        assertEq(wChild.s_poolToReceiveFrom(chainSelector, address(wMaster)), 1);
+
+        wChild.setConceroContractSender(chainSelector, address(Concero), 1);
+        assertEq(wChild.s_poolToReceiveFrom(chainSelector, address(Concero)), 1);
+
+        //====== Automation Setters
+
+        automation.setForwarderAddress(Forwarder);
+        // automation.setDonHostedSecretsVersion()
+
+        vm.stopPrank();
+        _;
+    }
+
+    error ConceroChildPool_InsufficientBalance();
+    function test_localDepositLiquidity() public setters{
+        uint256 amountToDeposit = 150 * 10**6;
+        uint256 amountLpShouldBeEmitted = 150 * 10**18;
+        uint256 mockedFeeAccrued = 3*10**6;
+        uint256 loanAmount = 1 * 10**6;
+        uint256 biggerLoanAmount = 20 * 10**6;
+
+        //====== Initiate the Deposit + Cross-chain transfer
+        assertEq(usdc.balanceOf(address(wMaster)), 0);
+        assertEq(usdc.balanceOf(address(wChild)), 0);
+
+        vm.startPrank(LiquidityProvider);
+        usdc.approve(address(wMaster), amountToDeposit);
+        wMaster.depositLiquidity(amountToDeposit);
+        vm.stopPrank();
+
+        assertEq(usdc.balanceOf(address(wMaster)), amountToDeposit/2);
+        assertEq(usdc.balanceOf(address(wChild)), amountToDeposit/2);
+
+        //===== Check User LP balance
+        assertEq(lp.balanceOf(LiquidityProvider), 0);
+
+        //===== Adjust manually the LP emission
+        wMaster.updateUSDCAmountManually(LiquidityProvider, amountToDeposit, amountToDeposit);
+
+        //===== Check User LP balance
+        assertEq(lp.balanceOf(LiquidityProvider), amountLpShouldBeEmitted);
+        
+        //===== Mocking some fees
+        usdc.mint(address(wMaster), mockedFeeAccrued);
+        usdc.mint(address(wChild), mockedFeeAccrued);
+        assertEq(usdc.balanceOf(address(wMaster)), (amountToDeposit/2) + mockedFeeAccrued);
+        assertEq(usdc.balanceOf(address(wChild)), (amountToDeposit/2) + mockedFeeAccrued);
+
+        //===== User initiate an withdrawRequest
+        //Withdraw only 1/3 of deposited == 153*10**18 / 3;
+        vm.prank(LiquidityProvider);
+        wMaster.startWithdrawal(amountLpShouldBeEmitted/3);
+
+        //===== Adjust manually the USDC cross-chain total
+        wMaster.updateUSDCAmountEarned(LiquidityProvider, (amountToDeposit/3) + mockedFeeAccrued);
+
+        //===== Take a loan on child pool
+        assertEq(usdc.balanceOf(Athena), 0);
+
+        vm.prank(Orchestrator);
+        wChild.orchestratorLoan(address(usdc), loanAmount, Athena);
+
+        assertEq(usdc.balanceOf(Athena), loanAmount);
+
+        //===== Advance in time
+        vm.warp(7 days);
+
+        //==== Mock the Automation call to ChildPool
+        vm.prank(Messenger);
+        wChild.ccipSendToPool(chainSelector, LiquidityProvider, (amountToDeposit/3));
+
+        //==== Mock complete withdraw
+        vm.startPrank(LiquidityProvider);
+        lp.approve(address(wMaster), amountLpShouldBeEmitted/3);
+        wMaster.completeWithdrawal();
+        vm.stopPrank();
+
+        //===== Take a loan on child pool
+        assertEq(usdc.balanceOf(Athena), loanAmount);
+
+        vm.prank(Orchestrator);
+        wChild.orchestratorLoan(address(usdc), biggerLoanAmount, Athena);
+
+        assertEq(usdc.balanceOf(Athena), loanAmount + biggerLoanAmount);
+
+        //==== Mock the Automation call to ChildPool
+        vm.prank(Messenger);
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InsufficientBalance.selector));
+        wChild.ccipSendToPool(chainSelector, LiquidityProvider, (amountToDeposit/2) - ((amountToDeposit/2))/2);
+    }
 }

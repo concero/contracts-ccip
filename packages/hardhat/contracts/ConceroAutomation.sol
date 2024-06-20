@@ -11,10 +11,6 @@ import {IConceroPool} from "./Interfaces/IConceroPool.sol";
 
 error ConceroAutomation_CallerNotAllowed(address caller);
 
-/**
- * @dev Example contract, use the Forwarder as needed for additional security.
- * @notice important to implement {AutomationCompatibleInterface}
- */
 contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ownable {
   ///////////////////////
   ///TYPE DECLARATIONS///
@@ -188,10 +184,10 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
     (address sender, uint256 amount, address token) = abi.decode(_performData, (address, uint256, address));
 
-    bytes[] memory args = new bytes[](3); //@Nikita. What we will send here?
+    bytes[] memory args = new bytes[](3); //@Nikita. What we will send here? How can we send the pools address? Because hardcoding will limit us from add chains.
     args[0] = abi.encodePacked(sender); //eg
 
-    bytes32 reqId = sendRequest(args, PERFORM_JS_CODE); //@Nikita
+    bytes32 reqId = _sendRequest(args, PERFORM_JS_CODE); //@No JS code yet
 
     s_requests[reqId] = PerformWithdrawRequest({liquidityProvider: sender, amount: amount, token: token});
 
@@ -203,7 +199,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    * @param _args the arguments for the request as bytes array
    * @param _jsCode the JScode that will be executed.
    */
-  function sendRequest(bytes[] memory _args, string memory _jsCode) internal returns (bytes32) {
+  function _sendRequest(bytes[] memory _args, string memory _jsCode) internal returns (bytes32) {
     FunctionsRequest.Request memory req;
     req.initializeRequestForInlineJavaScript(_jsCode);
     req.addDONHostedSecrets(i_donHostedSecretsSlotId, s_donHostedSecretsVersion);
@@ -226,8 +222,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
       return;
     }
 
-    bool fulfilled = abi.decode(response, (bool));
-    //@Oleg what we will receive back from `response` ?
+    bool fulfilled = abi.decode(response, (bool)); //Is that simple ? Looks wrong.
     if (fulfilled == true) {
       uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
 

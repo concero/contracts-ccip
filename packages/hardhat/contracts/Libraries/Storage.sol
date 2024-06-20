@@ -187,7 +187,6 @@ abstract contract Storage is IStorage {
    * @param feeAmount The total amount of fees charged.
    */
   function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external onlyOwner {
-    //@audit we must limit this amount. If we don't, it Will trigger red flags in audits.
     uint256 previousValue = clfPremiumFees[_chainSelector];
     clfPremiumFees[_chainSelector] = feeAmount;
 
@@ -280,7 +279,6 @@ abstract contract Storage is IStorage {
   function getToken(CCIPToken token, Chain _chainIndex) internal pure returns (address) {
     address[3][2] memory tokens;
 
-    //@audit use the actual chain id and not 0 1 2
     // Initialize BNM addresses
     tokens[0][0] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
     tokens[0][1] = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e; // base

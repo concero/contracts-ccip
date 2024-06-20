@@ -69,7 +69,14 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   /////////////////////////////////////////////////////////////////////////////
   receive() external payable {}
 
-  constructor(address _childPool, address _link, address _ccipRouter, address _usdc, address _orchestrator, address _owner) CCIPReceiver(_ccipRouter) ChildStorage(_owner) {
+  constructor(
+    address _childPool,
+    address _link,
+    address _ccipRouter,
+    address _usdc,
+    address _orchestrator,
+    address _owner
+  ) CCIPReceiver(_ccipRouter) ChildStorage(_owner) {
     i_childProxy = _childPool;
     i_linkToken = LinkTokenInterface(_link);
     i_router = IRouterClient(_ccipRouter);
@@ -154,7 +161,7 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   function _ccipReceive(
     Client.Any2EVMMessage memory any2EvmMessage
   ) internal override onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address))) {
-    (/*address liquidityProvider*/, uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address, uint256));
+    (, /*address liquidityProvider*/ uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address, uint256));
 
     if (receivedFee > 0) {
       //subtract the amount from the committed total amount

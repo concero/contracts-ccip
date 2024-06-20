@@ -30,7 +30,7 @@ interface IDexSwap {
 
   /**
    * @notice Entry point function for the Orchestrator to take loans
-   * @param _swapData a struct array that contains dex informations.
+   * @param _swapData a struct array that contains dex information.
    * @dev only the Orchestrator contract should be able to call this function
    */
   function conceroEntry(SwapData[] memory _swapData, uint256 nativeAmount) external payable;

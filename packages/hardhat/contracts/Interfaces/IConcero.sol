@@ -3,7 +3,7 @@ pragma solidity 0.8.20;
 
 import {IDexSwap} from "./IDexSwap.sol";
 
-interface IConcero{
+interface IConcero {
   ///////////////////////
   ///TYPE DECLARATIONS///
   ///////////////////////
@@ -22,7 +22,7 @@ interface IConcero{
     uint64 dstChainSelector;
     address receiver;
   }
-    
+
   function startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata dstSwapData) external;
 
   function fulfillRequestWrapper(bytes32 requestId, bytes memory response, bytes memory err) external;

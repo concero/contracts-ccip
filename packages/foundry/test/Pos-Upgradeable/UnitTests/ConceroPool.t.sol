@@ -2,36 +2,50 @@
 pragma solidity 0.8.20;
 
 import {Test, console2} from "forge-std/Test.sol";
-import {ConceroPool} from "contracts/ConceroPool.sol";
-import {LPToken} from "contracts/LPToken.sol";
+import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 import {ConceroPoolDeploy} from "../../../script/ConceroPoolDeploy.s.sol";
 import {LPTokenDeploy} from "../../../script/LPTokenDeploy.s.sol";
+import {MasterPoolProxyDeploy} from "../../../script/MasterPoolProxyDeploy.s.sol";
+
+import {ConceroPool} from "contracts/ConceroPool.sol";
+import {LPToken} from "contracts/LPToken.sol";
+
+import {MasterPoolProxy} from "contracts/Proxy/MasterPoolProxy.sol";
+
 
 import {USDC} from "../../Mocks/USDC.sol";
 
 contract ConceroPoolTest is Test {
-    ConceroPool public pool;
+    //==== Instantiate Contracts
+    ConceroPool public masterPool;
     LPToken public lp;
+    
+    //==== Instantiate Proxies
+    MasterPoolProxy masterProxy;
+    ITransparentUpgradeableProxy proxyInterfaceMaster;
 
-    ConceroPoolDeploy public deploy;
+    //==== Instantiate Deploy Script
+    ConceroPoolDeploy public masterDeploy;
     LPTokenDeploy public lpDeploy;
+    MasterPoolProxyDeploy masterProxyDeploy;
 
+    //==== Wrapped contract
+    ConceroPool wMaster;
+
+    //======= Instantiate Mock
     USDC public usdc;
 
     uint256 private constant INITIAL_BALANCE = 10 ether;
     uint256 private constant USDC_INITIAL_BALANCE = 10 * 10**6;
 
+    address proxyOwner = makeAddr("owner");
     address Tester = makeAddr("Tester");
-    address Puka = makeAddr("Puka");
     address Athena = makeAddr("Athena");
-    address Exploiter = makeAddr("Exploiter");
     address Orchestrator = makeAddr("Orchestrator");
     address Messenger = makeAddr("Messenger");
-    address UserReceiver = makeAddr("Receiver");
 
     uint64 mockDestinationChainSelector = 5161349165154982;
-    address mockProxy = makeAddr("0x09");
     address mockLinkTokenAddress = makeAddr("0x01");
     address mockSourceRouter = makeAddr("0x02");
     address mockLPTokenAddress = makeAddr("0x03");
@@ -48,31 +62,47 @@ contract ConceroPoolTest is Test {
     bytes32 public constant WHITE_LISTED = keccak256("WHITE_LISTED");
 
     function setUp() public {
-        usdc = new USDC("USDC", "USDC", Tester, USDC_INITIAL_BALANCE);
-        deploy = new ConceroPoolDeploy();
+        //======= Deploy Scripts
+        masterProxyDeploy = new MasterPoolProxyDeploy();
+        masterDeploy = new ConceroPoolDeploy();
         lpDeploy = new LPTokenDeploy();
 
-        lp = lpDeploy.run(Tester, address(0));
-        pool = deploy.run(
-            mockProxy,
+        //======= Deploy Mock
+        usdc = new USDC("USDC", "USDC", Tester, USDC_INITIAL_BALANCE);
+
+        //======= Deploy proxies
+        masterProxy = masterProxyDeploy.run(address(lpDeploy), proxyOwner, Tester, "");
+
+        //======= Wraps on the interface to update later 
+        proxyInterfaceMaster = ITransparentUpgradeableProxy(address(masterProxy));
+
+        //======= Liquidity Provider
+        lp = lpDeploy.run(Tester, address(masterProxy));
+
+        //======= Deploy MasterPool
+        masterPool = masterDeploy.run(
+            address(masterProxy),
             mockLinkTokenAddress,
             0,
             0,
             mockFunctionsRouter,
             mockSourceRouter,
             address(usdc),
-            mockLPTokenAddress,
+            address(lp),
             mockAutomationAddress,
             Orchestrator,
             Tester
         );
 
-        vm.prank(Tester);
-        lp.grantRole(keccak256("CONTRACT_MANAGER"), Puka);
-        vm.prank(Tester);
-        lp.grantRole(keccak256("MINTER_ROLE"), address(pool));
+        vm.prank(proxyOwner);
+        proxyInterfaceMaster.upgradeToAndCall(address(masterPool), "");
 
-        vm.deal(Tester, INITIAL_BALANCE);
+        vm.prank(Tester);
+        lp.grantRole(keccak256("CONTRACT_MANAGER"), Athena);
+        vm.prank(Tester);
+        lp.grantRole(keccak256("MINTER_ROLE"), address(masterPool));
+
+        wMaster = ConceroPool(payable(address(masterProxy)));
     }
 
     ///////////////////////////////////////////////////////////////
@@ -84,15 +114,15 @@ contract ConceroPoolTest is Test {
         vm.prank(Tester);
         vm.expectEmit();
         emit MasterStorage_ConceroSendersUpdated(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
-        pool.setConceroContractSender(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
+        wMaster.setConceroContractSender(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
 
-        assertEq(pool.s_poolToReceiveFrom(mockDestinationChainSelector, address(mockChildPoolAddress)), 1);
+        assertEq(wMaster.s_poolToReceiveFrom(mockDestinationChainSelector, address(mockChildPoolAddress)), 1);
     }
 
     error MasterStorage_NotContractOwner();
     function test_revertSetConceroPool() public {
         vm.expectRevert(abi.encodeWithSelector(MasterStorage_NotContractOwner.selector));
-        pool.setConceroContractSender(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
+        wMaster.setConceroContractSender(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
     }
 
     //setConceroPoolReceiver///
@@ -101,14 +131,14 @@ contract ConceroPoolTest is Test {
         vm.prank(Tester);
         vm.expectEmit();
         emit MasterStorage_PoolReceiverUpdated(mockDestinationChainSelector, address(mockChildPoolAddress));
-        pool.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
+        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
 
-        assertEq(pool.s_poolToSendTo(mockDestinationChainSelector), address(mockChildPoolAddress));
+        assertEq(wMaster.s_poolToSendTo(mockDestinationChainSelector), address(mockChildPoolAddress));
     }
 
     function test_revertSetConceroPoolReceiver() public {
         vm.expectRevert(abi.encodeWithSelector(MasterStorage_NotContractOwner.selector));
-        pool.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
+        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
     }
 
     ///orchestratorLoan///
@@ -118,14 +148,14 @@ contract ConceroPoolTest is Test {
     function test_orchestratorLoanRevert() external {
 
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_ItsNotOrchestrator.selector, address(this)));
-        pool.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
+        wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
 
         vm.startPrank(Orchestrator);
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_InvalidAddress.selector));
-        pool.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
+        wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
 
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_InsufficientBalance.selector));
-        pool.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
+        wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
 
         vm.stopPrank();
     }
@@ -138,32 +168,32 @@ contract ConceroPoolTest is Test {
         uint256 amountToDeposit = 1*10**5;
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_AmountBelowMinimum.selector, 100*10**6));
-        pool.depositLiquidity(amountToDeposit);
+        wMaster.depositLiquidity(amountToDeposit);
 
         uint256 allowedAmountToDeposit = 100*10**6;
 
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_MaxCapReached.selector, 0));
-        pool.depositLiquidity(allowedAmountToDeposit);
+        wMaster.depositLiquidity(allowedAmountToDeposit);
 
         vm.prank(Tester);
         vm.expectEmit();
         emit MasterStorage_MasterPoolCapUpdated(100*10**6);
-        pool.setPoolCap(100*10**6);
+        wMaster.setPoolCap(100*10**6);
         
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(ConceroPool_ThereIsNoPoolToDistribute.selector));
-        pool.depositLiquidity(allowedAmountToDeposit);
+        wMaster.depositLiquidity(allowedAmountToDeposit);
     }
 
     event MasterStorage_ChainAndAddressRemoved(uint64 chainSelector);
     function test_removePoolFromArray() public {
         vm.prank(Tester);
-        pool.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
+        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
 
         vm.prank(Tester);
         vm.expectEmit();
         emit MasterStorage_ChainAndAddressRemoved(mockDestinationChainSelector);
-        pool.removePoolsFromListOfSenders(mockDestinationChainSelector);
+        wMaster.removePoolsFromListOfSenders(mockDestinationChainSelector);
     }
 }

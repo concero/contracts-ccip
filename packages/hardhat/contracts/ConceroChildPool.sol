@@ -45,8 +45,6 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   IERC20 immutable i_USDC;
   ///@notice immutable variable to store the orchestrator address
   address private immutable i_concero_orchestrator;
-  ///@notice immutable variable to store the MasterPool address
-  address private immutable i_concero_masterPool;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -71,13 +69,12 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   /////////////////////////////////////////////////////////////////////////////
   receive() external payable {}
 
-  constructor(address _childPool, address _link, address _ccipRouter, address _usdc, address _orchestrator, address _masterPool, address _owner) CCIPReceiver(_ccipRouter) ChildStorage(_owner) {
+  constructor(address _childPool, address _link, address _ccipRouter, address _usdc, address _orchestrator, address _owner) CCIPReceiver(_ccipRouter) ChildStorage(_owner) {
     i_childProxy = _childPool;
     i_linkToken = LinkTokenInterface(_link);
     i_router = IRouterClient(_ccipRouter);
     i_USDC = IERC20(_usdc);
     i_concero_orchestrator = _orchestrator;
-    i_concero_masterPool = _masterPool;
   }
 
   //@Oleg How to fit the withdraw requests in here?
@@ -172,8 +169,4 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
       any2EvmMessage.destTokenAmounts[0].amount
     );
   }
-
-  ///////////////
-  /// PRIVATE ///
-  ///////////////
 }

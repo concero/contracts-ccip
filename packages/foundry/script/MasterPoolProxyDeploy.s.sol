@@ -9,6 +9,7 @@ contract MasterPoolProxyDeploy is Script {
     function run(
         address _logic,
         address _admin,
+        address _storageOwner,
         bytes memory _data
     ) public returns(MasterPoolProxy proxy){
 
@@ -16,6 +17,7 @@ contract MasterPoolProxyDeploy is Script {
         proxy = new MasterPoolProxy(
             _logic,
             _admin,
+            _storageOwner,
             _data
         );
         vm.stopBroadcast();

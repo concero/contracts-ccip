@@ -45,7 +45,7 @@ import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 //OpenZeppelin
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {ProxyAdmin, ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 //DEXes routers
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
@@ -76,6 +76,7 @@ contract ProtocolTest is Test {
     InfraProxy public proxy;
     LPToken public lp;
     ConceroAutomation public automation;
+    MasterPoolProxy masterProxy;
     ITransparentUpgradeableProxy proxyInterfaceInfra;
     ITransparentUpgradeableProxy proxyInterfaceMaster;
 
@@ -87,7 +88,6 @@ contract ProtocolTest is Test {
     InfraProxyDeploy proxyDeployBase;
     LPTokenDeploy lpDeployBase;
     AutomationDeploy autoDeployBase;
-    MasterPoolProxy masterProxy;
     MasterPoolProxyDeploy masterProxyDeploy;
 
     //==== Instantiate Arbitrum Contracts
@@ -156,8 +156,9 @@ contract ProtocolTest is Test {
     address functionsRouterArb = 0x97083E831F8F0638855e2A515c90EdCF158DF238;
     bytes32 donIdArb = 0x66756e2d617262697472756d2d6d61696e6e65742d3100000000000000000000;
 
-    address User = makeAddr("User");
+    address ProxyOwner = makeAddr("ProxyOwner");
     address Tester = makeAddr("Tester");
+    address User = makeAddr("User");
     address Messenger = makeAddr("Messenger");
     address LP = makeAddr("LiquidityProvider");
     address defaultSender = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
@@ -243,8 +244,8 @@ contract ProtocolTest is Test {
         );
 
         //====== Deploy the proxy with the dummy Orch to get the address
-        proxy = proxyDeployBase.run(address(orchEmpty), Tester, "");
-        masterProxy = masterProxyDeploy.run(address(orchEmpty), Tester, "");
+        proxy = proxyDeployBase.run(address(orchEmpty), ProxyOwner, Tester, "");
+        masterProxy = masterProxyDeploy.run(address(orchEmpty), ProxyOwner, Tester, "");
         proxyInterfaceInfra = ITransparentUpgradeableProxy(address(proxy));
         proxyInterfaceMaster = ITransparentUpgradeableProxy(address(masterProxy));
 
@@ -319,9 +320,9 @@ contract ProtocolTest is Test {
 
         //===== Base Proxies
         //====== Update the proxy for the correct address
-        vm.prank(Tester);
+        vm.prank(ProxyOwner);
         proxyInterfaceInfra.upgradeToAndCall(address(orch), "");
-        vm.prank(Tester);
+        vm.prank(ProxyOwner);
         proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
 
         wMaster = ConceroPool(payable(address(masterProxy)));
@@ -398,10 +399,10 @@ contract ProtocolTest is Test {
             1,
             Tester
         );
-        childProxy = childProxyDeploy.run(address(orchEmptyDst), Tester, "");
+        childProxy = childProxyDeploy.run(address(orchEmptyDst), ProxyOwner, Tester, "");
         
         //====== Deploy the proxy with the dummy Orch
-        proxyDst = proxyDeployArbitrum.run(address(orchEmptyDst), Tester, "");
+        proxyDst = proxyDeployArbitrum.run(address(orchEmptyDst), ProxyOwner, Tester, "");
 
         proxyInterfaceInfraArb = ITransparentUpgradeableProxy(address(proxyDst));
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
@@ -450,7 +451,6 @@ contract ProtocolTest is Test {
             ccipRouterArb,
             address(aUSDC),
             address(orchDst),
-            address(masterProxy),
             Tester
         );
 
@@ -466,9 +466,9 @@ contract ProtocolTest is Test {
         vm.makePersistent(address(wChild));
 
         //====== Update the proxy for the correct address
-        vm.prank(Tester);
+        vm.prank(ProxyOwner);
         proxyInterfaceInfraArb.upgradeToAndCall(address(orchDst), "");
-        vm.prank(Tester);
+        vm.prank(ProxyOwner);
         proxyInterfaceChild.upgradeToAndCall(address(child), "");
 
         //====== Wrap the proxy as the implementation
@@ -549,7 +549,7 @@ contract ProtocolTest is Test {
         vm.selectFork(baseMainFork);
         assertEq(vm.activeFork(), baseMainFork);
 
-        vm.startPrank(Tester);
+        vm.startPrank(ProxyOwner);
         proxyInterfaceInfra.upgradeToAndCall(address(SAFE_LOCK), "");
 
         vm.stopPrank();
@@ -561,7 +561,7 @@ contract ProtocolTest is Test {
         vm.selectFork(baseMainFork);
         assertEq(vm.activeFork(), baseMainFork);
 
-        vm.startPrank(Tester);
+        vm.startPrank(ProxyOwner);
 
         proxyInterfaceInfra.upgradeToAndCall(address(SAFE_LOCK), "");
 
@@ -605,7 +605,7 @@ contract ProtocolTest is Test {
         vm.selectFork(baseMainFork);
         assertEq(vm.activeFork(), baseMainFork);
 
-        vm.startPrank(Tester);
+        vm.startPrank(ProxyOwner);
         //====== Checks for the initial implementation
         // assertEq(proxy.implementation(), address(orch));
 

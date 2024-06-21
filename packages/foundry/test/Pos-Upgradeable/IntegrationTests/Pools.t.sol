@@ -458,7 +458,6 @@ contract PoolsTesting is Test{
 
         vm.warp(7 days);
         uint256 poolBalanceBeforeFirstWithdraw = usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild));
-        console2.log("Balance before first Withdraw:", poolBalanceBeforeFirstWithdraw);
         wMaster.updateUSDCAmountEarned(LiquidityProvider, usdc.balanceOf(address(wChild)));
 
         uint256 liquidityProviderUSDCAmountEarned = 522490477; //Almost half of the pool. It shouldn't be that much.
@@ -497,7 +496,7 @@ contract PoolsTesting is Test{
         assertEq(lp.balanceOf(LiquidityProviderTwo), 0);
         assertEq(usdc.balanceOf(LiquidityProviderTwo), liquidityProviderTwoUSDCAmountEarned);
 
-        console2.log(usdc.balanceOf(address(wChild)) + usdc.balanceOf(address(wMaster)));
+        console2.log("Total USDC in All Pools", usdc.balanceOf(address(wChild)) + usdc.balanceOf(address(wMaster)));
         
         //==== LiquidityProviderThree
         uint256 liquidityProviderThreeBalanceBeforeWithdraw = lp.balanceOf(LiquidityProviderThree);
@@ -511,11 +510,14 @@ contract PoolsTesting is Test{
 
         uint256 liquidityProviderThreeUSDCAmountEarned = 513525242;
 
-        console2.log(usdc.balanceOf(address(wMaster)));
-        console2.log(usdc.balanceOf(address(wChild)));
+        console2.log("Master Balance", usdc.balanceOf(address(wMaster)));
+        console2.log("Child Balance", usdc.balanceOf(address(wChild)));
 
         vm.prank(Messenger);
         wChild.ccipSendToPool(chainSelector, LiquidityProviderThree, liquidityProviderThreeUSDCAmountEarned / 2);
+
+        assertEq(usdc.balanceOf(address(wChild)), 0);        
+        assertEq(usdc.balanceOf(address(wMaster)), 513_525_242);
 
         vm.startPrank(LiquidityProviderThree);
         lp.approve(address(wMaster), liquidityProviderThreeBalanceBeforeWithdraw);

@@ -91,6 +91,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
   uint256 private constant USDC_DECIMALS = 10 ** 6;
   uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
   uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
+  uint256 private constant PRECISION_HANDLER = 10 ** 6;
   ///@notice Chainlink Functions Gas Limit
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   ///@notice Chainlink Function Gas Overhead
@@ -212,7 +213,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
 
     if (numberOfPools < 1) revert ConceroPool_ThereIsNoPoolToDistribute();
 
-    uint256 amountToDistribute = _amount / (numberOfPools + 1); //@audit loss of precision
+    uint256 amountToDistribute = ((_amount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER; //@audit Need to optimize it
 
     ///@Nikita
     //Q1: Which arguments I need to send?
@@ -273,7 +274,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
   function completeWithdrawal() external {
     IConceroPool.WithdrawRequests memory withdraw = s_pendingWithdrawRequests[msg.sender];
     uint256 numberOfPools = poolsToDistribute.length;
-    uint256 thresholdForWithdraw = ((withdraw.amountEarned * numberOfPools) / (numberOfPools + 1));  //@audit loss of precision
+    uint256 thresholdForWithdraw = ((((withdraw.amountEarned * numberOfPools) * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER);  //@audit Need to optimize it
 
     //receivedAmount must be 3/4 of the amount
     if (withdraw.receivedAmount < thresholdForWithdraw) revert ConceroPool_AmountNotAvailableYet(withdraw.receivedAmount, thresholdForWithdraw);
@@ -419,9 +420,10 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     uint256 lpTokenSupply = i_lp.totalSupply();
     uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(_crossChainBalance);
     uint256 amountDepositedConverted = _convertToLPTokenDecimals(_depositedAmount);
+
     //N° lpTokens = (((Total USDC Liq + user deposit) * Total sToken) / Total USDC Liq) - Total sToken
     uint256 lpTokensToMint = lpTokenSupply >= ALLOWED
-      ? (((crossChainBalanceConverted + amountDepositedConverted) * lpTokenSupply) / crossChainBalanceConverted) - lpTokenSupply  //@audit loss of precision
+      ? (((crossChainBalanceConverted + amountDepositedConverted) * lpTokenSupply) / crossChainBalanceConverted) - lpTokenSupply  //@audit Need to optimize it
       : amountDepositedConverted;
 
     i_lp.mint(_liquidityProvider, lpTokensToMint);
@@ -441,11 +443,15 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     uint256 totalCrossChainBalance = _totalUSDCCrossChain + i_USDC.balanceOf(address(this)) + s_loansInUse;
 
     //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
-    uint256 amountToWithdraw = (_convertToLPTokenDecimals(totalCrossChainBalance) * request.amountToBurn) / i_lp.totalSupply();  //@audit loss of precision
+    uint256 amountToWithdraw = (_convertToLPTokenDecimals(totalCrossChainBalance) * request.amountToBurn) / i_lp.totalSupply();  //@audit Need to optimize it
     
-    request.amountEarned = _convertToUSDCTokenDecimals(amountToWithdraw);
+    request.amountEarned = _convertToUSDCTokenDecimals(amountToWithdraw) > totalCrossChainBalance
+    ? totalCrossChainBalance
+    : _convertToUSDCTokenDecimals(amountToWithdraw);
+
+    //if balanceOf() + amountToWithdraw
     request.amountToRequest = _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1); //Cross-chain Pools + MasterPool
-    request.receivedAmount = _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1);  //@audit loss of precision
+    request.receivedAmount = _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1); 
 
     i_automation.addPendingWithdrawal(request);
 

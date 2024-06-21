@@ -22,6 +22,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .addFlag("deployproxy", "Deploy the proxy")
   .addFlag("skipsetvars", "Set the contract variables")
+  .addFlag("uploadsecrets", "Set the contract variables")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
@@ -52,8 +53,10 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     }
 
     if (!taskArgs.skipsetvars) {
-      await uploadDonSecrets(deployableChains, slotId, 4320);
-      await setContractVariables(liveChains, deployableChains, slotId);
+      if (taskArgs.uploadsecrets) {
+        await uploadDonSecrets(deployableChains, slotId, 4320);
+      }
+      await setContractVariables(liveChains, deployableChains, slotId, taskArgs.uploadsecrets);
       // await fundSubscription(liveChains);
       // await fundContract(deployableChains);
     }

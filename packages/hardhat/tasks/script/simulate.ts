@@ -73,6 +73,8 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
       "0x" + 40000000000000000n.toString(16), // amount
       "0x" + 5224473277236331295n.toString(16), // dstChainSelector
     ]);
+
+    await simulate(path.join(__dirname, "../", "./CLFScripts/dist/poolEval.min.js"), []);
   });
 
 export default {};

@@ -3,13 +3,11 @@ pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
 import {IFunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsClient.sol";
-
 import {IConcero} from "./Interfaces/IConcero.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
-import {Storage} from "./Libraries/Storage.sol";
+import {StorageSetters} from "./Libraries/StorageSetters.sol";
+import {LibConcero} from "./Libraries/LibConcero.sol";
 
 ///////////////////////////////
 /////////////ERROR/////////////
@@ -24,15 +22,16 @@ error Orchestrator_FoTNotAllowedYet();
 error Orchestrator_InvalidAmount();
 ///@notice FUNCTIONS ERROR
 error Orchestrator_OnlyRouterCanFulfill();
+error Orchestrator_FailedToStartBridge(uint256 receivedAmount, uint256 minAmount);
 
-contract Orchestrator is Storage, IFunctionsClient {
+contract Orchestrator is StorageSetters, IFunctionsClient {
   using SafeERC20 for IERC20;
 
   ///////////////
   ///IMMUTABLE///
   ///////////////
   ///@notice the address of Functions router
-  address immutable i_router;
+  address immutable i_functionsRouter;
   ///@notice variable to store the DexSwap address
   address immutable i_dexSwap;
   ///@notice variable to store the Concero address
@@ -42,16 +41,17 @@ contract Orchestrator is Storage, IFunctionsClient {
   ///@notice variable to store the immutable Proxy Address
   address immutable i_proxy;
   ///@notice ID of the deployed chain on getChain() function
-  Chain immutable i_chainIndex;
+  Chain internal immutable i_chainIndex;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
   ///@notice emitted when the Functions router fulfills a request
   event Orchestrator_RequestFulfilled(bytes32 requestId);
+  event Orchestrator_SwapSuccess();
 
-  constructor(address _router, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex, address _owner) Storage(_owner) {
-    i_router = _router;
+  constructor(address _functionsRouter, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex) StorageSetters(msg.sender) {
+    i_functionsRouter = _functionsRouter;
     i_dexSwap = _dexSwap;
     i_concero = _concero;
     i_pool = _pool;
@@ -69,6 +69,7 @@ contract Orchestrator is Storage, IFunctionsClient {
     } else {
       if (msg.value != amount) revert Orchestrator_InvalidAmount();
     }
+
     _;
   }
 
@@ -93,24 +94,22 @@ contract Orchestrator is Storage, IFunctionsClient {
   ////////////////////
   ///DELEGATE CALLS///
   ////////////////////
-  function swapAndBridge(
-    BridgeData calldata _bridgeData,
-    IDexSwap.SwapData[] calldata _srcSwapData,
-    IDexSwap.SwapData[] calldata _dstSwapData
-  ) external payable {
+  function swapAndBridge(BridgeData memory _bridgeData, IDexSwap.SwapData[] calldata _srcSwapData, IDexSwap.SwapData[] calldata _dstSwapData) external payable {
     uint256 amountToSwap = msg.value;
+    uint256 receivedAmount = _swap(_srcSwapData, amountToSwap, false);
 
-    _swap(_srcSwapData, amountToSwap);
+    if (receivedAmount < _bridgeData.minAmount) revert Orchestrator_FailedToStartBridge(receivedAmount, _bridgeData.minAmount);
+
+    _bridgeData.amount = receivedAmount;
 
     (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, _bridgeData, _dstSwapData));
     if (bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
   }
 
-  //@audit adjust the modifier
   function swap(
     IDexSwap.SwapData[] calldata _swapData
   ) external payable tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount) validateSwapData(_swapData) {
-    _swap(_swapData, msg.value);
+    _swap(_swapData, msg.value, true);
   }
 
   function bridge(
@@ -119,44 +118,30 @@ contract Orchestrator is Storage, IFunctionsClient {
   ) external payable tokenAmountSufficiency(getToken(bridgeData.tokenType, i_chainIndex), bridgeData.amount) validateBridgeData(bridgeData) {
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
 
-    IERC20(fromToken).safeTransferFrom(msg.sender, address(this), bridgeData.amount);
+    LibConcero.transferFromERC20(fromToken, msg.sender, address(this), bridgeData.amount);
 
-    (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(
-      abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData, i_chainIndex)
-    );
+    (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData));
     if (bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
   }
 
-  //////////////////////////
-  /// INTERNAL FUNCTIONS ///
-  //////////////////////////
-  event Log(string);
-  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount) internal returns (uint256 amountReceived) {
-    address fromToken = swapData[0].fromToken;
-    uint256 fromAmount = swapData[0].fromAmount;
-
-    if (fromToken != address(0)) {
-      uint256 balanceBefore = IERC20(fromToken).balanceOf(address(this));
-      IERC20(fromToken).safeTransferFrom(msg.sender, address(this), fromAmount);
-      uint256 balanceAfter = IERC20(fromToken).balanceOf(address(this));
-      //TODO: deal with FoT tokens.
-      amountReceived = balanceAfter - balanceBefore;
-      if (amountReceived < fromAmount) revert Orchestrator_FoTNotAllowedYet();
-
-      (bool swapSuccess, bytes memory data) = i_dexSwap.delegatecall(
-        abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, fromAmount -= (fromAmount / CONCERO_FEE_FACTOR))
-      );
-      if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(data);
-    } else {
-      (bool swapSuccess, bytes memory data) = i_dexSwap.delegatecall(
-        abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, nativeAmount -= (nativeAmount / CONCERO_FEE_FACTOR))
-      );
-      if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(data);
-    }
+  function addUnconfirmedTX(
+    bytes32 ccipMessageId,
+    address sender,
+    address recipient,
+    uint256 amount,
+    uint64 srcChainSelector,
+    CCIPToken token,
+    uint256 blockNumber,
+    bytes calldata dstSwapData
+  ) external {
+    (bool success, bytes memory data) = i_concero.delegatecall(
+      abi.encodeWithSelector(IConcero.addUnconfirmedTX.selector, ccipMessageId, sender, recipient, amount, srcChainSelector, token, blockNumber, dstSwapData)
+    );
+    if (success == false) revert Orchestrator_UnableToCompleteDelegateCall(data);
   }
 
   function handleOracleFulfillment(bytes32 requestId, bytes memory response, bytes memory err) external {
-    if (msg.sender != address(i_router)) {
+    if (msg.sender != address(i_functionsRouter)) {
       revert Orchestrator_OnlyRouterCanFulfill();
     }
 
@@ -167,5 +152,35 @@ contract Orchestrator is Storage, IFunctionsClient {
     if (fulfilled == false) revert Orchestrator_UnableToCompleteDelegateCall(notFulfilled);
 
     emit Orchestrator_RequestFulfilled(requestId);
+  }
+
+  //////////////////////////
+  /// INTERNAL FUNCTIONS ///
+  //////////////////////////
+  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount, bool isFeesNeeded) internal returns (uint256) {
+    address fromToken = swapData[0].fromToken;
+    uint256 fromAmount = swapData[0].fromAmount;
+    address toToken = swapData[swapData.length - 1].toToken;
+
+    uint256 toTokenBalanceBefore = IERC20(toToken).balanceOf(address(this));
+
+    if (fromToken != address(0)) {
+      //TODO: deal with FoT tokens.
+      if (isFeesNeeded) swapData[0].fromAmount -= (fromAmount / CONCERO_FEE_FACTOR);
+      LibConcero.transferFromERC20(fromToken, msg.sender, address(this), fromAmount);
+    } else {
+      if (isFeesNeeded) {
+        swapData[0].fromAmount -= (nativeAmount / CONCERO_FEE_FACTOR);
+        swapData[0].fromAmount -= (fromAmount / CONCERO_FEE_FACTOR);
+      }
+    }
+
+    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, nativeAmount));
+    if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
+
+    emit Orchestrator_SwapSuccess();
+
+    uint256 toTokenBalanceAfter = IERC20(toToken).balanceOf(address(this));
+    return toTokenBalanceAfter - toTokenBalanceBefore;
   }
 }

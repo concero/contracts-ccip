@@ -21,6 +21,7 @@ error SenderNotAllowed(address sender);
 error InvalidReceiverAddress();
 ///@notice error emitted when the link balance is not enough to send the message
 error NotEnoughLinkBalance(uint256 fees, uint256 feeToken);
+error ConceroCCIP_ChainNotAllowed(uint64 chainSelector);
 
 contract ConceroCCIP is ConceroFunctions {
   using SafeERC20 for IERC20;
@@ -35,6 +36,18 @@ contract ConceroCCIP is ConceroFunctions {
   LinkTokenInterface internal immutable i_linkToken;
   IRouterClient internal immutable i_ccipRouter;
 
+  ///////////////
+  ///MODIFIERS///
+  ///////////////
+  /**
+   * @notice CCIP Modifier to check receivers for a specific chain
+   * @param _chainSelector Id of the destination chain
+   */
+  modifier onlyAllowListedChain(uint64 _chainSelector) {
+    if (s_poolReceiver[_chainSelector] == address(0)) revert ConceroCCIP_ChainNotAllowed(_chainSelector);
+    _;
+  }
+
   constructor(
     FunctionsVariables memory _variables,
     uint64 _chainSelector,
@@ -45,12 +58,11 @@ contract ConceroCCIP is ConceroFunctions {
     bytes32 ethersHashSum,
     address _dexSwap,
     address _pool,
-    address _proxy,
-    address _owner
-  ) ConceroFunctions(_variables, _chainSelector, _chainIndex, jsCodeHashSum, ethersHashSum, _dexSwap, _pool, _proxy, _owner) {
+    address _proxy
+  ) ConceroFunctions(_variables, _chainSelector, _chainIndex, jsCodeHashSum, ethersHashSum, _dexSwap, _pool, _proxy) {
     i_linkToken = LinkTokenInterface(_link);
     i_ccipRouter = IRouterClient(_ccipRouter);
-    s_messengerAddresses[msg.sender] = APPROVED;
+    s_messengerContracts[msg.sender] = APPROVED;
   }
 
   ///////////////////////////////////////////////////////////////

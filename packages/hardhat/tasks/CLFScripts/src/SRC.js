@@ -19,6 +19,7 @@ async function f() {
 		dstChainSelector,
 		token,
 		blockNumber,
+		dstSwapData,
 	] = bytesArgs;
 	const chainSelectors = {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
@@ -149,6 +150,7 @@ async function f() {
 				srcChainSelector,
 				token,
 				blockNumber,
+				dstSwapData,
 				txOptions,
 			);
 		} catch (err) {
@@ -204,7 +206,7 @@ async function f() {
 		const wallet = new ethers.Wallet('0x' + secrets.WALLET_PRIVATE_KEY, provider);
 		const signer = wallet.connect(provider);
 		const abi = [
-			'function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256) external',
+			'function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256, bytes) external',
 			'function s_transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool)',
 		];
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);

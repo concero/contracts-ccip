@@ -4,17 +4,14 @@ pragma abicoder v2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
 import {ISwapRouter02, IV3SwapRouter} from "./Interfaces/ISwapRouter02.sol";
-
 import {Storage} from "./Libraries/Storage.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
-import "./Libraries/LibConcero.sol";
+import {LibConcero} from "./Libraries/LibConcero.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -27,6 +24,7 @@ error DexSwap_EmptyDexData();
 error DexSwap_RouterNotAllowed();
 ///@notice error emitted when the path to swaps is invalid
 error DexSwap_InvalidPath();
+error DexSwap_CallableOnlyByOwner(address caller, address owner);
 
 contract DexSwap is Storage, IDexSwap {
   using SafeERC20 for IERC20;
@@ -48,8 +46,13 @@ contract DexSwap is Storage, IDexSwap {
   /////////////////////////////////////////////////////////////////
   ////////////////////////////FUNCTIONS////////////////////////////
   /////////////////////////////////////////////////////////////////
-  constructor(address _proxy, address _owner) Storage(_owner) {
+  constructor(address _proxy) Storage(msg.sender) {
     i_proxy = _proxy;
+  }
+
+  modifier onlyOwner() {
+    if (msg.sender != i_owner) revert DexSwap_CallableOnlyByOwner(msg.sender, i_owner);
+    _;
   }
 
   /**

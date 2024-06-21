@@ -1,10 +1,7 @@
-//SPDX-License Identifier: MIT
+//SPDX-License-Identificer: MIT
 pragma solidity 0.8.20;
 
 interface IStorage {
-  ///////////////////////
-  ///TYPE DECLARATIONS///
-  ///////////////////////
   ///@notice Chainlink Functions Request Type
   enum RequestType {
     addUnconfirmedTxDst,
@@ -40,6 +37,19 @@ interface IStorage {
     address receiver;
   }
 
+  ///@notice ConceroPool Request
+  struct WithdrawRequests {
+    uint256 condition;
+    uint256 amount;
+    bool isActiv;
+  }
+
+  ///@notice `ccipSend` to distribute liquidity
+  struct Pools {
+    uint64 chainSelector;
+    address poolAddress;
+  }
+
   ///@notice Functions Js Code
   struct JsCodeHashSum {
     bytes32 src;
@@ -55,8 +65,9 @@ interface IStorage {
     CCIPToken token;
     uint64 srcChainSelector;
     bool isConfirmed;
+    bytes dstSwapData;
   }
-  
+
   ///@notice Chainlink Price Feeds
   struct PriceFeeds {
     address linkToUsdPriceFeeds;

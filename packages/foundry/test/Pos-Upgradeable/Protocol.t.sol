@@ -101,13 +101,13 @@ contract ProtocolTest is Test {
     ChildPoolProxy public childProxy;
     ITransparentUpgradeableProxy proxyInterfaceInfraArb;
     ITransparentUpgradeableProxy proxyInterfaceChild;
-        
+
     //==== Instantiate Deploy Script Arbitrum
     InfraProxyDeploy proxyDeployArbitrum;
     ChildPoolProxyDeploy childProxyDeploy;
 
     DexSwapDeploy dexDeployArbitrum;
-    ChildPoolDeploy childDeployArbitrum;    
+    ChildPoolDeploy childDeployArbitrum;
     ConceroDeploy conceroDeployArbitrum;
     OrchestratorDeploy orchDeployArbitrum;
 
@@ -253,7 +253,7 @@ contract ProtocolTest is Test {
         //===== Deploy the protocol with the proxy address
         //LP Token
         lp = lpDeployBase.run(Tester, address(0));
-        
+
         // Automation Contract
         automation = autoDeployBase.run(
             donIdBase, //_donId
@@ -278,7 +278,7 @@ contract ProtocolTest is Test {
                 subscriptionId: 15, //uint64 _subscriptionId,
                 donId: donIdBase,
                 functionsRouter: address(functionsRouterBase)
-            }),         
+            }),
             baseChainSelector,
             1, //uint _chainIndex,
             linkBase,
@@ -382,7 +382,7 @@ contract ProtocolTest is Test {
         aUSDC = USDC(0xaf88d065e77c8cC2239327C5EDb3A432268e5831);
 
         {
-        //===== Deploy Arbitrum Scripts    
+        //===== Deploy Arbitrum Scripts
         proxyDeployArbitrum = new InfraProxyDeploy();
         dexDeployArbitrum = new DexSwapDeploy();
         childDeployArbitrum = new ChildPoolDeploy();
@@ -401,7 +401,7 @@ contract ProtocolTest is Test {
             Tester
         );
         childProxy = childProxyDeploy.run(address(orchEmptyDst), ProxyOwner, Tester, "");
-        
+
         //====== Deploy the proxy with the dummy Orch
         proxyDst = proxyDeployArbitrum.run(address(orchEmptyDst), ProxyOwner, Tester, "");
 
@@ -409,7 +409,7 @@ contract ProtocolTest is Test {
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
 
         dexDst = dexDeployArbitrum.run(
-            address(proxyDst), 
+            address(proxyDst),
             Tester
         );
 
@@ -508,7 +508,7 @@ contract ProtocolTest is Test {
         vm.selectFork(arbitrumMainFork);
         //====== Setters
         vm.startPrank(Tester);
-        
+
         wChild.setPoolsToSend(baseChainSelector, address(wMaster));
         assertEq(wChild.s_poolToSendTo(baseChainSelector), address(wMaster));
 
@@ -524,7 +524,7 @@ contract ProtocolTest is Test {
 
     function helper() public {
         vm.selectFork(baseMainFork);
-        
+
         vm.deal(User, INITIAL_BALANCE);
         vm.deal(LP, LP_INITIAL_BALANCE);
 

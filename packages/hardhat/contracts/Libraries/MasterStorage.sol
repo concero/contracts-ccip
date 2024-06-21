@@ -54,7 +54,7 @@ contract MasterStorage {
   ///@notice variable to store Ethers Hashsum
   bytes32 internal s_ethersHashSum;
   ///@notice variable to store the value that will be temporary used by Chainlink Functions
-  uint256 public s_commit;
+  uint256 public s_loansInUse;
 
   ////////////////
   ///IMMUTABLES///

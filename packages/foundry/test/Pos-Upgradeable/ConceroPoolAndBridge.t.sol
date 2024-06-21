@@ -15,7 +15,7 @@ contract ConceroPoolAndBridge is Helpers {
     error ConceroPool_MaxCapReached(uint256);
     event MasterStorage_MasterPoolCapUpdated(uint256 _newCap);
     event ConceroPool_SuccessfulDeposited(address, uint256 , address);
-    function test_LiquidityProvidersDepositAndOpenARequest() public {
+    function test_LiquidityProvidersDepositAndOpenARequest() public setters {
         vm.selectFork(baseMainFork);
 
         swapUniV2LikeHelper();
@@ -30,12 +30,18 @@ contract ConceroPoolAndBridge is Helpers {
         wMaster.depositLiquidity(depositLowAmount);
         vm.stopPrank();
 
+        //======= Increase the CAP
+        vm.expectEmit();
+        vm.prank(Tester);
+        emit MasterStorage_MasterPoolCapUpdated(50*10**6);
+        wMaster.setPoolCap(50*10**6);
+
         //======= LP Deposits enough to go through, but revert on max Cap
         uint256 depositEnoughAmount = 100*10**6;
 
         vm.startPrank(LP);
         mUSDC.approve(address(wMaster), depositEnoughAmount);
-        vm.expectRevert(abi.encodeWithSelector(ConceroPool_MaxCapReached.selector, 0));
+        vm.expectRevert(abi.encodeWithSelector(ConceroPool_MaxCapReached.selector, 50*10**6));
         wMaster.depositLiquidity(depositEnoughAmount);
         vm.stopPrank();
 
@@ -62,9 +68,6 @@ contract ConceroPoolAndBridge is Helpers {
         uint256 poolBalance = mUSDC.balanceOf(address(wMaster));
         assertEq(poolBalance, depositEnoughAmount/2);
 
-        //======= Switch to Arbitrum
-        vm.selectFork(baseMainFork);
-
         //======= Mock the Functions call
         vm.prank(address(wMaster));
         wMaster.updateUSDCAmountManually(LP, depositEnoughAmount, 0);
@@ -87,6 +90,9 @@ contract ConceroPoolAndBridge is Helpers {
         vm.prank(Messenger);
         wChild.ccipSendToPool(baseChainSelector, LP, depositEnoughAmount/2);
         // ccipLocalSimulatorFork.switchChainAndRouteMessage(baseMainFork);
+
+        //======= Switch to Base
+        vm.selectFork(baseMainFork);
 
         wMaster.updateUSDCAmountEarned(LP, depositEnoughAmount/2);
 

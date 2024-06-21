@@ -212,7 +212,7 @@ contract PoolsTesting is Test{
         wChild.setPoolsToSend(chainSelector, address(wMaster));
         assertEq(wChild.s_poolToSendTo(chainSelector), address(wMaster));
 
-        wChild.setConceroContractSender(chainSelector, address(masterProxy), 1);
+        wChild.setConceroContractSender(chainSelector, address(wMaster), 1);
         assertEq(wChild.s_poolToReceiveFrom(chainSelector, address(wMaster)), 1);
 
         wChild.setConceroContractSender(chainSelector, address(Concero), 1);
@@ -263,12 +263,12 @@ contract PoolsTesting is Test{
         assertEq(usdc.balanceOf(address(wChild)), (amountToDeposit/2) + mockedFeeAccrued);
 
         //===== User initiate an withdrawRequest
-        //Withdraw only 1/3 of deposited == 153*10**18 / 3;
+        //Withdraw only 1/3 of deposited == 150*10**18 / 3;
         vm.prank(LiquidityProvider);
-        wMaster.startWithdrawal(amountLpShouldBeEmitted/3);
+        wMaster.startWithdrawal(50 * 10**18);
 
         //===== Adjust manually the USDC cross-chain total
-        wMaster.updateUSDCAmountEarned(LiquidityProvider, (amountToDeposit/3) + mockedFeeAccrued);
+        wMaster.updateUSDCAmountEarned(LiquidityProvider, 78*10**6);
 
         //===== Take a loan on child pool
         assertEq(usdc.balanceOf(Athena), 0);
@@ -283,11 +283,11 @@ contract PoolsTesting is Test{
 
         //==== Mock the Automation call to ChildPool
         vm.prank(Messenger);
-        wChild.ccipSendToPool(chainSelector, LiquidityProvider, (amountToDeposit/3));
+        wChild.ccipSendToPool(chainSelector, LiquidityProvider, 25_740_000);
 
         //==== Mock complete withdraw
         vm.startPrank(LiquidityProvider);
-        lp.approve(address(wMaster), amountLpShouldBeEmitted/3);
+        lp.approve(address(wMaster), 50 *10**18);
         wMaster.completeWithdrawal();
         vm.stopPrank();
 

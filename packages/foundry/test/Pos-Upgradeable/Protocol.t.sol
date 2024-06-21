@@ -41,6 +41,7 @@ import {ChildPoolProxyDeploy} from "../../script/ChildPoolProxyDeploy.s.sol";
 
 //Mocks
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
+import {USDC} from "../Mocks/USDC.sol";
 
 //OpenZeppelin
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -120,8 +121,8 @@ contract ProtocolTest is Test {
     //==== Create the instance to forked tokens
     IWETH wEth;
     IWETH arbWEth;
-    IERC20 public mUSDC;
-    IERC20 public aUSDC;
+    USDC public mUSDC;
+    USDC public aUSDC;
     ERC20Mock AERO;
 
     //==== Instantiate Base DEXes Routers
@@ -184,8 +185,8 @@ contract ProtocolTest is Test {
             routerAddress: ccipRouterBase,
             linkAddress: linkBase,
             wrappedNativeAddress: 0x4200000000000000000000000000000000000006,
-            ccipBnMAddress: address(0),
-            ccipLnMAddress: address(0)
+            ccipBnMAddress: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
+            ccipLnMAddress: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
         });
 
         ccipLocalSimulatorFork.setNetworkDetails(
@@ -199,8 +200,8 @@ contract ProtocolTest is Test {
             routerAddress: ccipRouterArb,
             linkAddress: linkArb,
             wrappedNativeAddress: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1,
-            ccipBnMAddress: address(0),
-            ccipLnMAddress: address(0)
+            ccipBnMAddress: 0xaf88d065e77c8cC2239327C5EDb3A432268e5831,
+            ccipLnMAddress: 0xaf88d065e77c8cC2239327C5EDb3A432268e5831
         });
 
         ccipLocalSimulatorFork.setNetworkDetails(
@@ -218,7 +219,7 @@ contract ProtocolTest is Test {
         aerodromeRouter = IRouter(0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43);
 
         wEth = IWETH(0x4200000000000000000000000000000000000006);
-        mUSDC = IERC20(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913);
+        mUSDC = USDC(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913);
         AERO = ERC20Mock(0x940181a94A35A4569E4529A3CDfB74e38FD98631);
         SAFE_LOCK = ERC721(0xde11Bc6a6c47EeaB0476C85672EA7f932f1a78Ed);
 
@@ -378,7 +379,7 @@ contract ProtocolTest is Test {
 
         //===== Arbitrum Tokens
         arbWEth = IWETH(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
-        aUSDC = IERC20(0xaf88d065e77c8cC2239327C5EDb3A432268e5831);
+        aUSDC = USDC(0xaf88d065e77c8cC2239327C5EDb3A432268e5831);
 
         {
         //===== Deploy Arbitrum Scripts    
@@ -430,7 +431,7 @@ contract ProtocolTest is Test {
                 dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
             }),
             0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_ethersHashSum
-            address(proxyInterfaceChild),
+            address(childProxy),
             address(proxyDst),
             Tester
         );
@@ -462,7 +463,7 @@ contract ProtocolTest is Test {
         vm.makePersistent(address(child));
         vm.makePersistent(address(conceroDst));
         vm.makePersistent(address(orchDst));
-        vm.makePersistent(address(ccipLocalSimulatorFork));
+        vm.makePersistent(address(childProxy));
         vm.makePersistent(address(wChild));
 
         //====== Update the proxy for the correct address
@@ -481,7 +482,10 @@ contract ProtocolTest is Test {
         opDst.manageRouterAddress(address(uniswapV3Arb), 1);
         opDst.manageRouterAddress(address(sushiV3Arb), 1);
         opDst.manageRouterAddress(address(aerodromeRouterArb), 1);
+        }
+    }
 
+    modifier setters(){
         //================ SWITCH CHAINS ====================\\
         //BASE
         vm.selectFork(baseMainFork);
@@ -505,7 +509,7 @@ contract ProtocolTest is Test {
         //====== Setters
         vm.startPrank(Tester);
         
-        wChild.setPoolsToSend(baseChainSelector, address(masterProxy));
+        wChild.setPoolsToSend(baseChainSelector, address(wMaster));
         assertEq(wChild.s_poolToSendTo(baseChainSelector), address(wMaster));
 
         wChild.setConceroContractSender(baseChainSelector, address(wMaster), 1);
@@ -515,7 +519,7 @@ contract ProtocolTest is Test {
         assertEq(wChild.s_poolToReceiveFrom(baseChainSelector, address(concero)), 1);
 
         vm.stopPrank();
-        }
+        _;
     }
 
     function helper() public {

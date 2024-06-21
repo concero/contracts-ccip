@@ -80,11 +80,12 @@ contract ConceroAutomationTest is Test {
     event ConceroAutomation_RequestAdded(IConceroPool.WithdrawRequests request);
     function test_addPendingWithdraw() public {
         IConceroPool.WithdrawRequests memory request = IConceroPool.WithdrawRequests ({
-            amount: 10*10**6,
+            amountEarned: 10*10**6,
             amountToBurn: 5*10**18,
+            amountToRequest: 0,
             receivedAmount: 0,
             token: address(usdc),
-            sender: User,
+            liquidityProvider: User,
             deadline: block.timestamp + 7 days
         });
 
@@ -97,11 +98,12 @@ contract ConceroAutomationTest is Test {
     error ConceroAutomation_CallerNotAllowed(address);
     function test_addPendingWithdrawRevert() public {
         IConceroPool.WithdrawRequests memory request = IConceroPool.WithdrawRequests ({
-            amount: 10*10**6,
+            amountEarned: 10*10**6,
             amountToBurn: 5*10**18,
+            amountToRequest: 0,
             receivedAmount: 0,
             token: address(usdc),
-            sender: User,
+            liquidityProvider: User,
             deadline: block.timestamp + 7 days
         });
         

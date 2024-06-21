@@ -16,8 +16,7 @@ contract ConceroMock is Concero {
             bytes32 _ethersHashSum,
             address _dexSwap,
             address _pool,
-            address _proxy,
-            address _owner
+            address _proxy
     ) Concero(
             _variables,
             _chainSelector,
@@ -28,8 +27,7 @@ contract ConceroMock is Concero {
             _ethersHashSum,
             _dexSwap,
             _pool,
-            _proxy,
-            _owner
+            _proxy
     ){}
 
     function externalFulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) external {

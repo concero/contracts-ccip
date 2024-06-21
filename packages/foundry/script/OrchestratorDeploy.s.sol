@@ -13,8 +13,7 @@ contract OrchestratorDeploy is Script {
             address _concero,
             address _pool,
             address _proxy,
-            uint8 _chainIndex,
-            address _owner
+            uint8 _chainIndex
     ) public returns(Orchestrator orch){
 
         vm.startBroadcast();
@@ -24,8 +23,7 @@ contract OrchestratorDeploy is Script {
             _concero,
             _pool,
             _proxy,
-            _chainIndex,
-            _owner
+            _chainIndex
         );
         vm.stopBroadcast();
     }

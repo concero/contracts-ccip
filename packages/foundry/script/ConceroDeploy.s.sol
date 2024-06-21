@@ -17,8 +17,7 @@ contract ConceroDeploy is Script {
             Concero.JsCodeHashSum memory jsCodeHashSum,
             bytes32 _ethersHashSum,
             address _pool,
-            address _proxy,
-            address _owner
+            address _proxy
         ) public returns(Concero concero){
 
         vm.startBroadcast();
@@ -32,8 +31,7 @@ contract ConceroDeploy is Script {
             _ethersHashSum,
             _dexSwap,
             _pool,
-            _proxy,
-            _owner
+            _proxy
         );
         vm.stopBroadcast();
     }

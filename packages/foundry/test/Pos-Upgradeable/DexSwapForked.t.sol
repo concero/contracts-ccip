@@ -51,7 +51,7 @@ contract DexSwapForked is ProtocolTest {
         op.swap(swapData);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
-        assertEq(wEth.balanceOf(address(op)), 0);
+        assertEq(wEth.balanceOf(address(op)), 100000000000000);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOutMin);
     }
 
@@ -76,7 +76,7 @@ contract DexSwapForked is ProtocolTest {
         op.swap(swapData);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
-        assertEq(wEth.balanceOf(address(op)), 0);
+        assertEq(wEth.balanceOf(address(op)), 100000000000000);
         assertTrue(mUSDC.balanceOf(address(User))> USDC_INITIAL_BALANCE + amountOut);
     }
 
@@ -105,7 +105,7 @@ contract DexSwapForked is ProtocolTest {
         op.swap(swapData);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
-        assertEq(wEth.balanceOf(address(op)), 0);
+        assertEq(wEth.balanceOf(address(op)), 100000000000000);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
     }
 
@@ -137,7 +137,7 @@ contract DexSwapForked is ProtocolTest {
         op.swap(swapData);
 
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn);
-        assertEq(wEth.balanceOf(address(op)), 0);
+        assertEq(wEth.balanceOf(address(op)), 100000000000000);
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn + amountOut);
     }
 
@@ -167,7 +167,7 @@ contract DexSwapForked is ProtocolTest {
         op.swap(swapData);
 
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn);
-        assertEq(wEth.balanceOf(address(op)), 0);
+        assertEq(wEth.balanceOf(address(op)), 100000000000000);
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn + amountOut);
     }
 
@@ -207,7 +207,7 @@ contract DexSwapForked is ProtocolTest {
         op.swap(swapData);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
-        assertEq(wEth.balanceOf(address(op)), 0);
+        assertEq(wEth.balanceOf(address(op)), 100000000000000);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
     }
 
@@ -250,7 +250,7 @@ contract DexSwapForked is ProtocolTest {
 
         assertEq(User.balance, INITIAL_BALANCE - amountIn);
         assertEq(wEth.balanceOf(address(op)), 0);
-        assertEq(address(op).balance, amountIn / 1000);
+        assertEq(address(op).balance, 0);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
     }
 }

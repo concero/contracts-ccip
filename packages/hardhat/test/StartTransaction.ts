@@ -30,18 +30,20 @@ const chainsMap = {
   },
   [process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY]: {
     viemChain: polygonAmoy,
-    viemTransport: http("https://polygon-amoy-bor-rpc.publicnode.com"),
+    viemTransport: http(`https://polygon-amoy.infura.io/v3/${process.env.INFURA_API_KEY}`),
   },
 };
 
-const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY;
-const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA;
+const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA;
+// const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY;
+const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
 const senderAddress = process.env.DEPLOYER_ADDRESS;
 const amount = "1000000000000000000";
-const bnmTokenAddress = process.env.CCIPBNM_POLYGON_AMOY;
+const bnmTokenAddress = process.env.CCIPBNM_OPTIMISM_SEPOLIA;
 const transactionsCount = 1;
-const srcContractAddress = process.env.CONCEROPROXY_POLYGON_AMOY;
-const dstContractAddress = process.env.CONCEROPROXY_OPTIMISM_SEPOLIA;
+const srcContractAddress = process.env.CONCEROPROXY_OPTIMISM_SEPOLIA;
+// const dstContractAddress = process.env.CONCEROPROXY_POLYGON_AMOY;
+const dstContractAddress = process.env.CONCEROPROXY_BASE_SEPOLIA;
 
 describe("startBatchTransactions\n", () => {
   let Concero: Concero;
@@ -196,16 +198,14 @@ describe("startBatchTransactions\n", () => {
       // });
       // transactionPromises.push(walletClient.writeContract(request));
 
-      console.log(bridgeData);
-
       const transactionHash = walletClient.writeContract({
         abi: ConceroOrchestratorAbi,
         functionName: "bridge",
         address: srcContractAddress as Address,
         args: [bridgeData, []],
         // nonce: nonce++,
-        gas: 4_000_000n,
-        gasPrice: gasPrice,
+        gas: 3_000_000n,
+        // gasPrice: gasPrice,
       });
 
       transactionPromises.push(transactionHash);

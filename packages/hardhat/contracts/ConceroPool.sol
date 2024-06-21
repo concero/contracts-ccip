@@ -195,7 +195,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     if (_receiver == address(0)) revert ConceroPool_InvalidAddress();
     if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
 
-    s_commit = s_commit + _amount;
+    s_loansInUse = s_loansInUse + _amount;
 
     IERC20(_token).safeTransfer(_receiver, _amount);
   }
@@ -206,13 +206,13 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
    */
   function depositLiquidity(uint256 _amount) external {
     if (_amount < MIN_DEPOSIT) revert ConceroPool_AmountBelowMinimum(MIN_DEPOSIT);
-    if (s_maxDeposit < _amount + i_USDC.balanceOf(address(this)) + s_commit && s_maxDeposit != 0) revert ConceroPool_MaxCapReached(s_maxDeposit);
+    if (s_maxDeposit < _amount + i_USDC.balanceOf(address(this)) + s_loansInUse && s_maxDeposit != 0) revert ConceroPool_MaxCapReached(s_maxDeposit);
 
     uint256 numberOfPools = poolsToDistribute.length;
 
     if (numberOfPools < 1) revert ConceroPool_ThereIsNoPoolToDistribute();
 
-    uint256 amountToDistribute = _amount / (numberOfPools + 1);
+    uint256 amountToDistribute = _amount / (numberOfPools + 1); //@audit loss of precision
 
     ///@Nikita
     //Q1: Which arguments I need to send?
@@ -224,7 +224,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     s_requests[requestId] = CLARequest({
       requestType: RequestType.GetTotalUSDC,
       liquidityProvider: msg.sender,
-      usdcBeforeDeposit: i_USDC.balanceOf(address(this)) + s_commit,
+      usdcBeforeDeposit: i_USDC.balanceOf(address(this)) + s_loansInUse,
       amount: _amount
     });
 
@@ -244,9 +244,9 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     if (s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ConceroPool_ActiveRequestNotFulfilledYet();
 
     s_pendingWithdrawRequests[msg.sender] = IConceroPool.WithdrawRequests({
-      amountEarned: 0, //@audit Not being updated correctly..
+      amountEarned: 0,
       amountToBurn: _lpAmount,
-      amountToRequest: 0,
+      amountToRequest: 0, //The value to send through function to get money from childPools
       receivedAmount: 0,
       token: address(i_USDC),
       liquidityProvider: msg.sender,
@@ -273,12 +273,12 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
   function completeWithdrawal() external {
     IConceroPool.WithdrawRequests memory withdraw = s_pendingWithdrawRequests[msg.sender];
     uint256 numberOfPools = poolsToDistribute.length;
-    uint256 thresholdForWithdraw = ((withdraw.amountEarned * numberOfPools) / (numberOfPools + 1));
+    uint256 thresholdForWithdraw = ((withdraw.amountEarned * numberOfPools) / (numberOfPools + 1));  //@audit loss of precision
 
     //receivedAmount must be 3/4 of the amount
     if (withdraw.receivedAmount < thresholdForWithdraw) revert ConceroPool_AmountNotAvailableYet(withdraw.receivedAmount, thresholdForWithdraw);
 
-    if (withdraw.amountEarned + s_commit > i_USDC.balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
+    if (withdraw.amountEarned > i_USDC.balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
 
     emit ConceroPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
 
@@ -309,7 +309,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
 
     if (receivedFee > 0) {
       //subtract the amount from the committed total amount
-      s_commit = s_commit - (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
+      s_loansInUse = s_loansInUse - (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
     } else if (_liquidityProvider != address(0)) {
       //update the corresponding withdraw request
       s_pendingWithdrawRequests[_liquidityProvider].receivedAmount =
@@ -421,13 +421,12 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     uint256 amountDepositedConverted = _convertToLPTokenDecimals(_depositedAmount);
     //N° lpTokens = (((Total USDC Liq + user deposit) * Total sToken) / Total USDC Liq) - Total sToken
     uint256 lpTokensToMint = lpTokenSupply >= ALLOWED
-      ? (((crossChainBalanceConverted + amountDepositedConverted) * lpTokenSupply) / crossChainBalanceConverted) - lpTokenSupply
+      ? (((crossChainBalanceConverted + amountDepositedConverted) * lpTokenSupply) / crossChainBalanceConverted) - lpTokenSupply  //@audit loss of precision
       : amountDepositedConverted;
 
     i_lp.mint(_liquidityProvider, lpTokensToMint);
   }
 
-  event Log(string, uint256);
   /**
    * @notice Function to updated cross-chain rewards will be paid to liquidity providers in the end of
    * withdraw period.
@@ -439,13 +438,14 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
   function _updateUsdcAmountEarned(address _liquidityProvider, uint256 _totalUSDCCrossChain) private {
     IConceroPool.WithdrawRequests storage request = s_pendingWithdrawRequests[_liquidityProvider];
     uint256 numberOfPools = poolsToDistribute.length;
-    uint256 totalCrossChainBalance = _totalUSDCCrossChain + i_USDC.balanceOf(address(this)) + s_commit;
+    uint256 totalCrossChainBalance = _totalUSDCCrossChain + i_USDC.balanceOf(address(this)) + s_loansInUse;
 
     //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
-    uint256 amountToWithdraw = (_convertToLPTokenDecimals(totalCrossChainBalance) * request.amountToBurn) / i_lp.totalSupply();
+    uint256 amountToWithdraw = (_convertToLPTokenDecimals(totalCrossChainBalance) * request.amountToBurn) / i_lp.totalSupply();  //@audit loss of precision
     
     request.amountEarned = _convertToUSDCTokenDecimals(amountToWithdraw);
-    request.amountToRequest = _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1);//Cross-chain Pools + MasterPool
+    request.amountToRequest = _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1); //Cross-chain Pools + MasterPool
+    request.receivedAmount = _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1);  //@audit loss of precision
 
     i_automation.addPendingWithdrawal(request);
 

@@ -49,6 +49,9 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   ///@notice emitted when the Functions router fulfills a request
   event Orchestrator_RequestFulfilled(bytes32 requestId);
   event Orchestrator_SwapSuccess();
+  event Orchestrator_StartSwap();
+  event Orchestrator_StartBridge();
+  event Orchestrator_StartSwapAndBridge();
 
   constructor(address _functionsRouter, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex) StorageSetters(msg.sender) {
     i_functionsRouter = _functionsRouter;
@@ -95,6 +98,8 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   ///DELEGATE CALLS///
   ////////////////////
   function swapAndBridge(BridgeData memory _bridgeData, IDexSwap.SwapData[] calldata _srcSwapData, IDexSwap.SwapData[] calldata _dstSwapData) external payable {
+    emit Orchestrator_StartSwapAndBridge();
+
     uint256 amountToSwap = msg.value;
     uint256 receivedAmount = _swap(_srcSwapData, amountToSwap, false);
 
@@ -109,6 +114,8 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   function swap(
     IDexSwap.SwapData[] calldata _swapData
   ) external payable tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount) validateSwapData(_swapData) {
+    emit Orchestrator_StartSwap();
+
     _swap(_swapData, msg.value, true);
   }
 
@@ -116,6 +123,8 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
     BridgeData calldata bridgeData,
     IDexSwap.SwapData[] calldata dstSwapData
   ) external payable tokenAmountSufficiency(getToken(bridgeData.tokenType, i_chainIndex), bridgeData.amount) validateBridgeData(bridgeData) {
+    emit Orchestrator_StartBridge();
+
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
 
     LibConcero.transferFromERC20(fromToken, msg.sender, address(this), bridgeData.amount);

@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity ^0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-
 import {Storage} from "./Libraries/Storage.sol";
 import {IConceroPool} from "./Interfaces/IConceroPool.sol";
+import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -26,6 +24,8 @@ error TxAlreadyConfirmed();
 error AddressNotSet();
 ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
 error ConceroFunctions_ItsNotOrchestrator(address caller);
+error ConceroFunctions_NotMessenger(address caller);
+error TXReleasedFailed(bytes error); // todo: TXReleasE
 
 contract ConceroFunctions is FunctionsClient, Storage {
   ///////////////////////
@@ -48,7 +48,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
   uint8 internal constant CL_SRC_RESPONSE_LENGTH = 192;
   ///@notice JS Code for Chainlink Functions
   string internal constant CL_JS_CODE =
-    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( `https://raw.githubusercontent.com/concero/contracts-ccip/full-infra-functions/packages/hardhat/tasks/CLFScripts/dist/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
+    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( `https://raw.githubusercontent.com/concero/contracts-ccip/new-delpoy-infra-script/packages/hardhat/tasks/CLFScripts/dist/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
   ////////////////
   ///IMMUTABLES///
@@ -80,25 +80,38 @@ contract ConceroFunctions is FunctionsClient, Storage {
   event TXConfirmed(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, uint256 amount, CCIPToken token);
   ///@notice emitted when a Function Request returns an error
   event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
+  ///@notice emitted when the concero pool address is updated
+  event ConceroPoolAddressUpdated(address previousAddress, address pool);
+
+  ///////////////
+  ///MODIFIERS///
+  ///////////////
+
+  /**
+   * @notice modifier to check if the caller is the an approved messenger
+   */
+  modifier onlyMessenger() {
+    if (s_messengerContracts[msg.sender] != APPROVED) revert ConceroFunctions_NotMessenger(msg.sender);
+    _;
+  }
 
   constructor(
     FunctionsVariables memory _variables,
     uint64 _chainSelector,
     uint _chainIndex,
-    JsCodeHashSum memory jsCodeHashSum,
-    bytes32 ethersHashSum,
+    JsCodeHashSum memory _jsCodeHashSum,
+    bytes32 _ethersHashSum,
     address _dexSwap,
     address _pool,
-    address _proxy,
-    address _owner
-  ) FunctionsClient(_variables.functionsRouter) Storage(_owner) {
+    address _proxy
+  ) FunctionsClient(_variables.functionsRouter) Storage(msg.sender) {
     i_donId = _variables.donId;
     i_subscriptionId = _variables.subscriptionId;
     s_donHostedSecretsVersion = _variables.donHostedSecretsVersion;
     s_donHostedSecretsSlotId = _variables.donHostedSecretsSlotId;
-    s_srcJsHashSum = jsCodeHashSum.src;
-    s_dstJsHashSum = jsCodeHashSum.dst;
-    s_ethersHashSum = ethersHashSum;
+    s_srcJsHashSum = _jsCodeHashSum.src;
+    s_dstJsHashSum = _jsCodeHashSum.dst;
+    s_ethersHashSum = _ethersHashSum;
     CHAIN_SELECTOR = _chainSelector;
     i_chainIndex = Chain(_chainIndex);
     i_dexSwap = _dexSwap;
@@ -109,6 +122,12 @@ contract ConceroFunctions is FunctionsClient, Storage {
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
+
+  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
+    return amount / 1000;
+    //@audit we can have loss of precision here?
+  }
+
   function addUnconfirmedTX(
     bytes32 ccipMessageId,
     address sender,
@@ -116,12 +135,13 @@ contract ConceroFunctions is FunctionsClient, Storage {
     uint256 amount,
     uint64 srcChainSelector,
     CCIPToken token,
-    uint256 blockNumber
+    uint256 blockNumber,
+    bytes calldata dstSwapData
   ) external onlyMessenger {
     Transaction memory transaction = s_transactions[ccipMessageId];
     if (transaction.sender != address(0)) revert TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
 
-    s_transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false);
+    s_transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false, dstSwapData);
 
     bytes[] memory args = new bytes[](12);
     args[0] = abi.encodePacked(s_dstJsHashSum);
@@ -165,6 +185,10 @@ contract ConceroFunctions is FunctionsClient, Storage {
     fulfillRequest(requestId, response, err);
   }
 
+  ////////////////////////
+  ///INTERNAL FUNCTIONS///
+  ////////////////////////
+
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
     Request storage request = s_requests[requestId];
 
@@ -186,9 +210,6 @@ contract ConceroFunctions is FunctionsClient, Storage {
     }
   }
 
-  ////////////////////////
-  ///INTERNAL FUNCTIONS///
-  ////////////////////////
   function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
     if (transaction.sender == address(0)) revert TxDoesNotExist();
     if (transaction.isConfirmed == true) revert TxAlreadyConfirmed();
@@ -198,10 +219,18 @@ contract ConceroFunctions is FunctionsClient, Storage {
     emit TXConfirmed(ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token);
   }
 
-  function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, CCIPToken token) internal {
+  function sendUnconfirmedTX(
+    bytes32 ccipMessageId,
+    address sender,
+    address recipient,
+    uint256 amount,
+    uint64 dstChainSelector,
+    CCIPToken token,
+    IDexSwap.SwapData[] calldata dstSwapData
+  ) internal {
     if (s_conceroContracts[dstChainSelector] == address(0)) revert AddressNotSet();
 
-    bytes[] memory args = new bytes[](12);
+    bytes[] memory args = new bytes[](13);
     args[0] = abi.encodePacked(s_srcJsHashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
     args[2] = abi.encodePacked(RequestType.addUnconfirmedTxDst);
@@ -214,6 +243,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
     args[9] = abi.encodePacked(dstChainSelector);
     args[10] = abi.encodePacked(uint8(token));
     args[11] = abi.encodePacked(block.number);
+    args[12] = _swapDataToBytes(dstSwapData);
 
     bytes32 reqId = sendRequest(args, CL_JS_CODE);
     s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;
@@ -223,21 +253,43 @@ contract ConceroFunctions is FunctionsClient, Storage {
     emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
   }
 
+  function _swapDataToBytes(IDexSwap.SwapData[] calldata swapData) private pure returns (bytes memory) {
+    if (swapData.length == 0) return abi.encodePacked(uint(0));
+
+    bytes memory packedData;
+    for (uint256 i = 0; i < swapData.length; i++) {
+      packedData = abi.encodePacked(
+        packedData,
+        swapData[i].dexType,
+        swapData[i].fromToken,
+        swapData[i].fromAmount,
+        swapData[i].toToken,
+        swapData[i].toAmount,
+        swapData[i].toAmountMin,
+        swapData[i].dexData
+      );
+    }
+    return packedData;
+  }
+
   function _handleDstFunctionsResponse(Request storage request) internal {
     Transaction storage transaction = s_transactions[request.ccipMessageId];
 
     _confirmTX(request.ccipMessageId, transaction);
 
-    uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
     address tokenReceived = getToken(transaction.token, i_chainIndex);
+    uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
-    if (tokenReceived == getToken(CCIPToken.bnm, i_chainIndex)) {
-      IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
-
-      emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
+    if (transaction.dstSwapData.length > 1) {
+      IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, address(this));
+      IDexSwap.SwapData[] memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData[]));
+      (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, 0));
+      if (swapSuccess == false) revert TXReleasedFailed(swapError);
     } else {
-      // i_dexSwap.conceroEntry(passing the user address as receiver);
+      IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
     }
+
+    emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
   }
 
   function _handleSrcFunctionsResponse(bytes memory response) internal {
@@ -255,10 +307,5 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_latestLinkUsdcRate = linkUsdcRate;
     s_latestNativeUsdcRate = nativeUsdcRate;
     s_latestLinkNativeRate = linkNativeRate;
-  }
-
-  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
-    return amount / 1000;
-    //@audit we can have loss of precision here?
   }
 }

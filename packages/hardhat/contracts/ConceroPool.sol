@@ -3,7 +3,6 @@ pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
@@ -416,7 +415,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
    */
   function _updateDepositInfoAndMintLPTokens(address _liquidityProvider, uint256 _depositedAmount, uint256 _crossChainBalance) private {
     //_crossChainBalance == the sum of all chains balance + commits
-    
+
     uint256 lpTokenSupply = i_lp.totalSupply();
     uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(_crossChainBalance);
     uint256 amountDepositedConverted = _convertToLPTokenDecimals(_depositedAmount);
@@ -444,14 +443,14 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
 
     //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
     uint256 amountToWithdraw = (_convertToLPTokenDecimals(totalCrossChainBalance) * request.amountToBurn) / i_lp.totalSupply();  //@audit Need to optimize it
-    
+
     request.amountEarned = _convertToUSDCTokenDecimals(amountToWithdraw) > totalCrossChainBalance
     ? totalCrossChainBalance
     : _convertToUSDCTokenDecimals(amountToWithdraw);
 
     //if balanceOf() + amountToWithdraw
     request.amountToRequest = _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1); //Cross-chain Pools + MasterPool
-    request.receivedAmount = _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1); 
+    request.receivedAmount = _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1);
 
     i_automation.addPendingWithdrawal(request);
 

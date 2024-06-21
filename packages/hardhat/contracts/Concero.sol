@@ -36,10 +36,6 @@ error Concero_ItsNotOrchestrator(address caller);
 contract Concero is ConceroCCIP {
   using SafeERC20 for IERC20;
 
-  ///////////////////////////////////////////////////////////
-  //////////////////////// VARIABLES ////////////////////////
-  ///////////////////////////////////////////////////////////
-
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
@@ -58,9 +54,8 @@ contract Concero is ConceroCCIP {
     bytes32 _ethersHashSum,
     address _dexSwap,
     address _pool,
-    address _proxy,
-    address _owner
-  ) ConceroCCIP(_variables, _chainSelector, _chainIndex, _link, _ccipRouter, _jsCodeHashSum, _ethersHashSum, _dexSwap, _pool, _proxy, _owner) {
+    address _proxy
+  ) ConceroCCIP(_variables, _chainSelector, _chainIndex, _link, _ccipRouter, _jsCodeHashSum, _ethersHashSum, _dexSwap, _pool, _proxy) {
     clfPremiumFees[3478487238524512106] = 4000000000000000; // 0.004 link | arb
     clfPremiumFees[10344971235874465080] = 1847290640394088; // 0.0018 link | base // takes in usd mb price feed needed
     clfPremiumFees[5224473277236331295] = 2000000000000000; // 0.002 link | opt
@@ -69,11 +64,11 @@ contract Concero is ConceroCCIP {
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
-  function startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata _dstSwapData, Chain _chainIndex) external {
+
+  function startBridge(BridgeData calldata bridgeData, IDexSwap.SwapData[] calldata _dstSwapData) external {
     if (address(this) != i_proxy) revert Concero_ItsNotOrchestrator(msg.sender);
 
-    address fromToken = getToken(bridgeData.tokenType, _chainIndex);
-
+    address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount);
 
     uint256 mockedLpFee = getDstTotalFeeInUsdc(bridgeData.amount);
@@ -87,8 +82,7 @@ contract Concero is ConceroCCIP {
 
     bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, actualLpFee);
     emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
-
-    sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType);
+    sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType, _dstSwapData);
   }
 
   /////////////////

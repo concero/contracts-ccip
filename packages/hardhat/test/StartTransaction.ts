@@ -35,15 +35,13 @@ const chainsMap = {
 };
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA;
-// const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY;
-const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
+const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY;
 const senderAddress = process.env.DEPLOYER_ADDRESS;
 const amount = "1000000000000000000";
 const bnmTokenAddress = process.env.CCIPBNM_OPTIMISM_SEPOLIA;
 const transactionsCount = 1;
 const srcContractAddress = process.env.CONCEROPROXY_OPTIMISM_SEPOLIA;
-// const dstContractAddress = process.env.CONCEROPROXY_POLYGON_AMOY;
-const dstContractAddress = process.env.CONCEROPROXY_BASE_SEPOLIA;
+const dstContractAddress = process.env.CONCEROPROXY_POLYGON_AMOY;
 
 describe("startBatchTransactions\n", () => {
   let Concero: Concero;
@@ -178,16 +176,15 @@ describe("startBatchTransactions\n", () => {
     const fromSrcBlockNumber = await srcPublicClient.getBlockNumber();
     const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
     let transactionPromises = [];
+    const bridgeData = {
+      tokenType: 0n,
+      amount: BigInt(amount),
+      minAmount: BigInt(amount),
+      dstChainSelector: BigInt(dstChainSelector),
+      receiver: senderAddress,
+    };
 
     for (let i = 0; i < transactionsCount; i++) {
-      const bridgeData = {
-        tokenType: 0n,
-        amount: BigInt(amount),
-        minAmount: BigInt(amount),
-        dstChainSelector: BigInt(dstChainSelector),
-        receiver: senderAddress,
-      };
-
       // const { request } = await srcPublicClient.simulateContract({
       //   abi: ConceroOrchestratorAbi,
       //   functionName: "bridge",
@@ -207,7 +204,6 @@ describe("startBatchTransactions\n", () => {
         gas: 3_000_000n,
         // gasPrice: gasPrice,
       });
-
       transactionPromises.push(transactionHash);
     }
 

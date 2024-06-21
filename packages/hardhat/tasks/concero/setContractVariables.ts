@@ -11,14 +11,21 @@ import getHashSum from "../../utils/getHashSum";
 import { liveChains } from "./liveChains";
 import { dstJsCodeUrl, ethersV6CodeUrl, srcJsCodeUrl } from "../../constants/functionsJsCodeUrls";
 
-export async function setContractVariables(liveChains: CNetwork[], deployableChains: CNetwork[], slotId: number) {
+export async function setContractVariables(
+  liveChains: CNetwork[],
+  deployableChains: CNetwork[],
+  slotId: number,
+  uploadsecrets: boolean,
+) {
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
   for (const deployableChain of deployableChains) {
     // await setDexSwapAllowedRouters(deployableChain, abi); // once
     await setDstConceroPools(deployableChain, abi);
-    await setDonHostedSecretsVersion(deployableChain, slotId, abi);
-    await setDonSecretsSlotId(deployableChain, slotId, abi);
+    if (uploadsecrets) {
+      await setDonHostedSecretsVersion(deployableChain, slotId, abi);
+      await setDonSecretsSlotId(deployableChain, slotId, abi);
+    }
     await addMessengerToAllowlist(deployableChain, abi); // once
     await setJsHashes(deployableChain, abi);
   }

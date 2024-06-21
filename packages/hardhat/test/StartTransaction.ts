@@ -30,7 +30,7 @@ const chainsMap = {
   },
   [process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY]: {
     viemChain: polygonAmoy,
-    viemTransport: http(),
+    viemTransport: http("https://polygon-amoy-bor-rpc.publicnode.com"),
   },
 };
 
@@ -171,6 +171,8 @@ describe("startBatchTransactions\n", () => {
   it("should start transactions", async () => {
     await approveBnmAndLink();
 
+    const gasPrice = await srcPublicClient.getGasPrice();
+
     const fromSrcBlockNumber = await srcPublicClient.getBlockNumber();
     const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
     let transactionPromises = [];
@@ -194,13 +196,16 @@ describe("startBatchTransactions\n", () => {
       // });
       // transactionPromises.push(walletClient.writeContract(request));
 
+      console.log(bridgeData);
+
       const transactionHash = walletClient.writeContract({
         abi: ConceroOrchestratorAbi,
         functionName: "bridge",
         address: srcContractAddress as Address,
         args: [bridgeData, []],
-        nonce: nonce++,
+        // nonce: nonce++,
         gas: 4_000_000n,
+        gasPrice: gasPrice,
       });
 
       transactionPromises.push(transactionHash);

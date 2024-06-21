@@ -45,6 +45,15 @@ async function main() {
 				confirmations: 3n,
 				chainId: '0xaa37dc',
 			},
+			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY}').toString(16)}`]: {
+				urls: [
+					`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://polygon-amoy.blockpi.network/v1/rpc/public',
+					'https://polygon-amoy-bor-rpc.publicnode.com',
+				],
+				confirmations: 3n,
+				chainId: '0x13882',
+			},
 		};
 
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {

@@ -1,4 +1,6 @@
 async function f() {
+	const ethers = await import('npm:ethers');
+
 	const chainSelectors = {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
@@ -84,10 +86,10 @@ async function f() {
 		const provider = new FunctionsJsonRpcProvider(url);
 		const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
 		const pool = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, provider);
-		const [poolBalance, commits] = await Promise.all(
+		const [poolBalance, commits] = await Promise.all([
 			erc20.balanceOf(chainSelectors[chain].poolAddress),
 			pool.s_commits(),
-		);
+		]);
 		totalBalance += poolBalance + commits;
 	}
 

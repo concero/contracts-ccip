@@ -143,7 +143,7 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
     if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
     if (_receiver == address(0)) revert ConceroChildPool_InvalidAddress();
 
-    s_commits = s_commits + _amount;
+    s_loansInUse = s_loansInUse + _amount;
 
     IERC20(_token).safeTransfer(_receiver, _amount);
 
@@ -165,7 +165,7 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
 
     if (receivedFee > 0) {
       //subtract the amount from the committed total amount
-      s_commits = s_commits - (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
+      s_loansInUse = s_loansInUse - (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
     }
 
     emit ConceroChildPool_CCIPReceived(

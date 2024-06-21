@@ -24,7 +24,7 @@ contract ChildStorage {
   ///STATE///
   ///////////
   ///@notice variable to store the value that will be temporary used by Chainlink Functions
-  uint256 public s_commits;
+  uint256 public s_loansInUse;
 
   ////////////////
   ///IMMUTABLES///

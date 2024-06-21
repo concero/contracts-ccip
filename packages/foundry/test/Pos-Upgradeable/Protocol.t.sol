@@ -240,8 +240,7 @@ contract ProtocolTest is Test {
             address(0),
             address(0),
             address(0),
-            1,
-            Tester
+            1
         );
 
         //====== Deploy the proxy with the dummy Orch to get the address
@@ -265,11 +264,11 @@ contract ProtocolTest is Test {
             0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
             address(functionsRouterBase), //_router,
             address(masterProxy),
-            Tester //_owner
+            Tester
         );
 
         // DexSwap Contract
-        dex = dexDeployBase.run(address(proxy), Tester);
+        dex = dexDeployBase.run(address(proxy));
 
         concero = conceroDeployBase.run(
             IStorage.FunctionsVariables ({
@@ -290,8 +289,7 @@ contract ProtocolTest is Test {
             }),
             0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
             address(masterProxy),
-            address(proxy),
-            Tester
+            address(proxy)
         );
         //====== Deploy a new Orch that will e set as implementation to the proxy.
         orch = orchDeployBase.run(
@@ -300,8 +298,7 @@ contract ProtocolTest is Test {
             address(concero),
             address(masterProxy),
             address(proxy),
-            1,
-            Tester
+            1
         );
 
         // Pool Contract
@@ -350,12 +347,12 @@ contract ProtocolTest is Test {
         op = Orchestrator(address(proxy));
 
         //====== Set the DEXes routers
-        vm.startPrank(Tester);
-        op.manageRouterAddress(address(uniswapV2), 1);
-        op.manageRouterAddress(address(sushiV2), 1);
-        op.manageRouterAddress(address(uniswapV3), 1);
-        op.manageRouterAddress(address(sushiV3), 1);
-        op.manageRouterAddress(address(aerodromeRouter), 1);
+        vm.startPrank(defaultSender);
+        op.setDexRouterAddress(address(uniswapV2), 1);
+        op.setDexRouterAddress(address(sushiV2), 1);
+        op.setDexRouterAddress(address(uniswapV3), 1);
+        op.setDexRouterAddress(address(sushiV3), 1);
+        op.setDexRouterAddress(address(aerodromeRouter), 1);
         vm.stopPrank();
         }
 
@@ -397,8 +394,7 @@ contract ProtocolTest is Test {
             address(0),
             address(0),
             address(0),
-            1,
-            Tester
+            1
         );
         childProxy = childProxyDeploy.run(address(orchEmptyDst), ProxyOwner, Tester, "");
 
@@ -409,8 +405,7 @@ contract ProtocolTest is Test {
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
 
         dexDst = dexDeployArbitrum.run(
-            address(proxyDst),
-            Tester
+            address(proxyDst)
         );
 
         conceroDst = conceroDeployArbitrum.run(
@@ -432,8 +427,7 @@ contract ProtocolTest is Test {
             }),
             0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_ethersHashSum
             address(childProxy),
-            address(proxyDst),
-            Tester
+            address(proxyDst)
         );
 
         orchDst = orchDeployArbitrum.run(
@@ -442,8 +436,7 @@ contract ProtocolTest is Test {
             address(conceroDst),
             address(childProxy),
             address(proxyDst),
-            1,
-            Tester
+            1
         );
 
         child = childDeployArbitrum.run(
@@ -476,12 +469,12 @@ contract ProtocolTest is Test {
         opDst = Orchestrator(address(proxyDst));
 
         //====== Set the DEXes routers
-        vm.startPrank(Tester);
-        opDst.manageRouterAddress(address(uniswapV2Arb), 1);
-        opDst.manageRouterAddress(address(sushiV2Arb), 1);
-        opDst.manageRouterAddress(address(uniswapV3Arb), 1);
-        opDst.manageRouterAddress(address(sushiV3Arb), 1);
-        opDst.manageRouterAddress(address(aerodromeRouterArb), 1);
+        vm.startPrank(defaultSender);
+        opDst.setDexRouterAddress(address(uniswapV2Arb), 1);
+        opDst.setDexRouterAddress(address(sushiV2Arb), 1);
+        opDst.setDexRouterAddress(address(uniswapV3Arb), 1);
+        opDst.setDexRouterAddress(address(sushiV3Arb), 1);
+        opDst.setDexRouterAddress(address(aerodromeRouterArb), 1);
         }
     }
 

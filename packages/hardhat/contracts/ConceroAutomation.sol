@@ -20,7 +20,6 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   struct PerformWithdrawRequest {
     address liquidityProvider;
     uint256 amount;
-    address token;
   }
 
   ///////////////////////////////////////////////////////////
@@ -59,7 +58,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ///@notice variable to store the Chainlink Function DON Secret Version
   uint64 internal s_donHostedSecretsVersion;
   ///@notice variable to store the Chainlink Function Source Hashsum
-  bytes32 internal s_srcJsHashSum;
+  bytes32 internal s_hashSum;
   ///@notice variable to store the Chainlink Function Destination Hashsum
   bytes32 internal s_dstJsHashSum;
   ///@notice variable to store Ethers Hashsum
@@ -89,6 +88,10 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   event ConceroAutomation_UpkeepPerformed(bytes32 reqId);
   ///@notice event emitted when the Don Secret is Updated
   event ConceroAutomation_DonSecretVersionUpdated(uint64 version);
+  ///@notice event emitted when the hashSum of Chainlink Function is updated
+  event ConceroAutomation_HashSumUpdated(bytes32 previousValue, bytes32 hashSum);
+  ///@notice event emitted when the Ethers HashSum is updated
+  event ConceroAutomation_EthersHashSumUpdated(bytes32 previousValue, bytes32 hashSum);
 
   /////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////FUNCTIONS//////////////////////////////////
@@ -98,7 +101,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     uint64 _subscriptionId,
     uint8 _slotId,
     uint64 _secretsVersion,
-    bytes32 _srcJsHashSum,
+    bytes32 _hashSum,
     bytes32 _dstJsHashSum,
     bytes32 _ethersHashSum,
     address _functionsRouter,
@@ -110,7 +113,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     i_donHostedSecretsSlotId = _slotId;
     i_masterPool = _masterPool;
     s_donHostedSecretsVersion = _secretsVersion;
-    s_srcJsHashSum = _srcJsHashSum;
+    s_hashSum = _hashSum;
     s_dstJsHashSum = _dstJsHashSum;
     s_ethersHashSum = _ethersHashSum;
   }
@@ -135,6 +138,30 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     s_donHostedSecretsVersion = _version;
 
     emit ConceroAutomation_DonSecretVersionUpdated(_version);
+  }
+
+  /**
+   * @notice Function to set the Source JS code for Chainlink Functions
+   * @param _hashSum  the JsCode
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setSrcJsHashSum(bytes32 _hashSum) external onlyOwner {
+    bytes32 previousValue = s_dstJsHashSum;
+
+    s_hashSum = _hashSum;
+
+    emit ConceroAutomation_HashSumUpdated(previousValue, _hashSum);
+  }
+
+  /**
+   * @notice Function to set the Ethers JS code for Chainlink Functions
+   * @param _hashSum the JsCode
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setEthersHashSum(bytes32 _hashSum) external payable onlyOwner {
+    bytes32 previousValue = s_ethersHashSum;
+    s_ethersHashSum = _hashSum;
+    emit ConceroAutomation_EthersHashSumUpdated(previousValue, _hashSum);
   }
 
   /**
@@ -165,9 +192,8 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     for (uint256 i; i < requestsNumber; ++i) {
       if (block.timestamp > s_pendingWithdrawRequestsCLA[i].deadline) {
         _performData = abi.encode(
-          s_pendingWithdrawRequestsCLA[i].sender, //address @Oleg
-          s_pendingWithdrawRequestsCLA[i].amount, //uint256
-          s_pendingWithdrawRequestsCLA[i].token //address
+          s_pendingWithdrawRequestsCLA[i].liquidityProvider, //address
+          s_pendingWithdrawRequestsCLA[i].amountToRequest //uint256
         );
         _upkeepNeeded = true;
       }
@@ -182,14 +208,17 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   function performUpkeep(bytes calldata _performData) external override {
     if (msg.sender != s_forwarderAddress) revert ConceroAutomation_CallerNotAllowed(msg.sender);
 
-    (address sender, uint256 amount, address token) = abi.decode(_performData, (address, uint256, address));
+    (address sender, uint256 amountToRequest) = abi.decode(_performData, (address, uint256));
 
-    bytes[] memory args = new bytes[](3); //@Nikita. What we will send here? How can we send the pools address? Because hardcoding will limit us from add chains.
-    args[0] = abi.encodePacked(sender); //eg
+    bytes[] memory args = new bytes[](4); //@Nikita.
+    args[0] = abi.encodePacked(s_hashSum);
+    args[1] = abi.encodePacked(s_ethersHashSum);
+    args[2] = abi.encodePacked(sender); //We need to send this as data through CCIP to updated the MasterPool storage.
+    args[3] = abi.encodePacked(amountToRequest); //Amount is the same for all pools
 
     bytes32 reqId = _sendRequest(args, PERFORM_JS_CODE); //@No JS code yet
 
-    s_requests[reqId] = PerformWithdrawRequest({liquidityProvider: sender, amount: amount, token: token});
+    s_requests[reqId] = PerformWithdrawRequest({liquidityProvider: sender, amount: amountToRequest});
 
     emit ConceroAutomation_UpkeepPerformed(reqId);
   }
@@ -227,7 +256,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
       uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
 
       for (uint256 i; i < requestsNumber; ++i) {
-        if (s_pendingWithdrawRequestsCLA[i].sender == request.liquidityProvider) {
+        if (s_pendingWithdrawRequestsCLA[i].liquidityProvider == request.liquidityProvider) {
           s_pendingWithdrawRequestsCLA[i] = s_pendingWithdrawRequestsCLA[s_pendingWithdrawRequestsCLA.length - 1];
           s_pendingWithdrawRequestsCLA.pop();
         }

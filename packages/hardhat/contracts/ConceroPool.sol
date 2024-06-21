@@ -40,7 +40,7 @@ error ConceroPool_ThereIsNoPoolToDistribute();
 ///@notice emitted in depositLiquidity when the input amount is not enough
 error ConceroPool_AmountBelowMinimum(uint256 minAmount);
 ///@notice emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
-error ConceroPool_AmountNotAvailableYet(uint256 amountAvailable);
+error ConceroPool_AmountNotAvailableYet(uint256 received, uint256 amountAvailable);
 ///@notice emitted in depositLiquidity when the input token is not allowed
 error ConceroPool_TokenNotAllowed(address token);
 ///@notice error emitted when the caller is not the messenger
@@ -216,16 +216,15 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
 
     ///@Nikita
     //Q1: Which arguments I need to send?
-    bytes[] memory args = new bytes[](2);
-    args[0] = abi.encodePacked(poolsToDistribute[0].chainSelector); //This will take too much code and, if a new pool enters
-    args[1] = abi.encodePacked(poolsToDistribute[0].poolAddress); //It will give an 'array out of bounds' error. Because it's 'hardcoded'
+    //Answer: No arguments
+    bytes[] memory args = new bytes[](0);
 
     bytes32 requestId/* = _sendRequest(args, DEPOSIT_JS_CODE)*/; // No JS code yet.
 
     s_requests[requestId] = CLARequest({
       requestType: RequestType.GetTotalUSDC,
       liquidityProvider: msg.sender,
-      usdcBeforeDeposit: i_USDC.balanceOf(address(this)),
+      usdcBeforeDeposit: i_USDC.balanceOf(address(this)) + s_commit,
       amount: _amount
     });
 
@@ -245,19 +244,18 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     if (s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ConceroPool_ActiveRequestNotFulfilledYet();
 
     s_pendingWithdrawRequests[msg.sender] = IConceroPool.WithdrawRequests({
-      amount: 0, //@audit Not being updated correctly..
+      amountEarned: 0, //@audit Not being updated correctly..
       amountToBurn: _lpAmount,
+      amountToRequest: 0,
       receivedAmount: 0,
       token: address(i_USDC),
-      sender: msg.sender,
+      liquidityProvider: msg.sender,
       deadline: block.timestamp + 597_600 //6days & 22h
     });
 
     ///@Nikita
-    //What I am missing here?
-    bytes[] memory args = new bytes[](2);
-    args[0] = abi.encodePacked(msg.sender);
-    args[1] = abi.encodePacked(RequestType.PerformWithdrawal);
+    //Need to send the address
+    bytes[] memory args = new bytes[](0);
 
     // bytes32 requestId = _sendRequest(args, WITHDRAW_JS_CODE);
 
@@ -274,14 +272,15 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
    */
   function completeWithdrawal() external {
     IConceroPool.WithdrawRequests memory withdraw = s_pendingWithdrawRequests[msg.sender];
-    uint256 numberOfPools = poolsToDistribute.length ;
+    uint256 numberOfPools = poolsToDistribute.length;
+    uint256 thresholdForWithdraw = ((withdraw.amountEarned * numberOfPools) / (numberOfPools + 1));
 
-    //@Oleg AMOUNT RECEIVED FOR WITHDRAWALS ISSUE
-    if (withdraw.receivedAmount < ((withdraw.amount * numberOfPools) / (numberOfPools + 1))) revert ConceroPool_AmountNotAvailableYet(withdraw.receivedAmount);
+    //receivedAmount must be 3/4 of the amount
+    if (withdraw.receivedAmount < thresholdForWithdraw) revert ConceroPool_AmountNotAvailableYet(withdraw.receivedAmount, thresholdForWithdraw);
 
-    if (withdraw.amount + s_commit > i_USDC.balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
+    if (withdraw.amountEarned + s_commit > i_USDC.balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
 
-    emit ConceroPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amount);
+    emit ConceroPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
 
     delete s_pendingWithdrawRequests[msg.sender];
 
@@ -289,7 +288,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
 
     i_lp.burn(withdraw.amountToBurn);
 
-    i_USDC.safeTransfer(msg.sender, withdraw.amount);
+    i_USDC.safeTransfer(msg.sender, withdraw.amountEarned);
   }
 
   ////////////////
@@ -395,13 +394,13 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
       return;
     }
 
-    uint256 _crossChainBalance = abi.decode(response, (uint256));
+    uint256 crossChainBalance = abi.decode(response, (uint256));
+    uint256 usdcReserve = request.usdcBeforeDeposit + crossChainBalance;
 
     if (request.requestType == RequestType.GetTotalUSDC) {
-      //@Oleg what we will receive back from `response` ?
-      _updateDepositInfoAndMintLPTokens(request.liquidityProvider, request.amount, _crossChainBalance);
+      _updateDepositInfoAndMintLPTokens(request.liquidityProvider, request.amount, usdcReserve);
     } else if (request.requestType == RequestType.PerformWithdrawal) {
-      _updateUsdcAmountEarned(request.liquidityProvider, _crossChainBalance);
+      _updateUsdcAmountEarned(request.liquidityProvider, usdcReserve);
     }
   }
 
@@ -415,39 +414,39 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
    * @param _crossChainBalance The total cross chain balance
    */
   function _updateDepositInfoAndMintLPTokens(address _liquidityProvider, uint256 _depositedAmount, uint256 _crossChainBalance) private {
-    //@Oleg CONFIRMED
     //_crossChainBalance == the sum of all chains balance + commits
-    uint256 usdcReserve = i_USDC.balanceOf(address(this)) + s_commit + _crossChainBalance;
+    
     uint256 lpTokenSupply = i_lp.totalSupply();
-
+    uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(_crossChainBalance);
+    uint256 amountDepositedConverted = _convertToLPTokenDecimals(_depositedAmount);
     //N° lpTokens = (((Total USDC Liq + user deposit) * Total sToken) / Total USDC Liq) - Total sToken
-    //Need to adjust the formula like so. The amount of the user is already on the balance now.
-    //N° lpTokens = (((Total USDC Liq) * Total sToken) / Total USDC Liq - user deposit) - Total sToken
     uint256 lpTokensToMint = lpTokenSupply >= ALLOWED
-      ? ((_convertToLPTokenDecimals((usdcReserve)) * lpTokenSupply) / _convertToLPTokenDecimals(usdcReserve - _depositedAmount)) - lpTokenSupply
-      : _convertToLPTokenDecimals(_depositedAmount);
+      ? (((crossChainBalanceConverted + amountDepositedConverted) * lpTokenSupply) / crossChainBalanceConverted) - lpTokenSupply
+      : amountDepositedConverted;
 
     i_lp.mint(_liquidityProvider, lpTokensToMint);
   }
 
-  event Log(string);
+  event Log(string, uint256);
   /**
    * @notice Function to updated cross-chain rewards will be paid to liquidity providers in the end of
    * withdraw period.
    * @param _liquidityProvider Liquidity Provider address to update info.
    * @param _totalUSDCCrossChain USDC total amount in child pools
    * @dev This function must be called only by an allowed Messenger & must not revert
+   * @dev _totalUSDCCrossChain MUST have 10**6 decimals.
    */
   function _updateUsdcAmountEarned(address _liquidityProvider, uint256 _totalUSDCCrossChain) private {
     IConceroPool.WithdrawRequests storage request = s_pendingWithdrawRequests[_liquidityProvider];
+    uint256 numberOfPools = poolsToDistribute.length;
+    uint256 totalCrossChainBalance = _totalUSDCCrossChain + i_USDC.balanceOf(address(this)) + s_commit;
 
     //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
-    uint256 amountToWithdraw = _convertToLPTokenDecimals(_totalUSDCCrossChain + i_USDC.balanceOf(address(this)) + s_commit) *
-      (request.amountToBurn / i_lp.totalSupply());
+    uint256 amountToWithdraw = (_convertToLPTokenDecimals(totalCrossChainBalance) * request.amountToBurn) / i_lp.totalSupply();
+    
+    request.amountEarned = _convertToUSDCTokenDecimals(amountToWithdraw);
+    request.amountToRequest = _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1);//Cross-chain Pools + MasterPool
 
-    request.amount = _convertToUSDCTokenDecimals(amountToWithdraw);
-
-    emit Log("here");
     i_automation.addPendingWithdrawal(request);
 
     emit ConceroPool_RequestUpdated(_liquidityProvider);
@@ -462,7 +461,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
    * @return _adjustedAmount the adjusted amount
    */
   function _convertToLPTokenDecimals(uint256 _usdcAmount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = ((_usdcAmount * LP_TOKEN_DECIMALS) / USDC_DECIMALS);
+    _adjustedAmount = (_usdcAmount * LP_TOKEN_DECIMALS) / USDC_DECIMALS;
   }
 
   /**
@@ -471,7 +470,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
    * @return _adjustedAmount the adjusted amount
    */
   function _convertToUSDCTokenDecimals(uint256 _lpAmount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = ((_lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS);
+    _adjustedAmount = (_lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
   }
 
   /**

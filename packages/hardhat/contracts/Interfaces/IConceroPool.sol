@@ -7,11 +7,12 @@ interface IConceroPool {
   ///////////////////////
   ///@notice ConceroPool Request
   struct WithdrawRequests {
-    uint256 amount;
+    uint256 amountEarned;
     uint256 amountToBurn;
+    uint256 amountToRequest;
     uint256 receivedAmount;
     address token;
-    address sender;
+    address liquidityProvider;
     uint256 deadline;
   }
 

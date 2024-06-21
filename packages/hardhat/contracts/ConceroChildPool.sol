@@ -112,7 +112,7 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
 
     Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
       receiver: abi.encode(s_poolToSendTo[_destinationChainSelector]),
-      data: abi.encode(_liquidityProviderAddress, 0), //0== lp fee. It will always be zero because here we just process withdraws
+      data: abi.encode(_liquidityProviderAddress, 0), //0== lp fee. It will always be zero because here we just processing withdraws
       tokenAmounts: tokenAmounts,
       extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
       feeToken: address(i_linkToken)

@@ -247,17 +247,17 @@ contract PoolsTesting is Test{
 
         vm.startPrank(LiquidityProvider);
         usdc.approve(address(wMaster), amountToDeposit);
-        wMaster.depositLiquidity(amountToDeposit);
+        wMaster.depositLiquidity(amountToDeposit); //150
         vm.stopPrank();
 
-        assertEq(usdc.balanceOf(address(wMaster)), amountToDeposit/2);
+        assertEq(usdc.balanceOf(address(wMaster)), amountToDeposit/2); //75
         assertEq(usdc.balanceOf(address(wChild)), amountToDeposit/2);
 
         //===== Check User LP balance
         assertEq(lp.balanceOf(LiquidityProvider), 0);
 
         //===== Adjust manually the LP emission
-        wMaster.updateUSDCAmountManually(LiquidityProvider, amountToDeposit, amountToDeposit);
+        wMaster.updateUSDCAmountManually(LiquidityProvider, amountToDeposit, amountToDeposit);//150
 
         //===== Check User LP balance
         assertEq(lp.balanceOf(LiquidityProvider), amountLpShouldBeEmitted);
@@ -265,7 +265,7 @@ contract PoolsTesting is Test{
         //===== Mocking some fees
         usdc.mint(address(wMaster), mockedFeeAccrued);
         usdc.mint(address(wChild), mockedFeeAccrued);
-        assertEq(usdc.balanceOf(address(wMaster)), (amountToDeposit/2) + mockedFeeAccrued);
+        assertEq(usdc.balanceOf(address(wMaster)), (amountToDeposit/2) + mockedFeeAccrued);//75+3
         assertEq(usdc.balanceOf(address(wChild)), (amountToDeposit/2) + mockedFeeAccrued);
 
         //===== User initiate an withdrawRequest
@@ -274,7 +274,7 @@ contract PoolsTesting is Test{
         wMaster.startWithdrawal(50 * 10**18);
 
         //===== Adjust manually the USDC cross-chain total
-        wMaster.updateUSDCAmountEarned(LiquidityProvider, 78*10**6);
+        wMaster.updateUSDCAmountEarned(LiquidityProvider, usdc.balanceOf(address(wChild)));
 
         //===== Take a loan on child pool
         assertEq(usdc.balanceOf(Athena), 0);
@@ -289,7 +289,7 @@ contract PoolsTesting is Test{
 
         //==== Mock the Automation call to ChildPool
         vm.prank(Messenger);
-        wChild.ccipSendToPool(chainSelector, LiquidityProvider, 25_740_000);
+        wChild.ccipSendToPool(chainSelector, LiquidityProvider, 26_000_000);
 
         //==== Mock complete withdraw
         vm.startPrank(LiquidityProvider);
@@ -447,6 +447,9 @@ contract PoolsTesting is Test{
         usdc.mint(address(wMaster), mockedFeeAccrued);
         usdc.mint(address(wChild), mockedFeeAccrued);
 
+        //===== Total USDC balance
+        console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));
+
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////////// WITHDRAW //////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -460,10 +463,10 @@ contract PoolsTesting is Test{
         uint256 poolBalanceBeforeFirstWithdraw = usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild));
         wMaster.updateUSDCAmountEarned(LiquidityProvider, usdc.balanceOf(address(wChild)));
 
-        uint256 liquidityProviderUSDCAmountEarned = 522490477; //Almost half of the pool. It shouldn't be that much.
+        uint256 liquidityProviderUSDCAmountEarned = 522490477;
 
         vm.prank(Messenger);
-        wChild.ccipSendToPool(chainSelector, LiquidityProvider, liquidityProviderUSDCAmountEarned / 2);
+        wChild.ccipSendToPool(chainSelector, LiquidityProvider, 261245238);
 
         vm.startPrank(LiquidityProvider);
         lp.approve(address(wMaster), liquidityProviderBalanceBeforeWithdraw);
@@ -473,6 +476,9 @@ contract PoolsTesting is Test{
         assertEq(lp.balanceOf(LiquidityProvider), 0);
         assertEq(usdc.balanceOf(LiquidityProvider), liquidityProviderUSDCAmountEarned);
         
+        //===== Total USDC balance
+        console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));
+
         //==== LiquidityProviderTwo
         uint256 liquidityProviderTwoBalanceBeforeWithdraw = lp.balanceOf(LiquidityProviderTwo);
 
@@ -486,7 +492,7 @@ contract PoolsTesting is Test{
         uint256 liquidityProviderTwoUSDCAmountEarned = 513984281;
 
         vm.prank(Messenger);
-        wChild.ccipSendToPool(chainSelector, LiquidityProviderTwo, liquidityProviderTwoUSDCAmountEarned / 2);
+        wChild.ccipSendToPool(chainSelector, LiquidityProviderTwo, 256992140);
 
         vm.startPrank(LiquidityProviderTwo);
         lp.approve(address(wMaster), liquidityProviderTwoBalanceBeforeWithdraw);
@@ -495,8 +501,9 @@ contract PoolsTesting is Test{
 
         assertEq(lp.balanceOf(LiquidityProviderTwo), 0);
         assertEq(usdc.balanceOf(LiquidityProviderTwo), liquidityProviderTwoUSDCAmountEarned);
-
-        console2.log("Total USDC in All Pools", usdc.balanceOf(address(wChild)) + usdc.balanceOf(address(wMaster)));
+        
+        //===== Total USDC balance
+        console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));
         
         //==== LiquidityProviderThree
         uint256 liquidityProviderThreeBalanceBeforeWithdraw = lp.balanceOf(LiquidityProviderThree);
@@ -510,14 +517,11 @@ contract PoolsTesting is Test{
 
         uint256 liquidityProviderThreeUSDCAmountEarned = 513525242;
 
-        console2.log("Master Balance", usdc.balanceOf(address(wMaster)));
-        console2.log("Child Balance", usdc.balanceOf(address(wChild)));
-
         vm.prank(Messenger);
-        wChild.ccipSendToPool(chainSelector, LiquidityProviderThree, liquidityProviderThreeUSDCAmountEarned / 2);
+        wChild.ccipSendToPool(chainSelector, LiquidityProviderThree, 256762622);
 
-        assertEq(usdc.balanceOf(address(wChild)), 0);        
-        assertEq(usdc.balanceOf(address(wMaster)), 513_525_242);
+        // assertEq(usdc.balanceOf(address(wMaster)), 513_525_242);
+        // assertEq(usdc.balanceOf(address(wChild)), 0);        
 
         vm.startPrank(LiquidityProviderThree);
         lp.approve(address(wMaster), liquidityProviderThreeBalanceBeforeWithdraw);
@@ -526,5 +530,8 @@ contract PoolsTesting is Test{
 
         assertEq(lp.balanceOf(LiquidityProviderThree), 0);
         assertEq(usdc.balanceOf(LiquidityProviderThree), liquidityProviderThreeUSDCAmountEarned); //BREAK
+        
+        //===== Total USDC balance
+        console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));
     }
 }

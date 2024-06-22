@@ -520,8 +520,8 @@ contract PoolsTesting is Test{
         vm.prank(Messenger);
         wChild.ccipSendToPool(chainSelector, LiquidityProviderThree, 256762622);
 
-        // assertEq(usdc.balanceOf(address(wMaster)), 513_525_242);
-        // assertEq(usdc.balanceOf(address(wChild)), 0);        
+        assertEq(usdc.balanceOf(address(wMaster)), 513_525_242);
+        assertEq(usdc.balanceOf(address(wChild)), 0);        
 
         vm.startPrank(LiquidityProviderThree);
         lp.approve(address(wMaster), liquidityProviderThreeBalanceBeforeWithdraw);
@@ -529,7 +529,7 @@ contract PoolsTesting is Test{
         vm.stopPrank();
 
         assertEq(lp.balanceOf(LiquidityProviderThree), 0);
-        assertEq(usdc.balanceOf(LiquidityProviderThree), liquidityProviderThreeUSDCAmountEarned); //BREAK
+        assertEq(usdc.balanceOf(LiquidityProviderThree), liquidityProviderThreeUSDCAmountEarned);
         
         //===== Total USDC balance
         console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));

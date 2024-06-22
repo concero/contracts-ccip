@@ -14,33 +14,9 @@ error MasterStorage_NotContractOwner();
 error MasterStorage_DuplicatedAddress();
 
 contract MasterStorage {
-  ///////////////////////
-  ///TYPE DECLARATIONS///
-  ///////////////////////
-  ///@notice `ccipSend` to distribute liquidity
-  struct Pools {
-    uint64 chainSelector;
-    address poolAddress;
-  }
-
-  ///@notice Struct to track Functions Requests Type
-  enum RequestType {
-    GetTotalUSDC, //Deposits
-    PerformWithdrawal //Start Withdrawals
-  }
-
-  struct CLARequest {
-    RequestType requestType;
-    address liquidityProvider; //address to check and pool the index from the array
-    uint256 usdcBeforeDeposit;
-    uint256 amount; //USDC or LP according to the request
-  }
-
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
-  ///@notice variable to store the total value deposited
-  // uint256 internal s_usdcPoolReserve; REMOVE
   ///@notice variable to store the max value that can be deposited on this pool
   uint256 internal s_maxDeposit;
   ///@notice variable to store the Chainlink Function DON Slot ID
@@ -132,7 +108,7 @@ contract MasterStorage {
    */
   function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
     if (s_poolToSendTo[_chainSelector] != address(0)) revert MasterStorage_DuplicatedAddress();
-    poolsToDistribute.push(Pools({chainSelector: _chainSelector, poolAddress: _pool}));
+    poolsToDistribute.push(IConceroPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
 
     s_poolToSendTo[_chainSelector] = _pool;
 

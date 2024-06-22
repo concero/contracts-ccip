@@ -19,6 +19,10 @@ contract MasterStorage {
   ///////////////////////////////////////////////////////////
   ///@notice variable to store the max value that can be deposited on this pool
   uint256 internal s_maxDeposit;
+  ///@notice variable to store the amount that will be temporary used by Chainlink Functions
+  uint256 public s_loansInUse;
+  ///@notice variable to store the amount requested in withdraws
+  uint256 public s_withdrawRequests;
   ///@notice variable to store the Chainlink Function DON Slot ID
   uint8 internal s_donHostedSecretsSlotId;
   ///@notice variable to store the Chainlink Function DON Secret Version
@@ -27,8 +31,6 @@ contract MasterStorage {
   bytes32 internal s_hashSum;
   ///@notice variable to store Ethers Hashsum
   bytes32 internal s_ethersHashSum;
-  ///@notice variable to store the value that will be temporary used by Chainlink Functions
-  uint256 public s_loansInUse;
 
   ////////////////
   ///IMMUTABLES///

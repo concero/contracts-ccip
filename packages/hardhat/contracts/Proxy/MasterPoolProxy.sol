@@ -85,9 +85,9 @@ contract MasterPoolProxy is ERC1967Proxy, MasterStorage {
   constructor(
     address _logic,
     address initialOwner,
-    address _storageOwner,
+    address _implementationOwner,
     bytes memory _data
-  ) payable ERC1967Proxy(_logic, _data) MasterStorage(_storageOwner) {
+  ) payable ERC1967Proxy(_logic, _data) MasterStorage(_implementationOwner) {
     _admin = initialOwner;
     // Set the storage value and emit an event for ERC-1967 compatibility
     ERC1967Utils.changeAdmin(_proxyAdmin());

@@ -271,6 +271,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     emit ConceroPool_WithdrawRequest(msg.sender, i_USDC, block.timestamp + 597_600);
   }
 
+  event Log(string, uint256);
   /**
    * @notice Function called to finalize the withdraw process.
    * @dev The msg.sender will be used to load the withdraw request data
@@ -285,6 +286,10 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     if (withdraw.amountEarned > i_USDC.balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
 
     emit ConceroPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
+
+    s_withdrawRequests = s_withdrawRequests > withdraw.amountEarned
+    ? s_withdrawRequests - withdraw.amountEarned
+    : 0;
 
     delete s_pendingWithdrawRequests[msg.sender];
 
@@ -321,6 +326,8 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
       request.amountToReceive = request.amountToReceive >= any2EvmMessage.destTokenAmounts[0].amount
         ? request.amountToReceive - any2EvmMessage.destTokenAmounts[0].amount
         : 0;
+        
+      s_withdrawRequests = s_withdrawRequests + any2EvmMessage.destTokenAmounts[0].amount;
     }
 
     emit ConceroPool_CCIPReceived(
@@ -465,6 +472,8 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
       deadline: block.timestamp + 597_600 //6days & 22h
     });
 
+    s_withdrawRequests = s_withdrawRequests + _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1);
+    
     s_pendingWithdrawRequests[_liquidityProvider] = request;
     i_automation.addPendingWithdrawal(request);
 

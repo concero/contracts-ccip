@@ -130,6 +130,20 @@ async function f() {
 				linkNative: '${LINK_NATIVE_PRICEFEED_ARBITRUM}',
 			},
 		},
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
+			urls: [
+				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://polygon.blockpi.network/v1/rpc/public',
+				'https://polygon-bor-rpc.publicnode.com',
+			],
+			chainId: '0x89',
+			priceFeed: {
+				linkUsd: '${LINK_USD_PRICEFEED_POLYGON}',
+				usdcUsd: '${USDC_USD_PRICEFEED_POLYGON}',
+				nativeUsd: '${NATIVE_USD_PRICEFEED_POLYGON}',
+				linkNative: '${LINK_NATIVE_PRICEFEED_POLYGON}',
+			},
+		},
 	};
 	const UINT256_BYTES_LENGTH = 32;
 	const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));

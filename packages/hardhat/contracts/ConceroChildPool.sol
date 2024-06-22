@@ -35,6 +35,8 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   ////////////////
   ///IMMUTABLES///
   ////////////////
+  ///@notice immutable variable to store Orchestrator Proxy
+  address private immutable i_orchestratorProxy;
   ///@notice Child Pool proxy address
   address private immutable i_childProxy;
   ///@notice Chainlink Link Token interface
@@ -42,9 +44,11 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   ///@notice Chainlink CCIP Router
   IRouterClient private immutable i_router;
   ///@notice immutable variable to store the USDC address.
-  IERC20 immutable i_USDC;
-  ///@notice immutable variable to store the orchestrator address
-  address private immutable i_concero_orchestrator;
+  IERC20 private immutable i_USDC;
+  ///@notice immutable variable to store the MasterPool chain selector
+  uint64 private immutable i_masterPoolChainSelector;
+  ///@notice immutable variable to store the MasterPool Proxy address
+  address private immutable i_masterPoolProxyAddress;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -59,6 +63,9 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   ///////////////
   ///MODIFIERS///
   ///////////////
+  /**
+   * @notice modifier to ensure if the function is being executed in the proxy context.
+  */
   modifier isProxy() {
     if (address(this) != i_childProxy) revert ConceroChildPool_CallerIsNotTheProxy(address(this));
     _;
@@ -70,21 +77,24 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   receive() external payable {}
 
   constructor(
-    address _childPool,
+    address _orchestratorProxy,
+    address _childProxy,
     address _link,
     address _ccipRouter,
+    uint64 _destinationChainSelector,
+    address _masterPoolProxyAddress,
     address _usdc,
     address _orchestrator,
     address _owner
   ) CCIPReceiver(_ccipRouter) ChildStorage(_owner) {
-    i_childProxy = _childPool;
+    i_orchestratorProxy = _orchestratorProxy;
+    i_childProxy = _childProxy;
     i_linkToken = LinkTokenInterface(_link);
     i_router = IRouterClient(_ccipRouter);
     i_USDC = IERC20(_usdc);
-    i_concero_orchestrator = _orchestrator;
+    i_masterPoolChainSelector = _destinationChainSelector;
+    i_masterPoolProxyAddress = _masterPoolProxyAddress;
   }
-
-  //@Oleg How to fit the withdraw requests in here?
 
   ////////////////////////
   ///EXTERNAL FUNCTIONS///
@@ -98,10 +108,9 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
    * @dev This function will sent the address of the user as data. This address will be used to update the mapping on MasterPool.
    */
   function ccipSendToPool(
-    uint64 _destinationChainSelector,
     address _liquidityProviderAddress,
     uint256 _amount
-  ) external onlyMessenger isProxy onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
+  ) external onlyMessenger isProxy returns (bytes32 messageId) {
     if (_amount > i_USDC.balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
 
     Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
@@ -111,23 +120,23 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
     tokenAmounts[0] = tokenAmount;
 
     Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
-      receiver: abi.encode(s_poolToSendTo[_destinationChainSelector]),
+      receiver: abi.encode(i_masterPoolProxyAddress),
       data: abi.encode(_liquidityProviderAddress, 0), //0== lp fee. It will always be zero because here we just processing withdraws
       tokenAmounts: tokenAmounts,
       extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
       feeToken: address(i_linkToken)
     });
 
-    uint256 fees = i_router.getFee(_destinationChainSelector, evm2AnyMessage);
+    uint256 fees = i_router.getFee(i_masterPoolChainSelector, evm2AnyMessage);
 
     if (fees > i_linkToken.balanceOf(address(this))) revert ConceroChildPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
     i_USDC.approve(address(i_router), _amount);
     i_linkToken.approve(address(i_router), fees);
 
-    emit ConceroChildPool_MessageSent(messageId, _destinationChainSelector, s_poolToSendTo[_destinationChainSelector], address(i_linkToken), fees);
+    emit ConceroChildPool_MessageSent(messageId, i_masterPoolChainSelector, i_masterPoolProxyAddress, address(i_linkToken), fees);
 
-    messageId = i_router.ccipSend(_destinationChainSelector, evm2AnyMessage);
+    messageId = i_router.ccipSend(i_masterPoolChainSelector, evm2AnyMessage);
   }
 
   /**
@@ -139,7 +148,7 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
    * @dev for ether transfer, the _receiver need to be known and trusted
    */
   function orchestratorLoan(address _token, uint256 _amount, address _receiver) external isProxy {
-    if (msg.sender != i_concero_orchestrator) revert ConceroChildPool_CallerIsNotConcero(msg.sender);
+    if (msg.sender != i_orchestratorProxy) revert ConceroChildPool_CallerIsNotConcero(msg.sender);
     if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
     if (_receiver == address(0)) revert ConceroChildPool_InvalidAddress();
 
@@ -160,9 +169,10 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
    */
   function _ccipReceive(
     Client.Any2EVMMessage memory any2EvmMessage
-  ) internal override /*onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address)))*/ {
-    (, /*address liquidityProvider*/ uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address, uint256));
+  ) internal override onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address))) {
+    (/*address liquidityProvider*/, uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address, uint256));
 
+    //If receivedFee > 0, it means is user transaction. If receivedFee == 0, means it's a deposit from MasterPool
     if (receivedFee > 0) {
       //subtract the amount from the committed total amount
       s_loansInUse = s_loansInUse - (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);

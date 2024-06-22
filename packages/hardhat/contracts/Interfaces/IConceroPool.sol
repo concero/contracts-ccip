@@ -16,6 +16,26 @@ interface IConceroPool {
     uint256 deadline;
   }
 
+  ///@notice `ccipSend` to distribute liquidity
+  struct Pools {
+    uint64 chainSelector;
+    address poolAddress;
+  }
+
+  ///@notice Struct to track Functions Requests Type
+  enum RequestType {
+    GetTotalUSDC, //Deposits
+    PerformWithdrawal //Start Withdrawals
+  }
+
+  struct CLARequest {
+    RequestType requestType;
+    address liquidityProvider; //address to check and pool the index from the array
+    uint256 usdcBeforeDeposit;
+    uint256 lpSupplyBeforeDeposit;
+    uint256 depositedAmount; //USDC or LP according to the request
+  }
+  
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////

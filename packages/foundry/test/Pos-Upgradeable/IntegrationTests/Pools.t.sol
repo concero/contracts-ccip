@@ -472,6 +472,8 @@ contract PoolsTesting is Test{
         wMaster.completeWithdrawal();
         vm.stopPrank();
 
+        assertEq(wMaster.s_withdrawRequests(), 0);
+
         assertEq(lp.balanceOf(LiquidityProvider), 0);
         assertEq(usdc.balanceOf(LiquidityProvider), liquidityProviderUSDCAmountEarned);
         
@@ -497,6 +499,8 @@ contract PoolsTesting is Test{
         lp.approve(address(wMaster), liquidityProviderTwoBalanceBeforeWithdraw);
         wMaster.completeWithdrawal();
         vm.stopPrank();
+
+        assertEq(wMaster.s_withdrawRequests(), 0);
 
         assertEq(lp.balanceOf(LiquidityProviderTwo), 0);
         assertEq(usdc.balanceOf(LiquidityProviderTwo), liquidityProviderTwoUSDCAmountEarned);

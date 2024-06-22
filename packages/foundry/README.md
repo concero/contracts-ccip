@@ -9,12 +9,6 @@ Foundry consists of:
 - **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
 - **Chisel**: Fast, utilitarian, and verbose solidity REPL.
 
-## Clone
-
-```shell
-git clone
-```
-
 ## Usage
 
 ### Build
@@ -55,6 +49,8 @@ The tests related to this pool's implementation are inside the `Pos-Upgradeable`
 
 We have some unit tests focused on setters and reverts, local integration tests using ccipLocal, and forked tests. Local and Forked ccip-related tests are complementary because we fork the mainnet environment, and it's not possible to transfer USDC through the forked environment.
 
+Our tests doesn't cover Automation & Functions, once the Java Script code are still under development.
+
 ## Attention Points
 
 - `ConceroPool.sol` & `ConceroChildPool.sol` only accepts `USDC`. So, loss of precision is greater than other tokens.
@@ -72,5 +68,25 @@ We have some unit tests focused on setters and reverts, local integration tests 
   - Didn't receive the full `amountEarned` checked in `receivedAmount`.
   - Do not burn the `LPToken` amount previously informed on `ConceroPool.sol::startWithdraw`.
 
+## Scope
+
+```
+- contracts/ConceroPool.sol
+- contracts/ConceroChildPool.sol
+- contracts/ConceroAutomation.sol
+- contracts/LPToken.sol*
+- Libraries/MasterStorage.sol - it's ConceroPool.sol Storage
+- Libraries/ChildStorage.sol - it's ConceroChildPool.sol Storage
+- Proxy/MasterPoolProxy.sol**
+- Proxy/ChildPoolProxy.sol**
+```
+
+** Open Zeppelin contract
+*** Open Zeppelin contract with the following adjustments:
+- Receive a `SAFE_LOCK` that allow us to stop all transactions
+- Removal of `ProxyAdmin`
+- Implementation of a new `_implementationOwner` to deal with storage update.
+
 ## Known Issues that we need help with
 - Loss of precision in fee calculation leading to DDOS + Funds Lost to the last withdrawer. It will only happen if the user enters the full amount of LPtokens received when depositing. If some 'dust' is left, the withdraw will not collapse.
+  - I managed to avoid DDOS. However, it still exists. On the other hand, the pool will receive Concero money as initiator and this money will be present there since the deployment helping us override the issue.

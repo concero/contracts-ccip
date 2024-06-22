@@ -122,6 +122,20 @@ async function f() {
 				linkNative: '0xb7c8Fb1dB45007F98A68Da0588e1AA524C317f27',
 			},
 		},
+		[`0x${BigInt('4051577828743386545').toString(16)}`]: {
+			urls: [
+				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://polygon.blockpi.network/v1/rpc/public',
+				'https://polygon-bor-rpc.publicnode.com',
+			],
+			chainId: '0x89',
+			priceFeed: {
+				linkUsd: '0xd9FFdb71EbE7496cC440152d43986Aae0AB76665',
+				usdcUsd: '0xfE4A8cc5b5B2366C1B58Bea3858e81843581b2F7',
+				nativeUsd: '0xAB594600376Ec9fD91F8e885dADF0CE036862dE0',
+				linkNative: '0x5787BefDc0ECd210Dfa948264631CD53E68F7802',
+			},
+		},
 	};
 	const UINT256_BYTES_LENGTH = 32;
 	const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));

@@ -83,7 +83,7 @@ contract ConceroAutomationTest is Test {
             amountEarned: 10*10**6,
             amountToBurn: 5*10**18,
             amountToRequest: 0,
-            receivedAmount: 0,
+            amountToReceive: 0,
             token: address(usdc),
             liquidityProvider: User,
             deadline: block.timestamp + 7 days
@@ -101,7 +101,7 @@ contract ConceroAutomationTest is Test {
             amountEarned: 10*10**6,
             amountToBurn: 5*10**18,
             amountToRequest: 0,
-            receivedAmount: 0,
+            amountToReceive: 0,
             token: address(usdc),
             liquidityProvider: User,
             deadline: block.timestamp + 7 days

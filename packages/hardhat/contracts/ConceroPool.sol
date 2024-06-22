@@ -39,7 +39,7 @@ error ConceroPool_ThereIsNoPoolToDistribute();
 ///@notice emitted in depositLiquidity when the input amount is not enough
 error ConceroPool_AmountBelowMinimum(uint256 minAmount);
 ///@notice emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
-error ConceroPool_AmountNotAvailableYet(uint256 received, uint256 amountAvailable);
+error ConceroPool_AmountNotAvailableYet(uint256 received);
 ///@notice emitted in depositLiquidity when the input token is not allowed
 error ConceroPool_TokenNotAllowed(address token);
 ///@notice error emitted when the caller is not the messenger
@@ -90,7 +90,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
   uint256 private constant USDC_DECIMALS = 10 ** 6;
   uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
   uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
-  uint256 private constant PRECISION_HANDLER = 10 ** 6;
+  uint256 private constant PRECISION_HANDLER = 10 ** 10;
   ///@notice Chainlink Functions Gas Limit
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   ///@notice Chainlink Function Gas Overhead
@@ -98,10 +98,8 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
   ///@notice Chainlink Src Response Length
   uint8 internal constant CL_SRC_RESPONSE_LENGTH = 192;
   ///@notice JS Code for Chainlink Functions
-  string internal constant DEPOSIT_JS_CODE =
-    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( `https://raw.githubusercontent.com/concero/contracts-ccip/full-infra-functions/packages/hardhat/tasks/CLFScripts/dist/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
-  string internal constant WITHDRAW_JS_CODE =
-    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( `https://raw.githubusercontent.com/concero/contracts-ccip/full-infra-functions/packages/hardhat/tasks/CLFScripts/dist/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
+  string internal constant DEPOSIT_JS_CODE = "";
+  string internal constant WITHDRAW_JS_CODE = "";
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -138,7 +136,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
    * @notice modifier to check if the caller is the an approved messenger
    */
   modifier onlyMessenger() {
-    if (getMessengers(msg.sender) == false) revert ConceroPool_NotMessenger(msg.sender);
+    if (isMessenger(msg.sender) == false) revert ConceroPool_NotMessenger(msg.sender);
     _;
   }
 
@@ -247,7 +245,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
       amountEarned: 0,
       amountToBurn: _lpAmount,
       amountToRequest: 0, //The value to send through function to get money from childPools
-      receivedAmount: 0,
+      amountToReceive: 0,
       token: address(i_USDC),
       liquidityProvider: msg.sender,
       deadline: block.timestamp + 597_600 //6days & 22h
@@ -272,11 +270,9 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
    */
   function completeWithdrawal() external {
     IConceroPool.WithdrawRequests memory withdraw = s_pendingWithdrawRequests[msg.sender];
-    uint256 numberOfPools = poolsToDistribute.length;
-    uint256 thresholdForWithdraw = ((((withdraw.amountEarned * numberOfPools) * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER);  //@audit Need to optimize it
 
     //receivedAmount must be 3/4 of the amount
-    if (withdraw.receivedAmount < thresholdForWithdraw) revert ConceroPool_AmountNotAvailableYet(withdraw.receivedAmount, thresholdForWithdraw);
+    if (withdraw.amountToReceive > 0) revert ConceroPool_AmountNotAvailableYet(withdraw.amountToReceive);
 
     if (withdraw.amountEarned > i_USDC.balanceOf(address(this))) revert ConceroPool_InsufficientBalance();
 
@@ -311,10 +307,12 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
       //subtract the amount from the committed total amount
       s_loansInUse = s_loansInUse - (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
     } else if (_liquidityProvider != address(0)) {
+      IConceroPool.WithdrawRequests storage request = s_pendingWithdrawRequests[_liquidityProvider];
+
       //update the corresponding withdraw request
-      s_pendingWithdrawRequests[_liquidityProvider].receivedAmount =
-        s_pendingWithdrawRequests[_liquidityProvider].receivedAmount +
-        any2EvmMessage.destTokenAmounts[0].amount;
+      request.amountToReceive = request.amountToReceive >= any2EvmMessage.destTokenAmounts[0].amount ?
+        request.amountToReceive - any2EvmMessage.destTokenAmounts[0].amount :
+        0;
     }
 
     emit ConceroPool_CCIPReceived(
@@ -428,6 +426,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     i_lp.mint(_liquidityProvider, lpTokensToMint);
   }
 
+  event Log(string, uint256);
   /**
    * @notice Function to updated cross-chain rewards will be paid to liquidity providers in the end of
    * withdraw period.
@@ -442,15 +441,13 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
     uint256 totalCrossChainBalance = _totalUSDCCrossChain + i_USDC.balanceOf(address(this)) + s_loansInUse;
 
     //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
-    uint256 amountToWithdraw = (_convertToLPTokenDecimals(totalCrossChainBalance) * request.amountToBurn) / i_lp.totalSupply();  //@audit Need to optimize it
+    //@audit Need to optimize it
+    uint256 amountToWithdraw = (((_convertToLPTokenDecimals(totalCrossChainBalance) * request.amountToBurn)* PRECISION_HANDLER)/ i_lp.totalSupply()) / PRECISION_HANDLER;
 
-    request.amountEarned = _convertToUSDCTokenDecimals(amountToWithdraw) > totalCrossChainBalance
-    ? totalCrossChainBalance
-    : _convertToUSDCTokenDecimals(amountToWithdraw);
+    request.amountEarned = _convertToUSDCTokenDecimals(amountToWithdraw);
 
-    //if balanceOf() + amountToWithdraw
     request.amountToRequest = _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1); //Cross-chain Pools + MasterPool
-    request.receivedAmount = _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1);
+    request.amountToReceive = (_convertToUSDCTokenDecimals(amountToWithdraw) * numberOfPools) / (numberOfPools + 1);
 
     i_automation.addPendingWithdrawal(request);
 
@@ -482,7 +479,7 @@ contract ConceroPool is CCIPReceiver, MasterStorage, FunctionsClient {
    * @notice Function to check if a caller address is an allowed messenger
    * @param _messenger the address of the caller
    */
-  function getMessengers(address _messenger) internal pure returns (bool isMessenger) {
+  function isMessenger(address _messenger) internal pure returns (bool isMessenger) {
     address[] memory messengers = new address[](4); //Number of messengers. To define.
     messengers[0] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267; //fake messenger from foundry environment
     messengers[1] = address(0);

@@ -7,7 +7,7 @@ import type { Account } from "viem/accounts/types";
 import { RpcSchema } from "viem/types/eip1193";
 import { privateKeyToAccount } from "viem/accounts";
 import { Address, createPublicClient, createWalletClient, decodeEventLog, http, PrivateKeyAccount } from "viem";
-import { arbitrumSepolia, baseSepolia, optimismSepolia, polygonAmoy } from "viem/chains";
+import { arbitrumSepolia, base, baseSepolia, optimismSepolia, polygon, polygonAmoy } from "viem/chains";
 import ERC20ABI from "../abi/ERC20.json";
 import { PublicClient } from "viem/clients/createPublicClient";
 import { abi as ConceroAbi } from "../artifacts/contracts/Concero.sol/Concero.json";
@@ -32,16 +32,27 @@ const chainsMap = {
     viemChain: polygonAmoy,
     viemTransport: http(`https://polygon-amoy.infura.io/v3/${process.env.INFURA_API_KEY}`),
   },
+
+  // mainnets
+  [process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON]: {
+    viemChain: polygon,
+    viemTransport: http(`https://polygon-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`),
+  },
+  [process.env.CL_CCIP_CHAIN_SELECTOR_BASE]: {
+    viemChain: base,
+    viemTransport: http(),
+  },
 };
 
-const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA;
-const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY;
+const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE;
+const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON;
 const senderAddress = process.env.DEPLOYER_ADDRESS;
-const amount = "1000000000000000000";
-const bnmTokenAddress = process.env.CCIPBNM_OPTIMISM_SEPOLIA;
+const amount = "500000";
+// const bnmTokenAddress = process.env.CCIPBNM_OPTIMISM_SEPOLIA;
+const usdcTokenAddress = process.env.USDC_BASE;
 const transactionsCount = 1;
-const srcContractAddress = process.env.CONCEROPROXY_OPTIMISM_SEPOLIA;
-const dstContractAddress = process.env.CONCEROPROXY_POLYGON_AMOY;
+const srcContractAddress = process.env.CONCEROPROXY_BASE;
+const dstContractAddress = process.env.CONCEROPROXY_POLYGON;
 
 describe("startBatchTransactions\n", () => {
   let Concero: Concero;
@@ -103,7 +114,7 @@ describe("startBatchTransactions\n", () => {
       return tokenHash;
     };
 
-    const bnmHash = await approveToken(bnmTokenAddress);
+    const bnmHash = await approveToken(usdcTokenAddress);
     // const linkHash = await approveToken(linkTokenAddress);
 
     if (!bnmHash) return;
@@ -177,7 +188,7 @@ describe("startBatchTransactions\n", () => {
     const fromDstBlockNumber = await dstPublicClient.getBlockNumber();
     let transactionPromises = [];
     const bridgeData = {
-      tokenType: 0n,
+      tokenType: 1n,
       amount: BigInt(amount),
       minAmount: BigInt(amount),
       dstChainSelector: BigInt(dstChainSelector),
@@ -191,7 +202,7 @@ describe("startBatchTransactions\n", () => {
       //   address: srcContractAddress as Address,
       //   args: [bridgeData, []],
       //   account: viemAccount as Account,
-      //   nonce: nonce++,
+      //   // nonce: nonce++,
       // });
       // transactionPromises.push(walletClient.writeContract(request));
 

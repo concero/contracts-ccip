@@ -9,7 +9,7 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {ConceroCCIP} from "./ConceroCCIP.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
-import {CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM} from "./Constants.sol";
+import {CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON} from "./Constants.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -57,7 +57,7 @@ contract Concero is ConceroCCIP {
     clfPremiumFees[CHAIN_SELECTOR_ARBITRUM] = 4000000000000000; // 0.004 link | arb
     clfPremiumFees[CHAIN_SELECTOR_BASE] = 2000000000000000; // 0.002 link | base // takes in usd mb price feed needed
     clfPremiumFees[CHAIN_SELECTOR_OPTIMISM] = 2000000000000000; // 0.002 link | opt
-    clfPremiumFees[CHAIN_SELECTOR_OPTIMISM] = 2000000000000000; // 0.002 link | opt
+    clfPremiumFees[CHAIN_SELECTOR_POLYGON] = 4000000000000000; // 0.004 link | opt
   }
 
   ///////////////////////////////////////////////////////////////

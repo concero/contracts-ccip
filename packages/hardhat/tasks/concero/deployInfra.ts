@@ -1,6 +1,6 @@
 import { task, types } from "hardhat/config";
 import chains, { networkEnvKeys } from "../../constants/CNetworks";
-import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
+import { setContractVariables } from "./setContractVariables";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../types/CNetwork";
 import log from "../../utils/log";
@@ -8,12 +8,12 @@ import uploadDonSecrets from "../donSecrets/upload";
 import deployConcero from "../../deploy/03_Concero";
 import { execSync } from "child_process";
 import { liveChains } from "./liveChains";
-import { setProxyImplementation } from "./setProxyImplementation";
 import deployConceroDexSwap from "../../deploy/02_ConceroDexSwap";
 import deployConceroOrchestrator from "../../deploy/04_ConceroOrchestrator";
 import addCLFConsumer from "../sub/add";
 import { getEnvVar } from "../../utils/getEnvVar";
 import deployConceroProxy from "../../deploy/00_ConceroProxy";
+import { setProxyImplementation } from "./setProxyImplementation";
 
 let deployableChains: CNetwork[] = liveChains;
 
@@ -49,7 +49,8 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
       await deployConceroOrchestrator(hre);
       await setProxyImplementation(hre, liveChains);
 
-      if (taskArgs.deployproxy) await setConceroProxyDstContracts(liveChains);
+      // if (taskArgs.deployproxy)
+      // await setConceroProxyDstContracts(liveChains);
     }
 
     if (!taskArgs.skipsetvars) {

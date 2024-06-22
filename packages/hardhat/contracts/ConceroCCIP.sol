@@ -30,6 +30,8 @@ contract ConceroCCIP is ConceroFunctions {
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
 
+  uint64 private constant CCIP_CALLBACK_GAS_LIMIT = 300_000;
+
   ////////////////
   ///IMMUTABLES///
   ////////////////
@@ -101,7 +103,7 @@ contract ConceroCCIP is ConceroFunctions {
         receiver: abi.encode(s_poolReceiver[_destinationChainSelector]),
         data: abi.encode(_lpFee),
         tokenAmounts: tokenAmounts,
-        extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
+        extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: CCIP_CALLBACK_GAS_LIMIT})),
         feeToken: address(i_linkToken)
       });
   }

@@ -10,7 +10,7 @@ interface IConceroPool {
     uint256 amountEarned;
     uint256 amountToBurn;
     uint256 amountToRequest;
-    uint256 receivedAmount;
+    uint256 amountToReceive;
     address token;
     address liquidityProvider;
     uint256 deadline;

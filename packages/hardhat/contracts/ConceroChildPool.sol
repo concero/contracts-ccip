@@ -78,11 +78,11 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
 
   constructor(
     address _orchestratorProxy,
+    address _masterPoolProxyAddress,
     address _childProxy,
     address _link,
     address _ccipRouter,
     uint64 _destinationChainSelector,
-    address _masterPoolProxyAddress,
     address _usdc,
     address _orchestrator,
     address _owner
@@ -102,7 +102,6 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
 
   /**
    * @notice Function to Distribute Liquidity across Concero Pools
-   * @param _destinationChainSelector Chain Id of the chain that will receive the amount
    * @param _liquidityProviderAddress The liquidity provider that requested Withdraw
    * @param _amount amount of the token to be sent
    * @dev This function will sent the address of the user as data. This address will be used to update the mapping on MasterPool.

@@ -8,15 +8,28 @@ contract ChildPoolDeploy is Script {
 
     
     function run(
-        address _proxy,
+        address _orchestratorProxy,
+        address _masterPoolProxyAddress,
+        address _childProxy,
         address _link,
         address _ccipRouter,
+        uint64 _destinationChainSelector,
         address _usdc, 
         address _orchestrator,
         address _owner
     ) public returns(ConceroChildPool child){
         vm.startBroadcast();
-        child = new ConceroChildPool(_proxy, _link, _ccipRouter, _usdc, _orchestrator, _owner);
+        child = new ConceroChildPool(
+            _orchestratorProxy,
+            _masterPoolProxyAddress,
+            _childProxy, 
+            _link, 
+            _ccipRouter,
+            _destinationChainSelector, 
+            _usdc, 
+            _orchestrator, 
+            _owner
+        );
         vm.stopBroadcast();
     }
 }

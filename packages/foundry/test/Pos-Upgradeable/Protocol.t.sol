@@ -260,7 +260,6 @@ contract ProtocolTest is Test {
             2, //_slotId
             0, //_secretsVersion
             0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_srcJsHashSum
-            0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_dstJsHashSum
             0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
             address(functionsRouterBase), //_router,
             address(masterProxy),
@@ -440,9 +439,12 @@ contract ProtocolTest is Test {
         );
 
         child = childDeployArbitrum.run(
+            address(proxyDst),
+            address(masterProxy),
             address(childProxy),
             linkArb,
             ccipRouterArb,
+            baseChainSelector,
             address(aUSDC),
             address(orchDst),
             Tester
@@ -501,9 +503,6 @@ contract ProtocolTest is Test {
         vm.selectFork(arbitrumMainFork);
         //====== Setters
         vm.startPrank(Tester);
-
-        wChild.setPoolsToSend(baseChainSelector, address(wMaster));
-        assertEq(wChild.s_poolToSendTo(baseChainSelector), address(wMaster));
 
         wChild.setConceroContractSender(baseChainSelector, address(wMaster), 1);
         assertEq(wChild.s_poolToReceiveFrom(baseChainSelector, address(wMaster)), 1);

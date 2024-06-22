@@ -133,7 +133,6 @@ contract PoolsTesting is Test{
             2, //_slotId
             0, //_secretsVersion
             0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_srcJsHashSum
-            0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_dstJsHashSum
             0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
             0xf9B8fc078197181C841c296C876945aaa425B278, //_router,
             address(masterProxy),
@@ -158,9 +157,12 @@ contract PoolsTesting is Test{
         childProxy = childProxyDeploy.run(address(usdc), proxyOwner, Tester, "");
         childInterface = ITransparentUpgradeableProxy(address(childProxy));
         child = childDeploy.run(
+            Orchestrator, //infra
+            address(masterProxy),
             address(childProxy),
             address(linkToken),
             address(destinationRouter),
+            chainSelector,
             address(usdc),
             Orchestrator,
             Tester
@@ -213,9 +215,6 @@ contract PoolsTesting is Test{
 
         //====== Child Setters
 
-        wChild.setPoolsToSend(chainSelector, address(wMaster));
-        assertEq(wChild.s_poolToSendTo(chainSelector), address(wMaster));
-
         wChild.setConceroContractSender(chainSelector, address(wMaster), 1);
         assertEq(wChild.s_poolToReceiveFrom(chainSelector, address(wMaster)), 1);
 
@@ -257,7 +256,7 @@ contract PoolsTesting is Test{
         assertEq(lp.balanceOf(LiquidityProvider), 0);
 
         //===== Adjust manually the LP emission
-        wMaster.updateUSDCAmountManually(LiquidityProvider, amountToDeposit, amountToDeposit);//150
+        wMaster.updateUSDCAmountManually(LiquidityProvider, lp.totalSupply(), amountToDeposit, amountToDeposit);//150
 
         //===== Check User LP balance
         assertEq(lp.balanceOf(LiquidityProvider), amountLpShouldBeEmitted);
@@ -274,7 +273,7 @@ contract PoolsTesting is Test{
         wMaster.startWithdrawal(50 * 10**18);
 
         //===== Adjust manually the USDC cross-chain total
-        wMaster.updateUSDCAmountEarned(LiquidityProvider, usdc.balanceOf(address(wChild)));
+        wMaster.updateUSDCAmountEarned(LiquidityProvider, lp.totalSupply(), 50 * 10**18, usdc.balanceOf(address(wChild)));
 
         //===== Take a loan on child pool
         assertEq(usdc.balanceOf(Athena), 0);
@@ -289,7 +288,7 @@ contract PoolsTesting is Test{
 
         //==== Mock the Automation call to ChildPool
         vm.prank(Messenger);
-        wChild.ccipSendToPool(chainSelector, LiquidityProvider, 26_000_000);
+        wChild.ccipSendToPool(LiquidityProvider, 26_000_000);
 
         //==== Mock complete withdraw
         vm.startPrank(LiquidityProvider);
@@ -311,7 +310,7 @@ contract PoolsTesting is Test{
         //==== Mock the Automation call to ChildPool
         vm.prank(Messenger);
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InsufficientBalance.selector));
-        wChild.ccipSendToPool(chainSelector, LiquidityProvider, (amountToDeposit/2) - ((amountToDeposit/2))/2);
+        wChild.ccipSendToPool(LiquidityProvider, (amountToDeposit/2) - ((amountToDeposit/2))/2);
     }
 
     function test_localMultipleDepositLiquidity() public setters{
@@ -341,7 +340,7 @@ contract PoolsTesting is Test{
         assertEq(usdc.balanceOf(address(wChild)), 50*10**6);
         
         //===== Adjust manually the LP emission
-        wMaster.updateUSDCAmountManually(LiquidityProvider, amountToDeposit, 0); //Not taking the user deposit in account
+        wMaster.updateUSDCAmountManually(LiquidityProvider, lp.totalSupply(), amountToDeposit, 0); //Not taking the user deposit in account
 
         //===== Check User LP balance
         uint256 liquidityProviderFirstLpBalance = lp.balanceOf(LiquidityProvider);
@@ -365,7 +364,7 @@ contract PoolsTesting is Test{
         assertEq(usdc.balanceOf(address(wChild)), 155*10**6);
         
         //===== Adjust manually the LP emission
-        wMaster.updateUSDCAmountManually(LiquidityProviderTwo, secondAmountToDeposit, 110*10**6); //Not taking the user deposit in account
+        wMaster.updateUSDCAmountManually(LiquidityProviderTwo, lp.totalSupply(), secondAmountToDeposit, 110*10**6); //Not taking the user deposit in account
 
         //===== Check User LP balance
         uint256 liquidityProviderTwoFirstLpBalance = lp.balanceOf(LiquidityProviderTwo);
@@ -388,7 +387,7 @@ contract PoolsTesting is Test{
         assertEq(usdc.balanceOf(address(wChild)), 410*10**6);
         
         //===== Adjust manually the LP emission
-        wMaster.updateUSDCAmountManually(LiquidityProviderThree, thirdAmountToDeposit, 320*10**6); //Not taking the user deposit in account
+        wMaster.updateUSDCAmountManually(LiquidityProviderThree, lp.totalSupply(), thirdAmountToDeposit, 320*10**6); //Not taking the user deposit in account
 
         //===== Check User LP balance
         uint256 liquidityProviderThreeLpBalance = lp.balanceOf(LiquidityProviderThree);
@@ -413,7 +412,7 @@ contract PoolsTesting is Test{
         assertEq(usdc.balanceOf(address(wChild)), 615*10**6);
         
         //===== Adjust manually the LP emission
-        wMaster.updateUSDCAmountManually(LiquidityProvider, fourthDepositAmount, 830*10**6); //Not taking the user deposit in account
+        wMaster.updateUSDCAmountManually(LiquidityProvider, lp.totalSupply(), fourthDepositAmount, 830*10**6); //Not taking the user deposit in account
 
         //===== Check User LP balance
         uint256 liquidityProviderSecondBalanceLpBalance = lp.balanceOf(LiquidityProvider);
@@ -438,7 +437,7 @@ contract PoolsTesting is Test{
         assertEq(usdc.balanceOf(address(wChild)), 770*10**6);
 
         //===== Adjust manually the LP emission
-        wMaster.updateUSDCAmountManually(LiquidityProviderTwo, fifthDepositAmount, 1240*10**6); //Something is breaking here.
+        wMaster.updateUSDCAmountManually(LiquidityProviderTwo, lp.totalSupply(), fifthDepositAmount, 1240*10**6); //Something is breaking here.
 
         //===== Check User LP balance
         assertEq(lp.balanceOf(LiquidityProviderTwo), liquidityProviderTwoFirstLpBalance + 258916347207009857611);
@@ -461,12 +460,12 @@ contract PoolsTesting is Test{
 
         vm.warp(7 days);
         uint256 poolBalanceBeforeFirstWithdraw = usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild));
-        wMaster.updateUSDCAmountEarned(LiquidityProvider, usdc.balanceOf(address(wChild)));
+        wMaster.updateUSDCAmountEarned(LiquidityProvider, lp.totalSupply(), liquidityProviderBalanceBeforeWithdraw, usdc.balanceOf(address(wChild)));
 
         uint256 liquidityProviderUSDCAmountEarned = 522490477;
 
         vm.prank(Messenger);
-        wChild.ccipSendToPool(chainSelector, LiquidityProvider, 261245238);
+        wChild.ccipSendToPool(LiquidityProvider, 261245238);
 
         vm.startPrank(LiquidityProvider);
         lp.approve(address(wMaster), liquidityProviderBalanceBeforeWithdraw);
@@ -487,12 +486,12 @@ contract PoolsTesting is Test{
 
         vm.warp(7 days);
         uint256 poolBalanceBeforeSecondWithdraw = usdc.balanceOf(address(wMaster));
-        wMaster.updateUSDCAmountEarned(LiquidityProviderTwo,  usdc.balanceOf(address(wChild)));
+        wMaster.updateUSDCAmountEarned(LiquidityProviderTwo, lp.totalSupply(), liquidityProviderTwoBalanceBeforeWithdraw,  usdc.balanceOf(address(wChild)));
 
         uint256 liquidityProviderTwoUSDCAmountEarned = 513984281;
 
         vm.prank(Messenger);
-        wChild.ccipSendToPool(chainSelector, LiquidityProviderTwo, 256992140);
+        wChild.ccipSendToPool(LiquidityProviderTwo, 256992140);
 
         vm.startPrank(LiquidityProviderTwo);
         lp.approve(address(wMaster), liquidityProviderTwoBalanceBeforeWithdraw);
@@ -513,12 +512,12 @@ contract PoolsTesting is Test{
 
         vm.warp(7 days);
         uint256 poolBalanceBeforeThirdWithdraw = usdc.balanceOf(address(wMaster));
-        wMaster.updateUSDCAmountEarned(LiquidityProviderThree,  usdc.balanceOf(address(wChild)));
+        wMaster.updateUSDCAmountEarned(LiquidityProviderThree, lp.totalSupply(), liquidityProviderThreeBalanceBeforeWithdraw, usdc.balanceOf(address(wChild)));
 
         uint256 liquidityProviderThreeUSDCAmountEarned = 513525242;
 
         vm.prank(Messenger);
-        wChild.ccipSendToPool(chainSelector, LiquidityProviderThree, 256762622);
+        wChild.ccipSendToPool(LiquidityProviderThree, 256762622);
 
         assertEq(usdc.balanceOf(address(wMaster)), 513_525_242);
         assertEq(usdc.balanceOf(address(wChild)), 0);        

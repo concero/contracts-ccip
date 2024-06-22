@@ -24,9 +24,7 @@ contract MasterStorage {
   ///@notice variable to store the Chainlink Function DON Secret Version
   uint64 internal s_donHostedSecretsVersion;
   ///@notice variable to store the Chainlink Function Source Hashsum
-  bytes32 internal s_srcJsHashSum;
-  ///@notice variable to store the Chainlink Function Destination Hashsum
-  bytes32 internal s_dstJsHashSum;
+  bytes32 internal s_hashSum;
   ///@notice variable to store Ethers Hashsum
   bytes32 internal s_ethersHashSum;
   ///@notice variable to store the value that will be temporary used by Chainlink Functions
@@ -42,7 +40,7 @@ contract MasterStorage {
   ///STORAGE///
   /////////////
   ///@notice array of Pools to receive Liquidity through `ccipSend` function
-  Pools[] poolsToDistribute;
+  IConceroPool.Pools[] poolsToDistribute;
 
   ///@notice Mapping to keep track of allowed pool receiver
   mapping(uint64 chainSelector => address pool) public s_poolToSendTo;
@@ -51,7 +49,7 @@ contract MasterStorage {
   ///@notice Mapping to keep track of Liquidity Providers withdraw requests
   mapping(address _liquidityProvider => IConceroPool.WithdrawRequests) public s_pendingWithdrawRequests;
   ///@notice Mapping to keep track of Chainlink Functions requests
-  mapping(bytes32 requestId => CLARequest) public s_requests;
+  mapping(bytes32 requestId => IConceroPool.CLARequest) public s_requests;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////

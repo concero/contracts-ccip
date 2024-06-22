@@ -31,9 +31,9 @@ interface IConceroPool {
   struct CLARequest {
     RequestType requestType;
     address liquidityProvider; //address to check and pool the index from the array
-    uint256 usdcBeforeDeposit;
-    uint256 lpSupplyBeforeDeposit;
-    uint256 depositedAmount; //USDC or LP according to the request
+    uint256 usdcBeforeRequest;
+    uint256 lpSupplyBeforeRequest;
+    uint256 amount; //USDC or LP according to the request
   }
   
   ////////////////////////////////////////////////////////

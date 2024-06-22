@@ -35,7 +35,6 @@ contract ConceroAutomationTest is Test {
             2, //_slotId
             0, //_secretsVersion
             0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_srcJsHashSum
-            0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_dstJsHashSum
             0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
             0xf9B8fc078197181C841c296C876945aaa425B278, //_router,
             masterProxy,

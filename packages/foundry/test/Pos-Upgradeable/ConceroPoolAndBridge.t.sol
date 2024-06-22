@@ -70,7 +70,7 @@ contract ConceroPoolAndBridge is Helpers {
 
         //======= Mock the Functions call
         vm.prank(address(wMaster));
-        wMaster.updateUSDCAmountManually(LP, depositEnoughAmount, 0);
+        wMaster.updateUSDCAmountManually(LP, lp.totalSupply(), depositEnoughAmount, 0);
 
         uint256 lpTokenUserBalance = lp.balanceOf(LP);
         assertEq(lpTokenUserBalance, (depositEnoughAmount * 10**18) / 10**6);
@@ -88,13 +88,13 @@ contract ConceroPoolAndBridge is Helpers {
 
         //======= Calls ChildPool to send the money
         vm.prank(Messenger);
-        wChild.ccipSendToPool(baseChainSelector, LP, depositEnoughAmount/2);
+        wChild.ccipSendToPool(LP, depositEnoughAmount/2);
         // ccipLocalSimulatorFork.switchChainAndRouteMessage(baseMainFork);
 
         //======= Switch to Base
         vm.selectFork(baseMainFork);
 
-        wMaster.updateUSDCAmountEarned(LP, depositEnoughAmount/2);
+        wMaster.updateUSDCAmountEarned(LP, lp.totalSupply(), lpTokenUserBalance, depositEnoughAmount/2);
 
         //======= Withdraw after the lock period and cross-chain transference
         vm.startPrank(LP);

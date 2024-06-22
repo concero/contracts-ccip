@@ -70,9 +70,12 @@ contract ConceroChildPoolTest is Test {
 
         //======= Deploy MasterPool
         childPool = childDeploy.run(
+            Orchestrator,
+            address(0),
             address(childProxy),
             mockLinkTokenAddress,
             mockSourceRouter,
+            mockDestinationChainSelector,
             address(usdc),
             Orchestrator,
             Tester
@@ -110,27 +113,6 @@ contract ConceroChildPoolTest is Test {
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(ChildStorage_InvalidAddress.selector));
         wChild.setConceroContractSender(mockDestinationChainSelector, address(0), 1);
-    }
-
-    //setPoolsToSend
-    event ChildStorage_PoolReceiverUpdated(uint64 chainSelector, address contractAddress);
-    function test_setPoolsToSend() public {
-        vm.prank(Tester);
-        vm.expectEmit();
-        emit ChildStorage_PoolReceiverUpdated(mockDestinationChainSelector, mockMasterPoolAddress);
-        wChild.setPoolsToSend(mockDestinationChainSelector, mockMasterPoolAddress);
-
-        assertEq(wChild.s_poolToSendTo(mockDestinationChainSelector), mockMasterPoolAddress);
-    }
-
-    function test_setPoolsToSendRevert() public {
-        vm.expectRevert(abi.encodeWithSelector(ChildStorage_NotContractOwner.selector));
-        wChild.setPoolsToSend(mockDestinationChainSelector, mockMasterPoolAddress);
-
-        
-        vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ChildStorage_InvalidAddress.selector));
-        wChild.setPoolsToSend(mockDestinationChainSelector, address(0));
     }
 
     //orchestratorLoan

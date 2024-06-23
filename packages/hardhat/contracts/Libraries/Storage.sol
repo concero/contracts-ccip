@@ -5,7 +5,7 @@ import {IDexSwap} from "../Interfaces/IDexSwap.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IStorage} from "../Interfaces/IStorage.sol";
 import {ConceroCCIP} from "../ConceroCCIP.sol";
-import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM} from "../Constants.sol";
+import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON} from "../Constants.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -121,9 +121,10 @@ abstract contract Storage is IStorage {
     tokens[uint(CCIPToken.bnm)][uint(Chain.pol)] = 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4; // pol
 
     // Initialize USDC addresses
-    tokens[uint(CCIPToken.usdc)][uint(Chain.arb)] = USDC_ARBITRUM; // arb
-    tokens[uint(CCIPToken.usdc)][uint(Chain.base)] = USDC_BASE; // base
-    tokens[uint(CCIPToken.usdc)][uint(Chain.opt)] = USDC_OPTIMISM; // opt
+    tokens[uint(CCIPToken.usdc)][uint(Chain.arb)] = USDC_ARBITRUM;
+    tokens[uint(CCIPToken.usdc)][uint(Chain.base)] = USDC_BASE;
+    tokens[uint(CCIPToken.usdc)][uint(Chain.opt)] = USDC_OPTIMISM;
+    tokens[uint(CCIPToken.usdc)][uint(Chain.pol)] = USDC_POLYGON;
 
     if (uint256(token) > tokens.length) revert Storage_TokenTypeOutOfBounds();
     if (uint256(_chainIndex) > tokens[uint256(token)].length) revert Storage_ChainIndexOutOfBounds();

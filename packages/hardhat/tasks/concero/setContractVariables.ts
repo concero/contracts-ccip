@@ -11,25 +11,41 @@ import getHashSum from "../../utils/getHashSum";
 import { liveChains } from "./liveChains";
 import { dstJsCodeUrl, ethersV6CodeUrl, srcJsCodeUrl } from "../../constants/functionsJsCodeUrls";
 
-export async function setContractVariables(
-  liveChains: CNetwork[],
-  deployableChains: CNetwork[],
-  slotId: number,
-  uploadsecrets: boolean,
-) {
-  const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
+const resetLastGasPrices = async (deployableChain: CNetwork, chains: CNetwork[], abi: any) => {
+  const conceroProxyAddress = getEnvVar(`CONCEROPROXY_${networkEnvKeys[deployableChain.name]}`);
+  const { walletClient, publicClient, account } = getClients(deployableChain.viemChain, deployableChain.url);
 
-  for (const deployableChain of deployableChains) {
-    // await setDexSwapAllowedRouters(deployableChain, abi); // once
-    await setDstConceroPools(deployableChain, abi);
-    if (uploadsecrets) {
-      await setDonHostedSecretsVersion(deployableChain, slotId, abi);
-      await setDonSecretsSlotId(deployableChain, slotId, abi);
-    }
-    await addMessengerToAllowlist(deployableChain, abi); // once
-    await setJsHashes(deployableChain, abi);
+  for (const chain of chains) {
+    const { chainSelector } = chain;
+
+    // const { request: resetGasPricesReq } = await publicClient.simulateContract({
+    //   address: conceroProxyAddress as Address,
+    //   abi: abi,
+    //   functionName: "setLasGasPrices",
+    //   args: [chainSelector!, 0n],
+    //   account,
+    //   chain: chain.viemChain,
+    // });
+
+    const resetGasPricesHash = await walletClient.writeContract({
+      address: conceroProxyAddress as Address,
+      abi: abi,
+      functionName: "setLasGasPrices",
+      args: [chainSelector!, 0n],
+      account,
+      chain: deployableChain.viemChain,
+    });
+
+    const { cumulativeGasUsed: resetGasPricesGasUsed } = await publicClient.waitForTransactionReceipt({
+      hash: resetGasPricesHash,
+    });
+
+    log(
+      `Reset last gas prices for ${deployableChain.name}:${conceroProxyAddress}. Gas used: ${resetGasPricesGasUsed.toString()}`,
+      "resetLastGasPrices",
+    );
   }
-}
+};
 
 export async function setConceroProxyDstContracts(liveChains: CNetwork[]) {
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
@@ -275,5 +291,26 @@ export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: a
     );
   } catch (error) {
     log(`Error for ${dcName}: ${error.message}`, "setDexRouterAddress");
+  }
+}
+
+export async function setContractVariables(
+  liveChains: CNetwork[],
+  deployableChains: CNetwork[],
+  slotId: number,
+  uploadsecrets: boolean,
+) {
+  const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
+
+  for (const deployableChain of deployableChains) {
+    // await setDexSwapAllowedRouters(deployableChain, abi); // once
+    await setDstConceroPools(deployableChain, abi);
+    if (uploadsecrets) {
+      await setDonHostedSecretsVersion(deployableChain, slotId, abi);
+      await setDonSecretsSlotId(deployableChain, slotId, abi);
+    }
+    // await addMessengerToAllowlist(deployableChain, abi); // once
+    await setJsHashes(deployableChain, abi);
+    // await resetLastGasPrices(deployableChain, liveChains, abi);
   }
 }

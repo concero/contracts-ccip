@@ -58,6 +58,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
         await uploadDonSecrets(deployableChains, slotId, 4320);
       }
       await setContractVariables(liveChains, deployableChains, slotId, taskArgs.uploadsecrets);
+
       // await fundSubscription(liveChains);
       // await fundContract(deployableChains);
     }

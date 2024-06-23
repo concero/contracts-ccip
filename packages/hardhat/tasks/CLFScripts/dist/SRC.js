@@ -262,13 +262,13 @@ async function f() {
 		const srcUrl =
 			chainSelectors[srcChainSelector].urls[Math.floor(Math.random() * chainSelectors[srcChainSelector].urls.length)];
 		const srcChainProvider = new FunctionsJsonRpcProvider(srcUrl);
-		const [dstFeeData, srcPriceFeeds] = await Promise.all([
+		const [srcFeeData, srcPriceFeeds] = await Promise.all([
 			srcChainProvider.getFeeData(),
 			getPriceRates(srcChainProvider, srcChainSelector),
 		]);
 		return constructResult([
-			dstFeeData.gasPrice,
 			gasPrice,
+			srcFeeData.gasPrice,
 			dstChainSelector,
 			srcPriceFeeds.linkUsdc,
 			srcPriceFeeds.nativeUsdc,

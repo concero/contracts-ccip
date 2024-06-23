@@ -97,7 +97,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
   ///@notice Chainlink Function Gas Overhead
   uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000; //Do we need this?
   ///@notice JS Code for Chainlink Functions
-  string internal constant JS_CODE = ""; //both can be combined?
+  string internal constant JS_CODE = ""; 
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////

@@ -1,19 +1,19 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {IConceroPool} from "contracts/Interfaces/IConceroPool.sol";
+import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
 ///@notice error emitted when an Admin enters an address(0) as input
-error MasterStorage_InvalidAddress();
+error ParentStorage_InvalidAddress();
 ///@notice error emitted when the caller is not the owner
-error MasterStorage_NotContractOwner();
+error ParentStorage_NotContractOwner();
 ///@notice error emitted when the owner tries to add an receiver that was already added.
-error MasterStorage_DuplicatedAddress();
+error ParentStorage_DuplicatedAddress();
 
-contract MasterStorage {
+contract ParentStorage {
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
@@ -42,36 +42,36 @@ contract MasterStorage {
   ///STORAGE///
   /////////////
   ///@notice array of Pools to receive Liquidity through `ccipSend` function
-  IConceroPool.Pools[] poolsToDistribute;
+  IParentPool.Pools[] poolsToDistribute;
 
   ///@notice Mapping to keep track of allowed pool receiver
   mapping(uint64 chainSelector => address pool) public s_poolToSendTo;
   ///@notice Mapping to keep track of allowed pool senders
-  mapping(uint64 chainSelector => mapping(address poolAddress => uint256)) public s_poolToReceiveFrom;
+  mapping(uint64 chainSelector => mapping(address poolAddress => uint256)) public s_contractsToReceiveFrom;
   ///@notice Mapping to keep track of Liquidity Providers withdraw requests
-  mapping(address _liquidityProvider => IConceroPool.WithdrawRequests) public s_pendingWithdrawRequests;
+  mapping(address _liquidityProvider => IParentPool.WithdrawRequests) public s_pendingWithdrawRequests;
   ///@notice Mapping to keep track of Chainlink Functions requests
-  mapping(bytes32 requestId => IConceroPool.CLARequest) public s_requests;
+  mapping(bytes32 requestId => IParentPool.CLARequest) public s_requests;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
   ///@notice event emitted when a Concero pool is added
-  event MasterStorage_PoolReceiverUpdated(uint64 chainSelector, address pool);
+  event ParentStorage_PoolReceiverUpdated(uint64 chainSelector, address pool);
   ///@notice event emitted when a allowed Cross-chain contract is updated
-  event MasterStorage_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
+  event ParentStorage_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
   ///@notice event emitted in setConceroContract when the address is emitted
-  event MasterStorage_ConceroContractUpdated(address concero);
+  event ParentStorage_ConceroContractUpdated(address concero);
   ///@notice event emitted when a contract is removed from the distribution array
-  event MasterStorage_ChainAndAddressRemoved(uint64 _chainSelector);
+  event ParentStorage_ChainAndAddressRemoved(uint64 _chainSelector);
   ///@notice event emitted when the MasterPool Cap is increased
-  event MasterStorage_MasterPoolCapUpdated(uint256 _newCap);
+  event ParentStorage_MasterPoolCapUpdated(uint256 _newCap);
 
   ///////////////
   ///MODIFIERS///
   ///////////////
   modifier onlyOwner() {
-    if (msg.sender != i_owner) revert MasterStorage_NotContractOwner();
+    if (msg.sender != i_owner) revert ParentStorage_NotContractOwner();
     _;
   }
 
@@ -92,10 +92,10 @@ contract MasterStorage {
    * @dev this functions is used on ConceroPool.sol
    */
   function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable onlyOwner {
-    if (_contractAddress == address(0)) revert MasterStorage_InvalidAddress();
-    s_poolToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
+    if (_contractAddress == address(0)) revert ParentStorage_InvalidAddress();
+    s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
 
-    emit MasterStorage_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
+    emit ParentStorage_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
   }
 
   /**
@@ -107,12 +107,12 @@ contract MasterStorage {
    * @dev this functions is used on ConceroPool.sol
    */
   function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
-    if (s_poolToSendTo[_chainSelector] != address(0)) revert MasterStorage_DuplicatedAddress();
-    poolsToDistribute.push(IConceroPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
+    if (s_poolToSendTo[_chainSelector] != address(0)) revert ParentStorage_DuplicatedAddress();
+    poolsToDistribute.push(IParentPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
 
     s_poolToSendTo[_chainSelector] = _pool;
 
-    emit MasterStorage_PoolReceiverUpdated(_chainSelector, _pool);
+    emit ParentStorage_PoolReceiverUpdated(_chainSelector, _pool);
   }
 
   /**
@@ -131,7 +131,7 @@ contract MasterStorage {
         ++i;
       }
     }
-    emit MasterStorage_ChainAndAddressRemoved(_chainSelector);
+    emit ParentStorage_ChainAndAddressRemoved(_chainSelector);
   }
 
   /**
@@ -141,6 +141,6 @@ contract MasterStorage {
   function setPoolCap(uint256 _newCap) external payable onlyOwner {
     s_maxDeposit = _newCap;
 
-    emit MasterStorage_MasterPoolCapUpdated(_newCap);
+    emit ParentStorage_MasterPoolCapUpdated(_newCap);
   }
 }

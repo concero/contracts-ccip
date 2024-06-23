@@ -7,7 +7,7 @@ import {AutomationDeploy} from "../../../script/AutomationDeploy.s.sol";
 
 import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
 
-import {IConceroPool} from "contracts/Interfaces/IConceroPool.sol";
+import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 
 import {USDC} from "../../Mocks/USDC.sol";
 
@@ -76,9 +76,9 @@ contract ConceroAutomationTest is Test {
     }
 
     //addPendingWithdrawal
-    event ConceroAutomation_RequestAdded(IConceroPool.WithdrawRequests request);
+    event ConceroAutomation_RequestAdded(IParentPool.WithdrawRequests request);
     function test_addPendingWithdraw() public {
-        IConceroPool.WithdrawRequests memory request = IConceroPool.WithdrawRequests ({
+        IParentPool.WithdrawRequests memory request = IParentPool.WithdrawRequests ({
             amountEarned: 10*10**6,
             amountToBurn: 5*10**18,
             amountToRequest: 0,
@@ -96,7 +96,7 @@ contract ConceroAutomationTest is Test {
 
     error ConceroAutomation_CallerNotAllowed(address);
     function test_addPendingWithdrawRevert() public {
-        IConceroPool.WithdrawRequests memory request = IConceroPool.WithdrawRequests ({
+        IParentPool.WithdrawRequests memory request = IParentPool.WithdrawRequests ({
             amountEarned: 10*10**6,
             amountToBurn: 5*10**18,
             amountToRequest: 0,

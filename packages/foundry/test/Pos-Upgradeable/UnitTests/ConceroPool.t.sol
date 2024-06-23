@@ -4,34 +4,34 @@ pragma solidity 0.8.20;
 import {Test, console2} from "forge-std/Test.sol";
 import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
-import {ConceroPoolDeploy} from "../../../script/ConceroPoolDeploy.s.sol";
+import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
 import {LPTokenDeploy} from "../../../script/LPTokenDeploy.s.sol";
-import {MasterPoolProxyDeploy} from "../../../script/MasterPoolProxyDeploy.s.sol";
+import {ParentPoolProxyDeploy} from "../../../script/ParentPoolProxyDeploy.s.sol";
 
-import {ConceroPool} from "contracts/ConceroPool.sol";
+import {ParentPool} from "contracts/ParentPool.sol";
 import {LPToken} from "contracts/LPToken.sol";
 
-import {MasterPoolProxy} from "contracts/Proxy/MasterPoolProxy.sol";
+import {ParentPoolProxy} from "contracts/Proxy/ParentPoolProxy.sol";
 
 
 import {USDC} from "../../Mocks/USDC.sol";
 
-contract ConceroPoolTest is Test {
+contract ParentPoolTest is Test {
     //==== Instantiate Contracts
-    ConceroPool public masterPool;
+    ParentPool public masterPool;
     LPToken public lp;
     
     //==== Instantiate Proxies
-    MasterPoolProxy masterProxy;
+    ParentPoolProxy masterProxy;
     ITransparentUpgradeableProxy proxyInterfaceMaster;
 
     //==== Instantiate Deploy Script
-    ConceroPoolDeploy public masterDeploy;
+    ParentPoolDeploy public masterDeploy;
     LPTokenDeploy public lpDeploy;
-    MasterPoolProxyDeploy masterProxyDeploy;
+    ParentPoolProxyDeploy masterProxyDeploy;
 
     //==== Wrapped contract
-    ConceroPool wMaster;
+    ParentPool wMaster;
 
     //======= Instantiate Mock
     USDC public usdc;
@@ -63,8 +63,8 @@ contract ConceroPoolTest is Test {
 
     function setUp() public {
         //======= Deploy Scripts
-        masterProxyDeploy = new MasterPoolProxyDeploy();
-        masterDeploy = new ConceroPoolDeploy();
+        masterProxyDeploy = new ParentPoolProxyDeploy();
+        masterDeploy = new ParentPoolDeploy();
         lpDeploy = new LPTokenDeploy();
 
         //======= Deploy Mock
@@ -102,60 +102,60 @@ contract ConceroPoolTest is Test {
         vm.prank(Tester);
         lp.grantRole(keccak256("MINTER_ROLE"), address(masterPool));
 
-        wMaster = ConceroPool(payable(address(masterProxy)));
+        wMaster = ParentPool(payable(address(masterProxy)));
     }
 
     ///////////////////////////////////////////////////////////////
     ////////////////////////Admin Functions////////////////////////
     ///////////////////////////////////////////////////////////////
     ///setConceroContractSender///
-    event MasterStorage_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256);
-    function test_setConceroPool() public {
+    event ParentStorage_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256);
+    function test_setParentPool() public {
         vm.prank(Tester);
         vm.expectEmit();
-        emit MasterStorage_ConceroSendersUpdated(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
+        emit ParentStorage_ConceroSendersUpdated(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
         wMaster.setConceroContractSender(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
 
-        assertEq(wMaster.s_poolToReceiveFrom(mockDestinationChainSelector, address(mockChildPoolAddress)), 1);
+        assertEq(wMaster.s_contractsToReceiveFrom(mockDestinationChainSelector, address(mockChildPoolAddress)), 1);
     }
 
-    error MasterStorage_NotContractOwner();
-    function test_revertSetConceroPool() public {
-        vm.expectRevert(abi.encodeWithSelector(MasterStorage_NotContractOwner.selector));
+    error ParentStorage_NotContractOwner();
+    function test_revertSetParentPool() public {
+        vm.expectRevert(abi.encodeWithSelector(ParentStorage_NotContractOwner.selector));
         wMaster.setConceroContractSender(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
     }
 
-    //setConceroPoolReceiver///
-    event MasterStorage_PoolReceiverUpdated(uint64 chainSelector, address contractAddress);
-    function test_setConceroPoolReceiver() public {
+    //setParentPoolReceiver///
+    event ParentStorage_PoolReceiverUpdated(uint64 chainSelector, address contractAddress);
+    function test_setParentPoolReceiver() public {
         vm.prank(Tester);
         vm.expectEmit();
-        emit MasterStorage_PoolReceiverUpdated(mockDestinationChainSelector, address(mockChildPoolAddress));
+        emit ParentStorage_PoolReceiverUpdated(mockDestinationChainSelector, address(mockChildPoolAddress));
         wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
 
         assertEq(wMaster.s_poolToSendTo(mockDestinationChainSelector), address(mockChildPoolAddress));
     }
 
-    function test_revertSetConceroPoolReceiver() public {
-        vm.expectRevert(abi.encodeWithSelector(MasterStorage_NotContractOwner.selector));
+    function test_revertSetParentPoolReceiver() public {
+        vm.expectRevert(abi.encodeWithSelector(ParentStorage_NotContractOwner.selector));
         wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
     }
 
     ///orchestratorLoan///
-    error ConceroPool_ItsNotOrchestrator(address);
-    error ConceroPool_InsufficientBalance();
-    error ConceroPool_InvalidAddress();
-    event ConceroPool_SuccessfulDeposited(address, uint256, address);
+    error ParentPool_ItsNotOrchestrator(address);
+    error ParentPool_InsufficientBalance();
+    error ParentPool_InvalidAddress();
+    event ParentPool_SuccessfulDeposited(address, uint256, address);
     function test_orchestratorLoanRevert() external {
 
-        vm.expectRevert(abi.encodeWithSelector(ConceroPool_ItsNotOrchestrator.selector, address(this)));
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_ItsNotOrchestrator.selector, address(this)));
         wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
 
         vm.startPrank(Orchestrator);
-        vm.expectRevert(abi.encodeWithSelector(ConceroPool_InvalidAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_InvalidAddress.selector));
         wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
 
-        vm.expectRevert(abi.encodeWithSelector(ConceroPool_InsufficientBalance.selector));
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_InsufficientBalance.selector));
         wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
 
         vm.stopPrank();
@@ -179,14 +179,14 @@ contract ConceroPoolTest is Test {
         wMaster.depositLiquidity(allowedAmountToDeposit);
     }
 
-    error ConceroPool_AmountBelowMinimum(uint256 amount);
-    error ConceroPool_ThereIsNoPoolToDistribute();
-    error ConceroPool_MaxCapReached(uint256);
-    event MasterStorage_MasterPoolCapUpdated(uint256);
+    error ParentPool_AmountBelowMinimum(uint256 amount);
+    error ParentPool_ThereIsNoPoolToDistribute();
+    error ParentPool_MaxCapReached(uint256);
+    event ParentStorage_MasterPoolCapUpdated(uint256);
     function test_depositLiquidityRevert() public {
         uint256 amountToDeposit = 1*10**5;
         vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ConceroPool_AmountBelowMinimum.selector, 100*10**6));
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountBelowMinimum.selector, 100*10**6));
         wMaster.depositLiquidity(amountToDeposit);
 
         uint256 allowedAmountToDeposit = 150*10**6;
@@ -195,27 +195,27 @@ contract ConceroPoolTest is Test {
         wMaster.setPoolCap(120 *10**6);
 
         vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ConceroPool_MaxCapReached.selector, 120 *10**6));
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_MaxCapReached.selector, 120 *10**6));
         wMaster.depositLiquidity(allowedAmountToDeposit);
 
         vm.prank(Tester);
         vm.expectEmit();
-        emit MasterStorage_MasterPoolCapUpdated(allowedAmountToDeposit);
+        emit ParentStorage_MasterPoolCapUpdated(allowedAmountToDeposit);
         wMaster.setPoolCap(allowedAmountToDeposit);
         
         vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ConceroPool_ThereIsNoPoolToDistribute.selector));
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_ThereIsNoPoolToDistribute.selector));
         wMaster.depositLiquidity(allowedAmountToDeposit);
     }
 
-    event MasterStorage_ChainAndAddressRemoved(uint64 chainSelector);
+    event ParentStorage_ChainAndAddressRemoved(uint64 chainSelector);
     function test_removePoolFromArray() public {
         vm.prank(Tester);
         wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
 
         vm.prank(Tester);
         vm.expectEmit();
-        emit MasterStorage_ChainAndAddressRemoved(mockDestinationChainSelector);
+        emit ParentStorage_ChainAndAddressRemoved(mockDestinationChainSelector);
         wMaster.removePoolsFromListOfSenders(mockDestinationChainSelector);
     }
 }

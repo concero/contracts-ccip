@@ -36,19 +36,17 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   ///IMMUTABLES///
   ////////////////
   ///@notice immutable variable to store Orchestrator Proxy
-  address private immutable i_orchestratorProxy;
+  address private immutable i_infraProxy;
   ///@notice Child Pool proxy address
   address private immutable i_childProxy;
   ///@notice Chainlink Link Token interface
   LinkTokenInterface private immutable i_linkToken;
-  ///@notice Chainlink CCIP Router
-  IRouterClient private immutable i_router;
   ///@notice immutable variable to store the USDC address.
   IERC20 private immutable i_USDC;
   ///@notice immutable variable to store the MasterPool chain selector
-  uint64 private immutable i_masterPoolChainSelector;
+  uint64 private immutable i_parentPoolChainSelector;
   ///@notice immutable variable to store the MasterPool Proxy address
-  address private immutable i_masterPoolProxyAddress;
+  address private immutable i_parentPoolProxyAddress;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -87,13 +85,12 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
     address _orchestrator,
     address _owner
   ) CCIPReceiver(_ccipRouter) ChildStorage(_owner) {
-    i_orchestratorProxy = _orchestratorProxy;
+    i_infraProxy = _orchestratorProxy;
     i_childProxy = _childProxy;
     i_linkToken = LinkTokenInterface(_link);
-    i_router = IRouterClient(_ccipRouter);
     i_USDC = IERC20(_usdc);
-    i_masterPoolChainSelector = _destinationChainSelector;
-    i_masterPoolProxyAddress = _masterPoolProxyAddress;
+    i_parentPoolChainSelector = _destinationChainSelector;
+    i_parentPoolProxyAddress = _masterPoolProxyAddress;
   }
 
   ////////////////////////
@@ -119,23 +116,23 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
     tokenAmounts[0] = tokenAmount;
 
     Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
-      receiver: abi.encode(i_masterPoolProxyAddress),
+      receiver: abi.encode(i_parentPoolProxyAddress),
       data: abi.encode(_liquidityProviderAddress, 0), //0== lp fee. It will always be zero because here we just processing withdraws
       tokenAmounts: tokenAmounts,
       extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
       feeToken: address(i_linkToken)
     });
 
-    uint256 fees = i_router.getFee(i_masterPoolChainSelector, evm2AnyMessage);
+    uint256 fees = IRouterClient(i_ccipRouter).getFee(i_parentPoolChainSelector, evm2AnyMessage);
 
     if (fees > i_linkToken.balanceOf(address(this))) revert ConceroChildPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
-    i_USDC.approve(address(i_router), _amount);
-    i_linkToken.approve(address(i_router), fees);
+    i_USDC.approve(i_ccipRouter, _amount);
+    i_linkToken.approve(i_ccipRouter, fees);
 
-    emit ConceroChildPool_MessageSent(messageId, i_masterPoolChainSelector, i_masterPoolProxyAddress, address(i_linkToken), fees);
+    emit ConceroChildPool_MessageSent(messageId, i_parentPoolChainSelector, i_parentPoolProxyAddress, address(i_linkToken), fees);
 
-    messageId = i_router.ccipSend(i_masterPoolChainSelector, evm2AnyMessage);
+    messageId = IRouterClient(i_ccipRouter).ccipSend(i_parentPoolChainSelector, evm2AnyMessage);
   }
 
   /**
@@ -147,7 +144,7 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
    * @dev for ether transfer, the _receiver need to be known and trusted
    */
   function orchestratorLoan(address _token, uint256 _amount, address _receiver) external isProxy {
-    if (msg.sender != i_orchestratorProxy) revert ConceroChildPool_CallerIsNotConcero(msg.sender);
+    if (msg.sender != i_infraProxy) revert ConceroChildPool_CallerIsNotConcero(msg.sender);
     if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
     if (_receiver == address(0)) revert ConceroChildPool_InvalidAddress();
 

@@ -8,7 +8,7 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import {IERC1967} from "@openzeppelin/contracts/interfaces/IERC1967.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
-import {MasterStorage} from "../Libraries/MasterStorage.sol";
+import {ParentStorage} from "../Libraries/ParentStorage.sol";
 
 /**
  * @dev Interface for {TransparentUpgradeableProxy}. In order to implement transparency, {TransparentUpgradeableProxy}
@@ -61,7 +61,7 @@ error Proxy_ContractPaused();
  * function and the functions declared in {ITransparentUpgradeableProxy} will be resolved in favor of the new one. This
  * could render the `upgradeToAndCall` function inaccessible, preventing upgradeability and compromising transparency.
  */
-contract MasterPoolProxy is ERC1967Proxy, MasterStorage {
+contract ParentPoolProxy is ERC1967Proxy, ParentStorage {
   // An immutable address for the admin to avoid unnecessary SLOADs before each call
   // at the expense of removing the ability to change the admin once it's set.
   // This is acceptable if the admin is always a ProxyAdmin instance or similar contract
@@ -87,7 +87,7 @@ contract MasterPoolProxy is ERC1967Proxy, MasterStorage {
     address initialOwner,
     address _implementationOwner,
     bytes memory _data
-  ) payable ERC1967Proxy(_logic, _data) MasterStorage(_implementationOwner) {
+  ) payable ERC1967Proxy(_logic, _data) ParentStorage(_implementationOwner) {
     _admin = initialOwner;
     // Set the storage value and emit an event for ERC-1967 compatibility
     ERC1967Utils.changeAdmin(_proxyAdmin());

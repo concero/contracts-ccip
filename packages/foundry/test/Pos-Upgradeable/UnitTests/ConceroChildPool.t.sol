@@ -99,7 +99,7 @@ contract ConceroChildPoolTest is Test {
         emit ChildStorage_ConceroSendersUpdated(mockDestinationChainSelector, mockMasterPoolAddress, 1);
         wChild.setConceroContractSender(mockDestinationChainSelector, mockMasterPoolAddress, 1);
 
-        assertEq(wChild.s_poolToReceiveFrom(mockDestinationChainSelector, mockMasterPoolAddress), 1);
+        assertEq(wChild.s_contractsToReceiveFrom(mockDestinationChainSelector, mockMasterPoolAddress), 1);
     }
 
     error ChildStorage_NotContractOwner();

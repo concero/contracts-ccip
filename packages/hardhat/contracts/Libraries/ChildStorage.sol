@@ -40,7 +40,7 @@ contract ChildStorage {
   ///STORAGE///
   /////////////
   ///@notice Mapping to keep track of allowed pool senders
-  mapping(uint64 chainSelector => mapping(address conceroContract => uint256)) public s_poolToReceiveFrom;
+  mapping(uint64 chainSelector => mapping(address conceroContract => uint256)) public s_contractsToReceiveFrom;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -62,7 +62,7 @@ contract ChildStorage {
    * @param _sender address of the sender contract
    */
   modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
-    if (s_poolToReceiveFrom[_chainSelector][_sender] != ALLOWED) revert ChildStorage_SenderNotAllowed(_sender);
+    if (s_contractsToReceiveFrom[_chainSelector][_sender] != ALLOWED) revert ChildStorage_SenderNotAllowed(_sender);
     _;
   }
 
@@ -95,7 +95,7 @@ contract ChildStorage {
    */
   function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable onlyOwner {
     if (_contractAddress == address(0)) revert ChildStorage_InvalidAddress();
-    s_poolToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
+    s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
 
     emit ChildStorage_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
   }

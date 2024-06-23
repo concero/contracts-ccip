@@ -6,7 +6,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {Storage} from "./Libraries/Storage.sol";
-import {IConceroPool} from "./Interfaces/IConceroPool.sol";
+import {IParentPool} from "./Interfaces/IParentPool.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 
 ////////////////////////////////////////////////////////
@@ -281,12 +281,12 @@ contract ConceroFunctions is FunctionsClient, Storage {
     uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
     if (transaction.dstSwapData.length > 1) {
-      IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, address(this));
+      IParentPool(i_pool).orchestratorLoan(tokenReceived, amount, address(this));
       IDexSwap.SwapData[] memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData[]));
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, 0));
       if (swapSuccess == false) revert TXReleasedFailed(swapError);
     } else {
-      IConceroPool(i_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
+      IParentPool(i_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
     }
 
     emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);

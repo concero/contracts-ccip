@@ -6,13 +6,13 @@ import {Test, console} from "forge-std/Test.sol";
 
 //Master & Infra Contracts
 import {DexSwap} from "contracts/DexSwap.sol";
-import {ConceroPool} from "contracts/ConceroPool.sol";
+import {ParentPool} from "contracts/ParentPool.sol";
 import {Concero} from "contracts/Concero.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
 import {LPToken} from "contracts/LPToken.sol";
 import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
 import {InfraProxy} from "contracts/Proxy/InfraProxy.sol";
-import {MasterPoolProxy} from "contracts/Proxy/MasterPoolProxy.sol";
+import {ParentPoolProxy} from "contracts/Proxy/ParentPoolProxy.sol";
 
 ///=== Child Contracts
 import {ConceroChildPool} from "contracts/ConceroChildPool.sol";
@@ -27,13 +27,13 @@ import {Storage} from "contracts/Libraries/Storage.sol";
 
 //MAster & Infra Scripts
 import {DexSwapDeploy} from "../../script/DexSwapDeploy.s.sol";
-import {ConceroPoolDeploy} from "../../script/ConceroPoolDeploy.s.sol";
+import {ParentPoolDeploy} from "../../script/ParentPoolDeploy.s.sol";
 import {ConceroDeploy} from "../../script/ConceroDeploy.s.sol";
 import {OrchestratorDeploy} from "../../script/OrchestratorDeploy.s.sol";
 import {InfraProxyDeploy} from "../../script/InfraProxyDeploy.s.sol";
 import {LPTokenDeploy} from "../../script/LPTokenDeploy.s.sol";
 import {AutomationDeploy} from "../../script/AutomationDeploy.s.sol";
-import {MasterPoolProxyDeploy} from "../../script/MasterPoolProxyDeploy.s.sol";
+import {ParentPoolProxyDeploy} from "../../script/ParentPoolProxyDeploy.s.sol";
 
 //===== Child Scripts
 import {ChildPoolDeploy} from "../../script/ChildPoolDeploy.s.sol";
@@ -70,26 +70,26 @@ interface IWETH is IERC20 {
 contract ProtocolTest is Test {
     //==== Instantiate Base Contracts
     DexSwap public dex;
-    ConceroPool public pool;
+    ParentPool public pool;
     Concero public concero;
     Orchestrator public orch;
     Orchestrator public orchEmpty;
     InfraProxy public proxy;
     LPToken public lp;
     ConceroAutomation public automation;
-    MasterPoolProxy masterProxy;
+    ParentPoolProxy masterProxy;
     ITransparentUpgradeableProxy proxyInterfaceInfra;
     ITransparentUpgradeableProxy proxyInterfaceMaster;
 
     //==== Instantiate Deploy Script Base
     DexSwapDeploy dexDeployBase;
-    ConceroPoolDeploy poolDeployBase;
+    ParentPoolDeploy poolDeployBase;
     ConceroDeploy conceroDeployBase;
     OrchestratorDeploy orchDeployBase;
     InfraProxyDeploy proxyDeployBase;
     LPTokenDeploy lpDeployBase;
     AutomationDeploy autoDeployBase;
-    MasterPoolProxyDeploy masterProxyDeploy;
+    ParentPoolProxyDeploy masterProxyDeploy;
 
     //==== Instantiate Arbitrum Contracts
     DexSwap public dexDst;
@@ -114,7 +114,7 @@ contract ProtocolTest is Test {
     //==== Wrapped contract
     Orchestrator op;
     Orchestrator opDst;
-    ConceroPool wMaster;
+    ParentPool wMaster;
     ConceroChildPool wChild;
 
 
@@ -224,13 +224,13 @@ contract ProtocolTest is Test {
         SAFE_LOCK = ERC721(0xde11Bc6a6c47EeaB0476C85672EA7f932f1a78Ed);
 
         dexDeployBase = new DexSwapDeploy();
-        poolDeployBase = new ConceroPoolDeploy();
+        poolDeployBase = new ParentPoolDeploy();
         conceroDeployBase = new ConceroDeploy();
         orchDeployBase = new OrchestratorDeploy();
         proxyDeployBase = new InfraProxyDeploy();
         lpDeployBase = new LPTokenDeploy();
         autoDeployBase = new AutomationDeploy();
-        masterProxyDeploy = new MasterPoolProxyDeploy();
+        masterProxyDeploy = new ParentPoolProxyDeploy();
 
         {
         //DEPLOY AN DUMMY ORCH
@@ -322,7 +322,7 @@ contract ProtocolTest is Test {
         vm.prank(ProxyOwner);
         proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
 
-        wMaster = ConceroPool(payable(address(masterProxy)));
+        wMaster = ParentPool(payable(address(masterProxy)));
 
         //=== Base Contracts
         vm.makePersistent(address(proxy));
@@ -491,10 +491,10 @@ contract ProtocolTest is Test {
         assertEq(wMaster.s_poolToSendTo(arbChainSelector), address(wChild));
 
         wMaster.setConceroContractSender(arbChainSelector, address(wChild), 1);
-        assertEq(wMaster.s_poolToReceiveFrom(arbChainSelector, address(wChild)), 1);
+        assertEq(wMaster.s_contractsToReceiveFrom(arbChainSelector, address(wChild)), 1);
 
         wMaster.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
-        assertEq(wMaster.s_poolToReceiveFrom(arbChainSelector, address(conceroDst)), 1);
+        assertEq(wMaster.s_contractsToReceiveFrom(arbChainSelector, address(conceroDst)), 1);
 
         vm.stopPrank();
 
@@ -505,10 +505,10 @@ contract ProtocolTest is Test {
         vm.startPrank(Tester);
 
         wChild.setConceroContractSender(baseChainSelector, address(wMaster), 1);
-        assertEq(wChild.s_poolToReceiveFrom(baseChainSelector, address(wMaster)), 1);
+        assertEq(wChild.s_contractsToReceiveFrom(baseChainSelector, address(wMaster)), 1);
 
         wChild.setConceroContractSender(baseChainSelector, address(concero), 1);
-        assertEq(wChild.s_poolToReceiveFrom(baseChainSelector, address(concero)), 1);
+        assertEq(wChild.s_contractsToReceiveFrom(baseChainSelector, address(concero)), 1);
 
         vm.stopPrank();
         _;

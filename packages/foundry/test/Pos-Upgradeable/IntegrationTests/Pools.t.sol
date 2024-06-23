@@ -4,10 +4,10 @@ pragma solidity 0.8.20;
 import {Test, console2} from "forge-std/Test.sol";
 
 //====== Master Pool
-import {ConceroPoolDeploy} from "../../../script/ConceroPoolDeploy.s.sol";
-import {MasterPoolProxyDeploy} from "../../../script/MasterPoolProxyDeploy.s.sol";
-import {ConceroPool} from "contracts/ConceroPool.sol";
-import {MasterPoolProxy} from "contracts/Proxy/MasterPoolProxy.sol";
+import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
+import {ParentPoolProxyDeploy} from "../../../script/ParentPoolProxyDeploy.s.sol";
+import {ParentPool} from "contracts/ParentPool.sol";
+import {ParentPoolProxy} from "contracts/Proxy/ParentPoolProxy.sol";
 
 //====== Child Pool
 import {ChildPoolDeploy} from "../../../script/ChildPoolDeploy.s.sol";
@@ -34,11 +34,11 @@ import {USDC} from "../../Mocks/USDC.sol";
 
 contract PoolsTesting is Test{
     //====== Instantiate Master Pool
-    ConceroPoolDeploy masterDeploy;
-    MasterPoolProxyDeploy masterProxyDeploy;
-    ConceroPool master;
-    MasterPoolProxy masterProxy;
-    ConceroPool wMaster;
+    ParentPoolDeploy masterDeploy;
+    ParentPoolProxyDeploy masterProxyDeploy;
+    ParentPool master;
+    ParentPoolProxy masterProxy;
+    ParentPool wMaster;
 
     //====== Instantiate Child Pool
     ChildPoolDeploy childDeploy;
@@ -103,8 +103,8 @@ contract PoolsTesting is Test{
         /////////////// DEPLOY SCRIPTS ///////////////
         //////////////////////////////////////////////
         //====== Deploy Master Pool scripts
-        masterDeploy = new ConceroPoolDeploy();
-        masterProxyDeploy = new MasterPoolProxyDeploy();
+        masterDeploy = new ParentPoolDeploy();
+        masterProxyDeploy = new ParentPoolProxyDeploy();
 
         //====== Deploy Child Pool scripts
         childDeploy = new ChildPoolDeploy();
@@ -187,7 +187,7 @@ contract PoolsTesting is Test{
         //////////////////////////////////////////////////////
         /////////////// WRAP PROXY & CONTRACTS ///////////////
         //////////////////////////////////////////////////////
-        wMaster = ConceroPool(payable(address(masterProxy)));
+        wMaster = ParentPool(payable(address(masterProxy)));
         wChild = ConceroChildPool(payable(address(childProxy)));
 
         /// FAUCET
@@ -206,20 +206,20 @@ contract PoolsTesting is Test{
         assertEq(wMaster.s_poolToSendTo(chainSelector), address(wChild));
 
         wMaster.setConceroContractSender(chainSelector, address(wChild), 1);
-        assertEq(wMaster.s_poolToReceiveFrom(chainSelector, address(wChild)), 1);
+        assertEq(wMaster.s_contractsToReceiveFrom(chainSelector, address(wChild)), 1);
 
         wMaster.setConceroContractSender(chainSelector, address(ConceroDst), 1);
-        assertEq(wMaster.s_poolToReceiveFrom(chainSelector, address(ConceroDst)), 1);
+        assertEq(wMaster.s_contractsToReceiveFrom(chainSelector, address(ConceroDst)), 1);
 
         wMaster.setPoolCap(USDC_INITIAL_BALANCE);
 
         //====== Child Setters
 
         wChild.setConceroContractSender(chainSelector, address(wMaster), 1);
-        assertEq(wChild.s_poolToReceiveFrom(chainSelector, address(wMaster)), 1);
+        assertEq(wChild.s_contractsToReceiveFrom(chainSelector, address(wMaster)), 1);
 
         wChild.setConceroContractSender(chainSelector, address(Concero), 1);
-        assertEq(wChild.s_poolToReceiveFrom(chainSelector, address(Concero)), 1);
+        assertEq(wChild.s_contractsToReceiveFrom(chainSelector, address(Concero)), 1);
 
         //====== Automation Setters
 

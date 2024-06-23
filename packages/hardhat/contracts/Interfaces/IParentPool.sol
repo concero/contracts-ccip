@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-interface IConceroPool {
+interface IParentPool {
   ///////////////////////
   ///TYPE DECLARATIONS///
   ///////////////////////

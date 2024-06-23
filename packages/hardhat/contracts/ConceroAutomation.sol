@@ -7,7 +7,7 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/autom
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 
-import {IConceroPool} from "./Interfaces/IConceroPool.sol";
+import {IParentPool} from "./Interfaces/IParentPool.sol";
 
 ///@notice error emitted when the caller is not the owner.
 error ConceroAutomation_CallerNotAllowed(address caller);
@@ -67,7 +67,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ///STORAGE///
   /////////////
   ///@notice array to store the withdraw requests of users
-  IConceroPool.WithdrawRequests[] public s_pendingWithdrawRequestsCLA;
+  IParentPool.WithdrawRequests[] public s_pendingWithdrawRequestsCLA;
 
   ///@notice Mapping to keep track of Chainlink Functions requests
   mapping(bytes32 requestId => PerformWithdrawRequest) public s_requests;
@@ -76,7 +76,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
   ///@notice event emitted when a new request is added
-  event ConceroAutomation_RequestAdded(IConceroPool.WithdrawRequests request);
+  event ConceroAutomation_RequestAdded(IParentPool.WithdrawRequests request);
   ///@notice event emitted when the Pool Address is updated
   event ConceroAutomation_PoolAddressUpdated(address pool);
   ///@notice event emitted when the Keeper Address is updated
@@ -163,7 +163,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    * @param _request the WithdrawRequests populated struct
    * @dev this function should only be called by the ConceroPool.sol
    */
-  function addPendingWithdrawal(IConceroPool.WithdrawRequests memory _request) external {
+  function addPendingWithdrawal(IParentPool.WithdrawRequests memory _request) external {
     if (i_masterPoolProxy != msg.sender) revert ConceroAutomation_CallerNotAllowed(msg.sender);
 
     s_pendingWithdrawRequestsCLA.push(_request);

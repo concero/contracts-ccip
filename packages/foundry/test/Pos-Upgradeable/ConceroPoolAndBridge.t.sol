@@ -6,15 +6,15 @@ import {IConcero, IDexSwap} from "contracts/Interfaces/IConcero.sol";
 import {Storage} from "contracts/Libraries/Storage.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract ConceroPoolAndBridge is Helpers {
+contract ParentPoolAndBridge is Helpers {
     //////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// POOL MODULE ///////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////
 
-    error ConceroPool_AmountBelowMinimum(uint256);
-    error ConceroPool_MaxCapReached(uint256);
-    event MasterStorage_MasterPoolCapUpdated(uint256 _newCap);
-    event ConceroPool_SuccessfulDeposited(address, uint256 , address);
+    error ParentPool_AmountBelowMinimum(uint256);
+    error ParentPool_MaxCapReached(uint256);
+    event ParentStorage_MasterPoolCapUpdated(uint256 _newCap);
+    event ParentPool_SuccessfulDeposited(address, uint256 , address);
     function test_LiquidityProvidersDepositAndOpenARequest() public setters {
         vm.selectFork(baseMainFork);
 
@@ -26,14 +26,14 @@ contract ConceroPoolAndBridge is Helpers {
         //======= LP Deposits Low Amount of USDC on the Main Pool to revert on Min Amount
         vm.startPrank(LP);
         mUSDC.approve(address(wMaster), depositLowAmount);
-        vm.expectRevert(abi.encodeWithSelector(ConceroPool_AmountBelowMinimum.selector, 100*10**6));
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountBelowMinimum.selector, 100*10**6));
         wMaster.depositLiquidity(depositLowAmount);
         vm.stopPrank();
 
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit MasterStorage_MasterPoolCapUpdated(50*10**6);
+        emit ParentStorage_MasterPoolCapUpdated(50*10**6);
         wMaster.setPoolCap(50*10**6);
 
         //======= LP Deposits enough to go through, but revert on max Cap
@@ -41,21 +41,21 @@ contract ConceroPoolAndBridge is Helpers {
 
         vm.startPrank(LP);
         mUSDC.approve(address(wMaster), depositEnoughAmount);
-        vm.expectRevert(abi.encodeWithSelector(ConceroPool_MaxCapReached.selector, 50*10**6));
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_MaxCapReached.selector, 50*10**6));
         wMaster.depositLiquidity(depositEnoughAmount);
         vm.stopPrank();
 
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit MasterStorage_MasterPoolCapUpdated(1000*10**6);
+        emit ParentStorage_MasterPoolCapUpdated(1000*10**6);
         wMaster.setPoolCap(1000*10**6);
 
         //======= LP Deposits Successfully
         vm.startPrank(LP);
         mUSDC.approve(address(wMaster), depositEnoughAmount);
         vm.expectEmit();
-        emit ConceroPool_SuccessfulDeposited(LP, depositEnoughAmount, address(mUSDC));
+        emit ParentPool_SuccessfulDeposited(LP, depositEnoughAmount, address(mUSDC));
         wMaster.depositLiquidity(depositEnoughAmount);
         // ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumMainFork);
         vm.stopPrank();

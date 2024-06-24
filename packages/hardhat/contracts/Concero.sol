@@ -42,6 +42,8 @@ contract Concero is ConceroCCIP {
   /// @notice event emitted when a stuck amount is withdraw
   event Concero_StuckAmountWithdraw(address owner, address token, uint256 amount);
 
+  uint64 private constant HALF_DST_GAS = 750_000;
+
   constructor(
     FunctionsVariables memory _variables,
     uint64 _chainSelector,
@@ -116,11 +118,12 @@ contract Concero is ConceroCCIP {
     uint256 conceroFee = amount / CONCERO_FEE_FACTOR; //@audit 1_000? == 0.1?
 
     // @notice gas fee
-    uint256 functionsGasFeeInNative = (750_000 * s_lastGasPrices[CHAIN_SELECTOR]) + (750_000 * s_lastGasPrices[dstChainSelector]);
-    uint256 functionsGasFeeInUsdc = (functionsGasFeeInNative * s_latestNativeUsdcRate) / 1 ether;
+    uint256 messengerDstGasInNative = HALF_DST_GAS * s_lastGasPrices[dstChainSelector];
+    uint256 messengerSrcGasInNative = HALF_DST_GAS * s_lastGasPrices[CHAIN_SELECTOR];
+    uint256 messengerGasFeeInUsdc = ((messengerDstGasInNative + messengerSrcGasInNative) * s_latestNativeUsdcRate) / 1 ether;
 
     // @notice: converting to 6 decimals
-    return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + functionsGasFeeInUsdc) / 1e12;
+    return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + messengerGasFeeInUsdc) / 1e12;
   }
 
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {

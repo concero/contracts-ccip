@@ -5,6 +5,8 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
+const ethers = await import('npm:ethers');
+
 async function f() {
 	const [
 		_,
@@ -30,6 +32,8 @@ async function f() {
 				usdcUsd: '',
 				nativeUsd: '',
 				linkNative: '',
+				maticUsd: '',
+				ethUsd: '',
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}').toString(16)}`]: {
@@ -72,6 +76,8 @@ async function f() {
 				usdcUsd: '${USDC_USD_PRICEFEED_BASE_SEPOLIA}',
 				nativeUsd: '${NATIVE_USD_PRICEFEED_BASE_SEPOLIA}',
 				linkNative: '${LINK_NATIVE_PRICEFEED_BASE_SEPOLIA}',
+				maticUsd: '${MATIC_USD_PRICEFEED_BASE}',
+				avaxUsd: '${AVAX_USD_PRICEFEED_BASE}',
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
@@ -100,6 +106,7 @@ async function f() {
 				usdcUsd: '${USDC_USD_PRICEFEED_POLYGON_AMOY}',
 				nativeUsd: '${NATIVE_USD_PRICEFEED_POLYGON_AMOY}',
 				linkNative: '${LINK_NATIVE_PRICEFEED_POLYGON_AMOY}',
+				ethUsd: '${ETH_USD_PRICEFEED_POLYGON_AMOY}',
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
@@ -114,6 +121,8 @@ async function f() {
 				usdcUsd: '${USDC_USD_PRICEFEED_BASE}',
 				nativeUsd: '${NATIVE_USD_PRICEFEED_BASE}',
 				linkNative: '${LINK_NATIVE_PRICEFEED_BASE}',
+				maticUsd: '${MATIC_USD_PRICEFEED_BASE}',
+				avaxUsd: '${AVAX_USD_PRICEFEED_BASE}',
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
@@ -142,6 +151,8 @@ async function f() {
 				usdcUsd: '${USDC_USD_PRICEFEED_POLYGON}',
 				nativeUsd: '${NATIVE_USD_PRICEFEED_POLYGON}',
 				linkNative: '${LINK_NATIVE_PRICEFEED_POLYGON}',
+				ethUsd: '${ETH_USD_PRICEFEED_POLYGON}',
+				avaxUsd: '${AVAX_USD_PRICEFEED_POLYGON}',
 			},
 		},
 	};
@@ -162,18 +173,55 @@ async function f() {
 			priceFeedsAbi,
 			provider,
 		);
-
-		const [linkUsd, usdcUsd, nativeUsd, linkNative] = await Promise.all([
+		const promises = [
 			linkUsdContract.latestRoundData(),
 			usdcUsdContract.latestRoundData(),
 			nativeUsdContract.latestRoundData(),
 			linkNativeContract.latestRoundData(),
-		]);
+		];
+
+		// const promiseUndefined = async () => {
+		// 	return new Promise(resolve => {
+		// 		resolve(undefined);
+		// 	});
+		// };
+
+		// if (chainSelectors[chainSelector].priceFeed.maticUsd) {
+		// 	const maticUsdContract = new ethers.Contract(
+		// 		chainSelectors[chainSelector].priceFeed.maticUsd,
+		// 		priceFeedsAbi,
+		// 		provider,
+		// 	);
+		// 	promises.push(maticUsdContract.latestRoundData());
+		// } else {
+		// 	promises.push(promiseUndefined());
+		// }
+		// if (chainSelectors[chainSelector].priceFeed.ethUsd) {
+		// 	const ethUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.ethUsd, priceFeedsAbi, provider);
+		// 	promises.push(ethUsdContract.latestRoundData());
+		// } else {
+		// 	promises.push(promiseUndefined());
+		// }
+		// if (chainSelectors[chainSelector].priceFeed.avaxUsd) {
+		// 	const avaxUsdContract = new ethers.Contract(
+		// 		chainSelectors[chainSelector].priceFeed.avaxUsd,
+		// 		priceFeedsAbi,
+		// 		provider,
+		// 	);
+		// 	promises.push(avaxUsdContract.latestRoundData());
+		// } else {
+		// 	promises.push(promiseUndefined());
+		// }
+
+		const [linkUsd, usdcUsd, nativeUsd, linkNative, maticUsd, ethUsd, avaxUsd] = await Promise.all(promises);
 
 		return {
 			linkUsdc: linkUsd[1] > 0n ? (linkUsd[1] * 10n ** 18n) / usdcUsd[1] : 0n,
 			nativeUsdc: nativeUsd[1] > 0n ? (nativeUsd[1] * 10n ** 18n) / usdcUsd[1] : 0n,
 			linkNative: linkNative[1] > 0 ? linkNative[1] : 0n,
+			// maticUsd: maticUsd ? maticUsd[1] : undefined,
+			// ethUsd: ethUsd ? ethUsd[1] : undefined,
+			// avaxUsd: avaxUsd ? avaxUsd[1] : undefined,
 		};
 	};
 	const constructResult = items => {
@@ -255,7 +303,6 @@ async function f() {
 				return res;
 			}
 		}
-
 		const dstUrl =
 			chainSelectors[dstChainSelector].urls[Math.floor(Math.random() * chainSelectors[dstChainSelector].urls.length)];
 		const provider = new FunctionsJsonRpcProvider(dstUrl);
@@ -299,4 +346,5 @@ async function f() {
 		}
 	}
 }
-f();
+
+return f();

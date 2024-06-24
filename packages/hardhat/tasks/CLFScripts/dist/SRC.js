@@ -1,4 +1,3 @@
-const ethers = await import('npm:ethers');
 async function f() {
 	const [
 		_,
@@ -294,4 +293,4 @@ async function f() {
 		}
 	}
 }
-return f();
+f();

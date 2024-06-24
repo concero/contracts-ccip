@@ -244,16 +244,12 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
       return;
     }
 
-    bool fulfilled = abi.decode(response, (bool));
+    uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
 
-    if (fulfilled == true) {
-      uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
-
-      for (uint256 i; i < requestsNumber; ++i) {
-        if (s_pendingWithdrawRequestsCLA[i].liquidityProvider == request.liquidityProvider) {
-          s_pendingWithdrawRequestsCLA[i] = s_pendingWithdrawRequestsCLA[s_pendingWithdrawRequestsCLA.length - 1];
-          s_pendingWithdrawRequestsCLA.pop();
-        }
+    for (uint256 i; i < requestsNumber; ++i) {
+      if (s_pendingWithdrawRequestsCLA[i].liquidityProvider == request.liquidityProvider) {
+        s_pendingWithdrawRequestsCLA[i] = s_pendingWithdrawRequestsCLA[s_pendingWithdrawRequestsCLA.length - 1];
+        s_pendingWithdrawRequestsCLA.pop();
       }
     }
   }

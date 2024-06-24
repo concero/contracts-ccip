@@ -1,6 +1,8 @@
 async function f() {
 	const ethers = await import('npm:ethers');
 
+	const [_, __, liquidityProvider, tokenAmount] = bytesArgs;
+
 	const chainSelectors = {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
@@ -60,6 +62,8 @@ async function f() {
 		},
 	};
 
+	const MASTER_POOL_CHAIN_SELECTOR = `0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`;
+
 	class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 		constructor(url) {
 			super(url);
@@ -75,6 +79,17 @@ async function f() {
 			if (res.length === undefined) return [res];
 			return res;
 		}
+	}
+
+	const poolAbi = ['function ccipSendToPool(address, uint256) external returns (bytes32 messageId)'];
+
+	for (const chainSelector in chainSelectors) {
+		if (chainSelector === MASTER_POOL_CHAIN_SELECTOR) continue;
+
+		const url = chainSelectors[chainSelector].urls[Math.floor(Math.random() * chainSelectors[chainSelector].urls.length)];
+		const provider = new FunctionsJsonRpcProvider(url);
+		const poolContract = new ethers.Contract(chainSelectors[chainSelector].poolAddress, poolAbi, provider);
+		const hash = await poolContract.ccipSendToPool(liquidityProvider, tokenAmount);
 	}
 }
 f();

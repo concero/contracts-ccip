@@ -1,6 +1,7 @@
 // Purpose: To have a single source of truth for networks across the project
 import { type CNetwork, CNetworkNames } from "../types/CNetwork";
 import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
+import { privateKeyToAddress } from "viem/accounts";
 import { arbitrumSepolia, avalancheFuji, baseSepolia, optimismSepolia, sepolia } from "viem/chains";
 
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;

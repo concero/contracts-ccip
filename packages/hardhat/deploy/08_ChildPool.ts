@@ -6,11 +6,17 @@ import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
 
 interface ConstructorArgs {
+  conceroProxyAddress?: string;
+  parentProxyAddress?: string;
+  childProxyAddress?: string;
   linkToken?: string;
   ccipRouter?: string;
+  chainSelector?: number,
+  usdc?: string;
+  owner?: string;
 }
 
-const deployConceroPool: DeployFunction = async function (
+const deployChildPool: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment,
   constructorArgs: ConstructorArgs = {},
 ) {
@@ -18,19 +24,24 @@ const deployConceroPool: DeployFunction = async function (
   const { deploy } = hre.deployments;
   const { name } = hre.network;
 
-  const { linkToken, ccipRouter } = chains[name];
+  const { linkToken, ccipRouter, chainSelector } = chains[name];
 
   const defaultArgs = {
+    conceroProxyAddress: getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`),
+    parentProxyAddress: getEnvVar(`PARENTPROXY_${networkEnvKeys[name]}`),
+    childProxyAddress: getEnvVar(`CHILDPROXY_${networkEnvKeys[name]}`),
     linkToken: linkToken,
     ccipRouter: ccipRouter,
-    conceroProxyAddress: getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`),
+    chainSelector: chainSelector,
+    usdc: process.env.USDC_BASE, //Need to make it dynamic
+    owner: deployer,
   };
 
   // Merge defaultArgs with constructorArgs
   const args = { ...defaultArgs, ...constructorArgs };
 
-  console.log("Deploying ConceroPool...");
-  const deployConceroPool = (await deploy("ConceroPool", {
+  console.log("Deploying ChildPool...");
+  const deployChildPool = (await deploy("ChildPool", {
     from: deployer,
     args: [args.linkToken, args.ccipRouter, args.conceroProxyAddress],
     log: true,
@@ -38,10 +49,10 @@ const deployConceroPool: DeployFunction = async function (
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {
-    log(`ConceroPool deployed to ${name} to: ${deployConceroPool.address}`, "deployConceroPool");
-    updateEnvVariable(`CONCEROPOOL_${networkEnvKeys[name]}`, deployConceroPool.address, "../../../.env.deployments");
+    log(`ChildPool deployed to ${name} to: ${deployChildPool.address}`, "deployChildPool");
+    updateEnvVariable(`CHILDPOOL_${networkEnvKeys[name]}`, deployChildPool.address, "../../../.env.deployments");
   }
 };
 
-export default deployConceroPool;
-deployConceroPool.tags = ["ConceroPool"];
+export default deployChildPool;
+deployChildPool.tags = ["ChildPool"];

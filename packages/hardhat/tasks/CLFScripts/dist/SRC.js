@@ -1,3 +1,4 @@
+const ethers = await import('npm:ethers');
 async function f() {
 	const [
 		_,
@@ -23,6 +24,8 @@ async function f() {
 				usdcUsd: '',
 				nativeUsd: '',
 				linkNative: '',
+				maticUsd: '',
+				ethUsd: '',
 			},
 		},
 		[`0x${BigInt('16015286601757825753').toString(16)}`]: {
@@ -65,6 +68,8 @@ async function f() {
 				usdcUsd: '0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165',
 				nativeUsd: '0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1',
 				linkNative: '0x56a43EB56Da12C0dc1D972ACb089c06a5dEF8e69',
+				maticUsd: '0x12129aAC52D6B0f0125677D4E1435633E61fD25f',
+				avaxUsd: '0xE70f2D34Fd04046aaEC26a198A35dD8F2dF5cd92',
 			},
 		},
 		[`0x${BigInt('5224473277236331295').toString(16)}`]: {
@@ -93,6 +98,7 @@ async function f() {
 				usdcUsd: '0x1b8739bB4CdF0089d07097A9Ae5Bd274b29C6F16',
 				nativeUsd: '0x001382149eBa3441043c1c66972b4772963f5D43',
 				linkNative: '0x408D97c89c141e60872C0835e18Dd1E670CD8781',
+				ethUsd: '0xF0d50568e3A7e8259E16663972b11910F89BD8e7',
 			},
 		},
 		[`0x${BigInt('15971525489660198786').toString(16)}`]: {
@@ -106,6 +112,8 @@ async function f() {
 				usdcUsd: '0x7e860098F58bBFC8648a4311b374B1D669a2bc6B',
 				nativeUsd: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70',
 				linkNative: '0xc5E65227fe3385B88468F9A01600017cDC9F3A12',
+				maticUsd: '0x12129aAC52D6B0f0125677D4E1435633E61fD25f',
+				avaxUsd: '0xE70f2D34Fd04046aaEC26a198A35dD8F2dF5cd92',
 			},
 		},
 		[`0x${BigInt('4949039107694359620').toString(16)}`]: {
@@ -134,6 +142,8 @@ async function f() {
 				usdcUsd: '0xfE4A8cc5b5B2366C1B58Bea3858e81843581b2F7',
 				nativeUsd: '0xAB594600376Ec9fD91F8e885dADF0CE036862dE0',
 				linkNative: '0x5787BefDc0ECd210Dfa948264631CD53E68F7802',
+				ethUsd: '0xF9680D99D6C9589e2a93a78A04A279e509205945',
+				avaxUsd: '0xe01eA2fbd8D76ee323FbEd03eB9a8625EC981A10',
 			},
 		},
 	};
@@ -154,12 +164,13 @@ async function f() {
 			priceFeedsAbi,
 			provider,
 		);
-		const [linkUsd, usdcUsd, nativeUsd, linkNative] = await Promise.all([
+		const promises = [
 			linkUsdContract.latestRoundData(),
 			usdcUsdContract.latestRoundData(),
 			nativeUsdContract.latestRoundData(),
 			linkNativeContract.latestRoundData(),
-		]);
+		];
+		const [linkUsd, usdcUsd, nativeUsd, linkNative, maticUsd, ethUsd, avaxUsd] = await Promise.all(promises);
 		return {
 			linkUsdc: linkUsd[1] > 0n ? (linkUsd[1] * 10n ** 18n) / usdcUsd[1] : 0n,
 			nativeUsdc: nativeUsd[1] > 0n ? (nativeUsd[1] * 10n ** 18n) / usdcUsd[1] : 0n,
@@ -283,4 +294,4 @@ async function f() {
 		}
 	}
 }
-f();
+return f();

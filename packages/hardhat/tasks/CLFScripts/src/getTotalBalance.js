@@ -82,7 +82,7 @@ async function f() {
 	let totalBalance = 0n;
 
 	for (const chain in chainSelectors) {
-		const url = chainSelectors[chain].urls[0];
+		const url = chainSelectors[chain].urls[Math.floor(Math.random() * chainSelectors[chain].urls.length)];
 		const provider = new FunctionsJsonRpcProvider(url);
 		const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
 		const pool = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, provider);

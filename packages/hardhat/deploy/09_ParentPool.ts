@@ -36,7 +36,7 @@ const deployParentPool: DeployFunction = async function (
     functionsSubIds: functionsSubIds,
     functionsRouter: functionsRouter,
     ccipRouter: ccipRouter,
-    usdc: process.env.USDC_BASE,
+    usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
     lpToken: getEnvVar(`LPTOKEN_${networkEnvKeys[name]}`),
     automation: getEnvVar(`CONCEROAUTOMATION_${networkEnvKeys[name]}`),
     conceroProxyAddress: getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`),

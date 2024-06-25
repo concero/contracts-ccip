@@ -74,7 +74,7 @@ const deployConcero: DeployFunction = async function (
       ).text(),
     ),
     functionsVars: {
-      donHostedSecretsSlotId: constructorArgs.soltid || 0,
+      donHostedSecretsSlotId: constructorArgs.slotId || 0,
       donHostedSecretsVersion: donHostedSecretsVersion,
       subscriptionId: functionsSubIds[0],
       donId: functionsDonId,

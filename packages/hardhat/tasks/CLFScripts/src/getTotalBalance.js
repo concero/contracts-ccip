@@ -6,7 +6,7 @@ async function f() {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa869',
 			usdcAddress: '${USDC_FUJI}',
-			poolAddress: '${CONCEROPOOL_AVALANCHE_FUJI}',
+			poolAddress: '${PARENTPOOL_AVALANCHE_FUJI}',
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -16,7 +16,7 @@ async function f() {
 			],
 			chainId: '0xaa36a7',
 			usdcAddress: '${USDC_SEPOLIA}',
-			poolAddress: '${CONCEROPOOL_SEPOLIA}',
+			poolAddress: '${PARENTPOOL_SEPOLIA}',
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -26,7 +26,7 @@ async function f() {
 			],
 			chainId: '0x66eee',
 			usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
-			poolAddress: '${CONCEROPOOL_ARBITRUM_SEPOLIA}',
+			poolAddress: '${PARENTPOOL_ARBITRUM_SEPOLIA}',
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -36,7 +36,7 @@ async function f() {
 			],
 			chainId: '0x14a34',
 			usdcAddress: '${USDC_BASE_SEPOLIA}',
-			poolAddress: '${CONCEROPOOL_BASE_SEPOLIA}',
+			poolAddress: '${PARENTPOOL_BASE_SEPOLIA}',
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -46,7 +46,7 @@ async function f() {
 			],
 			chainId: '0xaa37dc',
 			usdcAddress: '${USDC_OPTIMISM_SEPOLIA}',
-			poolAddress: '${CONCEROPOOL_OPTIMISM_SEPOLIA}',
+			poolAddress: '${PARENTPOOL_OPTIMISM_SEPOLIA}',
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY}').toString(16)}`]: {
 			urls: [
@@ -56,7 +56,7 @@ async function f() {
 			],
 			chainId: '0x13882',
 			usdcAddress: '${USDC_AMOY}',
-			poolAddress: '${CONCEROPOOL_POLYGON_AMOY}',
+			poolAddress: '${PARENTPOOL_POLYGON_AMOY}',
 		},
 	};
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];

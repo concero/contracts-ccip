@@ -26,16 +26,16 @@ const chainSelectors = {
 		usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
 		poolAddress: '0x915bd5c083ea78553243F31f86BFF6936cb230d6',
 	},
-	[`0x${BigInt('10344971235874465080').toString(16)}`]: {
-		urls: [
-			`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-			'https://base-sepolia.blockpi.network/v1/rpc/public',
-			'https://base-sepolia-rpc.publicnode.com',
-		],
-		chainId: '0x14a34',
-		usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-		poolAddress: '0xA77d67158e77Db8C0a72f25A2Ff58C1c9fCc2D9B',
-	},
+	// [`0x${BigInt('10344971235874465080').toString(16)}`]: { //This we account internally.
+	// 	urls: [
+	// 		`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
+	// 		'https://base-sepolia.blockpi.network/v1/rpc/public',
+	// 		'https://base-sepolia-rpc.publicnode.com',
+	// 	],
+	// 	chainId: '0x14a34',
+	// 	usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+	// 	poolAddress: '0xA77d67158e77Db8C0a72f25A2Ff58C1c9fCc2D9B',
+	// },
 	[`0x${BigInt('5224473277236331295').toString(16)}`]: {
 		urls: [
 			`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,

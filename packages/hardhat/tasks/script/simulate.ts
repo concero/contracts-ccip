@@ -44,8 +44,8 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     execSync(`bunx hardhat clf-script-build --all`, { stdio: "inherit" });
 
     // await simulate(path.join(__dirname, "../", "./CLFScripts/dist/SRC.min.js"), [
-    //   "0x387496908b17af80df7e0029e55b562af3dcdac3db84a04ffabce629fd87474a", // srcJsHashSum
-    //   "0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4", // ethers hash sum
+    //   "0xdda371abc7d11a7ae49fe213757bb409aa3eafacae9a62fed13311091abf1424", // srcJsHashSum
+    //   "0xd5558cd419c8d46bdc958064cb97f963d1ea793866414c025906ec15033512ed", // ethers hash sum
     //   "0x0",
     //   // process.env.CONCEROCCIP_OPTIMISM_SEPOLIA, // contractAddress
     //   "0x3055cC530B8cF18fD996545EC025C4e677a1dAa3", // contractAddress
@@ -60,8 +60,8 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     // ]);
 
     await simulate(path.join(__dirname, "../", "./CLFScripts/dist/eval.min.js"), [
-      "0xe6023cea71e57e758a7c38c335fa525f21a5f4f2f3c3fe8766d3a2dc6d9d02a6", // srcJsHashSum
-      "0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4", // ethers hash sum
+      "0xdda371abc7d11a7ae49fe213757bb409aa3eafacae9a62fed13311091abf1424", // srcJsHashSum
+      "0xd5558cd419c8d46bdc958064cb97f963d1ea793866414c025906ec15033512ed", // ethers hash sum
       "0x0",
       process.env.CONCEROCCIP_OPTIMISM_SEPOLIA, // contractAddress
       "0x5315f93154194ca637615651c5662cf39a77308927ebe7d31c9e970958681a49", // ccipMessageId

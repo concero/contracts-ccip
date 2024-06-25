@@ -277,7 +277,7 @@ async function f() {
 			}
 		}
 
-		return 0n;
+		return _gasPrice;
 	};
 	let nonce = 0;
 	let retries = 0;

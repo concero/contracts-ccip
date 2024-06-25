@@ -1,5 +1,5 @@
 try {
-	const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';
+	const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.0.0/dist/ethers.umd.min.js';
 	const [t, p] = await Promise.all([
 		fetch(u),
 		fetch(

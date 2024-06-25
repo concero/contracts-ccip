@@ -261,7 +261,7 @@ async function f() {
 				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
 			}
 		}
-		return 0n;
+		return _gasPrice;
 	};
 	let nonce = 0;
 	let retries = 0;

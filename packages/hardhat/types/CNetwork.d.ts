@@ -34,6 +34,7 @@ interface PriceFeed {
 export type CLCCIPNetwork = {
   linkToken: envString;
   ccipBnmToken: envString;
+  usdc: envString;
   ccipRouter: envString;
   chainSelector: envString;
   priceFeed: PriceFeed;

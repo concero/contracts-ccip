@@ -33,7 +33,7 @@ const deployChildPool: DeployFunction = async function (
     linkToken: linkToken,
     ccipRouter: ccipRouter,
     chainSelector: chainSelector,
-    usdc: process.env.USDC_BASE, //Need to make it dynamic
+    usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
     owner: deployer,
   };
 

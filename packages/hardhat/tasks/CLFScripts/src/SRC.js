@@ -147,9 +147,9 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
 			urls: [
-				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				// `https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 				'https://polygon.blockpi.network/v1/rpc/public',
-				'https://polygon-bor-rpc.publicnode.com',
+				// 'https://polygon-bor-rpc.publicnode.com',
 			],
 			chainId: '0x89',
 			nativeCurrency: 'matic',
@@ -266,13 +266,23 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		const getGasPriceByPriceFeeds = (nativeUsdPriceFeed, dstAssetUsdPriceFeed, __gasPrice) => {
 			if (dstAssetUsdPriceFeed === undefined) return 0n;
 			const srcNativeDstNativeRate = (nativeUsdPriceFeed * 10n ** 10n) / dstAssetUsdPriceFeed;
-			return (__gasPrice * srcNativeDstNativeRate) / 10n ** 18n;
+			const dstGasPriceInSrcCurrency = (__gasPrice * srcNativeDstNativeRate) / 10n ** 18n;
+			return dstGasPriceInSrcCurrency < 1n ? 1n : dstGasPriceInSrcCurrency;
 		};
 
-		if (chainSelectors[srcChainSelector].nativeCurrency === 'eth') {
-			if (chainSelectors[dstChainSelector].nativeCurrency === 'matic') {
+		const srcNativeCurrency = chainSelectors[srcChainSelector].nativeCurrency;
+		const dstNativeCurrency = chainSelectors[dstChainSelector].nativeCurrency;
+
+		if (srcNativeCurrency === 'eth') {
+			if (dstNativeCurrency === 'matic') {
 				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.maticUsd, _gasPrice);
-			} else if (chainSelectors[dstChainSelector].nativeCurrency === 'avax') {
+			} else if (dstNativeCurrency === 'avax') {
+				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
+			}
+		} else if (srcNativeCurrency === 'matic') {
+			if (dstNativeCurrency === 'eth') {
+				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.ethUsd, _gasPrice);
+			} else if (dstNativeCurrency === 'avax') {
 				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
 			}
 		}

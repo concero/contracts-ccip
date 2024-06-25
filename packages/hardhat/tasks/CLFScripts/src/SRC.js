@@ -5,7 +5,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
-async function f() {
+(async function f() {
 	const [
 		_,
 		__,
@@ -390,5 +390,4 @@ async function f() {
 			throw new Error(message?.slice(0, 255));
 		}
 	}
-}
-await f();
+})();

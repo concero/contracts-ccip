@@ -370,4 +370,4 @@ async function f() {
 		}
 	}
 }
-f();
+await f();

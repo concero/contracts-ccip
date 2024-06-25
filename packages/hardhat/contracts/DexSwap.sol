@@ -62,7 +62,7 @@ contract DexSwap is Storage, IDexSwap {
    */
   function conceroEntry(IDexSwap.SwapData[] memory _swapData, uint256 _amount) external payable {
     if (address(this) != i_proxy) revert DexSwap_ItsNotOrchestrator(address(this));
-    if (_swapData.length < 1 || _swapData.length > 5) revert DexSwap_EmptyDexData();
+    if (_swapData.length < 1 || _swapData.length > 5) revert DexSwap_EmptyDexData(); //TODO: Custom Error: rename it
 
     uint256 swapDataLength = _swapData.length;
 
@@ -70,7 +70,8 @@ contract DexSwap is Storage, IDexSwap {
       uint256 previousBalance;
       uint256 postBalance;
 
-      previousBalance = _swapData[i].fromToken == address(0) ? address(this).balance : IERC20(_swapData[i].fromToken).balanceOf(address(this));
+      //@audit ADJUSTED
+      previousBalance = _swapData[i].toToken == address(0) ? address(this).balance : IERC20(_swapData[i].toToken).balanceOf(address(this));
 
       if (_swapData[i].dexType == DexType.UniswapV3Single) {
         _swapUniV3Single(_swapData[i]);
@@ -92,13 +93,13 @@ contract DexSwap is Storage, IDexSwap {
         _swapEtherOnUniV2Like(_swapData[i], _amount);
       }
 
-      postBalance = _swapData[i].fromToken == address(0) ? address(this).balance : IERC20(_swapData[i].fromToken).balanceOf(address(this));
+      //@audit ADJUSTED
+      postBalance = _swapData[i].toToken == address(0) ? address(this).balance : IERC20(_swapData[i].toToken).balanceOf(address(this));
 
       if (swapDataLength > 1 && i + 1 <= swapDataLength) {
         uint256 newBalance = postBalance - previousBalance;
-        if (_swapData[i + 1].fromAmount < newBalance) {
-          _swapData[i + 1].fromAmount = newBalance;
-        }
+        //Remove the second if because it will always be >= than the amountOutMin.
+        _swapData[i + 1].fromAmount = newBalance;
       }
 
       unchecked {

@@ -11,7 +11,7 @@ interface ConstructorArgs {
   childProxyAddress?: string;
   linkToken?: string;
   ccipRouter?: string;
-  chainSelector?: number,
+  chainSelector?: number;
   usdc?: string;
   owner?: string;
 }
@@ -43,7 +43,16 @@ const deployChildPool: DeployFunction = async function (
   console.log("Deploying ChildPool...");
   const deployChildPool = (await deploy("ChildPool", {
     from: deployer,
-    args: [args.linkToken, args.ccipRouter, args.conceroProxyAddress],
+    args: [
+      args.conceroProxyAddress,
+      args.parentProxyAddress,
+      args.childProxyAddress,
+      args.linkToken,
+      args.ccipRouter,
+      args.chainSelector,
+      args.usdc,
+      args.owner,
+    ],
     log: true,
     autoMine: true,
   })) as Deployment;

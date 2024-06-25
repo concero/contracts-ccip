@@ -49,7 +49,19 @@ const deployParentPool: DeployFunction = async function (
   console.log("Deploying ParentPool...");
   const deployParentPool = (await deploy("ParentPool", {
     from: deployer,
-    args: [args.linkToken, args.ccipRouter, args.conceroProxyAddress],
+    args: [
+      args.parentProxyAddress,
+      args.linkToken,
+      args.functionsDonId,
+      args.functionsSubIds,
+      args.functionsRouter,
+      args.ccipRouter,
+      args.usdc,
+      args.lpToken,
+      args.automation,
+      args.conceroProxyAddress,
+      args.owner,
+    ],
     log: true,
     autoMine: true,
   })) as Deployment;

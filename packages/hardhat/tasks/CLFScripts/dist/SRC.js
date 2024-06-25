@@ -1,4 +1,4 @@
-async function f() {
+(async function f() {
 	const [
 		_,
 		__,
@@ -369,5 +369,4 @@ async function f() {
 			throw new Error(message?.slice(0, 255));
 		}
 	}
-}
-await f();
+})();

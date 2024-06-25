@@ -1,4 +1,4 @@
-(async function f() {
+(async () => {
 	const [
 		_,
 		__,

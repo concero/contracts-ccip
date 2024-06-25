@@ -17,6 +17,8 @@ import { setProxyImplementation } from "./setProxyImplementation";
 
 let deployableChains: CNetwork[] = liveChains;
 
+// 3 months in sec = 7776000
+
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)

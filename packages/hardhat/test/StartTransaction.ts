@@ -44,15 +44,15 @@ const chainsMap = {
   },
 };
 
-const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE;
-const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON;
+const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON;
+const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE;
 const senderAddress = process.env.DEPLOYER_ADDRESS;
 const amount = "1000000";
 // const bnmTokenAddress = process.env.CCIPBNM_OPTIMISM_SEPOLIA;
-const usdcTokenAddress = process.env.USDC_BASE;
+const usdcTokenAddress = process.env.USDC_POLYGON;
 const transactionsCount = 1;
-const srcContractAddress = process.env.CONCEROPROXY_BASE;
-const dstContractAddress = process.env.CONCEROPROXY_POLYGON;
+const srcContractAddress = process.env.CONCEROPROXY_POLYGON;
+const dstContractAddress = process.env.CONCEROPROXY_BASE;
 
 describe("startBatchTransactions\n", () => {
   let Concero: Concero;

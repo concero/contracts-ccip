@@ -4,6 +4,7 @@ import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
 import {
   arbitrum,
   arbitrumSepolia,
+  avalanche,
   avalancheFuji,
   base,
   baseSepolia,
@@ -317,65 +318,24 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
       linkToNativePriceFeeds: process.env.LINK_NATIVE_PRICEFEED_POLYGON_AMOY!,
     },
   },
-  // mainnet: {
-  //   url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // goerli: {
-  //   url: `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // arbitrum: {
-  //   url: `https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // optimism: {
-  //   url: `https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // polygon: {
-  //   url: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // polygonZkEvm: {
-  //   url: `https://polygonzkevm-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // polygonZkEvmTestnet: {
-  //   url: `https://polygonzkevm-testnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // gnosis: {
-  //   url: "https://rpc.gnosischain.com",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // chiado: {
-  //   url: "https://rpc.chiadochain.net",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // base: {
-  //   url: "https://mainnet.base.org",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // baseGoerli: {
-  //   url: "https://goerli.base.org",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // scrollSepolia: {
-  //   url: "https://sepolia-rpc.scroll.io",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // scroll: {
-  //   url: "https://rpc.scroll.io",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // pgn: {
-  //   url: "https://rpc.publicgoods.network",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // pgnTestnet: {
-  //   url: "https://sepolia.publicgoods.network",
-  //   accounts: [deployerPrivateKey],
-  // },
+  avalanche: {
+    chainId: 43114,
+    url: `https://avalanche-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    accounts: [deployerPK, proxyDeployerPK],
+    functionsDonId: process.env.CLF_DONID_AVALANCHE,
+    functionsDonIdAlias: process.env.CLF_DONID_AVALANCHE_ALIAS,
+    functionsRouter: process.env.CLF_ROUTER_AVALANCHE,
+    functionsSubIds: [process.env.CLF_SUBID_AVALANCHE],
+    functionsGatewayUrls: functionsGatewayUrls.mainnet,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_AVALANCHE,
+    chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_AVALANCHE,
+    confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
+    linkToken: process.env.LINK_AVALANCHE,
+    linkPriceFeed: process.env.LINK_PRICEFEED_AVALANCHE,
+    ccipBnmToken: process.env.CCIPBNM_FUJI,
+    ccipRouter: process.env.CL_CCIP_ROUTER_AVALANCHE,
+    viemChain: avalanche,
+    name: "avalanche",
+  },
 };
 export default CNetworks;

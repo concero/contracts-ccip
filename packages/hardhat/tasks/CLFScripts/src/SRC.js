@@ -25,6 +25,7 @@ async function f() {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa869',
+			nativeCurrency: 'avax',
 			priceFeed: {
 				linkUsd: '',
 				usdcUsd: '',
@@ -41,6 +42,7 @@ async function f() {
 				'https://ethereum-sepolia.blockpi.network/v1/rpc/public',
 			],
 			chainId: '0xaa36a7',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '',
 				usdcUsd: '',
@@ -55,6 +57,7 @@ async function f() {
 				'https://arbitrum-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x66eee',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '${LINK_USD_PRICEFEED_ARBITRUM_SEPOLIA}',
 				usdcUsd: '${USDC_USD_PRICEFEED_ARBITRUM_SEPOLIA}',
@@ -69,6 +72,7 @@ async function f() {
 				'https://base-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x14a34',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '${LINK_USD_PRICEFEED_BASE_SEPOLIA}',
 				usdcUsd: '${USDC_USD_PRICEFEED_BASE_SEPOLIA}',
@@ -85,6 +89,7 @@ async function f() {
 				'https://optimism-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0xaa37dc',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '${LINK_USD_PRICEFEED_OPTIMISM_SEPOLIA}',
 				usdcUsd: '${USDC_USD_PRICEFEED_OPTIMISM_SEPOLIA}',
@@ -99,6 +104,7 @@ async function f() {
 				'https://polygon-amoy-bor-rpc.publicnode.com',
 			],
 			chainId: '0x13882',
+			nativeCurrency: 'matic',
 			priceFeed: {
 				linkUsd: '${LINK_USD_PRICEFEED_POLYGON_AMOY}',
 				usdcUsd: '${USDC_USD_PRICEFEED_POLYGON_AMOY}',
@@ -114,6 +120,7 @@ async function f() {
 				'https://base-rpc.publicnode.com',
 			],
 			chainId: '0x2105',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '${LINK_USD_PRICEFEED_BASE}',
 				usdcUsd: '${USDC_USD_PRICEFEED_BASE}',
@@ -130,6 +137,7 @@ async function f() {
 				'https://arbitrum-rpc.publicnode.com',
 			],
 			chainId: '0xa4b1',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '${LINK_USD_PRICEFEED_ARBITRUM}',
 				usdcUsd: '${USDC_USD_PRICEFEED_ARBITRUM}',
@@ -144,6 +152,7 @@ async function f() {
 				'https://polygon-bor-rpc.publicnode.com',
 			],
 			chainId: '0x89',
+			nativeCurrency: 'matic',
 			priceFeed: {
 				linkUsd: '${LINK_USD_PRICEFEED_POLYGON}',
 				usdcUsd: '${USDC_USD_PRICEFEED_POLYGON}',
@@ -151,6 +160,23 @@ async function f() {
 				linkNative: '${LINK_NATIVE_PRICEFEED_POLYGON}',
 				ethUsd: '${ETH_USD_PRICEFEED_POLYGON}',
 				avaxUsd: '${AVAX_USD_PRICEFEED_POLYGON}',
+			},
+		},
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}').toString(16)}`]: {
+			urls: [
+				`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://avalanche.blockpi.network/v1/rpc/public',
+				'https://avalanche-c-chain-rpc.publicnode.com',
+			],
+			chainId: '0xa86a',
+			nativeCurrency: 'avax',
+			priceFeed: {
+				linkUsd: '${LINK_USD_PRICEFEED_AVALANCHE}',
+				usdcUsd: '${USDC_USD_PRICEFEED_AVALANCHE}',
+				nativeUsd: '${NATIVE_USD_PRICEFEED_AVALANCHE}',
+				linkNative: '${LINK_NATIVE_PRICEFEED_AVALANCHE}',
+				ethUsd: '${ETH_USD_PRICEFEED_AVALANCHE}',
+				maticUsd: '${MATIC_USD_PRICEFEED_AVALANCHE}',
 			},
 		},
 	};
@@ -178,38 +204,38 @@ async function f() {
 			linkNativeContract.latestRoundData(),
 		];
 
-		// const promiseUndefined = async () => {
-		// 	return new Promise(resolve => {
-		// 		resolve(undefined);
-		// 	});
-		// };
+		const promiseUndefined = async () => {
+			return new Promise(resolve => {
+				resolve(undefined);
+			});
+		};
 
-		// if (chainSelectors[chainSelector].priceFeed.maticUsd) {
-		// 	const maticUsdContract = new ethers.Contract(
-		// 		chainSelectors[chainSelector].priceFeed.maticUsd,
-		// 		priceFeedsAbi,
-		// 		provider,
-		// 	);
-		// 	promises.push(maticUsdContract.latestRoundData());
-		// } else {
-		// 	promises.push(promiseUndefined());
-		// }
-		// if (chainSelectors[chainSelector].priceFeed.ethUsd) {
-		// 	const ethUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.ethUsd, priceFeedsAbi, provider);
-		// 	promises.push(ethUsdContract.latestRoundData());
-		// } else {
-		// 	promises.push(promiseUndefined());
-		// }
-		// if (chainSelectors[chainSelector].priceFeed.avaxUsd) {
-		// 	const avaxUsdContract = new ethers.Contract(
-		// 		chainSelectors[chainSelector].priceFeed.avaxUsd,
-		// 		priceFeedsAbi,
-		// 		provider,
-		// 	);
-		// 	promises.push(avaxUsdContract.latestRoundData());
-		// } else {
-		// 	promises.push(promiseUndefined());
-		// }
+		if (chainSelectors[chainSelector].priceFeed.maticUsd) {
+			const maticUsdContract = new ethers.Contract(
+				chainSelectors[chainSelector].priceFeed.maticUsd,
+				priceFeedsAbi,
+				provider,
+			);
+			promises.push(maticUsdContract.latestRoundData());
+		} else {
+			promises.push(promiseUndefined());
+		}
+		if (chainSelectors[chainSelector].priceFeed.ethUsd) {
+			const ethUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.ethUsd, priceFeedsAbi, provider);
+			promises.push(ethUsdContract.latestRoundData());
+		} else {
+			promises.push(promiseUndefined());
+		}
+		if (chainSelectors[chainSelector].priceFeed.avaxUsd) {
+			const avaxUsdContract = new ethers.Contract(
+				chainSelectors[chainSelector].priceFeed.avaxUsd,
+				priceFeedsAbi,
+				provider,
+			);
+			promises.push(avaxUsdContract.latestRoundData());
+		} else {
+			promises.push(promiseUndefined());
+		}
 
 		const [linkUsd, usdcUsd, nativeUsd, linkNative, maticUsd, ethUsd, avaxUsd] = await Promise.all(promises);
 
@@ -217,9 +243,10 @@ async function f() {
 			linkUsdc: linkUsd[1] > 0n ? (linkUsd[1] * 10n ** 18n) / usdcUsd[1] : 0n,
 			nativeUsdc: nativeUsd[1] > 0n ? (nativeUsd[1] * 10n ** 18n) / usdcUsd[1] : 0n,
 			linkNative: linkNative[1] > 0 ? linkNative[1] : 0n,
-			// maticUsd: maticUsd ? maticUsd[1] : undefined,
-			// ethUsd: ethUsd ? ethUsd[1] : undefined,
-			// avaxUsd: avaxUsd ? avaxUsd[1] : undefined,
+			nativeUsd: nativeUsd[1] > 0 ? nativeUsd[1] : 0n,
+			maticUsd: maticUsd ? maticUsd[1] : undefined,
+			ethUsd: ethUsd ? ethUsd[1] : undefined,
+			avaxUsd: avaxUsd ? avaxUsd[1] : undefined,
 		};
 	};
 	const constructResult = items => {
@@ -234,6 +261,23 @@ async function f() {
 		}
 
 		return result;
+	};
+	const getDstGasPriceInSrcCurrency = (_gasPrice, srcPriceFeeds) => {
+		const getGasPriceByPriceFeeds = (nativeUsdPriceFeed, dstAssetUsdPriceFeed, __gasPrice) => {
+			if (dstAssetUsdPriceFeed === undefined) return 0n;
+			const srcNativeDstNativeRate = (nativeUsdPriceFeed * 10n ** 10n) / dstAssetUsdPriceFeed;
+			return (__gasPrice * srcNativeDstNativeRate) / 10n ** 18n;
+		};
+
+		if (chainSelectors[srcChainSelector].nativeCurrency === 'eth') {
+			if (chainSelectors[dstChainSelector].nativeCurrency === 'matic') {
+				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.maticUsd, _gasPrice);
+			} else if (chainSelectors[dstChainSelector].nativeCurrency === 'avax') {
+				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
+			}
+		}
+
+		return 0n;
 	};
 	let nonce = 0;
 	let retries = 0;
@@ -327,8 +371,11 @@ async function f() {
 			srcChainProvider.getFeeData(),
 			getPriceRates(srcChainProvider, srcChainSelector),
 		]);
+
+		const dstGasPriceInSrcCurrency = getDstGasPriceInSrcCurrency(gasPrice, srcPriceFeeds);
+
 		return constructResult([
-			gasPrice,
+			dstGasPriceInSrcCurrency,
 			srcFeeData.gasPrice,
 			dstChainSelector,
 			srcPriceFeeds.linkUsdc,
@@ -344,5 +391,4 @@ async function f() {
 		}
 	}
 }
-
 f();

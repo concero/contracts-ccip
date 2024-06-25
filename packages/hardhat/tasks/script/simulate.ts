@@ -47,19 +47,20 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     //   "0x387496908b17af80df7e0029e55b562af3dcdac3db84a04ffabce629fd87474a", // srcJsHashSum
     //   "0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4", // ethers hash sum
     //   "0x0",
-    //   process.env.CONCEROCCIP_OPTIMISM_SEPOLIA, // contractAddress
+    //   // process.env.CONCEROCCIP_OPTIMISM_SEPOLIA, // contractAddress
+    //   "0x3055cC530B8cF18fD996545EC025C4e677a1dAa3", // contractAddress
     //   "0x5315f93154194ca637615651c5662cf39a77308927ebe7d31c9e970958681a49", // ccipMessageId
     //   "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
     //   "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
     //   "0x" + 100000000000000000n.toString(16), // amount
-    //   "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA).toString(16), // srcChainSelector
-    //   "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA).toString(16), // dstChainSelector
+    //   "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_BASE).toString(16), // srcChainSelector
+    //   "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON).toString(16), // dstChainSelector
     //   "0x" + 0n.toString(16), // token
     //   "0xA65233", // blockNumber
     // ]);
 
     await simulate(path.join(__dirname, "../", "./CLFScripts/dist/eval.min.js"), [
-      "0x5dfcaf25ce9b48257265afed18170d2d9c30375cdbbad2df0976b91c98f44aa2", // srcJsHashSum
+      "0xe6023cea71e57e758a7c38c335fa525f21a5f4f2f3c3fe8766d3a2dc6d9d02a6", // srcJsHashSum
       "0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4", // ethers hash sum
       "0x0",
       process.env.CONCEROCCIP_OPTIMISM_SEPOLIA, // contractAddress
@@ -72,7 +73,7 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
       "0x" + 0n.toString(16), // token
       "0xA65233", // blockNumber
     ]);
-    //
+
     // await simulate(path.join(__dirname, "../", "./CLFScripts/dist/eval.min.js"), [
     //   "0x814507c2fbbd1cc9277ae7a9e20b72edb571b976312aa808edd9af2e88176490",
     //   "0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4", // ethers hash sum

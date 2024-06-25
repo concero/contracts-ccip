@@ -18,6 +18,7 @@ async function f() {
 		[`0x${BigInt('14767482510784806043').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa869',
+			nativeCurrency: 'avax',
 			priceFeed: {
 				linkUsd: '',
 				usdcUsd: '',
@@ -34,6 +35,7 @@ async function f() {
 				'https://ethereum-sepolia.blockpi.network/v1/rpc/public',
 			],
 			chainId: '0xaa36a7',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '',
 				usdcUsd: '',
@@ -48,6 +50,7 @@ async function f() {
 				'https://arbitrum-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x66eee',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '0x0FB99723Aee6f420beAD13e6bBB79b7E6F034298',
 				usdcUsd: '0x0153002d20B96532C639313c2d54c3dA09109309',
@@ -62,6 +65,7 @@ async function f() {
 				'https://base-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x14a34',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '0xb113F5A928BCfF189C998ab20d753a47F9dE5A61',
 				usdcUsd: '0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165',
@@ -78,6 +82,7 @@ async function f() {
 				'https://optimism-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0xaa37dc',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '0x53f91dA33120F44893CB896b12a83551DEDb31c6',
 				usdcUsd: '0x6e44e50E3cc14DD16e01C590DC1d7020cb36eD4C',
@@ -92,6 +97,7 @@ async function f() {
 				'https://polygon-amoy-bor-rpc.publicnode.com',
 			],
 			chainId: '0x13882',
+			nativeCurrency: 'matic',
 			priceFeed: {
 				linkUsd: '0xc2e2848e28B9fE430Ab44F55a8437a33802a219C',
 				usdcUsd: '0x1b8739bB4CdF0089d07097A9Ae5Bd274b29C6F16',
@@ -106,6 +112,7 @@ async function f() {
 				'https://base-rpc.publicnode.com',
 			],
 			chainId: '0x2105',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '0x17CAb8FE31E32f08326e5E27412894e49B0f9D65',
 				usdcUsd: '0x7e860098F58bBFC8648a4311b374B1D669a2bc6B',
@@ -122,6 +129,7 @@ async function f() {
 				'https://arbitrum-rpc.publicnode.com',
 			],
 			chainId: '0xa4b1',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '0x86E53CF1B870786351Da77A57575e79CB55812CB',
 				usdcUsd: '0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3',
@@ -136,6 +144,7 @@ async function f() {
 				'https://polygon-bor-rpc.publicnode.com',
 			],
 			chainId: '0x89',
+			nativeCurrency: 'matic',
 			priceFeed: {
 				linkUsd: '0xd9FFdb71EbE7496cC440152d43986Aae0AB76665',
 				usdcUsd: '0xfE4A8cc5b5B2366C1B58Bea3858e81843581b2F7',
@@ -143,6 +152,23 @@ async function f() {
 				linkNative: '0x5787BefDc0ECd210Dfa948264631CD53E68F7802',
 				ethUsd: '0xF9680D99D6C9589e2a93a78A04A279e509205945',
 				avaxUsd: '0xe01eA2fbd8D76ee323FbEd03eB9a8625EC981A10',
+			},
+		},
+		[`0x${BigInt('6433500567565415381').toString(16)}`]: {
+			urls: [
+				`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://avalanche.blockpi.network/v1/rpc/public',
+				'https://avalanche-c-chain-rpc.publicnode.com',
+			],
+			chainId: '0xa86a',
+			nativeCurrency: 'avax',
+			priceFeed: {
+				linkUsd: '0x49ccd9ca821EfEab2b98c60dC60F518E765EDe9a',
+				usdcUsd: '0xF096872672F44d6EBA71458D74fe67F9a77a23B9',
+				nativeUsd: '0x0A77230d17318075983913bC2145DB16C7366156',
+				linkNative: '0x1b8a25F73c9420dD507406C3A3816A276b62f56a',
+				ethUsd: '0x976B3D034E162d8bD72D6b9C989d545b839003b0',
+				maticUsd: '0x1db18D41E4AD2403d9f52b5624031a2D9932Fd73',
 			},
 		},
 	};
@@ -169,11 +195,46 @@ async function f() {
 			nativeUsdContract.latestRoundData(),
 			linkNativeContract.latestRoundData(),
 		];
+		const promiseUndefined = async () => {
+			return new Promise(resolve => {
+				resolve(undefined);
+			});
+		};
+		if (chainSelectors[chainSelector].priceFeed.maticUsd) {
+			const maticUsdContract = new ethers.Contract(
+				chainSelectors[chainSelector].priceFeed.maticUsd,
+				priceFeedsAbi,
+				provider,
+			);
+			promises.push(maticUsdContract.latestRoundData());
+		} else {
+			promises.push(promiseUndefined());
+		}
+		if (chainSelectors[chainSelector].priceFeed.ethUsd) {
+			const ethUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.ethUsd, priceFeedsAbi, provider);
+			promises.push(ethUsdContract.latestRoundData());
+		} else {
+			promises.push(promiseUndefined());
+		}
+		if (chainSelectors[chainSelector].priceFeed.avaxUsd) {
+			const avaxUsdContract = new ethers.Contract(
+				chainSelectors[chainSelector].priceFeed.avaxUsd,
+				priceFeedsAbi,
+				provider,
+			);
+			promises.push(avaxUsdContract.latestRoundData());
+		} else {
+			promises.push(promiseUndefined());
+		}
 		const [linkUsd, usdcUsd, nativeUsd, linkNative, maticUsd, ethUsd, avaxUsd] = await Promise.all(promises);
 		return {
 			linkUsdc: linkUsd[1] > 0n ? (linkUsd[1] * 10n ** 18n) / usdcUsd[1] : 0n,
 			nativeUsdc: nativeUsd[1] > 0n ? (nativeUsd[1] * 10n ** 18n) / usdcUsd[1] : 0n,
 			linkNative: linkNative[1] > 0 ? linkNative[1] : 0n,
+			nativeUsd: nativeUsd[1] > 0 ? nativeUsd[1] : 0n,
+			maticUsd: maticUsd ? maticUsd[1] : undefined,
+			ethUsd: ethUsd ? ethUsd[1] : undefined,
+			avaxUsd: avaxUsd ? avaxUsd[1] : undefined,
 		};
 	};
 	const constructResult = items => {
@@ -186,6 +247,21 @@ async function f() {
 			offset += UINT256_BYTES_LENGTH;
 		}
 		return result;
+	};
+	const getDstGasPriceInSrcCurrency = (_gasPrice, srcPriceFeeds) => {
+		const getGasPriceByPriceFeeds = (nativeUsdPriceFeed, dstAssetUsdPriceFeed, __gasPrice) => {
+			if (dstAssetUsdPriceFeed === undefined) return 0n;
+			const srcNativeDstNativeRate = (nativeUsdPriceFeed * 10n ** 10n) / dstAssetUsdPriceFeed;
+			return (__gasPrice * srcNativeDstNativeRate) / 10n ** 18n;
+		};
+		if (chainSelectors[srcChainSelector].nativeCurrency === 'eth') {
+			if (chainSelectors[dstChainSelector].nativeCurrency === 'matic') {
+				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.maticUsd, _gasPrice);
+			} else if (chainSelectors[dstChainSelector].nativeCurrency === 'avax') {
+				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
+			}
+		}
+		return 0n;
 	};
 	let nonce = 0;
 	let retries = 0;
@@ -276,8 +352,9 @@ async function f() {
 			srcChainProvider.getFeeData(),
 			getPriceRates(srcChainProvider, srcChainSelector),
 		]);
+		const dstGasPriceInSrcCurrency = getDstGasPriceInSrcCurrency(gasPrice, srcPriceFeeds);
 		return constructResult([
-			gasPrice,
+			dstGasPriceInSrcCurrency,
 			srcFeeData.gasPrice,
 			dstChainSelector,
 			srcPriceFeeds.linkUsdc,

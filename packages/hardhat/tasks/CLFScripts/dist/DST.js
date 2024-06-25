@@ -1,4 +1,4 @@
-async function main() {
+(async () => {
 	try {
 		const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 		const [_, __, ___, srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = bytesArgs;
@@ -146,5 +146,4 @@ async function main() {
 	} catch (error) {
 		throw new Error(error.message.slice(0, 255));
 	}
-}
-main();
+})();

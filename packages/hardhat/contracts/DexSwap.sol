@@ -24,7 +24,12 @@ error DexSwap_EmptyDexData();
 error DexSwap_RouterNotAllowed();
 ///@notice error emitted when the path to swaps is invalid
 error DexSwap_InvalidPath();
+///@notice error emitted if a swapData has invalid tokens
+error DexSwap_SwapDataNotChained(address toToken, address fromToken);
+///@notice error emitted if a not-owner-address call the function
 error DexSwap_CallableOnlyByOwner(address caller, address owner);
+///@notice error emitted when the DexData is not valid
+error DexSwap_InvalidDexData();
 
 contract DexSwap is Storage, IDexSwap {
   using SafeERC20 for IERC20;
@@ -62,16 +67,13 @@ contract DexSwap is Storage, IDexSwap {
    */
   function conceroEntry(IDexSwap.SwapData[] memory _swapData, uint256 _amount) external payable {
     if (address(this) != i_proxy) revert DexSwap_ItsNotOrchestrator(address(this));
-    if (_swapData.length < 1 || _swapData.length > 5) revert DexSwap_EmptyDexData(); //TODO: Custom Error: rename it
-
     uint256 swapDataLength = _swapData.length;
+    if (swapDataLength < 1 || swapDataLength > 5) revert DexSwap_InvalidDexData(); //Renamed
+
 
     for (uint256 i; i < swapDataLength; ) {
-      uint256 previousBalance;
-      uint256 postBalance;
-
       //@audit ADJUSTED
-      previousBalance = _swapData[i].toToken == address(0) ? address(this).balance : IERC20(_swapData[i].toToken).balanceOf(address(this));
+      uint256 previousBalance = _swapData[i].toToken == address(0) ? address(this).balance : IERC20(_swapData[i].toToken).balanceOf(address(this));
 
       if (_swapData[i].dexType == DexType.UniswapV3Single) {
         _swapUniV3Single(_swapData[i]);
@@ -94,9 +96,13 @@ contract DexSwap is Storage, IDexSwap {
       }
 
       //@audit ADJUSTED
-      postBalance = _swapData[i].toToken == address(0) ? address(this).balance : IERC20(_swapData[i].toToken).balanceOf(address(this));
+      uint256 postBalance = _swapData[i].toToken == address(0) ? address(this).balance : IERC20(_swapData[i].toToken).balanceOf(address(this));
 
-      if (swapDataLength > 1 && i + 1 <= swapDataLength) {
+      if(swapDataLength -1 > i){
+        if(_swapData[i].toToken != _swapData[i + 1].fromToken) revert DexSwap_SwapDataNotChained(_swapData[i].toToken, _swapData[i + 1].fromToken);
+      }
+
+      if (i + 1 <= swapDataLength - 1) {
         uint256 newBalance = postBalance - previousBalance;
         //Remove the second if because it will always be >= than the amountOutMin.
         _swapData[i + 1].fromAmount = newBalance;

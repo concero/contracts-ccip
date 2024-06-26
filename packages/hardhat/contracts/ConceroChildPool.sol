@@ -82,7 +82,6 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
     address _ccipRouter,
     uint64 _destinationChainSelector,
     address _usdc,
-    address _orchestrator,
     address _owner
   ) CCIPReceiver(_ccipRouter) ChildStorage(_owner) {
     i_infraProxy = _orchestratorProxy;

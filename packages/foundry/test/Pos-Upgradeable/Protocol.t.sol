@@ -446,7 +446,6 @@ contract ProtocolTest is Test {
             ccipRouterArb,
             baseChainSelector,
             address(aUSDC),
-            address(orchDst),
             Tester
         );
 

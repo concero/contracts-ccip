@@ -14,6 +14,7 @@ import {ConceroAutomation} from "./ConceroAutomation.sol";
 import {LPToken} from "./LPToken.sol";
 
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
+import {IStorage} from "./Interfaces/IStorage.sol";
 
 import {ParentStorage} from "contracts/Libraries/ParentStorage.sol";
 
@@ -311,11 +312,19 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
     //2 scenarios in which we will receive data
     //1. Fee of cross-chains transactions
     //2. Transfers of amounts to be withdraw
-    (address _liquidityProvider, uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address, uint256));
+    (address _liquidityProvider, address _user, uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address, address, uint256));
+
+    uint256 amountMinusFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
 
     if (receivedFee > 0) {
-      //subtract the amount from the committed total amount
-      s_loansInUse = s_loansInUse - (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
+      IStorage.Transaction memory transaction = IStorage(i_infraProxy).getTransactionsInfo(any2EvmMessage.messageId);
+
+      if(transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false || transaction.ccipMessageId == 0){
+        i_USDC.safeTransfer(_user, amountMinusFees);
+      } else  {
+        //subtract the amount from the committed total amount
+        s_loansInUse = s_loansInUse - amountMinusFees;
+      }
     } else if (_liquidityProvider != address(0)) {
       IParentPool.WithdrawRequests storage request = s_pendingWithdrawRequests[_liquidityProvider];
 
@@ -352,7 +361,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
 
       Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
         receiver: abi.encode(pool.poolAddress),
-        data: abi.encode(address(0), 0), //How can we refactor this?
+        data: abi.encode(address(0), address(0), 0), //Here the 1° address is (0) because this is the Parent Pool and we never send to withdraw in another place.
         tokenAmounts: tokenAmounts,
         extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 350_000})),
         feeToken: address(i_linkToken)

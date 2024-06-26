@@ -82,4 +82,6 @@ interface IStorage {
     bytes32 donId;
     address functionsRouter;
   }
+
+  function getTransactionsInfo(bytes32 _ccipMessageId) external view returns(Transaction memory);
 }

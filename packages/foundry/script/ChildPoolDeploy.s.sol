@@ -14,8 +14,7 @@ contract ChildPoolDeploy is Script {
         address _link,
         address _ccipRouter,
         uint64 _destinationChainSelector,
-        address _usdc, 
-        address _orchestrator,
+        address _usdc,
         address _owner
     ) public returns(ConceroChildPool child){
         vm.startBroadcast();
@@ -27,7 +26,6 @@ contract ChildPoolDeploy is Script {
             _ccipRouter,
             _destinationChainSelector, 
             _usdc, 
-            _orchestrator, 
             _owner
         );
         vm.stopBroadcast();

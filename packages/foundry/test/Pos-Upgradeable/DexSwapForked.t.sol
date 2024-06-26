@@ -253,4 +253,98 @@ contract DexSwapForked is ProtocolTest {
         assertEq(address(op).balance, 0);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
     }
+
+    function test_customMultiHopFunctionalitySuccess() public {
+        helper();
+
+        uint amountIn = 1*10**17;
+        uint amountOutMin = 350*10**5;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(mUSDC);
+        address to = address(op);
+        uint deadline = block.timestamp + 1800;
+
+        vm.startPrank(User);
+        wEth.approve(address(op), amountIn);
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](2);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(sushiV2, path, to, deadline)
+        });
+
+        //==== Initiate transaction
+
+        /////=============== TEST CHAINED TX =====================\\\\\        
+        
+        amountIn = 350*10**5;
+        amountOutMin = 1*10**16;
+        path = new address[](2);
+        path[0] = address(mUSDC);
+        path[1] = address(wEth);
+        to = address(User);
+
+        swapData[1] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(mUSDC),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(sushiV2, path, to, deadline)
+        });
+
+        //==== Initiate transaction
+        op.swap(swapData);
+    }
+
+    error DexSwap_SwapDataNotChained();
+    function test_customMultiHopFunctionalityRevert() public {
+        helper();
+
+        uint amountIn = 1*10**17;
+        uint amountOutMin = 350*10**5;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(mUSDC);
+        address to = address(op);
+        uint deadline = block.timestamp + 1800;
+
+        vm.startPrank(User);
+        wEth.approve(address(op), amountIn);
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](2);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(sushiV2, path, to, deadline)
+        });
+
+        to = User;
+
+        /////=============== TEST CHAINED TX =====================\\\\\
+        swapData[1] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(sushiV2, path, to, deadline)
+        });
+
+        //==== Initiate transaction
+        vm.expectRevert(abi.encodeWithSelector(DexSwap_SwapDataNotChained.selector));
+        op.swap(swapData);
+    }
 }

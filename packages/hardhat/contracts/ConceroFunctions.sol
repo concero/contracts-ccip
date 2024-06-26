@@ -62,7 +62,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
   ///@notice variable to store the DexSwap address
   address immutable i_dexSwap;
   ///@notice variable to store the ConceroPool address
-  address immutable i_pool;
+  address immutable i_poolProxy;
   ///@notice Immutable variable to hold proxy address
   address immutable i_proxy;
   ///@notice ID of the deployed chain on getChain() function
@@ -108,7 +108,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
     CHAIN_SELECTOR = _chainSelector;
     i_chainIndex = Chain(_chainIndex);
     i_dexSwap = _dexSwap;
-    i_pool = _pool;
+    i_poolProxy = _pool;
     i_proxy = _proxy;
   }
 
@@ -274,12 +274,12 @@ contract ConceroFunctions is FunctionsClient, Storage {
     uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
     if (transaction.dstSwapData.length > 0) {
-      IParentPool(i_pool).orchestratorLoan(tokenReceived, amount, address(this));
+      IParentPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, address(this));
       IDexSwap.SwapData[] memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData[]));
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, 0));
       if (swapSuccess == false) revert TXReleasedFailed(swapError);
     } else {
-      IParentPool(i_pool).orchestratorLoan(tokenReceived, amount, transaction.recipient);
+      IParentPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, transaction.recipient);
     }
 
     emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);

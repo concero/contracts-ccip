@@ -11,10 +11,12 @@ import {ConceroCCIP} from "../ConceroCCIP.sol";
 ////////////////////////////////////////////////////////
 ///@notice error emitted when bridge data is empty
 error Storage_InvalidBridgeData();
-///@notice error emited when the choosen token is not allowed
+///@notice error emitted when the chosen token is not allowed
 error Storage_TokenTypeOutOfBounds();
 ///@notice error emitted when the chain index is incorrect
 error Storage_ChainIndexOutOfBounds();
+///@notice error emitted when a not allowed caller try to get CCIP information from storage
+error Storage_CallerNotAllowed();
 
 abstract contract Storage is IStorage {
   address internal immutable i_owner;
@@ -124,5 +126,10 @@ abstract contract Storage is IStorage {
     if (uint256(_chainIndex) > tokens[uint256(token)].length) revert Storage_ChainIndexOutOfBounds();
 
     return tokens[uint256(token)][uint256(_chainIndex)];
+  }
+
+  function getTransactionsInfo(bytes32 _ccipMessageId) external view returns(Transaction memory transaction){
+    // if(msg.sender != i_poolProxy ) revert Storage_CallerNotAllowed();
+    transaction = s_transactions[_ccipMessageId];
   }
 }

@@ -11,6 +11,8 @@ import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interface
 
 import {ChildStorage} from "contracts/Libraries/ChildStorage.sol";
 
+import {IStorage} from "./Interfaces/IStorage.sol";
+
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
@@ -116,7 +118,7 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
 
     Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
       receiver: abi.encode(i_parentPoolProxyAddress),
-      data: abi.encode(_liquidityProviderAddress, 0), //0== lp fee. It will always be zero because here we just processing withdraws
+      data: abi.encode(_liquidityProviderAddress, address(0), 0), //0== lp fee. It will always be zero because here we just processing withdraws
       tokenAmounts: tokenAmounts,
       extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
       feeToken: address(i_linkToken)
@@ -165,12 +167,20 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   function _ccipReceive(
     Client.Any2EVMMessage memory any2EvmMessage
   ) internal override onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address))) {
-    (/*address liquidityProvider*/, uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address, uint256));
+    (/*address liquidityProvider*/, address _user, uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address, address, uint256));
 
-    //If receivedFee > 0, it means is user transaction. If receivedFee == 0, means it's a deposit from MasterPool
+    uint256 amountMinusFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
+
+    //If receivedFee > 0, it means is user transaction. If receivedFee == 0, means it's a deposit from ParentPool
     if (receivedFee > 0) {
-      //subtract the amount from the committed total amount
-      s_loansInUse = s_loansInUse - (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
+      IStorage.Transaction memory transaction = IStorage(i_infraProxy).getTransactionsInfo(any2EvmMessage.messageId);
+
+      if(transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false || transaction.ccipMessageId == 0){
+        i_USDC.safeTransfer(_user, amountMinusFees);
+      } else  {
+        //subtract the amount from the committed total amount
+        s_loansInUse = s_loansInUse - amountMinusFees;
+      }
     }
 
     emit ConceroChildPool_CCIPReceived(

@@ -70,9 +70,10 @@ contract ConceroCCIP is ConceroFunctions {
     uint64 _destinationChainSelector,
     address _token,
     uint256 _amount,
+    address _receiver,
     uint256 _lpFee
   ) internal onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_token, _amount, _lpFee, _destinationChainSelector);
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_token, _amount, _receiver, _lpFee, _destinationChainSelector);
 
     uint256 fees = i_ccipRouter.getFee(_destinationChainSelector, evm2AnyMessage);
 
@@ -87,6 +88,7 @@ contract ConceroCCIP is ConceroFunctions {
   function _buildCCIPMessage(
     address _token,
     uint256 _amount,
+    address _receiver,
     uint256 _lpFee,
     uint64 _destinationChainSelector
   ) internal view returns (Client.EVM2AnyMessage memory) {
@@ -96,7 +98,7 @@ contract ConceroCCIP is ConceroFunctions {
     return
       Client.EVM2AnyMessage({
         receiver: abi.encode(s_poolReceiver[_destinationChainSelector]),
-        data: abi.encode(address(0), _lpFee),
+        data: abi.encode(address(0), _receiver, _lpFee),
         tokenAmounts: tokenAmounts,
         extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
         feeToken: address(i_linkToken)

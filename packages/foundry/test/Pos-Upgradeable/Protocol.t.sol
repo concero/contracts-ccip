@@ -271,8 +271,6 @@ contract ProtocolTest is Test {
 
         concero = conceroDeployBase.run(
             IStorage.FunctionsVariables ({
-                donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
-                donHostedSecretsVersion: 0, //uint64 _donHostedSecretsVersion
                 subscriptionId: 15, //uint64 _subscriptionId,
                 donId: donIdBase,
                 functionsRouter: address(functionsRouterBase)
@@ -282,11 +280,6 @@ contract ProtocolTest is Test {
             linkBase,
             ccipRouterBase,
             address(dex),
-            IStorage.JsCodeHashSum ({
-                src: 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124,
-                dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
-            }),
-            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
             address(masterProxy),
             address(proxy)
         );
@@ -409,8 +402,6 @@ contract ProtocolTest is Test {
 
         conceroDst = conceroDeployArbitrum.run(
             IStorage.FunctionsVariables ({
-                donHostedSecretsSlotId: 2, //uint8 _donHostedSecretsSlotId
-                donHostedSecretsVersion: 0, //uint64 _donHostedSecretsVersion
                 subscriptionId: 0, //uint64 _subscriptionId,
                 donId: donIdArb,
                 functionsRouter: functionsRouterArb
@@ -420,11 +411,6 @@ contract ProtocolTest is Test {
             linkArb,
             ccipRouterArb,
             address(dexDst),
-            IStorage.JsCodeHashSum ({
-                src: 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124,
-                dst: 0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173
-            }),
-            0x07659e767a9a393434883a48c64fc8ba6e00c790452a54b5cecbf2ebb75b0173, //_ethersHashSum
             address(childProxy),
             address(proxyDst)
         );

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
+import {console} from "forge-std/console.sol";
 import {ProtocolTest} from "./Protocol.t.sol";
 
 //Protocol Interfaces
@@ -304,7 +305,8 @@ contract DexSwapForked is ProtocolTest {
         op.swap(swapData);
     }
 
-    error DexSwap_SwapDataNotChained();
+    error DexSwap_SwapDataNotChained(address, address);
+    error Orchestrator_UnableToCompleteDelegateCall(bytes);
     function test_customMultiHopFunctionalityRevert() public {
         helper();
 
@@ -344,7 +346,9 @@ contract DexSwapForked is ProtocolTest {
         });
 
         //==== Initiate transaction
-        vm.expectRevert(abi.encodeWithSelector(DexSwap_SwapDataNotChained.selector));
+        bytes memory notChained = abi.encodeWithSelector(DexSwap_SwapDataNotChained.selector, address(mUSDC), address(wEth));
+
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, notChained));
         op.swap(swapData);
     }
 }

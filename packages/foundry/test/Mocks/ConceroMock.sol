@@ -12,8 +12,6 @@ contract ConceroMock is Concero {
             uint _chainIndex,
             address _link,
             address _ccipRouter,
-            Concero.JsCodeHashSum memory jsCodeHashSum,
-            bytes32 _ethersHashSum,
             address _dexSwap,
             address _pool,
             address _proxy
@@ -23,8 +21,6 @@ contract ConceroMock is Concero {
             _chainIndex,
             _link,
             _ccipRouter,
-            jsCodeHashSum,
-            _ethersHashSum,
             _dexSwap,
             _pool,
             _proxy

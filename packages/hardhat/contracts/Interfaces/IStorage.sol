@@ -78,8 +78,6 @@ interface IStorage {
 
   ///@notice Chainlink Functions Variables
   struct FunctionsVariables {
-    uint8 donHostedSecretsSlotId;
-    uint64 donHostedSecretsVersion;
     uint64 subscriptionId;
     bytes32 donId;
     address functionsRouter;

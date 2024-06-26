@@ -91,7 +91,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
    * @notice modifier to check if the caller is the an approved messenger
    */
   modifier onlyMessenger() {
-    if (s_messengerContracts[msg.sender] != APPROVED) revert ConceroFunctions_NotMessenger(msg.sender);
+    if (isMessenger(msg.sender) == false) revert ConceroFunctions_NotMessenger(msg.sender);
     _;
   }
 
@@ -99,19 +99,12 @@ contract ConceroFunctions is FunctionsClient, Storage {
     FunctionsVariables memory _variables,
     uint64 _chainSelector,
     uint _chainIndex,
-    JsCodeHashSum memory _jsCodeHashSum,
-    bytes32 _ethersHashSum,
     address _dexSwap,
     address _pool,
     address _proxy
   ) FunctionsClient(_variables.functionsRouter) Storage(msg.sender) {
     i_donId = _variables.donId;
     i_subscriptionId = _variables.subscriptionId;
-    s_donHostedSecretsVersion = _variables.donHostedSecretsVersion;
-    s_donHostedSecretsSlotId = _variables.donHostedSecretsSlotId;
-    s_srcJsHashSum = _jsCodeHashSum.src;
-    s_dstJsHashSum = _jsCodeHashSum.dst;
-    s_ethersHashSum = _ethersHashSum;
     CHAIN_SELECTOR = _chainSelector;
     i_chainIndex = Chain(_chainIndex);
     i_dexSwap = _dexSwap;
@@ -307,5 +300,27 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_latestLinkUsdcRate = linkUsdcRate;
     s_latestNativeUsdcRate = nativeUsdcRate;
     s_latestLinkNativeRate = linkNativeRate;
+  }
+
+  /**
+   * @notice Function to check if a caller address is an allowed messenger
+   * @param _messenger the address of the caller
+   */
+  function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
+    address[] memory messengers = new address[](4); //Number of messengers. To define.
+    messengers[0] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267; //fake messenger from foundry environment
+    messengers[1] = address(0);
+    messengers[2] = address(0);
+    messengers[3] = address(0);
+
+    for (uint256 i; i < messengers.length; ) {
+      if (_messenger == messengers[i]) {
+        return true;
+      }
+      unchecked {
+        ++i;
+      }
+    }
+    return false;
   }
 }

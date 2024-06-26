@@ -28,15 +28,15 @@ abstract contract Storage is IStorage {
   ///////////////
 
   ///@notice variable to store the Chainlink Function DON Slot ID
-  uint8 internal s_donHostedSecretsSlotId;
+  uint8 public s_donHostedSecretsSlotId;
   ///@notice variable to store the Chainlink Function DON Secret Version
-  uint64 internal s_donHostedSecretsVersion;
+  uint64 public s_donHostedSecretsVersion;
   ///@notice variable to store the Chainlink Function Source Hashsum
-  bytes32 internal s_srcJsHashSum;
+  bytes32 public s_srcJsHashSum;
   ///@notice variable to store the Chainlink Function Destination Hashsum
-  bytes32 internal s_dstJsHashSum;
+  bytes32 public s_dstJsHashSum;
   ///@notice variable to store Ethers Hashsum
-  bytes32 internal s_ethersHashSum;
+  bytes32 public s_ethersHashSum;
   ///@notice Variable to store the Link to USDC latest rate
   uint256 public s_latestLinkUsdcRate;
   ///@notice Variable to store the Native to USDC latest rate
@@ -54,10 +54,8 @@ abstract contract Storage is IStorage {
 
   ///@notice Concero: Mapping to keep track of CLF fees for different chains
   mapping(uint64 => uint256) public clfPremiumFees;
-  ///@notice Mapping to keep track of messenger addresses
-  mapping(address messenger => uint256 allowed) internal s_messengerContracts;
   ///@notice DexSwap: mapping to keep track of allowed routers to perform swaps. 1 == Allowed.
-  mapping(address router => uint256 isAllowed) internal s_routerAllowed;
+  mapping(address router => uint256 isAllowed) public s_routerAllowed;
   ///@notice ConceroPool a: Mapping to keep track of allowed pool receiver
   mapping(uint64 chainSelector => address pool) public s_poolReceiver;
   ///@notice ConceroPool: Mapping to keep track of allowed tokens
@@ -69,9 +67,9 @@ abstract contract Storage is IStorage {
   ///@notice ConceroPool: Mapping to keep track of allowed pool senders
   mapping(uint64 chainSelector => mapping(address poolAddress => uint256)) public s_allowedPool;
   ///@notice ConceroPool: Mapping to keep track of withdraw requests
-  mapping(address token => WithdrawRequests) internal s_withdrawWaitlist;
+  mapping(address token => WithdrawRequests) public s_withdrawWaitlist;
   ///@notice Functions: Mapping to keep track of Concero.sol contracts to send cross-chain Chainlink Functions messages
-  mapping(uint64 chainSelector => address conceroContract) internal s_conceroContracts;
+  mapping(uint64 chainSelector => address conceroContract) public s_conceroContracts;
   ///@notice Functions: Mapping to keep track of cross-chain transactions
   mapping(bytes32 => Transaction) public s_transactions;
   ///@notice Functions: Mapping to keep track of Chainlink Functions requests

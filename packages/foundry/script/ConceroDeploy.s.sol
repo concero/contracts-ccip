@@ -14,8 +14,6 @@ contract ConceroDeploy is Script {
             address _link,
             address _ccipRouter,
             address _dexSwap,
-            Concero.JsCodeHashSum memory jsCodeHashSum,
-            bytes32 _ethersHashSum,
             address _pool,
             address _proxy
         ) public returns(Concero concero){
@@ -27,8 +25,6 @@ contract ConceroDeploy is Script {
             _chainIndex,
             _link,
             _ccipRouter,
-            jsCodeHashSum,
-            _ethersHashSum,
             _dexSwap,
             _pool,
             _proxy

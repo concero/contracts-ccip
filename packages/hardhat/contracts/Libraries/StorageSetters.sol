@@ -24,18 +24,6 @@ contract StorageSetters is Storage {
   }
 
   /**
-   * @notice Function to update Concero Messenger Addresses
-   * @param _walletAddress the messenger address
-   * @param _approved 1 == Approved | Any other value disapproved
-   */
-  //@changed
-  function setConceroMessenger(address _walletAddress, uint256 _approved) external onlyOwner {
-    if (_walletAddress == address(0)) revert Storage_InvalidAddress();
-    s_messengerContracts[_walletAddress] = _approved;
-    emit Storage_MessengerUpdated(_walletAddress, _approved);
-  }
-
-  /**
    * @notice function to manage DEX routers addresses
    * @param _router the address of the router
    * @param _isApproved 1 == Approved | Any other value is not Approved.
@@ -45,6 +33,14 @@ contract StorageSetters is Storage {
     emit Storage_NewRouterAdded(_router, _isApproved);
   }
 
+  /**
+   * @notice Function to update Chainlink Functions fees
+   * @param _chainSelector Chain Identifier
+   * @param feeAmount fee amount
+   * @dev arb default fee: 3478487238524512106 == 4000000000000000; // 0.004 link
+   * @dev base default fee: 10344971235874465080 == 1847290640394088; // 0.0018 link
+   * @dev opt default fee: 5224473277236331295 == 2000000000000000; // 0.002 link
+   */
   function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external payable onlyOwner {
     //@audit we must limit this amount. If we don't, it Will trigger red flags in audits.
     uint256 previousValue = clfPremiumFees[_chainSelector];
@@ -76,7 +72,7 @@ contract StorageSetters is Storage {
   }
 
   function setSrcJsHashSum(bytes32 _hashSum) external onlyOwner {
-    bytes32 previousValue = s_dstJsHashSum;
+    bytes32 previousValue = s_srcJsHashSum;
     s_srcJsHashSum = _hashSum;
     emit SourceJsHashSumUpdated(previousValue, _hashSum);
   }

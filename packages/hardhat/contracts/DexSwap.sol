@@ -4,11 +4,15 @@ pragma abicoder v2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
 import {ISwapRouter02, IV3SwapRouter} from "./Interfaces/ISwapRouter02.sol";
+
+import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
+
 import {Storage} from "./Libraries/Storage.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
@@ -33,12 +37,15 @@ error DexSwap_InvalidDexData();
 
 contract DexSwap is Storage, IDexSwap {
   using SafeERC20 for IERC20;
+  using BytesLib for bytes;
 
   ///////////////
   ///IMMUTABLE///
   ///////////////
   ///@notice Immutable variable to hold proxy address
   address private immutable i_proxy;
+  ///@notice immutable variable to hold wEth address
+  address private immutable i_wEth;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -51,8 +58,9 @@ contract DexSwap is Storage, IDexSwap {
   /////////////////////////////////////////////////////////////////
   ////////////////////////////FUNCTIONS////////////////////////////
   /////////////////////////////////////////////////////////////////
-  constructor(address _proxy) Storage(msg.sender) {
+  constructor(address _proxy, address _wEth) Storage(msg.sender) {
     i_proxy = _proxy;
+    i_wEth = _wEth;
   }
 
   modifier onlyOwner() {
@@ -74,7 +82,7 @@ contract DexSwap is Storage, IDexSwap {
     for (uint256 i; i < swapDataLength; ) {
       //@audit ADJUSTED
       uint256 previousBalance = _swapData[i].toToken == address(0) ? address(this).balance : IERC20(_swapData[i].toToken).balanceOf(address(this));
-
+      
       if (_swapData[i].dexType == DexType.UniswapV3Single) {
         _swapUniV3Single(_swapData[i]);
       } else if (_swapData[i].dexType == DexType.SushiV3Single) {
@@ -217,7 +225,15 @@ contract DexSwap is Storage, IDexSwap {
   function _swapSushiV3Multi(IDexSwap.SwapData memory _swapData) private returns (uint256 _amountOut) {
     (address routerAddress, bytes memory path, address recipient, uint256 deadline) = abi.decode(_swapData.dexData, (address, bytes, address, uint256));
 
+    bytes memory tokenBytes = path.slice(0, 20);
+    address firstToken;
+
+    assembly {
+      firstToken := mload(add(tokenBytes, 20))
+    }
+
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
+    if( firstToken != _swapData.fromToken) revert DexSwap_InvalidPath();
 
     ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
       path: path,
@@ -240,7 +256,15 @@ contract DexSwap is Storage, IDexSwap {
   function _swapUniV3Multi(IDexSwap.SwapData memory _swapData) private returns (uint256 _amountOut) {
     (address routerAddress, bytes memory path, address recipient) = abi.decode(_swapData.dexData, (address, bytes, address));
 
+    bytes memory tokenBytes = path.slice(0, 20);
+    address firstToken;
+
+    assembly {
+      firstToken := mload(add(tokenBytes, 20))
+    }
+
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
+    if( firstToken != _swapData.fromToken) revert DexSwap_InvalidPath();
 
     IV3SwapRouter.ExactInputParams memory params = IV3SwapRouter.ExactInputParams({
       path: path,
@@ -303,6 +327,8 @@ contract DexSwap is Storage, IDexSwap {
     if (_swapData.dexData.length < 1) revert DexSwap_EmptyDexData();
 
     (address routerAddress, address[] memory path, address recipient, uint256 deadline) = abi.decode(_swapData.dexData, (address, address[], address, uint256));
+    if (address(0) != _swapData.fromToken) revert DexSwap_InvalidPath();
+    if (path[0] != i_wEth) revert DexSwap_InvalidPath();
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 

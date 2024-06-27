@@ -224,7 +224,7 @@ contract ProtocolTest is Test {
         );
 
         // DexSwap Contract
-        dex = dexDeployBase.run(address(proxy));
+        dex = dexDeployBase.run(address(proxy), address(wEth));
 
         concero = conceroDeployBase.run(
             IStorage.FunctionsVariables ({

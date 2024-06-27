@@ -142,6 +142,37 @@ contract DexSwapForked is ProtocolTest {
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn + amountOut);
     }
 
+    error DexSwap_InvalidPath();
+    function test_revertSwapSushiV3MultiMock() public {
+        helper();
+
+        uint24 poolFee = 500;
+        uint256 amountIn = 1*10**17;
+        uint256 amountOut = 1*10**16;
+
+        bytes memory path = abi.encodePacked(mUSDC, poolFee, wEth, poolFee, mUSDC);
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.SushiV3Multi,
+            fromToken: address(wEth),
+            fromAmount: amountIn,
+            toToken: address(wEth),
+            toAmount: amountOut,
+            toAmountMin: amountOut,
+            dexData: abi.encode(sushiV3, path, address(User), block.timestamp + 300)
+        });
+
+        bytes memory encodedError = abi.encodeWithSelector(DexSwap_InvalidPath.selector);
+
+        vm.startPrank(User);
+        wEth.approve(address(op), amountIn);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, encodedError));
+        op.swap(swapData);
+
+        vm.stopPrank();
+    }
+
     function test_swapUniV3MultiMock() public {
         helper();
 
@@ -170,6 +201,37 @@ contract DexSwapForked is ProtocolTest {
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn);
         assertEq(wEth.balanceOf(address(op)), 100000000000000);
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn + amountOut);
+    }
+
+    function test_revertSwapUniV3MultiMock() public {
+        helper();
+
+        uint24 poolFee = 500;
+        uint256 amountIn = 350*10*6;
+        uint256 amountOut = 1*10**17;
+
+        bytes memory path = abi.encodePacked(mUSDC, poolFee, wEth, poolFee, mUSDC);
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV3Multi,
+            fromToken: address(wEth),
+            fromAmount: amountIn,
+            toToken: address(mUSDC),
+            toAmount: amountOut,
+            toAmountMin: amountOut,
+            dexData: abi.encode(uniswapV3, path, address(User))
+        });
+
+        bytes memory encodedError = abi.encodeWithSelector(DexSwap_InvalidPath.selector);
+
+        vm.startPrank(User);
+
+        wEth.approve(address(op), amountIn);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, encodedError));
+        op.swap(swapData);
+        
+        vm.stopPrank();
     }
 
     function test_swapDromeMock() public {

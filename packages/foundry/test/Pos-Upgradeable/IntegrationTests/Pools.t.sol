@@ -70,12 +70,14 @@ contract PoolsTesting is Test{
     //====== Instantiate Mocks
     USDC usdc;
     uint256 private constant USDC_INITIAL_BALANCE = 500 * 10**6;
+    uint256 private constant USDC_WHALE_BALANCE = 1000 * 10**6;
 
     address proxyOwner = makeAddr("owner");
     address Tester = makeAddr("Tester");
     address LiquidityProvider = makeAddr("LiquidityProvider");
     address LiquidityProviderTwo = makeAddr("LiquidityProviderTwo");
     address LiquidityProviderThree = makeAddr("LiquidityProviderThree");
+    address LiquidityProviderWhale = makeAddr("Whale");
     address Athena = makeAddr("Athena");
     address Concero = makeAddr("Concero");
     address ConceroDst = makeAddr("ConceroDst");
@@ -98,6 +100,7 @@ contract PoolsTesting is Test{
         ) = ccipLocalSimulator.configuration();
 
         usdc = new USDC("USDC", "USDC", Tester, USDC_INITIAL_BALANCE);
+        usdc.mint(LiquidityProviderWhale, USDC_WHALE_BALANCE);
 
         //////////////////////////////////////////////
         /////////////// DEPLOY SCRIPTS ///////////////
@@ -536,4 +539,5 @@ contract PoolsTesting is Test{
         //===== Total USDC balance
         console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));
     }
+
 }

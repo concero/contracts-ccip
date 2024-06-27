@@ -321,6 +321,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
 
       if(transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false || transaction.ccipMessageId == 0){
         i_USDC.safeTransfer(_user, amountMinusFees);
+        //We don't subtract it here because the loan was not performed. And the value is not summed into the `s_loanInUse` variable.
       } else  {
         //subtract the amount from the committed total amount
         s_loansInUse = s_loansInUse - amountMinusFees;

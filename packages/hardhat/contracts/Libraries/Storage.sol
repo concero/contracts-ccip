@@ -58,18 +58,8 @@ abstract contract Storage is IStorage {
   mapping(uint64 => uint256) public clfPremiumFees;
   ///@notice DexSwap: mapping to keep track of allowed routers to perform swaps. 1 == Allowed.
   mapping(address router => uint256 isAllowed) public s_routerAllowed;
-  ///@notice ConceroPool a: Mapping to keep track of allowed pool receiver
+  ///@notice Mapping to keep track of allowed pool receiver
   mapping(uint64 chainSelector => address pool) public s_poolReceiver;
-  ///@notice ConceroPool: Mapping to keep track of allowed tokens
-  mapping(address token => uint256 isApproved) public s_isTokenSupported;
-  ///@notice ConceroPool: Mapping to keep track of allowed senders on a given token
-  mapping(address token => address senderAllowed) public s_approvedSenders;
-  ///@notice ConceroPool: Mapping to keep track of balances of user on a given token
-  mapping(address token => mapping(address user => uint256 balance)) public s_userBalances;
-  ///@notice ConceroPool: Mapping to keep track of allowed pool senders
-  mapping(uint64 chainSelector => mapping(address poolAddress => uint256)) public s_allowedPool;
-  ///@notice ConceroPool: Mapping to keep track of withdraw requests
-  mapping(address token => WithdrawRequests) public s_withdrawWaitlist;
   ///@notice Functions: Mapping to keep track of Concero.sol contracts to send cross-chain Chainlink Functions messages
   mapping(uint64 chainSelector => address conceroContract) public s_conceroContracts;
   ///@notice Functions: Mapping to keep track of cross-chain transactions
@@ -119,7 +109,7 @@ abstract contract Storage is IStorage {
 
     // Initialize USDC addresses
     tokens[1][0] = 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d; // arb
-    tokens[1][1] = 0x036CbD53842c5426634e7929541eC2318f3dCF7e; // base
+    tokens[1][1] = 0x2e234DAe75C793f67A35089C9d99245E1C58470b; // 0x036CbD53842c5426634e7929541eC2318f3dCF7e; // base updated to test locally
     tokens[1][2] = 0x5fd84259d66Cd46123540766Be93DFE6D43130D7; // opt
 
     if (uint256(token) > tokens.length) revert Storage_TokenTypeOutOfBounds();
@@ -129,7 +119,6 @@ abstract contract Storage is IStorage {
   }
 
   function getTransactionsInfo(bytes32 _ccipMessageId) external view returns(Transaction memory transaction){
-    // if(msg.sender != i_poolProxy ) revert Storage_CallerNotAllowed();
     transaction = s_transactions[_ccipMessageId];
   }
 }

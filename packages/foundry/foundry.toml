@@ -14,7 +14,8 @@ remappings = [
     "@sushiSwap/v3-periphery/contracts/=node_modules/sushiswap-v3-periphery/contracts/",
     "@chainlink/contracts/=lib/chainlink/contracts/",
     "@starterKit/=lib/foundry-starter-kit",
-    "contracts/=../hardhat/contracts/"
+    "contracts/=../hardhat/contracts/",
+    "solidity-bytes-utils/=lib/solidity-bytes-utils/"
 ]
 
 

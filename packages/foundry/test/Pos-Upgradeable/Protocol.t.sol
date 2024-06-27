@@ -267,7 +267,7 @@ contract ProtocolTest is Test {
         );
 
         // DexSwap Contract
-        dex = dexDeployBase.run(address(proxy));
+        dex = dexDeployBase.run(address(proxy), address(wEth));
 
         concero = conceroDeployBase.run(
             IStorage.FunctionsVariables ({
@@ -397,7 +397,8 @@ contract ProtocolTest is Test {
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
 
         dexDst = dexDeployArbitrum.run(
-            address(proxyDst)
+            address(proxyDst),
+            address(arbWEth)
         );
 
         conceroDst = conceroDeployArbitrum.run(

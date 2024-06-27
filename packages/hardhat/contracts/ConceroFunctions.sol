@@ -137,18 +137,18 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false, dstSwapData);
 
     bytes[] memory args = new bytes[](12);
-    args[0] = abi.encodePacked(s_dstJsHashSum);
-    args[1] = abi.encodePacked(s_ethersHashSum);
-    args[2] = abi.encodePacked(RequestType.checkTxSrc);
-    args[3] = abi.encodePacked(s_conceroContracts[srcChainSelector]);
-    args[4] = abi.encodePacked(srcChainSelector);
-    args[5] = abi.encodePacked(blockNumber);
-    args[6] = abi.encodePacked(ccipMessageId);
-    args[7] = abi.encodePacked(sender);
-    args[8] = abi.encodePacked(recipient);
-    args[9] = abi.encodePacked(uint8(token));
-    args[10] = abi.encodePacked(amount);
-    args[11] = abi.encodePacked(CHAIN_SELECTOR);
+    args[0] = abi.encode(s_dstJsHashSum);
+    args[1] = abi.encode(s_ethersHashSum);
+    args[2] = abi.encode(RequestType.checkTxSrc);
+    args[3] = abi.encode(s_conceroContracts[srcChainSelector]);
+    args[4] = abi.encode(srcChainSelector);
+    args[5] = abi.encode(blockNumber);
+    args[6] = abi.encode(ccipMessageId);
+    args[7] = abi.encode(sender);
+    args[8] = abi.encode(recipient);
+    args[9] = abi.encode(uint8(token));
+    args[10] = abi.encode(amount);
+    args[11] = abi.encode(CHAIN_SELECTOR);
 
     bytes32 reqId = sendRequest(args, CL_JS_CODE);
 
@@ -224,18 +224,18 @@ contract ConceroFunctions is FunctionsClient, Storage {
     if (s_conceroContracts[dstChainSelector] == address(0)) revert AddressNotSet();
 
     bytes[] memory args = new bytes[](13);
-    args[0] = abi.encodePacked(s_srcJsHashSum);
-    args[1] = abi.encodePacked(s_ethersHashSum);
-    args[2] = abi.encodePacked(RequestType.addUnconfirmedTxDst);
-    args[3] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
-    args[4] = abi.encodePacked(ccipMessageId);
-    args[5] = abi.encodePacked(sender);
-    args[6] = abi.encodePacked(recipient);
-    args[7] = abi.encodePacked(amount);
-    args[8] = abi.encodePacked(CHAIN_SELECTOR);
-    args[9] = abi.encodePacked(dstChainSelector);
-    args[10] = abi.encodePacked(uint8(token));
-    args[11] = abi.encodePacked(block.number);
+    args[0] = abi.encode(s_srcJsHashSum);
+    args[1] = abi.encode(s_ethersHashSum);
+    args[2] = abi.encode(RequestType.addUnconfirmedTxDst);
+    args[3] = abi.encode(s_conceroContracts[dstChainSelector]);
+    args[4] = abi.encode(ccipMessageId);
+    args[5] = abi.encode(sender);
+    args[6] = abi.encode(recipient);
+    args[7] = abi.encode(amount);
+    args[8] = abi.encode(CHAIN_SELECTOR);
+    args[9] = abi.encode(dstChainSelector);
+    args[10] = abi.encode(uint8(token));
+    args[11] = abi.encode(block.number);
     args[12] = _swapDataToBytes(dstSwapData);
 
     bytes32 reqId = sendRequest(args, CL_JS_CODE);
@@ -246,23 +246,21 @@ contract ConceroFunctions is FunctionsClient, Storage {
     emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
   }
 
-  function _swapDataToBytes(IDexSwap.SwapData[] calldata swapData) private pure returns (bytes memory) {
-    if (swapData.length == 0) return abi.encodePacked(uint(0));
+  function _swapDataToBytes(IDexSwap.SwapData[] calldata _swapData) private pure returns (bytes memory _encodedData) {
+    uint256 numberOfSwaps = _swapData.length;
+    if (numberOfSwaps == 0) return abi.encode(uint(0));
 
-    bytes memory packedData;
-    for (uint256 i = 0; i < swapData.length; i++) {
-      packedData = abi.encodePacked(
-        packedData,
-        swapData[i].dexType,
-        swapData[i].fromToken,
-        swapData[i].fromAmount,
-        swapData[i].toToken,
-        swapData[i].toAmount,
-        swapData[i].toAmountMin,
-        swapData[i].dexData
+    for (uint256 i; i < numberOfSwaps; i++) {
+      _encodedData = abi.encode(
+        _swapData[i].dexType,
+        _swapData[i].fromToken,
+        _swapData[i].fromAmount,
+        _swapData[i].toToken,
+        _swapData[i].toAmount,
+        _swapData[i].toAmountMin,
+        _swapData[i].dexData
       );
     }
-    return packedData;
   }
 
   function _handleDstFunctionsResponse(Request storage request) internal {

@@ -68,7 +68,7 @@ contract DEXMock {
 
     if (msg.value < 1) revert DidntReceiveAnyValue();
 
-    IERC20(route[1]).safeTransfer(to, amountOutMin);
+    IERC20(route[path.length - 1]).safeTransfer(to, amountOutMin);
     emit DexMock_Transferred();
   }
 

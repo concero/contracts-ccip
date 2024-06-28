@@ -97,7 +97,7 @@ contract DexSwapForked is ProtocolTest {
             toToken: address(mUSDC),
             toAmount: amountOut,
             toAmountMin: amountOut,
-            dexData: abi.encode(uniswapV3, 500, User, 0)
+            dexData: abi.encode(uniswapV3, 500, User, 0, block.timestamp + 1800)
         });
 
         vm.startPrank(User);
@@ -190,7 +190,7 @@ contract DexSwapForked is ProtocolTest {
             toToken: address(mUSDC),
             toAmount: amountOut,
             toAmountMin: amountOut,
-            dexData: abi.encode(uniswapV3, path, address(User))
+            dexData: abi.encode(uniswapV3, path, address(User), block.timestamp + 1800)
         });
 
         vm.startPrank(User);

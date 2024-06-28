@@ -78,11 +78,10 @@ contract DexSwap is Storage, IDexSwap {
     uint256 swapDataLength = _swapData.length;
     if (swapDataLength < 1 || swapDataLength > 5) revert DexSwap_InvalidDexData(); //Renamed
 
-
     for (uint256 i; i < swapDataLength; ) {
       //@audit ADJUSTED
       uint256 previousBalance = _swapData[i].toToken == address(0) ? address(this).balance : IERC20(_swapData[i].toToken).balanceOf(address(this));
-      
+
       if (_swapData[i].dexType == DexType.UniswapV3Single) {
         _swapUniV3Single(_swapData[i]);
       } else if (_swapData[i].dexType == DexType.SushiV3Single) {
@@ -106,8 +105,8 @@ contract DexSwap is Storage, IDexSwap {
       //@audit ADJUSTED
       uint256 postBalance = _swapData[i].toToken == address(0) ? address(this).balance : IERC20(_swapData[i].toToken).balanceOf(address(this));
 
-      if(swapDataLength -1 > i){
-        if(_swapData[i].toToken != _swapData[i + 1].fromToken) revert DexSwap_SwapDataNotChained(_swapData[i].toToken, _swapData[i + 1].fromToken);
+      if (swapDataLength - 1 > i) {
+        if (_swapData[i].toToken != _swapData[i + 1].fromToken) revert DexSwap_SwapDataNotChained(_swapData[i].toToken, _swapData[i + 1].fromToken);
       }
 
       if (i + 1 <= swapDataLength - 1) {
@@ -233,7 +232,7 @@ contract DexSwap is Storage, IDexSwap {
     }
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
-    if( firstToken != _swapData.fromToken) revert DexSwap_InvalidPath();
+    if (firstToken != _swapData.fromToken) revert DexSwap_InvalidPath();
 
     ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
       path: path,
@@ -264,7 +263,7 @@ contract DexSwap is Storage, IDexSwap {
     }
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
-    if( firstToken != _swapData.fromToken) revert DexSwap_InvalidPath();
+    if (firstToken != _swapData.fromToken) revert DexSwap_InvalidPath();
 
     IV3SwapRouter.ExactInputParams memory params = IV3SwapRouter.ExactInputParams({
       path: path,
@@ -273,7 +272,7 @@ contract DexSwap is Storage, IDexSwap {
       amountOutMinimum: _swapData.toAmountMin
     });
 
-    TransferHelper.safeApprove(_swapData.fromToken, routerAddress, _swapData.fromAmount); // <@
+    TransferHelper.safeApprove(_swapData.fromToken, routerAddress, _swapData.fromAmount);
 
     _amountOut = ISwapRouter02(routerAddress).exactInput(params);
   }

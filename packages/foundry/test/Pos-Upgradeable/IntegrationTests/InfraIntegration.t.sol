@@ -35,6 +35,9 @@ import {LPTokenDeploy} from "../../../script/LPTokenDeploy.s.sol";
 import {AutomationDeploy} from "../../../script/AutomationDeploy.s.sol";
 import {ParentPoolProxyDeploy} from "../../../script/ParentPoolProxyDeploy.s.sol";
 
+//Mock Scripts
+import {DexMockDeploy} from "../../../script/DexMockDeploy.s.sol";
+
 //===== Child Scripts
 import {ChildPoolDeploy} from "../../../script/ChildPoolDeploy.s.sol";
 import {ChildPoolProxyDeploy} from "../../../script/ChildPoolProxyDeploy.s.sol";
@@ -42,6 +45,7 @@ import {ChildPoolProxyDeploy} from "../../../script/ChildPoolProxyDeploy.s.sol";
 //Mocks
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {USDC} from "../../Mocks/USDC.sol";
+import {DEXMock} from "../../Mocks/DEXMock.sol";
 
 //OpenZeppelin
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -60,7 +64,7 @@ import {CCIPLocalSimulator, WETH9, IRouterClient, BurnMintERC677Helper, LinkToke
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {FunctionsRouter} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsRouter.sol";
 
-contract ProtocolTest is Test {
+contract InfraIntegration is Test {
     CCIPLocalSimulator public ccipLocalSimulator;
 
     //==== Instantiate Base Contracts
@@ -85,6 +89,7 @@ contract ProtocolTest is Test {
     LPTokenDeploy lpDeployBase;
     AutomationDeploy autoDeployBase;
     ParentPoolProxyDeploy masterProxyDeploy;
+
 
     //==== Instantiate Arbitrum Contracts
     DexSwap public dexDst;
@@ -113,8 +118,11 @@ contract ProtocolTest is Test {
     ConceroChildPool wChild;
 
 
-    //==== Create the instance to forked tokens
+    //==== Create the instance to mocks
     USDC public mUSDC;
+    ERC20Mock public wEth;
+    DexMockDeploy public dexMockDeploy;
+    DEXMock public dexMock;
 
     //==== Instantiate Base DEXes Routers
     IUniswapV2Router02 uniswapV2;
@@ -186,6 +194,7 @@ contract ProtocolTest is Test {
         ccipRouterLocalDst = address(destinationRouter);
 
         mUSDC = new USDC("USDC", "USDC", User, USDC_INITIAL_BALANCE);
+        wEth = new ERC20Mock();
 
         ccipLocalSimulator.supportNewToken(address(mUSDC));
 
@@ -197,6 +206,7 @@ contract ProtocolTest is Test {
         lpDeployBase = new LPTokenDeploy();
         autoDeployBase = new AutomationDeploy();
         masterProxyDeploy = new ParentPoolProxyDeploy();
+        dexMockDeploy = new DexMockDeploy();
 
         {
         //DEPLOY AN DUMMY ORCH
@@ -233,7 +243,7 @@ contract ProtocolTest is Test {
         );
 
         // DexSwap Contract
-        dex = dexDeployBase.run(address(proxy));
+        dex = dexDeployBase.run(address(proxy), address(wEth));
 
         concero = conceroDeployBase.run(
             IStorage.FunctionsVariables ({
@@ -273,6 +283,9 @@ contract ProtocolTest is Test {
             address(orch),
             Tester
         );
+        }
+
+        dexMock = dexMockDeploy.run();
 
         //===== Base Proxies
         //====== Update the proxy for the correct address
@@ -289,13 +302,10 @@ contract ProtocolTest is Test {
 
         //====== Wrap the proxy as the implementation
         wInfraSrc = Orchestrator(address(proxy));
-        }
 
-        
         /////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
         //================ SWITCH CHAINS ====================\\
         ///////////////////////////////////////////////////////
-
         {
         //===== Deploy Arbitrum Scripts
         proxyDeployArbitrum = new InfraProxyDeploy();
@@ -323,7 +333,8 @@ contract ProtocolTest is Test {
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
 
         dexDst = dexDeployArbitrum.run(
-            address(proxyDst)
+            address(proxyDst),
+            address(wrappedNative)
         );
 
         conceroDst = conceroDeployArbitrum.run(
@@ -388,6 +399,8 @@ contract ProtocolTest is Test {
         wInfraDst.setConceroContract(localChainSelector, address(proxy));
         wInfraDst.setDstConceroPool(localChainSelector, address(wMaster));
 
+        wInfraSrc.setDexRouterAddress(address(dexMock), 1);
+
         vm.stopPrank();
 
         vm.startPrank(Tester);
@@ -402,6 +415,8 @@ contract ProtocolTest is Test {
         vm.stopPrank();
 
         mUSDC.mint(LiquidityProviderWhale, USDC_WHALE_BALANCE);
+        mUSDC.mint(address(dexMock), USDC_WHALE_BALANCE);
+        wEth.mint(User, 10 * 10**18);
     }
 
     //To run the test below you need to comment out the line 79 of Concero.sol. Functions doesn't work in this environment.
@@ -434,5 +449,66 @@ contract ProtocolTest is Test {
 
         //Final amount is = Transferred value - (src fee + dst fee)
         assertEq(mUSDC.balanceOf(CrossChainReceiver), (10 *10**6 - (10 *10**6 / 1000)) - ((10 *10**6 - (10 *10**6 / 1000))/ 1000));
+    }
+
+    function test_swapAndBridgeWithoutFunctions() public {
+        setters();
+        
+        vm.deal(User, INITIAL_BALANCE);
+
+        vm.startPrank(LiquidityProviderWhale);
+        mUSDC.approve(address(wMaster), USDC_WHALE_BALANCE);
+        wMaster.depositLiquidity(USDC_WHALE_BALANCE); //1000
+        vm.stopPrank();
+
+        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        
+        uint amountIn = 1*10**17;
+        uint amountOutMin = 350*10**6;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(mUSDC);
+        address to = address(wInfraSrc);
+        uint deadline = block.timestamp + 1800;
+
+        vm.startPrank(User);
+        wEth.approve(address(concero), amountIn);
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(dexMock, path, to, deadline)
+        });
+
+        // ==== Approve Transfer
+        vm.startPrank(User);
+        wEth.approve(address(wInfraSrc), 0.1 ether);
+
+        /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+            tokenType: IStorage.CCIPToken.usdc,
+            amount: 350 *10**6,
+            minAmount: 330 *10**6,
+            dstChainSelector: localChainSelector,
+            receiver: CrossChainReceiver
+        });
+
+        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        IDexSwap.SwapData[] memory swapDataDst = new IDexSwap.SwapData[](0);
+
+        //====== Check Receiver balance
+        assertEq(mUSDC.balanceOf(CrossChainReceiver), 0);
+        assertEq(mUSDC.balanceOf(address(dexMock)), USDC_WHALE_BALANCE);
+
+        vm.startPrank(User);
+        wInfraSrc.swapAndBridge(bridgeData, swapData, swapDataDst);
+        vm.stopPrank();
+
+        assertTrue(mUSDC.balanceOf(CrossChainReceiver) > 340 *10**6);
     }
 }

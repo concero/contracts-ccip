@@ -18,11 +18,16 @@ error Orchestrator_InvalidImplementationAddress(address invalidAddress);
 error Orchestrator_UnableToCompleteDelegateCall(bytes delegateError);
 ///@notice error emitted when the input token has Fee on transfers
 error Orchestrator_FoTNotAllowedYet();
-///@notice error emited when the amount sent if bigger than the specified param
+///@notice error emitted when the balance input is smaller than the specified amount param
 error Orchestrator_InvalidAmount();
-///@notice FUNCTIONS ERROR
+///@notice error emitted when a address non-router calls the `handleOracleFulfillment` function
 error Orchestrator_OnlyRouterCanFulfill();
+///@notice error emitted when the amount received is less than the minAmount to bridge
 error Orchestrator_FailedToStartBridge(uint256 receivedAmount, uint256 minAmount);
+///@notice error emitted when some params of Bridge Data are empty
+error Orchestrator_InvalidBridgeData();
+///@notice error emitted when an empty swapData is the input
+error Orchestrator_InvalidSwapData();
 
 contract Orchestrator is StorageSetters, IFunctionsClient {
   using SafeERC20 for IERC20;
@@ -69,24 +74,21 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
     } else {
       if (msg.value != amount) revert Orchestrator_InvalidAmount();
     }
-
     _;
   }
 
-  modifier validateBridgeData(BridgeData calldata _bridgeData) {
-    if (_bridgeData.amount == 0) {
-      revert Orchestrator_InvalidAmount();
-    }
+  modifier validateBridgeData(BridgeData memory _bridgeData) {
+    if (_bridgeData.amount == 0 || _bridgeData.dstChainSelector == 0 || _bridgeData.receiver == address(0)) revert Orchestrator_InvalidBridgeData();
     _;
   }
 
   modifier validateSwapData(IDexSwap.SwapData[] calldata _srcSwapData) {
     if (_srcSwapData.length == 0) {
-      revert IDexSwap.InvalidSwapData();
+      revert Orchestrator_InvalidSwapData();
     }
 
     if (_srcSwapData[0].fromToken == address(0)) {
-      if (_srcSwapData[0].fromAmount != msg.value) revert IDexSwap.InvalidSwapData();
+      if (_srcSwapData[0].fromAmount != msg.value) revert Orchestrator_InvalidSwapData();
     }
     _;
   }
@@ -94,15 +96,20 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   ////////////////////
   ///DELEGATE CALLS///
   ////////////////////
-  function swapAndBridge(BridgeData memory _bridgeData, IDexSwap.SwapData[] calldata _srcSwapData, IDexSwap.SwapData[] calldata _dstSwapData) external payable {
-    uint256 amountToSwap = msg.value;
-    uint256 receivedAmount = _swap(_srcSwapData, amountToSwap, false);
+  function swapAndBridge(
+    BridgeData memory bridgeData, 
+    IDexSwap.SwapData[] calldata srcSwapData, 
+    IDexSwap.SwapData[] calldata dstSwapData
+  ) external validateBridgeData(bridgeData){
+    if (srcSwapData.length == 0) revert Orchestrator_InvalidSwapData();
 
-    if (receivedAmount < _bridgeData.minAmount) revert Orchestrator_FailedToStartBridge(receivedAmount, _bridgeData.minAmount);
+    uint256 receivedAmount = _swap(srcSwapData, 0, false);
 
-    _bridgeData.amount = receivedAmount;
+    if (receivedAmount < bridgeData.minAmount) revert Orchestrator_FailedToStartBridge(receivedAmount, bridgeData.minAmount);
 
-    (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, _bridgeData, _dstSwapData));
+    bridgeData.amount = receivedAmount;
+
+    (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData));
     if (bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
   }
 
@@ -113,7 +120,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   }
 
   function bridge(
-    BridgeData calldata bridgeData,
+    BridgeData memory bridgeData,
     IDexSwap.SwapData[] calldata dstSwapData
   ) external payable tokenAmountSufficiency(getToken(bridgeData.tokenType, i_chainIndex), bridgeData.amount) validateBridgeData(bridgeData) {
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
@@ -151,7 +158,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
 
     if (fulfilled == false) revert Orchestrator_UnableToCompleteDelegateCall(notFulfilled);
 
-    emit Orchestrator_RequestFulfilled(requestId);
+    emit Orchestrator_RequestFulfilled(requestId);  
   }
 
   //////////////////////////

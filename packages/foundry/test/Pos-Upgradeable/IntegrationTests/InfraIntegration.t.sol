@@ -432,7 +432,6 @@ contract InfraIntegration is Test {
         IStorage.BridgeData memory data = IStorage.BridgeData({
             tokenType: IStorage.CCIPToken.usdc,
             amount: 10 *10**6,
-            minAmount: 10 *10**6,
             dstChainSelector: localChainSelector,
             receiver: CrossChainReceiver
         });
@@ -493,7 +492,6 @@ contract InfraIntegration is Test {
         IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
             tokenType: IStorage.CCIPToken.usdc,
             amount: 350 *10**6,
-            minAmount: 330 *10**6,
             dstChainSelector: localChainSelector,
             receiver: CrossChainReceiver
         });

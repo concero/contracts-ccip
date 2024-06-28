@@ -41,7 +41,7 @@ contract DexSwapForked is ProtocolTest {
                             toToken: address(mUSDC),
                             toAmount: amountOutMin,
                             toAmountMin: amountOutMin,
-                            dexData: abi.encode(sushiV2, path, to, deadline)
+                            dexData: abi.encode(sushiV2, path, deadline)
         });
 
         // ==== Approve Transfer
@@ -49,7 +49,7 @@ contract DexSwapForked is ProtocolTest {
         wEth.approve(address(op), 0.1 ether);
 
         //==== Initiate transaction
-        op.swap(swapData);
+        op.swap(swapData, to);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
         assertEq(wEth.balanceOf(address(op)), 100000000000000);
@@ -68,13 +68,13 @@ contract DexSwapForked is ProtocolTest {
                             toToken: address(mUSDC),
                             toAmount: 1*10**5,
                             toAmountMin: amountOut,
-                            dexData: abi.encode(sushiV3, 500, address(User), block.timestamp + 1800, 0)
+                            dexData: abi.encode(sushiV3, 500, block.timestamp + 1800, 0)
                         });
 
         vm.startPrank(User);
         wEth.approve(address(op), 1 ether);
 
-        op.swap(swapData);
+        op.swap(swapData, User);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
         assertEq(wEth.balanceOf(address(op)), 100000000000000);
@@ -97,13 +97,13 @@ contract DexSwapForked is ProtocolTest {
             toToken: address(mUSDC),
             toAmount: amountOut,
             toAmountMin: amountOut,
-            dexData: abi.encode(uniswapV3, 500, User, 0, block.timestamp + 1800)
+            dexData: abi.encode(uniswapV3, 500, 0, block.timestamp + 1800)
         });
 
         vm.startPrank(User);
         wEth.approve(address(op), amountIn);
 
-        op.swap(swapData);
+        op.swap(swapData, User);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
         assertEq(wEth.balanceOf(address(op)), 100000000000000);
@@ -127,7 +127,7 @@ contract DexSwapForked is ProtocolTest {
             toToken: address(wEth),
             toAmount: amountOut,
             toAmountMin: amountOut,
-            dexData: abi.encode(sushiV3, path, address(User), block.timestamp + 300)
+            dexData: abi.encode(sushiV3, path, block.timestamp + 300)
         });
 
         vm.startPrank(User);
@@ -135,7 +135,7 @@ contract DexSwapForked is ProtocolTest {
 
         assertEq(wEth.balanceOf(User), INITIAL_BALANCE);
 
-        op.swap(swapData);
+        op.swap(swapData, User);
 
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn);
         assertEq(wEth.balanceOf(address(op)), 100000000000000);
@@ -160,7 +160,7 @@ contract DexSwapForked is ProtocolTest {
             toToken: address(wEth),
             toAmount: amountOut,
             toAmountMin: amountOut,
-            dexData: abi.encode(sushiV3, path, address(User), block.timestamp + 300)
+            dexData: abi.encode(sushiV3, path, block.timestamp + 300)
         });
 
         bytes memory encodedError = abi.encodeWithSelector(DexSwap_InvalidPath.selector);
@@ -168,7 +168,7 @@ contract DexSwapForked is ProtocolTest {
         vm.startPrank(User);
         wEth.approve(address(op), amountIn);
         vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, encodedError));
-        op.swap(swapData);
+        op.swap(swapData, User);
 
         vm.stopPrank();
     }
@@ -190,13 +190,13 @@ contract DexSwapForked is ProtocolTest {
             toToken: address(mUSDC),
             toAmount: amountOut,
             toAmountMin: amountOut,
-            dexData: abi.encode(uniswapV3, path, address(User), block.timestamp + 1800)
+            dexData: abi.encode(uniswapV3, path, block.timestamp + 1800)
         });
 
         vm.startPrank(User);
         wEth.approve(address(op), amountIn);
 
-        op.swap(swapData);
+        op.swap(swapData, User);
 
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn);
         assertEq(wEth.balanceOf(address(op)), 100000000000000);
@@ -220,7 +220,7 @@ contract DexSwapForked is ProtocolTest {
             toToken: address(mUSDC),
             toAmount: amountOut,
             toAmountMin: amountOut,
-            dexData: abi.encode(uniswapV3, path, address(User))
+            dexData: abi.encode(uniswapV3, path)
         });
 
         bytes memory encodedError = abi.encodeWithSelector(DexSwap_InvalidPath.selector);
@@ -229,7 +229,7 @@ contract DexSwapForked is ProtocolTest {
 
         wEth.approve(address(op), amountIn);
         vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, encodedError));
-        op.swap(swapData);
+        op.swap(swapData, User);
         
         vm.stopPrank();
     }
@@ -261,13 +261,13 @@ contract DexSwapForked is ProtocolTest {
             toToken: address(mUSDC),
             toAmount: amountOut,
             toAmountMin: amountOut,
-            dexData: abi.encode(aerodromeRouter, route, User, block.timestamp + 1800)
+            dexData: abi.encode(aerodromeRouter, route, block.timestamp + 1800)
         });
 
         vm.startPrank(User);
         wEth.approve(address(op), amountIn);
 
-        op.swap(swapData);
+        op.swap(swapData, User);
 
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
         assertEq(wEth.balanceOf(address(op)), 100000000000000);
@@ -303,12 +303,12 @@ contract DexSwapForked is ProtocolTest {
             toToken: address(mUSDC),
             toAmount: amountOut,
             toAmountMin: amountOut,
-            dexData: abi.encode(uniswapV2, path, to, deadline)
+            dexData: abi.encode(uniswapV2, path, deadline)
         });
 
         //===== Start transaction calling the function and passing the payload
         vm.startPrank(User);
-        op.swap{value: amountIn}(swapData);
+        op.swap{value: amountIn}(swapData, User);
         vm.stopPrank();
 
         assertEq(User.balance, INITIAL_BALANCE - amountIn);
@@ -325,7 +325,6 @@ contract DexSwapForked is ProtocolTest {
         address[] memory path = new address[](2);
         path[0] = address(wEth);
         path[1] = address(mUSDC);
-        address to = address(op);
         uint deadline = block.timestamp + 1800;
 
         vm.startPrank(User);
@@ -339,7 +338,7 @@ contract DexSwapForked is ProtocolTest {
                             toToken: address(mUSDC),
                             toAmount: amountOutMin,
                             toAmountMin: amountOutMin,
-                            dexData: abi.encode(sushiV2, path, to, deadline)
+                            dexData: abi.encode(sushiV2, path, deadline)
         });
 
         //==== Initiate transaction
@@ -351,7 +350,6 @@ contract DexSwapForked is ProtocolTest {
         path = new address[](2);
         path[0] = address(mUSDC);
         path[1] = address(wEth);
-        to = address(User);
 
         swapData[1] = IDexSwap.SwapData({
                             dexType: IDexSwap.DexType.UniswapV2,
@@ -360,11 +358,11 @@ contract DexSwapForked is ProtocolTest {
                             toToken: address(mUSDC),
                             toAmount: amountOutMin,
                             toAmountMin: amountOutMin,
-                            dexData: abi.encode(sushiV2, path, to, deadline)
+                            dexData: abi.encode(sushiV2, path, deadline)
         });
 
         //==== Initiate transaction
-        op.swap(swapData);
+        op.swap(swapData, User);
     }
 
     error DexSwap_SwapDataNotChained(address, address);
@@ -377,7 +375,6 @@ contract DexSwapForked is ProtocolTest {
         address[] memory path = new address[](2);
         path[0] = address(wEth);
         path[1] = address(mUSDC);
-        address to = address(op);
         uint deadline = block.timestamp + 1800;
 
         vm.startPrank(User);
@@ -391,10 +388,8 @@ contract DexSwapForked is ProtocolTest {
                             toToken: address(mUSDC),
                             toAmount: amountOutMin,
                             toAmountMin: amountOutMin,
-                            dexData: abi.encode(sushiV2, path, to, deadline)
+                            dexData: abi.encode(sushiV2, path, deadline)
         });
-
-        to = User;
 
         /////=============== TEST CHAINED TX =====================\\\\\
         swapData[1] = IDexSwap.SwapData({
@@ -404,13 +399,13 @@ contract DexSwapForked is ProtocolTest {
                             toToken: address(mUSDC),
                             toAmount: amountOutMin,
                             toAmountMin: amountOutMin,
-                            dexData: abi.encode(sushiV2, path, to, deadline)
+                            dexData: abi.encode(sushiV2, path, deadline)
         });
 
         //==== Initiate transaction
         bytes memory notChained = abi.encodeWithSelector(DexSwap_SwapDataNotChained.selector, address(mUSDC), address(wEth));
 
         vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, notChained));
-        op.swap(swapData);
+        op.swap(swapData, User);
     }
 }

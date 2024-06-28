@@ -32,7 +32,6 @@ interface IStorage {
   struct BridgeData {
     CCIPToken tokenType;
     uint256 amount;
-    uint256 minAmount;
     uint64 dstChainSelector;
     address receiver;
   }

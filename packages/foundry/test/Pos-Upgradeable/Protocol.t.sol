@@ -556,7 +556,6 @@ contract ProtocolTest is Test {
         address[] memory path = new address[](2);
         path[0] = address(wEth);
         path[1] = address(mUSDC);
-        address to = User;
         uint deadline = block.timestamp + 1800;
 
         vm.startPrank(User);
@@ -570,7 +569,7 @@ contract ProtocolTest is Test {
                             toToken: address(mUSDC),
                             toAmount: amountOutMin,
                             toAmountMin: amountOutMin,
-                            dexData: abi.encode(sushiV2, path, to, deadline)
+                            dexData: abi.encode(sushiV2, path, deadline)
                         });
 
         // ==== Approve Transfer
@@ -579,7 +578,7 @@ contract ProtocolTest is Test {
 
         //==== Initiate transaction
         vm.expectRevert(abi.encodeWithSelector(Proxy_ContractPaused.selector));
-        op.swap(swapData);
+        op.swap(swapData, User);
     }
 
     function test_AdminCanUpdatedImplementationAfterSafeLock() public {

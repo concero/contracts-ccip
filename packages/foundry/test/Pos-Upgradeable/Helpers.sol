@@ -31,7 +31,6 @@ contract Helpers is DexSwapForked {
         address[] memory path = new address[](2);
         path[0] = address(wEth);
         path[1] = address(mUSDC);
-        address to = LP;
         uint deadline = block.timestamp + 1800;
 
         vm.startPrank(LP);
@@ -44,14 +43,14 @@ contract Helpers is DexSwapForked {
                             toToken: address(mUSDC),
                             toAmount: amountOutMin,
                             toAmountMin: amountOutMin,
-                            dexData: abi.encode(uniswapV2, path, to, deadline)
+                            dexData: abi.encode(uniswapV2, path, deadline)
                         });
 
         // ==== Approve Transfer
         wEth.approve(address(op), amountIn);
 
         //==== Initiate transaction
-        op.swap(swapData);
+        op.swap(swapData, LP);
         vm.stopPrank();
 
         emit FirstLegDone();
@@ -75,7 +74,6 @@ contract Helpers is DexSwapForked {
         address[] memory path = new address[](2);
         path[0] = address(arbWEth);
         path[1] = address(aUSDC);
-        address to = LP;
         uint deadline = block.timestamp + 1800;
 
         vm.startPrank(LP);
@@ -88,14 +86,14 @@ contract Helpers is DexSwapForked {
                             toToken: address(aUSDC),
                             toAmount: amountOutMin,
                             toAmountMin: amountOutMin,
-                            dexData: abi.encode(uniswapV2Arb, path, to, deadline)
+                            dexData: abi.encode(uniswapV2Arb, path, deadline)
                         });
 
         // ==== Approve Transfer
         arbWEth.approve(address(opDst), amountIn);
 
         //==== Initiate transaction
-        opDst.swap(swapData);
+        opDst.swap(swapData, LP);
         vm.stopPrank();
 
         emit FirstLegDone();
@@ -105,7 +103,6 @@ contract Helpers is DexSwapForked {
         address[] memory secondPath = new address[](2);
         secondPath[0] = address(arbWEth);
         secondPath[1] = address(linkArb);
-        address secondTo = LP;
         uint secondDeadline = block.timestamp + 1800;
 
         IDexSwap.SwapData[] memory secondSwapData = new IDexSwap.SwapData[](1);
@@ -116,14 +113,14 @@ contract Helpers is DexSwapForked {
                             toToken: address(linkArb),
                             toAmount: secondAmountOutMin,
                             toAmountMin: secondAmountOutMin,
-                            dexData: abi.encode(sushiV2Arb, secondPath, secondTo, secondDeadline)
+                            dexData: abi.encode(sushiV2Arb, secondPath, secondDeadline)
                         });
 
         vm.startPrank(LP);
         arbWEth.approve(address(opDst), secondAmountIn);
 
         //==== Initiate transaction
-        opDst.swap(secondSwapData);
+        opDst.swap(secondSwapData, LP);
 
         assertEq(arbWEth.balanceOf(address(LP)), 0);
         assertTrue(IERC20(linkArb).balanceOf(address(LP)) > amountOutMin);

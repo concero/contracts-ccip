@@ -103,9 +103,8 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   ) external validateBridgeData(bridgeData){
     if (srcSwapData.length == 0) revert Orchestrator_InvalidSwapData();
 
-    uint256 receivedAmount = _swap(srcSwapData, 0, false);
-
-    if (receivedAmount < bridgeData.minAmount) revert Orchestrator_FailedToStartBridge(receivedAmount, bridgeData.minAmount);
+    //Swap -> money come back to this contract
+    uint256 receivedAmount = _swap(srcSwapData, 0, false, address(this));
 
     bridgeData.amount = receivedAmount;
 
@@ -114,9 +113,10 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   }
 
   function swap(
-    IDexSwap.SwapData[] calldata _swapData
+    IDexSwap.SwapData[] calldata _swapData,
+    address _receiver
   ) external payable tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount) validateSwapData(_swapData) {
-    _swap(_swapData, msg.value, true);
+    _swap(_swapData, msg.value, true, _receiver);
   }
 
   function bridge(
@@ -164,7 +164,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   //////////////////////////
   /// INTERNAL FUNCTIONS ///
   //////////////////////////
-  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount, bool isFeesNeeded) internal returns (uint256) {
+  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount, bool isFeesNeeded, address _receiver) internal returns (uint256) {
     address fromToken = swapData[0].fromToken;
     uint256 fromAmount = swapData[0].fromAmount;
     address toToken = swapData[swapData.length - 1].toToken;
@@ -182,7 +182,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
       }
     }
 
-    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, nativeAmount));
+    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, nativeAmount, _receiver));
     if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
 
     emit Orchestrator_SwapSuccess();

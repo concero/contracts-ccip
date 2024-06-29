@@ -28,6 +28,8 @@ error Orchestrator_FailedToStartBridge(uint256 receivedAmount, uint256 minAmount
 error Orchestrator_InvalidBridgeData();
 ///@notice error emitted when an empty swapData is the input
 error Orchestrator_InvalidSwapData();
+///@notice error emitted when an attempt to withdraw ether fails
+error Orchestrator_EtherWithdrawalFailed();
 
 contract Orchestrator is StorageSetters, IFunctionsClient {
   using SafeERC20 for IERC20;
@@ -53,7 +55,10 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   ////////////////////////////////////////////////////////
   ///@notice emitted when the Functions router fulfills a request
   event Orchestrator_RequestFulfilled(bytes32 requestId);
+  ///@notice emitted if swap successed
   event Orchestrator_SwapSuccess();
+  ///@notice emitted when fees are withdrawn
+  event Orchestrator_FeeWithdrawal(address owner, uint256 amount);
 
   constructor(address _functionsRouter, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex) StorageSetters(msg.sender) {
     i_functionsRouter = _functionsRouter;
@@ -85,7 +90,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   modifier validateSwapData(IDexSwap.SwapData[] calldata _srcSwapData) {
     uint256 swapDataLength = _srcSwapData.length;
 
-    if (swapDataLength == 0 || swapDataLength > 5) {
+    if (swapDataLength == 0 || swapDataLength > 5 || _srcSwapData.dexData == 0) {
       revert Orchestrator_InvalidSwapData();
     }
 
@@ -175,8 +180,10 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   function withdrawEtherFee() external onlyOwner {
     uint256 amount = address(this).balance;
 
-    (bool sent, ) = _receiver.call{value: amount}("");
-    if (sent == false) revert();
+    emit Orchestrator_FeeWithdrawal(msg.sender, amount);
+
+    (bool sent, ) = i_owner.call{value: amount}("");
+    if (sent == false) revert Orchestrator_EtherWithdrawalFailed();
   }
 
   /**
@@ -187,7 +194,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   function withdrawERC20Fee(address _token) external onlyOwner{
     uint256 amount = IERC20(_token).balanceOf(address(this));
 
-    emit DexSwap_RemovingDust(msg.sender, amount);
+    emit Orchestrator_FeeWithdrawal(msg.sender, amount);
 
     IERC20(_token).safeTransfer(msg.sender, amount);
   }

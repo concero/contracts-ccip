@@ -40,7 +40,7 @@ contract DexSwap is Storage, IDexSwap {
   using BytesLib for bytes;
 
   ///////////////
-  ///IMMUTABLE///
+  ///CONSTANTS///
   ///////////////
   uint256 private constant BASE_CHAIN_ID = 8453; //Testnet
   uint256 private constant AVAX_CHAIN_ID = 43114; //Testnet
@@ -209,9 +209,7 @@ contract DexSwap is Storage, IDexSwap {
   function _swapUniV3Single(IDexSwap.SwapData memory _swapData, address _recipient) private {
     (address routerAddress, uint24 fee, uint160 sqrtPriceLimitX96, uint256 deadline) = abi.decode(_swapData.dexData, (address, uint24, uint160, uint256));
 
-    if (s_routerAllowed[routerAddress] != APPROVED) {
-      revert DexSwap_RouterNotAllowed();
-    }
+    if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 
     if( block.chainid == BASE_CHAIN_ID || block.chainid == AVAX_CHAIN_ID){
       IV3SwapRouter.ExactInputSingleParams memory dex = IV3SwapRouter.ExactInputSingleParams({
@@ -326,8 +324,6 @@ contract DexSwap is Storage, IDexSwap {
    * @dev This function accepts regular and Fee on Transfer tokens
    */
   function _swapDrome(IDexSwap.SwapData memory _swapData, address _recipient) private {
-    if (_swapData.dexData.length < 1) revert DexSwap_EmptyDexData();
-
     (address routerAddress, IRouter.Route[] memory routes, uint256 deadline) = abi.decode(
       _swapData.dexData,
       (address, IRouter.Route[], uint256)
@@ -346,8 +342,6 @@ contract DexSwap is Storage, IDexSwap {
    * @dev This function accepts Fee on Transfer tokens
    */
   function _swapDromeFoT(IDexSwap.SwapData memory _swapData, address _recipient) private {
-    if (_swapData.dexData.length < 1) revert DexSwap_EmptyDexData();
-
     (address routerAddress, IRouter.Route[] memory routes, uint256 deadline) = abi.decode(
       _swapData.dexData,
       (address, IRouter.Route[], uint256)

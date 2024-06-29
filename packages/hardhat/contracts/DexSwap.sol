@@ -82,7 +82,6 @@ contract DexSwap is Storage, IDexSwap {
   function conceroEntry(IDexSwap.SwapData[] memory _swapData, uint256 _amount, address _recipient) external payable {
     if (address(this) != i_proxy) revert DexSwap_ItsNotOrchestrator(address(this));
     uint256 swapDataLength = _swapData.length;
-    if (swapDataLength < 1 || swapDataLength > 5) revert DexSwap_InvalidDexData(); //Renamed
 
     for (uint256 i; i < swapDataLength; ) {
       //@audit ADJUSTED
@@ -397,7 +396,7 @@ contract DexSwap is Storage, IDexSwap {
     uint256 amount = address(this).balance;
 
     (bool sent, ) = _receiver.call{value: amount}("");
-    if (sent = false) revert();
+    if (sent == false) revert();
   }
 }
 

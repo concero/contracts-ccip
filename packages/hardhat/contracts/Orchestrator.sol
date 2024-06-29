@@ -83,7 +83,9 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   }
 
   modifier validateSwapData(IDexSwap.SwapData[] calldata _srcSwapData) {
-    if (_srcSwapData.length == 0) {
+    uint256 swapDataLength = _srcSwapData.length;
+
+    if (swapDataLength == 0 || swapDataLength > 5) {
       revert Orchestrator_InvalidSwapData();
     }
 
@@ -115,7 +117,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   function swap(
     IDexSwap.SwapData[] calldata _swapData,
     address _receiver
-  ) external payable tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount) validateSwapData(_swapData) {
+  ) external payable validateSwapData(_swapData) tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount)  {
     _swap(_swapData, msg.value, true, _receiver);
   }
 
@@ -162,8 +164,38 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   }
 
   //////////////////////////
+  /// EXTERNAL FUNCTIONS ///
+  //////////////////////////
+  
+  /**
+   * @notice function to withdraw ether fees
+   * @dev owner address will receive the amount
+   * @dev can only be called by owner
+   */
+  function withdrawEtherFee() external onlyOwner {
+    uint256 amount = address(this).balance;
+
+    (bool sent, ) = _receiver.call{value: amount}("");
+    if (sent == false) revert();
+  }
+
+  /**
+   * @notice function to withdraw erc20 fees
+   * @param _token the address of the token to be withdraw
+   * @dev can only be called by owner
+   */
+  function withdrawERC20Fee(address _token) external onlyOwner{
+    uint256 amount = IERC20(_token).balanceOf(address(this));
+
+    emit DexSwap_RemovingDust(msg.sender, amount);
+
+    IERC20(_token).safeTransfer(msg.sender, amount);
+  }
+
+  //////////////////////////
   /// INTERNAL FUNCTIONS ///
   //////////////////////////
+  error DexSwap_InvalidDexData();
   function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount, bool isFeesNeeded, address _receiver) internal returns (uint256) {
     address fromToken = swapData[0].fromToken;
     uint256 fromAmount = swapData[0].fromAmount;

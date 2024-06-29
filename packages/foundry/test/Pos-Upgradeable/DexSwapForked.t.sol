@@ -17,8 +17,10 @@ import {ISwapRouter02, IV3SwapRouter} from "contracts/Interfaces/ISwapRouter02.s
 contract DexSwapForked is ProtocolTest {
 
     //////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////// SWAPING MODULE /////////////////////////////////
+    ///////////////////////////////// SWAPPING MODULE /////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////
+    error DexSwap_CallableOnlyByOwner(address, address);
+    event DexSwap_RemovingDust(address, uint256);
     function test_swapUniV2LikeMock() public {
         helper();
 
@@ -54,6 +56,20 @@ contract DexSwapForked is ProtocolTest {
         assertEq(wEth.balanceOf(address(User)), INITIAL_BALANCE - amountIn);
         assertEq(wEth.balanceOf(address(op)), 100000000000000);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOutMin);
+
+        //===== Mock some dust stuck on the protocol
+        mUSDC.transfer(address(dex), amountOutMin);
+        assertEq(mUSDC.balanceOf(address(dex)), amountOutMin);
+        vm.stopPrank();
+
+        //==== Arbitrary address tries to withdraw it and revert
+        vm.expectRevert(abi.encodeWithSelector(DexSwap_CallableOnlyByOwner.selector, address(this), defaultSender));
+        dex.dustRemoval(address(mUSDC), amountOutMin);
+
+        vm.prank(defaultSender);
+        vm.expectEmit();
+        emit DexSwap_RemovingDust(defaultSender, amountOutMin);
+        dex.dustRemoval(address(mUSDC), amountOutMin);
     }
 
     function test_swapSushiV3SingleMock() public {
@@ -315,6 +331,17 @@ contract DexSwapForked is ProtocolTest {
         assertEq(wEth.balanceOf(address(op)), 0);
         assertEq(address(op).balance, 0);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
+
+        uint256 userBalance = User.balance;
+
+        vm.deal(address(dex), 1*10**18);
+
+        assertEq(1*10**18, address(dex).balance);
+
+        vm.prank(defaultSender);
+        dex.dustEtherRemoval(User);
+
+        assertEq(User.balance, userBalance  + 1*10**18);
     }
 
     function test_customMultiHopFunctionalitySuccess() public {
@@ -407,5 +434,100 @@ contract DexSwapForked is ProtocolTest {
 
         vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, notChained));
         op.swap(swapData, User);
+    }
+
+    error DexSwap_ItsNotOrchestrator(address);
+    error Orchestrator_InvalidSwapData();
+    function test_revertConceroEntry() public {
+        
+        helper();
+
+        uint amountIn = 1*10**17;
+        uint amountOutMin = 350*10**5;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(mUSDC);
+        uint deadline = block.timestamp + 1800;
+
+        vm.startPrank(User);
+        wEth.approve(address(op), amountIn);
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(sushiV2, path, deadline)
+        });
+
+        vm.expectRevert(abi.encodeWithSelector(DexSwap_ItsNotOrchestrator.selector, address(dex)));
+        dex.conceroEntry(swapData, 0, User);
+        
+        IDexSwap.SwapData[] memory emptyData = new IDexSwap.SwapData[](0);
+
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidSwapData.selector));
+        op.swap(emptyData, User);
+        
+        IDexSwap.SwapData[] memory fullData = new IDexSwap.SwapData[](6);
+        fullData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(sushiV2, path, deadline)
+        });
+        fullData[1] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(sushiV2, path, deadline)
+        });
+        fullData[2] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(sushiV2, path, deadline)
+        });
+        fullData[3] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(sushiV2, path, deadline)
+        });
+        fullData[4] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(sushiV2, path, deadline)
+        });
+        fullData[5] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(sushiV2, path, deadline)
+        });
+
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidSwapData.selector));
+        op.swap(fullData, User);
     }
 }

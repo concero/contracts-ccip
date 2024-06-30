@@ -10,8 +10,6 @@ import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 error ParentStorage_InvalidAddress();
 ///@notice error emitted when the caller is not the owner
 error ParentStorage_NotContractOwner();
-///@notice error emitted when the owner tries to add an receiver that was already added.
-error ParentStorage_DuplicatedAddress();
 
 contract ParentStorage {
   ///////////////////////////////////////////////////////////
@@ -109,7 +107,7 @@ contract ParentStorage {
    * @dev this functions is used on ConceroPool.sol
    */
   function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
-    if (s_poolToSendTo[_chainSelector] != address(0)) revert ParentStorage_DuplicatedAddress();
+    if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ParentStorage_InvalidAddress();
     poolsToDistribute.push(IParentPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
 
     s_poolToSendTo[_chainSelector] = _pool;

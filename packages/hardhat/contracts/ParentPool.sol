@@ -29,8 +29,6 @@ error ParentPool_InvalidAddress();
 error ParentPool_SenderNotAllowed(address _sender);
 ///@notice error emitted when an attempt to create a new request is made while other is still active.
 error ParentPool_ActiveRequestNotFulfilledYet();
-///@notice error emitted when an attempt to send value to a not allowed receiver is made
-error ParentPool_DestinationNotAllowed();  //@audit not being used
 ///@notice error emitted when the contract doesn't have enough link balance
 error ParentPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
 ///@notice error emitted when a LP try to deposit liquidity on the contract without pools
@@ -39,10 +37,6 @@ error ParentPool_ThereIsNoPoolToDistribute();
 error ParentPool_AmountBelowMinimum(uint256 minAmount);
 ///@notice emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
 error ParentPool_AmountNotAvailableYet(uint256 received);
-///@notice emitted in depositLiquidity when the input token is not allowed
-error ParentPool_TokenNotAllowed(address token);  //@audit not being used
-///@notice error emitted when the caller is not the messenger
-error ParentPool_NotMessenger(address caller);
 ///@notice error emitted when the chain selector input is invalid
 error ParentPool_ChainNotAllowed(uint64 chainSelector);
 ///@notice error emitted when the caller is not the Orchestrator
@@ -128,23 +122,6 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
    */
   modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
     if (s_contractsToReceiveFrom[_chainSelector][_sender] != ALLOWED) revert ParentPool_SenderNotAllowed(_sender);
-    _;
-  }
-
-  /**
-   * @notice modifier to check if the caller is the an approved messenger
-   */
-  modifier onlyMessenger() {
-    if (isMessenger(msg.sender) == false) revert ParentPool_NotMessenger(msg.sender);
-    _;
-  }
-
-  /**
-   * @notice CCIP Modifier to check receivers for a specific chain
-   * @param _chainSelector Id of the destination chain
-   */
-  modifier onlyAllowListedChain(uint64 _chainSelector) {
-    if (s_poolToSendTo[_chainSelector] == address(0)) revert ParentPool_ChainNotAllowed(_chainSelector);
     _;
   }
 
@@ -506,28 +483,6 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
    */
   function _convertToUSDCTokenDecimals(uint256 _lpAmount) internal pure returns (uint256 _adjustedAmount) {
     _adjustedAmount = (_lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
-  }
-
-  /**
-   * @notice Function to check if a caller address is an allowed messenger
-   * @param _messenger the address of the caller
-   */
-  function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
-    address[] memory messengers = new address[](4); //Number of messengers. To define.
-    messengers[0] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267; //fake messenger from foundry environment
-    messengers[1] = address(0);
-    messengers[2] = address(0);
-    messengers[3] = address(0);
-
-    for (uint256 i; i < messengers.length; ) {
-      if (_messenger == messengers[i]) {
-        return true;
-      }
-      unchecked {
-        ++i;
-      }
-    }
-    return false;
   }
 
   //////////////////////////////

@@ -564,8 +564,8 @@ contract DexSwapForked is ProtocolTest {
         uint deadline = block.timestamp + 1800;
 
         //===== Gives User some ether and checks the balance
-        vm.deal(User, INITIAL_BALANCE);
-        assertEq(User.balance, INITIAL_BALANCE);
+        vm.deal(User, 1*10**17);
+        assertEq(User.balance, 1*10**17);
 
         //===== Mock the payload to send on the function
         IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
@@ -584,9 +584,9 @@ contract DexSwapForked is ProtocolTest {
         op.swap{value: amountIn}(swapData, User);
         vm.stopPrank();
 
-        assertEq(User.balance, INITIAL_BALANCE - amountIn);
+        assertEq(User.balance, 0);
         assertEq(wEth.balanceOf(address(op)), 0);
-        assertEq(address(op).balance, 0);
+        assertEq(address(op).balance, 1*10**17 / 1000);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
 
         uint256 userBalance = User.balance;

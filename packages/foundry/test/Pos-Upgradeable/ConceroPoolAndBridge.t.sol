@@ -57,7 +57,7 @@ contract ParentPoolAndBridge is Helpers {
         vm.expectEmit();
         emit ParentPool_SuccessfulDeposited(LP, depositEnoughAmount, address(mUSDC));
         wMaster.depositLiquidity(depositEnoughAmount);
-        // ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumMainFork);
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumMainFork);
         vm.stopPrank();
 
         //======= Check LP balance
@@ -89,7 +89,7 @@ contract ParentPoolAndBridge is Helpers {
         //======= Calls ChildPool to send the money
         vm.prank(Messenger);
         wChild.ccipSendToPool(LP, depositEnoughAmount/2);
-        // ccipLocalSimulatorFork.switchChainAndRouteMessage(baseMainFork);
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(baseMainFork);
 
         //======= Switch to Base
         vm.selectFork(baseMainFork);
@@ -103,6 +103,6 @@ contract ParentPoolAndBridge is Helpers {
         vm.stopPrank();
 
         // //======= Check LP balance
-        // assertEq(mUSDC.balanceOf(LP), lpBalance);
+        assertEq(mUSDC.balanceOf(LP), lpBalance);
     }
 }

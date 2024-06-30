@@ -18,14 +18,6 @@ contract ChildStorage {
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
 
-  ///////////
-  ///STATE///
-  ///////////
-  ///@notice variable to store the value that will be temporary used by Chainlink Functions
-  uint256 public s_loansInUse;
-  ///@notice gap to reserve storage in the contract for future variable additions
-  uint256[50] __gap;
-
   ////////////////
   ///IMMUTABLES///
   ////////////////
@@ -37,6 +29,14 @@ contract ChildStorage {
   ///////////////
   ///@notice Magic Number Removal
   uint256 private constant ALLOWED = 1;
+
+  ///////////
+  ///STATE///
+  ///////////
+  ///@notice variable to store the value that will be temporary used by Chainlink Functions
+  uint256 public s_loansInUse;
+  ///@notice gap to reserve storage in the contract for future variable additions
+  uint256[50] __gap;
 
   /////////////
   ///STORAGE///

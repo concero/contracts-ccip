@@ -106,13 +106,13 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
   ///@notice event emitted when a new withdraw request is made
   event ParentPool_WithdrawRequest(address caller, IERC20 token, uint256 deadline);
   ///@notice event emitted when a value is withdraw from the contract
-  event ParentPool_Withdrawn(address to, address token, uint256 amount);
+  event ParentPool_Withdrawn(address indexed to, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain tx is received.
   event ParentPool_CCIPReceived(bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain message is sent.
   event ParentPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
   ///@notice event emitted in depositLiquidity when a deposit is successful executed
-  event ParentPool_SuccessfulDeposited(address liquidityProvider, uint256 _amount, IERC20 _token);
+  event ParentPool_SuccessfulDeposited(address indexed liquidityProvider, uint256 _amount, IERC20 _token);
   ///@notice event emitted when a request is updated with the total USDC to withdraw
   event ParentPool_RequestUpdated(address liquidityProvider);
   ///@notice event emitted when the Functions request return error

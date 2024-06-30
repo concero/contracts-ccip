@@ -450,6 +450,7 @@ contract InfraIntegration is Test {
         assertEq(mUSDC.balanceOf(CrossChainReceiver), (10 *10**6 - (10 *10**6 / 1000)) - ((10 *10**6 - (10 *10**6 / 1000))/ 1000));
     }
 
+    error Concero_ItsNotOrchestrator(address);
     function test_swapAndBridgeWithoutFunctions() public {
         setters();
         
@@ -504,9 +505,78 @@ contract InfraIntegration is Test {
         assertEq(mUSDC.balanceOf(address(dexMock)), USDC_WHALE_BALANCE);
 
         vm.startPrank(User);
+        vm.expectRevert(abi.encodeWithSelector(Concero_ItsNotOrchestrator.selector, address(concero)));
+        concero.startBridge(bridgeData, swapData);
+
         wInfraSrc.swapAndBridge(bridgeData, swapData, swapDataDst);
         vm.stopPrank();
 
         assertTrue(mUSDC.balanceOf(CrossChainReceiver) > 340 *10**6);
+    }
+
+    error InsufficientFundsForFees(uint256, uint256);
+    error Orchestrator_UnableToCompleteDelegateCall(bytes);
+    function test_swapAndBridgeRevertBecauseBridgeAmount() public {
+        
+        setters();
+        vm.startPrank(defaultSender);
+        wInfraSrc.setLastGasPrices(localChainSelector, 5767529);
+        wInfraSrc.setLatestLinkUsdcRate(13_560_000_000_000_000_000);
+        wInfraSrc.setLatestNativeUsdcRate(3_383_730_000_000_000_000_000);
+        wInfraSrc.setLatestLinkNativeRate(40091515);
+        vm.stopPrank();
+        
+        vm.deal(User, INITIAL_BALANCE);
+
+        vm.startPrank(LiquidityProviderWhale);
+        mUSDC.approve(address(wMaster), USDC_WHALE_BALANCE);
+        wMaster.depositLiquidity(USDC_WHALE_BALANCE); //1000
+        vm.stopPrank();
+
+        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        
+        uint amountIn = 29510000000000;
+        uint amountOutMin = 9*10**4;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(mUSDC);
+        address to = address(wInfraSrc);
+        uint deadline = block.timestamp + 1800;
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(mUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(dexMock, path, to, deadline)
+        });
+
+        // ==== Approve Transfer
+        vm.startPrank(User);
+        wEth.approve(address(wInfraSrc), amountIn);
+
+        /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+            tokenType: IStorage.CCIPToken.usdc,
+            amount: amountOutMin,
+            dstChainSelector: localChainSelector,
+            receiver: CrossChainReceiver
+        });
+
+        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        IDexSwap.SwapData[] memory swapDataDst = new IDexSwap.SwapData[](0);
+
+        //====== Check Receiver balance
+        assertEq(mUSDC.balanceOf(CrossChainReceiver), 0);
+        assertEq(mUSDC.balanceOf(address(dexMock)), USDC_WHALE_BALANCE);
+
+        vm.startPrank(User);
+        bytes memory InsufficientFundsForFees = abi.encodeWithSelector(InsufficientFundsForFees.selector, amountOutMin , 137753641354758127);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, InsufficientFundsForFees));
+        wInfraSrc.swapAndBridge(bridgeData, swapData, swapDataDst);
+        vm.stopPrank();
     }
 }

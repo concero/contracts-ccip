@@ -64,12 +64,16 @@ contract Concero is ConceroCCIP {
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount);
     uint256 mockedLpFee = getDstTotalFeeInUsdc(bridgeData.amount);
+    
+    emit Log("converted Fee", _convertToUSDCDecimals(totalSrcFee + mockedLpFee)); // 137753
 
-    if (bridgeData.amount < totalSrcFee + mockedLpFee) {
+    if (bridgeData.amount < _convertToUSDCDecimals(totalSrcFee + mockedLpFee)) {
       revert InsufficientFundsForFees(bridgeData.amount, totalSrcFee);
     }
 
-    uint256 amount = bridgeData.amount - totalSrcFee;
+    emit Log("Amount after subtraction",  bridgeData.amount - _convertToUSDCDecimals(totalSrcFee + mockedLpFee)); // 349862247
+
+    uint256 amount = bridgeData.amount - _convertToUSDCDecimals(totalSrcFee);
     uint256 actualLpFee = getDstTotalFeeInUsdc(amount);
 
     bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, bridgeData.receiver, actualLpFee);
@@ -112,19 +116,27 @@ contract Concero is ConceroCCIP {
    * @param dstChainSelector the destination blockchain chain selector
    * @param amount the amount of value the fees will calculated over.
    */
-  function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) public view returns (uint256) {
+  function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) public returns (uint256) {
     // cl functions fee
     uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
+    emit Log("functionsFeeInUsdc", functionsFeeInUsdc); //108480000000003037
 
     // cl ccip fee
     uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector);
+    emit Log("ccipFeeInUsdc", ccipFeeInUsdc); //0 ???
 
     // concero fee
     uint256 conceroFee = amount / CONCERO_FEE_FACTOR;
+    emit Log("conceroFee", conceroFee); // 350*10**6 -> 350_000 -> 0.35
 
+    //@audit BROKEN
     // gas fee
     uint256 functionsGasFeeInNative = (750_000 * s_lastGasPrices[CHAIN_SELECTOR]) + (750_000 * s_lastGasPrices[dstChainSelector]);
+    emit Log("functionsGasFeeInNative", functionsGasFeeInNative); // 8651293500000
     uint256 functionsGasFeeInUsdc = (functionsGasFeeInNative * s_latestNativeUsdcRate) / 1 ether;
+    emit Log("functionsGasFeeInUsdc", functionsGasFeeInUsdc); // 29273641354755000
+
+    emit Log("Final Fee", functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + functionsGasFeeInUsdc); // 137753641355108037
 
     return functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + functionsGasFeeInUsdc;
   }
@@ -147,6 +159,6 @@ contract Concero is ConceroCCIP {
    */
   function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector);
-    return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / 1 ether;
+    return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / 1 ether; //17_115_716_109_256_993 -> From mainnet call
   }
 }

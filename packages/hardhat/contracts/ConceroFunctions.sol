@@ -288,16 +288,16 @@ contract ConceroFunctions is FunctionsClient, Storage {
       return;
     }
 
-    (uint256 dstGasPrice, uint256 srcGasPrice, uint256 dstChainSelector, uint256 linkUsdcRate, uint256 nativeUsdcRate, uint256 linkNativeRate) = abi.decode(
+    (uint256 dstGasPrice, uint256 srcGasPrice, uint64 dstChainSelector, uint256 linkUsdcRate, uint256 nativeUsdcRate, uint256 linkNativeRate) = abi.decode(
       response,
-      (uint256, uint256, uint256, uint256, uint256, uint256)
+      (uint256, uint256, uint64, uint256, uint256, uint256)
     );
 
-    s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice;
-    s_lastGasPrices[uint64(dstChainSelector)] = dstGasPrice;
-    s_latestLinkUsdcRate = linkUsdcRate;
-    s_latestNativeUsdcRate = nativeUsdcRate;
-    s_latestLinkNativeRate = linkNativeRate;
+    s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice == 0 ? s_lastGasPrices[CHAIN_SELECTOR] : srcGasPrice;
+    s_lastGasPrices[dstChainSelector] = dstGasPrice == 0 ? s_lastGasPrices[dstChainSelector] : dstGasPrice;
+    s_latestLinkUsdcRate = linkUsdcRate == 0 ? s_latestLinkUsdcRate : linkUsdcRate;
+    s_latestNativeUsdcRate = nativeUsdcRate == 0 ? s_latestNativeUsdcRate : nativeUsdcRate;
+    s_latestLinkNativeRate = linkNativeRate == 0 ? s_latestLinkNativeRate : linkNativeRate;
   }
 
   /**

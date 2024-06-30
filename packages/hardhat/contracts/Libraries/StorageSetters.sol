@@ -15,6 +15,14 @@ contract StorageSetters is Storage {
   event DestinationJsHashSumUpdated(bytes32 previousDstHashSum, bytes32 newDstHashSum);
   event SourceJsHashSumUpdated(bytes32 previousSrcHashSum, bytes32 newSrcHashSum);
   event EthersHashSumUpdated(bytes32 previousValue, bytes32 hashSum);
+  ///@notice event emitted a cross-chain Gas price is updated.
+  event StorageSetters_LastGasPriceUpdated(uint64 chainSelector, uint256 feeAmount);
+  ///@notice event emitted when the Link to Usdc rate is updated
+  event StorageSetters_LinkUsdcRateUpdated(uint256 amount);
+  ///@notice event emitted when the Native to Usdc rate is updated
+  event StorageSetters_NativeUsdcRateUpdated(uint256 amount);
+  ///@notice event emitted when the Link to Native rate is updated
+  event StorageSetters_LinkNativeRateUpdated(uint256 amount);
 
   constructor(address _initialOwner) Storage(_initialOwner) {}
 
@@ -47,6 +55,52 @@ contract StorageSetters is Storage {
     clfPremiumFees[_chainSelector] = feeAmount;
     emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
   }
+
+  /**
+   * @notice function to update Gas Prices Cross Chain
+   * @param _chainSelector the chain Id
+   * @param _gasPrice the cost of gas
+   * @dev this function should be called only before the first transaction
+  */
+  function setLastGasPrices(uint64 _chainSelector, uint256 _gasPrice) external onlyOwner {
+    s_lastGasPrices[_chainSelector] = _gasPrice;
+
+    emit StorageSetters_LastGasPriceUpdated(_chainSelector, _gasPrice);
+  }
+
+  /**
+   * @notice Function to update Link To USDC rate
+   * @param _latestRate the latest rate
+   * @dev this function should be called only before the first transaction
+   */
+  function setLatestLinkUsdcRate(uint256 _latestRate) external payable onlyOwner{
+    s_latestLinkUsdcRate = _latestRate;
+    
+    emit StorageSetters_LinkUsdcRateUpdated(_latestRate);
+  }
+
+  /**
+   * @notice Function to Update the Native to USDC rate
+   * @param _latestRate the latest rate
+   * @dev this function should be called only before the first transaction
+   */
+  function setLatestNativeUsdcRate(uint256 _latestRate) external payable onlyOwner{
+    s_latestNativeUsdcRate = _latestRate;
+    
+    emit StorageSetters_NativeUsdcRateUpdated(_latestRate);
+  }
+
+  /**
+   * Function to update the Link To Native rate
+   * @param _latestRate the latest Rate
+   * @dev this function should be called only before the first transaction
+   * 
+   */
+  function setLatestLinkNativeRate(uint256 _latestRate) external payable onlyOwner{
+    s_latestLinkNativeRate = _latestRate;
+    
+    emit StorageSetters_LinkNativeRateUpdated(_latestRate);
+  }  
 
   function setConceroContract(uint64 _chainSelector, address _conceroContract) external onlyOwner {
     s_conceroContracts[_chainSelector] = _conceroContract;

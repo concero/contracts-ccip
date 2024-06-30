@@ -30,6 +30,8 @@ error Orchestrator_InvalidBridgeData();
 error Orchestrator_InvalidSwapData();
 ///@notice error emitted when an attempt to withdraw ether fails
 error Orchestrator_EtherWithdrawalFailed();
+///@notice error emitted when the ether swap data is corrupted
+error Orchestrator_InvalidSwapEtherData();
 
 contract Orchestrator is StorageSetters, IFunctionsClient {
   using SafeERC20 for IERC20;
@@ -90,9 +92,11 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   modifier validateSwapData(IDexSwap.SwapData[] calldata _srcSwapData) {
     uint256 swapDataLength = _srcSwapData.length;
 
-    if (swapDataLength == 0 || swapDataLength > 5 || _srcSwapData.dexData == 0) {
+    if (swapDataLength == 0 || swapDataLength > 5) {
       revert Orchestrator_InvalidSwapData();
     }
+
+    if(_srcSwapData[0].dexType == IDexSwap.DexType.UniswapV2Ether && _srcSwapData[0].fromToken != address(0)) revert Orchestrator_InvalidSwapEtherData();
 
     if (_srcSwapData[0].fromToken == address(0)) {
       if (_srcSwapData[0].fromAmount != msg.value) revert Orchestrator_InvalidSwapData();

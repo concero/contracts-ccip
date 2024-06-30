@@ -26,9 +26,17 @@ abstract contract Storage is IStorage {
   }
 
   ///////////////
-  ///VARIABLES///
+  ///CONSTANTS///
   ///////////////
+  ///@notice removing magic-numbers
+  uint256 internal constant APPROVED = 1;
+  uint16 internal constant CONCERO_FEE_FACTOR = 1000;
+  uint256 private constant USDC_DECIMALS = 10 ** 6;
+  uint256 private constant STANDARD_TOKEN_DECIMALS = 10 ** 18;
 
+  /////////////////////
+  ///STATE VARIABLES///
+  /////////////////////
   ///@notice variable to store the Chainlink Function DON Slot ID
   uint8 public s_donHostedSecretsSlotId;
   ///@notice variable to store the Chainlink Function DON Secret Version
@@ -69,14 +77,6 @@ abstract contract Storage is IStorage {
   ///@notice Functions: Mapping to keep track of cross-chain gas prices
   mapping(uint64 chainSelector => uint256 lasGasPrice) public s_lastGasPrices;
 
-  ///////////////
-  ///CONSTANTS///
-  ///////////////
-  ///@notice removing magic-numbers
-  uint256 internal constant APPROVED = 1;
-  ///@notice Removing magic numbers from calculations
-  uint16 internal constant CONCERO_FEE_FACTOR = 1000;
-
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
@@ -91,9 +91,9 @@ abstract contract Storage is IStorage {
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
 
-  /////////////////
-  ///VIEW & PURE///
-  /////////////////
+  ///////////////////////////
+  ///VIEW & PURE FUNCTIONS///
+  ///////////////////////////
   /**
    * @notice Function to check for allowed tokens on specific networks
    * @param token The enum flag of the token
@@ -120,5 +120,14 @@ abstract contract Storage is IStorage {
 
   function getTransactionsInfo(bytes32 _ccipMessageId) external view returns(Transaction memory transaction){
     transaction = s_transactions[_ccipMessageId];
+  }
+
+  /**
+   * @notice Internal function to convert USDC Decimals to LP Decimals
+   * @param _amount the amount of USDC
+   * @return _adjustedAmount the adjusted amount
+   */
+  function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
+    _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
   }
 }

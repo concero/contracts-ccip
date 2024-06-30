@@ -17,13 +17,14 @@ error Storage_TokenTypeOutOfBounds();
 error Storage_ChainIndexOutOfBounds();
 ///@notice error emitted when a not allowed caller try to get CCIP information from storage
 error Storage_CallerNotAllowed();
+///@notice error emitted when a non-messenger address call a controlled function
+error Storage_NotMessenger(address caller);
 
 abstract contract Storage is IStorage {
+  ///////////////
+  ///IMMUTABLE///
+  ///////////////
   address internal immutable i_owner;
-
-  constructor(address _initialOwner) {
-    i_owner = _initialOwner;
-  }
 
   ///////////////
   ///CONSTANTS///
@@ -87,9 +88,23 @@ abstract contract Storage is IStorage {
   ///@notice event emitted when the router address is approved
   event Storage_NewRouterAdded(address router, uint256 isAllowed);
 
+  ///////////////
+  ///MODIFIERS///
+  ///////////////
+  /**
+   * @notice modifier to check if the caller is the an approved messenger
+   */
+  modifier onlyMessenger() {
+    if (isMessenger(msg.sender) == false) revert Storage_NotMessenger(msg.sender);
+    _;
+  }
+
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
+  constructor(address _initialOwner) {
+    i_owner = _initialOwner;
+  }
 
   ///////////////////////////
   ///VIEW & PURE FUNCTIONS///
@@ -129,5 +144,27 @@ abstract contract Storage is IStorage {
    */
   function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
     _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
+  }
+
+  /**
+   * @notice Function to check if a caller address is an allowed messenger
+   * @param _messenger the address of the caller
+   */
+  function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
+    address[] memory messengers = new address[](4); //Number of messengers. To define.
+    messengers[0] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267; //fake messenger from foundry environment
+    messengers[1] = address(0);
+    messengers[2] = address(0);
+    messengers[3] = address(0);
+
+    for (uint256 i; i < messengers.length; ) {
+      if (_messenger == messengers[i]) {
+        return true;
+      }
+      unchecked {
+        ++i;
+      }
+    }
+    return false;
   }
 }

@@ -370,7 +370,7 @@ contract DexSwap is Storage, IDexSwap {
    * @param _amount the ether amount to swap
    */
   function _swapEtherOnUniV2Like(IDexSwap.SwapData memory _swapData, uint256 _amount, address _recipient) private returns (uint256[] memory amounts) {
-    if (_swapData.dexData.length < 1) revert DexSwap_EmptyDexData();
+    if (_swapData.dexData.length < APPROVED) revert DexSwap_EmptyDexData();
 
     (address routerAddress, address[] memory path, uint256 deadline) = abi.decode(_swapData.dexData, (address, address[], uint256));
     if (_swapData.fromToken != address(0) || path[0] != i_wEth) revert DexSwap_InvalidPath();

@@ -233,6 +233,10 @@ contract PoolsTesting is Test{
     }
 
     error ConceroChildPool_InsufficientBalance();
+    error ChildStorage_NotMessenger(address);
+    error ConceroChildPool_CallerIsNotTheProxy(address);
+    error ConceroChildPool_CallerIsNotConcero(address);
+    error ConceroChildPool_InvalidAddress();
     //Deposits, start withdraw, take loans, complete withdraw.
     //One liquidity provider -> partial withdraw
     function test_localDepositLiquidity() public setters{
@@ -285,8 +289,31 @@ contract PoolsTesting is Test{
 
         assertEq(usdc.balanceOf(Athena), loanAmount);
 
+        //===== Revert on caller
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_CallerIsNotConcero.selector, address(this)));
+        wChild.orchestratorLoan(address(usdc), loanAmount, Athena);
+
+        //===== Revert on Balance
+        vm.prank(Orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InsufficientBalance.selector));
+        wChild.orchestratorLoan(address(usdc), 100*10**6, Athena);
+
+        //===== Revert on Address
+        vm.prank(Orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InvalidAddress.selector));
+        wChild.orchestratorLoan(address(usdc), loanAmount, address(0));
+
         //===== Advance in time
         vm.warp(7 days);
+
+        //===== Revert on Messenger
+        vm.expectRevert(abi.encodeWithSelector(ChildStorage_NotMessenger.selector, address(this)));
+        wChild.ccipSendToPool(LiquidityProvider, 26_000_000);
+
+        //===== Revert on Environment
+        vm.prank(Messenger);
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_CallerIsNotTheProxy.selector, address(child)));
+        child.ccipSendToPool(LiquidityProvider, 26_000_000);
 
         //==== Mock the Automation call to ChildPool
         vm.prank(Messenger);

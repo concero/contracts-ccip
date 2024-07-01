@@ -260,7 +260,6 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
 
     if (withdraw.amountEarned > i_USDC.balanceOf(address(this))) revert ParentPool_InsufficientBalance();
 
-    emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
 
     s_withdrawRequests = s_withdrawRequests > withdraw.amountEarned
     ? s_withdrawRequests - withdraw.amountEarned
@@ -268,6 +267,8 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
 
     delete s_pendingWithdrawRequests[msg.sender];
 
+    emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
+    
     IERC20(i_lp).safeTransferFrom(msg.sender, address(this), withdraw.amountToBurn);
 
     i_lp.burn(withdraw.amountToBurn);

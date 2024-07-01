@@ -58,7 +58,6 @@ contract Concero is ConceroCCIP {
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
-  event Log(string, uint256);
   function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] calldata dstSwapData) external {
     if (address(this) != i_proxy) revert Concero_ItsNotOrchestrator(address(this));
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);

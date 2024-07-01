@@ -26,22 +26,22 @@ import {IStorage} from "contracts/Interfaces/IStorage.sol";
 import {Storage} from "contracts/Libraries/Storage.sol";
 
 //MAster & Infra Scripts
-import {DexSwapDeploy} from "../../script/DexSwapDeploy.s.sol";
-import {ParentPoolDeploy} from "../../script/ParentPoolDeploy.s.sol";
-import {ConceroDeploy} from "../../script/ConceroDeploy.s.sol";
-import {OrchestratorDeploy} from "../../script/OrchestratorDeploy.s.sol";
-import {InfraProxyDeploy} from "../../script/InfraProxyDeploy.s.sol";
-import {LPTokenDeploy} from "../../script/LPTokenDeploy.s.sol";
-import {AutomationDeploy} from "../../script/AutomationDeploy.s.sol";
-import {ParentPoolProxyDeploy} from "../../script/ParentPoolProxyDeploy.s.sol";
+import {DexSwapDeploy} from "../../../script/DexSwapDeploy.s.sol";
+import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
+import {ConceroDeploy} from "../../../script/ConceroDeploy.s.sol";
+import {OrchestratorDeploy} from "../../../script/OrchestratorDeploy.s.sol";
+import {InfraProxyDeploy} from "../../../script/InfraProxyDeploy.s.sol";
+import {LPTokenDeploy} from "../../../script/LPTokenDeploy.s.sol";
+import {AutomationDeploy} from "../../../script/AutomationDeploy.s.sol";
+import {ParentPoolProxyDeploy} from "../../../script/ParentPoolProxyDeploy.s.sol";
 
 //===== Child Scripts
-import {ChildPoolDeploy} from "../../script/ChildPoolDeploy.s.sol";
-import {ChildPoolProxyDeploy} from "../../script/ChildPoolProxyDeploy.s.sol";
+import {ChildPoolDeploy} from "../../../script/ChildPoolDeploy.s.sol";
+import {ChildPoolProxyDeploy} from "../../../script/ChildPoolProxyDeploy.s.sol";
 
 //Mocks
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
-import {USDC} from "../Mocks/USDC.sol";
+import {USDC} from "../../Mocks/USDC.sol";
 
 //OpenZeppelin
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -154,7 +154,7 @@ contract ProtocolTest is Test {
     //Arb Mainnet variables
     address linkArb = 0xf97f4df75117a78c1A5a0DBb814Af92458539FB4;
     address ccipRouterArb = 0x141fa059441E0ca23ce184B6A78bafD2A517DdE8;
-    address functionsRouterArb = 0x97083E831F8F0638855e2A515c90EdCF158DF238;
+    FunctionsRouter functionsRouterArb = FunctionsRouter(0x97083E831F8F0638855e2A515c90EdCF158DF238);
     bytes32 donIdArb = 0x66756e2d617262697472756d2d6d61696e6e65742d3100000000000000000000;
 
     address ProxyOwner = makeAddr("ProxyOwner");
@@ -163,6 +163,7 @@ contract ProtocolTest is Test {
     address Messenger = makeAddr("Messenger");
     address LP = makeAddr("LiquidityProvider");
     address defaultSender = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
+    address subOwner = 0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0;
 
     uint256 baseMainFork;
     uint256 arbitrumMainFork;
@@ -175,9 +176,10 @@ contract ProtocolTest is Test {
     ERC721 SAFE_LOCK;
 
     function setUp() public {
-        baseMainFork = vm.createFork(BASE_RPC_URL);
+        baseMainFork = vm.createSelectFork(BASE_RPC_URL);
         arbitrumMainFork = vm.createFork(ARB_RPC_URL);
         ccipLocalSimulatorFork = new CCIPLocalSimulatorFork();
+        vm.makePersistent(address(ccipLocalSimulatorFork));
 
         //Base Network details
         Register.NetworkDetails memory base = Register.NetworkDetails({
@@ -326,11 +328,6 @@ contract ProtocolTest is Test {
         vm.makePersistent(address(ccipLocalSimulatorFork));
         vm.makePersistent(address(wMaster));
 
-        vm.prank(0xB015a6318f1D19DC3E135C8cEBa4bda00845c9Be);
-        functionsRouterBase.addConsumer(15, address(proxy));
-        vm.prank(0xB015a6318f1D19DC3E135C8cEBa4bda00845c9Be);
-        functionsRouterBase.addConsumer(15, address(wMaster));
-
         //====== Update the MINTER on the LP Token
         vm.prank(Tester);
         lp.grantRole(keccak256("MINTER_ROLE"), address(wMaster));
@@ -405,7 +402,7 @@ contract ProtocolTest is Test {
             IStorage.FunctionsVariables ({
                 subscriptionId: 0, //uint64 _subscriptionId,
                 donId: donIdArb,
-                functionsRouter: functionsRouterArb
+                functionsRouter: address(functionsRouterArb)
             }),
             arbChainSelector,
             1, //uint _chainIndex,
@@ -417,7 +414,7 @@ contract ProtocolTest is Test {
         );
 
         orchDst = orchDeployArbitrum.run(
-            functionsRouterArb,
+            address(functionsRouterArb),
             address(dexDst),
             address(conceroDst),
             address(childProxy),
@@ -481,7 +478,12 @@ contract ProtocolTest is Test {
 
         wMaster.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
         assertEq(wMaster.s_contractsToReceiveFrom(arbChainSelector, address(conceroDst)), 1);
+        vm.stopPrank();
 
+        vm.startPrank(address(subOwner));
+        functionsRouterBase.addConsumer(14, address(op));
+        functionsRouterBase.addConsumer(14, address(wMaster));
+        functionsRouterBase.addConsumer(14, address(automation));
         vm.stopPrank();
 
         //================ SWITCH CHAINS ====================\\
@@ -496,6 +498,11 @@ contract ProtocolTest is Test {
         wChild.setConceroContractSender(baseChainSelector, address(concero), 1);
         assertEq(wChild.s_contractsToReceiveFrom(baseChainSelector, address(concero)), 1);
 
+        vm.stopPrank();
+
+        vm.startPrank(address(subOwner));
+        functionsRouterArb.addConsumer(22, address(opDst));
+        functionsRouterArb.addConsumer(22, address(wChild));
         vm.stopPrank();
         _;
     }

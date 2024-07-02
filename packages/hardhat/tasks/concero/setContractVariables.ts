@@ -266,10 +266,14 @@ export async function setDonSecretsSlotId(deployableChain: CNetwork, slotId: num
   }
 }
 
+const allowedRouters = {
+  "137": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+};
+
 export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: any) {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
   const conceroProxy = getEnvVar(`CONCEROPROXY_${networkEnvKeys[dcName]}`);
-  const allowedRouter = "0xF8908a808F1c04396B16A5a5f0A14064324d0EdA";
+  const allowedRouter = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
   const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
 
   try {
@@ -303,14 +307,14 @@ export async function setContractVariables(
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
   for (const deployableChain of deployableChains) {
-    // await setDexSwapAllowedRouters(deployableChain, abi); // once
+    await setDexSwapAllowedRouters(deployableChain, abi); // once
     // await setDstConceroPools(deployableChain, abi); // once
     if (uploadsecrets) {
       await setDonHostedSecretsVersion(deployableChain, slotId, abi);
       await setDonSecretsSlotId(deployableChain, slotId, abi);
     }
     // await addMessengerToAllowlist(deployableChain, abi); // once
-    await setJsHashes(deployableChain, abi);
+    // await setJsHashes(deployableChain, abi);
 
     // REMOVE IN PROD!!!
     // await resetLastGasPrices(deployableChain, liveChains, abi);

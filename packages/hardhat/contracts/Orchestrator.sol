@@ -111,10 +111,10 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] calldata srcSwapData,
     IDexSwap.SwapData[] calldata dstSwapData
-  ) external validateBridgeData(bridgeData){
-	  emit Orchestrator_StartSwapAndBridge();
+  ) external validateBridgeData(bridgeData) {
+    emit Orchestrator_StartSwapAndBridge();
 
-  if (srcSwapData.length == 0) revert Orchestrator_InvalidSwapData();
+    if (srcSwapData.length == 0) revert Orchestrator_InvalidSwapData();
 
     //Swap -> money come back to this contract
     uint256 receivedAmount = _swap(srcSwapData, 0, false, address(this));
@@ -128,8 +128,8 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   function swap(
     IDexSwap.SwapData[] calldata _swapData,
     address _receiver
-  ) external payable validateSwapData(_swapData) tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount)  {
-	  emit Orchestrator_StartSwap();
+  ) external payable validateSwapData(_swapData) tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount) {
+    emit Orchestrator_StartSwap();
     _swap(_swapData, msg.value, true, _receiver);
   }
 
@@ -188,6 +188,10 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
     }
   }
 
+  function getTransactionsInfo(bytes32 _ccipMessageId) external view returns (Transaction memory transaction) {
+    transaction = s_transactions[_ccipMessageId];
+  }
+
   //////////////////////////
   /// INTERNAL FUNCTIONS ///
   //////////////////////////
@@ -210,7 +214,9 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
       }
     }
 
-    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, nativeAmount, _receiver));
+    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
+      abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, nativeAmount, _receiver)
+    );
     if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
 
     emit Orchestrator_SwapSuccess();

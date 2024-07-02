@@ -97,9 +97,6 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     bytes32 _donId,
     uint64 _subscriptionId,
     uint8 _slotId,
-    uint64 _secretsVersion,
-    bytes32 _hashSum,
-    bytes32 _ethersHashSum,
     address _functionsRouter,
     address _masterPool,
     address _owner
@@ -108,9 +105,6 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     i_subscriptionId = _subscriptionId;
     i_donHostedSecretsSlotId = _slotId;
     i_masterPoolProxy = _masterPool;
-    s_donHostedSecretsVersion = _secretsVersion;
-    s_hashSum = _hashSum;
-    s_ethersHashSum = _ethersHashSum;
   }
 
   /**
@@ -125,7 +119,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   }
 
   /**
-   * @notice Function to set the Don Secrects Version from Chainlink Functions
+   * @notice Function to set the Don Secrets Version from Chainlink Functions
    * @param _version the version
    * @dev this functions was used inside of ConceroFunctions
    */

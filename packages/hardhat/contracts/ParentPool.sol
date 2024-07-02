@@ -486,6 +486,14 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
     _adjustedAmount = (_lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
   }
 
+  function getMaxCap() external view returns(uint256 _maxCap){
+    _maxCap = s_maxDeposit;
+  }
+
+  function getUsdcInUse() external view returns(uint256 _usdcInUse){
+    _usdcInUse = s_loansInUse;
+  }
+
   //////////////////////////////
   /// HELPER TO REMOVE LATER ///
   //////////////////////////////

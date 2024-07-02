@@ -222,9 +222,6 @@ contract ProtocolTestnet is Test {
             donIdBase, //_donId
             subscriptionIdBase, //_subscriptionId
             2, //_slotId
-            0, //_secretsVersion
-            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_srcJsHashSum
-            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
             address(functionsRouterBase), //_router,
             address(masterProxy),
             Tester
@@ -289,6 +286,7 @@ contract ProtocolTestnet is Test {
         vm.makePersistent(address(orch));
         vm.makePersistent(address(ccipLocalSimulatorFork));
         vm.makePersistent(address(wMaster));
+        vm.makePersistent(address(automation));
 
         //====== Update the MINTER on the LP Token
         vm.prank(Tester);
@@ -554,8 +552,8 @@ contract ProtocolTestnet is Test {
         IDexSwap.SwapData[] memory swapDataDst = new IDexSwap.SwapData[](0);
 
         vm.startPrank(User);
-        bytes memory InsufficientFundsForFees = abi.encodeWithSelector(InsufficientFundsForFees.selector, amountOutMin , 219164296709379108);
-        vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, InsufficientFundsForFees));
+        bytes memory InsufficientFunds = abi.encodeWithSelector(InsufficientFundsForFees.selector, amountOutMin , 219164296709379108);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, InsufficientFunds));
         op.swapAndBridge(bridgeData, swapData, swapDataDst);
         vm.stopPrank();
 

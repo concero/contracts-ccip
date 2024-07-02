@@ -156,7 +156,7 @@ contract ProtocolTestnet is Test {
     address Messenger = makeAddr("Messenger");
     address LP = makeAddr("LiquidityProvider");
     address defaultSender = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
-    address subOwnerBase = 0x007E2e8D8CF1C50291943a805b7CdAe8ae8EfaaE;
+    address subOwnerBase = 0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0;
     address subOwnerArb = 0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0;
 
     uint256 baseTestFork;
@@ -309,6 +309,8 @@ contract ProtocolTestnet is Test {
 
         vm.prank(0xd5CCdabF11E3De8d2F64022e232aC18001B8acAC);
         ERC20Mock(ccipBnM).mint(address(LP), 1000 * 10**18);
+        vm.prank(0xd5CCdabF11E3De8d2F64022e232aC18001B8acAC);
+        ERC20Mock(ccipBnM).mint(address(User), 100 * 10**18);
 
         /////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
         //================ SWITCH CHAINS ====================\\
@@ -359,7 +361,7 @@ contract ProtocolTestnet is Test {
                 functionsRouter: address(functionsRouterArb)
             }),
             arbChainSelector,
-            1, //uint _chainIndex,
+            0, //uint _chainIndex,
             linkArb,
             ccipRouterArb,
             address(dexDst),
@@ -418,7 +420,7 @@ contract ProtocolTestnet is Test {
         //BASE
         vm.selectFork(baseTestFork);
 
-        //====== Setters
+        ///======= Pools Allowance
         vm.startPrank(Tester);
         wMaster.setPoolsToSend(arbChainSelector, address(childProxy));
         assertEq(wMaster.s_poolToSendTo(arbChainSelector), address(wChild));
@@ -426,35 +428,51 @@ contract ProtocolTestnet is Test {
         wMaster.setConceroContractSender(arbChainSelector, address(wChild), 1);
         assertEq(wMaster.s_contractsToReceiveFrom(arbChainSelector, address(wChild)), 1);
 
-        wMaster.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
-        assertEq(wMaster.s_contractsToReceiveFrom(arbChainSelector, address(conceroDst)), 1);
+        wMaster.setConceroContractSender(arbChainSelector, address(proxyDst), 1);
+        assertEq(wMaster.s_contractsToReceiveFrom(arbChainSelector, address(proxyDst)), 1);
+        vm.stopPrank();
+
+        ///======= Infra Allowance
+        vm.startPrank(defaultSender);
+        op.setDstConceroPool(arbChainSelector, address(childProxy));
+        assertEq(op.s_poolReceiver(arbChainSelector), address(wChild));
+
+        op.setConceroContract(arbChainSelector, address(proxyDst));
         vm.stopPrank();
 
         vm.startPrank(address(subOwnerBase));
-        functionsRouterBase.addConsumer(14, address(op));
-        functionsRouterBase.addConsumer(14, address(wMaster));
-        functionsRouterBase.addConsumer(14, address(automation));
+        functionsRouterBase.addConsumer(16, address(op));
+        functionsRouterBase.addConsumer(16, address(wMaster));
+        functionsRouterBase.addConsumer(16, address(automation));
         vm.stopPrank();
 
         //================ SWITCH CHAINS ====================\\
         //ARBITRUM
         vm.selectFork(arbitrumTestFork);
-        //====== Setters
+
+        ///======= Pools Allowance
         vm.startPrank(Tester);
         wChild.setConceroContractSender(baseChainSelector, address(wMaster), 1);
         assertEq(wChild.s_contractsToReceiveFrom(baseChainSelector, address(wMaster)), 1);
 
-        wChild.setConceroContractSender(baseChainSelector, address(concero), 1);
-        assertEq(wChild.s_contractsToReceiveFrom(baseChainSelector, address(concero)), 1);
+        wChild.setConceroContractSender(baseChainSelector, address(op), 1);
+        assertEq(wChild.s_contractsToReceiveFrom(baseChainSelector, address(op)), 1);
+        vm.stopPrank();
+
+        ///======= Infra Allowance
+        vm.startPrank(defaultSender);
+        opDst.setDstConceroPool(arbChainSelector, address(childProxy));
+        assertEq(op.s_poolReceiver(arbChainSelector), address(wChild));
+
+        opDst.setConceroContract(arbChainSelector, address(opDst));
         vm.stopPrank();
 
         vm.startPrank(address(subOwnerArb));
         functionsRouterArb.addConsumer(53, address(opDst));
-        functionsRouterArb.addConsumer(53, address(wChild));
         vm.stopPrank();
 
         vm.prank(0x4281eCF07378Ee595C564a59048801330f3084eE);
-        IERC20(linkArb).transfer(address(wChild), 1*10**18);
+        IERC20(linkArb).transfer(address(opDst), 1*10**18);
         _;
     }
 

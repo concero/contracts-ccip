@@ -124,7 +124,7 @@ abstract contract Storage is IStorage {
 
     // Initialize USDC addresses
     tokens[1][0] = 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d; // arb
-    tokens[1][1] = 0x2e234DAe75C793f67A35089C9d99245E1C58470b; // 0x036CbD53842c5426634e7929541eC2318f3dCF7e; // base updated to test locally
+    tokens[1][1] = 0x036CbD53842c5426634e7929541eC2318f3dCF7e; // base
     tokens[1][2] = 0x5fd84259d66Cd46123540766Be93DFE6D43130D7; // opt
 
     if (uint256(token) > tokens.length) revert Storage_TokenTypeOutOfBounds();

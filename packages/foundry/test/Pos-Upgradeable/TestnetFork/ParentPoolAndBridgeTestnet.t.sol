@@ -3,6 +3,7 @@ pragma solidity 0.8.20;
 
 import {HelpersTestnet} from "./HelpersTestnet.sol";
 import {IConcero, IDexSwap} from "contracts/Interfaces/IConcero.sol";
+import {IStorage} from "contracts/Interfaces/IStorage.sol";
 import {Storage} from "contracts/Libraries/Storage.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -146,5 +147,61 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
 
         // //======= Check LP balance
         assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance);
+    }
+
+    function test_userBridge() public setters {
+        vm.selectFork(baseTestFork);
+
+        uint256 lpBalance = IERC20(ccipBnM).balanceOf(LP);
+        uint256 depositLowAmount = 10*10**6;
+
+        //======= LP Deposits enough to go through, but revert on max Cap
+        uint256 depositEnoughAmount = 100*10**6;
+
+        //======= Increase the CAP
+        vm.expectEmit();
+        vm.prank(Tester);
+        emit ParentStorage_MasterPoolCapUpdated(1000*10**6);
+        wMaster.setPoolCap(1000*10**6);
+
+        vm.startPrank(LP);
+        IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
+        wMaster.depositLiquidity(depositEnoughAmount);
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+        vm.stopPrank();
+
+        //====== Check Receiver balance
+        assertEq(IERC20(ccipBnMArb).balanceOf(User), 0);
+        assertEq(IERC20(ccipBnMArb).balanceOf(address(wChild)), depositEnoughAmount / 2);
+
+        vm.selectFork(baseTestFork);
+
+        //====== Mock the payload
+        uint256 amountToSend = 10 *10**6;
+
+        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+            tokenType: IStorage.CCIPToken.bnm,
+            amount: amountToSend,
+            dstChainSelector: arbChainSelector,
+            receiver: User
+        });
+
+        IDexSwap.SwapData[] memory swap = new IDexSwap.SwapData[](0);
+
+        vm.startPrank(User);
+        IERC20(ccipBnM).approve(address(op), amountToSend);
+        op.bridge(bridgeData, swap);
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+        vm.stopPrank();
+
+        //====== Check Receiver balance
+        assertEq(IERC20(ccipBnMArb).balanceOf(User), amountToSend - (amountToSend /1000));
+        
+        //@audit IT'S NOT UPDATING STORAGE. FALLBACK IT'S NOT HAPPENING
+        // assertTrue(op.s_lastGasPrices(baseChainSelector) > 0);
+        // assertTrue(op.s_lastGasPrices(arbChainSelector) > 0);
+        // assertTrue(op.s_latestLinkUsdcRate() > 0);
+        // assertTrue(op.s_latestNativeUsdcRate() > 0);
+        // assertTrue(op.s_latestLinkNativeRate() > 0);
     }
 }

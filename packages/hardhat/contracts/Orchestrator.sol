@@ -32,6 +32,8 @@ error Orchestrator_InvalidSwapData();
 error Orchestrator_EtherWithdrawalFailed();
 ///@notice error emitted when the ether swap data is corrupted
 error Orchestrator_InvalidSwapEtherData();
+///@notice error emitted when the token to bridge is not USDC
+error Orchestrator_InvalidBridgeToken();
 
 contract Orchestrator is StorageSetters, IFunctionsClient {
   using SafeERC20 for IERC20;
@@ -109,10 +111,15 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
     IDexSwap.SwapData[] calldata dstSwapData
   ) external validateBridgeData(bridgeData){
     if (srcSwapData.length == 0) revert Orchestrator_InvalidSwapData();
+    address bridgeToken = getToken(bridgeData.tokenType, i_chainIndex);
 
+    uint256 toTokenBalanceBefore = IERC20(bridgeToken).balanceOf(address(this));
     //Swap -> money come back to this contract
     uint256 receivedAmount = _swap(srcSwapData, 0, false, address(this));
 
+    uint256 toTokenBalanceAfter = IERC20(bridgeToken).balanceOf(address(this));
+    
+    if(toTokenBalanceAfter - toTokenBalanceBefore != receivedAmount) revert Orchestrator_InvalidBridgeToken();
     bridgeData.amount = receivedAmount;
 
     (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData));

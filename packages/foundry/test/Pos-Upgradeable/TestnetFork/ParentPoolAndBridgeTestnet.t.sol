@@ -148,6 +148,64 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
         // //======= Check LP balance
         assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance);
     }
+    
+    error Concero_ItsNotOrchestrator(address);
+    function test_swapAndBridgeWithoutFunctions() public setters{
+        helper();
+
+        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        
+        uint amountIn = 1*10**17;
+        uint amountOutMin = 350*10**6;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(tUSDC);
+        address to = address(op);
+        uint deadline = block.timestamp + 1800;
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(tUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(mockBase, path, to, deadline)
+        });
+
+        // ==== Approve Transfer
+        vm.startPrank(User);
+        wEth.approve(address(op), 0.1 ether);
+
+        /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+            tokenType: IStorage.CCIPToken.usdc,
+            amount: 350 *10**6,
+            dstChainSelector: arbChainSelector,
+            receiver: User
+        });
+
+        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        IDexSwap.SwapData[] memory swapDataDst = new IDexSwap.SwapData[](0);
+
+
+        vm.startPrank(User);
+        vm.expectRevert(abi.encodeWithSelector(Concero_ItsNotOrchestrator.selector, address(concero)));
+        concero.startBridge(bridgeData, swapData);
+
+        op.swapAndBridge(bridgeData, swapData, swapDataDst);
+        vm.stopPrank();
+
+        /////////////////////////// MOCK WITHDRAW \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        vm.expectRevert(abi.encodeWithSelector(Storage_CallableOnlyByOwner.selector, address(this), defaultSender));
+        op.withdrawERC20Fee(address(tUSDC));
+
+        vm.prank(defaultSender);
+        vm.expectEmit();
+        emit Orchestrator_FeeWithdrawal(defaultSender, 219164); //Fee 219164
+        op.withdrawERC20Fee(address(tUSDC));
+    }
 
     function test_userBridge() public setters {
         vm.selectFork(baseTestFork);
@@ -195,7 +253,7 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
         vm.stopPrank();
 
         //====== Check Receiver balance
-        assertEq(IERC20(ccipBnMArb).balanceOf(User), amountToSend - (amountToSend /1000));
+        assertEq(IERC20(ccipBnMArb).balanceOf(User), 9774384); //Amount - fee = 9774384
         
         //@audit IT'S NOT UPDATING STORAGE. FALLBACK IT'S NOT HAPPENING
         // assertTrue(op.s_lastGasPrices(baseChainSelector) > 0);

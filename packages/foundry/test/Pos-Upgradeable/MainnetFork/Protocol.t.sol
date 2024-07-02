@@ -260,9 +260,6 @@ contract ProtocolTest is Test {
             donIdBase, //_donId
             15, //_subscriptionId
             2, //_slotId
-            0, //_secretsVersion
-            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_srcJsHashSum
-            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
             address(functionsRouterBase), //_router,
             address(masterProxy),
             Tester

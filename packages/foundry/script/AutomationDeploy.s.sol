@@ -10,9 +10,6 @@ contract AutomationDeploy is Script {
         bytes32 _donId,
         uint64 _subscriptionId,
         uint8 _slotId,
-        uint64 _secretsVersion,
-        bytes32 _srcJsHashSum,
-        bytes32 _ethersHashSum,
         address _router,
         address _masterPool,
         address _owner
@@ -22,9 +19,6 @@ contract AutomationDeploy is Script {
             _donId,
             _subscriptionId,
             _slotId,
-            _secretsVersion,
-            _srcJsHashSum,
-            _ethersHashSum,
             _router,
             _masterPool,
             _owner

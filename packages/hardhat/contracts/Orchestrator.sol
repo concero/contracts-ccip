@@ -30,6 +30,7 @@ error Orchestrator_InvalidBridgeData();
 error Orchestrator_InvalidSwapData();
 ///@notice error emitted when an attempt to withdraw ether fails
 error Orchestrator_EtherWithdrawalFailed();
+error Orchestrator_FailedToWithdrawEth(address owner, address target, uint256 value);
 
 contract Orchestrator is StorageSetters, IFunctionsClient {
   using SafeERC20 for IERC20;
@@ -57,6 +58,9 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   event Orchestrator_RequestFulfilled(bytes32 requestId);
   ///@notice emitted if swap successed
   event Orchestrator_SwapSuccess();
+  event Orchestrator_StartSwap();
+  event Orchestrator_StartBridge();
+  event Orchestrator_StartSwapAndBridge();
   ///@notice emitted when fees are withdrawn
   event Orchestrator_FeeWithdrawal(address owner, uint256 amount);
 
@@ -104,11 +108,13 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   ///DELEGATE CALLS///
   ////////////////////
   function swapAndBridge(
-    BridgeData memory bridgeData, 
-    IDexSwap.SwapData[] calldata srcSwapData, 
+    BridgeData memory bridgeData,
+    IDexSwap.SwapData[] calldata srcSwapData,
     IDexSwap.SwapData[] calldata dstSwapData
   ) external validateBridgeData(bridgeData){
-    if (srcSwapData.length == 0) revert Orchestrator_InvalidSwapData();
+	  emit Orchestrator_StartSwapAndBridge();
+
+  if (srcSwapData.length == 0) revert Orchestrator_InvalidSwapData();
 
     //Swap -> money come back to this contract
     uint256 receivedAmount = _swap(srcSwapData, 0, false, address(this));
@@ -123,6 +129,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
     IDexSwap.SwapData[] calldata _swapData,
     address _receiver
   ) external payable validateSwapData(_swapData) tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount)  {
+	  emit Orchestrator_StartSwap();
     _swap(_swapData, msg.value, true, _receiver);
   }
 
@@ -130,6 +137,8 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] calldata dstSwapData
   ) external payable tokenAmountSufficiency(getToken(bridgeData.tokenType, i_chainIndex), bridgeData.amount) validateBridgeData(bridgeData) {
+    emit Orchestrator_StartBridge();
+
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
 
     LibConcero.transferFromERC20(fromToken, msg.sender, address(this), bridgeData.amount);
@@ -165,38 +174,18 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
 
     if (fulfilled == false) revert Orchestrator_UnableToCompleteDelegateCall(notFulfilled);
 
-    emit Orchestrator_RequestFulfilled(requestId);  
+    emit Orchestrator_RequestFulfilled(requestId);
   }
 
-  //////////////////////////
-  /// EXTERNAL FUNCTIONS ///
-  //////////////////////////
-  
-  /**
-   * @notice function to withdraw ether fees
-   * @dev owner address will receive the amount
-   * @dev can only be called by owner
-   */
-  function withdrawEtherFee() external onlyOwner {
-    uint256 amount = address(this).balance;
+  function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
+    uint256 balance = LibConcero.getBalance(token, address(this));
+    if (balance < amount) revert Orchestrator_InvalidAmount();
 
-    emit Orchestrator_FeeWithdrawal(msg.sender, amount);
-
-    (bool sent, ) = i_owner.call{value: amount}("");
-    if (sent == false) revert Orchestrator_EtherWithdrawalFailed();
-  }
-
-  /**
-   * @notice function to withdraw erc20 fees
-   * @param _token the address of the token to be withdraw
-   * @dev can only be called by owner
-   */
-  function withdrawERC20Fee(address _token) external onlyOwner{
-    uint256 amount = IERC20(_token).balanceOf(address(this));
-
-    emit Orchestrator_FeeWithdrawal(msg.sender, amount);
-
-    IERC20(_token).safeTransfer(msg.sender, amount);
+    if (token != address(0)) {
+      LibConcero.transferERC20(token, amount, recipient);
+    } else {
+      payable(recipient).transfer(amount);
+    }
   }
 
   //////////////////////////

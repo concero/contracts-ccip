@@ -1,4 +1,4 @@
-async function main() {
+(async () => {
 	try {
 		const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 		const [_, __, ___, srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = bytesArgs;
@@ -44,6 +44,41 @@ async function main() {
 				],
 				confirmations: 3n,
 				chainId: '0xaa37dc',
+			},
+			[`0x${BigInt('16281711391670634445').toString(16)}`]: {
+				urls: [
+					`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://polygon-amoy.blockpi.network/v1/rpc/public',
+					'https://polygon-amoy-bor-rpc.publicnode.com',
+				],
+				confirmations: 3n,
+				chainId: '0x13882',
+			},
+			[`0x${BigInt('4051577828743386545').toString(16)}`]: {
+				urls: [
+					`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://polygon.blockpi.network/v1/rpc/public',
+					'https://polygon-bor-rpc.publicnode.com',
+				],
+				confirmations: 3n,
+				chainId: '0x89',
+			},
+			[`0x${BigInt('4949039107694359620').toString(16)}`]: {
+				urls: [
+					`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://arbitrum.blockpi.network/v1/rpc/public',
+					'https://arbitrum-rpc.publicnode.com',
+				],
+				confirmations: 3n,
+				chainId: '0xa4b1',
+			},
+			[`0x${BigInt('15971525489660198786').toString(16)}`]: {
+				urls: [
+					'https://base.blockpi.network/v1/rpc/public',
+					'https://base-rpc.publicnode.com',
+				],
+				confirmations: 3n,
+				chainId: '0x2105',
 			},
 		};
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
@@ -111,5 +146,4 @@ async function main() {
 	} catch (error) {
 		throw new Error(error.message.slice(0, 255));
 	}
-}
-main();
+})();

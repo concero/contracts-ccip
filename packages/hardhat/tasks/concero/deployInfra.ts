@@ -1,28 +1,30 @@
 import { task, types } from "hardhat/config";
-import { fundSubscription } from "./fundSubscription";
 import chains, { networkEnvKeys } from "../../constants/CNetworks";
-import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
-import { fundContract } from "./fundContract";
+import { setContractVariables } from "./setContractVariables";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../types/CNetwork";
 import log from "../../utils/log";
 import uploadDonSecrets from "../donSecrets/upload";
-import deployConcero from "../../deploy/04_Concero";
+import deployConcero from "../../deploy/03_Concero";
 import { execSync } from "child_process";
 import { liveChains } from "./liveChains";
-import { setProxyImplementation } from "./setProxyImplementation";
-import deployConceroDexSwap from "../../deploy/03_ConceroDexSwap";
-import deployConceroOrchestrator from "../../deploy/05_ConceroOrchestrator";
+import deployConceroDexSwap from "../../deploy/02_ConceroDexSwap";
+import deployConceroOrchestrator from "../../deploy/04_ConceroOrchestrator";
 import addCLFConsumer from "../sub/add";
 import { getEnvVar } from "../../utils/getEnvVar";
 import deployConceroProxy from "../../deploy/00_ConceroProxy";
+import { setProxyImplementation } from "./setProxyImplementation";
 
 let deployableChains: CNetwork[] = liveChains;
+
+// 3 months in sec = 7776000
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .addFlag("deployproxy", "Deploy the proxy")
+  .addFlag("skipsetvars", "Set the contract variables")
+  .addFlag("uploadsecrets", "Set the contract variables")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
@@ -50,13 +52,18 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
       await setProxyImplementation(hre, liveChains);
 
       // if (taskArgs.deployproxy)
-      await setConceroProxyDstContracts(liveChains);
+      // await setConceroProxyDstContracts(liveChains);
     }
 
-    await uploadDonSecrets(deployableChains, slotId, 4320);
-    await setContractVariables(liveChains, deployableChains, slotId);
-    await fundSubscription(liveChains);
-    await fundContract(deployableChains);
+    if (!taskArgs.skipsetvars) {
+      if (taskArgs.uploadsecrets) {
+        await uploadDonSecrets(deployableChains, slotId, 4320);
+      }
+      await setContractVariables(liveChains, deployableChains, slotId, taskArgs.uploadsecrets);
+
+      // await fundSubscription(liveChains);
+      // await fundContract(deployableChains);
+    }
   });
 
 export default {};

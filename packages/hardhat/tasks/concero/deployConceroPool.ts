@@ -163,7 +163,7 @@ task("deploy-pool", "Deploy the concero pool")
         await deployConceroPool(hre);
       }
 
-      await setPoolVariables(deployableChains);
+      // await setPoolVariables(deployableChains);
     } catch (e) {
       console.error(e);
     }

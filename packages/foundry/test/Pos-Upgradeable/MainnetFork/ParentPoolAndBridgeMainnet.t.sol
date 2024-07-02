@@ -6,11 +6,12 @@ import {IConcero, IDexSwap} from "contracts/Interfaces/IConcero.sol";
 import {Storage} from "contracts/Libraries/Storage.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract ParentPoolAndBridge is Helpers {
+contract ParentPoolAndBridgeMainnet is Helpers {
     //////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// POOL MODULE ///////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////
 
+    //This test only work with USDC Mainnet address on Storage::getToken function.
     error ParentPool_AmountBelowMinimum(uint256);
     error ParentPool_MaxCapReached(uint256);
     event ParentStorage_MasterPoolCapUpdated(uint256 _newCap);

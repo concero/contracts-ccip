@@ -125,6 +125,7 @@ contract ProtocolTestnet is Test {
     IWETH wEth;
     IWETH arbWEth;
     USDC public mUSDC;
+    USDC public tUSDC;
     USDC public aUSDC;
     ERC20Mock AERO;
 
@@ -181,6 +182,7 @@ contract ProtocolTestnet is Test {
         AERO = ERC20Mock(0x940181a94A35A4569E4529A3CDfB74e38FD98631);
         SAFE_LOCK = ERC721(0x048B9d899e5c5dABA4361Dd7ae5E24A93b93b535);
         mUSDC = new USDC("Mock USDC", "USDC", Tester, 1000 * 10**6);
+        tUSDC = USDC(0x036CbD53842c5426634e7929541eC2318f3dCF7e);
 
         dexDeployBase = new DexSwapDeploy();
         poolDeployBase = new ParentPoolDeploy();
@@ -438,6 +440,12 @@ contract ProtocolTestnet is Test {
         assertEq(op.s_poolReceiver(arbChainSelector), address(wChild));
 
         op.setConceroContract(arbChainSelector, address(proxyDst));
+        
+        op.setClfPremiumFees(arbChainSelector, 4000000000000000);
+        op.setLastGasPrices(arbChainSelector, 5767529);
+        op.setLatestLinkUsdcRate(13_560_000_000_000_000_000);
+        op.setLatestNativeUsdcRate(3_383_730_000_000_000_000_000);
+        op.setLatestLinkNativeRate(40091515);
         vm.stopPrank();
 
         vm.startPrank(address(subOwnerBase));
@@ -445,6 +453,9 @@ contract ProtocolTestnet is Test {
         functionsRouterBase.addConsumer(16, address(wMaster));
         functionsRouterBase.addConsumer(16, address(automation));
         vm.stopPrank();
+
+        vm.prank(0xFaEc9cDC3Ef75713b48f46057B98BA04885e3391);
+        tUSDC.transfer(address(mockBase), 1000*10**6);
 
         //================ SWITCH CHAINS ====================\\
         //ARBITRUM
@@ -461,10 +472,10 @@ contract ProtocolTestnet is Test {
 
         ///======= Infra Allowance
         vm.startPrank(defaultSender);
-        opDst.setDstConceroPool(arbChainSelector, address(childProxy));
-        assertEq(op.s_poolReceiver(arbChainSelector), address(wChild));
+        opDst.setDstConceroPool(baseChainSelector, address(wChild));
+        assertEq(opDst.s_poolReceiver(baseChainSelector), address(wChild));
 
-        opDst.setConceroContract(arbChainSelector, address(opDst));
+        opDst.setConceroContract(baseChainSelector, address(op));
         vm.stopPrank();
 
         vm.startPrank(address(subOwnerArb));
@@ -473,6 +484,9 @@ contract ProtocolTestnet is Test {
 
         vm.prank(0x4281eCF07378Ee595C564a59048801330f3084eE);
         IERC20(linkArb).transfer(address(opDst), 1*10**18);
+
+        vm.prank(0x4281eCF07378Ee595C564a59048801330f3084eE);
+        IERC20(linkArb).transfer(address(wChild), 1*10**18);
         _;
     }
 
@@ -492,5 +506,241 @@ contract ProtocolTestnet is Test {
 
         assertEq(wEth.balanceOf(User), INITIAL_BALANCE);
         assertEq(wEth.balanceOf(LP), LP_INITIAL_BALANCE);
+    }
+
+    ////////////////
+    /// REVERTS ////
+    ////////////////
+
+    error InsufficientFundsForFees(uint256, uint256);
+    error Orchestrator_UnableToCompleteDelegateCall(bytes);
+    error Orchestrator_InvalidSwapData();
+    function test_swapAndBridgeRevertBecauseBridgeAmount() public setters{
+        helper();
+        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        
+        uint amountIn = 29510000000000;
+        uint amountOutMin = 9*10**4;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(tUSDC);
+        address to = address(op);
+        uint deadline = block.timestamp + 1800;
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(tUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(mockBase, path, to, deadline)
+        });
+
+        // ==== Approve Transfer
+        vm.startPrank(User);
+        wEth.approve(address(op), amountIn);
+
+        /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+            tokenType: IStorage.CCIPToken.usdc,
+            amount: amountOutMin,
+            dstChainSelector: arbChainSelector,
+            receiver: User
+        });
+
+        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        IDexSwap.SwapData[] memory swapDataDst = new IDexSwap.SwapData[](0);
+
+        vm.startPrank(User);
+        bytes memory InsufficientFundsForFees = abi.encodeWithSelector(InsufficientFundsForFees.selector, amountOutMin , 219164296709379108);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, InsufficientFundsForFees));
+        op.swapAndBridge(bridgeData, swapData, swapDataDst);
+        vm.stopPrank();
+
+        IDexSwap.SwapData[] memory swapEmptyData = new IDexSwap.SwapData[](0);
+
+        vm.startPrank(User);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidSwapData.selector));
+        op.swapAndBridge(bridgeData, swapEmptyData, swapDataDst);
+        vm.stopPrank();
+    }
+
+    error Orchestrator_InvalidAmount();
+    function test_erc20TokenSufficiencyModifier() public setters{
+        vm.selectFork(baseTestFork);
+
+        //====== Mock the payload
+        IStorage.BridgeData memory data = IStorage.BridgeData({
+            tokenType: IStorage.CCIPToken.usdc,
+            amount: USDC_INITIAL_BALANCE + 1,
+            dstChainSelector: arbChainSelector,
+            receiver: User
+        });
+
+        IDexSwap.SwapData[] memory swap = new IDexSwap.SwapData[](0);
+
+        vm.startPrank(User);
+        tUSDC.approve(address(op), USDC_INITIAL_BALANCE + 1);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidAmount.selector));
+        op.bridge(data, swap);
+        vm.stopPrank();
+    }
+
+    error Orchestrator_InvalidBridgeData();
+    function test_BridgeDataModifier() public setters{
+        helper();
+
+        vm.prank(0xFaEc9cDC3Ef75713b48f46057B98BA04885e3391);
+        tUSDC.transfer(address(User), 1000*10**6);
+
+        //==== Leg 1 - Amount 0 revert
+
+        //====== Mock the payload
+        IStorage.BridgeData memory data = IStorage.BridgeData({
+            tokenType: IStorage.CCIPToken.usdc,
+            amount: 0,
+            dstChainSelector: arbChainSelector,
+            receiver: User
+        });
+
+        IDexSwap.SwapData[] memory swap = new IDexSwap.SwapData[](0);
+
+        vm.startPrank(User);
+        tUSDC.approve(address(op), 1*10**6);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidBridgeData.selector));
+        op.bridge(data, swap);
+        vm.stopPrank();
+
+        //==== Leg 2 - No ChainSelector
+
+        //====== Mock the payload
+        IStorage.BridgeData memory dataTwo = IStorage.BridgeData({
+            tokenType: IStorage.CCIPToken.usdc,
+            amount: 20*10**6,
+            dstChainSelector: 0,
+            receiver: User
+        });
+
+        vm.startPrank(User);
+        tUSDC.approve(address(op), 20*10**6);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidBridgeData.selector));
+        op.bridge(dataTwo, swap);
+        vm.stopPrank();
+
+        //===== Leg 3 - Empty receiver
+        
+
+        //====== Mock the payload
+        IStorage.BridgeData memory dataThree = IStorage.BridgeData({
+            tokenType: IStorage.CCIPToken.usdc,
+            amount: 20*10**6,
+            dstChainSelector: arbChainSelector,
+            receiver: address(0)
+        });
+
+        vm.startPrank(User);
+        tUSDC.approve(address(op), 20*10**6);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidBridgeData.selector));
+        op.bridge(dataThree, swap);
+        vm.stopPrank();
+    }
+
+    error Orchestrator_InvalidSwapEtherData();
+    function test_swapDataModifier() public setters{
+        helper();
+
+        uint256 amountIn = 1*10**17;
+
+        uint256 amountOut = 350*10*6;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(tUSDC);
+        address to = address(User);
+        uint deadline = block.timestamp + 1800;
+
+        vm.deal(User, INITIAL_BALANCE);
+        assertEq(User.balance, INITIAL_BALANCE);
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV2Ether,
+            fromToken: address(wEth),
+            fromAmount: amountIn,
+            toToken: address(tUSDC),
+            toAmount: amountOut,
+            toAmountMin: amountOut,
+            dexData: abi.encode(mockBase, path, deadline)
+        });
+
+        vm.startPrank(User);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidSwapEtherData.selector));
+        op.swap{value: amountIn}(swapData, User);
+        vm.stopPrank();
+
+        //===== Leg 2 - Revert In divergent amount
+
+        swapData[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV2Ether,
+            fromToken: address(0),
+            fromAmount: 1 *10 **18,
+            toToken: address(tUSDC),
+            toAmount: amountOut,
+            toAmountMin: amountOut,
+            dexData: abi.encode(mockBase, path, deadline)
+        });
+
+        vm.startPrank(User);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidAmount.selector));
+        op.swap{value: amountIn}(swapData, User);
+        vm.stopPrank();
+
+        //===== Leg 3 - Empty Swap data
+        IDexSwap.SwapData[] memory swapDataEmpty = new IDexSwap.SwapData[](0);
+
+        vm.startPrank(User);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidSwapData.selector));
+        op.swap{value: amountIn}(swapDataEmpty, User);
+        vm.stopPrank();
+    }
+
+    error Storage_CallableOnlyByOwner(address, address);
+    event Orchestrator_FeeWithdrawal(address, uint256);
+    function test_withdrawEtherFee() public {
+        vm.deal(address(op), 1*10**18);
+
+        vm.prank(User);
+        vm.expectRevert(abi.encodeWithSelector(Storage_CallableOnlyByOwner.selector, User, defaultSender));
+        op.withdrawEtherFee();
+
+        uint256 previousBalance = defaultSender.balance;
+
+        vm.prank(defaultSender);
+        vm.expectEmit();
+        emit Orchestrator_FeeWithdrawal(defaultSender, 1*10**18);
+        op.withdrawEtherFee();
+
+        assertEq(defaultSender.balance, previousBalance + 1*10**18);
+    }
+
+    error Orchestrator_OnlyRouterCanFulfill();
+    error UnexpectedRequestID(bytes32);
+    error ConceroFunctions_ItsNotOrchestrator(address);
+    function test_oracleFulfillment() public {
+        bytes32 requestId = 0x47e4710d8d5d8e8598e8ab4ab6639c6aa7124620476f299e5abab3634a24036a;
+
+        vm.prank(User);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_OnlyRouterCanFulfill.selector));
+        op.handleOracleFulfillment(requestId, "", "");
+
+        vm.prank(address(functionsRouterBase));
+        bytes memory unexpectedRequest = abi.encodeWithSelector(UnexpectedRequestID.selector, requestId);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, unexpectedRequest));
+        op.handleOracleFulfillment(requestId, "", "");
+
+        //==== Mock a direct call
+        vm.expectRevert(abi.encodeWithSelector(ConceroFunctions_ItsNotOrchestrator.selector, address(concero)));
+        concero.fulfillRequestWrapper(requestId, "", "");
     }
 }

@@ -17,6 +17,7 @@ import timeout from "./sub/timeout";
 import deployConceroProxy from "./concero/deployProxy";
 import deployConceroDexSwap from "./concero/deployConceroDexSwap";
 import deployConceroOrchestrator from "./concero/deployConceroOrchestrator";
+import withdrawConceroProxy from "./concero/withdrawConceroProxy";
 
 export default {
   billing,
@@ -38,4 +39,5 @@ export default {
   transferTokens,
   remove,
   timeout,
+  withdrawConceroProxy,
 };

@@ -1,11 +1,8 @@
-import { networkEnvKeys } from "../../constants/CNetworks";
-import { formatUnits, getContract } from "viem";
+import { encodeAbiParameters, formatUnits, getContract } from "viem";
 import functionsRouterAbi from "@chainlink/contracts/abi/v0.8/FunctionsRouter.json";
 import linkTokenAbi from "@chainlink/contracts/abi/v0.8/LinkToken.json";
 import { getClients } from "../utils/switchChain";
-import { encodeAbiParameters } from "viem";
 import { CNetwork } from "../../types/CNetwork";
-import { getEnvVar } from "../../utils/getEnvVar";
 import log from "../../utils/log";
 
 export async function fundSubscription(selectedChains: CNetwork[]) {
@@ -21,7 +18,8 @@ export async function fundSubscription(selectedChains: CNetwork[]) {
       client: { public: publicClient, wallet: walletClient },
     });
     const { balance, consumers } = await functionsRouterContract.read.getSubscription([functionsSubIds[0]]);
-    const minBalance = 250n * 10n ** 18n; // Set minimum balance to 250 LINK
+    // const minBalance = 250n * 10n ** 18n; // Set minimum balance to 250 LINK
+    const minBalance = 1n * 10n ** 18n; // Set minimum balance to 250 LINK
 
     if (balance < minBalance) {
       const amountToFund = minBalance - balance;

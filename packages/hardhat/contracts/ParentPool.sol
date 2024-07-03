@@ -9,14 +9,12 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-
 import {ConceroAutomation} from "./ConceroAutomation.sol";
 import {LPToken} from "./LPToken.sol";
-
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
-
 import {ParentStorage} from "contracts/Libraries/ParentStorage.sol";
+import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -30,7 +28,7 @@ error ParentPool_SenderNotAllowed(address _sender);
 ///@notice error emitted when an attempt to create a new request is made while other is still active.
 error ParentPool_ActiveRequestNotFulfilledYet();
 ///@notice error emitted when an attempt to send value to a not allowed receiver is made
-error ParentPool_DestinationNotAllowed();  //@audit not being used
+error ParentPool_DestinationNotAllowed(); //@audit not being used
 ///@notice error emitted when the contract doesn't have enough link balance
 error ParentPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
 ///@notice error emitted when a LP try to deposit liquidity on the contract without pools
@@ -40,7 +38,7 @@ error ParentPool_AmountBelowMinimum(uint256 minAmount);
 ///@notice emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
 error ParentPool_AmountNotAvailableYet(uint256 received);
 ///@notice emitted in depositLiquidity when the input token is not allowed
-error ParentPool_TokenNotAllowed(address token);  //@audit not being used
+error ParentPool_TokenNotAllowed(address token); //@audit not being used
 ///@notice error emitted when the caller is not the messenger
 error ParentPool_NotMessenger(address caller);
 ///@notice error emitted when the chain selector input is invalid
@@ -245,14 +243,14 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
    * @notice Function to allow Liquidity Providers to start the Withdraw of their USDC deposited
    * @param _lpAmount the amount of lp token the user wants to burn to get USDC back.
    */
-  function startWithdrawal(uint256 _lpAmount) external isProxy{
+  function startWithdrawal(uint256 _lpAmount) external isProxy {
     if (i_lp.balanceOf(msg.sender) < _lpAmount) revert ParentPool_InsufficientBalance();
     if (s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ParentPool_ActiveRequestNotFulfilledYet();
 
     uint256 numberOfPools = poolsToDistribute.length;
 
     bytes[] memory args = new bytes[](15);
-    for(uint i; i < numberOfPools; i++){
+    for (uint i; i < numberOfPools; i++) {
       args[i] = abi.encodePacked(poolsToDistribute[i].chainSelector);
     }
 
@@ -285,9 +283,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
 
     emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
 
-    s_withdrawRequests = s_withdrawRequests > withdraw.amountEarned
-    ? s_withdrawRequests - withdraw.amountEarned
-    : 0;
+    s_withdrawRequests = s_withdrawRequests > withdraw.amountEarned ? s_withdrawRequests - withdraw.amountEarned : 0;
 
     delete s_pendingWithdrawRequests[msg.sender];
 
@@ -317,12 +313,12 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
     uint256 amountMinusFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
 
     if (receivedFee > 0) {
-      IStorage.Transaction memory transaction = IStorage(i_infraProxy).getTransactionsInfo(any2EvmMessage.messageId);
+      IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransactionsInfo(any2EvmMessage.messageId);
 
-      if(transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false || transaction.ccipMessageId == 0){
+      if ((transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false) || transaction.ccipMessageId == 0) {
         i_USDC.safeTransfer(_user, amountMinusFees);
         //We don't subtract it here because the loan was not performed. And the value is not summed into the `s_loanInUse` variable.
-      } else  {
+      } else {
         //subtract the amount from the committed total amount
         s_loansInUse = s_loansInUse - amountMinusFees;
       }
@@ -333,7 +329,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
       request.amountToReceive = request.amountToReceive >= any2EvmMessage.destTokenAmounts[0].amount
         ? request.amountToReceive - any2EvmMessage.destTokenAmounts[0].amount
         : 0;
-        
+
       s_withdrawRequests = s_withdrawRequests + any2EvmMessage.destTokenAmounts[0].amount;
     }
 
@@ -436,7 +432,12 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
    * @dev This function must be called only by an allowed Messenger & must not revert
    * @dev _totalUSDCCrossChain MUST have 10**6 decimals.
    */
-  function _updateDepositInfoAndMintLPTokens(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _usdcDeposited, uint256 _totalUSDCCrossChain) private {
+  function _updateDepositInfoAndMintLPTokens(
+    address _liquidityProvider,
+    uint256 _lpSupplyBeforeRequest,
+    uint256 _usdcDeposited,
+    uint256 _totalUSDCCrossChain
+  ) private {
     //_totalUSDCCrossChain == the sum of all chains balance + commits
 
     uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(_totalUSDCCrossChain);
@@ -480,7 +481,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
     });
 
     s_withdrawRequests = s_withdrawRequests + _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1);
-    
+
     s_pendingWithdrawRequests[_liquidityProvider] = request;
     i_automation.addPendingWithdrawal(request);
 
@@ -538,7 +539,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
     _updateDepositInfoAndMintLPTokens(_liquidityProvider, _lpSupplyBeforeRequest, _depositedAmount, _crossChainBalance);
   }
 
-  function updateUSDCAmountEarned(address _liquidityProvider,uint256 _lpSupplyBeforeRequest, uint256 _lpToBurn,  uint256 _totalUSDC) external {
+  function updateUSDCAmountEarned(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _lpToBurn, uint256 _totalUSDC) external {
     _updateUsdcAmountEarned(_liquidityProvider, _lpSupplyBeforeRequest, _lpToBurn, _totalUSDC);
   }
 }

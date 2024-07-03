@@ -1,11 +1,10 @@
 import { CNetwork } from "../../types/CNetwork";
 import ierc20Abi from "@chainlink/contracts/abi/v0.8/IERC20.json";
 import { getClients } from "../utils/switchChain";
-import { networkEnvKeys } from "../../constants/CNetworks";
+import chains, { networkEnvKeys } from "../../constants/CNetworks";
 import { dripBnm } from "./dripBnm";
 import { task } from "hardhat/config";
-import { liveChains } from "./deployInfra";
-import chains from "../../constants/CNetworks";
+import { liveChains } from "./deployInfra/deployInfra";
 import { getEnvVar } from "../../utils/getEnvVar";
 import log from "../../utils/log";
 

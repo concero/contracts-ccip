@@ -1,10 +1,10 @@
-import { getEnvVar } from "../../utils/getEnvVar";
-import { networkEnvKeys } from "../../constants/CNetworks";
-import { CNetwork } from "../../types/CNetwork";
-import { getClients } from "../utils/switchChain";
+import { getEnvVar } from "../../../utils/getEnvVar";
+import { networkEnvKeys } from "../../../constants/CNetworks";
+import { CNetwork } from "../../../types/CNetwork";
+import { getClients } from "../../utils/switchChain";
 import { privateKeyToAccount } from "viem/accounts";
 import { Address, parseAbi } from "viem";
-import log from "../../utils/log";
+import log from "../../../utils/log";
 
 export async function setProxyImplementation(hre, liveChains: CNetwork[]) {
   const { name: chainName } = hre.network;

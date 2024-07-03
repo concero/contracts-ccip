@@ -1,10 +1,10 @@
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { CNetwork } from "../../types/CNetwork";
-import { liveChains } from "./liveChains";
-import CNetworks from "../../constants/CNetworks";
+import { CNetwork } from "../../../types/CNetwork";
+import { liveChains } from "../liveChains";
+import CNetworks from "../../../constants/CNetworks";
 import { execSync } from "child_process";
-import deployConceroDexSwap from "../../deploy/03_ConceroDexSwap";
+import deployConceroDexSwap from "../../../deploy/03_ConceroDexSwap";
 
 task("deploy-dex-swap", "Deploy the concero dex swap contract")
   .addFlag("skipdeploy", "Skip deployment")

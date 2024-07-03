@@ -8,6 +8,7 @@ import {IConcero} from "./Interfaces/IConcero.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {StorageSetters} from "./Libraries/StorageSetters.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
+import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
 
 ///////////////////////////////
 /////////////ERROR/////////////
@@ -32,7 +33,7 @@ error Orchestrator_InvalidSwapData();
 error Orchestrator_EtherWithdrawalFailed();
 error Orchestrator_FailedToWithdrawEth(address owner, address target, uint256 value);
 
-contract Orchestrator is StorageSetters, IFunctionsClient {
+contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
   using SafeERC20 for IERC20;
 
   ///////////////
@@ -94,7 +95,7 @@ contract Orchestrator is StorageSetters, IFunctionsClient {
   modifier validateSwapData(IDexSwap.SwapData[] calldata _srcSwapData) {
     uint256 swapDataLength = _srcSwapData.length;
 
-    if (swapDataLength == 0 || swapDataLength > 5 || _srcSwapData.dexData == 0) {
+    if (swapDataLength == 0 || swapDataLength > 5) {
       revert Orchestrator_InvalidSwapData();
     }
 

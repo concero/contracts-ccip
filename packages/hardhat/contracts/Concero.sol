@@ -74,7 +74,7 @@ contract Concero is ConceroCCIP {
 
     bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, bridgeData.receiver, actualLpFee);
     emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
-    sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType, _dstSwapData);
+    sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType, dstSwapData);
   }
 
   /////////////////
@@ -137,7 +137,7 @@ contract Concero is ConceroCCIP {
    * @param dstChainSelector the destination blockchain chain selector
    */
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, i_chainIndex), 1 ether, 0.1 ether, dstChainSelector);
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, i_chainIndex), 1 ether, address(this), 0.1 ether, dstChainSelector);
     return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
   }
 

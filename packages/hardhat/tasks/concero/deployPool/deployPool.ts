@@ -1,25 +1,21 @@
 import { task, types } from "hardhat/config";
-import chains, { networkEnvKeys } from "../../../constants/CNetworks";
-import { setContractVariables } from "../setInfraVariables/setContractVariables";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { CNetwork } from "../../../types/CNetwork";
-import log from "../../../utils/log";
-import uploadDonSecrets from "../../donSecrets/upload";
-import deployConcero from "../../../deploy/04_Concero";
-import { execSync } from "child_process";
-import { liveChains } from "../liveChains";
-import deployConceroDexSwap from "../../../deploy/03_ConceroDexSwap";
-import deployConceroOrchestrator from "../../../deploy/05_ConceroOrchestrator";
-import addCLFConsumer from "../../sub/add";
+import chains, { networkEnvKeys } from "../../../constants/CNetworks";
+import deployConceroProxy from "../../../deploy/00_InfraProxy";
 import { getEnvVar } from "../../../utils/getEnvVar";
-import deployInfraProxy from "../../../deploy/00_InfraProxy";
-import { setProxyImplementation } from "./setProxyImplementation";
+import addCLFConsumer from "../../sub/add";
+import log from "../../../utils/log";
+import { execSync } from "child_process";
+import deployConceroDexSwap from "../../../deploy/03_ConceroDexSwap";
+import deployConcero from "../../../deploy/04_Concero";
+import deployConceroOrchestrator from "../../../deploy/05_ConceroOrchestrator";
+import { setProxyImplementation } from "../deployInfra/setProxyImplementation";
+import { liveChains } from "../liveChains";
+import uploadDonSecrets from "../../donSecrets/upload";
+import { setConceroProxyDstContracts, setContractVariables } from "../setInfraVariables/setContractVariables";
+import { CNetwork } from "../../../types/CNetwork";
 
-let deployableChains: CNetwork[] = liveChains;
-
-// 3 months in sec = 7776000
-
-task("deploy-infra", "Deploy the CCIP infrastructure")
+task("deploy-pool", "Deploy the pool")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .addFlag("deployproxy", "Deploy the proxy")
@@ -29,13 +25,14 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
     const { name } = hre.network;
+    let deployableChains: CNetwork[] = liveChains;
 
     if (name !== "localhost" && name !== "hardhat") {
       deployableChains = [chains[name]];
     }
 
     if (taskArgs.deployproxy) {
-      await deployInfraProxy(hre);
+      await deployConceroProxy(hre);
       const proxyAddress = getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`);
       const { functionsSubIds } = chains[name];
       await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
@@ -51,8 +48,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
       await deployConceroOrchestrator(hre);
       await setProxyImplementation(hre, liveChains);
 
-      // if (taskArgs.deployproxy)
-      // await setConceroProxyDstContracts(liveChains);
+      if (taskArgs.deployproxy) await setConceroProxyDstContracts(liveChains);
     }
 
     if (!taskArgs.skipsetvars) {

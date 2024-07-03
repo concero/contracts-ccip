@@ -4,6 +4,7 @@ run with: yarn hardhat clf-build-script --path ./CLFScripts/DST.js
  */
 
 import { task, types } from "hardhat/config";
+
 export const pathToScript = [__dirname, "../", "CLFScripts"];
 const fs = require("fs");
 const path = require("path");
@@ -35,8 +36,8 @@ function replaceEnvironmentVariables(content) {
   return updatedContent;
 }
 
-function saveProcessedFile(content, outputPath) {
-  const outputDir = path.join(...pathToScript, "dist");
+function saveProcessedFile(content, outputPath, scriptType: string) {
+  const outputDir = path.join(...pathToScript, `dist/${scriptType}`);
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir);
   }
@@ -75,28 +76,39 @@ export function buildScript(fileToBuild: string) {
     fileContent = replaceEnvironmentVariables(fileContent);
     let cleanedUpFile = cleanupFile(fileContent);
     let minifiedFile = minifyFile(cleanedUpFile);
+    let scriptType = "pool";
 
-    saveProcessedFile(cleanedUpFile, fileToBuild);
-    saveProcessedFile(minifiedFile, fileToBuild.replace(".js", ".min.js"));
+    if (fileToBuild.split("/").includes("infra")) {
+      scriptType = "infra";
+    }
+
+    saveProcessedFile(cleanedUpFile, fileToBuild, scriptType);
+    saveProcessedFile(minifiedFile, fileToBuild.replace(".js", ".min.js"), scriptType);
   } catch (err) {
     console.error(`Error processing file ${fileToBuild}: ${err}`);
     process.exit(1);
   }
 }
 
-// run with: yarn hardhat clf-script-build --path DST.js
+// run with: yarn hardhat clf-script-build --file DST.js
 task("clf-script-build", "Builds the JavaScript source code")
   .addFlag("all", "Build all scripts")
   .addOptionalParam("file", "Path to Functions script file", undefined, types.string)
   .setAction(async (taskArgs, hre) => {
     if (taskArgs.all) {
-      const files = fs.readdirSync(path.join(...pathToScript, "src"));
-      files.forEach(file => {
-        if (file.endsWith(".js")) {
-          const fileToBuild = path.join(...pathToScript, "src", file);
-          buildScript(fileToBuild);
-        }
+      const paths = ["src/infra", "src/pool"];
+
+      paths.forEach((_path: string) => {
+        const files = fs.readdirSync(path.join(...pathToScript, _path));
+
+        files.forEach((file: string) => {
+          if (file.endsWith(".js")) {
+            const fileToBuild = path.join(...pathToScript, _path, file);
+            buildScript(fileToBuild);
+          }
+        });
       });
+
       return;
     }
     if (taskArgs.file) {

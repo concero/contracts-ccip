@@ -144,7 +144,22 @@ contract ParentStorage {
    */
   function setPoolCap(uint256 _newCap) external payable onlyOwner {
     s_maxDeposit = _newCap;
-
     emit ParentStorage_MasterPoolCapUpdated(_newCap);
+  }
+
+  function setDonHostedSecretsSlotId(uint8 _slotId) external payable onlyOwner {
+    s_donHostedSecretsSlotId = _slotId;
+  }
+
+  function setDonHostedSecretsVersion(uint64 _version) external payable onlyOwner {
+    s_donHostedSecretsVersion = _version;
+  }
+
+  function setHashSum(bytes32 _hashSum) external payable onlyOwner {
+    s_hashSum = _hashSum;
+  }
+
+  function setEthersHashSum(bytes32 _ethersHashSum) external payable onlyOwner {
+    s_ethersHashSum = _ethersHashSum;
   }
 }

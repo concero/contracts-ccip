@@ -11,7 +11,7 @@ const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEn
   const { name } = hre.network;
   const implementationAddress = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
 
-  console.log("Deploying ConceroProxy...");
+  console.log("Deploying InfraProxy...");
   const conceroProxyDeployment = (await deploy("ConceroProxy", {
     from: proxyDeployer,
     args: [implementationAddress, proxyDeployer, "0x", deployer],

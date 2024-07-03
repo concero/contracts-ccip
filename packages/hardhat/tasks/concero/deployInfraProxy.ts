@@ -1,7 +1,7 @@
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { execSync } from "child_process";
-import deployConceroProxy from "../../deploy/00_ConceroProxy";
+import deployConceroProxy from "../../deploy/00_InfraProxy";
 
 task("deploy-proxy", "Deploy the concero proxy")
   .addFlag("skipdeploy", "Skip deployment")

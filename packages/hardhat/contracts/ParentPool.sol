@@ -57,6 +57,23 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
 
+  ///////////////
+  ///CONSTANTS///
+  ///////////////
+  ///@notice Magic Number Removal
+  uint256 private constant ALLOWED = 1;
+  uint256 private constant USDC_DECIMALS = 10 ** 6;
+  uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
+  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
+  uint256 private constant PRECISION_HANDLER = 10 ** 10;
+  uint256 private constant WITHDRAW_DEADLINE = 597_600;
+  ///@notice Chainlink Functions Gas Limit
+  uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
+  ///@notice Chainlink Function Gas Overhead
+  uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000; //Do we need this?
+  ///@notice JS Code for Chainlink Functions
+  string internal constant JS_CODE = "";
+
   ////////////////
   ///IMMUTABLES///
   ////////////////
@@ -77,22 +94,6 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
   ///@notice Chainlink Functions Protocol Subscription ID
   uint64 private immutable i_subscriptionId;
 
-  ///////////////
-  ///CONSTANTS///
-  ///////////////
-  ///@notice Magic Number Removal
-  uint256 private constant ALLOWED = 1;
-  uint256 private constant USDC_DECIMALS = 10 ** 6;
-  uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
-  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
-  uint256 private constant PRECISION_HANDLER = 10 ** 10;
-
-  ///@notice Chainlink Functions Gas Limit
-  uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
-  ///@notice Chainlink Function Gas Overhead
-  uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000; //Do we need this?
-  ///@notice JS Code for Chainlink Functions
-  string internal constant JS_CODE = "";
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -200,8 +201,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
 
-    //Commented so tests don't fail.
-    bytes32 requestId /* = _sendRequest(args, JS_CODE)*/; // No JS code yet.
+    bytes32 requestId = _sendRequest(args, JS_CODE); // No JS code yet.
 
     s_requests[requestId] = IParentPool.CLARequest({
       requestType: IParentPool.RequestType.GetTotalUSDC,
@@ -233,8 +233,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
       args[i] = abi.encodePacked(poolsToDistribute[i].chainSelector);
     }
 
-    //Commented so tests don't fail.
-    bytes32 requestId /*= _sendRequest(args, JS_CODE)*/; // No JS code yet.
+    bytes32 requestId = _sendRequest(args, JS_CODE); // No JS code yet.
 
     s_requests[requestId] = IParentPool.CLARequest({
       requestType: IParentPool.RequestType.PerformWithdrawal,
@@ -244,7 +243,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
       amount: _lpAmount //Here it's the lp amount
     });
 
-    emit ParentPool_WithdrawRequest(msg.sender, i_USDC, block.timestamp + 597_600);
+    emit ParentPool_WithdrawRequest(msg.sender, i_USDC, block.timestamp + WITHDRAW_DEADLINE);
   }
 
   /**

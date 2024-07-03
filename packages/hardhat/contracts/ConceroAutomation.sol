@@ -65,7 +65,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ///STORAGE///
   /////////////
   ///@notice array to store the withdraw requests of users
-  IParentPool.WithdrawRequests[] public s_pendingWithdrawRequestsCLA;
+  IParentPool.WithdrawRequests[] s_pendingWithdrawRequestsCLA;
 
   ///@notice Mapping to keep track of Chainlink Functions requests
   mapping(bytes32 requestId => PerformWithdrawRequest) public s_requests;
@@ -170,7 +170,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    * @return _performData the payload we need to send through performUpkeep to Chainlink functions.
    * @dev this function must be called only by the Chainlink Forwarder unique address
    */
-  function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool _upkeepNeeded, bytes memory _performData) {
+  function checkUpkeep(bytes calldata /* checkData */) external override returns (bool _upkeepNeeded, bytes memory _performData) {
     if (msg.sender != s_forwarderAddress) revert ConceroAutomation_CallerNotAllowed(msg.sender);
 
     uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
@@ -197,13 +197,13 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     (address liquidityProvider, uint256 amountToRequest) = abi.decode(_performData, (address, uint256));
 
     bytes[] memory args = new bytes[](4);
-    args[0] = abi.encodePacked(s_hashSum);
-    args[1] = abi.encodePacked(s_ethersHashSum);
-    args[2] = abi.encodePacked(liquidityProvider); //We need to send this as data through CCIP to updated the MasterPool storage.
-    args[3] = abi.encodePacked(amountToRequest); //Amount is the same for all pools
+    args[0] = abi.encode(s_hashSum);
+    args[1] = abi.encode(s_ethersHashSum);
+    args[2] = abi.encode(liquidityProvider); //We need to send this as data through CCIP to updated the MasterPool storage.
+    args[3] = abi.encode(amountToRequest); //Amount is the same for all pools
 
     //Commented so tests don't fail.
-    bytes32 reqId /*= _sendRequest(args, JS_CODE)*/; //@No JS code yet
+    bytes32 reqId = _sendRequest(args, JS_CODE); //@No JS code yet
 
     s_requests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest});
 
@@ -246,5 +246,12 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
         s_pendingWithdrawRequestsCLA.pop();
       }
     }
+  }
+
+  ///////////////////////////
+  ///PURE & VIEW FUNCTIONS///
+  ///////////////////////////
+  function getPendingRequests() external view returns(IParentPool.WithdrawRequests[] memory _request){
+    _request = s_pendingWithdrawRequestsCLA;
   }
 }

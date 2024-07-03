@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -9,14 +9,12 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-
 import {ConceroAutomation} from "./ConceroAutomation.sol";
 import {LPToken} from "./LPToken.sol";
-
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
-
 import {ParentStorage} from "contracts/Libraries/ParentStorage.sol";
+import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -37,8 +35,6 @@ error ParentPool_ThereIsNoPoolToDistribute();
 error ParentPool_AmountBelowMinimum(uint256 minAmount);
 ///@notice emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
 error ParentPool_AmountNotAvailableYet(uint256 received);
-///@notice error emitted when the chain selector input is invalid
-error ParentPool_ChainNotAllowed(uint64 chainSelector);
 ///@notice error emitted when the caller is not the Orchestrator
 error ParentPool_ItsNotOrchestrator(address caller);
 ///@notice error emitted when the max amount accepted by the pool is reached
@@ -46,7 +42,7 @@ error ParentPool_MaxCapReached(uint256 maxCap);
 ///@notice error emitted when it's not the proxy calling the function
 error ParentPool_CallerIsNotTheProxy(address caller);
 
-contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
+contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   ///////////////////////
   ///TYPE DECLARATIONS///
   ///////////////////////
@@ -72,7 +68,8 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
   ///@notice Chainlink Function Gas Overhead
   uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000; //Do we need this?
   ///@notice JS Code for Chainlink Functions
-  string internal constant JS_CODE = "";
+  string internal constant JS_CODE =
+    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = `https://raw.githubusercontent.com/concero/contracts-ccip/main-proxy/packages/hardhat/tasks/CLFScripts/dist/pool/${BigInt(bytesArgs[2]) === 1n ? '' : 'getBalances'}.min.js`; console.log(q); const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
   ////////////////
   ///IMMUTABLES///
@@ -93,7 +90,6 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
   bytes32 private immutable i_donId;
   ///@notice Chainlink Functions Protocol Subscription ID
   uint64 private immutable i_subscriptionId;
-
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -222,14 +218,14 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
    * @notice Function to allow Liquidity Providers to start the Withdraw of their USDC deposited
    * @param _lpAmount the amount of lp token the user wants to burn to get USDC back.
    */
-  function startWithdrawal(uint256 _lpAmount) external isProxy{
+  function startWithdrawal(uint256 _lpAmount) external isProxy {
     if (i_lp.balanceOf(msg.sender) < _lpAmount) revert ParentPool_InsufficientBalance();
     if (s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ParentPool_ActiveRequestNotFulfilledYet();
 
     uint256 numberOfPools = poolsToDistribute.length;
 
     bytes[] memory args = new bytes[](15);
-    for(uint i; i < numberOfPools; i++){
+    for (uint i; i < numberOfPools; i++) {
       args[i] = abi.encodePacked(poolsToDistribute[i].chainSelector);
     }
 
@@ -260,9 +256,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
     if (withdraw.amountEarned > i_USDC.balanceOf(address(this))) revert ParentPool_InsufficientBalance();
 
 
-    s_withdrawRequests = s_withdrawRequests > withdraw.amountEarned
-    ? s_withdrawRequests - withdraw.amountEarned
-    : 0;
+    s_withdrawRequests = s_withdrawRequests > withdraw.amountEarned ? s_withdrawRequests - withdraw.amountEarned : 0;
 
     delete s_pendingWithdrawRequests[msg.sender];
 
@@ -294,12 +288,12 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
     uint256 amountMinusFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
 
     if (receivedFee > 0) {
-      IStorage.Transaction memory transaction = IStorage(i_infraProxy).getTransactionsInfo(any2EvmMessage.messageId);
+      IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransactionsInfo(any2EvmMessage.messageId);
 
-      if(transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false || transaction.ccipMessageId == 0){
+      if ((transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false) || transaction.ccipMessageId == 0) {
         i_USDC.safeTransfer(_user, amountMinusFees);
         //We don't subtract it here because the loan was not performed. And the value is not summed into the `s_loanInUse` variable.
-      } else  {
+      } else {
         //subtract the amount from the committed total amount
         s_loansInUse = s_loansInUse - amountMinusFees;
       }
@@ -310,7 +304,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
       request.amountToReceive = request.amountToReceive >= any2EvmMessage.destTokenAmounts[0].amount
         ? request.amountToReceive - any2EvmMessage.destTokenAmounts[0].amount
         : 0;
-        
+
       s_withdrawRequests = s_withdrawRequests + any2EvmMessage.destTokenAmounts[0].amount;
     }
 
@@ -413,7 +407,12 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
    * @dev This function must be called only by an allowed Messenger & must not revert
    * @dev _totalUSDCCrossChain MUST have 10**6 decimals.
    */
-  function _updateDepositInfoAndMintLPTokens(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _usdcDeposited, uint256 _totalUSDCCrossChain) private {
+  function _updateDepositInfoAndMintLPTokens(
+    address _liquidityProvider,
+    uint256 _lpSupplyBeforeRequest,
+    uint256 _usdcDeposited,
+    uint256 _totalUSDCCrossChain
+  ) private {
     //_totalUSDCCrossChain == the sum of all chains balance + commits
 
     uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(_totalUSDCCrossChain);
@@ -457,7 +456,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
     });
 
     s_withdrawRequests = s_withdrawRequests + _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1);
-    
+
     s_pendingWithdrawRequests[_liquidityProvider] = request;
     i_automation.addPendingWithdrawal(request);
 
@@ -501,7 +500,7 @@ contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
     _updateDepositInfoAndMintLPTokens(_liquidityProvider, _lpSupplyBeforeRequest, _depositedAmount, _crossChainBalance);
   }
 
-  function updateUSDCAmountEarned(address _liquidityProvider,uint256 _lpSupplyBeforeRequest, uint256 _lpToBurn,  uint256 _totalUSDC) external {
+  function updateUSDCAmountEarned(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _lpToBurn, uint256 _totalUSDC) external {
     _updateUsdcAmountEarned(_liquidityProvider, _lpSupplyBeforeRequest, _lpToBurn, _totalUSDC);
   }
 }

@@ -1,31 +1,22 @@
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { CNetwork } from "../../types/CNetwork";
-import { liveChains } from "./liveChains";
-import CNetworks from "../../constants/CNetworks";
 import { execSync } from "child_process";
-import deployConceroDexSwap from "../../deploy/03_ConceroDexSwap";
+import deployConceroProxy from "../../../deploy/00_InfraProxy";
 
-task("deploy-dex-swap", "Deploy the concero dex swap contract")
+task("deploy-proxy", "Deploy the concero proxy")
   .addFlag("skipdeploy", "Skip deployment")
+
   .setAction(async taskArgs => {
     try {
       const hre: HardhatRuntimeEnvironment = require("hardhat");
       const { name } = hre.network;
-      let deployableChains: CNetwork[] = liveChains;
-
-      if (name !== "localhost" && name !== "hardhat") {
-        deployableChains = [CNetworks[name]];
-      }
 
       if (taskArgs.skipdeploy) {
         console.log("Skipping deployment");
       } else {
         execSync("yarn compile", { stdio: "inherit" });
-        await deployConceroDexSwap(hre);
+        await deployConceroProxy(hre);
       }
-
-      // TODO: set dex swap allowed routers
     } catch (e) {
       console.error(e);
     }

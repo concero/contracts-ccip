@@ -25,6 +25,7 @@ contract ParentStorage {
   ///////////
   ///STATE///
   ///////////
+  
   ///@notice variable to store the max value that can be deposited on this pool
   uint256 public s_maxDeposit;
   ///@notice variable to store the amount that will be temporary used by Chainlink Functions

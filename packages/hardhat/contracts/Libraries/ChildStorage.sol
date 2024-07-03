@@ -18,14 +18,6 @@ contract ChildStorage {
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
 
-  ///////////
-  ///STATE///
-  ///////////
-  ///@notice variable to store the value that will be temporary used by Chainlink Functions
-  uint256 public s_loansInUse;
-  ///@notice gap to reserve storage in the contract for future variable additions
-  uint256[50] __gap;
-
   ////////////////
   ///IMMUTABLES///
   ////////////////
@@ -37,6 +29,14 @@ contract ChildStorage {
   ///////////////
   ///@notice Magic Number Removal
   uint256 private constant ALLOWED = 1;
+
+  ///////////
+  ///STATE///
+  ///////////
+  ///@notice variable to store the value that will be temporary used by Chainlink Functions
+  uint256 public s_loansInUse;
+  ///@notice gap to reserve storage in the contract for future variable additions
+  uint256[50] __gap;
 
   /////////////
   ///STORAGE///
@@ -112,7 +112,7 @@ contract ChildStorage {
    */
   function isMessengers(address _messenger) internal pure returns (bool isMessenger) {
     address[] memory messengers = new address[](4); //Number of messengers. To define.
-    messengers[0] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267; //fake messenger from foundry environment
+    messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
     messengers[1] = address(0);
     messengers[2] = address(0);
     messengers[3] = address(0);

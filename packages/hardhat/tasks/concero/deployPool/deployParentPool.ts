@@ -12,7 +12,7 @@ import deployParentPool from "../../../deploy/09_ParentPool";
 import { setParentPoolVariables } from "./setParentPoolVariables";
 import { setParentPoolProxyImplementation } from "./setParentPoolProxyImplementation";
 
-task("deploy-pool", "Deploy the pool")
+task("deploy-parent-pool", "Deploy the pool")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .addFlag("deployproxy", "Deploy the proxy")

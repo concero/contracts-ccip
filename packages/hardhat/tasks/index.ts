@@ -5,7 +5,6 @@ import transfer from "./sub/transfer";
 import simulate from "./script/simulate";
 import build from "./script/build";
 import deployCCIPInfrastructure from "./concero/deployInfra/deployInfra";
-import deployConceroPool from "./concero/deployPool/deployConceroPool";
 import { fundContract } from "./concero/fundContract";
 import dripBnm from "./concero/dripBnm";
 import getHashSum from "./script/listHashes";
@@ -26,7 +25,6 @@ export default {
   simulate,
   build,
   deployCCIPInfrastructure,
-  deployConceroPool,
   deployInfraProxy,
   deployConceroDexSwap,
   deployConceroOrchestrator,

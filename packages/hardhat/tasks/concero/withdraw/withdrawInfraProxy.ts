@@ -1,11 +1,11 @@
 import { task } from "hardhat/config";
-import chains, { networkEnvKeys } from "../../constants/CNetworks";
-import { CNetwork } from "../../types/CNetwork";
-import { getClients } from "../utils/switchChain";
-import { getEnvVar } from "../../utils/getEnvVar";
+import chains, { networkEnvKeys } from "../../../constants/CNetworks";
+import { CNetwork } from "../../../types/CNetwork";
+import { getClients } from "../../utils/switchChain";
+import { getEnvVar } from "../../../utils/getEnvVar";
 import { Address, erc20Abi } from "viem";
-import log from "../../utils/log";
-import load from "../../utils/load";
+import log from "../../../utils/log";
+import load from "../../../utils/load";
 
 const getBalance = async (tokenAddress: Address, account: Address, chain: CNetwork) => {
   const { publicClient } = getClients(chain.viemChain, chain.url);
@@ -53,7 +53,7 @@ const withdrawToken = async (chain: CNetwork) => {
   }
 };
 
-task("withdraw-concero-proxy", "Withdraws the Conceros from the proxy contract").setAction(async taskArgs => {
+task("withdraw-infra-proxy", "Withdraws the token from the proxy contract").setAction(async taskArgs => {
   const { name } = hre.network;
   if (name !== "localhost" && name !== "hardhat") {
     await withdrawToken(chains[name]);

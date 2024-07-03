@@ -9,7 +9,7 @@ import log from "../../utils/log";
 import listSecrets from "./list";
 import { setDonHostedSecretsVersion } from "../concero/setInfraVariables/setContractVariables";
 import load from "../../utils/load";
-import { liveChains } from "../concero/deployInfra";
+import { liveChains } from "../concero/deployInfra/deployInfra";
 
 // const path = require("path");
 

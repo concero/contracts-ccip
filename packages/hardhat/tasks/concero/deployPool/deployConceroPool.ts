@@ -1,15 +1,15 @@
 import { task } from "hardhat/config";
 import { execSync } from "child_process";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import deployConceroPool from "../../deploy/09_ParentPool";
-import { liveChains } from "./liveChains";
-import { CNetwork } from "../../types/CNetwork";
-import { getClients } from "../utils/switchChain";
-import CNetworks, { networkEnvKeys } from "../../constants/CNetworks";
-import { getEnvVar } from "../../utils/getEnvVar";
-import load from "../../utils/load";
-import log from "../../utils/log";
-import env from "../../types/env";
+import deployConceroPool from "../../../deploy/09_ParentPool";
+import { liveChains } from "../liveChains";
+import { CNetwork } from "../../../types/CNetwork";
+import { getClients } from "../../utils/switchChain";
+import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
+import { getEnvVar } from "../../../utils/getEnvVar";
+import load from "../../../utils/load";
+import log from "../../../utils/log";
+import env from "../../../types/env";
 
 async function setMessenger(chain: CNetwork, clients) {
   const { publicClient, account, walletClient } = clients;

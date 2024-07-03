@@ -50,7 +50,7 @@ error ParentPool_MaxCapReached(uint256 maxCap);
 ///@notice error emitted when it's not the proxy calling the function
 error ParentPool_CallerIsNotTheProxy(address caller);
 
-contract ParentPool is CCIPReceiver, ParentStorage, FunctionsClient {
+contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   ///////////////////////
   ///TYPE DECLARATIONS///
   ///////////////////////

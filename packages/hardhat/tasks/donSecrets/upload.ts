@@ -7,7 +7,7 @@ import { CNetwork } from "../../types/CNetwork";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import log from "../../utils/log";
 import listSecrets from "./list";
-import { setDonHostedSecretsVersion } from "../concero/setContractVariables";
+import { setDonHostedSecretsVersion } from "../concero/setInfraVariables/setContractVariables";
 import load from "../../utils/load";
 import { liveChains } from "../concero/deployInfra";
 

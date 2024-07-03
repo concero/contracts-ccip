@@ -1,15 +1,15 @@
-import { networkEnvKeys } from "../../constants/CNetworks";
-import { CNetwork } from "../../types/CNetwork";
-import { getClients } from "../utils/switchChain";
-import load from "../../utils/load";
-import { getEnvVar } from "../../utils/getEnvVar";
-import log from "../../utils/log";
-import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
+import { networkEnvKeys } from "../../../constants/CNetworks";
+import { CNetwork } from "../../../types/CNetwork";
+import { getClients } from "../../utils/switchChain";
+import load from "../../../utils/load";
+import { getEnvVar } from "../../../utils/getEnvVar";
+import log from "../../../utils/log";
+import { getEthersSignerAndProvider } from "../../utils/getEthersSignerAndProvider";
 import { SecretsManager } from "@chainlink/functions-toolkit";
 import { Address } from "viem";
-import getHashSum from "../../utils/getHashSum";
-import { liveChains } from "./liveChains";
-import { dstJsCodeUrl, ethersV6CodeUrl, srcJsCodeUrl } from "../../constants/functionsJsCodeUrls";
+import getHashSum from "../../../utils/getHashSum";
+import { liveChains } from "../liveChains";
+import { dstJsCodeUrl, ethersV6CodeUrl, srcJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 
 const resetLastGasPrices = async (deployableChain: CNetwork, chains: CNetwork[], abi: any) => {
   const conceroProxyAddress = getEnvVar(`CONCEROPROXY_${networkEnvKeys[deployableChain.name]}`);

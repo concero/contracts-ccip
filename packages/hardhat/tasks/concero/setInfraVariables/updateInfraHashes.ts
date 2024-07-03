@@ -1,15 +1,15 @@
 import { task } from "hardhat/config";
-import { liveChains } from "./deployInfra";
-import { CNetwork } from "../../types/CNetwork";
-import chains, { networkEnvKeys } from "../../constants/CNetworks";
-import { getEnvVar } from "../../utils/getEnvVar";
-import { getClients } from "../utils/switchChain";
-import load from "../../utils/load";
-import getHashSum from "../../utils/getHashSum";
-import secrets from "../../constants/CLFSecrets";
-import log from "../../utils/log";
+import { liveChains } from "../deployInfra";
+import { CNetwork } from "../../../types/CNetwork";
+import chains, { networkEnvKeys } from "../../../constants/CNetworks";
+import { getEnvVar } from "../../../utils/getEnvVar";
+import { getClients } from "../../utils/switchChain";
+import load from "../../../utils/load";
+import getHashSum from "../../../utils/getHashSum";
+import secrets from "../../../constants/CLFSecrets";
+import log from "../../../utils/log";
 
-async function updateHashes(chain: CNetwork) {
+async function updateInfraHashes(chain: CNetwork) {
   const { name, url, viemChain } = chain;
   try {
     const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
@@ -78,12 +78,12 @@ task("clf-update-hashes", "Update the hashes of the contracts")
   .setAction(async (taskArgs, hre) => {
     if (taskArgs.all) {
       for (const liveChain of liveChains) {
-        await updateHashes(liveChain);
+        await updateInfraHashes(liveChain);
       }
     }
     const { name } = hre.network;
 
-    await updateHashes(chains[name]);
+    await updateInfraHashes(chains[name]);
   });
 
 export default {};

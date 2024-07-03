@@ -1,6 +1,6 @@
 import { task, types } from "hardhat/config";
 import chains, { networkEnvKeys } from "../../constants/CNetworks";
-import { setContractVariables } from "./setContractVariables";
+import { setContractVariables } from "./setInfraVariables/setContractVariables";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../types/CNetwork";
 import log from "../../utils/log";
@@ -12,7 +12,7 @@ import deployConceroDexSwap from "../../deploy/03_ConceroDexSwap";
 import deployConceroOrchestrator from "../../deploy/05_ConceroOrchestrator";
 import addCLFConsumer from "../sub/add";
 import { getEnvVar } from "../../utils/getEnvVar";
-import deployConceroProxy from "../../deploy/00_ConceroProxy";
+import deployConceroProxy from "../../deploy/00_InfraProxy";
 import { setProxyImplementation } from "./setProxyImplementation";
 
 let deployableChains: CNetwork[] = liveChains;

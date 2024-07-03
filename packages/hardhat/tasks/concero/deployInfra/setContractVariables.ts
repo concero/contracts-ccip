@@ -9,7 +9,7 @@ import { SecretsManager } from "@chainlink/functions-toolkit";
 import { Address } from "viem";
 import getHashSum from "../../../utils/getHashSum";
 import { liveChains } from "../liveChains";
-import { dstJsCodeUrl, ethersV6CodeUrl, srcJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
+import { ethersV6CodeUrl, infraDstJsCodeUrl, infraSrcJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 
 const resetLastGasPrices = async (deployableChain: CNetwork, chains: CNetwork[], abi: any) => {
   const conceroProxyAddress = getEnvVar(`CONCEROPROXY_${networkEnvKeys[deployableChain.name]}`);
@@ -86,8 +86,6 @@ export async function setConceroProxyDstContracts(liveChains: CNetwork[]) {
 }
 
 export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slotId: number, abi: any) {
-  // todo: assert slotid = current slotid in the contract, otherwise skip setDonHostedSecretsVersion
-  //todo: Set DonHostedSecrets slotId in case necessary
   const {
     functionsRouter: dcFunctionsRouter,
     functionsDonIdAlias: dcFunctionsDonIdAlias,
@@ -97,7 +95,7 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
     name: dcName,
   } = deployableChain;
   try {
-    const conceroProxy = getEnvVar(`CONCEROPROXY_${networkEnvKeys[dcName]}`);
+    const conceroProxy = getEnvVar(`CONCEROPROXY_${networkEnvKeys[dcName]}`) as Address;
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
 
     const { signer: dcSigner } = getEthersSignerAndProvider(dcUrl);
@@ -117,7 +115,7 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
     if (!rowBySlotId) return log(`No secrets found for ${dcName} at slot ${slotId}.`, "updateContract");
 
     const { request: setDstConceroContractReq } = await publicClient.simulateContract({
-      address: conceroProxy as Address,
+      address: conceroProxy,
       abi,
       functionName: "setDonHostedSecretsVersion",
       account,
@@ -176,8 +174,8 @@ async function setJsHashes(deployableChain: CNetwork, abi: any) {
     const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
     const conceroProxyAddress = getEnvVar(`CONCEROPROXY_${networkEnvKeys[srcChainName]}`);
-    const conceroSrcCode = await (await fetch(srcJsCodeUrl)).text();
-    const conceroDstCode = await (await fetch(dstJsCodeUrl)).text();
+    const conceroSrcCode = await (await fetch(infraSrcJsCodeUrl)).text();
+    const conceroDstCode = await (await fetch(infraDstJsCodeUrl)).text();
     const ethersCode = await (await fetch(ethersV6CodeUrl)).text();
 
     const setHash = async (hash: string, functionName: string) => {

@@ -7,12 +7,11 @@ import { getEnvVar } from "../utils/getEnvVar";
 
 const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer, proxyDeployer } = await hre.getNamedAccounts();
-
   const { deploy } = hre.deployments;
   const { name } = hre.network;
   const implementationAddress = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
 
-  console.log("Deploying ConceroProxy...");
+  console.log("Deploying InfraProxy...");
   const conceroProxyDeployment = (await deploy("ConceroProxy", {
     from: proxyDeployer,
     args: [implementationAddress, proxyDeployer, "0x", deployer],

@@ -4,15 +4,12 @@ pragma abicoder v2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
 import {ISwapRouter02, IV3SwapRouter} from "./Interfaces/ISwapRouter02.sol";
-
 import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
-
 import {Storage} from "./Libraries/Storage.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
@@ -88,7 +85,7 @@ contract DexSwap is Storage, IDexSwap {
       uint256 previousBalance = _swapData[i].toToken == address(0) ? address(this).balance : IERC20(_swapData[i].toToken).balanceOf(address(this));
       address destinationAddress;
 
-      if(i == swapDataLength -1 && _recipient != address(this)){
+      if (i == swapDataLength - 1 && _recipient != address(this)) {
         destinationAddress = _recipient;
       } else {
         destinationAddress = address(this);
@@ -180,11 +177,7 @@ contract DexSwap is Storage, IDexSwap {
    * @dev This function can execute swap in any protocol compatible with UniV3 that implements the ISwapRouter
    */
   function _swapSushiV3Single(IDexSwap.SwapData memory _swapData, address _recipient) private {
-    if(_swapData.dexData.length < APPROVED) revert DexSwap_EmptyDexData();
-    (address routerAddress, uint24 fee, uint256 deadline, uint160 sqrtPriceLimitX96) = abi.decode(
-      _swapData.dexData,
-      (address, uint24, uint256, uint160)
-    );
+    (address routerAddress, uint24 fee, uint256 deadline, uint160 sqrtPriceLimitX96) = abi.decode(_swapData.dexData, (address, uint24, uint256, uint160));
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 
@@ -215,7 +208,7 @@ contract DexSwap is Storage, IDexSwap {
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
 
-    if( block.chainid == BASE_CHAIN_ID || block.chainid == AVAX_CHAIN_ID){
+    if (block.chainid == BASE_CHAIN_ID || block.chainid == AVAX_CHAIN_ID) {
       IV3SwapRouter.ExactInputSingleParams memory dex = IV3SwapRouter.ExactInputSingleParams({
         tokenIn: _swapData.fromToken,
         tokenOut: _swapData.toToken,
@@ -230,7 +223,7 @@ contract DexSwap is Storage, IDexSwap {
 
       ISwapRouter02(routerAddress).exactInputSingle(dex);
     } else {
-      ISwapRouter.ExactInputSingleParams memory dex = ISwapRouter.ExactInputSingleParams ({
+      ISwapRouter.ExactInputSingleParams memory dex = ISwapRouter.ExactInputSingleParams({
         tokenIn: _swapData.fromToken,
         tokenOut: _swapData.toToken,
         fee: fee,
@@ -298,7 +291,7 @@ contract DexSwap is Storage, IDexSwap {
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
     if (firstToken != _swapData.fromToken) revert DexSwap_InvalidPath();
 
-    if( block.chainid == BASE_CHAIN_ID || block.chainid == AVAX_CHAIN_ID){
+    if (block.chainid == BASE_CHAIN_ID || block.chainid == AVAX_CHAIN_ID) {
       IV3SwapRouter.ExactInputParams memory params = IV3SwapRouter.ExactInputParams({
         path: path,
         recipient: _recipient,
@@ -310,7 +303,7 @@ contract DexSwap is Storage, IDexSwap {
 
       _amountOut = ISwapRouter02(routerAddress).exactInput(params);
     } else {
-      ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams ({
+      ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
         path: path,
         recipient: _recipient,
         deadline: deadline,
@@ -331,10 +324,7 @@ contract DexSwap is Storage, IDexSwap {
    */
   function _swapDrome(IDexSwap.SwapData memory _swapData, address _recipient) private {
     if(_swapData.dexData.length < APPROVED) revert DexSwap_EmptyDexData();
-    (address routerAddress, IRouter.Route[] memory routes, uint256 deadline) = abi.decode(
-      _swapData.dexData,
-      (address, IRouter.Route[], uint256)
-    );
+    (address routerAddress, IRouter.Route[] memory routes, uint256 deadline) = abi.decode(_swapData.dexData, (address, IRouter.Route[], uint256));
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
     if (routes[0].from != _swapData.fromToken) revert DexSwap_InvalidPath();
@@ -351,10 +341,7 @@ contract DexSwap is Storage, IDexSwap {
    */
   function _swapDromeFoT(IDexSwap.SwapData memory _swapData, address _recipient) private {
     if(_swapData.dexData.length < APPROVED) revert DexSwap_EmptyDexData();
-    (address routerAddress, IRouter.Route[] memory routes, uint256 deadline) = abi.decode(
-      _swapData.dexData,
-      (address, IRouter.Route[], uint256)
-    );
+    (address routerAddress, IRouter.Route[] memory routes, uint256 deadline) = abi.decode(_swapData.dexData, (address, IRouter.Route[], uint256));
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
     if (routes[0].from != _swapData.fromToken) revert DexSwap_InvalidPath();

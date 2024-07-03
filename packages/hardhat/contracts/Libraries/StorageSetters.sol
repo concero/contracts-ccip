@@ -140,4 +140,9 @@ contract StorageSetters is Storage {
   function setDstConceroPool(uint64 _chainSelector, address _pool) external payable onlyOwner {
     s_poolReceiver[_chainSelector] = _pool;
   }
+
+  // TODO: REMOVE IN PRODUCTION!!!
+  function setLasGasPrices(uint64 _chainSelector, uint256 _lastGasPrice) external payable onlyOwner {
+    s_lastGasPrices[_chainSelector] = _lastGasPrice;
+  }
 }

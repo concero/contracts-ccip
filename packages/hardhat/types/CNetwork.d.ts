@@ -4,7 +4,7 @@ import { HttpNetworkUserConfig } from "hardhat/src/types/config";
 import { Chain } from "viem";
 
 export type envString = string | undefined;
-export type CNetworkNames = "localhost" | "mainnet" | "arbitrum" | "optimism" | "polygon" | "polygonZkEvm" | "avalanche" | "base" | "sepolia" | "optimismSepolia" | "arbitrumSepolia" | "avalancheFuji" | "baseSepolia";
+export type CNetworkNames = "localhost" | "mainnet" | "arbitrum" | "optimism" | "polygon" | "polygonZkEvm" | "avalanche" | "base" | "sepolia" | "optimismSepolia" | "arbitrumSepolia" | "avalancheFuji" | "baseSepolia" | "polygonAmoy";
 // Chainlink Functions Network specific configuration
 export type CLFNetwork = {
   functionsRouter: envString;

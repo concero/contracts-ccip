@@ -5,7 +5,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
-async function f() {
+(async () => {
 	const [
 		_,
 		__,
@@ -25,11 +25,14 @@ async function f() {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa869',
+			nativeCurrency: 'avax',
 			priceFeed: {
 				linkUsd: '',
 				usdcUsd: '',
 				nativeUsd: '',
 				linkNative: '',
+				maticUsd: '',
+				ethUsd: '',
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}').toString(16)}`]: {
@@ -39,6 +42,7 @@ async function f() {
 				'https://ethereum-sepolia.blockpi.network/v1/rpc/public',
 			],
 			chainId: '0xaa36a7',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '',
 				usdcUsd: '',
@@ -53,6 +57,7 @@ async function f() {
 				'https://arbitrum-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x66eee',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '${LINK_USD_PRICEFEED_ARBITRUM_SEPOLIA}',
 				usdcUsd: '${USDC_USD_PRICEFEED_ARBITRUM_SEPOLIA}',
@@ -67,11 +72,14 @@ async function f() {
 				'https://base-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x14a34',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '${LINK_USD_PRICEFEED_BASE_SEPOLIA}',
 				usdcUsd: '${USDC_USD_PRICEFEED_BASE_SEPOLIA}',
 				nativeUsd: '${NATIVE_USD_PRICEFEED_BASE_SEPOLIA}',
 				linkNative: '${LINK_NATIVE_PRICEFEED_BASE_SEPOLIA}',
+				maticUsd: '${MATIC_USD_PRICEFEED_BASE}',
+				avaxUsd: '${AVAX_USD_PRICEFEED_BASE}',
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
@@ -81,11 +89,94 @@ async function f() {
 				'https://optimism-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0xaa37dc',
+			nativeCurrency: 'eth',
 			priceFeed: {
 				linkUsd: '${LINK_USD_PRICEFEED_OPTIMISM_SEPOLIA}',
 				usdcUsd: '${USDC_USD_PRICEFEED_OPTIMISM_SEPOLIA}',
 				nativeUsd: '${NATIVE_USD_PRICEFEED_OPTIMISM_SEPOLIA}',
 				linkNative: '${LINK_NATIVE_PRICEFEED_OPTIMISM_SEPOLIA}',
+			},
+		},
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY}').toString(16)}`]: {
+			urls: [
+				`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://polygon-amoy.blockpi.network/v1/rpc/public',
+				'https://polygon-amoy-bor-rpc.publicnode.com',
+			],
+			chainId: '0x13882',
+			nativeCurrency: 'matic',
+			priceFeed: {
+				linkUsd: '${LINK_USD_PRICEFEED_POLYGON_AMOY}',
+				usdcUsd: '${USDC_USD_PRICEFEED_POLYGON_AMOY}',
+				nativeUsd: '${NATIVE_USD_PRICEFEED_POLYGON_AMOY}',
+				linkNative: '${LINK_NATIVE_PRICEFEED_POLYGON_AMOY}',
+				ethUsd: '${ETH_USD_PRICEFEED_POLYGON_AMOY}',
+			},
+		},
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
+			urls: [
+				// `https://base.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
+				'https://base.blockpi.network/v1/rpc/public',
+				'https://base-rpc.publicnode.com',
+			],
+			chainId: '0x2105',
+			nativeCurrency: 'eth',
+			priceFeed: {
+				linkUsd: '${LINK_USD_PRICEFEED_BASE}',
+				usdcUsd: '${USDC_USD_PRICEFEED_BASE}',
+				nativeUsd: '${NATIVE_USD_PRICEFEED_BASE}',
+				linkNative: '${LINK_NATIVE_PRICEFEED_BASE}',
+				maticUsd: '${MATIC_USD_PRICEFEED_BASE}',
+				avaxUsd: '${AVAX_USD_PRICEFEED_BASE}',
+			},
+		},
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
+			urls: [
+				`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://arbitrum.blockpi.network/v1/rpc/public',
+				'https://arbitrum-rpc.publicnode.com',
+			],
+			chainId: '0xa4b1',
+			nativeCurrency: 'eth',
+			priceFeed: {
+				linkUsd: '${LINK_USD_PRICEFEED_ARBITRUM}',
+				usdcUsd: '${USDC_USD_PRICEFEED_ARBITRUM}',
+				nativeUsd: '${NATIVE_USD_PRICEFEED_ARBITRUM}',
+				linkNative: '${LINK_NATIVE_PRICEFEED_ARBITRUM}',
+			},
+		},
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
+			urls: [
+				// `https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://polygon.blockpi.network/v1/rpc/public',
+				// 'https://polygon-bor-rpc.publicnode.com',
+			],
+			chainId: '0x89',
+			nativeCurrency: 'matic',
+			priceFeed: {
+				linkUsd: '${LINK_USD_PRICEFEED_POLYGON}',
+				usdcUsd: '${USDC_USD_PRICEFEED_POLYGON}',
+				nativeUsd: '${NATIVE_USD_PRICEFEED_POLYGON}',
+				linkNative: '${LINK_NATIVE_PRICEFEED_POLYGON}',
+				ethUsd: '${ETH_USD_PRICEFEED_POLYGON}',
+				avaxUsd: '${AVAX_USD_PRICEFEED_POLYGON}',
+			},
+		},
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}').toString(16)}`]: {
+			urls: [
+				`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://avalanche.blockpi.network/v1/rpc/public',
+				'https://avalanche-c-chain-rpc.publicnode.com',
+			],
+			chainId: '0xa86a',
+			nativeCurrency: 'avax',
+			priceFeed: {
+				linkUsd: '${LINK_USD_PRICEFEED_AVALANCHE}',
+				usdcUsd: '${USDC_USD_PRICEFEED_AVALANCHE}',
+				nativeUsd: '${NATIVE_USD_PRICEFEED_AVALANCHE}',
+				linkNative: '${LINK_NATIVE_PRICEFEED_AVALANCHE}',
+				ethUsd: '${ETH_USD_PRICEFEED_AVALANCHE}',
+				maticUsd: '${MATIC_USD_PRICEFEED_AVALANCHE}',
 			},
 		},
 	};
@@ -106,18 +197,56 @@ async function f() {
 			priceFeedsAbi,
 			provider,
 		);
-
-		const [linkUsd, usdcUsd, nativeUsd, linkNative] = await Promise.all([
+		const promises = [
 			linkUsdContract.latestRoundData(),
 			usdcUsdContract.latestRoundData(),
 			nativeUsdContract.latestRoundData(),
 			linkNativeContract.latestRoundData(),
-		]);
+		];
+
+		const promiseUndefined = async () => {
+			return new Promise(resolve => {
+				resolve(undefined);
+			});
+		};
+
+		if (chainSelectors[chainSelector].priceFeed.maticUsd) {
+			const maticUsdContract = new ethers.Contract(
+				chainSelectors[chainSelector].priceFeed.maticUsd,
+				priceFeedsAbi,
+				provider,
+			);
+			promises.push(maticUsdContract.latestRoundData());
+		} else {
+			promises.push(promiseUndefined());
+		}
+		if (chainSelectors[chainSelector].priceFeed.ethUsd) {
+			const ethUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.ethUsd, priceFeedsAbi, provider);
+			promises.push(ethUsdContract.latestRoundData());
+		} else {
+			promises.push(promiseUndefined());
+		}
+		if (chainSelectors[chainSelector].priceFeed.avaxUsd) {
+			const avaxUsdContract = new ethers.Contract(
+				chainSelectors[chainSelector].priceFeed.avaxUsd,
+				priceFeedsAbi,
+				provider,
+			);
+			promises.push(avaxUsdContract.latestRoundData());
+		} else {
+			promises.push(promiseUndefined());
+		}
+
+		const [linkUsd, usdcUsd, nativeUsd, linkNative, maticUsd, ethUsd, avaxUsd] = await Promise.all(promises);
 
 		return {
 			linkUsdc: linkUsd[1] > 0n ? (linkUsd[1] * 10n ** 18n) / usdcUsd[1] : 0n,
 			nativeUsdc: nativeUsd[1] > 0n ? (nativeUsd[1] * 10n ** 18n) / usdcUsd[1] : 0n,
 			linkNative: linkNative[1] > 0 ? linkNative[1] : 0n,
+			nativeUsd: nativeUsd[1] > 0 ? nativeUsd[1] : 0n,
+			maticUsd: maticUsd ? maticUsd[1] : undefined,
+			ethUsd: ethUsd ? ethUsd[1] : undefined,
+			avaxUsd: avaxUsd ? avaxUsd[1] : undefined,
 		};
 	};
 	const constructResult = items => {
@@ -132,6 +261,33 @@ async function f() {
 		}
 
 		return result;
+	};
+	const getDstGasPriceInSrcCurrency = (_gasPrice, srcPriceFeeds) => {
+		const getGasPriceByPriceFeeds = (nativeUsdPriceFeed, dstAssetUsdPriceFeed, __gasPrice) => {
+			if (dstAssetUsdPriceFeed === undefined) return 0n;
+			const srcNativeDstNativeRate = (nativeUsdPriceFeed * 10n ** 10n) / dstAssetUsdPriceFeed;
+			const dstGasPriceInSrcCurrency = (__gasPrice * srcNativeDstNativeRate) / 10n ** 18n;
+			return dstGasPriceInSrcCurrency < 1n ? 1n : dstGasPriceInSrcCurrency;
+		};
+
+		const srcNativeCurrency = chainSelectors[srcChainSelector].nativeCurrency;
+		const dstNativeCurrency = chainSelectors[dstChainSelector].nativeCurrency;
+
+		if (srcNativeCurrency === 'eth') {
+			if (dstNativeCurrency === 'matic') {
+				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.maticUsd, _gasPrice);
+			} else if (dstNativeCurrency === 'avax') {
+				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
+			}
+		} else if (srcNativeCurrency === 'matic') {
+			if (dstNativeCurrency === 'eth') {
+				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.ethUsd, _gasPrice);
+			} else if (dstNativeCurrency === 'avax') {
+				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
+			}
+		}
+
+		return _gasPrice;
 	};
 	let nonce = 0;
 	let retries = 0;
@@ -199,7 +355,6 @@ async function f() {
 				return res;
 			}
 		}
-
 		const dstUrl =
 			chainSelectors[dstChainSelector].urls[Math.floor(Math.random() * chainSelectors[dstChainSelector].urls.length)];
 		const provider = new FunctionsJsonRpcProvider(dstUrl);
@@ -222,13 +377,16 @@ async function f() {
 		const srcUrl =
 			chainSelectors[srcChainSelector].urls[Math.floor(Math.random() * chainSelectors[srcChainSelector].urls.length)];
 		const srcChainProvider = new FunctionsJsonRpcProvider(srcUrl);
-		const [dstFeeData, srcPriceFeeds] = await Promise.all([
+		const [srcFeeData, srcPriceFeeds] = await Promise.all([
 			srcChainProvider.getFeeData(),
 			getPriceRates(srcChainProvider, srcChainSelector),
 		]);
+
+		const dstGasPriceInSrcCurrency = getDstGasPriceInSrcCurrency(gasPrice, srcPriceFeeds);
+
 		return constructResult([
-			dstFeeData.gasPrice,
-			gasPrice,
+			dstGasPriceInSrcCurrency,
+			srcFeeData.gasPrice,
 			dstChainSelector,
 			srcPriceFeeds.linkUsdc,
 			srcPriceFeeds.nativeUsdc,
@@ -242,5 +400,4 @@ async function f() {
 			throw new Error(message?.slice(0, 255));
 		}
 	}
-}
-f();
+})();

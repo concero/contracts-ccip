@@ -1,9 +1,8 @@
 import { SecretsManager } from "@chainlink/functions-toolkit";
-import chains, { networkEnvKeys } from "../../constants/CNetworks";
-import updateEnvVariable from "../../utils/updateEnvVariable";
+import chains from "../../constants/CNetworks";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { liveChains } from "../concero/deployInfra";
+import { liveChains } from "../concero/deployInfra/deployInfra";
 import { CNetwork } from "../../types/CNetwork";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import log from "../../utils/log";

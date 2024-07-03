@@ -18,7 +18,8 @@ interface IStorage {
   enum Chain {
     arb,
     base,
-    opt
+    opt,
+    pol
   }
 
   ///@notice Function Request
@@ -81,6 +82,4 @@ interface IStorage {
     bytes32 donId;
     address functionsRouter;
   }
-
-  function getTransactionsInfo(bytes32 _ccipMessageId) external view returns(Transaction memory);
 }

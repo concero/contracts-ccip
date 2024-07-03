@@ -3,15 +3,13 @@ pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
-
 import {ChildStorage} from "contracts/Libraries/ChildStorage.sol";
-
 import {IStorage} from "./Interfaces/IStorage.sol";
+import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -65,7 +63,7 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   ///////////////
   /**
    * @notice modifier to ensure if the function is being executed in the proxy context.
-  */
+   */
   modifier isProxy() {
     if (address(this) != i_childProxy) revert ConceroChildPool_CallerIsNotTheProxy(address(this));
     _;
@@ -104,10 +102,7 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
    * @param _amount amount of the token to be sent
    * @dev This function will sent the address of the user as data. This address will be used to update the mapping on MasterPool.
    */
-  function ccipSendToPool(
-    address _liquidityProviderAddress,
-    uint256 _amount
-  ) external onlyMessenger isProxy returns (bytes32 messageId) {
+  function ccipSendToPool(address _liquidityProviderAddress, uint256 _amount) external onlyMessenger isProxy returns (bytes32 messageId) {
     if (_amount > i_USDC.balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
 
     Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
@@ -167,18 +162,18 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   function _ccipReceive(
     Client.Any2EVMMessage memory any2EvmMessage
   ) internal override onlyAllowlistedSenderAndChainSelector(any2EvmMessage.sourceChainSelector, abi.decode(any2EvmMessage.sender, (address))) {
-    (/*address liquidityProvider*/, address _user, uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address, address, uint256));
+    (, /*address liquidityProvider*/ address _user, uint256 receivedFee) = abi.decode(any2EvmMessage.data, (address, address, uint256));
 
     uint256 amountMinusFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
 
     //If receivedFee > 0, it means is user transaction. If receivedFee == 0, means it's a deposit from ParentPool
     if (receivedFee > 0) {
-      IStorage.Transaction memory transaction = IStorage(i_infraProxy).getTransactionsInfo(any2EvmMessage.messageId);
+      IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransactionsInfo(any2EvmMessage.messageId);
 
-      if(transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false || transaction.ccipMessageId == 0){
+      if ((transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false) || transaction.ccipMessageId == 0) {
         i_USDC.safeTransfer(_user, amountMinusFees);
         //We don't subtract it here because the loan was not performed. And the value is not summed into the `s_loanInUse` variable.
-      } else  {
+      } else {
         //subtract the amount from the committed total amount
         s_loansInUse = s_loansInUse - amountMinusFees;
       }

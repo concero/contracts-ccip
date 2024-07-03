@@ -7,9 +7,9 @@ import { CNetwork } from "../../types/CNetwork";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import log from "../../utils/log";
 import listSecrets from "./list";
-import { setDonHostedSecretsVersion } from "../concero/setContractVariables";
+import { setDonHostedSecretsVersion } from "../concero/setInfraVariables/setContractVariables";
 import load from "../../utils/load";
-import { liveChains } from "../concero/deployInfra";
+import { liveChains } from "../concero/deployInfra/deployInfra";
 
 // const path = require("path");
 
@@ -36,7 +36,8 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
       console.error("No secrets to upload.");
       return;
     }
-    // console.log("Uploading secrets to DON for network:", name);
+
+    console.log("Uploading secrets to DON for network:", name);
     const encryptedSecretsObj = await secretsManager.encryptSecrets(secrets);
 
     const {
@@ -44,7 +45,7 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
       success, // Boolean value indicating if encrypted secrets were successfully uploaded to all nodes connected to the gateway
     } = await secretsManager.uploadEncryptedSecretsToDON({
       encryptedSecretsHexstring: encryptedSecretsObj.encryptedSecrets,
-      gatewayUrls: functionsGatewayUrls,
+      gatewayUrls: ["https://01.functions-gateway.chain.link/", "https://02.functions-gateway.chain.link/"],
       slotId,
       minutesUntilExpiration,
     });

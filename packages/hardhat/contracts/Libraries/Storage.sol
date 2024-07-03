@@ -115,7 +115,7 @@ abstract contract Storage is IStorage {
    * @param token The enum flag of the token
    * @param _chainIndex the index of the chain
    */
-  function getToken(CCIPToken token, Chain _chainIndex) internal pure returns (address) {
+  function getToken(CCIPToken token, Chain _chainIndex) internal view returns (address) {
     address[4][2] memory tokens;
 
     // Initialize BNM addresses
@@ -125,8 +125,8 @@ abstract contract Storage is IStorage {
     tokens[uint(CCIPToken.bnm)][uint(Chain.pol)] = 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4; // pol
 
     // Initialize USDC addresses
-    tokens[uint(CCIPToken.usdc)][uint(Chain.arb)] = USDC_ARBITRUM;
-    tokens[uint(CCIPToken.usdc)][uint(Chain.base)] = USDC_BASE;
+    tokens[uint(CCIPToken.usdc)][uint(Chain.arb)] = block.chainid == 42161 ? USDC_ARBITRUM : 	0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d;
+    tokens[uint(CCIPToken.usdc)][uint(Chain.base)] = block.chainid == 8453 ? USDC_BASE : 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
     tokens[uint(CCIPToken.usdc)][uint(Chain.opt)] = USDC_OPTIMISM;
     tokens[uint(CCIPToken.usdc)][uint(Chain.pol)] = USDC_POLYGON;
 
@@ -134,5 +134,36 @@ abstract contract Storage is IStorage {
     if (uint256(_chainIndex) > tokens[uint256(token)].length) revert Storage_ChainIndexOutOfBounds();
 
     return tokens[uint256(token)][uint256(_chainIndex)];
+  }
+
+  /**
+   * @notice Internal function to convert USDC Decimals to LP Decimals
+   * @param _amount the amount of USDC
+   * @return _adjustedAmount the adjusted amount
+   */
+  function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
+    _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
+  }
+
+  /**
+   * @notice Function to check if a caller address is an allowed messenger
+   * @param _messenger the address of the caller
+   */
+  function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
+    address[] memory messengers = new address[](4); //Number of messengers. To define.
+    messengers[0] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267; //fake messenger from foundry environment
+    messengers[1] = address(0);
+    messengers[2] = address(0);
+    messengers[3] = address(0);
+
+    for (uint256 i; i < messengers.length; ) {
+      if (_messenger == messengers[i]) {
+        return true;
+      }
+      unchecked {
+        ++i;
+      }
+    }
+    return false;
   }
 }

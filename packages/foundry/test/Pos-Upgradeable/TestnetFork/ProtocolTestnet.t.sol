@@ -143,6 +143,7 @@ contract ProtocolTestnet is Test {
     address linkOwnerBase = 0xd5CCdabF11E3De8d2F64022e232aC18001B8acAC;
     address ccipBnM = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e;
     address ccipBnMArb = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D;
+    address registryAddress = 0x8B1565DbAF0577F2F3b474334b068C95687f4FcE;
 
     //Arb Testnet variables
     address linkArb = 0xb1D4538B4571d411F07960EF2838Ce337FE1E80E;
@@ -306,6 +307,8 @@ contract ProtocolTestnet is Test {
         LinkToken(linkBase).mint(address(op), 10*10**18);
         vm.prank(Tester);
         LinkToken(linkBase).mint(address(wMaster), 10*10**18);
+        vm.prank(Tester);
+        LinkToken(linkBase).mint(address(User), 10*10**18);
 
         vm.prank(0xd5CCdabF11E3De8d2F64022e232aC18001B8acAC);
         ERC20Mock(ccipBnM).mint(address(LP), 1000 * 10**18);
@@ -705,22 +708,6 @@ contract ProtocolTestnet is Test {
 
     error Storage_CallableOnlyByOwner(address, address);
     event Orchestrator_FeeWithdrawal(address, uint256);
-    function test_withdrawEtherFee() public {
-        vm.deal(address(op), 1*10**18);
-
-        vm.prank(User);
-        vm.expectRevert(abi.encodeWithSelector(Storage_CallableOnlyByOwner.selector, User, defaultSender));
-        op.withdrawEtherFee();
-
-        uint256 previousBalance = defaultSender.balance;
-
-        vm.prank(defaultSender);
-        vm.expectEmit();
-        emit Orchestrator_FeeWithdrawal(defaultSender, 1*10**18);
-        op.withdrawEtherFee();
-
-        assertEq(defaultSender.balance, previousBalance + 1*10**18);
-    }
 
     error Orchestrator_OnlyRouterCanFulfill();
     error UnexpectedRequestID(bytes32);

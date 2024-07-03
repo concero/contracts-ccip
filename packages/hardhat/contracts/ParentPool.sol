@@ -197,9 +197,8 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
 
-    bytes32 requestId = _sendRequest(args, JS_CODE); // No JS code yet.
-
-    s_requests[requestId] = IParentPool.CLARequest({
+    bytes32 requestId = _sendRequest(args, JS_CODE);
+    s_requests[requestId] = IParentPool.CLFRequest({
       requestType: IParentPool.RequestType.GetTotalUSDC,
       liquidityProvider: msg.sender,
       usdcBeforeRequest: i_USDC.balanceOf(address(this)) + s_loansInUse,
@@ -231,7 +230,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     bytes32 requestId = _sendRequest(args, JS_CODE); // No JS code yet.
 
-    s_requests[requestId] = IParentPool.CLARequest({
+    s_requests[requestId] = IParentPool.CLFRequest({
       requestType: IParentPool.RequestType.PerformWithdrawal,
       liquidityProvider: msg.sender,
       usdcBeforeRequest: 0,
@@ -254,7 +253,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     if (withdraw.amountToReceive > 0) revert ParentPool_AmountNotAvailableYet(withdraw.amountToReceive);
 
     if (withdraw.amountEarned > i_USDC.balanceOf(address(this))) revert ParentPool_InsufficientBalance();
-
 
     s_withdrawRequests = s_withdrawRequests > withdraw.amountEarned ? s_withdrawRequests - withdraw.amountEarned : 0;
 
@@ -378,7 +376,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @dev response & err will never be empty or populated at same time.
    */
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
-    IParentPool.CLARequest storage request = s_requests[requestId];
+    IParentPool.CLFRequest storage request = s_requests[requestId];
 
     if (err.length > 0) {
       emit FunctionsRequestError(requestId, request.requestType);
@@ -452,7 +450,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       amountToReceive: (_convertToUSDCTokenDecimals(amountToWithdraw) * numberOfPools) / (numberOfPools + 1), //The portion of the money that is not on MasterPool
       token: address(i_USDC),
       liquidityProvider: _liquidityProvider,
-      deadline: block.timestamp + 597_600 //6days & 22h
+      deadline: block.timestamp + WITHDRAW_DEADLINE //6days & 22h
     });
 
     s_withdrawRequests = s_withdrawRequests + _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1);

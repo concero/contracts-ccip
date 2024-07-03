@@ -127,7 +127,7 @@ contract Concero is ConceroCCIP {
     uint256 messengerGasFeeInUsdc = ((messengerDstGasInNative + messengerSrcGasInNative) * s_latestNativeUsdcRate) / 1 ether;
 
     // @notice: converting to 6 decimals
-    return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + messengerGasFeeInUsdc) / 1e12;
+    return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + messengerGasFeeInUsdc);
   }
 
   /**

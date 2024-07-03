@@ -234,334 +234,336 @@ contract PoolsTesting is Test{
     error ConceroChildPool_CallerIsNotTheProxy(address);
     error ConceroChildPool_CallerIsNotConcero(address);
     error ConceroChildPool_InvalidAddress();
-    //Deposits, start withdraw, take loans, complete withdraw.
-    //One liquidity provider -> partial withdraw
-    function test_localDepositLiquidity() public setters{
-        uint256 amountToDeposit = 150 * 10**6;
-        uint256 amountLpShouldBeEmitted = 150 * 10**18;
-        uint256 mockedFeeAccrued = 3*10**6;
-        uint256 loanAmount = 1 * 10**6;
-        uint256 biggerLoanAmount = 20 * 10**6;
+    //Only Works without Functions
+    //Change `ParentPool`line 200 for this: bytes32 requestId/* = _sendRequest(args, JS_CODE)*/;
+    // function test_localDepositLiquidity() public setters{
+    //     uint256 amountToDeposit = 150 * 10**6;
+    //     uint256 amountLpShouldBeEmitted = 150 * 10**18;
+    //     uint256 mockedFeeAccrued = 3*10**6;
+    //     uint256 loanAmount = 1 * 10**6;
+    //     uint256 biggerLoanAmount = 20 * 10**6;
 
-        //====== Initiate the Deposit + Cross-chain transfer
-        assertEq(usdc.balanceOf(address(wMaster)), 0);
-        assertEq(usdc.balanceOf(address(wChild)), 0);
+    //     //====== Initiate the Deposit + Cross-chain transfer
+    //     assertEq(usdc.balanceOf(address(wMaster)), 0);
+    //     assertEq(usdc.balanceOf(address(wChild)), 0);
 
-        vm.startPrank(LiquidityProvider);
-        usdc.approve(address(wMaster), amountToDeposit);
-        wMaster.depositLiquidity(amountToDeposit); //150
-        vm.stopPrank();
+    //     vm.startPrank(LiquidityProvider);
+    //     usdc.approve(address(wMaster), amountToDeposit);
+    //     wMaster.depositLiquidity(amountToDeposit); //150
+    //     vm.stopPrank();
 
-        assertEq(usdc.balanceOf(address(wMaster)), amountToDeposit/2); //75
-        assertEq(usdc.balanceOf(address(wChild)), amountToDeposit/2);
+    //     assertEq(usdc.balanceOf(address(wMaster)), amountToDeposit/2); //75
+    //     assertEq(usdc.balanceOf(address(wChild)), amountToDeposit/2);
 
-        //===== Check User LP balance
-        assertEq(lp.balanceOf(LiquidityProvider), 0);
+    //     //===== Check User LP balance
+    //     assertEq(lp.balanceOf(LiquidityProvider), 0);
 
-        //===== Adjust manually the LP emission
-        wMaster.updateUSDCAmountManually(LiquidityProvider, lp.totalSupply(), amountToDeposit, amountToDeposit);//150
+    //     //===== Adjust manually the LP emission
+    //     wMaster.updateUSDCAmountManually(LiquidityProvider, lp.totalSupply(), amountToDeposit, amountToDeposit);//150
 
-        //===== Check User LP balance
-        assertEq(lp.balanceOf(LiquidityProvider), amountLpShouldBeEmitted);
+    //     //===== Check User LP balance
+    //     assertEq(lp.balanceOf(LiquidityProvider), amountLpShouldBeEmitted);
         
-        //===== Mocking some fees
-        usdc.mint(address(wMaster), mockedFeeAccrued);
-        usdc.mint(address(wChild), mockedFeeAccrued);
-        assertEq(usdc.balanceOf(address(wMaster)), (amountToDeposit/2) + mockedFeeAccrued);//75+3
-        assertEq(usdc.balanceOf(address(wChild)), (amountToDeposit/2) + mockedFeeAccrued);
+    //     //===== Mocking some fees
+    //     usdc.mint(address(wMaster), mockedFeeAccrued);
+    //     usdc.mint(address(wChild), mockedFeeAccrued);
+    //     assertEq(usdc.balanceOf(address(wMaster)), (amountToDeposit/2) + mockedFeeAccrued);//75+3
+    //     assertEq(usdc.balanceOf(address(wChild)), (amountToDeposit/2) + mockedFeeAccrued);
 
-        //===== User initiate an withdrawRequest
-        //Withdraw only 1/3 of deposited == 150*10**18 / 3;
-        vm.prank(LiquidityProvider);
-        wMaster.startWithdrawal(50 * 10**18);
+    //     //===== User initiate an withdrawRequest
+    //     //Withdraw only 1/3 of deposited == 150*10**18 / 3;
+    //     vm.prank(LiquidityProvider);
+    //     wMaster.startWithdrawal(50 * 10**18);
 
-        //===== Adjust manually the USDC cross-chain total
-        wMaster.updateUSDCAmountEarned(LiquidityProvider, lp.totalSupply(), 50 * 10**18, usdc.balanceOf(address(wChild)));
+    //     //===== Adjust manually the USDC cross-chain total
+    //     wMaster.updateUSDCAmountEarned(LiquidityProvider, lp.totalSupply(), 50 * 10**18, usdc.balanceOf(address(wChild)));
 
-        //===== Take a loan on child pool
-        assertEq(usdc.balanceOf(Athena), 0);
+    //     //===== Take a loan on child pool
+    //     assertEq(usdc.balanceOf(Athena), 0);
 
-        vm.prank(Orchestrator);
-        wChild.orchestratorLoan(address(usdc), loanAmount, Athena);
+    //     vm.prank(Orchestrator);
+    //     wChild.orchestratorLoan(address(usdc), loanAmount, Athena);
 
-        assertEq(usdc.balanceOf(Athena), loanAmount);
+    //     assertEq(usdc.balanceOf(Athena), loanAmount);
 
-        //===== Revert on caller
-        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_CallerIsNotConcero.selector, address(this)));
-        wChild.orchestratorLoan(address(usdc), loanAmount, Athena);
+    //     //===== Revert on caller
+    //     vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_CallerIsNotConcero.selector, address(this)));
+    //     wChild.orchestratorLoan(address(usdc), loanAmount, Athena);
 
-        //===== Revert on Balance
-        vm.prank(Orchestrator);
-        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InsufficientBalance.selector));
-        wChild.orchestratorLoan(address(usdc), 100*10**6, Athena);
+    //     //===== Revert on Balance
+    //     vm.prank(Orchestrator);
+    //     vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InsufficientBalance.selector));
+    //     wChild.orchestratorLoan(address(usdc), 100*10**6, Athena);
 
-        //===== Revert on Address
-        vm.prank(Orchestrator);
-        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InvalidAddress.selector));
-        wChild.orchestratorLoan(address(usdc), loanAmount, address(0));
+    //     //===== Revert on Address
+    //     vm.prank(Orchestrator);
+    //     vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InvalidAddress.selector));
+    //     wChild.orchestratorLoan(address(usdc), loanAmount, address(0));
 
-        //===== Advance in time
-        vm.warp(7 days);
+    //     //===== Advance in time
+    //     vm.warp(7 days);
 
-        //===== Revert on Messenger
-        vm.expectRevert(abi.encodeWithSelector(ChildStorage_NotMessenger.selector, address(this)));
-        wChild.ccipSendToPool(LiquidityProvider, 26_000_000);
+    //     //===== Revert on Messenger
+    //     vm.expectRevert(abi.encodeWithSelector(ChildStorage_NotMessenger.selector, address(this)));
+    //     wChild.ccipSendToPool(LiquidityProvider, 26_000_000);
 
-        //===== Revert on Environment
-        vm.prank(Messenger);
-        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_CallerIsNotTheProxy.selector, address(child)));
-        child.ccipSendToPool(LiquidityProvider, 26_000_000);
+    //     //===== Revert on Environment
+    //     vm.prank(Messenger);
+    //     vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_CallerIsNotTheProxy.selector, address(child)));
+    //     child.ccipSendToPool(LiquidityProvider, 26_000_000);
 
-        //==== Mock the Automation call to ChildPool
-        vm.prank(Messenger);
-        wChild.ccipSendToPool(LiquidityProvider, 26_000_000);
+    //     //==== Mock the Automation call to ChildPool
+    //     vm.prank(Messenger);
+    //     wChild.ccipSendToPool(LiquidityProvider, 26_000_000);
 
-        //==== Mock complete withdraw
-        vm.startPrank(LiquidityProvider);
-        lp.approve(address(wMaster), 50 *10**18);
-        wMaster.completeWithdrawal();
-        vm.stopPrank();
+    //     //==== Mock complete withdraw
+    //     vm.startPrank(LiquidityProvider);
+    //     lp.approve(address(wMaster), 50 *10**18);
+    //     wMaster.completeWithdrawal();
+    //     vm.stopPrank();
 
-        assertEq(usdc.balanceOf(LiquidityProvider), USDC_INITIAL_BALANCE - amountToDeposit + 52*10**6);
-        assertEq(lp.balanceOf(LiquidityProvider), 100*10**18);
+    //     assertEq(usdc.balanceOf(LiquidityProvider), USDC_INITIAL_BALANCE - amountToDeposit + 52*10**6);
+    //     assertEq(lp.balanceOf(LiquidityProvider), 100*10**18);
 
-        //===== Take a loan on child pool
-        assertEq(usdc.balanceOf(Athena), loanAmount);
+    //     //===== Take a loan on child pool
+    //     assertEq(usdc.balanceOf(Athena), loanAmount);
 
-        vm.prank(Orchestrator);
-        wChild.orchestratorLoan(address(usdc), biggerLoanAmount, Athena);
+    //     vm.prank(Orchestrator);
+    //     wChild.orchestratorLoan(address(usdc), biggerLoanAmount, Athena);
 
-        assertEq(usdc.balanceOf(Athena), loanAmount + biggerLoanAmount);
+    //     assertEq(usdc.balanceOf(Athena), loanAmount + biggerLoanAmount);
 
-        //==== Mock the Automation call to ChildPool
-        vm.prank(Messenger);
-        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InsufficientBalance.selector));
-        wChild.ccipSendToPool(LiquidityProvider, (amountToDeposit/2) - ((amountToDeposit/2))/2);
-    }
+    //     //==== Mock the Automation call to ChildPool
+    //     vm.prank(Messenger);
+    //     vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InsufficientBalance.selector));
+    //     wChild.ccipSendToPool(LiquidityProvider, (amountToDeposit/2) - ((amountToDeposit/2))/2);
+    // }
 
-    function test_localMultipleDepositLiquidity() public setters{
-        uint256 amountToDeposit = 100 * 10**6;
-        uint256 secondAmountToDeposit = 200 * 10**6;
-        uint256 thirdAmountToDeposit = 500 * 10**6;
-        uint256 mockedFeeAccrued = 5*10**6;
-        uint256 loanAmount = 10 * 10**6;
-        uint256 biggerLoanAmount = 100 * 10**6;
+    //Only Works without Functions
+    //Change `ParentPool`line 200 for this: bytes32 requestId/* = _sendRequest(args, JS_CODE)*/;
+    // function test_localMultipleDepositLiquidity() public setters{
+    //     uint256 amountToDeposit = 100 * 10**6;
+    //     uint256 secondAmountToDeposit = 200 * 10**6;
+    //     uint256 thirdAmountToDeposit = 500 * 10**6;
+    //     uint256 mockedFeeAccrued = 5*10**6;
+    //     uint256 loanAmount = 10 * 10**6;
+    //     uint256 biggerLoanAmount = 100 * 10**6;
 
-        vm.prank(Tester);
-        wMaster.setPoolCap(USDC_INITIAL_BALANCE * 3); //500*3
+    //     vm.prank(Tester);
+    //     wMaster.setPoolCap(USDC_INITIAL_BALANCE * 3); //500*3
 
-        ////////////////////////////////////////////////////////////////
-        //====== Initiate First Deposit + Cross-chain transfer ======//
-        //////////////////////////////////////////////////////////////
-        assertEq(usdc.balanceOf(address(wMaster)), 0);
-        assertEq(usdc.balanceOf(address(wChild)), 0);
+    //     ////////////////////////////////////////////////////////////////
+    //     //====== Initiate First Deposit + Cross-chain transfer ======//
+    //     //////////////////////////////////////////////////////////////
+    //     assertEq(usdc.balanceOf(address(wMaster)), 0);
+    //     assertEq(usdc.balanceOf(address(wChild)), 0);
 
-        vm.startPrank(LiquidityProvider);
-        usdc.approve(address(wMaster), amountToDeposit);
-        wMaster.depositLiquidity(amountToDeposit);
-        vm.stopPrank();
+    //     vm.startPrank(LiquidityProvider);
+    //     usdc.approve(address(wMaster), amountToDeposit);
+    //     wMaster.depositLiquidity(amountToDeposit);
+    //     vm.stopPrank();
 
-        assertEq(usdc.balanceOf(LiquidityProvider), 400*10**6);
-        assertEq(usdc.balanceOf(address(wMaster)), 50*10**6);
-        assertEq(usdc.balanceOf(address(wChild)), 50*10**6);
+    //     assertEq(usdc.balanceOf(LiquidityProvider), 400*10**6);
+    //     assertEq(usdc.balanceOf(address(wMaster)), 50*10**6);
+    //     assertEq(usdc.balanceOf(address(wChild)), 50*10**6);
         
-        //===== Adjust manually the LP emission
-        wMaster.updateUSDCAmountManually(LiquidityProvider, lp.totalSupply(), amountToDeposit, 0); //Not taking the user deposit in account
+    //     //===== Adjust manually the LP emission
+    //     wMaster.updateUSDCAmountManually(LiquidityProvider, lp.totalSupply(), amountToDeposit, 0); //Not taking the user deposit in account
 
-        //===== Check User LP balance
-        uint256 liquidityProviderFirstLpBalance = lp.balanceOf(LiquidityProvider);
+    //     //===== Check User LP balance
+    //     uint256 liquidityProviderFirstLpBalance = lp.balanceOf(LiquidityProvider);
 
-        assertEq(liquidityProviderFirstLpBalance, 100*10**18);
+    //     assertEq(liquidityProviderFirstLpBalance, 100*10**18);
 
-        //===== Mocking some fees
-        usdc.mint(address(wMaster), mockedFeeAccrued);
-        usdc.mint(address(wChild), mockedFeeAccrued);
+    //     //===== Mocking some fees
+    //     usdc.mint(address(wMaster), mockedFeeAccrued);
+    //     usdc.mint(address(wChild), mockedFeeAccrued);
 
-        /////////////////////////////////////////////////////////////////
-        //====== Initiate Second Deposit + Cross-chain transfer ======//
-        ///////////////////////////////////////////////////////////////
-        vm.startPrank(LiquidityProviderTwo);
-        usdc.approve(address(wMaster), secondAmountToDeposit);
-        wMaster.depositLiquidity(secondAmountToDeposit);
-        vm.stopPrank();
+    //     /////////////////////////////////////////////////////////////////
+    //     //====== Initiate Second Deposit + Cross-chain transfer ======//
+    //     ///////////////////////////////////////////////////////////////
+    //     vm.startPrank(LiquidityProviderTwo);
+    //     usdc.approve(address(wMaster), secondAmountToDeposit);
+    //     wMaster.depositLiquidity(secondAmountToDeposit);
+    //     vm.stopPrank();
 
-        assertEq(usdc.balanceOf(address(LiquidityProviderTwo)), 300*10**6);
-        assertEq(usdc.balanceOf(address(wMaster)), 155*10**6);
-        assertEq(usdc.balanceOf(address(wChild)), 155*10**6);
+    //     assertEq(usdc.balanceOf(address(LiquidityProviderTwo)), 300*10**6);
+    //     assertEq(usdc.balanceOf(address(wMaster)), 155*10**6);
+    //     assertEq(usdc.balanceOf(address(wChild)), 155*10**6);
         
-        //===== Adjust manually the LP emission
-        wMaster.updateUSDCAmountManually(LiquidityProviderTwo, lp.totalSupply(), secondAmountToDeposit, 110*10**6); //Not taking the user deposit in account
+    //     //===== Adjust manually the LP emission
+    //     wMaster.updateUSDCAmountManually(LiquidityProviderTwo, lp.totalSupply(), secondAmountToDeposit, 110*10**6); //Not taking the user deposit in account
 
-        //===== Check User LP balance
-        uint256 liquidityProviderTwoFirstLpBalance = lp.balanceOf(LiquidityProviderTwo);
-        assertEq(liquidityProviderTwoFirstLpBalance, 181818181818181818181);
+    //     //===== Check User LP balance
+    //     uint256 liquidityProviderTwoFirstLpBalance = lp.balanceOf(LiquidityProviderTwo);
+    //     assertEq(liquidityProviderTwoFirstLpBalance, 181818181818181818181);
 
-        //===== Mocking some fees
-        usdc.mint(address(wMaster), mockedFeeAccrued);
-        usdc.mint(address(wChild), mockedFeeAccrued);
+    //     //===== Mocking some fees
+    //     usdc.mint(address(wMaster), mockedFeeAccrued);
+    //     usdc.mint(address(wChild), mockedFeeAccrued);
 
-        ////////////////////////////////////////////////////////////////
-        //====== Initiate third Deposit + Cross-chain transfer ======//
-        //////////////////////////////////////////////////////////////
-        vm.startPrank(LiquidityProviderThree);
-        usdc.approve(address(wMaster), thirdAmountToDeposit);
-        wMaster.depositLiquidity(thirdAmountToDeposit);
-        vm.stopPrank();
+    //     ////////////////////////////////////////////////////////////////
+    //     //====== Initiate third Deposit + Cross-chain transfer ======//
+    //     //////////////////////////////////////////////////////////////
+    //     vm.startPrank(LiquidityProviderThree);
+    //     usdc.approve(address(wMaster), thirdAmountToDeposit);
+    //     wMaster.depositLiquidity(thirdAmountToDeposit);
+    //     vm.stopPrank();
 
-        assertEq(usdc.balanceOf(address(LiquidityProviderThree)), 0);
-        assertEq(usdc.balanceOf(address(wMaster)), 410*10**6);
-        assertEq(usdc.balanceOf(address(wChild)), 410*10**6);
+    //     assertEq(usdc.balanceOf(address(LiquidityProviderThree)), 0);
+    //     assertEq(usdc.balanceOf(address(wMaster)), 410*10**6);
+    //     assertEq(usdc.balanceOf(address(wChild)), 410*10**6);
         
-        //===== Adjust manually the LP emission
-        wMaster.updateUSDCAmountManually(LiquidityProviderThree, lp.totalSupply(), thirdAmountToDeposit, 320*10**6); //Not taking the user deposit in account
+    //     //===== Adjust manually the LP emission
+    //     wMaster.updateUSDCAmountManually(LiquidityProviderThree, lp.totalSupply(), thirdAmountToDeposit, 320*10**6); //Not taking the user deposit in account
 
-        //===== Check User LP balance
-        uint256 liquidityProviderThreeLpBalance = lp.balanceOf(LiquidityProviderThree);
-        assertEq(liquidityProviderThreeLpBalance, 440_340_909_090_909_090_907);
+    //     //===== Check User LP balance
+    //     uint256 liquidityProviderThreeLpBalance = lp.balanceOf(LiquidityProviderThree);
+    //     assertEq(liquidityProviderThreeLpBalance, 440_340_909_090_909_090_907);
 
-        //===== Mocking some fees
-        usdc.mint(address(wMaster), mockedFeeAccrued);
-        usdc.mint(address(wChild), mockedFeeAccrued);
+    //     //===== Mocking some fees
+    //     usdc.mint(address(wMaster), mockedFeeAccrued);
+    //     usdc.mint(address(wChild), mockedFeeAccrued);
 
-        /////////////////////////////////////////////////////////////////
-        //====== Initiate fourth Deposit + Cross-chain transfer ======//
-        ///////////////////////////////////////////////////////////////
-        uint256 fourthDepositAmount = USDC_INITIAL_BALANCE - amountToDeposit;
+    //     /////////////////////////////////////////////////////////////////
+    //     //====== Initiate fourth Deposit + Cross-chain transfer ======//
+    //     ///////////////////////////////////////////////////////////////
+    //     uint256 fourthDepositAmount = USDC_INITIAL_BALANCE - amountToDeposit;
 
-        vm.startPrank(LiquidityProvider);
-        usdc.approve(address(wMaster), fourthDepositAmount);
-        wMaster.depositLiquidity(fourthDepositAmount);
-        vm.stopPrank();
+    //     vm.startPrank(LiquidityProvider);
+    //     usdc.approve(address(wMaster), fourthDepositAmount);
+    //     wMaster.depositLiquidity(fourthDepositAmount);
+    //     vm.stopPrank();
 
-        assertEq(usdc.balanceOf(address(LiquidityProvider)), 0);
-        assertEq(usdc.balanceOf(address(wMaster)), 615*10**6);
-        assertEq(usdc.balanceOf(address(wChild)), 615*10**6);
+    //     assertEq(usdc.balanceOf(address(LiquidityProvider)), 0);
+    //     assertEq(usdc.balanceOf(address(wMaster)), 615*10**6);
+    //     assertEq(usdc.balanceOf(address(wChild)), 615*10**6);
         
-        //===== Adjust manually the LP emission
-        wMaster.updateUSDCAmountManually(LiquidityProvider, lp.totalSupply(), fourthDepositAmount, 830*10**6); //Not taking the user deposit in account
+    //     //===== Adjust manually the LP emission
+    //     wMaster.updateUSDCAmountManually(LiquidityProvider, lp.totalSupply(), fourthDepositAmount, 830*10**6); //Not taking the user deposit in account
 
-        //===== Check User LP balance
-        uint256 liquidityProviderSecondBalanceLpBalance = lp.balanceOf(LiquidityProvider);
-        assertEq(liquidityProviderSecondBalanceLpBalance, liquidityProviderFirstLpBalance + 348028477546549835705);
+    //     //===== Check User LP balance
+    //     uint256 liquidityProviderSecondBalanceLpBalance = lp.balanceOf(LiquidityProvider);
+    //     assertEq(liquidityProviderSecondBalanceLpBalance, liquidityProviderFirstLpBalance + 348028477546549835705);
 
-        //===== Mocking some fees
-        usdc.mint(address(wMaster), mockedFeeAccrued);
-        usdc.mint(address(wChild), mockedFeeAccrued);
+    //     //===== Mocking some fees
+    //     usdc.mint(address(wMaster), mockedFeeAccrued);
+    //     usdc.mint(address(wChild), mockedFeeAccrued);
 
-        ////////////////////////////////////////////////////////////////
-        //====== Initiate fifth Deposit + Cross-chain transfer ======//
-        //////////////////////////////////////////////////////////////
-        uint256 fifthDepositAmount = USDC_INITIAL_BALANCE - secondAmountToDeposit; //500-200
+    //     ////////////////////////////////////////////////////////////////
+    //     //====== Initiate fifth Deposit + Cross-chain transfer ======//
+    //     //////////////////////////////////////////////////////////////
+    //     uint256 fifthDepositAmount = USDC_INITIAL_BALANCE - secondAmountToDeposit; //500-200
 
-        vm.startPrank(LiquidityProviderTwo);
-        usdc.approve(address(wMaster), fifthDepositAmount);
-        wMaster.depositLiquidity(fifthDepositAmount);
-        vm.stopPrank();
+    //     vm.startPrank(LiquidityProviderTwo);
+    //     usdc.approve(address(wMaster), fifthDepositAmount);
+    //     wMaster.depositLiquidity(fifthDepositAmount);
+    //     vm.stopPrank();
 
-        assertEq(usdc.balanceOf(address(LiquidityProviderTwo)), 0);
-        assertEq(usdc.balanceOf(address(wMaster)), 770*10**6);
-        assertEq(usdc.balanceOf(address(wChild)), 770*10**6);
+    //     assertEq(usdc.balanceOf(address(LiquidityProviderTwo)), 0);
+    //     assertEq(usdc.balanceOf(address(wMaster)), 770*10**6);
+    //     assertEq(usdc.balanceOf(address(wChild)), 770*10**6);
 
-        //===== Adjust manually the LP emission
-        wMaster.updateUSDCAmountManually(LiquidityProviderTwo, lp.totalSupply(), fifthDepositAmount, 1240*10**6); //Something is breaking here.
+    //     //===== Adjust manually the LP emission
+    //     wMaster.updateUSDCAmountManually(LiquidityProviderTwo, lp.totalSupply(), fifthDepositAmount, 1240*10**6); //Something is breaking here.
 
-        //===== Check User LP balance
-        assertEq(lp.balanceOf(LiquidityProviderTwo), liquidityProviderTwoFirstLpBalance + 258916347207009857611);
+    //     //===== Check User LP balance
+    //     assertEq(lp.balanceOf(LiquidityProviderTwo), liquidityProviderTwoFirstLpBalance + 258916347207009857611);
 
-        //===== Mocking some fees
-        usdc.mint(address(wMaster), mockedFeeAccrued);
-        usdc.mint(address(wChild), mockedFeeAccrued);
+    //     //===== Mocking some fees
+    //     usdc.mint(address(wMaster), mockedFeeAccrued);
+    //     usdc.mint(address(wChild), mockedFeeAccrued);
 
-        //===== Total USDC balance
-        console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));
+    //     //===== Total USDC balance
+    //     console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));
 
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        ////////////////////////////////////////////////////////////// WITHDRAW //////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //==== LiquidityProvider
-        uint256 liquidityProviderBalanceBeforeWithdraw = lp.balanceOf(LiquidityProvider);
+    //     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //     ////////////////////////////////////////////////////////////// WITHDRAW //////////////////////////////////////////////////////////////
+    //     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //     //==== LiquidityProvider
+    //     uint256 liquidityProviderBalanceBeforeWithdraw = lp.balanceOf(LiquidityProvider);
 
-        vm.prank(LiquidityProvider);
-        wMaster.startWithdrawal(liquidityProviderBalanceBeforeWithdraw);
+    //     vm.prank(LiquidityProvider);
+    //     wMaster.startWithdrawal(liquidityProviderBalanceBeforeWithdraw);
 
-        vm.warp(7 days);
-        uint256 poolBalanceBeforeFirstWithdraw = usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild));
-        wMaster.updateUSDCAmountEarned(LiquidityProvider, lp.totalSupply(), liquidityProviderBalanceBeforeWithdraw, usdc.balanceOf(address(wChild)));
+    //     vm.warp(7 days);
+    //     uint256 poolBalanceBeforeFirstWithdraw = usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild));
+    //     wMaster.updateUSDCAmountEarned(LiquidityProvider, lp.totalSupply(), liquidityProviderBalanceBeforeWithdraw, usdc.balanceOf(address(wChild)));
 
-        uint256 liquidityProviderUSDCAmountEarned = 522490477;
+    //     uint256 liquidityProviderUSDCAmountEarned = 522490477;
 
-        vm.prank(Messenger);
-        wChild.ccipSendToPool(LiquidityProvider, 261245238);
+    //     vm.prank(Messenger);
+    //     wChild.ccipSendToPool(LiquidityProvider, 261245238);
 
-        vm.startPrank(LiquidityProvider);
-        lp.approve(address(wMaster), liquidityProviderBalanceBeforeWithdraw);
-        wMaster.completeWithdrawal();
-        vm.stopPrank();
+    //     vm.startPrank(LiquidityProvider);
+    //     lp.approve(address(wMaster), liquidityProviderBalanceBeforeWithdraw);
+    //     wMaster.completeWithdrawal();
+    //     vm.stopPrank();
 
-        assertEq(wMaster.s_withdrawRequests(), 0);
+    //     assertEq(wMaster.s_withdrawRequests(), 0);
 
-        assertEq(lp.balanceOf(LiquidityProvider), 0);
-        assertEq(usdc.balanceOf(LiquidityProvider), liquidityProviderUSDCAmountEarned);
+    //     assertEq(lp.balanceOf(LiquidityProvider), 0);
+    //     assertEq(usdc.balanceOf(LiquidityProvider), liquidityProviderUSDCAmountEarned);
         
-        //===== Total USDC balance
-        console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));
+    //     //===== Total USDC balance
+    //     console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));
 
-        //==== LiquidityProviderTwo
-        uint256 liquidityProviderTwoBalanceBeforeWithdraw = lp.balanceOf(LiquidityProviderTwo);
+    //     //==== LiquidityProviderTwo
+    //     uint256 liquidityProviderTwoBalanceBeforeWithdraw = lp.balanceOf(LiquidityProviderTwo);
 
-        vm.prank(LiquidityProviderTwo);
-        wMaster.startWithdrawal(liquidityProviderTwoBalanceBeforeWithdraw);
+    //     vm.prank(LiquidityProviderTwo);
+    //     wMaster.startWithdrawal(liquidityProviderTwoBalanceBeforeWithdraw);
 
-        vm.warp(7 days);
-        uint256 poolBalanceBeforeSecondWithdraw = usdc.balanceOf(address(wMaster));
-        wMaster.updateUSDCAmountEarned(LiquidityProviderTwo, lp.totalSupply(), liquidityProviderTwoBalanceBeforeWithdraw,  usdc.balanceOf(address(wChild)));
+    //     vm.warp(7 days);
+    //     uint256 poolBalanceBeforeSecondWithdraw = usdc.balanceOf(address(wMaster));
+    //     wMaster.updateUSDCAmountEarned(LiquidityProviderTwo, lp.totalSupply(), liquidityProviderTwoBalanceBeforeWithdraw,  usdc.balanceOf(address(wChild)));
 
-        uint256 liquidityProviderTwoUSDCAmountEarned = 513984281;
+    //     uint256 liquidityProviderTwoUSDCAmountEarned = 513984281;
 
-        vm.prank(Messenger);
-        wChild.ccipSendToPool(LiquidityProviderTwo, 256992140);
+    //     vm.prank(Messenger);
+    //     wChild.ccipSendToPool(LiquidityProviderTwo, 256992140);
 
-        vm.startPrank(LiquidityProviderTwo);
-        lp.approve(address(wMaster), liquidityProviderTwoBalanceBeforeWithdraw);
-        wMaster.completeWithdrawal();
-        vm.stopPrank();
+    //     vm.startPrank(LiquidityProviderTwo);
+    //     lp.approve(address(wMaster), liquidityProviderTwoBalanceBeforeWithdraw);
+    //     wMaster.completeWithdrawal();
+    //     vm.stopPrank();
 
-        assertEq(wMaster.s_withdrawRequests(), 0);
+    //     assertEq(wMaster.s_withdrawRequests(), 0);
 
-        assertEq(lp.balanceOf(LiquidityProviderTwo), 0);
-        assertEq(usdc.balanceOf(LiquidityProviderTwo), liquidityProviderTwoUSDCAmountEarned);
+    //     assertEq(lp.balanceOf(LiquidityProviderTwo), 0);
+    //     assertEq(usdc.balanceOf(LiquidityProviderTwo), liquidityProviderTwoUSDCAmountEarned);
         
-        //===== Total USDC balance
-        console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));
+    //     //===== Total USDC balance
+    //     console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));
         
-        //==== LiquidityProviderThree
-        uint256 liquidityProviderThreeBalanceBeforeWithdraw = lp.balanceOf(LiquidityProviderThree);
+    //     //==== LiquidityProviderThree
+    //     uint256 liquidityProviderThreeBalanceBeforeWithdraw = lp.balanceOf(LiquidityProviderThree);
 
-        vm.prank(LiquidityProviderThree);
-        wMaster.startWithdrawal(liquidityProviderThreeBalanceBeforeWithdraw);
+    //     vm.prank(LiquidityProviderThree);
+    //     wMaster.startWithdrawal(liquidityProviderThreeBalanceBeforeWithdraw);
 
-        vm.warp(7 days);
-        uint256 poolBalanceBeforeThirdWithdraw = usdc.balanceOf(address(wMaster));
-        wMaster.updateUSDCAmountEarned(LiquidityProviderThree, lp.totalSupply(), liquidityProviderThreeBalanceBeforeWithdraw, usdc.balanceOf(address(wChild)));
+    //     vm.warp(7 days);
+    //     uint256 poolBalanceBeforeThirdWithdraw = usdc.balanceOf(address(wMaster));
+    //     wMaster.updateUSDCAmountEarned(LiquidityProviderThree, lp.totalSupply(), liquidityProviderThreeBalanceBeforeWithdraw, usdc.balanceOf(address(wChild)));
 
-        uint256 liquidityProviderThreeUSDCAmountEarned = 513525242;
+    //     uint256 liquidityProviderThreeUSDCAmountEarned = 513525242;
 
-        vm.prank(Messenger);
-        wChild.ccipSendToPool(LiquidityProviderThree, 256762622);
+    //     vm.prank(Messenger);
+    //     wChild.ccipSendToPool(LiquidityProviderThree, 256762622);
 
-        assertEq(usdc.balanceOf(address(wMaster)), 513_525_242);
-        assertEq(usdc.balanceOf(address(wChild)), 0);        
+    //     assertEq(usdc.balanceOf(address(wMaster)), 513_525_242);
+    //     assertEq(usdc.balanceOf(address(wChild)), 0);        
 
-        vm.startPrank(LiquidityProviderThree);
-        lp.approve(address(wMaster), liquidityProviderThreeBalanceBeforeWithdraw);
-        wMaster.completeWithdrawal();
-        vm.stopPrank();
+    //     vm.startPrank(LiquidityProviderThree);
+    //     lp.approve(address(wMaster), liquidityProviderThreeBalanceBeforeWithdraw);
+    //     wMaster.completeWithdrawal();
+    //     vm.stopPrank();
 
-        assertEq(lp.balanceOf(LiquidityProviderThree), 0);
-        assertEq(usdc.balanceOf(LiquidityProviderThree), liquidityProviderThreeUSDCAmountEarned);
+    //     assertEq(lp.balanceOf(LiquidityProviderThree), 0);
+    //     assertEq(usdc.balanceOf(LiquidityProviderThree), liquidityProviderThreeUSDCAmountEarned);
         
-        //===== Total USDC balance
-        console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));
-    }
+    //     //===== Total USDC balance
+    //     console2.log("Master + Child", usdc.balanceOf(address(wMaster)) + usdc.balanceOf(address(wChild)));
+    // }
 
 }

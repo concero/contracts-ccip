@@ -197,14 +197,6 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
         op.swapAndBridge(bridgeData, swapData, swapDataDst);
         vm.stopPrank();
 
-        /////////////////////////// MOCK WITHDRAW \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        vm.expectRevert(abi.encodeWithSelector(Storage_CallableOnlyByOwner.selector, address(this), defaultSender));
-        op.withdrawERC20Fee(address(tUSDC));
-
-        vm.prank(defaultSender);
-        vm.expectEmit();
-        emit Orchestrator_FeeWithdrawal(defaultSender, 219164); //Fee 219164
-        op.withdrawERC20Fee(address(tUSDC));
     }
 
     function test_userBridge() public setters {

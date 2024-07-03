@@ -177,6 +177,7 @@ contract DexSwap is Storage, IDexSwap {
    * @dev This function can execute swap in any protocol compatible with UniV3 that implements the ISwapRouter
    */
   function _swapSushiV3Single(IDexSwap.SwapData memory _swapData, address _recipient) private {
+    if(_swapData.dexData.length < APPROVED) revert DexSwap_EmptyDexData();
     (address routerAddress, uint24 fee, uint256 deadline, uint160 sqrtPriceLimitX96) = abi.decode(_swapData.dexData, (address, uint24, uint256, uint160));
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();

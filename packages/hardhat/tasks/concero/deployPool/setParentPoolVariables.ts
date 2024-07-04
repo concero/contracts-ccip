@@ -49,7 +49,7 @@ async function setParentPoolJsHashes(deployableChain: CNetwork, abi: any) {
 
 async function setParentPoolCap(chain: CNetwork, abi: any) {
   try {
-    const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
+    const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = chain;
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
     const parentPoolProxyAddress = getEnvVar(`PARENTPROXY_${networkEnvKeys[srcChainName]}`) as Address;
     const poolCap = 100_000n * 10n ** 6n;
@@ -74,10 +74,6 @@ async function setParentPoolCap(chain: CNetwork, abi: any) {
 
 async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slotId: number) {
   try {
-    const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = chain;
-    const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
-    const parentPoolProxyAddress = getEnvVar(`PARENTPROXY_${networkEnvKeys[srcChainName]}`) as Address;
-    const { signer: dcSigner } = getEthersSignerAndProvider(dcUrl);
     const {
       functionsRouter: dcFunctionsRouter,
       functionsDonIdAlias: dcFunctionsDonIdAlias,
@@ -86,6 +82,9 @@ async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slotId: nu
       viemChain: dcViemChain,
       name: dcName,
     } = chain;
+    const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+    const parentPoolProxyAddress = getEnvVar(`PARENTPROXY_${networkEnvKeys[dcName]}`) as Address;
+    const { signer: dcSigner } = getEthersSignerAndProvider(dcUrl);
 
     const secretsManager = new SecretsManager({
       signer: dcSigner,
@@ -116,7 +115,7 @@ async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slotId: nu
     });
 
     log(
-      `Set ${dcName}:${conceroProxy} donHostedSecretsVersion[${rowBySlotId.version}]. Gas used: ${setDstConceroContractGasUsed.toString()}`,
+      `Set ${dcName}:${parentPoolProxyAddress} donHostedSecretsVersion[${rowBySlotId.version}]. Gas used: ${setDstConceroContractGasUsed.toString()}`,
       "setDonHostedSecretsVersion",
     );
   } catch (error) {
@@ -126,7 +125,7 @@ async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slotId: nu
 
 async function setParentPoolSecretsSlotId(chian: CNetwork, abi: any, slotId: number) {
   try {
-    const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
+    const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = chian;
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
     const parentPoolProxyAddress = getEnvVar(`PARENTPROXY_${networkEnvKeys[srcChainName]}`) as Address;
 

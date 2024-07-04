@@ -140,7 +140,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    * @param _hashSum  the JsCode
    * @dev this functions was used inside of ConceroFunctions
    */
-  function setSrcJsHashSum(bytes32 _hashSum) external onlyOwner {
+  function setJsHashSum(bytes32 _hashSum) external onlyOwner {
     s_hashSum = _hashSum;
 
     emit ConceroAutomation_HashSumUpdated(_hashSum);

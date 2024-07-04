@@ -12,7 +12,7 @@ const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEn
   const implementationAddress = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
 
   console.log("Deploying InfraProxy...");
-  const conceroProxyDeployment = (await deploy("ConceroProxy", {
+  const conceroProxyDeployment = (await deploy("Proxy/InfraProxy", {
     from: proxyDeployer,
     args: [implementationAddress, proxyDeployer, "0x", deployer],
     log: true,
@@ -21,7 +21,7 @@ const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEn
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {
-    log(`ConceroProxy deployed to ${name} to: ${conceroProxyDeployment.address}`, "deployConceroProxy");
+    log(`InfraProxy deployed to ${name} to: ${conceroProxyDeployment.address}`, "deployInfraProxy");
     updateEnvVariable(
       `CONCEROPROXY_${networkEnvKeys[name]}`,
       conceroProxyDeployment.address,
@@ -31,4 +31,4 @@ const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEn
 };
 
 export default deployConceroProxy;
-deployConceroProxy.tags = ["ConceroProxy"];
+deployConceroProxy.tags = ["InfraProxy"];

@@ -46,7 +46,7 @@ contract ParentStorage {
   uint256[50] __gap;
 
   ///@notice array of Pools to receive Liquidity through `ccipSend` function
-  IParentPool.Pools[] poolsToDistribute;
+  IParentPool.Pools[] s_poolsToDistribute;
 
   ///@notice Mapping to keep track of allowed pool receiver
   mapping(uint64 chainSelector => address pool) public s_poolToSendTo;
@@ -112,7 +112,7 @@ contract ParentStorage {
    */
   function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
     if (s_poolToSendTo[_chainSelector] != address(0)) revert ParentStorage_DuplicatedAddress();
-    poolsToDistribute.push(IParentPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
+    s_poolsToDistribute.push(IParentPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
 
     s_poolToSendTo[_chainSelector] = _pool;
 
@@ -124,11 +124,11 @@ contract ParentStorage {
    * @param _chainSelector the CCIP chainSelector for the specific chain
    */
   function removePoolsFromListOfSenders(uint64 _chainSelector) external payable onlyOwner {
-    uint256 arrayLength = poolsToDistribute.length;
+    uint256 arrayLength = s_poolsToDistribute.length;
     for (uint256 i; i < arrayLength; ) {
-      if (poolsToDistribute[i].chainSelector == _chainSelector) {
-        poolsToDistribute[i] = poolsToDistribute[poolsToDistribute.length - 1];
-        poolsToDistribute.pop();
+      if (s_poolsToDistribute[i].chainSelector == _chainSelector) {
+        s_poolsToDistribute[i] = s_poolsToDistribute[s_poolsToDistribute.length - 1];
+        s_poolsToDistribute.pop();
         delete s_poolToSendTo[_chainSelector];
       }
       unchecked {

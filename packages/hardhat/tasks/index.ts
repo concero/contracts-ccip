@@ -16,6 +16,9 @@ import deployInfraProxy from "./concero/deployInfra/deployInfraProxy";
 import deployConceroDexSwap from "./concero/deployInfra/deployConceroDexSwap";
 import deployConceroOrchestrator from "./concero/deployInfra/deployConceroOrchestrator";
 import withdrawInfraProxy from "./concero/withdraw/withdrawInfraProxy";
+import deployParentPool from "./concero/deployPool/deployParentPool";
+import deployLpToken from "./concero/deployLpToken/deployLpToken";
+import deployAutomations from "./concero/deployAutomations/deployAutomations";
 
 export default {
   billing,
@@ -36,4 +39,7 @@ export default {
   remove,
   timeout,
   withdrawInfraProxy,
+  deployParentPool,
+  deployLpToken,
+  deployAutomations,
 };

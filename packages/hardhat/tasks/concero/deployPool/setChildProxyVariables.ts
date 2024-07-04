@@ -12,7 +12,7 @@ async function setConceroProxySender(hre, liveChains: CNetwork[]) {
   const { name: chainName, viemChain, url } = chain;
   const clients = getClients(viemChain, url);
   const { publicClient, account, walletClient } = clients;
-  const { abi } = await load("../artifacts/contracts/ChildPool.sol/ChildPool.json");
+  const { abi } = await load("../artifacts/contracts/ConceroChildPool.sol/ConceroChildPool.json");
   if (!chainName) throw new Error("Chain name not found");
 
   for (const dstChain of liveChains) {
@@ -22,7 +22,7 @@ async function setConceroProxySender(hre, liveChains: CNetwork[]) {
     if (!dstChainName) throw new Error("Destination chain name not found");
     if (!dstChainSelector) throw new Error("Destination chain selector not found");
     const dstConceroContract = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
-    const conceroPoolAddress = getEnvVar(`CHILD_PROXY_${networkEnvKeys[chainName]}` as keyof env) as Address;
+    const conceroPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env) as Address;
 
     const { request: setSenderReq } = await publicClient.simulateContract({
       address: conceroPoolAddress,

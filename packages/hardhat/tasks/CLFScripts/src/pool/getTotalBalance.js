@@ -6,7 +6,7 @@ async function f() {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa869',
 			usdcAddress: '${USDC_FUJI}',
-			poolAddress: '${CHILD_POOL_AVALANCHE_FUJI}', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '${CHILD_POOL_AVALANCHE_FUJI}',
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -16,7 +16,7 @@ async function f() {
 			],
 			chainId: '0xaa36a7',
 			usdcAddress: '${USDC_SEPOLIA}',
-			poolAddress: '${CHILD_POOL_SEPOLIA}', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '${CHILD_POOL_SEPOLIA}',
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -26,18 +26,8 @@ async function f() {
 			],
 			chainId: '0x66eee',
 			usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
-			poolAddress: '${CHILD_POOL_ARBITRUM_SEPOLIA}', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '${CHILD_POOL_ARBITRUM_SEPOLIA}',
 		},
-		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`]: {
-		// 	urls: [
-		// 		`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-		// 		'https://base-sepolia.blockpi.network/v1/rpc/public',
-		// 		'https://base-sepolia-rpc.publicnode.com',
-		// 	],
-		// 	chainId: '0x14a34',
-		// 	usdcAddress: '${USDC_BASE_SEPOLIA}',
-		// 	poolAddress: '${PARENT_POOL_BASE_SEPOLIA}', //WE GET THIS ON-CHAIN
-		// },
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
 			urls: [
 				`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
@@ -46,7 +36,7 @@ async function f() {
 			],
 			chainId: '0xaa37dc',
 			usdcAddress: '${USDC_OPTIMISM_SEPOLIA}',
-			poolAddress: '${CHILD_POOL_OPTIMISM_SEPOLIA}', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '${CHILD_POOL_OPTIMISM_SEPOLIA}',
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY}').toString(16)}`]: {
 			urls: [
@@ -56,7 +46,7 @@ async function f() {
 			],
 			chainId: '0x13882',
 			usdcAddress: '${USDC_AMOY}',
-			poolAddress: '${CHILD_POOL_POLYGON_AMOY}', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '${CHILD_POOL_POLYGON_AMOY}',
 		},
 	};
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];

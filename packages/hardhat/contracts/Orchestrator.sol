@@ -9,6 +9,7 @@ import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {StorageSetters} from "./Libraries/StorageSetters.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
+import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_POLYGON_AMOY, USDC_ARBITRUM_SEPOLIA, USDC_BASE_SEPOLIA, USDC_OPTIMISM_SEPOLIA} from "./Constants.sol";
 
 ///////////////////////////////
 /////////////ERROR/////////////
@@ -27,8 +28,17 @@ error Orchestrator_InvalidSwapData();
 error Orchestrator_InvalidSwapEtherData();
 ///@notice error emitted when the token to bridge is not USDC
 error Orchestrator_InvalidBridgeToken();
+///@notice error emitted when a non-messenger address calls
+error Orchestrator_NotMessenger(address);
+///@notice error emitted when the chosen token is not allowed
+error Orchestrator_TokenTypeOutOfBounds();
+///@notice error emitted when the chain index is incorrect
+error Orchestrator_ChainIndexOutOfBounds();
 
 contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
+  ///////////////////////
+  ///TYPE DECLARATIONS///
+  ///////////////////////
   using SafeERC20 for IERC20;
 
   ///////////////
@@ -75,6 +85,14 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
   ///////////////
   ///MODIFIERS///
   ///////////////
+  /**
+   * @notice modifier to check if the caller is the an approved messenger
+   */
+  modifier onlyMessenger() {
+    if (isMessenger(msg.sender) == false) revert Orchestrator_NotMessenger(msg.sender);
+    _;
+  }
+  
   modifier tokenAmountSufficiency(address token, uint256 amount) {
     if (token != address(0)) {
       uint256 balance = IERC20(token).balanceOf(msg.sender);
@@ -93,7 +111,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
   modifier validateSwapData(IDexSwap.SwapData[] calldata _srcSwapData) {
     uint256 swapDataLength = _srcSwapData.length;
 
-    if (swapDataLength == 0 || swapDataLength > 5) {
+    if (swapDataLength == 0 || swapDataLength > 5 || _srcSwapData[0].fromAmount == 0) {
       revert Orchestrator_InvalidSwapData();
     }
 
@@ -108,7 +126,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] calldata srcSwapData,
     IDexSwap.SwapData[] calldata dstSwapData
-  ) external validateBridgeData(bridgeData) {
+  ) external validateSwapData(srcSwapData) validateBridgeData(bridgeData) validateSwapData(dstSwapData){
     emit Orchestrator_StartSwapAndBridge();
 
     if (srcSwapData.length == 0) revert Orchestrator_InvalidSwapData();
@@ -116,12 +134,12 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
 
     uint256 toTokenBalanceBefore = IERC20(bridgeToken).balanceOf(address(this));
     //Swap -> money come back to this contract
-    uint256 receivedAmount = _swap(srcSwapData, 0, false, address(this));
+    uint256 receivedAmount = _swap(srcSwapData, 0, false, address(this)); 
 
     uint256 toTokenBalanceAfter = IERC20(bridgeToken).balanceOf(address(this));
     
     if(toTokenBalanceAfter - toTokenBalanceBefore != receivedAmount) revert Orchestrator_InvalidBridgeToken();
-    bridgeData.amount = receivedAmount;
+    bridgeData.amount =   ;
 
     (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData));
     if (bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
@@ -197,7 +215,6 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
   //////////////////////////
   /// INTERNAL FUNCTIONS ///
   //////////////////////////
-  error DexSwap_InvalidDexData();
   function _swap(IDexSwap.SwapData[] memory swapData, uint256 _nativeAmount, bool isFeesNeeded, address _receiver) internal returns (uint256) {
     address fromToken = swapData[0].fromToken;
     uint256 fromAmount = swapData[0].fromAmount;
@@ -222,5 +239,65 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
 
     uint256 toTokenBalanceAfter = IERC20(toToken).balanceOf(address(this));
     return toTokenBalanceAfter - toTokenBalanceBefore;
+  }
+
+  ///////////////////////////
+  ///VIEW & PURE FUNCTIONS///
+  ///////////////////////////
+  /**
+   * @notice Function to check for allowed tokens on specific networks
+   * @param token The enum flag of the token
+   * @param _chainIndex the index of the chain
+   */
+  function getToken(CCIPToken token, Chain _chainIndex) internal view returns (address) {
+    address[4][2] memory tokens;
+
+    // Initialize BNM addresses
+    tokens[uint(CCIPToken.bnm)][uint(Chain.arb)] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
+    tokens[uint(CCIPToken.bnm)][uint(Chain.base)] = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e; // base
+    tokens[uint(CCIPToken.bnm)][uint(Chain.opt)] = 0x8aF4204e30565DF93352fE8E1De78925F6664dA7; // opt
+    tokens[uint(CCIPToken.bnm)][uint(Chain.pol)] = 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4; // pol
+
+    // Initialize USDC addresses
+    tokens[uint(CCIPToken.usdc)][uint(Chain.arb)] = block.chainid == 42161 ? USDC_ARBITRUM : 	USDC_ARBITRUM_SEPOLIA;
+    tokens[uint(CCIPToken.usdc)][uint(Chain.base)] = block.chainid == 8453 ? USDC_BASE : USDC_BASE_SEPOLIA;
+    tokens[uint(CCIPToken.usdc)][uint(Chain.opt)] = block.chainid == 10 ? USDC_OPTIMISM : USDC_OPTIMISM_SEPOLIA;
+    tokens[uint(CCIPToken.usdc)][uint(Chain.pol)] = block.chainid == 137 ? USDC_POLYGON : USDC_POLYGON_AMOY;
+
+    if (uint256(token) > tokens.length) revert Orchestrator_TokenTypeOutOfBounds();
+    if (uint256(_chainIndex) > tokens[uint256(token)].length) revert Orchestrator_ChainIndexOutOfBounds();
+
+    return tokens[uint256(token)][uint256(_chainIndex)];
+  }
+
+  /**
+   * @notice Internal function to convert USDC Decimals to LP Decimals
+   * @param _amount the amount of USDC
+   * @return _adjustedAmount the adjusted amount
+   */
+  function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
+    _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
+  }
+
+  /**
+   * @notice Function to check if a caller address is an allowed messenger
+   * @param _messenger the address of the caller
+   */
+  function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
+    address[] memory messengers = new address[](4); //Number of messengers. To define.
+    messengers[0] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267; //fake messenger from foundry environment
+    messengers[1] = address(0);
+    messengers[2] = address(0);
+    messengers[3] = address(0);
+
+    for (uint256 i; i < messengers.length; ) {
+      if (_messenger == messengers[i]) {
+        return true;
+      }
+      unchecked {
+        ++i;
+      }
+    }
+    return false;
   }
 }

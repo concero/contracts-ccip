@@ -7,7 +7,7 @@ import {Test, console} from "forge-std/Test.sol";
 //Master & Infra Contracts
 import {DexSwap} from "contracts/DexSwap.sol";
 import {ParentPool} from "contracts/ParentPool.sol";
-import {Concero} from "contracts/Concero.sol";
+import {ConceroBridge} from "contracts/ConceroBridge.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
 import {LPToken} from "contracts/LPToken.sol";
 import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
@@ -71,7 +71,7 @@ contract ProtocolTest is Test {
     //==== Instantiate Base Contracts
     DexSwap public dex;
     ParentPool public pool;
-    Concero public concero;
+    ConceroBridge public concero;
     Orchestrator public orch;
     Orchestrator public orchEmpty;
     InfraProxy public proxy;
@@ -94,7 +94,7 @@ contract ProtocolTest is Test {
     //==== Instantiate Arbitrum Contracts
     DexSwap public dexDst;
     ConceroChildPool public child;
-    Concero public conceroDst;
+    ConceroBridge public conceroDst;
     Orchestrator public orchDst;
     Orchestrator public orchEmptyDst;
     InfraProxy public proxyDst;

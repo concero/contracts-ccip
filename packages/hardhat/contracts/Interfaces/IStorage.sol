@@ -1,7 +1,8 @@
-//SPDX-License-Identificer: MIT
+//SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
 interface IStorage {
+  //@audit ENUM CANNOT BE HERE
   ///@notice Chainlink Functions Request Type
   enum RequestType {
     addUnconfirmedTxDst,

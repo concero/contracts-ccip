@@ -39,13 +39,13 @@ contract DexSwap is Storage, IDexSwap {
   ///////////////
   ///CONSTANTS///
   ///////////////
+  ///@notice removing magic-numbers
   uint256 private constant BASE_CHAIN_ID = 8453; //Testnet
   uint256 private constant AVAX_CHAIN_ID = 43114; //Testnet
 
   ///////////////
   ///IMMUTABLE///
   ///////////////
-  ///@notice Immutable variable to hold proxy address
   address private immutable i_proxy;
   ///@notice immutable variable to hold wEth address
   address private immutable i_wEth;
@@ -61,14 +61,9 @@ contract DexSwap is Storage, IDexSwap {
   /////////////////////////////////////////////////////////////////
   ////////////////////////////FUNCTIONS////////////////////////////
   /////////////////////////////////////////////////////////////////
-  constructor(address _proxy, address _wEth) Storage(msg.sender) {
+  constructor(address _proxy, address _wEth) {
     i_proxy = _proxy;
     i_wEth = _wEth;
-  }
-
-  modifier onlyOwner() {
-    if (msg.sender != i_owner) revert DexSwap_CallableOnlyByOwner(msg.sender, i_owner);
-    _;
   }
 
   /**
@@ -367,27 +362,6 @@ contract DexSwap is Storage, IDexSwap {
     amounts = IUniswapV2Router02(routerAddress).swapExactETHForTokens{value: _amount}(_swapData.toAmountMin, path, _recipient, deadline);
   }
 
-  /**
-   * @notice function to withdraw any dust that may be stuck in this contract
-   * @param _token the address of the token to be withdraw
-   * @param _amount the amount of dust to be collected
-   */
-  function dustRemoval(address _token, uint256 _amount) external payable onlyOwner {
-    emit DexSwap_RemovingDust(msg.sender, _amount);
-
-    IERC20(_token).safeTransfer(msg.sender, _amount);
-  }
-
-  /**
-   * @notice function to withdraw any dust that may be stuck in this contract
-   * @param _receiver the address that will receive the amount
-   */
-  function dustEtherRemoval(address _receiver) external onlyOwner {
-    uint256 amount = address(this).balance;
-
-    (bool sent, ) = _receiver.call{value: amount}("");
-    if (sent == false) revert();
-  }
 }
 
 /** Arbitrum

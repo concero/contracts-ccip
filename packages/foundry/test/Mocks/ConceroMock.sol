@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.20;
 
-import {Concero} from "contracts/Concero.sol";
+import {ConceroBridge} from "contracts/ConceroBridge.sol";
 import {Storage} from "contracts/Libraries/Storage.sol";
 
-contract ConceroMock is Concero {
+contract ConceroMock is ConceroBridge {
 
     constructor(
             Storage.FunctionsVariables memory _variables,
@@ -15,7 +15,7 @@ contract ConceroMock is Concero {
             address _dexSwap,
             address _pool,
             address _proxy
-    ) Concero(
+    ) ConceroBridge(
             _variables,
             _chainSelector,
             _chainIndex,

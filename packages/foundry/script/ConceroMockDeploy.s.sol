@@ -3,7 +3,7 @@ pragma solidity 0.8.20;
 
 import {Script, console} from "forge-std/Script.sol";
 import {ConceroMock} from "../test/Mocks/ConceroMock.sol";
-import {Concero} from "contracts/Concero.sol";
+import {ConceroBridge} from "contracts/ConceroBridge.sol";
 import {Storage} from "contracts/Libraries/Storage.sol";
 
 contract ConceroMockDeploy is Script {
@@ -17,10 +17,10 @@ contract ConceroMockDeploy is Script {
             address _dexSwap,
             address _pool,
             address _proxy
-        ) public returns(Concero concero){
+        ) public returns(ConceroBridge concero){
 
         vm.startBroadcast();
-        concero = new Concero(
+        concero = new ConceroBridge(
             _variables,
             _chainSelector,
             _chainIndex,

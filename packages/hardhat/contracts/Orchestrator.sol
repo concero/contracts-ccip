@@ -32,6 +32,11 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
   using SafeERC20 for IERC20;
 
   ///////////////
+  ///CONSTANTS///
+  ///////////////
+  uint16 internal constant CONCERO_FEE_FACTOR = 1000;
+
+  ///////////////
   ///IMMUTABLE///
   ///////////////
   ///@notice the address of Functions router

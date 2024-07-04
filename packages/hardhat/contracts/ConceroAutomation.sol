@@ -205,11 +205,10 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     bytes[] memory args = new bytes[](4);
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
-    args[2] = abi.encodePacked(liquidityProvider); //We need to send this as data through CCIP to updated the MasterPool storage.
-    args[3] = abi.encodePacked(amountToRequest); //Amount is the same for all pools
+    args[2] = abi.encodePacked(liquidityProvider);
+    args[3] = abi.encodePacked(amountToRequest);
 
-    //Commented so tests don't fail.
-    bytes32 reqId /*= _sendRequest(args, JS_CODE)*/; //@No JS code yet
+    bytes32 reqId = _sendRequest(args, JS_CODE);
 
     s_requests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest});
 

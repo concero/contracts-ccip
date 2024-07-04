@@ -88,7 +88,8 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   uint256 private constant ALLOWED = 1;
   uint256 private constant USDC_DECIMALS = 10 ** 6;
   uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
-  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
+  //  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
+  uint256 private constant MIN_DEPOSIT = 10 * 10 ** 6;
   uint256 private constant PRECISION_HANDLER = 10 ** 10;
 
   ///@notice Chainlink Functions Gas Limit
@@ -212,7 +213,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     if (_usdcAmount < MIN_DEPOSIT) revert ParentPool_AmountBelowMinimum(MIN_DEPOSIT);
     if (s_maxDeposit != 0 && s_maxDeposit < _usdcAmount + i_USDC.balanceOf(address(this)) + s_loansInUse) revert ParentPool_MaxCapReached(s_maxDeposit);
 
-    uint256 numberOfPools = poolsToDistribute.length;
+    uint256 numberOfPools = s_poolsToDistribute.length;
 
     if (numberOfPools < 1) revert ParentPool_ThereIsNoPoolToDistribute();
 
@@ -222,15 +223,14 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
 
-    //Commented so tests don't fail.
-    bytes32 requestId /* = _sendRequest(args, JS_CODE)*/; // No JS code yet.
+    bytes32 requestId = _sendRequest(args, JS_CODE);
 
     s_requests[requestId] = IParentPool.CLARequest({
       requestType: IParentPool.RequestType.GetTotalUSDC,
       liquidityProvider: msg.sender,
       usdcBeforeRequest: i_USDC.balanceOf(address(this)) + s_loansInUse,
       lpSupplyBeforeRequest: i_lp.totalSupply(),
-      amount: _usdcAmount //Here it's the usdc amount
+      amount: _usdcAmount
     });
 
     emit ParentPool_SuccessfulDeposited(msg.sender, _usdcAmount, i_USDC);
@@ -248,22 +248,21 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     if (i_lp.balanceOf(msg.sender) < _lpAmount) revert ParentPool_InsufficientBalance();
     if (s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ParentPool_ActiveRequestNotFulfilledYet();
 
-    uint256 numberOfPools = poolsToDistribute.length;
+    uint256 numberOfPools = s_poolsToDistribute.length;
 
     bytes[] memory args = new bytes[](15);
     for (uint i; i < numberOfPools; i++) {
-      args[i] = abi.encodePacked(poolsToDistribute[i].chainSelector);
+      args[i] = abi.encodePacked(s_poolsToDistribute[i].chainSelector);
     }
 
-    //Commented so tests don't fail.
-    bytes32 requestId /*= _sendRequest(args, JS_CODE)*/; // No JS code yet.
+    bytes32 requestId = _sendRequest(args, JS_CODE);
 
     s_requests[requestId] = IParentPool.CLARequest({
       requestType: IParentPool.RequestType.PerformWithdrawal,
       liquidityProvider: msg.sender,
       usdcBeforeRequest: 0,
       lpSupplyBeforeRequest: i_lp.totalSupply(),
-      amount: _lpAmount //Here it's the lp amount
+      amount: _lpAmount
     });
 
     emit ParentPool_WithdrawRequest(msg.sender, i_USDC, block.timestamp + 597_600);
@@ -355,7 +354,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     tokenAmounts[0] = tokenAmount;
 
     for (uint256 i; i < _numberOfPools; ) {
-      IParentPool.Pools memory pool = poolsToDistribute[i];
+      IParentPool.Pools memory pool = s_poolsToDistribute[i];
 
       Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
         receiver: abi.encode(pool.poolAddress),
@@ -464,7 +463,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @dev _totalUSDCCrossChain MUST have 10**6 decimals.
    */
   function _updateUsdcAmountEarned(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _lpToBurn, uint256 _totalUSDCCrossChain) private {
-    uint256 numberOfPools = poolsToDistribute.length;
+    uint256 numberOfPools = s_poolsToDistribute.length;
     uint256 totalCrossChainBalance = _totalUSDCCrossChain + i_USDC.balanceOf(address(this)) + s_loansInUse;
 
     //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
@@ -516,7 +515,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    */
   function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
     address[] memory messengers = new address[](4); //Number of messengers. To define.
-    messengers[0] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267; //fake messenger from foundry environment
+    messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
     messengers[1] = address(0);
     messengers[2] = address(0);
     messengers[3] = address(0);

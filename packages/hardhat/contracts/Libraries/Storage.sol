@@ -32,7 +32,6 @@ abstract contract Storage is IStorage {
   ///////////////
   ///@notice removing magic-numbers
   uint256 internal constant APPROVED = 1;
-  uint16 internal constant CONCERO_FEE_FACTOR = 1000;
   uint256 private constant USDC_DECIMALS = 10 ** 6;
   uint256 private constant STANDARD_TOKEN_DECIMALS = 10 ** 18;
 

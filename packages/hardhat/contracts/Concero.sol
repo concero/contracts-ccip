@@ -33,6 +33,11 @@ error Concero_ItsNotOrchestrator(address caller);
 
 contract Concero is ConceroCCIP {
   using SafeERC20 for IERC20;
+  
+  ///////////////
+  ///CONSTANTS///
+  ///////////////
+  uint16 internal constant CONCERO_FEE_FACTOR = 1000;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////

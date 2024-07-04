@@ -52,14 +52,14 @@ contract Automation is ProtocolTestnet {
 
         //===== Ownable Revert
         vm.expectRevert(abi.encodeWithSelector(OwnableUnauthorizedAccount.selector, address(this)));
-        automation.setSrcJsHashSum(hashSum);
+        automation.setJsHashSum(hashSum);
 
         //====== Success
 
         vm.prank(Tester);
         vm.expectEmit();
         emit ConceroAutomation_HashSumUpdated(hashSum);
-        automation.setSrcJsHashSum(hashSum);
+        automation.setJsHashSum(hashSum); 
     }
 
     event ConceroAutomation_EthersHashSumUpdated(bytes32);

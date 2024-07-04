@@ -1,12 +1,25 @@
-//SPDX-License-Identificer: MIT
+//SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
 import {Storage} from "./Storage.sol";
 
 contract StorageSetters is Storage {
+  ///////////////////////////////
+  /////////////ERROR/////////////
+  ///////////////////////////////
+
   ///@notice error emitted when the input is the address(0)
   error Storage_InvalidAddress();
   error Storage_CallableOnlyByOwner(address msgSender, address owner);
+
+  ///////////////
+  ///CONSTANTS///
+  ///////////////
+
+  ///////////////
+  ///IMMUTABLE///
+  ///////////////
+  address internal immutable i_owner;
 
   event CLFPremiumFeeUpdated(uint64 chainSelector, uint256 previousValue, uint256 feeAmount);
   event ConceroContractUpdated(uint64 chainSelector, address conceroContract);
@@ -15,6 +28,8 @@ contract StorageSetters is Storage {
   event DestinationJsHashSumUpdated(bytes32 previousDstHashSum, bytes32 newDstHashSum);
   event SourceJsHashSumUpdated(bytes32 previousSrcHashSum, bytes32 newSrcHashSum);
   event EthersHashSumUpdated(bytes32 previousValue, bytes32 hashSum);
+  ///@notice event emitted when a new router address is added
+  event Storage_NewRouterAdded(address router, uint256 isApproved);
   ///@notice event emitted a cross-chain Gas price is updated.
   event StorageSetters_LastGasPriceUpdated(uint64 chainSelector, uint256 feeAmount);
   ///@notice event emitted when the Link to Usdc rate is updated
@@ -24,7 +39,9 @@ contract StorageSetters is Storage {
   ///@notice event emitted when the Link to Native rate is updated
   event StorageSetters_LinkNativeRateUpdated(uint256 amount);
 
-  constructor(address _initialOwner) Storage(_initialOwner) {}
+  constructor(address _initialOwner) {
+    i_owner = _initialOwner;
+  }
 
   modifier onlyOwner() {
     if (msg.sender != i_owner) revert Storage_CallableOnlyByOwner(msg.sender, i_owner);

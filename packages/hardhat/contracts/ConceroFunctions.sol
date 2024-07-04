@@ -8,6 +8,7 @@ import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/l
 import {Storage} from "./Libraries/Storage.sol";
 import {IParentPool} from "./Interfaces/IParentPool.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
+import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_POLYGON_AMOY, USDC_ARBITRUM_SEPOLIA, USDC_BASE_SEPOLIA, USDC_OPTIMISM_SEPOLIA} from "./Constants.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -24,6 +25,13 @@ error TxAlreadyConfirmed();
 error AddressNotSet();
 ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
 error ConceroFunctions_ItsNotOrchestrator(address caller);
+///@notice error emitted when a non-messenger address calls
+error ConceroFunctions_NotMessenger(address);
+///@notice error emitted when the chosen token is not allowed
+error ConceroFunctions_TokenTypeOutOfBounds();
+///@notice error emitted when the chain index is incorrect
+error ConceroFunctions_ChainIndexOutOfBounds();
+
 error TXReleasedFailed(bytes error); // todo: TXReleasE
 
 contract ConceroFunctions is FunctionsClient, Storage {
@@ -35,10 +43,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
 
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
-  ///////////////////////////////////////////////////////////
-  ///////////////
-  ///CONSTANTS///
-  ///////////////
+  ///////////////////////////////////////////////////////////  
   ///@notice
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   ///@notice
@@ -82,6 +87,17 @@ contract ConceroFunctions is FunctionsClient, Storage {
   ///@notice emitted when the concero pool address is updated
   event ConceroPoolAddressUpdated(address previousAddress, address pool);
 
+  ///////////////
+  ///MODIFIERS///
+  ///////////////
+  /**
+   * @notice modifier to check if the caller is the an approved messenger
+   */
+  modifier onlyMessenger() {
+    if (isMessenger(msg.sender) == false) revert ConceroFunctions_NotMessenger(msg.sender);
+    _;
+  }
+  
   constructor(
     FunctionsVariables memory _variables,
     uint64 _chainSelector,
@@ -89,7 +105,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
     address _dexSwap,
     address _pool,
     address _proxy
-  ) FunctionsClient(_variables.functionsRouter) Storage(msg.sender) {
+  ) FunctionsClient(_variables.functionsRouter) {
     i_donId = _variables.donId;
     i_subscriptionId = _variables.subscriptionId;
     CHAIN_SELECTOR = _chainSelector;
@@ -285,5 +301,65 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_latestLinkUsdcRate = linkUsdcRate == 0 ? s_latestLinkUsdcRate : linkUsdcRate;
     s_latestNativeUsdcRate = nativeUsdcRate == 0 ? s_latestNativeUsdcRate : nativeUsdcRate;
     s_latestLinkNativeRate = linkNativeRate == 0 ? s_latestLinkNativeRate : linkNativeRate;
+  }
+
+  ///////////////////////////
+  ///VIEW & PURE FUNCTIONS///
+  ///////////////////////////
+  /**
+   * @notice Function to check for allowed tokens on specific networks
+   * @param token The enum flag of the token
+   * @param _chainIndex the index of the chain
+   */
+  function getToken(CCIPToken token, Chain _chainIndex) internal view returns (address) {
+    address[4][2] memory tokens;
+
+    // Initialize BNM addresses
+    tokens[uint(CCIPToken.bnm)][uint(Chain.arb)] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
+    tokens[uint(CCIPToken.bnm)][uint(Chain.base)] = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e; // base
+    tokens[uint(CCIPToken.bnm)][uint(Chain.opt)] = 0x8aF4204e30565DF93352fE8E1De78925F6664dA7; // opt
+    tokens[uint(CCIPToken.bnm)][uint(Chain.pol)] = 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4; // pol
+
+    // Initialize USDC addresses
+    tokens[uint(CCIPToken.usdc)][uint(Chain.arb)] = block.chainid == 42161 ? USDC_ARBITRUM : 	USDC_ARBITRUM_SEPOLIA;
+    tokens[uint(CCIPToken.usdc)][uint(Chain.base)] = block.chainid == 8453 ? USDC_BASE : USDC_BASE_SEPOLIA;
+    tokens[uint(CCIPToken.usdc)][uint(Chain.opt)] = block.chainid == 10 ? USDC_OPTIMISM : USDC_OPTIMISM_SEPOLIA;
+    tokens[uint(CCIPToken.usdc)][uint(Chain.pol)] = block.chainid == 137 ? USDC_POLYGON : USDC_POLYGON_AMOY;
+
+    if (uint256(token) > tokens.length) revert ConceroFunctions_TokenTypeOutOfBounds();
+    if (uint256(_chainIndex) > tokens[uint256(token)].length) revert ConceroFunctions_ChainIndexOutOfBounds();
+
+    return tokens[uint256(token)][uint256(_chainIndex)];
+  }
+
+  /**
+   * @notice Internal function to convert USDC Decimals to LP Decimals
+   * @param _amount the amount of USDC
+   * @return _adjustedAmount the adjusted amount
+   */
+  function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
+    _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
+  }
+
+  /**
+   * @notice Function to check if a caller address is an allowed messenger
+   * @param _messenger the address of the caller
+   */
+  function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
+    address[] memory messengers = new address[](4); //Number of messengers. To define.
+    messengers[0] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267; //fake messenger from foundry environment
+    messengers[1] = address(0);
+    messengers[2] = address(0);
+    messengers[3] = address(0);
+
+    for (uint256 i; i < messengers.length; ) {
+      if (_messenger == messengers[i]) {
+        return true;
+      }
+      unchecked {
+        ++i;
+      }
+    }
+    return false;
   }
 }

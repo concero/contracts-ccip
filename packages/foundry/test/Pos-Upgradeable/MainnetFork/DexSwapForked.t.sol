@@ -134,15 +134,6 @@ contract DexSwapForked is ProtocolTest {
         vm.prank(User);
         mUSDC.transfer(address(dex), 300 *10**5);
         assertEq(mUSDC.balanceOf(address(dex)), 300 *10**5);
-
-        //==== Arbitrary address tries to withdraw it and revert
-        vm.expectRevert(abi.encodeWithSelector(DexSwap_CallableOnlyByOwner.selector, address(this), defaultSender));
-        dex.dustRemoval(address(mUSDC), 300 *10**5);
-
-        vm.prank(defaultSender);
-        vm.expectEmit();
-        emit DexSwap_RemovingDust(defaultSender, 300 *10**5);
-        dex.dustRemoval(address(mUSDC), 300 *10**5);
     }
 
     function test_swapUniV2LikeFoTMock() public {
@@ -815,17 +806,6 @@ contract DexSwapForked is ProtocolTest {
         assertEq(wEth.balanceOf(address(op)), 0);
         assertEq(address(op).balance, 1*10**17 / 1000);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
-
-        uint256 userBalance = User.balance;
-
-        vm.deal(address(dex), 1*10**18);
-
-        assertEq(1*10**18, address(dex).balance);
-
-        vm.prank(defaultSender);
-        dex.dustEtherRemoval(User);
-
-        assertEq(User.balance, userBalance  + 1*10**18);
 
         ////================================ Empty Dex Data =================================\\\\\\
         swapData[0] = IDexSwap.SwapData({

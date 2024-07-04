@@ -5,7 +5,7 @@ async function f() {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa869',
 			usdcAddress: '0x5425890298aed601595a70ab815c96711a31bc65',
-			poolAddress: '', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '',
 		},
 		[`0x${BigInt('16015286601757825753').toString(16)}`]: {
 			urls: [
@@ -15,7 +15,7 @@ async function f() {
 			],
 			chainId: '0xaa36a7',
 			usdcAddress: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
-			poolAddress: '', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '',
 		},
 		[`0x${BigInt('3478487238524512106').toString(16)}`]: {
 			urls: [
@@ -25,7 +25,7 @@ async function f() {
 			],
 			chainId: '0x66eee',
 			usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-			poolAddress: '0x52536BDa65E4a5a43411aeFa968e166dE782abcB', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '0x52536BDa65E4a5a43411aeFa968e166dE782abcB',
 		},
 		[`0x${BigInt('5224473277236331295').toString(16)}`]: {
 			urls: [
@@ -35,7 +35,7 @@ async function f() {
 			],
 			chainId: '0xaa37dc',
 			usdcAddress: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
-			poolAddress: '0x98BED4A1619a2Ef2Bed40A47281D5f8Aa609462d', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '0xCE80F13941446FbA1E7dFB49f1454044081Ee7Ae',
 		},
 		[`0x${BigInt('16281711391670634445').toString(16)}`]: {
 			urls: [
@@ -45,7 +45,7 @@ async function f() {
 			],
 			chainId: '0x13882',
 			usdcAddress: '0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582',
-			poolAddress: '', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '',
 		},
 	};
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];

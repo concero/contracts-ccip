@@ -20,7 +20,7 @@
 //
 //     if (!functionsGatewayUrls || functionsGatewayUrls.length === 0) throw Error(`No gatewayUrls found for ${name}.`);
 //     const { walletClient, publicClient, account } = getClients(viemChain, url);
-//     const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`); // grabbing up-to-date var
+//     const contract = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`); // grabbing up-to-date var
 //
 //     const secretsManager = new SecretsManager({
 //       signer,

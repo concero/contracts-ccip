@@ -65,8 +65,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   uint256 private constant WITHDRAW_DEADLINE = 597_600;
   ///@notice Chainlink Functions Gas Limit
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
-  ///@notice Chainlink Function Gas Overhead
-  uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000; //Do we need this?
   ///@notice JS Code for Chainlink Functions
   string internal constant JS_CODE =
     "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = `https://raw.githubusercontent.com/concero/contracts-ccip/main-proxy/packages/hardhat/tasks/CLFScripts/dist/pool/${BigInt(bytesArgs[2]) === 1n ? '' : 'getBalances'}.min.js`; console.log(q); const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
@@ -187,7 +185,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     if (_usdcAmount < MIN_DEPOSIT) revert ParentPool_AmountBelowMinimum(MIN_DEPOSIT);
     if (s_maxDeposit != 0 && s_maxDeposit < _usdcAmount + i_USDC.balanceOf(address(this)) + s_loansInUse) revert ParentPool_MaxCapReached(s_maxDeposit);
 
-    uint256 numberOfPools = poolsToDistribute.length;
+    uint256 numberOfPools = s_poolsToDistribute.length;
 
     if (numberOfPools < 1) revert ParentPool_ThereIsNoPoolToDistribute();
 
@@ -203,7 +201,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       liquidityProvider: msg.sender,
       usdcBeforeRequest: i_USDC.balanceOf(address(this)) + s_loansInUse,
       lpSupplyBeforeRequest: i_lp.totalSupply(),
-      amount: _usdcAmount //Here it's the usdc amount
+      amount: _usdcAmount
     });
 
     emit ParentPool_SuccessfulDeposited(msg.sender, _usdcAmount, i_USDC);
@@ -221,21 +219,21 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     if (i_lp.balanceOf(msg.sender) < _lpAmount) revert ParentPool_InsufficientBalance();
     if (s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ParentPool_ActiveRequestNotFulfilledYet();
 
-    uint256 numberOfPools = poolsToDistribute.length;
+    uint256 numberOfPools = s_poolsToDistribute.length;
 
     bytes[] memory args = new bytes[](15);
     for (uint i; i < numberOfPools; i++) {
-      args[i] = abi.encodePacked(poolsToDistribute[i].chainSelector);
+      args[i] = abi.encodePacked(s_poolsToDistribute[i].chainSelector);
     }
 
-    bytes32 requestId = _sendRequest(args, JS_CODE); // No JS code yet.
+    bytes32 requestId = _sendRequest(args, JS_CODE);
 
     s_requests[requestId] = IParentPool.CLFRequest({
       requestType: IParentPool.RequestType.PerformWithdrawal,
       liquidityProvider: msg.sender,
       usdcBeforeRequest: 0,
       lpSupplyBeforeRequest: i_lp.totalSupply(),
-      amount: _lpAmount //Here it's the lp amount
+      amount: _lpAmount
     });
 
     emit ParentPool_WithdrawRequest(msg.sender, i_USDC, block.timestamp + WITHDRAW_DEADLINE);
@@ -327,7 +325,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     tokenAmounts[0] = tokenAmount;
 
     for (uint256 i; i < _numberOfPools; ) {
-      IParentPool.Pools memory pool = poolsToDistribute[i];
+      IParentPool.Pools memory pool = s_poolsToDistribute[i];
 
       Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
         receiver: abi.encode(pool.poolAddress),
@@ -436,7 +434,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @dev _totalUSDCCrossChain MUST have 10**6 decimals.
    */
   function _updateUsdcAmountEarned(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _lpToBurn, uint256 _totalUSDCCrossChain) private {
-    uint256 numberOfPools = poolsToDistribute.length;
+    uint256 numberOfPools = s_poolsToDistribute.length;
     uint256 totalCrossChainBalance = _totalUSDCCrossChain + i_USDC.balanceOf(address(this)) + s_loansInUse;
 
     //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)

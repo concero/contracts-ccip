@@ -9,7 +9,7 @@ export async function fundSubscription(selectedChains: CNetwork[]) {
   for (const chain of selectedChains) {
     const { linkToken, functionsRouter, functionsSubIds, viemChain, url, name } = chain;
     const { walletClient, publicClient } = getClients(viemChain, url);
-    // const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
+    // const contract = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`);
     // console.log(`Checking subscription for ${contract} on ${name}`);
 
     const functionsRouterContract = getContract({

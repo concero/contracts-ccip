@@ -35,10 +35,10 @@ const senderAddress = process.env.TESTS_WALLET_ADDRESS as Address;
 const usdcAmount = "10000";
 const bnmAmount = "1500000000000000000";
 const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA as Address;
-const usdTokenAddress = process.env.USDC_BASE_SEPOLIA as Address;
+const usdcTokenAddress = process.env.USDC_BASE_SEPOLIA as Address;
 const transactionsCount = 1;
-const srcContractAddress = process.env.CONCEROPROXY_BASE_SEPOLIA as Address;
-const dstContractAddress = process.env.CONCEROPROXY_OPTIMISM_SEPOLIA as Address;
+const srcContractAddress = process.env.CONCERO_PROXY_BASE_SEPOLIA as Address;
+const dstContractAddress = process.env.CONCERO_PROXY_OPTIMISM_SEPOLIA as Address;
 
 describe("swap\n", () => {
   let Concero: Concero;
@@ -102,7 +102,7 @@ describe("swap\n", () => {
       return tokenHash;
     };
 
-    const usdcHash = await approveToken(usdTokenAddress, usdcAmount);
+    const usdcHash = await approveToken(usdcTokenAddress, usdcAmount);
 
     if (!usdcHash) {
       return;
@@ -121,13 +121,13 @@ describe("swap\n", () => {
 
       const dexData = encodeAbiParameters(
         [{ type: "address" }, { type: "address[]" }, { type: "address" }, { type: "uint256" }],
-        [dexRouterAddress, [usdTokenAddress, bnmTokenAddress], senderAddress, 100n],
+        [dexRouterAddress, [usdcTokenAddress, bnmTokenAddress], senderAddress, 100n],
       );
 
       const swapData = [
         {
           dexType: 0n,
-          fromToken: usdTokenAddress,
+          fromToken: usdcTokenAddress,
           fromAmount: BigInt(usdcAmount),
           toToken: bnmTokenAddress,
           toAmount: BigInt(bnmAmount),
@@ -162,13 +162,13 @@ describe("swap\n", () => {
 
       const dexData = encodeAbiParameters(
         [{ type: "address" }, { type: "address[]" }, { type: "address" }, { type: "uint256" }],
-        [dexRouterAddress, [usdTokenAddress, bnmTokenAddress], srcContractAddress, 100n],
+        [dexRouterAddress, [usdcTokenAddress, bnmTokenAddress], srcContractAddress, 100n],
       );
 
       const swapData = [
         {
           dexType: 0n,
-          fromToken: usdTokenAddress,
+          fromToken: usdcTokenAddress,
           fromAmount: BigInt(usdcAmount),
           toToken: bnmTokenAddress,
           toAmount: BigInt(bnmAmount),

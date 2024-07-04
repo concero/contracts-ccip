@@ -1,36 +1,26 @@
 import { getEnvVar } from "../../../utils/getEnvVar";
 import { networkEnvKeys } from "../../../constants/CNetworks";
-import { CNetwork } from "../../../types/CNetwork";
-import { getClients } from "../../utils/switchChain";
-import { privateKeyToAccount } from "viem/accounts";
 import { Address, parseAbi } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { getClients } from "../../utils/switchChain";
 import log from "../../../utils/log";
+import { CNetwork } from "../../../types/CNetwork";
 
-export async function setProxyImplementation(hre, liveChains: CNetwork[]) {
+export async function setParentPoolProxyImplementation(hre, liveChains: CNetwork[]) {
   const { name: chainName } = hre.network;
-  const conceroProxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[chainName]}`) as Address;
+  const conceroProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}`) as Address;
   const chainId = hre.network.config.chainId;
   const { viemChain } = liveChains.find(chain => chain.chainId === chainId);
   const viemAccount = privateKeyToAccount(`0x${process.env.PROXY_DEPLOYER_PRIVATE_KEY}`);
   const { walletClient, publicClient } = getClients(viemChain, undefined, viemAccount);
-  const conceroOrchestratorAddress = getEnvVar(`CONCERO_ORCHESTRATOR_${networkEnvKeys[chainName]}`) as Address;
-
-  // const { request } = await publicClient.simulateContract({
-  //   address: conceroProxyAddress as Address,
-  //   abi: parseAbi(["function upgradeToAndCall(address newImplementation, bytes calldata data) external"]),
-  //   functionName: "upgradeToAndCall",
-  //   account: viemAccount,
-  //   args: [conceroOrchestratorAddress, "0x"],
-  //   chain: viemChain,
-  // });
-  // const txHash = await walletClient.writeContract(request);
+  const parentPoolAddress = getEnvVar(`PARENT_POOL_${networkEnvKeys[chainName]}`) as Address;
 
   const txHash = await walletClient.writeContract({
     address: conceroProxyAddress,
     abi: parseAbi(["function upgradeToAndCall(address, bytes calldata) external payable"]),
     functionName: "upgradeToAndCall",
     account: viemAccount,
-    args: [conceroOrchestratorAddress, "0x"],
+    args: [parentPoolAddress, "0x"],
     chain: viemChain,
     gas: 500_000n,
   });

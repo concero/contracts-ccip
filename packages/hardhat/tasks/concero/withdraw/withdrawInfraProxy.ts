@@ -21,7 +21,7 @@ const getBalance = async (tokenAddress: Address, account: Address, chain: CNetwo
 const withdrawToken = async (chain: CNetwork) => {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = chain;
   const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
-  const conceroProxy = getEnvVar(`CONCEROPROXY_${networkEnvKeys[dcName]}`);
+  const conceroProxy = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dcName]}`);
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
   const usdcAddress = getEnvVar(`USDC_${networkEnvKeys[dcName]}`);
 

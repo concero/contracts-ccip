@@ -3,7 +3,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
-import getHashSum from "../utils/getHashSum";
 import path from "path";
 import fs from "fs";
 import { getEnvVar } from "../utils/getEnvVar";
@@ -64,15 +63,6 @@ const deployConcero: DeployFunction = async function (
     linkToken: linkToken,
     ccipRouter: ccipRouter,
     dexSwapModule: getEnvVar(`CONCERO_DEX_SWAP_${networkEnvKeys[name]}`),
-    jsCodeHashSum: {
-      src: getHashSum(getJS(jsPath, "SRC")),
-      dst: getHashSum(getJS(jsPath, "DST")),
-    },
-    ethersHashSum: getHashSum(
-      await (
-        await fetch("https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js")
-      ).text(),
-    ),
     functionsVars: {
       donHostedSecretsSlotId: constructorArgs.slotId || 0,
       donHostedSecretsVersion: donHostedSecretsVersion,
@@ -81,13 +71,13 @@ const deployConcero: DeployFunction = async function (
       functionsRouter: functionsRouter,
     },
     conceroPoolAddress: getEnvVar(`CONCEROPOOL_${networkEnvKeys[name]}`),
-    conceroProxyAddress: getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`),
+    conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
   };
 
   // Merge defaultArgs with constructorArgs
   const args = { ...defaultArgs, ...constructorArgs };
 
-  const deployment = (await deploy("Concero", {
+  const deployment = (await deploy("ConceroBridge", {
     from: deployer,
     log: true,
     args: [
@@ -96,8 +86,6 @@ const deployConcero: DeployFunction = async function (
       args.conceroChainIndex,
       args.linkToken,
       args.ccipRouter,
-      args.jsCodeHashSum,
-      args.ethersHashSum,
       args.dexSwapModule,
       args.conceroPoolAddress,
       args.conceroProxyAddress,
@@ -107,9 +95,9 @@ const deployConcero: DeployFunction = async function (
 
   if (name !== "hardhat" && name !== "localhost") {
     log(`Contract Concero deployed to ${name} at ${deployment.address}`, "deployConcero");
-    updateEnvVariable(`CONCEROCCIP_${networkEnvKeys[name]}`, deployment.address, "../../../.env.deployments");
+    updateEnvVariable(`CONCERO_BRIDGE_${networkEnvKeys[name]}`, deployment.address, "../../../.env.deployments");
   }
 };
 
 export default deployConcero;
-deployConcero.tags = ["Concero"];
+deployConcero.tags = ["ConceroBridge"];

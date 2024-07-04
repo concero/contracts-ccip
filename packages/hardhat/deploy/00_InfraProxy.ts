@@ -9,12 +9,12 @@ const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEn
   const { deployer, proxyDeployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
-  const implementationAddress = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
+  const implementationAddress = getEnvVar(`CONCERO_ORCHESTRATOR_${networkEnvKeys[name]}`);
 
   console.log("Deploying InfraProxy...");
-  const conceroProxyDeployment = (await deploy("Proxy/InfraProxy", {
+  const conceroProxyDeployment = (await deploy("InfraProxy", {
     from: proxyDeployer,
-    args: [implementationAddress, proxyDeployer, "0x", deployer],
+    args: [implementationAddress, proxyDeployer, deployer, "0x"],
     log: true,
     autoMine: true,
     gasLimit: 2_000_000,
@@ -23,7 +23,7 @@ const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEn
   if (name !== "hardhat" && name !== "localhost") {
     log(`InfraProxy deployed to ${name} to: ${conceroProxyDeployment.address}`, "deployInfraProxy");
     updateEnvVariable(
-      `CONCEROPROXY_${networkEnvKeys[name]}`,
+      `CONCERO_PROXY_${networkEnvKeys[name]}`,
       conceroProxyDeployment.address,
       "../../../.env.deployments",
     );

@@ -8,12 +8,12 @@ import log from "../../../utils/log";
 
 export async function setChildPoolProxyImplementation(hre, liveChains: CNetwork[]) {
   const { name: chainName } = hre.network;
-  const conceroProxyAddress = getEnvVar(`CHILDPROXY_${networkEnvKeys[chainName]}`) as Address;
+  const conceroProxyAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[chainName]}`) as Address;
   const chainId = hre.network.config.chainId;
   const { viemChain } = liveChains.find(chain => chain.chainId === chainId);
   const viemAccount = privateKeyToAccount(`0x${process.env.PROXY_DEPLOYER_PRIVATE_KEY}`);
   const { walletClient, publicClient } = getClients(viemChain, undefined, viemAccount);
-  const childPoolAddress = getEnvVar(`CHILDPOOL_${networkEnvKeys[chainName]}`) as Address;
+  const childPoolAddress = getEnvVar(`CHILD_POOL_${networkEnvKeys[chainName]}`) as Address;
 
   const txHash = await walletClient.writeContract({
     address: conceroProxyAddress,

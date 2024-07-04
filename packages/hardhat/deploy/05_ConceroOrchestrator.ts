@@ -11,9 +11,9 @@ const deployConceroOrchestrator: DeployFunction = async function (hre: HardhatRu
   const { name } = hre.network;
   const { linkToken, ccipRouter, functionsRouter, conceroChainIndex } = chains[name];
   const conceroDexSwapAddress = getEnvVar(`CONCERO_DEX_SWAP_${networkEnvKeys[name]}`);
-  const conceroAddress = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
+  const conceroAddress = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`);
   const conceroPoolAddress = getEnvVar(`CONCEROPOOL_${networkEnvKeys[name]}`);
-  const conceroProxyAddress = getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`);
+  const conceroProxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`);
 
   console.log("Deploying ConceroOrchestrator...");
 

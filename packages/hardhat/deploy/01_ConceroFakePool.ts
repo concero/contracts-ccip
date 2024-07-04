@@ -23,7 +23,7 @@ const deployConceroPool: DeployFunction = async function (
   const defaultArgs = {
     linkToken: linkToken,
     ccipRouter: ccipRouter,
-    conceroProxyAddress: getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`),
+    conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
   };
 
   // Merge defaultArgs with constructorArgs

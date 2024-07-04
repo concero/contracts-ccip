@@ -19,7 +19,7 @@ const deployLPToken: DeployFunction = async function (
   const { name } = hre.network;
 
   const defaultArgs = {
-    parentProxyAddress: getEnvVar(`PARENTPROXY_${networkEnvKeys[name]}`),
+    parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`),
     owner: deployer,
   };
 

@@ -37,8 +37,8 @@ const bnmAmount = "1500000000000000000";
 const bnmTokenAddress = process.env.CCIPBNM_BASE_SEPOLIA as Address;
 const usdTokenAddress = process.env.USDC_BASE_SEPOLIA as Address;
 const transactionsCount = 1;
-const srcContractAddress = process.env.CONCEROPROXY_BASE_SEPOLIA as Address;
-const dstContractAddress = process.env.CONCEROPROXY_OPTIMISM_SEPOLIA as Address;
+const srcContractAddress = process.env.CONCERO_PROXY_BASE_SEPOLIA as Address;
+const dstContractAddress = process.env.CONCERO_PROXY_OPTIMISM_SEPOLIA as Address;
 
 describe("swap\n", () => {
   let Concero: Concero;

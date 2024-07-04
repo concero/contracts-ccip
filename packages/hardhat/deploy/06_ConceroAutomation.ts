@@ -49,7 +49,7 @@ const deployConceroAutomation: DeployFunction = async function (
       ).text(),
     ),
     functionsRouter: functionsRouter,
-    parentProxyAddress: getEnvVar(`PARENTPROXY_${networkEnvKeys[name]}`),
+    parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`),
     owner: deployer,
   };
 
@@ -76,7 +76,7 @@ const deployConceroAutomation: DeployFunction = async function (
   if (name !== "hardhat" && name !== "localhost") {
     log(`ConceroAutomation deployed to ${name} to: ${deployConceroAutomation.address}`, "deployConceroAutomation");
     updateEnvVariable(
-      `CONCEROAUTOMATION_${networkEnvKeys[name]}`,
+      `CONCERO_AUTOMATION_${networkEnvKeys[name]}`,
       deployConceroAutomation.address,
       "../../../.env.deployments",
     );

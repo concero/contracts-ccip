@@ -30,16 +30,16 @@ const deployParentPool: DeployFunction = async function (
   const { linkToken, ccipRouter, functionsRouter, functionsDonId, functionsSubIds } = chains[name];
 
   const defaultArgs = {
-    parentProxyAddress: getEnvVar(`PARENTPROXY_${networkEnvKeys[name]}`),
+    parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`),
     linkToken: linkToken,
     functionsDonId: functionsDonId,
-    functionsSubIds: functionsSubIds,
+    functionsSubId: functionsSubIds[0],
     functionsRouter: functionsRouter,
     ccipRouter: ccipRouter,
     usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
     lpToken: getEnvVar(`LPTOKEN_${networkEnvKeys[name]}`),
-    automation: getEnvVar(`CONCEROAUTOMATION_${networkEnvKeys[name]}`),
-    conceroProxyAddress: getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`),
+    automation: getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[name]}`),
+    conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
     owner: deployer,
   };
 
@@ -53,7 +53,7 @@ const deployParentPool: DeployFunction = async function (
       args.parentProxyAddress,
       args.linkToken,
       args.functionsDonId,
-      args.functionsSubIds,
+      args.functionsSubId,
       args.functionsRouter,
       args.ccipRouter,
       args.usdc,
@@ -68,7 +68,7 @@ const deployParentPool: DeployFunction = async function (
 
   if (name !== "hardhat" && name !== "localhost") {
     log(`ParentPool deployed to ${name} to: ${deployParentPool.address}`, "deployParentPool");
-    updateEnvVariable(`PARENTPOOL_${networkEnvKeys[name]}`, deployParentPool.address, "../../../.env.deployments");
+    updateEnvVariable(`PARENT_POOL_${networkEnvKeys[name]}`, deployParentPool.address, "../../../.env.deployments");
   }
 };
 

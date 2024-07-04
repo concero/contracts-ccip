@@ -5,7 +5,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../../types/CNetwork";
 import log from "../../../utils/log";
 import uploadDonSecrets from "../../donSecrets/upload";
-import deployConcero from "../../../deploy/04_Concero";
+import deployConcero from "../../../deploy/04_ConceroBridge";
 import { execSync } from "child_process";
 import { liveChains } from "../liveChains";
 import deployConceroDexSwap from "../../../deploy/03_ConceroDexSwap";
@@ -36,7 +36,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
 
     if (taskArgs.deployproxy) {
       await deployInfraProxy(hre);
-      const proxyAddress = getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`);
+      const proxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`);
       const { functionsSubIds } = chains[name];
       await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
     }
@@ -51,8 +51,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
       await deployConceroOrchestrator(hre);
       await setProxyImplementation(hre, liveChains);
 
-      // if (taskArgs.deployproxy)
-      // await setConceroProxyDstContracts(liveChains);
+      if (taskArgs.deployproxy) await setConceroProxyDstContracts(liveChains);
     }
 
     if (!taskArgs.skipsetvars) {

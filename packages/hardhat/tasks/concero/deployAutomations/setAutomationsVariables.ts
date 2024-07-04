@@ -14,7 +14,7 @@ const setDonHostedSecretsVersion = async (hre, slotId: number, abi) => {
     const { viemChain } = chain;
     const secretsVersion = (await getSecretsBySlotId(hre.network.name, slotId)).version;
     const { walletClient, publicClient, account } = getClients(chain.viemChain, chain.url);
-    const automationsContract = getEnvVar(`CONCEROAUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
+    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
 
     const { request: setDstConceroContractReq } = await publicClient.simulateContract({
       address: automationsContract,
@@ -36,7 +36,7 @@ const setForwarderAddress = async (hre, forwarderAddress: string, abi: any) => {
     const chain = CNetworks[hre.network.name];
     const { viemChain } = chain;
     const { walletClient, publicClient, account } = getClients(chain.viemChain, chain.url);
-    const automationsContract = getEnvVar(`CONCEROAUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
+    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
 
     const { request: setForwarderAddressReq } = await publicClient.simulateContract({
       address: automationsContract,
@@ -59,7 +59,7 @@ const setHashSum = async (hre, abi: any) => {
     const chain = CNetworks[hre.network.name];
     const { viemChain } = chain;
     const { walletClient, publicClient, account } = getClients(chain.viemChain, chain.url);
-    const automationsContract = getEnvVar(`CONCEROAUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
+    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
     const jsCodeHashSum = getHashSum(await (await fetch(automationsJsCodeUrl)).text());
 
     const { request: setHashSumReq } = await publicClient.simulateContract({
@@ -83,7 +83,7 @@ const setEthersHashSum = async (hre, abi: any) => {
     const chain = CNetworks[hre.network.name];
     const { viemChain } = chain;
     const { walletClient, publicClient, account } = getClients(viemChain, chain.url);
-    const automationsContract = getEnvVar(`CONCEROAUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
+    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
     const jsCodeHashSum = getHashSum(await (await fetch(ethersV6CodeUrl)).text());
 
     const { request: setEthersHashSumReq } = await publicClient.simulateContract({

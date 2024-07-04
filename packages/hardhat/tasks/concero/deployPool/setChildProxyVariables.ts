@@ -21,8 +21,8 @@ async function setConceroProxySender(hre, liveChains: CNetwork[]) {
     const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
     if (!dstChainName) throw new Error("Destination chain name not found");
     if (!dstChainSelector) throw new Error("Destination chain selector not found");
-    const dstConceroContract = getEnvVar(`CONCEROPROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
-    const conceroPoolAddress = getEnvVar(`CHILDTPROXY_${networkEnvKeys[chainName]}` as keyof env) as Address;
+    const dstConceroContract = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
+    const conceroPoolAddress = getEnvVar(`CHILD_PROXY_${networkEnvKeys[chainName]}` as keyof env) as Address;
 
     const { request: setSenderReq } = await publicClient.simulateContract({
       address: conceroPoolAddress,

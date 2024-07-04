@@ -19,6 +19,7 @@ import withdrawInfraProxy from "./concero/withdraw/withdrawInfraProxy";
 import deployParentPool from "./concero/deployPool/deployParentPool";
 import deployLpToken from "./concero/deployLpToken/deployLpToken";
 import deployAutomations from "./concero/deployAutomations/deployAutomations";
+import deployChildPool from "./concero/deployPool/deployChildPool";
 
 export default {
   billing,
@@ -42,4 +43,5 @@ export default {
   deployParentPool,
   deployLpToken,
   deployAutomations,
+  deployChildPool,
 };

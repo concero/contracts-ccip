@@ -51,8 +51,8 @@ const amount = "1000000";
 // const bnmTokenAddress = process.env.CCIPBNM_OPTIMISM_SEPOLIA;
 const usdcTokenAddress = process.env.USDC_POLYGON;
 const transactionsCount = 1;
-const srcContractAddress = process.env.CONCEROPROXY_POLYGON;
-const dstContractAddress = process.env.CONCEROPROXY_BASE;
+const srcContractAddress = process.env.CONCERO_PROXY_POLYGON;
+const dstContractAddress = process.env.CONCERO_PROXY_BASE;
 
 describe("startBatchTransactions\n", () => {
   let Concero: Concero;

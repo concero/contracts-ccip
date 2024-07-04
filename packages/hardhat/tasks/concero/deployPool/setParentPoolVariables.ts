@@ -16,7 +16,7 @@ async function setParentPoolJsHashes(deployableChain: CNetwork, abi: any) {
   try {
     const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
-    const parentPoolProxyAddress = getEnvVar(`PARENTPROXY_${networkEnvKeys[srcChainName]}`);
+    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[srcChainName]}`);
     const parentPoolJsCode = await (await fetch(parentPoolJsCodeUrl)).text();
     const ethersCode = await (await fetch(ethersV6CodeUrl)).text();
 
@@ -51,7 +51,7 @@ async function setParentPoolCap(chain: CNetwork, abi: any) {
   try {
     const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = chain;
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
-    const parentPoolProxyAddress = getEnvVar(`PARENTPROXY_${networkEnvKeys[srcChainName]}`) as Address;
+    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[srcChainName]}`) as Address;
     const poolCap = 100_000n * 10n ** 6n;
 
     const { request: setCapReq } = await publicClient.simulateContract({
@@ -83,7 +83,7 @@ async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slotId: nu
       name: dcName,
     } = chain;
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
-    const parentPoolProxyAddress = getEnvVar(`PARENTPROXY_${networkEnvKeys[dcName]}`) as Address;
+    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dcName]}`) as Address;
     const { signer: dcSigner } = getEthersSignerAndProvider(dcUrl);
 
     const secretsManager = new SecretsManager({
@@ -127,7 +127,7 @@ async function setParentPoolSecretsSlotId(chian: CNetwork, abi: any, slotId: num
   try {
     const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = chian;
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
-    const parentPoolProxyAddress = getEnvVar(`PARENTPROXY_${networkEnvKeys[srcChainName]}`) as Address;
+    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[srcChainName]}`) as Address;
 
     const { request } = await publicClient.simulateContract({
       address: parentPoolProxyAddress,
@@ -150,11 +150,10 @@ async function setParentPoolSecretsSlotId(chian: CNetwork, abi: any, slotId: num
   }
 }
 
-async function setConceroContractSenders(chain: CNetwork) {
+async function setConceroContractSenders(chain: CNetwork, abi: any) {
   const { name: chainName, viemChain, url } = chain;
   const clients = getClients(viemChain, url);
   const { publicClient, account, walletClient } = clients;
-  const { abi } = await load("../artifacts/contracts/ConceroPool.sol/ConceroPool.json");
   if (!chainName) throw new Error("Chain name not found");
 
   for (const dstChain of liveChains) {
@@ -163,8 +162,8 @@ async function setConceroContractSenders(chain: CNetwork) {
     const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
     if (!dstChainName) throw new Error("Destination chain name not found");
     if (!dstChainSelector) throw new Error("Destination chain selector not found");
-    const dstConceroContract = getEnvVar(`CONCEROPROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
-    const conceroPoolAddress = getEnvVar(`PARENTPROXY_${networkEnvKeys[chainName]}` as keyof env) as Address;
+    const dstConceroContract = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
+    const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env) as Address;
 
     const { request: setSenderReq } = await publicClient.simulateContract({
       address: conceroPoolAddress,
@@ -185,11 +184,10 @@ async function setConceroContractSenders(chain: CNetwork) {
   }
 }
 
-async function setPoolsToSend(chain: CNetwork) {
-  const { name: chainName, viemChain } = chain;
+async function setPoolsToSend(chain: CNetwork, abi: any) {
+  const { name: chainName, viemChain, url } = chain;
   const clients = getClients(viemChain, url);
   const { publicClient, account, walletClient } = clients;
-  const { abi } = await load("../artifacts/contracts/ConceroPool.sol/ConceroPool.json");
   if (!chainName) throw new Error("Chain name not found");
 
   for (const dstChain of liveChains) {
@@ -197,8 +195,8 @@ async function setPoolsToSend(chain: CNetwork) {
 
     const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
     if (!dstChainName) throw new Error("Destination chain name not found");
-    const dstPoolAddress = getEnvVar(`PARENTPROXY_${networkEnvKeys[dstChainName]}` as keyof env);
-    const conceroPoolAddress = getEnvVar(`PARENTPROXY_${networkEnvKeys[chainName]}` as keyof env);
+    const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
+    const dstPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env);
 
     const { request: setReceiverReq } = await publicClient.simulateContract({
       address: conceroPoolAddress,
@@ -230,6 +228,6 @@ export async function setParentPoolVariables(chain: CNetwork, isSetSecretsNeeded
     await setParentPoolSecretsSlotId(chain, ParentPoolAbi, slotId);
   }
 
-  await setConceroContractSenders(chain);
-  await setPoolsToSend(chain);
+  await setConceroContractSenders(chain, ParentPoolAbi);
+  await setPoolsToSend(chain, ParentPoolAbi);
 }

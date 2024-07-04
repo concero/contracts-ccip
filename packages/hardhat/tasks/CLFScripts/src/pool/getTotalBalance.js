@@ -6,7 +6,7 @@ async function f() {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa869',
 			usdcAddress: '${USDC_FUJI}',
-			poolAddress: '${CHILDPOOL_AVALANCHE_FUJI}', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '${CHILD_POOL_AVALANCHE_FUJI}', //CHANGE PARENTPOOL -> CHILDPOOL
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -16,7 +16,7 @@ async function f() {
 			],
 			chainId: '0xaa36a7',
 			usdcAddress: '${USDC_SEPOLIA}',
-			poolAddress: '${CHILDPOOL_SEPOLIA}', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '${CHILD_POOL_SEPOLIA}', //CHANGE PARENTPOOL -> CHILDPOOL
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -26,7 +26,7 @@ async function f() {
 			],
 			chainId: '0x66eee',
 			usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
-			poolAddress: '${CHILDPOOL_ARBITRUM_SEPOLIA}', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '${CHILD_POOL_ARBITRUM_SEPOLIA}', //CHANGE PARENTPOOL -> CHILDPOOL
 		},
 		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`]: {
 		// 	urls: [
@@ -36,7 +36,7 @@ async function f() {
 		// 	],
 		// 	chainId: '0x14a34',
 		// 	usdcAddress: '${USDC_BASE_SEPOLIA}',
-		// 	poolAddress: '${PARENTPOOL_BASE_SEPOLIA}', //WE GET THIS ON-CHAIN
+		// 	poolAddress: '${PARENT_POOL_BASE_SEPOLIA}', //WE GET THIS ON-CHAIN
 		// },
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -46,7 +46,7 @@ async function f() {
 			],
 			chainId: '0xaa37dc',
 			usdcAddress: '${USDC_OPTIMISM_SEPOLIA}',
-			poolAddress: '${CHILDPOOL_OPTIMISM_SEPOLIA}', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '${CHILD_POOL_OPTIMISM_SEPOLIA}', //CHANGE PARENTPOOL -> CHILDPOOL
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY}').toString(16)}`]: {
 			urls: [
@@ -56,7 +56,7 @@ async function f() {
 			],
 			chainId: '0x13882',
 			usdcAddress: '${USDC_AMOY}',
-			poolAddress: '${CHILDPOOL_POLYGON_AMOY}', //CHANGE PARENTPOOL -> CHILDPOOL
+			poolAddress: '${CHILD_POOL_POLYGON_AMOY}', //CHANGE PARENTPOOL -> CHILDPOOL
 		},
 	};
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];

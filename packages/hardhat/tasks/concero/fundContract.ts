@@ -33,7 +33,7 @@ export async function fundContract(chains: CNetwork[], amount: number = 1) {
   try {
     for (const chain of chains) {
       const { name, viemChain, ccipBnmToken, url } = chain;
-      const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
+      const contract = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`);
       const { walletClient, publicClient, account } = getClients(viemChain, url);
       await ensureDeployerBnMBalance(chains);
       const { request: sendReq } = await publicClient.simulateContract({

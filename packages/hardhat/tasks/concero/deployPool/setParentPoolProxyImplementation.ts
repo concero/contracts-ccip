@@ -8,12 +8,12 @@ import { CNetwork } from "../../../types/CNetwork";
 
 export async function setParentPoolProxyImplementation(hre, liveChains: CNetwork[]) {
   const { name: chainName } = hre.network;
-  const conceroProxyAddress = getEnvVar(`PARENTPROXY_${networkEnvKeys[chainName]}`) as Address;
+  const conceroProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}`) as Address;
   const chainId = hre.network.config.chainId;
   const { viemChain } = liveChains.find(chain => chain.chainId === chainId);
   const viemAccount = privateKeyToAccount(`0x${process.env.PROXY_DEPLOYER_PRIVATE_KEY}`);
   const { walletClient, publicClient } = getClients(viemChain, undefined, viemAccount);
-  const parentPoolAddress = getEnvVar(`PARENTPOOL_${networkEnvKeys[chainName]}`) as Address;
+  const parentPoolAddress = getEnvVar(`PARENT_POOL_${networkEnvKeys[chainName]}`) as Address;
 
   const txHash = await walletClient.writeContract({
     address: conceroProxyAddress,

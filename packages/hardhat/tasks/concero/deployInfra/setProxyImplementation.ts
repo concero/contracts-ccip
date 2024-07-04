@@ -8,7 +8,7 @@ import log from "../../../utils/log";
 
 export async function setProxyImplementation(hre, liveChains: CNetwork[]) {
   const { name: chainName } = hre.network;
-  const conceroProxyAddress = getEnvVar(`CONCEROPROXY_${networkEnvKeys[chainName]}`) as Address;
+  const conceroProxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[chainName]}`) as Address;
   const chainId = hre.network.config.chainId;
   const { viemChain } = liveChains.find(chain => chain.chainId === chainId);
   const viemAccount = privateKeyToAccount(`0x${process.env.PROXY_DEPLOYER_PRIVATE_KEY}`);

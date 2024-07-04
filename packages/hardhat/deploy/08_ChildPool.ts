@@ -27,9 +27,9 @@ const deployChildPool: DeployFunction = async function (
   const { linkToken, ccipRouter, chainSelector } = chains[name];
 
   const defaultArgs = {
-    conceroProxyAddress: getEnvVar(`CONCEROPROXY_${networkEnvKeys[name]}`),
-    parentProxyAddress: getEnvVar(`PARENTPROXY_${networkEnvKeys[name]}`),
-    childProxyAddress: getEnvVar(`CHILDPROXY_${networkEnvKeys[name]}`),
+    conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
+    parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_BASE_SEPOLIA`),
+    childProxyAddress: getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`),
     linkToken: linkToken,
     ccipRouter: ccipRouter,
     chainSelector: chainSelector,
@@ -41,7 +41,7 @@ const deployChildPool: DeployFunction = async function (
   const args = { ...defaultArgs, ...constructorArgs };
 
   console.log("Deploying ChildPool...");
-  const deployChildPool = (await deploy("ChildPool", {
+  const deployChildPool = (await deploy("ConceroChildPool", {
     from: deployer,
     args: [
       args.conceroProxyAddress,
@@ -58,8 +58,8 @@ const deployChildPool: DeployFunction = async function (
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {
-    log(`ChildPool deployed to ${name} to: ${deployChildPool.address}`, "deployChildPool");
-    updateEnvVariable(`CHILDPOOL_${networkEnvKeys[name]}`, deployChildPool.address, "../../../.env.deployments");
+    log(`ConceroChildPool deployed to ${name} to: ${deployChildPool.address}`, "deployConceroChildPool");
+    updateEnvVariable(`CHILD_POOL_${networkEnvKeys[name]}`, deployChildPool.address, "../../../.env.deployments");
   }
 };
 

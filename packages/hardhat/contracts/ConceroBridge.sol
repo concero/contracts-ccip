@@ -31,7 +31,7 @@ error FailedToWithdrawEth(address owner, address target, uint256 value);
 ///@notice error emitted when a non orchestrator address call startBridge
 error Concero_ItsNotOrchestrator(address caller);
 
-contract Concero is ConceroCCIP {
+contract ConceroBridge is ConceroCCIP {
   using SafeERC20 for IERC20;
   
   ///////////////
@@ -47,7 +47,7 @@ contract Concero is ConceroCCIP {
   /// @notice event emitted when a stuck amount is withdraw
   event Concero_StuckAmountWithdraw(address owner, address token, uint256 amount);
 
-  uint64 private constant HALF_DST_GAS = 750_000;
+  uint64 private constant HALF_DST_GAS = 600_000;
 
   constructor(
     FunctionsVariables memory _variables,

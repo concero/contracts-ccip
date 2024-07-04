@@ -34,27 +34,25 @@ const deployConceroAutomation: DeployFunction = async function (
 
   function getJS(jsPath: string, type: string): string {
     const dist = path.join(jsPath, "dist", `${type}.min.js`);
-
     return fs.readFileSync(dist, "utf8");
   }
 
   const defaultArgs = {
     functionsDonId: functionsDonId,
     functionsSubIds: functionsSubIds,
-    functionsSlotId: constructorArgs.slotId || 0, //Need to create this
+    functionsSlotId: constructorArgs.slotId || 0,
     donHostedSecretsVersion: donHostedSecretsVersion,
-    hashSum: getHashSum(getJS(jsPath, "getTotalBalance")), //Need to create this
+    hashSum: getHashSum(getJS(jsPath, "pool/getTotalBalance")),
     etherHashSum: getHashSum(
       await (
         await fetch("https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js")
       ).text(),
-    ), //Need to create this
+    ),
     functionsRouter: functionsRouter,
-    parentProxyAddress: getEnvVar(`CONCEROAUTOMATION_${networkEnvKeys[name]}`),
+    parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`),
     owner: deployer,
   };
 
-  // Merge defaultArgs with constructorArgs
   const args = { ...defaultArgs, ...constructorArgs };
 
   console.log("Deploying ConceroAutomation...");
@@ -62,7 +60,7 @@ const deployConceroAutomation: DeployFunction = async function (
     from: deployer,
     args: [
       args.functionsDonId,
-      args.functionsSubIds,
+      args.functionsSubIds[0],
       args.functionsSlotId,
       args.donHostedSecretsVersion,
       args.hashSum,
@@ -78,7 +76,7 @@ const deployConceroAutomation: DeployFunction = async function (
   if (name !== "hardhat" && name !== "localhost") {
     log(`ConceroAutomation deployed to ${name} to: ${deployConceroAutomation.address}`, "deployConceroAutomation");
     updateEnvVariable(
-      `CONCEROAUTOMATION_${networkEnvKeys[name]}`,
+      `CONCERO_AUTOMATION_${networkEnvKeys[name]}`,
       deployConceroAutomation.address,
       "../../../.env.deployments",
     );

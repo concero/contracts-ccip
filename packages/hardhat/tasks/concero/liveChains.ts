@@ -5,7 +5,7 @@ export const liveChains: CNetwork[] = [
   chains.baseSepolia,
   chains.arbitrumSepolia,
   chains.optimismSepolia,
-  chains.polygonAmoy,
+  // chains.polygonAmoy,
 ];
 
 // export const liveChains: CNetwork[] = [chains.base, chains.polygon];

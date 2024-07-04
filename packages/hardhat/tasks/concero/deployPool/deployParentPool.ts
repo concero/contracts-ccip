@@ -5,19 +5,14 @@ import { getEnvVar } from "../../../utils/getEnvVar";
 import addCLFConsumer from "../../sub/add";
 import log from "../../../utils/log";
 import { execSync } from "child_process";
-import { liveChains } from "../liveChains";
 import uploadDonSecrets from "../../donSecrets/upload";
-import {
-  setContractVariables,
-  setDonHostedSecretsVersion,
-  setDonSecretsSlotId,
-} from "../setInfraVariables/setContractVariables";
 import { CNetwork } from "../../../types/CNetwork";
 import deployParentPoolProxy from "../../../deploy/01_ParentPoolProxy";
 import deployParentPool from "../../../deploy/09_ParentPool";
-import load from "../../../utils/load";
+import { setParentPoolVariables } from "./setParentPoolVariables";
+import { setParentPoolProxyImplementation } from "./setParentPoolProxyImplementation";
 
-task("deploy-pool", "Deploy the pool")
+task("deploy-parent-pool", "Deploy the pool")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .addFlag("deployproxy", "Deploy the proxy")
@@ -28,7 +23,6 @@ task("deploy-pool", "Deploy the pool")
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
     const { name } = hre.network;
-
     let deployableChains: CNetwork[] = [chains.baseSepolia];
 
     if (taskArgs.ismainnet) {
@@ -37,7 +31,7 @@ task("deploy-pool", "Deploy the pool")
 
     if (taskArgs.deployproxy) {
       await deployParentPoolProxy(hre);
-      const proxyAddress = getEnvVar(`PARENTPROXY_${networkEnvKeys[name]}`);
+      const proxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`);
       const { functionsSubIds } = chains[name];
       await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
     }
@@ -48,6 +42,7 @@ task("deploy-pool", "Deploy the pool")
       execSync("yarn compile", { stdio: "inherit" });
 
       await deployParentPool(hre);
+      await setParentPoolProxyImplementation(hre, deployableChains);
     }
 
     if (taskArgs.uploadsecrets) {
@@ -55,12 +50,7 @@ task("deploy-pool", "Deploy the pool")
     }
 
     if (!taskArgs.skipsetvars) {
-      if (taskArgs.uploadsecrets) {
-        const { abi: ParentPoolAbi } = await load("../artifacts/contracts/ParentPool.sol/ParentPool.json");
-        await setDonHostedSecretsVersion(deployableChains[0], slotId, ParentPoolAbi);
-        await setDonSecretsSlotId(deployableChains[0], slotId, ParentPoolAbi);
-      }
-      await setContractVariables(liveChains, deployableChains, slotId, taskArgs.uploadsecrets);
+      await setParentPoolVariables(deployableChains[0], taskArgs.uploadsecrets, slotId);
     }
   });
 

@@ -19,7 +19,7 @@ const deployLPToken: DeployFunction = async function (
   const { name } = hre.network;
 
   const defaultArgs = {
-    parentProxyAddress: getEnvVar(`LPTOKEN_${networkEnvKeys[name]}`),
+    parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`),
     owner: deployer,
   };
 
@@ -27,7 +27,7 @@ const deployLPToken: DeployFunction = async function (
   const args = { ...defaultArgs, ...constructorArgs };
 
   console.log("Deploying LpToken...");
-  const deployLPToken = (await deploy("LpToken", {
+  const deployLPToken = (await deploy("LPToken", {
     from: deployer,
     args: [args.parentProxyAddress, args.owner],
     log: true,

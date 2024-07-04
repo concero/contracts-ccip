@@ -1,0 +1,85 @@
+import { Concero } from "../typechain-types";
+import "@nomicfoundation/hardhat-chai-matchers";
+import { WalletClient } from "viem/clients/createWalletClient";
+import { HttpTransport } from "viem/clients/transports/http";
+import { Chain } from "viem/types/chain";
+import type { Account } from "viem/accounts/types";
+import { RpcSchema } from "viem/types/eip1193";
+import { privateKeyToAccount } from "viem/accounts";
+import { Address, createPublicClient, createWalletClient, http, PrivateKeyAccount } from "viem";
+import { arbitrumSepolia, baseSepolia, optimismSepolia } from "viem/chains";
+import { PublicClient } from "viem/clients/createPublicClient";
+import { approve } from "./utils/approve";
+import { abi as ParentPoolAbi } from "../artifacts/contracts/ParentPool.sol/ParentPool.json";
+
+const chainsMap = {
+  [process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA]: {
+    viemChain: optimismSepolia,
+    viemTransport: http(`https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`),
+  },
+  [process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA]: {
+    viemChain: baseSepolia,
+    viemTransport: http(`https://base-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`),
+  },
+  [process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA]: {
+    viemChain: arbitrumSepolia,
+    viemTransport: http(),
+  },
+};
+
+const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
+const senderAddress = process.env.TESTS_WALLET_ADDRESS as Address;
+const usdcAmount = "100000000";
+const usdcTokenAddress = process.env.USDC_BASE_SEPOLIA as Address;
+const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
+
+describe("deposit usdc to pool\n", () => {
+  let Concero: Concero;
+  let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
+    chain: chainsMap[srcChainSelector].viemChain,
+    transport: chainsMap[srcChainSelector].viemTransport,
+  });
+
+  let viemAccount: PrivateKeyAccount = privateKeyToAccount(
+    ("0x" + process.env.TESTS_WALLET_PRIVATE_KEY) as `0x${string}`,
+  );
+  let nonce: BigInt;
+  let walletClient: WalletClient<HttpTransport, Chain, Account, RpcSchema> = createWalletClient({
+    chain: chainsMap[srcChainSelector].viemChain,
+    transport: chainsMap[srcChainSelector].viemTransport,
+    account: viemAccount,
+  });
+
+  before(async () => {
+    nonce = BigInt(
+      await srcPublicClient.getTransactionCount({
+        address: viemAccount.address,
+      }),
+    );
+  });
+
+  const callApprovals = async () => {
+    await approve(usdcTokenAddress, poolAddress, BigInt(usdcAmount), walletClient, srcPublicClient);
+  };
+
+  it("should deposit usdc to pool", async () => {
+    try {
+      await callApprovals();
+
+      const transactionHash = await walletClient.writeContract({
+        abi: ParentPoolAbi,
+        functionName: "depositLiquidity",
+        address: poolAddress as Address,
+        args: [BigInt(usdcAmount)],
+        gas: 1_000_000n,
+      });
+
+      const { status } = await srcPublicClient.waitForTransactionReceipt({ hash: transactionHash });
+
+      console.log("transactionHash: ", transactionHash);
+      console.log("status: ", status, "\n");
+    } catch (error) {
+      console.error("Error: ", error);
+    }
+  }).timeout(0);
+});

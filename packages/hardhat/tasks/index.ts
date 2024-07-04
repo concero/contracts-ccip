@@ -5,7 +5,6 @@ import transfer from "./sub/transfer";
 import simulate from "./script/simulate";
 import build from "./script/build";
 import deployCCIPInfrastructure from "./concero/deployInfra/deployInfra";
-import deployConceroPool from "./concero/deployPool/deployConceroPool";
 import { fundContract } from "./concero/fundContract";
 import dripBnm from "./concero/dripBnm";
 import getHashSum from "./script/listHashes";
@@ -17,6 +16,10 @@ import deployInfraProxy from "./concero/deployInfra/deployInfraProxy";
 import deployConceroDexSwap from "./concero/deployInfra/deployConceroDexSwap";
 import deployConceroOrchestrator from "./concero/deployInfra/deployConceroOrchestrator";
 import withdrawInfraProxy from "./concero/withdraw/withdrawInfraProxy";
+import deployParentPool from "./concero/deployPool/deployParentPool";
+import deployLpToken from "./concero/deployLpToken/deployLpToken";
+import deployAutomations from "./concero/deployAutomations/deployAutomations";
+import deployChildPool from "./concero/deployPool/deployChildPool";
 
 export default {
   billing,
@@ -26,7 +29,6 @@ export default {
   simulate,
   build,
   deployCCIPInfrastructure,
-  deployConceroPool,
   deployInfraProxy,
   deployConceroDexSwap,
   deployConceroOrchestrator,
@@ -38,4 +40,8 @@ export default {
   remove,
   timeout,
   withdrawInfraProxy,
+  deployParentPool,
+  deployLpToken,
+  deployAutomations,
+  deployChildPool,
 };

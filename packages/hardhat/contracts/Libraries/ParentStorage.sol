@@ -47,7 +47,7 @@ contract ParentStorage {
   ///STORAGE///
   /////////////
   ///@notice array of Pools to receive Liquidity through `ccipSend` function
-  IParentPool.Pools[] poolsToDistribute;
+  IParentPool.Pools[] s_poolsToDistribute;
 
   ///@notice Mapping to keep track of allowed pool receiver
   mapping(uint64 chainSelector => address pool) public s_poolToSendTo;
@@ -125,11 +125,11 @@ contract ParentStorage {
    * @param _chainSelector the CCIP chainSelector for the specific chain
    */
   function removePoolsFromListOfSenders(uint64 _chainSelector) external payable onlyOwner {
-    uint256 arrayLength = poolsToDistribute.length;
+    uint256 arrayLength = s_poolsToDistribute.length;
     for (uint256 i; i < arrayLength; ) {
-      if (poolsToDistribute[i].chainSelector == _chainSelector) {
-        poolsToDistribute[i] = poolsToDistribute[poolsToDistribute.length - 1];
-        poolsToDistribute.pop();
+      if (s_poolsToDistribute[i].chainSelector == _chainSelector) {
+        s_poolsToDistribute[i] = s_poolsToDistribute[s_poolsToDistribute.length - 1];
+        s_poolsToDistribute.pop();
         delete s_poolToSendTo[_chainSelector];
       }
       unchecked {
@@ -145,7 +145,22 @@ contract ParentStorage {
    */
   function setPoolCap(uint256 _newCap) external payable onlyOwner {
     s_maxDeposit = _newCap;
-
     emit ParentStorage_MasterPoolCapUpdated(_newCap);
+  }
+
+  function setDonHostedSecretsSlotId(uint8 _slotId) external payable onlyOwner {
+    s_donHostedSecretsSlotId = _slotId;
+  }
+
+  function setDonHostedSecretsVersion(uint64 _version) external payable onlyOwner {
+    s_donHostedSecretsVersion = _version;
+  }
+
+  function setHashSum(bytes32 _hashSum) external payable onlyOwner {
+    s_hashSum = _hashSum;
+  }
+
+  function setEthersHashSum(bytes32 _ethersHashSum) external payable onlyOwner {
+    s_ethersHashSum = _ethersHashSum;
   }
 }

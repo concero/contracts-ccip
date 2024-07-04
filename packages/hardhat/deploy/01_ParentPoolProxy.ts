@@ -10,12 +10,12 @@ const deployParentProxy: DeployFunction = async function (hre: HardhatRuntimeEnv
 
   const { deploy } = hre.deployments;
   const { name } = hre.network;
-  const implementationAddress = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
+  const implementationAddress = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`);
 
   console.log("Deploying ParentProxy...");
-  const deployParentProxy = (await deploy("ParentProxy", {
+  const deployParentProxy = (await deploy("ParentPoolProxy", {
     from: proxyDeployer,
-    args: [implementationAddress, proxyDeployer, "0x", deployer],
+    args: [implementationAddress, proxyDeployer, deployer, "0x"],
     log: true,
     autoMine: true,
     gasLimit: 2_000_000,
@@ -24,9 +24,9 @@ const deployParentProxy: DeployFunction = async function (hre: HardhatRuntimeEnv
   if (name !== "hardhat" && name !== "localhost") {
     log(`ParentProxy deployed to ${name} to: ${deployParentProxy.address}`, "deployParentProxy");
     updateEnvVariable(
-       `PARENTPROXY_${networkEnvKeys[name]}`,
-       deployParentProxy.address,
-       "../../../.env.deployments",
+      `PARENT_POOL_PROXY_${networkEnvKeys[name]}`,
+      deployParentProxy.address,
+      "../../../.env.deployments",
     );
   }
 };

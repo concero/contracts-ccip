@@ -1,6 +1,4 @@
 async function f() {
-	const ethers = await import('npm:ethers');
-
 	const chainSelectors = {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],

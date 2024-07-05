@@ -45,7 +45,7 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
       success, // Boolean value indicating if encrypted secrets were successfully uploaded to all nodes connected to the gateway
     } = await secretsManager.uploadEncryptedSecretsToDON({
       encryptedSecretsHexstring: encryptedSecretsObj.encryptedSecrets,
-      gatewayUrls: ["https://01.functions-gateway.chain.link/", "https://02.functions-gateway.chain.link/"],
+      gatewayUrls: functionsGatewayUrls,
       slotId,
       minutesUntilExpiration,
     });

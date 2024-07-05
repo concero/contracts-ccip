@@ -1,6 +1,6 @@
 try {
 	const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';
-	const q = `https://raw.githubusercontent.com/concero/contracts-ccip/main-proxy/packages/hardhat/tasks/CLFScripts/dist/pool/getTotalBalance.min.js`;
+	const q = `https://raw.githubusercontent.com/concero/contracts-ccip/master/packages/hardhat/tasks/CLFScripts/dist/pool/getTotalBalance.min.js`;
 	const [t, p] = await Promise.all([fetch(u), fetch(q)]);
 	const [e, c] = await Promise.all([t.text(), p.text()]);
 	const g = async s => {

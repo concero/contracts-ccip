@@ -70,7 +70,6 @@ async function f() {
 	let totalBalance = 0n;
 
 	for (const chain in chainSelectors) {
-		// const url = chainSelectors[chain].urls[Math.floor(Math.random() * chainSelectors[chain].urls.length)];
 		const fallBackProviders = chainSelectors[chain].urls.map(url => {
 			return {
 				provider: new FunctionsJsonRpcProvider(url),
@@ -80,7 +79,6 @@ async function f() {
 			};
 		});
 		const provider = new ethers.FallbackProvider(fallBackProviders, null, {quorum: 1});
-		// const provider = new FunctionsJsonRpcProvider(url);
 		const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
 		const pool = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, provider);
 		const [poolBalance, commits] = await Promise.all([

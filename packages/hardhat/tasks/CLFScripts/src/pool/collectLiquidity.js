@@ -1,6 +1,4 @@
 async function f() {
-	const ethers = await import('npm:ethers');
-
 	const [_, __, liquidityProvider, tokenAmount] = bytesArgs;
 
 	const chainSelectors = {

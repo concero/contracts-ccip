@@ -3,6 +3,8 @@ import fs from "fs";
 import secrets from "../../constants/CLFSecrets";
 import CLFSimulationConfig from "../../constants/CLFSimulationConfig";
 import { execSync } from "child_process";
+import getHashSum from "../../utils/getHashSum";
+import { automationsJsCodeUrl, ethersV6CodeUrl } from "../../constants/functionsJsCodeUrls";
 
 const { simulateScript, decodeResult } = require("@chainlink/functions-toolkit");
 
@@ -97,8 +99,8 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     // ]);
 
     await simulate(path.join(__dirname, "../", "./CLFScripts/dist/pool/automationEval.min.js"), [
-      "0xef64cf53063700bbbd8e42b0282d3d8579aac289ea03f826cf16f9bd96c7703a", // srcJsHashSum
-      "0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4", // ethers hash sum
+      getHashSum(await (await fetch(automationsJsCodeUrl)).text()),
+      getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
     ]);
   });
 

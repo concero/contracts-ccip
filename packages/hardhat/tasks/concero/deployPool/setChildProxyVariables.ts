@@ -1,4 +1,3 @@
-import { CNetwork } from "../../../types/CNetwork";
 import { getClients } from "../../utils/switchChain";
 import load from "../../../utils/load";
 import { getEnvVar } from "../../../utils/getEnvVar";
@@ -6,8 +5,9 @@ import chains, { networkEnvKeys } from "../../../constants/CNetworks";
 import env from "../../../types/env";
 import { Address } from "viem";
 import log from "../../../utils/log";
+import { liveChains } from "../liveChains";
 
-async function setConceroProxySender(hre, liveChains: CNetwork[]) {
+async function setConceroProxySender(hre) {
   const chain = chains[hre.network.name];
   const { name: chainName, viemChain, url } = chain;
   const clients = getClients(viemChain, url);
@@ -43,6 +43,6 @@ async function setConceroProxySender(hre, liveChains: CNetwork[]) {
   }
 }
 
-export async function setChildProxyVariables(hre, deployableChains: CNetwork[]) {
-  await setConceroProxySender(hre, deployableChains);
+export async function setChildProxyVariables(hre) {
+  await setConceroProxySender(hre);
 }

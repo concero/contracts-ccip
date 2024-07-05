@@ -36,7 +36,7 @@ task("deploy-child-pool", "Deploy the pool")
     }
 
     if (!taskArgs.skipsetvars) {
-      await setChildProxyVariables(hre, deployableChains);
+      await setChildProxyVariables(hre);
     }
   });
 

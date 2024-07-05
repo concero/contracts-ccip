@@ -24,7 +24,7 @@ async function f() {
 			],
 			chainId: '0x66eee',
 			usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
-			poolAddress: '${CHILD_POOL_ARBITRUM_SEPOLIA}',
+			poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -34,7 +34,7 @@ async function f() {
 			],
 			chainId: '0xaa37dc',
 			usdcAddress: '${USDC_OPTIMISM_SEPOLIA}',
-			poolAddress: '${CHILD_POOL_OPTIMISM_SEPOLIA}',
+			poolAddress: '${CHILD_POOL_PROXY_OPTIMISM_SEPOLIA}',
 		},
 		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY}').toString(16)}`]: {
 		// 	urls: [

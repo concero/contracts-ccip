@@ -48,7 +48,7 @@ async function f() {
 		// },
 	};
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
-	const poolAbi = ['function s_commits() external view returns (uint256)'];
+	const poolAbi = ['function s_loansInUse() external view returns (uint256)'];
 
 	class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 		constructor(url) {
@@ -76,7 +76,7 @@ async function f() {
 		const pool = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, provider);
 		const [poolBalance, commits] = await Promise.all([
 			erc20.balanceOf(chainSelectors[chain].poolAddress),
-			pool.s_commits(),
+			pool.s_loansInUse(),
 		]);
 		totalBalance += poolBalance + commits;
 	}

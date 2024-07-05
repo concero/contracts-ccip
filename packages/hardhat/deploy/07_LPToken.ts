@@ -23,13 +23,12 @@ const deployLPToken: DeployFunction = async function (
     owner: deployer,
   };
 
-  // Merge defaultArgs with constructorArgs
   const args = { ...defaultArgs, ...constructorArgs };
 
   console.log("Deploying LpToken...");
   const deployLPToken = (await deploy("LPToken", {
     from: deployer,
-    args: [args.parentProxyAddress, args.owner],
+    args: [args.owner, args.parentProxyAddress],
     log: true,
     autoMine: true,
   })) as Deployment;

@@ -14,8 +14,8 @@ import { chainsMap } from "./utils/chainsMap";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
 const senderAddress = process.env.TESTS_WALLET_ADDRESS as Address;
-const usdcAmount = "100000";
-const usdcTokenAddress = process.env.USDC_BASE_SEPOLIA as Address;
+const lpAmount = "100000000000000000";
+const lpTokenAddress = process.env.LPTOKEN_BASE_SEPOLIA as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 
 describe("deposit usdc to pool\n", () => {
@@ -44,7 +44,7 @@ describe("deposit usdc to pool\n", () => {
   });
 
   const callApprovals = async () => {
-    await approve(usdcTokenAddress, poolAddress, BigInt(usdcAmount), walletClient, srcPublicClient);
+    await approve(lpTokenAddress, poolAddress, BigInt(lpAmount), walletClient, srcPublicClient);
   };
 
   it("should deposit usdc to pool", async () => {
@@ -53,9 +53,9 @@ describe("deposit usdc to pool\n", () => {
 
       const transactionHash = await walletClient.writeContract({
         abi: ParentPoolAbi,
-        functionName: "depositLiquidity",
+        functionName: "startWithdrawal",
         address: poolAddress as Address,
-        args: [BigInt(usdcAmount)],
+        args: [BigInt(lpAmount)],
         gas: 3_000_000n,
       });
 

@@ -60,6 +60,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   uint256 private constant ALLOWED = 1;
   uint256 private constant USDC_DECIMALS = 10 ** 6;
   uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
+  // TODO: Change this value to 100 * 10 ** 6 in production!!!
   //  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
   uint256 private constant MIN_DEPOSIT = 0.1 * 10 ** 6;
   uint256 private constant PRECISION_HANDLER = 10 ** 10;
@@ -220,12 +221,9 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     if (i_lp.balanceOf(msg.sender) < _lpAmount) revert ParentPool_InsufficientBalance();
     if (s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ParentPool_ActiveRequestNotFulfilledYet();
 
-    uint256 numberOfPools = s_poolsToDistribute.length;
-
-    bytes[] memory args = new bytes[](15);
-    for (uint i; i < numberOfPools; i++) {
-      args[i] = abi.encodePacked(s_poolsToDistribute[i].chainSelector);
-    }
+    bytes[] memory args = new bytes[](2);
+    args[0] = abi.encodePacked(s_hashSum);
+    args[1] = abi.encodePacked(s_ethersHashSum);
 
     bytes32 requestId = _sendRequest(args, JS_CODE);
 
@@ -392,6 +390,10 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     }
   }
 
+  function getPendingWithdrawRequest(address _liquidityProvider) external view returns (IParentPool.WithdrawRequests memory) {
+    return s_pendingWithdrawRequests[_liquidityProvider];
+  }
+
   ///////////////
   /// PRIVATE ///
   ///////////////
@@ -442,20 +444,21 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     uint256 amountToWithdraw = (((_convertToLPTokenDecimals(totalCrossChainBalance) * _lpToBurn) * PRECISION_HANDLER) / _lpSupplyBeforeRequest) /
       PRECISION_HANDLER;
 
+    uint256 amountToWithdrawWithUsdcDecimals = _convertToUSDCTokenDecimals(amountToWithdraw);
+
     IParentPool.WithdrawRequests memory request = IParentPool.WithdrawRequests({
-      amountEarned: _convertToUSDCTokenDecimals(amountToWithdraw),
+      amountEarned: amountToWithdrawWithUsdcDecimals,
       amountToBurn: _lpToBurn,
-      amountToRequest: _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1), //Cross-chain Pools + MasterPool
-      amountToReceive: (_convertToUSDCTokenDecimals(amountToWithdraw) * numberOfPools) / (numberOfPools + 1), //The portion of the money that is not on MasterPool
+      amountToRequest: amountToWithdrawWithUsdcDecimals / (numberOfPools + 1), //Cross-chain Pools + MasterPool
+      amountToReceive: (amountToWithdrawWithUsdcDecimals * numberOfPools) / (numberOfPools + 1), //The portion of the money that is not on MasterPool
       token: address(i_USDC),
-      liquidityProvider: _liquidityProvider,
       deadline: block.timestamp + WITHDRAW_DEADLINE //6days & 22h
     });
 
-    s_withdrawRequests = s_withdrawRequests + _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1);
+    s_withdrawRequests = s_withdrawRequests + amountToWithdrawWithUsdcDecimals / (numberOfPools + 1);
 
     s_pendingWithdrawRequests[_liquidityProvider] = request;
-    i_automation.addPendingWithdrawal(request);
+    i_automation.addPendingWithdrawal(_liquidityProvider);
 
     emit ParentPool_RequestUpdated(_liquidityProvider);
   }

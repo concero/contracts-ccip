@@ -47,7 +47,7 @@ describe("deposit usdc to pool\n", () => {
     await approve(lpTokenAddress, poolAddress, BigInt(lpAmount), walletClient, srcPublicClient);
   };
 
-  it("should deposit usdc to pool", async () => {
+  it("should withdraw usdc from pool", async () => {
     try {
       await callApprovals();
 

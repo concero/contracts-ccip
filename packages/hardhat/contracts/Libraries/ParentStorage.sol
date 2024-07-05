@@ -21,11 +21,11 @@ contract ParentStorage {
   ////////////////
   ///@notice Contract Owner
   address immutable i_owner;
-  
+
   ///////////
   ///STATE///
   ///////////
-  
+
   ///@notice variable to store the max value that can be deposited on this pool
   uint256 public s_maxDeposit;
   ///@notice variable to store the amount that will be temporary used by Chainlink Functions
@@ -113,7 +113,7 @@ contract ParentStorage {
    */
   function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
     if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ParentStorage_InvalidAddress();
-    poolsToDistribute.push(IParentPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
+    s_poolsToDistribute.push(IParentPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
 
     s_poolToSendTo[_chainSelector] = _pool;
 

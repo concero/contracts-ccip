@@ -1,5 +1,4 @@
 async function f() {
-	const ethers = await import('npm:ethers');
 	const chainSelectors = {
 		[`0x${BigInt('14767482510784806043').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],

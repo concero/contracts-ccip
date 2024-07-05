@@ -33,6 +33,11 @@ error Concero_ItsNotOrchestrator(address caller);
 
 contract ConceroBridge is ConceroCCIP {
   using SafeERC20 for IERC20;
+  
+  ///////////////
+  ///CONSTANTS///
+  ///////////////
+  uint16 internal constant CONCERO_FEE_FACTOR = 1000;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -58,18 +63,17 @@ contract ConceroBridge is ConceroCCIP {
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
-  event Log(string, uint256);
   function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] calldata dstSwapData) external {
     if (address(this) != i_proxy) revert Concero_ItsNotOrchestrator(address(this));
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
     uint256 totalSrcFee = getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount);
     uint256 mockedLpFee = getDstTotalFeeInUsdc(bridgeData.amount);
 
-    if (bridgeData.amount < totalSrcFee + mockedLpFee) {
+    if (bridgeData.amount < _convertToUSDCDecimals(totalSrcFee + mockedLpFee)) {
       revert InsufficientFundsForFees(bridgeData.amount, totalSrcFee);
     }
 
-    uint256 amount = bridgeData.amount - totalSrcFee;
+    uint256 amount = bridgeData.amount - _convertToUSDCDecimals(totalSrcFee);
     uint256 actualLpFee = getDstTotalFeeInUsdc(amount);
 
     bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, bridgeData.receiver, actualLpFee);
@@ -128,7 +132,7 @@ contract ConceroBridge is ConceroCCIP {
     uint256 messengerGasFeeInUsdc = ((messengerDstGasInNative + messengerSrcGasInNative) * s_latestNativeUsdcRate) / 1 ether;
 
     // @notice: converting to 6 decimals
-    return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + messengerGasFeeInUsdc) / 1e12;
+    return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + messengerGasFeeInUsdc);
   }
 
   /**

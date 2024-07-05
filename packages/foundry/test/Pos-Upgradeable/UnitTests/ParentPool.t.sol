@@ -13,8 +13,8 @@ import {LPToken} from "contracts/LPToken.sol";
 
 import {ParentPoolProxy} from "contracts/Proxy/ParentPoolProxy.sol";
 
-
 import {USDC} from "../../Mocks/USDC.sol";
+
 
 contract ParentPoolTest is Test {
     //==== Instantiate Contracts
@@ -120,9 +120,14 @@ contract ParentPoolTest is Test {
     }
 
     error ParentStorage_NotContractOwner();
+    error ParentStorage_InvalidAddress();
     function test_revertSetParentPool() public {
         vm.expectRevert(abi.encodeWithSelector(ParentStorage_NotContractOwner.selector));
         wMaster.setConceroContractSender(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
+        
+        vm.prank(Tester);
+        vm.expectRevert(abi.encodeWithSelector(ParentStorage_InvalidAddress.selector));
+        wMaster.setConceroContractSender(mockDestinationChainSelector, address(0), 1);
     }
 
     //setParentPoolReceiver///
@@ -139,6 +144,17 @@ contract ParentPoolTest is Test {
     function test_revertSetParentPoolReceiver() public {
         vm.expectRevert(abi.encodeWithSelector(ParentStorage_NotContractOwner.selector));
         wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
+        
+        vm.prank(Tester);
+        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
+
+        vm.prank(Tester);
+        vm.expectRevert(abi.encodeWithSelector(ParentStorage_InvalidAddress.selector));
+        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
+        
+        vm.prank(Tester);
+        vm.expectRevert(abi.encodeWithSelector(ParentStorage_InvalidAddress.selector));
+        wMaster.setPoolsToSend(mockDestinationChainSelector, address(0));
     }
 
     ///orchestratorLoan///
@@ -146,6 +162,7 @@ contract ParentPoolTest is Test {
     error ParentPool_InsufficientBalance();
     error ParentPool_InvalidAddress();
     event ParentPool_SuccessfulDeposited(address, uint256, address);
+    error ParentPool_CallerIsNotTheProxy(address);
     function test_orchestratorLoanRevert() external {
 
         vm.expectRevert(abi.encodeWithSelector(ParentPool_ItsNotOrchestrator.selector, address(this)));
@@ -157,6 +174,10 @@ contract ParentPoolTest is Test {
 
         vm.expectRevert(abi.encodeWithSelector(ParentPool_InsufficientBalance.selector));
         wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
+
+        vm.startPrank(Orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_CallerIsNotTheProxy.selector, address(masterPool)));
+        masterPool.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
 
         vm.stopPrank();
     }

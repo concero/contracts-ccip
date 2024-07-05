@@ -28,7 +28,7 @@ interface IParentPool {
     PerformWithdrawal //Start Withdrawals
   }
 
-  struct CLARequest {
+  struct CLFRequest {
     RequestType requestType;
     address liquidityProvider; //address to check and pool the index from the array
     uint256 usdcBeforeRequest;

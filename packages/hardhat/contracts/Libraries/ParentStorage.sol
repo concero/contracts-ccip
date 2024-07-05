@@ -10,8 +10,6 @@ import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 error ParentStorage_InvalidAddress();
 ///@notice error emitted when the caller is not the owner
 error ParentStorage_NotContractOwner();
-///@notice error emitted when the owner tries to add an receiver that was already added.
-error ParentStorage_DuplicatedAddress();
 
 contract ParentStorage {
   ///////////////////////////////////////////////////////////
@@ -23,11 +21,11 @@ contract ParentStorage {
   ////////////////
   ///@notice Contract Owner
   address immutable i_owner;
-
-  /////////////
-  ///STORAGE///
-  /////////////
-
+  
+  ///////////
+  ///STATE///
+  ///////////
+  
   ///@notice variable to store the max value that can be deposited on this pool
   uint256 public s_maxDeposit;
   ///@notice variable to store the amount that will be temporary used by Chainlink Functions
@@ -45,6 +43,9 @@ contract ParentStorage {
   ///@notice gap to reserve storage in the contract for future variable additions
   uint256[50] __gap;
 
+  /////////////
+  ///STORAGE///
+  /////////////
   ///@notice array of Pools to receive Liquidity through `ccipSend` function
   IParentPool.Pools[] s_poolsToDistribute;
 
@@ -55,7 +56,7 @@ contract ParentStorage {
   ///@notice Mapping to keep track of Liquidity Providers withdraw requests
   mapping(address _liquidityProvider => IParentPool.WithdrawRequests) public s_pendingWithdrawRequests;
   ///@notice Mapping to keep track of Chainlink Functions requests
-  mapping(bytes32 requestId => IParentPool.CLARequest) public s_requests;
+  mapping(bytes32 requestId => IParentPool.CLFRequest) public s_requests;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -111,8 +112,8 @@ contract ParentStorage {
    * @dev this functions is used on ConceroPool.sol
    */
   function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
-    if (s_poolToSendTo[_chainSelector] != address(0)) revert ParentStorage_DuplicatedAddress();
-    s_poolsToDistribute.push(IParentPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
+    if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ParentStorage_InvalidAddress();
+    poolsToDistribute.push(IParentPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
 
     s_poolToSendTo[_chainSelector] = _pool;
 

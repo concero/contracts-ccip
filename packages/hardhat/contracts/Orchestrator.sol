@@ -13,28 +13,28 @@ import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
 ///////////////////////////////
 /////////////ERROR/////////////
 ///////////////////////////////
-///@notice error emitted when the new implementation address is invalid
-error Orchestrator_InvalidImplementationAddress(address invalidAddress);
 ///@notice error emitted when a delegatecall fails
 error Orchestrator_UnableToCompleteDelegateCall(bytes delegateError);
-///@notice error emitted when the input token has Fee on transfers
-error Orchestrator_FoTNotAllowedYet();
 ///@notice error emitted when the balance input is smaller than the specified amount param
 error Orchestrator_InvalidAmount();
 ///@notice error emitted when a address non-router calls the `handleOracleFulfillment` function
 error Orchestrator_OnlyRouterCanFulfill();
-///@notice error emitted when the amount received is less than the minAmount to bridge
-error Orchestrator_FailedToStartBridge(uint256 receivedAmount, uint256 minAmount);
 ///@notice error emitted when some params of Bridge Data are empty
 error Orchestrator_InvalidBridgeData();
 ///@notice error emitted when an empty swapData is the input
 error Orchestrator_InvalidSwapData();
-///@notice error emitted when an attempt to withdraw ether fails
-error Orchestrator_EtherWithdrawalFailed();
-error Orchestrator_FailedToWithdrawEth(address owner, address target, uint256 value);
+///@notice error emitted when the ether swap data is corrupted
+error Orchestrator_InvalidSwapEtherData();
+///@notice error emitted when the token to bridge is not USDC
+error Orchestrator_InvalidBridgeToken();
 
 contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
   using SafeERC20 for IERC20;
+
+  ///////////////
+  ///CONSTANTS///
+  ///////////////
+  uint16 internal constant CONCERO_FEE_FACTOR = 1000;
 
   ///////////////
   ///IMMUTABLE///
@@ -62,8 +62,6 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
   event Orchestrator_StartSwap();
   event Orchestrator_StartBridge();
   event Orchestrator_StartSwapAndBridge();
-  ///@notice emitted when fees are withdrawn
-  event Orchestrator_FeeWithdrawal(address owner, uint256 amount);
 
   constructor(address _functionsRouter, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex) StorageSetters(msg.sender) {
     i_functionsRouter = _functionsRouter;
@@ -99,9 +97,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
       revert Orchestrator_InvalidSwapData();
     }
 
-    if (_srcSwapData[0].fromToken == address(0)) {
-      if (_srcSwapData[0].fromAmount != msg.value) revert Orchestrator_InvalidSwapData();
-    }
+    if(_srcSwapData[0].dexType == IDexSwap.DexType.UniswapV2Ether && _srcSwapData[0].fromToken != address(0)) revert Orchestrator_InvalidSwapEtherData();
     _;
   }
 
@@ -116,10 +112,15 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
     emit Orchestrator_StartSwapAndBridge();
 
     if (srcSwapData.length == 0) revert Orchestrator_InvalidSwapData();
+    address bridgeToken = getToken(bridgeData.tokenType, i_chainIndex);
 
+    uint256 toTokenBalanceBefore = IERC20(bridgeToken).balanceOf(address(this));
     //Swap -> money come back to this contract
     uint256 receivedAmount = _swap(srcSwapData, 0, false, address(this));
 
+    uint256 toTokenBalanceAfter = IERC20(bridgeToken).balanceOf(address(this));
+    
+    if(toTokenBalanceAfter - toTokenBalanceBefore != receivedAmount) revert Orchestrator_InvalidBridgeToken();
     bridgeData.amount = receivedAmount;
 
     (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData));
@@ -157,7 +158,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
     CCIPToken token,
     uint256 blockNumber,
     bytes calldata dstSwapData
-  ) external {
+  ) external onlyMessenger {
     (bool success, bytes memory data) = i_concero.delegatecall(
       abi.encodeWithSelector(IConcero.addUnconfirmedTX.selector, ccipMessageId, sender, recipient, amount, srcChainSelector, token, blockNumber, dstSwapData)
     );
@@ -197,7 +198,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
   /// INTERNAL FUNCTIONS ///
   //////////////////////////
   error DexSwap_InvalidDexData();
-  function _swap(IDexSwap.SwapData[] memory swapData, uint256 nativeAmount, bool isFeesNeeded, address _receiver) internal returns (uint256) {
+  function _swap(IDexSwap.SwapData[] memory swapData, uint256 _nativeAmount, bool isFeesNeeded, address _receiver) internal returns (uint256) {
     address fromToken = swapData[0].fromToken;
     uint256 fromAmount = swapData[0].fromAmount;
     address toToken = swapData[swapData.length - 1].toToken;
@@ -210,14 +211,11 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
       LibConcero.transferFromERC20(fromToken, msg.sender, address(this), fromAmount);
     } else {
       if (isFeesNeeded) {
-        swapData[0].fromAmount -= (nativeAmount / CONCERO_FEE_FACTOR);
-        swapData[0].fromAmount -= (fromAmount / CONCERO_FEE_FACTOR);
+        _nativeAmount -= (_nativeAmount / CONCERO_FEE_FACTOR);
       }
     }
 
-    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-      abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, nativeAmount, _receiver)
-    );
+    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, _nativeAmount, _receiver));
     if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
 
     emit Orchestrator_SwapSuccess();

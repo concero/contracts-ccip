@@ -234,9 +234,6 @@ contract InfraIntegration is Test {
             donIdBase, //_donId
             15, //_subscriptionId
             2, //_slotId
-            0, //_secretsVersion
-            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_srcJsHashSum
-            0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124, //_ethersHashSum
             address(functionsRouterBase), //_router,
             address(masterProxy),
             Tester
@@ -389,6 +386,11 @@ contract InfraIntegration is Test {
         vm.startPrank(defaultSender);
         //Infra Src
         wInfraSrc.setClfPremiumFees(localChainSelector, 4000000000000000);
+        wInfraSrc.setLastGasPrices(localChainSelector, 5767529);
+        wInfraSrc.setLatestLinkUsdcRate(13_560_000_000_000_000_000);
+        wInfraSrc.setLatestNativeUsdcRate(3_383_730_000_000_000_000_000);
+        wInfraSrc.setLatestLinkNativeRate(40091515);
+
 
         wInfraSrc.setConceroContract(localChainSelector, address(proxyDst));
         wInfraSrc.setDstConceroPool(localChainSelector, address(wChild));
@@ -419,94 +421,40 @@ contract InfraIntegration is Test {
         wEth.mint(User, 10 * 10**18);
     }
 
-    //To run the test below you need to comment out the line 79 of Concero.sol. Functions doesn't work in this environment.
-    function test_bridgeWithoutFunctions() public {
-        setters();
+    /// IN ORDER TO RUN THESE TESTS, THE USDC ON `getToken` FUNCTION NEED TO BE UPDATED TO THE LOCAL VERSION
+    // ADDRESS: 0x2e234DAe75C793f67A35089C9d99245E1C58470b
+    // And comment out the line 79 of Concero.sol. Functions doesn't work in this environment.
+    // function test_bridgeWithoutFunctions() public {
+    //     setters();
 
-        vm.startPrank(LiquidityProviderWhale);
-        mUSDC.approve(address(wMaster), USDC_WHALE_BALANCE);
-        wMaster.depositLiquidity(USDC_WHALE_BALANCE); //1000
-        vm.stopPrank();
+    //     vm.startPrank(LiquidityProviderWhale);
+    //     mUSDC.approve(address(wMaster), USDC_WHALE_BALANCE);
+    //     wMaster.depositLiquidity(USDC_WHALE_BALANCE); //1000
+    //     vm.stopPrank();
 
-        //====== Mock the payload
-        IStorage.BridgeData memory data = IStorage.BridgeData({
-            tokenType: IStorage.CCIPToken.usdc,
-            amount: 10 *10**6,
-            dstChainSelector: localChainSelector,
-            receiver: CrossChainReceiver
-        });
+    //     //====== Mock the payload
+    //     IStorage.BridgeData memory data = IStorage.BridgeData({
+    //         tokenType: IStorage.CCIPToken.usdc,
+    //         amount: 10 *10**6,
+    //         dstChainSelector: localChainSelector,
+    //         receiver: CrossChainReceiver
+    //     });
 
-        IDexSwap.SwapData[] memory swap = new IDexSwap.SwapData[](0);
+    //     IDexSwap.SwapData[] memory swap = new IDexSwap.SwapData[](0);
 
-        //====== Check Receiver balance
-        assertEq(mUSDC.balanceOf(CrossChainReceiver), 0);
+    //     //====== Check Receiver balance
+    //     assertEq(mUSDC.balanceOf(CrossChainReceiver), 0);
 
-        vm.startPrank(User);
-        mUSDC.approve(address(wInfraSrc), 10 *10**6);
-        wInfraSrc.bridge(data, swap);
-        vm.stopPrank();
+    //     vm.startPrank(User);
+    //     mUSDC.approve(address(wInfraSrc), 10 *10**6);
+    //     wInfraSrc.bridge(data, swap);
+    //     vm.stopPrank();
 
-        //Final amount is = Transferred value - (src fee + dst fee)
-        assertEq(mUSDC.balanceOf(CrossChainReceiver), (10 *10**6 - (10 *10**6 / 1000)) - ((10 *10**6 - (10 *10**6 / 1000))/ 1000));
-    }
+    //     //Final amount is = Transferred value - (src fee + dst fee)
+    //     assertEq(mUSDC.balanceOf(CrossChainReceiver), 9852385); //Here, we don't have CCIP costs because testing locally, the fee is 0.
+    // }
 
-    function test_swapAndBridgeWithoutFunctions() public {
-        setters();
-        
-        vm.deal(User, INITIAL_BALANCE);
-
-        vm.startPrank(LiquidityProviderWhale);
-        mUSDC.approve(address(wMaster), USDC_WHALE_BALANCE);
-        wMaster.depositLiquidity(USDC_WHALE_BALANCE); //1000
-        vm.stopPrank();
-
-        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        
-        uint amountIn = 1*10**17;
-        uint amountOutMin = 350*10**6;
-        address[] memory path = new address[](2);
-        path[0] = address(wEth);
-        path[1] = address(mUSDC);
-        address to = address(wInfraSrc);
-        uint deadline = block.timestamp + 1800;
-
-        vm.startPrank(User);
-        wEth.approve(address(concero), amountIn);
-
-        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
-        swapData[0] = IDexSwap.SwapData({
-                            dexType: IDexSwap.DexType.UniswapV2,
-                            fromToken: address(wEth),
-                            fromAmount: amountIn,
-                            toToken: address(mUSDC),
-                            toAmount: amountOutMin,
-                            toAmountMin: amountOutMin,
-                            dexData: abi.encode(dexMock, path, to, deadline)
-        });
-
-        // ==== Approve Transfer
-        vm.startPrank(User);
-        wEth.approve(address(wInfraSrc), 0.1 ether);
-
-        /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
-            tokenType: IStorage.CCIPToken.usdc,
-            amount: 350 *10**6,
-            dstChainSelector: localChainSelector,
-            receiver: CrossChainReceiver
-        });
-
-        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        IDexSwap.SwapData[] memory swapDataDst = new IDexSwap.SwapData[](0);
-
-        //====== Check Receiver balance
-        assertEq(mUSDC.balanceOf(CrossChainReceiver), 0);
-        assertEq(mUSDC.balanceOf(address(dexMock)), USDC_WHALE_BALANCE);
-
-        vm.startPrank(User);
-        wInfraSrc.swapAndBridge(bridgeData, swapData, swapDataDst);
-        vm.stopPrank();
-
-        assertTrue(mUSDC.balanceOf(CrossChainReceiver) > 340 *10**6);
-    }
+    ////////////////
+    /// GETTERS ////
+    ////////////////
 }

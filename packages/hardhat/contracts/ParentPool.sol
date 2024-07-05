@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -27,8 +27,6 @@ error ParentPool_InvalidAddress();
 error ParentPool_SenderNotAllowed(address _sender);
 ///@notice error emitted when an attempt to create a new request is made while other is still active.
 error ParentPool_ActiveRequestNotFulfilledYet();
-///@notice error emitted when an attempt to send value to a not allowed receiver is made
-error ParentPool_DestinationNotAllowed(); //@audit not being used
 ///@notice error emitted when the contract doesn't have enough link balance
 error ParentPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
 ///@notice error emitted when a LP try to deposit liquidity on the contract without pools
@@ -37,12 +35,6 @@ error ParentPool_ThereIsNoPoolToDistribute();
 error ParentPool_AmountBelowMinimum(uint256 minAmount);
 ///@notice emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
 error ParentPool_AmountNotAvailableYet(uint256 received);
-///@notice emitted in depositLiquidity when the input token is not allowed
-error ParentPool_TokenNotAllowed(address token); //@audit not being used
-///@notice error emitted when the caller is not the messenger
-error ParentPool_NotMessenger(address caller);
-///@notice error emitted when the chain selector input is invalid
-error ParentPool_ChainNotAllowed(uint64 chainSelector);
 ///@notice error emitted when the caller is not the Orchestrator
 error ParentPool_ItsNotOrchestrator(address caller);
 ///@notice error emitted when the max amount accepted by the pool is reached
@@ -60,6 +52,22 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
+
+  ///////////////
+  ///CONSTANTS///
+  ///////////////
+  ///@notice Magic Number Removal
+  uint256 private constant ALLOWED = 1;
+  uint256 private constant USDC_DECIMALS = 10 ** 6;
+  uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
+  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
+  uint256 private constant PRECISION_HANDLER = 10 ** 10;
+  uint256 private constant WITHDRAW_DEADLINE = 597_600;
+  ///@notice Chainlink Functions Gas Limit
+  uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
+  ///@notice JS Code for Chainlink Functions
+  string internal constant JS_CODE =
+    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = `https://raw.githubusercontent.com/concero/contracts-ccip/main-proxy/packages/hardhat/tasks/CLFScripts/dist/pool/${BigInt(bytesArgs[2]) === 1n ? '' : 'getBalances'}.min.js`; console.log(q); const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
   ////////////////
   ///IMMUTABLES///
@@ -81,38 +89,19 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   ///@notice Chainlink Functions Protocol Subscription ID
   uint64 private immutable i_subscriptionId;
 
-  ///////////////
-  ///CONSTANTS///
-  ///////////////
-  ///@notice Magic Number Removal
-  uint256 private constant ALLOWED = 1;
-  uint256 private constant USDC_DECIMALS = 10 ** 6;
-  uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
-  //  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
-  uint256 private constant MIN_DEPOSIT = 0.1 * 10 ** 6;
-  uint256 private constant PRECISION_HANDLER = 10 ** 10;
-
-  ///@notice Chainlink Functions Gas Limit
-  uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
-  ///@notice Chainlink Function Gas Overhead
-  uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000; //Do we need this?
-  ///@notice JS Code for Chainlink Functions
-  string internal constant JS_CODE =
-    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = `https://raw.githubusercontent.com/concero/contracts-ccip/master/packages/hardhat/tasks/CLFScripts/dist/pool/getTotalBalance.min.js`; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
-
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
   ///@notice event emitted when a new withdraw request is made
   event ParentPool_WithdrawRequest(address caller, IERC20 token, uint256 deadline);
   ///@notice event emitted when a value is withdraw from the contract
-  event ParentPool_Withdrawn(address to, address token, uint256 amount);
+  event ParentPool_Withdrawn(address indexed to, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain tx is received.
   event ParentPool_CCIPReceived(bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain message is sent.
   event ParentPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
   ///@notice event emitted in depositLiquidity when a deposit is successful executed
-  event ParentPool_SuccessfulDeposited(address liquidityProvider, uint256 _amount, IERC20 _token);
+  event ParentPool_SuccessfulDeposited(address indexed liquidityProvider, uint256 _amount, IERC20 _token);
   ///@notice event emitted when a request is updated with the total USDC to withdraw
   event ParentPool_RequestUpdated(address liquidityProvider);
   ///@notice event emitted when the Functions request return error
@@ -128,23 +117,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    */
   modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
     if (s_contractsToReceiveFrom[_chainSelector][_sender] != ALLOWED) revert ParentPool_SenderNotAllowed(_sender);
-    _;
-  }
-
-  /**
-   * @notice modifier to check if the caller is the an approved messenger
-   */
-  modifier onlyMessenger() {
-    if (isMessenger(msg.sender) == false) revert ParentPool_NotMessenger(msg.sender);
-    _;
-  }
-
-  /**
-   * @notice CCIP Modifier to check receivers for a specific chain
-   * @param _chainSelector Id of the destination chain
-   */
-  modifier onlyAllowListedChain(uint64 _chainSelector) {
-    if (s_poolToSendTo[_chainSelector] == address(0)) revert ParentPool_ChainNotAllowed(_chainSelector);
     _;
   }
 
@@ -224,8 +196,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     args[1] = abi.encodePacked(s_ethersHashSum);
 
     bytes32 requestId = _sendRequest(args, JS_CODE);
-
-    s_requests[requestId] = IParentPool.CLARequest({
+    s_requests[requestId] = IParentPool.CLFRequest({
       requestType: IParentPool.RequestType.GetTotalUSDC,
       liquidityProvider: msg.sender,
       usdcBeforeRequest: i_USDC.balanceOf(address(this)) + s_loansInUse,
@@ -257,7 +228,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     bytes32 requestId = _sendRequest(args, JS_CODE);
 
-    s_requests[requestId] = IParentPool.CLARequest({
+    s_requests[requestId] = IParentPool.CLFRequest({
       requestType: IParentPool.RequestType.PerformWithdrawal,
       liquidityProvider: msg.sender,
       usdcBeforeRequest: 0,
@@ -265,7 +236,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       amount: _lpAmount
     });
 
-    emit ParentPool_WithdrawRequest(msg.sender, i_USDC, block.timestamp + 597_600);
+    emit ParentPool_WithdrawRequest(msg.sender, i_USDC, block.timestamp + WITHDRAW_DEADLINE);
   }
 
   /**
@@ -281,11 +252,11 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     if (withdraw.amountEarned > i_USDC.balanceOf(address(this))) revert ParentPool_InsufficientBalance();
 
-    emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
-
     s_withdrawRequests = s_withdrawRequests > withdraw.amountEarned ? s_withdrawRequests - withdraw.amountEarned : 0;
 
     delete s_pendingWithdrawRequests[msg.sender];
+
+    emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
 
     IERC20(i_lp).safeTransferFrom(msg.sender, address(this), withdraw.amountToBurn);
 
@@ -403,7 +374,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @dev response & err will never be empty or populated at same time.
    */
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
-    IParentPool.CLARequest storage request = s_requests[requestId];
+    IParentPool.CLFRequest storage request = s_requests[requestId];
 
     if (err.length > 0) {
       emit FunctionsRequestError(requestId, request.requestType);
@@ -477,7 +448,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       amountToReceive: (_convertToUSDCTokenDecimals(amountToWithdraw) * numberOfPools) / (numberOfPools + 1), //The portion of the money that is not on MasterPool
       token: address(i_USDC),
       liquidityProvider: _liquidityProvider,
-      deadline: block.timestamp + 597_600 //6days & 22h
+      deadline: block.timestamp + WITHDRAW_DEADLINE //6days & 22h
     });
 
     s_withdrawRequests = s_withdrawRequests + _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1);
@@ -509,26 +480,12 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     _adjustedAmount = (_lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
   }
 
-  /**
-   * @notice Function to check if a caller address is an allowed messenger
-   * @param _messenger the address of the caller
-   */
-  function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
-    address[] memory messengers = new address[](4); //Number of messengers. To define.
-    messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
-    messengers[1] = address(0);
-    messengers[2] = address(0);
-    messengers[3] = address(0);
+  function getMaxCap() external view returns(uint256 _maxCap){
+    _maxCap = s_maxDeposit;
+  }
 
-    for (uint256 i; i < messengers.length; ) {
-      if (_messenger == messengers[i]) {
-        return true;
-      }
-      unchecked {
-        ++i;
-      }
-    }
-    return false;
+  function getUsdcInUse() external view returns(uint256 _usdcInUse){
+    _usdcInUse = s_loansInUse;
   }
 
   //////////////////////////////

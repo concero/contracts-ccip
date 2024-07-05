@@ -24,7 +24,6 @@ error TxAlreadyConfirmed();
 error AddressNotSet();
 ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
 error ConceroFunctions_ItsNotOrchestrator(address caller);
-error ConceroFunctions_NotMessenger(address caller);
 error TXReleasedFailed(bytes error); // todo: TXReleasE
 
 contract ConceroFunctions is FunctionsClient, Storage {
@@ -82,18 +81,6 @@ contract ConceroFunctions is FunctionsClient, Storage {
   event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
   ///@notice emitted when the concero pool address is updated
   event ConceroPoolAddressUpdated(address previousAddress, address pool);
-
-  ///////////////
-  ///MODIFIERS///
-  ///////////////
-
-  /**
-   * @notice modifier to check if the caller is the an approved messenger
-   */
-  modifier onlyMessenger() {
-    if (isMessenger(msg.sender) == false) revert ConceroFunctions_NotMessenger(msg.sender);
-    _;
-  }
 
   constructor(
     FunctionsVariables memory _variables,
@@ -173,7 +160,7 @@ contract ConceroFunctions is FunctionsClient, Storage {
   }
 
   function fulfillRequestWrapper(bytes32 requestId, bytes memory response, bytes memory err) external {
-    if (address(this) != i_proxy) revert ConceroFunctions_ItsNotOrchestrator(msg.sender);
+    if (address(this) != i_proxy) revert ConceroFunctions_ItsNotOrchestrator(address(this));
 
     fulfillRequest(requestId, response, err);
   }
@@ -288,37 +275,15 @@ contract ConceroFunctions is FunctionsClient, Storage {
       return;
     }
 
-    (uint256 dstGasPrice, uint256 srcGasPrice, uint256 dstChainSelector, uint256 linkUsdcRate, uint256 nativeUsdcRate, uint256 linkNativeRate) = abi.decode(
+    (uint256 dstGasPrice, uint256 srcGasPrice, uint64 dstChainSelector, uint256 linkUsdcRate, uint256 nativeUsdcRate, uint256 linkNativeRate) = abi.decode(
       response,
-      (uint256, uint256, uint256, uint256, uint256, uint256)
+      (uint256, uint256, uint64, uint256, uint256, uint256)
     );
 
-    s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice;
-    s_lastGasPrices[uint64(dstChainSelector)] = dstGasPrice;
-    s_latestLinkUsdcRate = linkUsdcRate;
-    s_latestNativeUsdcRate = nativeUsdcRate;
-    s_latestLinkNativeRate = linkNativeRate;
-  }
-
-  /**
-   * @notice Function to check if a caller address is an allowed messenger
-   * @param _messenger the address of the caller
-   */
-  function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
-    address[] memory messengers = new address[](4); //Number of messengers. To define.
-    messengers[0] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267; //fake messenger from foundry environment
-    messengers[1] = address(0);
-    messengers[2] = address(0);
-    messengers[3] = address(0);
-
-    for (uint256 i; i < messengers.length; ) {
-      if (_messenger == messengers[i]) {
-        return true;
-      }
-      unchecked {
-        ++i;
-      }
-    }
-    return false;
+    s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice == 0 ? s_lastGasPrices[CHAIN_SELECTOR] : srcGasPrice;
+    s_lastGasPrices[dstChainSelector] = dstGasPrice == 0 ? s_lastGasPrices[dstChainSelector] : dstGasPrice;
+    s_latestLinkUsdcRate = linkUsdcRate == 0 ? s_latestLinkUsdcRate : linkUsdcRate;
+    s_latestNativeUsdcRate = nativeUsdcRate == 0 ? s_latestNativeUsdcRate : nativeUsdcRate;
+    s_latestLinkNativeRate = linkNativeRate == 0 ? s_latestLinkNativeRate : linkNativeRate;
   }
 }

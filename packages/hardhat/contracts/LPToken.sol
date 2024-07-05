@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 contract LPToken is ERC20, ERC20Burnable, AccessControl, ERC20Permit {
   bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-  constructor(address defaultAdmin, address minter) ERC20("LPToken", "LPT") ERC20Permit("LPToken") {
+  constructor(address defaultAdmin, address minter) ERC20("Concero-LP", "CLP") ERC20Permit("Concero-LP") {
     _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
     _grantRole(MINTER_ROLE, minter);
   }

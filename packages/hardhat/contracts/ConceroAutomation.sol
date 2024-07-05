@@ -65,7 +65,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ///STORAGE///
   /////////////
   ///@notice array to store the withdraw requests of users
-  IParentPool.WithdrawRequests[] s_pendingWithdrawRequestsCLA;
+  address[] public s_pendingWithdrawRequestsCLA;
 
   ///@notice Mapping to keep track of Chainlink Functions requests
   mapping(bytes32 requestId => PerformWithdrawRequest) public s_requests;
@@ -74,7 +74,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
   ///@notice event emitted when a new request is added
-  event ConceroAutomation_RequestAdded(IParentPool.WithdrawRequests request);
+  event ConceroAutomation_RequestAdded(address);
   ///@notice event emitted when the Pool Address is updated
   event ConceroAutomation_PoolAddressUpdated(address pool);
   ///@notice event emitted when the Keeper Address is updated
@@ -152,15 +152,15 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
   /**
    * @notice Function to add new withdraw requests to CLA monitoring system
-   * @param _request the WithdrawRequests populated struct
+   * @param _liquidityProvider the WithdrawRequests populated address
    * @dev this function should only be called by the ConceroPool.sol
    */
-  function addPendingWithdrawal(IParentPool.WithdrawRequests memory _request) external {
+  function addPendingWithdrawal(address _liquidityProvider) external {
     if (i_masterPoolProxy != msg.sender) revert ConceroAutomation_CallerNotAllowed(msg.sender);
 
-    s_pendingWithdrawRequestsCLA.push(_request);
+    s_pendingWithdrawRequestsCLA.push(_liquidityProvider);
 
-    emit ConceroAutomation_RequestAdded(_request);
+    emit ConceroAutomation_RequestAdded(_liquidityProvider);
   }
 
   /**
@@ -176,10 +176,13 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
 
     for (uint256 i; i < requestsNumber; ++i) {
-      if (block.timestamp > s_pendingWithdrawRequestsCLA[i].deadline) {
+      address liquidityProvider = s_pendingWithdrawRequestsCLA[i];
+      IParentPool.WithdrawRequests memory pendingRequest = IParentPool(i_masterPoolProxy).getPendingWithdrawRequest(liquidityProvider);
+
+      if (block.timestamp > pendingRequest.deadline) {
         _performData = abi.encode(
-          s_pendingWithdrawRequestsCLA[i].liquidityProvider, //address
-          s_pendingWithdrawRequestsCLA[i].amountToRequest //uint256
+          liquidityProvider, //address
+          pendingRequest.amountToRequest //uint256
         );
         _upkeepNeeded = true;
       }
@@ -231,7 +234,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    * @dev response & err will never be empty or populated at same time.
    */
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
-    PerformWithdrawRequest storage request = s_requests[requestId];
+    PerformWithdrawRequest storage functionRequest = s_requests[requestId];
 
     if (err.length > 0) {
       emit FunctionsRequestError(requestId);
@@ -241,7 +244,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
 
     for (uint256 i; i < requestsNumber; ++i) {
-      if (s_pendingWithdrawRequestsCLA[i].liquidityProvider == request.liquidityProvider) {
+      if (s_pendingWithdrawRequestsCLA[i] == functionRequest.liquidityProvider) {
         s_pendingWithdrawRequestsCLA[i] = s_pendingWithdrawRequestsCLA[s_pendingWithdrawRequestsCLA.length - 1];
         s_pendingWithdrawRequestsCLA.pop();
       }
@@ -251,7 +254,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ///////////////////////////
   ///PURE & VIEW FUNCTIONS///
   ///////////////////////////
-  function getPendingRequests() external view returns(IParentPool.WithdrawRequests[] memory _request){
-    _request = s_pendingWithdrawRequestsCLA;
+  function getPendingRequests() external view returns (address[] memory _requests) {
+    _requests = s_pendingWithdrawRequestsCLA;
   }
 }

@@ -12,7 +12,6 @@ interface IParentPool {
     uint256 amountToRequest;
     uint256 amountToReceive;
     address token;
-    address liquidityProvider;
     uint256 deadline;
   }
 
@@ -35,7 +34,7 @@ interface IParentPool {
     uint256 lpSupplyBeforeRequest;
     uint256 amount; //USDC or LP according to the request
   }
-  
+
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
@@ -54,4 +53,6 @@ interface IParentPool {
   function depositEther() external payable;
 
   function depositToken(address _token, uint256 _amount) external;
+
+  function getPendingWithdrawRequest(address _liquidityProvider) external view returns (WithdrawRequests memory);
 }

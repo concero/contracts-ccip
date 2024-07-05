@@ -32,8 +32,9 @@ const setDonHostedSecretsVersion = async (hre, slotId: number, abi) => {
 };
 
 const setForwarderAddress = async (hre, forwarderAddress: string, abi: any) => {
+  const name = hre.network.name;
   try {
-    const chain = CNetworks[hre.network.name];
+    const chain = CNetworks[name];
     const { viemChain } = chain;
     const { walletClient, publicClient, account } = getClients(chain.viemChain, chain.url);
     const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
@@ -105,8 +106,8 @@ const setEthersHashSum = async (hre, abi: any) => {
 export async function setAutomationsVariables(hre, slotId: number, forwarderAddress: string) {
   const { abi } = await load("../artifacts/contracts/ConceroAutomation.sol/ConceroAutomation.json");
 
-  await setDonHostedSecretsVersion(hre, slotId, abi);
+  // await setDonHostedSecretsVersion(hre, slotId, abi);
   await setForwarderAddress(hre, forwarderAddress, abi);
-  await setHashSum(hre, abi);
-  await setEthersHashSum(hre, abi);
+  // await setHashSum(hre, abi);
+  // await setEthersHashSum(hre, abi);
 }

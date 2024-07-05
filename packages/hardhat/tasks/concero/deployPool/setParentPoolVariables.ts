@@ -223,10 +223,10 @@ export async function setParentPoolVariables(chain: CNetwork, isSetSecretsNeeded
   await setParentPoolJsHashes(chain, ParentPoolAbi);
   await setParentPoolCap(chain, ParentPoolAbi);
 
-  if (isSetSecretsNeeded) {
-    await setParentPoolSecretsVersion(chain, ParentPoolAbi, slotId);
-    await setParentPoolSecretsSlotId(chain, ParentPoolAbi, slotId);
-  }
+  // if (isSetSecretsNeeded) {
+  await setParentPoolSecretsVersion(chain, ParentPoolAbi, slotId);
+  await setParentPoolSecretsSlotId(chain, ParentPoolAbi, slotId);
+  // }
 
   await setConceroContractSenders(chain, ParentPoolAbi);
   await setPoolsToSend(chain, ParentPoolAbi);

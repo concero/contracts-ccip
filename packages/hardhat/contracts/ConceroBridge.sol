@@ -33,11 +33,12 @@ error Concero_ItsNotOrchestrator(address caller);
 
 contract ConceroBridge is ConceroCCIP {
   using SafeERC20 for IERC20;
-  
+
   ///////////////
   ///CONSTANTS///
   ///////////////
   uint16 internal constant CONCERO_FEE_FACTOR = 1000;
+  uint64 private constant HALF_DST_GAS = 600_000;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -46,8 +47,6 @@ contract ConceroBridge is ConceroCCIP {
   event CCIPSent(bytes32 indexed ccipMessageId, address sender, address recipient, CCIPToken token, uint256 amount, uint64 dstChainSelector);
   /// @notice event emitted when a stuck amount is withdraw
   event Concero_StuckAmountWithdraw(address owner, address token, uint256 amount);
-
-  uint64 private constant HALF_DST_GAS = 600_000;
 
   constructor(
     FunctionsVariables memory _variables,

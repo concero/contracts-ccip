@@ -41,7 +41,7 @@ async function f() {
 	}
 	let totalBalance = 0n;
 	for (const chain in chainSelectors) {
-		const fallBackProviders = chainSelectors[srcChainSelector].urls.map(url => {
+		const fallBackProviders = chainSelectors[chain].urls.map(url => {
 			return {
 				provider: new FunctionsJsonRpcProvider(url),
 				priority: Math.random(),

@@ -71,7 +71,7 @@ async function f() {
 
 	for (const chain in chainSelectors) {
 		// const url = chainSelectors[chain].urls[Math.floor(Math.random() * chainSelectors[chain].urls.length)];
-		const fallBackProviders = chainSelectors[srcChainSelector].urls.map(url => {
+		const fallBackProviders = chainSelectors[chain].urls.map(url => {
 			return {
 				provider: new FunctionsJsonRpcProvider(url),
 				priority: Math.random(),

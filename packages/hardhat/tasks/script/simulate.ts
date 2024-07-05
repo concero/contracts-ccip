@@ -92,7 +92,7 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     // ]);
 
     await simulate(path.join(__dirname, "../", "./CLFScripts/dist/pool/parentPoolEval.min.js"), [
-      "0x001f6864036648a54934d06e98416a94c239ee27cc96baf8a9460d22bf99643c", // srcJsHashSum
+      "0x4c6d8a0cb9facc3e732f6a3a2417499d1a9f1e5a029de4a7ab31a93d2fafb950", // srcJsHashSum
       "0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4", // ethers hash sum
     ]);
   });

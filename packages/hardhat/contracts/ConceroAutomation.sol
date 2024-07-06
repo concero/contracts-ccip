@@ -11,6 +11,8 @@ import {IParentPool} from "./Interfaces/IParentPool.sol";
 
 ///@notice error emitted when the caller is not the owner.
 error ConceroAutomation_CallerNotAllowed(address caller);
+error ConceroAutomation_WithdrawAlreadyTriggered(address liquidityProvider);
+error ConceroAutomation_CLFFallbackError(bytes32 requestId);
 
 contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ownable {
   ///////////////////////
@@ -68,7 +70,8 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   address[] public s_pendingWithdrawRequestsCLA;
 
   ///@notice Mapping to keep track of Chainlink Functions requests
-  mapping(bytes32 requestId => PerformWithdrawRequest) public s_requests;
+  mapping(bytes32 requestId => PerformWithdrawRequest) public s_functionsRequests;
+  mapping(address => bool) public s_withdrawTriggered;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -170,23 +173,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    * @return _performData the payload we need to send through performUpkeep to Chainlink functions.
    * @dev this function must be called only by the Chainlink Forwarder unique address
    */
-  function checkUpkeep(bytes calldata /* checkData */) external override returns (bool _upkeepNeeded, bytes memory _performData) {
-    //    if (msg.sender != s_forwarderAddress) revert ConceroAutomation_CallerNotAllowed(msg.sender);
-
-    uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
-
-    for (uint256 i; i < requestsNumber; ++i) {
-      address liquidityProvider = s_pendingWithdrawRequestsCLA[i];
-      IParentPool.WithdrawRequests memory pendingRequest = IParentPool(i_masterPoolProxy).getPendingWithdrawRequest(liquidityProvider);
-
-      if (block.timestamp > pendingRequest.deadline) {
-        _performData = abi.encode(liquidityProvider, pendingRequest.amountToRequest);
-        _upkeepNeeded = true;
-      }
-    }
-  }
-
-  function getCheckUpkeep() external view returns (bool _upkeepNeeded, bytes memory _performData) {
+  function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool _upkeepNeeded, bytes memory _performData) {
     uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
 
     for (uint256 i; i < requestsNumber; ++i) {
@@ -207,8 +194,13 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    */
   function performUpkeep(bytes calldata _performData) external override {
     if (msg.sender != s_forwarderAddress) revert ConceroAutomation_CallerNotAllowed(msg.sender);
-
     (address liquidityProvider, uint256 amountToRequest) = abi.decode(_performData, (address, uint256));
+
+    if (s_withdrawTriggered[liquidityProvider] == true) {
+      revert ConceroAutomation_WithdrawAlreadyTriggered(liquidityProvider);
+    } else {
+      s_withdrawTriggered[liquidityProvider] = true;
+    }
 
     bytes[] memory args = new bytes[](4);
     args[0] = abi.encode(s_hashSum);
@@ -219,7 +211,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     //Commented so tests don't fail.
     bytes32 reqId = _sendRequest(args, JS_CODE); //@No JS code yet
 
-    s_requests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest});
+    s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest});
 
     emit ConceroAutomation_UpkeepPerformed(reqId);
   }
@@ -245,17 +237,21 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    * @dev response & err will never be empty or populated at same time.
    */
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
-    PerformWithdrawRequest storage functionRequest = s_requests[requestId];
+    PerformWithdrawRequest storage functionRequest = s_functionsRequests[requestId];
+    address liquidityProvider = functionRequest.liquidityProvider;
 
     if (err.length > 0) {
       emit FunctionsRequestError(requestId);
-      return;
+      revert ConceroAutomation_CLFFallbackError(requestId);
+      // todo: there is no fallback mechanism if CLF fails to trigger liquidity pull from child pools.
+      // todo: if CLF fails, the LP will not be able to retry the withdrawal request.
     }
 
+    s_withdrawTriggered[liquidityProvider] = false;
     uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
 
     for (uint256 i; i < requestsNumber; ++i) {
-      if (s_pendingWithdrawRequestsCLA[i] == functionRequest.liquidityProvider) {
+      if (s_pendingWithdrawRequestsCLA[i] == liquidityProvider) {
         s_pendingWithdrawRequestsCLA[i] = s_pendingWithdrawRequestsCLA[s_pendingWithdrawRequestsCLA.length - 1];
         s_pendingWithdrawRequestsCLA.pop();
       }

@@ -18,7 +18,7 @@ task("deploy-parent-pool", "Deploy the pool")
   .addFlag("deployproxy", "Deploy the proxy")
   .addFlag("skipsetvars", "Set the contract variables")
   .addFlag("uploadsecrets", "Set the contract variables")
-  .addFlag("ismainnet", "Deploy to testnet")
+  .addFlag("mainnet", "Deploy to mainnet")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);

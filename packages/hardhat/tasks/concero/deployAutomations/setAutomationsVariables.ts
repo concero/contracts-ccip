@@ -211,7 +211,7 @@ export async function setAutomationsVariables(hre, slotId: number, forwarderAddr
   await setHashSum(hre, abi);
   await setEthersHashSum(hre, abi);
 
-  // await deleteRequest(hre, abi);
+  await deleteRequest(hre, abi);
 
   await checkUpkeep(hre, abi);
 }

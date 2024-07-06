@@ -98,12 +98,19 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     //   "0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4", // ethers hash sum
     // ]);
 
-    await simulate(path.join(__dirname, "../", "./CLFScripts/dist/pool/automationEval.min.js"), [
-      getHashSum(await (await fetch(automationsJsCodeUrl)).text()),
-      getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
-      "0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0",
-      "0x186A0",
-    ]);
+    let promises = [];
+    for (let i = 0; i < 4; i++) {
+      promises.push(
+        simulate(path.join(__dirname, "../", "./CLFScripts/dist/pool/automationEval.min.js"), [
+          getHashSum(await (await fetch(automationsJsCodeUrl)).text()),
+          getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
+          "0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0",
+          "0x186A0",
+        ]),
+      );
+    }
+
+    await Promise.all(promises);
   });
 
 export default {};

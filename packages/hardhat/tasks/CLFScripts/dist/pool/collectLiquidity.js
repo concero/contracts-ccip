@@ -9,7 +9,7 @@ async function f() {
 			],
 			chainId: '0x66eee',
 			usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-			poolAddress: '0xf7F3c68fb90aeEB9E024C7e2176B168dF7b921Dd',
+			poolAddress: '0x869a621003BC70fceA9d12267a3B80E49cCbEFE3',
 		},
 		[`0x${BigInt('5224473277236331295').toString(16)}`]: {
 			urls: [
@@ -19,7 +19,7 @@ async function f() {
 			],
 			chainId: '0xaa37dc',
 			usdcAddress: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
-			poolAddress: '0xCE80F13941446FbA1E7dFB49f1454044081Ee7Ae',
+			poolAddress: '0xE2E94C32beeB98F1b4D96F0E30a5a92af8f09108',
 		},
 	};
 	const MASTER_POOL_CHAIN_SELECTOR = `0x${BigInt('10344971235874465080').toString(16)}`;

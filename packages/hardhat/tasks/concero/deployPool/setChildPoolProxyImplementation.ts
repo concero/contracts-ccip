@@ -29,5 +29,5 @@ export async function setChildPoolProxyImplementation(hre, liveChains: CNetwork[
 
   const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-  log(`Upgrade to CCIP implementation: gasUsed: ${cumulativeGasUsed}, hash: ${txHash}`, "setProxyImplementation");
+  log(`Upgrade to Child Pool implementation: gasUsed: ${cumulativeGasUsed}, hash: ${txHash}`, "setProxyImplementation");
 }

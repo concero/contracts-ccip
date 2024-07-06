@@ -123,30 +123,11 @@ const setEthersHashSum = async (hre, abi: any) => {
   }
 };
 
-async function getCheckUpkeep(chain, abi) {
-  const { viemChain } = chain;
-  const { walletClient, publicClient, account } = getClients(viemChain, chain.url);
-  const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
-
-  const res = await publicClient.readContract({
-    address: automationsContract,
-    abi,
-    functionName: "getCheckUpkeep",
-    account,
-    chain: viemChain,
-  });
-
-  console.log(res);
-}
-
 export async function setAutomationsVariables(hre, slotId: number, forwarderAddress: string) {
   const { abi } = await load("../artifacts/contracts/ConceroAutomation.sol/ConceroAutomation.json");
 
-  // await setDonHostedSecretsVersion(hre, slotId, abi);
-  // await setForwarderAddress(hre, forwarderAddress, abi);
-  // await setHashSum(hre, abi);
-  // await setEthersHashSum(hre, abi);
-
-  const chain = CNetworks[hre.network.name];
-  await getCheckUpkeep(chain, abi);
+  await setDonHostedSecretsVersion(hre, slotId, abi);
+  await setForwarderAddress(hre, forwarderAddress, abi);
+  await setHashSum(hre, abi);
+  await setEthersHashSum(hre, abi);
 }

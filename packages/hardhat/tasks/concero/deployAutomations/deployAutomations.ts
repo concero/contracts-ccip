@@ -5,6 +5,7 @@ import { setAutomationsVariables } from "./setAutomationsVariables";
 import CNetworks from "../../../constants/CNetworks";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import { execSync } from "child_process";
+import addCLFConsumer from "../../sub/add";
 
 task("deploy-automations", "Deploy the automations")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
@@ -12,7 +13,7 @@ task("deploy-automations", "Deploy the automations")
   .addOptionalParam(
     "automationsforwarder",
     "Automations forwarder",
-    "0xd7d0c7FbEF707E39AbeFCe639d3Da2D955c2BfFD",
+    "0x9ea696B99E3a42B0AA1f2383F4222fFE04F50393",
     types.string,
   )
   .setAction(async taskArgs => {
@@ -26,7 +27,7 @@ task("deploy-automations", "Deploy the automations")
 
     const chain = CNetworks[hre.network.name];
     const automationContractAddress = getEnvVar("CONCERO_AUTOMATION_BASE_SEPOLIA");
-    // await addCLFConsumer(chain, [automationContractAddress], chain.functionsSubIds[0]);
+    await addCLFConsumer(chain, [automationContractAddress], chain.functionsSubIds[0]);
 
     await setAutomationsVariables(hre, slotId, taskArgs.automationsforwarder);
   });

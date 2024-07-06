@@ -205,13 +205,13 @@ const deleteRequest = async (hre, abi: any) => {
 export async function setAutomationsVariables(hre, slotId: number, forwarderAddress: string) {
   const { abi } = await load("../artifacts/contracts/ConceroAutomation.sol/ConceroAutomation.json");
 
-  // await setDonHostedSecretsVersion(hre, slotId, abi);
-  // await setDonHostedSecretsSlotId(hre, slotId, abi);
-  // await setForwarderAddress(hre, forwarderAddress, abi);
+  await setDonHostedSecretsVersion(hre, slotId, abi);
+  await setDonHostedSecretsSlotId(hre, slotId, abi);
+  await setForwarderAddress(hre, forwarderAddress, abi);
   await setHashSum(hre, abi);
   await setEthersHashSum(hre, abi);
 
-  await deleteRequest(hre, abi);
+  // await deleteRequest(hre, abi);
 
-  await checkUpkeep(hre, abi);
+  // await checkUpkeep(hre, abi);
 }

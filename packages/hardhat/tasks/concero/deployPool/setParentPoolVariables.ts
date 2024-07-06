@@ -263,20 +263,59 @@ async function getPendingRequest(chain: CNetwork, abi: any) {
   console.log(pendingRequest);
 }
 
+async function removePoolsFromListOfSenders(chain: CNetwork, abi, chainSelectors: string[]) {
+  const { name: chainName, viemChain, url } = chain;
+  const clients = getClients(viemChain, url);
+  const { publicClient, account, walletClient } = clients;
+  if (!chainName) throw new Error("Chain name not found");
+
+  const parentPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
+
+  for (const chainSelector of chainSelectors) {
+    // const { request: deletePoolReq } = await publicClient.simulateContract({
+    //   address: parentPoolAddress,
+    //   abi,
+    //   functionName: "removePoolsFromListOfSenders",
+    //   args: [chainSelector],
+    //   account,
+    //   viemChain,
+    // });
+
+    const deletePoolHash = await walletClient.writeContract({
+      address: parentPoolAddress,
+      abi,
+      functionName: "removePoolsFromListOfSenders",
+      args: [chainSelector],
+      account,
+      viemChain,
+      gas: 1_000_000n,
+    });
+
+    const { cumulativeGasUsed: deletePoolGasUsed } = await publicClient.waitForTransactionReceipt({
+      hash: deletePoolHash,
+    });
+    log(
+      `Remove ${chainName}:${chainSelector} from list of senders. Gas used: ${deletePoolGasUsed.toString()}`,
+      "removePoolFromListOfSenders",
+    );
+  }
+}
+
 export async function setParentPoolVariables(chain: CNetwork, isSetSecretsNeeded: boolean, slotId: number) {
   const { abi: ParentPoolAbi } = await load("../artifacts/contracts/ParentPool.sol/ParentPool.json");
 
   await setParentPoolJsHashes(chain, ParentPoolAbi);
   await setParentPoolCap(chain, ParentPoolAbi);
 
-  if (isSetSecretsNeeded) {
-    await setParentPoolSecretsVersion(chain, ParentPoolAbi, slotId);
-    await setParentPoolSecretsSlotId(chain, ParentPoolAbi, slotId);
-  }
+  // if (isSetSecretsNeeded) {
+  await setParentPoolSecretsVersion(chain, ParentPoolAbi, slotId);
+  await setParentPoolSecretsSlotId(chain, ParentPoolAbi, slotId);
+  // }
 
-  await setConceroContractSenders(chain, ParentPoolAbi);
   await setPoolsToSend(chain, ParentPoolAbi);
+  await setConceroContractSenders(chain, ParentPoolAbi);
 
+  // await removePoolsFromListOfSenders(chain, ParentPoolAbi, ["3478487238524512106", "5224473277236331295"]);
   // await deletePendingRequest(chain, ParentPoolAbi, "0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0");
   // await deletePendingRequest(chain, ParentPoolAbi, "0x1637A2cafe89Ea6d8eCb7cC7378C023f25c892b6");
 }

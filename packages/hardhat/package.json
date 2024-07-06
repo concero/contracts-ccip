@@ -18,7 +18,7 @@
     "forge-clean": "cd ./test/forge/ && forge clean",
     "verify": "hardhat etherscan-verify",
     "hardhat-verify": "hardhat verify",
-    "clean": "rm -rf ./artifacts ./cache ./coverage ./typechain-types",
+    "clean": "rm -rf ./artifacts ./cache ./coverage ./typechain-types ./deployments",
     "solhint": "solhint ./contracts/**/*.sol",
     "solhint:fix": "solhint --fix ./contracts/**/*.sol",
     "gas-report": "REPORT_GAS=true hardhat test --network hardhat",

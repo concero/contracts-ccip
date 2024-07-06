@@ -14,7 +14,7 @@ import { chainsMap } from "./utils/chainsMap";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
 const senderAddress = process.env.TESTS_WALLET_ADDRESS as Address;
-const lpAmount = "2479340892017266";
+const lpAmount = "100000000000000000";
 const lpTokenAddress = process.env.LPTOKEN_BASE_SEPOLIA as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 
@@ -25,7 +25,9 @@ describe("withdraw usdc from pool\n", () => {
     transport: chainsMap[srcChainSelector].viemTransport,
   });
 
-  let viemAccount: PrivateKeyAccount = privateKeyToAccount(("0x" + process.env.DEPLOYER_PRIVATE_KEY) as `0x${string}`);
+  let viemAccount: PrivateKeyAccount = privateKeyToAccount(
+    ("0x" + process.env.TESTS_WALLET_PRIVATE_KEY) as `0x${string}`,
+  );
   let nonce: BigInt;
   let walletClient: WalletClient<HttpTransport, Chain, Account, RpcSchema> = createWalletClient({
     chain: chainsMap[srcChainSelector].viemChain,

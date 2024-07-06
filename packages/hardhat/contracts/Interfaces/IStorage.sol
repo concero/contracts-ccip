@@ -2,7 +2,6 @@
 pragma solidity 0.8.20;
 
 interface IStorage {
-  //@audit ENUM CANNOT BE HERE
   ///@notice Chainlink Functions Request Type
   enum RequestType {
     addUnconfirmedTxDst,
@@ -38,23 +37,10 @@ interface IStorage {
     address receiver;
   }
 
-  ///@notice ConceroPool Request
-  struct WithdrawRequests {
-    uint256 condition;
-    uint256 amount;
-    bool isActiv;
-  }
-
   ///@notice `ccipSend` to distribute liquidity
   struct Pools {
     uint64 chainSelector;
     address poolAddress;
-  }
-
-  ///@notice Functions Js Code
-  struct JsCodeHashSum {
-    bytes32 src;
-    bytes32 dst;
   }
 
   ///@notice Chainlink Functions Transaction
@@ -67,14 +53,6 @@ interface IStorage {
     uint64 srcChainSelector;
     bool isConfirmed;
     bytes dstSwapData;
-  }
-
-  ///@notice Chainlink Price Feeds
-  struct PriceFeeds {
-    address linkToUsdPriceFeeds;
-    address usdcToUsdPriceFeeds;
-    address nativeToUsdPriceFeeds;
-    address linkToNativePriceFeeds;
   }
 
   ///@notice Chainlink Functions Variables

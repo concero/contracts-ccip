@@ -11,11 +11,11 @@ remappings = [
     "@uniswap/v3-core/contracts/=lib/v3-core/contracts",
     "velodrome/contracts/=lib/contracts/contracts/",
     "@uniswap/swap-router-contracts/contracts/=lib/swap-router-contracts/contracts/",
-    "@sushiSwap/v3-periphery/contracts/=node_modules/sushiswap-v3-periphery/contracts/",
     "@chainlink/contracts/=lib/chainlink/contracts/",
     "@starterKit/=lib/foundry-starter-kit",
     "contracts/=../hardhat/contracts/",
-    "solidity-bytes-utils/=lib/solidity-bytes-utils/"
+    "solidity-bytes-utils/=lib/solidity-bytes-utils/",
+    "sushiswap-v3-periphery/contracts/=node_modules/sushiswap-v3-periphery/contracts/"
 ]
 
 

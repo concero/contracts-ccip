@@ -137,7 +137,6 @@ contract ProtocolTest is Test {
     IUniswapV2Router02 sushiV2Arb;
     ISwapRouter02 uniswapV3Arb;
     ISwapRouter sushiV3Arb;
-    IRouter aerodromeRouterArb;
 
     //==== Instantiate Chainlink Forked CCIP
     CCIPLocalSimulatorFork public ccipLocalSimulatorFork;
@@ -309,8 +308,13 @@ contract ProtocolTest is Test {
 
         //===== Base Proxies
         //====== Update the proxy for the correct address
+        uint256 lastGasPrice = 5767529;
+        uint256 latestLinkUsdcRate = 13_560_000_000_000_000_000;
+        uint256 latestNativeUsdcRate = 3_383_730_000_000_000_000_000;
+        uint256 latestLinkNativeRate = 40091515;
+        bytes memory data = abi.encodeWithSignature("initialize(uint64,uint256,uint256,uint256,uint256)", arbChainSelector, lastGasPrice, latestLinkUsdcRate, latestNativeUsdcRate, latestLinkNativeRate);
         vm.prank(ProxyOwner);
-        proxyInterfaceInfra.upgradeToAndCall(address(orch), "");
+        proxyInterfaceInfra.upgradeToAndCall(address(orch), data);
         vm.prank(ProxyOwner);
         proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
 
@@ -333,7 +337,7 @@ contract ProtocolTest is Test {
         op = Orchestrator(address(proxy));
 
         //====== Set the DEXes routers
-        vm.startPrank(defaultSender);
+        vm.startPrank(Tester);
         op.setDexRouterAddress(address(uniswapV2), 1);
         op.setDexRouterAddress(address(sushiV2), 1);
         op.setDexRouterAddress(address(uniswapV3), 1);
@@ -451,12 +455,11 @@ contract ProtocolTest is Test {
         opDst = Orchestrator(address(proxyDst));
 
         //====== Set the DEXes routers
-        vm.startPrank(defaultSender);
+        vm.startPrank(Tester);
         opDst.setDexRouterAddress(address(uniswapV2Arb), 1);
         opDst.setDexRouterAddress(address(sushiV2Arb), 1);
         opDst.setDexRouterAddress(address(uniswapV3Arb), 1);
         opDst.setDexRouterAddress(address(sushiV3Arb), 1);
-        opDst.setDexRouterAddress(address(aerodromeRouterArb), 1);
         }
     }
 

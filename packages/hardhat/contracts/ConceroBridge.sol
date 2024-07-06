@@ -91,14 +91,14 @@ contract ConceroBridge is ConceroCCIP {
   function getFunctionsFeeInLink(uint64 dstChainSelector) public view returns (uint256) {
     uint256 srcGasPrice = s_lastGasPrices[CHAIN_SELECTOR];
     uint256 dstGasPrice = s_lastGasPrices[dstChainSelector];
-    uint256 srsClFeeInLink = clfPremiumFees[CHAIN_SELECTOR] +
+    uint256 srcClFeeInLink = clfPremiumFees[CHAIN_SELECTOR] +
       ((srcGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_CALLBACK_GAS_LIMIT)) * s_latestLinkNativeRate) /
-      1 ether;
+      STANDARD_TOKEN_DECIMALS;
     uint256 dstClFeeInLink = clfPremiumFees[dstChainSelector] +
       ((dstGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_CALLBACK_GAS_LIMIT)) * s_latestLinkNativeRate) /
-      1 ether;
+      STANDARD_TOKEN_DECIMALS;
 
-    return srsClFeeInLink + dstClFeeInLink;
+    return srcClFeeInLink + dstClFeeInLink;
   }
 
   /**
@@ -107,7 +107,7 @@ contract ConceroBridge is ConceroCCIP {
    */
   function getFunctionsFeeInUsdc(uint64 dstChainSelector) public view returns (uint256) {
     uint256 functionsFeeInLink = getFunctionsFeeInLink(dstChainSelector);
-    return (functionsFeeInLink * s_latestLinkUsdcRate) / 1 ether;
+    return (functionsFeeInLink * s_latestLinkUsdcRate) / STANDARD_TOKEN_DECIMALS;
   }
 
   /**
@@ -121,17 +121,16 @@ contract ConceroBridge is ConceroCCIP {
     uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
 
     // @notice cl ccip fee
-    uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector);
+    uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector, amount);
 
     // @notice concero fee
-    uint256 conceroFee = amount / CONCERO_FEE_FACTOR; //@audit 1_000? == 0.1?
+    uint256 conceroFee = amount / CONCERO_FEE_FACTOR;
 
     // @notice gas fee
     uint256 messengerDstGasInNative = HALF_DST_GAS * s_lastGasPrices[dstChainSelector];
     uint256 messengerSrcGasInNative = HALF_DST_GAS * s_lastGasPrices[CHAIN_SELECTOR];
-    uint256 messengerGasFeeInUsdc = ((messengerDstGasInNative + messengerSrcGasInNative) * s_latestNativeUsdcRate) / 1 ether;
+    uint256 messengerGasFeeInUsdc = ((messengerDstGasInNative + messengerSrcGasInNative) * s_latestNativeUsdcRate) / STANDARD_TOKEN_DECIMALS;
 
-    // @notice: converting to 6 decimals
     return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + messengerGasFeeInUsdc);
   }
 
@@ -140,8 +139,8 @@ contract ConceroBridge is ConceroCCIP {
    * @param tokenType the position of the CCIPToken enum
    * @param dstChainSelector the destination blockchain chain selector
    */
-  function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, i_chainIndex), 1 ether, address(this), 0.1 ether, dstChainSelector);
+  function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector, uint256 _amount) public view returns (uint256) {
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, i_chainIndex), _amount, address(this), (_amount / 1000), dstChainSelector);
     return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
   }
 
@@ -150,8 +149,8 @@ contract ConceroBridge is ConceroCCIP {
    * @param tokenType the position of the CCIPToken enum
    * @param dstChainSelector the destination blockchain chain selector
    */
-  function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
-    uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector);
-    return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / 1 ether;
+  function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 _amount) public view returns (uint256) {
+    uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector, _amount);
+    return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
   }
 }

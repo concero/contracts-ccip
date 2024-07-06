@@ -221,10 +221,9 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     uint256 numberOfPools = s_poolsToDistribute.length;
 
-    bytes[] memory args = new bytes[](15);
-    for (uint i; i < numberOfPools; i++) {
-      args[i] = abi.encodePacked(s_poolsToDistribute[i].chainSelector);
-    }
+    bytes[] memory args = new bytes[](2);
+    args[0] = abi.encodePacked(s_hashSum);
+    args[1] = abi.encodePacked(s_ethersHashSum);
 
     bytes32 requestId = _sendRequest(args, JS_CODE);
 
@@ -390,6 +389,24 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       _updateUsdcAmountEarned(request.liquidityProvider, request.lpSupplyBeforeRequest, request.amount, usdcReserve);
     }
   }
+  
+  /**
+   * @notice Internal function to convert USDC Decimals to LP Decimals
+   * @param _usdcAmount the amount of USDC
+   * @return _adjustedAmount the adjusted amount
+   */
+  function _convertToLPTokenDecimals(uint256 _usdcAmount) internal pure returns (uint256 _adjustedAmount) {
+    _adjustedAmount = (_usdcAmount * LP_TOKEN_DECIMALS) / USDC_DECIMALS;
+  }
+
+  /**
+   * @notice Internal function to convert LP Decimals to USDC Decimals
+   * @param _lpAmount the amount of LP
+   * @return _adjustedAmount the adjusted amount
+   */
+  function _convertToUSDCTokenDecimals(uint256 _lpAmount) internal pure returns (uint256 _adjustedAmount) {
+    _adjustedAmount = (_lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
+  }
 
   ///////////////
   /// PRIVATE ///
@@ -440,18 +457,19 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
     uint256 amountToWithdraw = (((_convertToLPTokenDecimals(totalCrossChainBalance) * _lpToBurn) * PRECISION_HANDLER) / _lpSupplyBeforeRequest) /
       PRECISION_HANDLER;
+    uint256 amountConvertedToUSDC = _convertToUSDCTokenDecimals(amountToWithdraw);
 
     IParentPool.WithdrawRequests memory request = IParentPool.WithdrawRequests({
-      amountEarned: _convertToUSDCTokenDecimals(amountToWithdraw),
+      amountEarned: amountConvertedToUSDC,
       amountToBurn: _lpToBurn,
-      amountToRequest: _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1), //Cross-chain Pools + MasterPool
-      amountToReceive: (_convertToUSDCTokenDecimals(amountToWithdraw) * numberOfPools) / (numberOfPools + 1), //The portion of the money that is not on MasterPool
+      amountToRequest: amountConvertedToUSDC / (numberOfPools + 1), //Cross-chain Pools + MasterPool
+      amountToReceive: (amountConvertedToUSDC * numberOfPools) / (numberOfPools + 1), //The portion of the money that is not on MasterPool
       token: address(i_USDC),
       liquidityProvider: _liquidityProvider,
       deadline: block.timestamp + WITHDRAW_DEADLINE //6days & 22h
     });
 
-    s_withdrawRequests = s_withdrawRequests + _convertToUSDCTokenDecimals(amountToWithdraw) / (numberOfPools + 1);
+    s_withdrawRequests = s_withdrawRequests + amountConvertedToUSDC / (numberOfPools + 1);
 
     s_pendingWithdrawRequests[_liquidityProvider] = request;
     i_automation.addPendingWithdrawal(request);
@@ -462,24 +480,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   ///////////////////////////
   ///VIEW & PURE FUNCTIONS///
   ///////////////////////////
-  /**
-   * @notice Internal function to convert USDC Decimals to LP Decimals
-   * @param _usdcAmount the amount of USDC
-   * @return _adjustedAmount the adjusted amount
-   */
-  function _convertToLPTokenDecimals(uint256 _usdcAmount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = (_usdcAmount * LP_TOKEN_DECIMALS) / USDC_DECIMALS;
-  }
-
-  /**
-   * @notice Internal function to convert LP Decimals to USDC Decimals
-   * @param _lpAmount the amount of LP
-   * @return _adjustedAmount the adjusted amount
-   */
-  function _convertToUSDCTokenDecimals(uint256 _lpAmount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = (_lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
-  }
-
   function getMaxCap() external view returns(uint256 _maxCap){
     _maxCap = s_maxDeposit;
   }

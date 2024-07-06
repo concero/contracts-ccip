@@ -286,8 +286,13 @@ contract InfraIntegration is Test {
 
         //===== Base Proxies
         //====== Update the proxy for the correct address
+        uint256 lastGasPrice = 5767529;
+        uint256 latestLinkUsdcRate = 13_560_000_000_000_000_000;
+        uint256 latestNativeUsdcRate = 3_383_730_000_000_000_000_000;
+        uint256 latestLinkNativeRate = 40091515;
+        bytes memory data = abi.encodeWithSignature("initialize(uint64,uint256,uint256,uint256,uint256)", localChainSelector, lastGasPrice, latestLinkUsdcRate, latestNativeUsdcRate, latestLinkNativeRate);
         vm.prank(ProxyOwner);
-        proxyInterfaceInfra.upgradeToAndCall(address(orch), "");
+        proxyInterfaceInfra.upgradeToAndCall(address(orch), data);
         vm.prank(ProxyOwner);
         proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
 
@@ -386,11 +391,6 @@ contract InfraIntegration is Test {
         vm.startPrank(defaultSender);
         //Infra Src
         wInfraSrc.setClfPremiumFees(localChainSelector, 4000000000000000);
-        wInfraSrc.setLastGasPrices(localChainSelector, 5767529);
-        wInfraSrc.setLatestLinkUsdcRate(13_560_000_000_000_000_000);
-        wInfraSrc.setLatestNativeUsdcRate(3_383_730_000_000_000_000_000);
-        wInfraSrc.setLatestLinkNativeRate(40091515);
-
 
         wInfraSrc.setConceroContract(localChainSelector, address(proxyDst));
         wInfraSrc.setDstConceroPool(localChainSelector, address(wChild));

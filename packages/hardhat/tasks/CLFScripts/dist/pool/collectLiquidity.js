@@ -44,7 +44,9 @@ async function f() {
 		if (chainSelector === MASTER_POOL_CHAIN_SELECTOR) continue;
 		const url = chainSelectors[chainSelector].urls[Math.floor(Math.random() * chainSelectors[chainSelector].urls.length)];
 		const provider = new FunctionsJsonRpcProvider(url);
-		const poolContract = new ethers.Contract(chainSelectors[chainSelector].poolAddress, poolAbi, provider);
+		const wallet = new ethers.Wallet('0x' + secrets.WALLET_PRIVATE_KEY, provider);
+		const signer = wallet.connect(provider);
+		const poolContract = new ethers.Contract(chainSelectors[chainSelector].poolAddress, poolAbi, signer);
 		await poolContract.ccipSendToPool(liquidityProvider, tokenAmount);
 		return Functions.encodeUint256(1n);
 	}

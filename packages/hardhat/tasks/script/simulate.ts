@@ -15,27 +15,37 @@ async function simulate(pathToFile, args) {
   if (!fs.existsSync(pathToFile)) return console.error(`File not found: ${pathToFile}`);
   console.log("Simulating script:", pathToFile);
 
-  const { responseBytesHexstring, errorString, capturedTerminalOutput } = await simulateScript({
-    source: fs.readFileSync(pathToFile, "utf8"),
-    bytesArgs: args,
-    secrets,
-    ...CLFSimulationConfig,
-  });
-  if (errorString) {
-    console.log("CAPTURED ERROR:");
-    console.log(errorString);
+  let promises = [];
+  for (let i = 0; i < 4; i++) {
+    promises.push(
+      simulateScript({
+        source: fs.readFileSync(pathToFile, "utf8"),
+        bytesArgs: args,
+        secrets,
+        ...CLFSimulationConfig,
+      }),
+    );
   }
 
-  if (capturedTerminalOutput) {
-    console.log("CAPTURED TERMINAL OUTPUT:");
-    console.log(capturedTerminalOutput);
-  }
+  let results = await Promise.all(promises);
 
-  if (responseBytesHexstring) {
-    console.log("RESPONSE BYTES HEXSTRING:");
-    console.log(responseBytesHexstring);
-    console.log("RESPONSE BYTES DECODED:");
-    // console.log(decodeResult(responseBytesHexstring, "uint256"));
+  for (const result of results) {
+    const { errorString, capturedTerminalOutput, responseBytesHexstring } = result;
+
+    if (errorString) {
+      console.log("CAPTURED ERROR:");
+      console.log(errorString);
+    }
+
+    if (capturedTerminalOutput) {
+      console.log("CAPTURED TERMINAL OUTPUT:");
+      console.log(capturedTerminalOutput);
+    }
+
+    if (responseBytesHexstring) {
+      console.log("RESPONSE BYTES HEXSTRING:");
+      console.log(responseBytesHexstring);
+    }
   }
 }
 
@@ -98,19 +108,12 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     //   "0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4", // ethers hash sum
     // ]);
 
-    let promises = [];
-    for (let i = 0; i < 4; i++) {
-      promises.push(
-        simulate(path.join(__dirname, "../", "./CLFScripts/dist/pool/automationEval.min.js"), [
-          getHashSum(await (await fetch(automationsJsCodeUrl)).text()),
-          getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
-          "0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0",
-          "0x186A0",
-        ]),
-      );
-    }
-
-    await Promise.all(promises);
+    await simulate(path.join(__dirname, "../", "./CLFScripts/dist/pool/automationEval.min.js"), [
+      getHashSum(await (await fetch(automationsJsCodeUrl)).text()),
+      getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
+      "0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0",
+      "0x186A0",
+    ]);
   });
 
 export default {};

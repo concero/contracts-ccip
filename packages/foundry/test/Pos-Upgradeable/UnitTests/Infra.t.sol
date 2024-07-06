@@ -67,7 +67,7 @@ interface IWETH is IERC20 {
     function withdraw(uint256) external;
 }
 
-contract ProtocolTest is Test {
+contract Infra is Test {
     //==== Instantiate Base Contracts
     DexSwap public dex;
     ParentPool public pool;
@@ -164,6 +164,7 @@ contract ProtocolTest is Test {
     address Messenger = makeAddr("Messenger");
     address LP = makeAddr("LiquidityProvider");
     address DummyAddress = makeAddr("DummyAddress");
+    address MockAddress = makeAddr("MockAddress");
     address defaultSender = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
 
     uint256 baseTestnetFork;
@@ -269,23 +270,22 @@ contract ProtocolTest is Test {
         vm.prank(ProxyOwner);
         proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
 
+        //====== Wrap the proxy as the implementation
+        wInfraSrc = Orchestrator(address(proxy));
         wMaster = ParentPool(payable(address(masterProxy)));
 
         //====== Update the MINTER on the LP Token
-        vm.prank(Tester);
-        lp.grantRole(keccak256("MINTER_ROLE"), address(wMaster));
-
-        //====== Wrap the proxy as the implementation
-        wInfraSrc = Orchestrator(address(proxy));
+        // vm.prank(Tester);
+        // lp.grantRole(keccak256("MINTER_ROLE"), address(wMaster));
         }
     }
 
-    error Storage_CallableOnlyByOwner(address, address);
+    error StorageSetters_CallableOnlyByOwner(address, address);
 
     // setDexRouterAddress
     event Storage_NewRouterAdded(address, uint256);
     function test_setDexRouterAddress() public {
-        vm.prank(defaultSender);
+        vm.prank(Tester);
         vm.expectEmit();
         emit Storage_NewRouterAdded(DummyAddress, 1);
         wInfraSrc.setDexRouterAddress( DummyAddress, 1);
@@ -294,8 +294,8 @@ contract ProtocolTest is Test {
     }
 
     function test_revertSetDexRouterAddress() public {
-        vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(Storage_CallableOnlyByOwner.selector, Tester, defaultSender));
+        vm.prank(defaultSender);
+        vm.expectRevert(abi.encodeWithSelector(StorageSetters_CallableOnlyByOwner.selector, defaultSender, Tester));
         wInfraSrc.setDexRouterAddress( DummyAddress, 1);
 
         vm.assertEq(wInfraSrc.s_routerAllowed(DummyAddress), 0);
@@ -307,7 +307,7 @@ contract ProtocolTest is Test {
         uint256 previousValue = 0;
         uint256 feeAmount = 1847290640394088;
 
-        vm.prank(defaultSender);
+        vm.prank(Tester);
         vm.expectEmit();
         emit CLFPremiumFeeUpdated(baseChainSelector, previousValue, feeAmount);
         wInfraSrc.setClfPremiumFees(baseChainSelector, feeAmount);
@@ -319,8 +319,8 @@ contract ProtocolTest is Test {
         uint256 previousValue = 0;
         uint256 feeAmount = 1847290640394088;
 
-        vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(Storage_CallableOnlyByOwner.selector, Tester, defaultSender));
+        vm.prank(defaultSender);
+        vm.expectRevert(abi.encodeWithSelector(StorageSetters_CallableOnlyByOwner.selector, defaultSender, Tester));
         wInfraSrc.setClfPremiumFees(baseChainSelector, feeAmount);
 
         assertEq(wInfraSrc.clfPremiumFees(baseChainSelector), previousValue);
@@ -329,7 +329,7 @@ contract ProtocolTest is Test {
     // setConceroContract
     event ConceroContractUpdated(uint64, address);
     function test_infraSetConceroContract() public {
-        vm.prank(defaultSender);
+        vm.prank(Tester);
         vm.expectEmit();
         emit ConceroContractUpdated(arbChainSelector, address(concero));
         wInfraSrc.setConceroContract(arbChainSelector, address(concero));
@@ -338,8 +338,8 @@ contract ProtocolTest is Test {
     }
 
     function test_revertInfraSetConceroContract() public {
-        vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(Storage_CallableOnlyByOwner.selector, Tester, defaultSender));
+        vm.prank(defaultSender);
+        vm.expectRevert(abi.encodeWithSelector(StorageSetters_CallableOnlyByOwner.selector, defaultSender, Tester));
         wInfraSrc.setConceroContract(arbChainSelector, address(concero));
 
         assertEq(wInfraSrc.s_conceroContracts(arbChainSelector), address(0));
@@ -351,7 +351,7 @@ contract ProtocolTest is Test {
         uint64 previousValue = 0;
         uint64 newVersion = 10;
 
-        vm.prank(defaultSender);
+        vm.prank(Tester);
         vm.expectEmit();
         emit DonSecretVersionUpdated(previousValue, newVersion);
         wInfraSrc.setDonHostedSecretsVersion(newVersion);
@@ -363,8 +363,8 @@ contract ProtocolTest is Test {
         uint64 previousValue = 0;
         uint64 newVersion = 10;
 
-        vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(Storage_CallableOnlyByOwner.selector, Tester, defaultSender));
+        vm.prank(defaultSender);
+        vm.expectRevert(abi.encodeWithSelector(StorageSetters_CallableOnlyByOwner.selector, defaultSender, Tester));
         wInfraSrc.setDonHostedSecretsVersion(newVersion);
 
         assertEq(wInfraSrc.s_donHostedSecretsVersion(), 0);
@@ -376,7 +376,7 @@ contract ProtocolTest is Test {
         uint8 previousValue = 0;
         uint8 newVersion = 1;
 
-        vm.prank(defaultSender);
+        vm.prank(Tester);
         vm.expectEmit();
         emit DonSlotIdUpdated(previousValue, newVersion);
         wInfraSrc.setDonHostedSecretsSlotID(newVersion);
@@ -388,8 +388,8 @@ contract ProtocolTest is Test {
         uint8 previousValue = 0;
         uint8 newVersion = 1;
 
-        vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(Storage_CallableOnlyByOwner.selector, Tester, defaultSender));
+        vm.prank(defaultSender);
+        vm.expectRevert(abi.encodeWithSelector(StorageSetters_CallableOnlyByOwner.selector, defaultSender, Tester));
         wInfraSrc.setDonHostedSecretsSlotID(newVersion);
 
         assertEq(wInfraSrc.s_donHostedSecretsSlotId(), previousValue);
@@ -401,7 +401,7 @@ contract ProtocolTest is Test {
         bytes32 previousHashSum = 0;
         bytes32 hashSum = 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124;
 
-        vm.prank(defaultSender);
+        vm.prank(Tester);
         vm.expectEmit();
         emit DestinationJsHashSumUpdated(previousHashSum, hashSum);
         wInfraSrc.setDstJsHashSum(hashSum);
@@ -413,8 +413,8 @@ contract ProtocolTest is Test {
         bytes32 previousHashSum = 0;
         bytes32 hashSum = 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124;
 
-        vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(Storage_CallableOnlyByOwner.selector, Tester, defaultSender));
+        vm.prank(defaultSender);
+        vm.expectRevert(abi.encodeWithSelector(StorageSetters_CallableOnlyByOwner.selector, defaultSender, Tester));
         wInfraSrc.setDstJsHashSum(hashSum);
         
         assertEq(wInfraSrc.s_dstJsHashSum(), previousHashSum);
@@ -426,7 +426,7 @@ contract ProtocolTest is Test {
         bytes32 previousHashSum = 0;
         bytes32 hashSum = 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124;
 
-        vm.prank(defaultSender);
+        vm.prank(Tester);
         vm.expectEmit();
         emit SourceJsHashSumUpdated(previousHashSum, hashSum);
         wInfraSrc.setSrcJsHashSum(hashSum);
@@ -439,8 +439,8 @@ contract ProtocolTest is Test {
         bytes32 previousHashSum = 0;
         bytes32 hashSum = 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124;
 
-        vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(Storage_CallableOnlyByOwner.selector, Tester, defaultSender));
+        vm.prank(defaultSender);
+        vm.expectRevert(abi.encodeWithSelector(StorageSetters_CallableOnlyByOwner.selector, defaultSender, Tester));
         wInfraSrc.setSrcJsHashSum(hashSum);
         
         assertEq(wInfraSrc.s_srcJsHashSum(), previousHashSum);
@@ -452,7 +452,7 @@ contract ProtocolTest is Test {
         bytes32 previousHashSum = 0;
         bytes32 hashSum = 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124;
 
-        vm.prank(defaultSender);
+        vm.prank(Tester);
         vm.expectEmit();
         emit EthersHashSumUpdated(previousHashSum, hashSum);
         wInfraSrc.setEthersHashSum(hashSum);
@@ -465,8 +465,8 @@ contract ProtocolTest is Test {
         bytes32 previousHashSum = 0;
         bytes32 hashSum = 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124;
 
-        vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(Storage_CallableOnlyByOwner.selector, Tester, defaultSender));
+        vm.prank(defaultSender);
+        vm.expectRevert(abi.encodeWithSelector(StorageSetters_CallableOnlyByOwner.selector, defaultSender, Tester));
         wInfraSrc.setEthersHashSum(hashSum);
         
         assertEq(wInfraSrc.s_ethersHashSum(), previousHashSum);
@@ -474,16 +474,16 @@ contract ProtocolTest is Test {
 
     // SetDstConceroPool
     function test_setConceroPool() public {
-        vm.prank(defaultSender);
-        wInfraSrc.setDstConceroPool(arbChainSelector, address(childProxy));
+        vm.prank(Tester);
+        wInfraSrc.setDstConceroPool(arbChainSelector, MockAddress);
 
-        assertEq(wInfraSrc.s_poolReceiver(arbChainSelector), address(childProxy));
+        assertEq(wInfraSrc.s_poolReceiver(arbChainSelector), MockAddress);
     }
 
     function test_revertSetConceroPool() public {
-        vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(Storage_CallableOnlyByOwner.selector, Tester, defaultSender));
-        wInfraSrc.setDstConceroPool(arbChainSelector, address(childProxy));
+        vm.prank(defaultSender);
+        vm.expectRevert(abi.encodeWithSelector(StorageSetters_CallableOnlyByOwner.selector, defaultSender, Tester));
+        wInfraSrc.setDstConceroPool(arbChainSelector, MockAddress);
 
         assertEq(wInfraSrc.s_poolReceiver(arbChainSelector), address(0));
     }

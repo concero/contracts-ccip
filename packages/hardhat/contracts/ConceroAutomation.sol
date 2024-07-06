@@ -32,7 +32,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ///@notice Chainlink Functions Gas Limit
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   ///@notice Chainlink Function Gas Overhead
-  uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
+  uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000; //@audit do we need this? It's not being used.
   ///@notice JS Code for Chainlink Functions
   string internal constant JS_CODE =
     "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = `https://raw.githubusercontent.com/concero/contracts-ccip/main-proxy/packages/hardhat/tasks/CLFScripts/dist/pool/collectLiquidity.min.js`; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
@@ -108,49 +108,6 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   }
 
   /**
-   * @notice Function to set the Chainlink Automation Forwarder
-   * @param _forwarderAddress the unique forward address
-   * @dev this address will be used inside of revert statements
-   */
-  function setForwarderAddress(address _forwarderAddress) external onlyOwner {
-    s_forwarderAddress = _forwarderAddress;
-
-    emit ConceroAutomation_ForwarderAddressUpdated(_forwarderAddress);
-  }
-
-  /**
-   * @notice Function to set the Don Secrets Version from Chainlink Functions
-   * @param _version the version
-   * @dev this functions was used inside of ConceroFunctions
-   */
-  function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
-    s_donHostedSecretsVersion = _version;
-
-    emit ConceroAutomation_DonSecretVersionUpdated(_version);
-  }
-
-  /**
-   * @notice Function to set the Source JS code for Chainlink Functions
-   * @param _hashSum  the JsCode
-   * @dev this functions was used inside of ConceroFunctions
-   */
-  function setJsHashSum(bytes32 _hashSum) external onlyOwner {
-    s_hashSum = _hashSum;
-
-    emit ConceroAutomation_HashSumUpdated(_hashSum);
-  }
-
-  /**
-   * @notice Function to set the Ethers JS code for Chainlink Functions
-   * @param _hashSum the JsCode
-   * @dev this functions was used inside of ConceroFunctions
-   */
-  function setEthersHashSum(bytes32 _hashSum) external payable onlyOwner {
-    s_ethersHashSum = _hashSum;
-    emit ConceroAutomation_EthersHashSumUpdated(_hashSum);
-  }
-
-  /**
    * @notice Function to add new withdraw requests to CLA monitoring system
    * @param _request the WithdrawRequests populated struct
    * @dev this function should only be called by the ConceroPool.sol
@@ -197,19 +154,64 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     (address liquidityProvider, uint256 amountToRequest) = abi.decode(_performData, (address, uint256));
 
     bytes[] memory args = new bytes[](4);
-    args[0] = abi.encode(s_hashSum);
-    args[1] = abi.encode(s_ethersHashSum);
+    args[0] = abi.encodePacked(s_hashSum);
+    args[1] = abi.encodePacked(s_ethersHashSum);
     args[2] = abi.encode(liquidityProvider); //We need to send this as data through CCIP to updated the MasterPool storage.
     args[3] = abi.encode(amountToRequest); //Amount is the same for all pools
 
-    //Commented so tests don't fail.
-    bytes32 reqId = _sendRequest(args, JS_CODE); //@No JS code yet
+    bytes32 reqId = _sendRequest(args, JS_CODE);
 
     s_requests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest});
 
     emit ConceroAutomation_UpkeepPerformed(reqId);
   }
 
+  /**
+   * @notice Function to set the Chainlink Automation Forwarder
+   * @param _forwarderAddress the unique forward address
+   * @dev this address will be used inside of revert statements
+   */
+  function setForwarderAddress(address _forwarderAddress) external onlyOwner {
+    s_forwarderAddress = _forwarderAddress;
+
+    emit ConceroAutomation_ForwarderAddressUpdated(_forwarderAddress);
+  }
+
+  /**
+   * @notice Function to set the Don Secrets Version from Chainlink Functions
+   * @param _version the version
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
+    s_donHostedSecretsVersion = _version;
+
+    emit ConceroAutomation_DonSecretVersionUpdated(_version);
+  }
+
+  /**
+   * @notice Function to set the Source JS code for Chainlink Functions
+   * @param _hashSum  the JsCode
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setJsHashSum(bytes32 _hashSum) external onlyOwner {
+    s_hashSum = _hashSum;
+
+    emit ConceroAutomation_HashSumUpdated(_hashSum);
+  }
+
+  /**
+   * @notice Function to set the Ethers JS code for Chainlink Functions
+   * @param _hashSum the JsCode
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setEthersHashSum(bytes32 _hashSum) external payable onlyOwner {
+    s_ethersHashSum = _hashSum;
+    emit ConceroAutomation_EthersHashSumUpdated(_hashSum);
+  }
+
+  //////////////
+  ///INTERNAL///
+  //////////////
   /**
    * @notice Function to send a Request to Chainlink Functions
    * @param _args the arguments for the request as bytes array

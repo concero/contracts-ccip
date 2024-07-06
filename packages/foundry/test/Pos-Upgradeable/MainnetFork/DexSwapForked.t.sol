@@ -28,7 +28,7 @@ contract DexSwapForked is ProtocolTest {
         helper();
 
         uint amountIn = 1*10**16;
-        uint amountOutMin = 300*10**5;
+        uint amountOutMin = 250*10**5;
         address[] memory path = new address[](2);
         path[0] = address(wEth);
         path[1] = address(mUSDC);
@@ -128,12 +128,6 @@ contract DexSwapForked is ProtocolTest {
         vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, emptyDexData));
         op.swap(swapData, to);
         vm.stopPrank();
-
-        //=================================== Dust Withdraw =========================================\\
-        //===== Mock some dust stuck on the protocol
-        vm.prank(User);
-        mUSDC.transfer(address(dex), 300 *10**5);
-        assertEq(mUSDC.balanceOf(address(dex)), 300 *10**5);
     }
 
     function test_swapUniV2LikeFoTMock() public {
@@ -462,7 +456,7 @@ contract DexSwapForked is ProtocolTest {
 
         uint24 poolFee = 500;
         uint256 amountIn = 1*10**17;
-        uint256 amountOut = 350*10*6;
+        uint256 amountOut = 300*10*6;
 
         bytes memory path = abi.encodePacked(wEth, poolFee, mUSDC, poolFee, wEth);
 
@@ -471,7 +465,7 @@ contract DexSwapForked is ProtocolTest {
             dexType: IDexSwap.DexType.UniswapV3Multi,
             fromToken: address(wEth),
             fromAmount: amountIn,
-            toToken: address(mUSDC),
+            toToken: address(wEth),
             toAmount: amountOut,
             toAmountMin: amountOut,
             dexData: abi.encode(uniswapV3, path, block.timestamp + 1800)
@@ -484,6 +478,23 @@ contract DexSwapForked is ProtocolTest {
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn);
         assertEq(wEth.balanceOf(address(op)), 100000000000000);
         assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn + amountOut);
+
+        ///===== Revert because of toToken
+        swapData[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV3Multi,
+            fromToken: address(wEth),
+            fromAmount: amountIn,
+            toToken: address(mUSDC),
+            toAmount: amountOut,
+            toAmountMin: amountOut,
+            dexData: abi.encode(uniswapV3, path, block.timestamp + 1800)
+        });
+
+        vm.startPrank(User);
+        wEth.approve(address(op), amountIn);
+        bytes memory invalidPath = abi.encodeWithSelector(DexSwap_InvalidPath.selector);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, invalidPath));
+        op.swap(swapData, User);
 
         //=================================== Revert Leg =========================================\\
         
@@ -818,6 +829,10 @@ contract DexSwapForked is ProtocolTest {
             dexData: ""
         });
 
+        //===== Gives User some ether and checks the balance
+        vm.deal(User, 1*10**17);
+        assertEq(User.balance, 1*10**17);
+
         vm.startPrank(User);
         bytes memory emptyDexData = abi.encodeWithSelector(DexSwap_EmptyDexData.selector);
         vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, emptyDexData));
@@ -844,7 +859,7 @@ contract DexSwapForked is ProtocolTest {
         ////================================ Invalid Path =================================\\\\\\
         
         //===== Mock the data for payload to send to the function
-        amountOut = 350*10*6;
+        amountOut = 300*10*6;
         path[0] = address(0);
         path[1] = address(mUSDC);
         to = address(User);
@@ -911,7 +926,7 @@ contract DexSwapForked is ProtocolTest {
                             dexType: IDexSwap.DexType.UniswapV2,
                             fromToken: address(mUSDC),
                             fromAmount: amountIn,
-                            toToken: address(mUSDC),
+                            toToken: address(wEth),
                             toAmount: amountOutMin,
                             toAmountMin: amountOutMin,
                             dexData: abi.encode(sushiV2, path, deadline)

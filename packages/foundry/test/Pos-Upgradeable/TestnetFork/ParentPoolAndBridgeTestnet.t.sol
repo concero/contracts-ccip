@@ -174,10 +174,6 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
                             dexData: abi.encode(mockBase, path, to, deadline)
         });
 
-        // ==== Approve Transfer
-        vm.startPrank(User);
-        wEth.approve(address(op), 0.1 ether);
-
         /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
         IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
             tokenType: IStorage.CCIPToken.usdc,
@@ -186,15 +182,13 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
             receiver: User
         });
 
-        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        IDexSwap.SwapData[] memory swapDataDst = new IDexSwap.SwapData[](0);
-
-
+        // ==== Approve Transfer
         vm.startPrank(User);
+        wEth.approve(address(op), 0.1 ether);
         vm.expectRevert(abi.encodeWithSelector(Concero_ItsNotOrchestrator.selector, address(concero)));
         concero.startBridge(bridgeData, swapData);
 
-        op.swapAndBridge(bridgeData, swapData, swapDataDst);
+        op.swapAndBridge(bridgeData, swapData, swapData);
         vm.stopPrank();
 
     }
@@ -236,22 +230,39 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
             receiver: User
         });
 
-        IDexSwap.SwapData[] memory swap = new IDexSwap.SwapData[](0);
+        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        
+        uint amountIn = 1*10**17;
+        uint amountOutMin = 350*10**6;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(tUSDC);
+        address to = address(op);
+        uint deadline = block.timestamp + 1800;
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(tUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(mockBase, path, to, deadline)
+        });
 
         vm.startPrank(User);
         IERC20(ccipBnM).approve(address(op), amountToSend);
-        op.bridge(bridgeData, swap);
+        op.bridge(bridgeData, swapData);
         ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
         vm.stopPrank();
 
         //====== Check Receiver balance
-        assertEq(IERC20(ccipBnMArb).balanceOf(User), 9774384); //Amount - fee = 9774384
+        assertEq(IERC20(ccipBnMArb).balanceOf(User), 9831494); //Amount - fee = 9831494
         
-        //@audit IT'S NOT UPDATING STORAGE. FALLBACK IT'S NOT HAPPENING
-        // assertTrue(op.s_lastGasPrices(baseChainSelector) > 0);
-        // assertTrue(op.s_lastGasPrices(arbChainSelector) > 0);
-        // assertTrue(op.s_latestLinkUsdcRate() > 0);
-        // assertTrue(op.s_latestNativeUsdcRate() > 0);
-        // assertTrue(op.s_latestLinkNativeRate() > 0);
+        assertTrue(op.s_lastGasPrices(arbChainSelector) > 0);
+        assertTrue(op.s_latestLinkUsdcRate() > 0);
+        assertTrue(op.s_latestNativeUsdcRate() > 0);
+        assertTrue(op.s_latestLinkNativeRate() > 0);
     }
 }

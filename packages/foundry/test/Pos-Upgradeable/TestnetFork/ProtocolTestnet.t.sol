@@ -272,8 +272,14 @@ contract ProtocolTestnet is Test {
 
         //===== Base Proxies
         //====== Update the proxy for the correct address
+        uint256 lastGasPrice = 5767529;
+        uint256 latestLinkUsdcRate = 13_560_000_000_000_000_000;
+        uint256 latestNativeUsdcRate = 3_383_730_000_000_000_000_000;
+        uint256 latestLinkNativeRate = 40091515;
+        bytes memory data = abi.encodeWithSignature("initialize(uint64,uint256,uint256,uint256,uint256)", arbChainSelector, lastGasPrice, latestLinkUsdcRate, latestNativeUsdcRate, latestLinkNativeRate);
+
         vm.prank(ProxyOwner);
-        proxyInterfaceInfra.upgradeToAndCall(address(orch), "");
+        proxyInterfaceInfra.upgradeToAndCall(address(orch), data);
         vm.prank(ProxyOwner);
         proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
 
@@ -297,7 +303,7 @@ contract ProtocolTestnet is Test {
         op = Orchestrator(address(proxy));
 
         //====== Set the DEXes routers
-        vm.prank(defaultSender);
+        vm.prank(Tester);
         op.setDexRouterAddress(address(mockBase), 1);
         }
 
@@ -413,7 +419,7 @@ contract ProtocolTestnet is Test {
         opDst = Orchestrator(address(proxyDst));
 
         //====== Set the DEXes routers
-        vm.prank(defaultSender);
+        vm.prank(Tester);
         opDst.setDexRouterAddress(address(mockArb), 1);
         }
     }
@@ -436,17 +442,12 @@ contract ProtocolTestnet is Test {
         vm.stopPrank();
 
         ///======= Infra Allowance
-        vm.startPrank(defaultSender);
+        vm.startPrank(Tester);
         op.setDstConceroPool(arbChainSelector, address(childProxy));
         assertEq(op.s_poolReceiver(arbChainSelector), address(wChild));
 
         op.setConceroContract(arbChainSelector, address(proxyDst));
-        
-        op.setClfPremiumFees(arbChainSelector, 4000000000000000);
-        op.setLastGasPrices(arbChainSelector, 5767529);
-        op.setLatestLinkUsdcRate(13_560_000_000_000_000_000);
-        op.setLatestNativeUsdcRate(3_383_730_000_000_000_000_000);
-        op.setLatestLinkNativeRate(40091515);
+
         vm.stopPrank();
 
         vm.startPrank(address(subOwnerBase));
@@ -472,7 +473,7 @@ contract ProtocolTestnet is Test {
         vm.stopPrank();
 
         ///======= Infra Allowance
-        vm.startPrank(defaultSender);
+        vm.startPrank(Tester);
         opDst.setDstConceroPool(baseChainSelector, address(wChild));
         assertEq(opDst.s_poolReceiver(baseChainSelector), address(wChild));
 
@@ -539,10 +540,6 @@ contract ProtocolTestnet is Test {
                             dexData: abi.encode(mockBase, path, to, deadline)
         });
 
-        // ==== Approve Transfer
-        vm.startPrank(User);
-        wEth.approve(address(op), amountIn);
-
         /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
         IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
             tokenType: IStorage.CCIPToken.usdc,
@@ -551,20 +548,20 @@ contract ProtocolTestnet is Test {
             receiver: User
         });
 
-        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        IDexSwap.SwapData[] memory swapDataDst = new IDexSwap.SwapData[](0);
+        // ==== Approve Transfer
 
         vm.startPrank(User);
-        bytes memory InsufficientFunds = abi.encodeWithSelector(InsufficientFundsForFees.selector, amountOutMin , 219164296709379108);
+        wEth.approve(address(op), amountIn);
+        bytes memory InsufficientFunds = abi.encodeWithSelector(InsufficientFundsForFees.selector, amountOutMin , 161996932573903608);
         vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, InsufficientFunds));
-        op.swapAndBridge(bridgeData, swapData, swapDataDst);
+        op.swapAndBridge(bridgeData, swapData, swapData);
         vm.stopPrank();
 
         IDexSwap.SwapData[] memory swapEmptyData = new IDexSwap.SwapData[](0);
 
         vm.startPrank(User);
         vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidSwapData.selector));
-        op.swapAndBridge(bridgeData, swapEmptyData, swapDataDst);
+        op.swapAndBridge(bridgeData, swapEmptyData, swapData);
         vm.stopPrank();
     }
 
@@ -584,8 +581,34 @@ contract ProtocolTestnet is Test {
 
         vm.startPrank(User);
         tUSDC.approve(address(op), USDC_INITIAL_BALANCE + 1);
-        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidAmount.selector));
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidSwapData.selector));
         op.bridge(data, swap);
+        vm.stopPrank();
+        
+        uint amountIn = 29510000000000;
+        uint amountOutMin = 9*10**4;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(tUSDC);
+        address to = address(op);
+        uint deadline = block.timestamp + 1800;
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(tUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(mockBase, path, to, deadline)
+        });
+
+
+        vm.startPrank(User);
+        tUSDC.approve(address(op), USDC_INITIAL_BALANCE + 1);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidAmount.selector));
+        op.bridge(data, swapData);
         vm.stopPrank();
     }
 

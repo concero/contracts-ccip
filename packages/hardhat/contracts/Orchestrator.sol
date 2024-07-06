@@ -26,14 +26,14 @@ error Orchestrator_InvalidBridgeData();
 error Orchestrator_InvalidSwapData();
 ///@notice error emitted when the ether swap data is corrupted
 error Orchestrator_InvalidSwapEtherData();
-///@notice error emitted when the token to bridge is not USDC
-error Orchestrator_InvalidBridgeToken();
 ///@notice error emitted when a non-messenger address calls
 error Orchestrator_NotMessenger(address);
 ///@notice error emitted when the chosen token is not allowed
 error Orchestrator_TokenTypeOutOfBounds();
 ///@notice error emitted when the chain index is incorrect
 error Orchestrator_ChainIndexOutOfBounds();
+///@notice error emitted when the token to bridge is not USDC
+error Orchestrator_InvalidBridgeToken();
 
 contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
   ///////////////////////
@@ -69,9 +69,6 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
   event Orchestrator_RequestFulfilled(bytes32 requestId);
   ///@notice emitted if swap successed
   event Orchestrator_SwapSuccess();
-  event Orchestrator_StartSwap();
-  event Orchestrator_StartBridge();
-  event Orchestrator_StartSwapAndBridge();
 
   constructor(address _functionsRouter, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex) StorageSetters(msg.sender) {
     i_functionsRouter = _functionsRouter;
@@ -111,7 +108,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
   modifier validateSwapData(IDexSwap.SwapData[] calldata _srcSwapData) {
     uint256 swapDataLength = _srcSwapData.length;
 
-    if (swapDataLength == 0 || swapDataLength > 5 || _srcSwapData[0].fromAmount == 0) {
+    if (swapDataLength == 0 || swapDataLength > 5 || _srcSwapData[0].fromAmount == 0 || _srcSwapData[0].toAmountMin == 0) {
       revert Orchestrator_InvalidSwapData();
     }
 
@@ -127,19 +124,11 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
     IDexSwap.SwapData[] calldata srcSwapData,
     IDexSwap.SwapData[] calldata dstSwapData
   ) external validateSwapData(srcSwapData) validateBridgeData(bridgeData) validateSwapData(dstSwapData){
-    emit Orchestrator_StartSwapAndBridge();
+    if(srcSwapData[srcSwapData.length - 1].toToken != getToken(bridgeData.tokenType, i_chainIndex)) revert Orchestrator_InvalidSwapData();
+    // if(dstSwapData[0].toToken != getToken(bridgeData.tokenType, bridgeData.dstChainSelector)) revert Orchestrator_InvalidSwapData();
 
-    if (srcSwapData.length == 0) revert Orchestrator_InvalidSwapData();
-    address bridgeToken = getToken(bridgeData.tokenType, i_chainIndex);
-
-    uint256 toTokenBalanceBefore = IERC20(bridgeToken).balanceOf(address(this));
-    //Swap -> money come back to this contract
-    uint256 receivedAmount = _swap(srcSwapData, 0, false, address(this)); 
-
-    uint256 toTokenBalanceAfter = IERC20(bridgeToken).balanceOf(address(this));
-    
-    if(toTokenBalanceAfter - toTokenBalanceBefore != receivedAmount) revert Orchestrator_InvalidBridgeToken();
-    bridgeData.amount =   ;
+    //Swap -> money come back to this contract       
+    bridgeData.amount = _swap(srcSwapData, 0, false, address(this));
 
     (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData));
     if (bridgeSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(bridgeError);
@@ -149,16 +138,17 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
     IDexSwap.SwapData[] calldata _swapData,
     address _receiver
   ) external payable validateSwapData(_swapData) tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount) {
-    emit Orchestrator_StartSwap();
     _swap(_swapData, msg.value, true, _receiver);
   }
 
   function bridge(
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] calldata dstSwapData
-  ) external payable tokenAmountSufficiency(getToken(bridgeData.tokenType, i_chainIndex), bridgeData.amount) validateBridgeData(bridgeData) {
-    emit Orchestrator_StartBridge();
-
+  ) external validateBridgeData(bridgeData) validateSwapData(dstSwapData){
+    {
+    uint256 userBalance = IERC20(getToken(bridgeData.tokenType, i_chainIndex)).balanceOf(msg.sender);
+    if (userBalance < bridgeData.amount) revert Orchestrator_InvalidAmount();
+    }
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
 
     LibConcero.transferFromERC20(fromToken, msg.sender, address(this), bridgeData.amount);
@@ -208,10 +198,6 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
     }
   }
 
-  function getTransactionsInfo(bytes32 _ccipMessageId) external view returns (Transaction memory transaction) {
-    transaction = s_transactions[_ccipMessageId];
-  }
-
   //////////////////////////
   /// INTERNAL FUNCTIONS ///
   //////////////////////////
@@ -223,13 +209,10 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
     uint256 toTokenBalanceBefore = IERC20(toToken).balanceOf(address(this));
 
     if (fromToken != address(0)) {
-      //TODO: deal with FoT tokens.
-      if (isFeesNeeded) swapData[0].fromAmount -= (fromAmount / CONCERO_FEE_FACTOR);
       LibConcero.transferFromERC20(fromToken, msg.sender, address(this), fromAmount);
+      if (isFeesNeeded) swapData[0].fromAmount -= (fromAmount / CONCERO_FEE_FACTOR);
     } else {
-      if (isFeesNeeded) {
-        _nativeAmount -= (_nativeAmount / CONCERO_FEE_FACTOR);
-      }
+      if (isFeesNeeded) _nativeAmount -= (_nativeAmount / CONCERO_FEE_FACTOR);
     }
 
     (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, _nativeAmount, _receiver));
@@ -244,6 +227,10 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
   ///////////////////////////
   ///VIEW & PURE FUNCTIONS///
   ///////////////////////////
+  function getTransactionsInfo(bytes32 _ccipMessageId) external view returns (Transaction memory transaction) {
+    transaction = s_transactions[_ccipMessageId];
+  }
+
   /**
    * @notice Function to check for allowed tokens on specific networks
    * @param token The enum flag of the token
@@ -264,8 +251,8 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
     tokens[uint(CCIPToken.usdc)][uint(Chain.opt)] = block.chainid == 10 ? USDC_OPTIMISM : USDC_OPTIMISM_SEPOLIA;
     tokens[uint(CCIPToken.usdc)][uint(Chain.pol)] = block.chainid == 137 ? USDC_POLYGON : USDC_POLYGON_AMOY;
 
-    if (uint256(token) > tokens.length) revert Orchestrator_TokenTypeOutOfBounds();
-    if (uint256(_chainIndex) > tokens[uint256(token)].length) revert Orchestrator_ChainIndexOutOfBounds();
+    if (uint256(token) >= tokens.length) revert Orchestrator_TokenTypeOutOfBounds();
+    if (uint256(_chainIndex) >= tokens[uint256(token)].length) revert Orchestrator_ChainIndexOutOfBounds();
 
     return tokens[uint256(token)][uint256(_chainIndex)];
   }

@@ -75,7 +75,6 @@ contract ConceroCCIP is ConceroFunctions {
     address _receiver,
     uint256 _lpFee
   ) internal onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
-    //@adjusted because of fallback functionality
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_token, _amount, _receiver, _lpFee, _destinationChainSelector);
 
     uint256 fees = i_ccipRouter.getFee(_destinationChainSelector, evm2AnyMessage);

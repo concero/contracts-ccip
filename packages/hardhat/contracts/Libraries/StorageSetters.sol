@@ -1,16 +1,17 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
+import {Initializable} from "@openzeppelin/upgradeable/contracts/proxy/utils/Initializable.sol";
 import {Storage} from "./Storage.sol";
 
-contract StorageSetters is Storage {
+contract StorageSetters is Storage, Initializable {
   ///////////////////////////////
   /////////////ERROR/////////////
   ///////////////////////////////
 
   ///@notice error emitted when the input is the address(0)
-  error Storage_InvalidAddress();
-  error Storage_CallableOnlyByOwner(address msgSender, address owner);
+  error StorageSetters_InvalidAddress();
+  error StorageSetters_CallableOnlyByOwner(address msgSender, address owner);
 
   ///////////////
   ///CONSTANTS///
@@ -44,19 +45,26 @@ contract StorageSetters is Storage {
   }
 
   modifier onlyOwner() {
-    if (msg.sender != i_owner) revert Storage_CallableOnlyByOwner(msg.sender, i_owner);
+    if (msg.sender != i_owner) revert StorageSetters_CallableOnlyByOwner(msg.sender, i_owner);
     _;
   }
 
-  /**
-   * @notice function to manage DEX routers addresses
-   * @param _router the address of the router
-   * @param _isApproved 1 == Approved | Any other value is not Approved.
-   */
-  function setDexRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner {
-    s_routerAllowed[_router] = _isApproved;
-    emit Storage_NewRouterAdded(_router, _isApproved);
+  function initialize(
+    uint64 _arbChainSelector,
+    uint256 _gasPrice,
+    uint256 _linkUSDCRate,
+    uint256 _nativeUSDCRate,
+    uint256 _linkNativeRate
+  ) initializer public {
+    s_lastGasPrices[_arbChainSelector] = _gasPrice;
+    s_latestLinkUsdcRate = _linkUSDCRate;
+    s_latestNativeUsdcRate = _nativeUSDCRate;
+    s_latestLinkNativeRate = _linkNativeRate;
   }
+
+  ///////////////////////////
+  /// FUNCTIONS VARIABLES ///
+  ///////////////////////////
 
   /**
    * @notice Function to update Chainlink Functions fees
@@ -71,57 +79,6 @@ contract StorageSetters is Storage {
     uint256 previousValue = clfPremiumFees[_chainSelector];
     clfPremiumFees[_chainSelector] = feeAmount;
     emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
-  }
-
-  /**
-   * @notice function to update Gas Prices Cross Chain
-   * @param _chainSelector the chain Id
-   * @param _gasPrice the cost of gas
-   * @dev this function should be called only before the first transaction
-  */
-  function setLastGasPrices(uint64 _chainSelector, uint256 _gasPrice) external onlyOwner {
-    s_lastGasPrices[_chainSelector] = _gasPrice;
-
-    emit StorageSetters_LastGasPriceUpdated(_chainSelector, _gasPrice);
-  }
-
-  /**
-   * @notice Function to update Link To USDC rate
-   * @param _latestRate the latest rate
-   * @dev this function should be called only before the first transaction
-   */
-  function setLatestLinkUsdcRate(uint256 _latestRate) external payable onlyOwner{
-    s_latestLinkUsdcRate = _latestRate;
-    
-    emit StorageSetters_LinkUsdcRateUpdated(_latestRate);
-  }
-
-  /**
-   * @notice Function to Update the Native to USDC rate
-   * @param _latestRate the latest rate
-   * @dev this function should be called only before the first transaction
-   */
-  function setLatestNativeUsdcRate(uint256 _latestRate) external payable onlyOwner{
-    s_latestNativeUsdcRate = _latestRate;
-    
-    emit StorageSetters_NativeUsdcRateUpdated(_latestRate);
-  }
-
-  /**
-   * Function to update the Link To Native rate
-   * @param _latestRate the latest Rate
-   * @dev this function should be called only before the first transaction
-   * 
-   */
-  function setLatestLinkNativeRate(uint256 _latestRate) external payable onlyOwner{
-    s_latestLinkNativeRate = _latestRate;
-    
-    emit StorageSetters_LinkNativeRateUpdated(_latestRate);
-  }  
-
-  function setConceroContract(uint64 _chainSelector, address _conceroContract) external onlyOwner {
-    s_conceroContracts[_chainSelector] = _conceroContract;
-    emit ConceroContractUpdated(_chainSelector, _conceroContract);
   }
 
   function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
@@ -154,12 +111,28 @@ contract StorageSetters is Storage {
     emit EthersHashSumUpdated(previousValue, _hashSum);
   }
 
+  /////////////////////////
+  /// CONTRACT ADDRESSES///
+  /////////////////////////
+  function setConceroContract(uint64 _chainSelector, address _conceroContract) external onlyOwner {
+    if(_conceroContract == address(0)) revert StorageSetters_InvalidAddress();
+    s_conceroContracts[_chainSelector] = _conceroContract;
+    emit ConceroContractUpdated(_chainSelector, _conceroContract);
+  }
+
   function setDstConceroPool(uint64 _chainSelector, address _pool) external payable onlyOwner {
+    if(_pool == address(0)) revert StorageSetters_InvalidAddress();
     s_poolReceiver[_chainSelector] = _pool;
   }
 
-  // TODO: REMOVE IN PRODUCTION!!!
-  function setLasGasPrices(uint64 _chainSelector, uint256 _lastGasPrice) external payable onlyOwner {
-    s_lastGasPrices[_chainSelector] = _lastGasPrice;
+  /**
+   * @notice function to manage DEX routers addresses
+   * @param _router the address of the router
+   * @param _isApproved 1 == Approved | Any other value is not Approved.
+   */
+  function setDexRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner {
+    if(_router == address(0)) revert StorageSetters_InvalidAddress();
+    s_routerAllowed[_router] = _isApproved;
+    emit Storage_NewRouterAdded(_router, _isApproved);
   }
 }

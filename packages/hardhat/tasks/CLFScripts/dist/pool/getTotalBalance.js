@@ -29,6 +29,9 @@ async function f() {
 			this.url = url;
 		}
 		async _send(payload) {
+			if (payload.method === 'eth_estimateGas') {
+				return [{jsonrpc: '2.0', id: payload.id, result: '0x1e8480'}];
+			}
 			let resp = await fetch(this.url, {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
@@ -39,6 +42,7 @@ async function f() {
 			return res;
 		}
 	}
+	const promises = [];
 	let totalBalance = 0n;
 	for (const chain in chainSelectors) {
 		const fallBackProviders = chainSelectors[chain].urls.map(url => {
@@ -52,11 +56,12 @@ async function f() {
 		const provider = new ethers.FallbackProvider(fallBackProviders, null, {quorum: 1});
 		const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
 		const pool = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, provider);
-		const [poolBalance, commits] = await Promise.all([
-			erc20.balanceOf(chainSelectors[chain].poolAddress),
-			pool.s_loansInUse(),
-		]);
-		totalBalance += poolBalance + commits;
+		promises.push(erc20.balanceOf(chainSelectors[chain].poolAddress));
+		promises.push(pool.s_loansInUse());
+	}
+	const results = await Promise.all(promises);
+	for (let i = 0; i < results.length; i += 2) {
+		totalBalance += BigInt(results[i]) + BigInt(results[i + 1]);
 	}
 	return Functions.encodeUint256(totalBalance);
 }

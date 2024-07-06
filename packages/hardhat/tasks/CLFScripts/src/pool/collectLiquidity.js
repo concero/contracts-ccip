@@ -50,8 +50,6 @@ async function f() {
 		// },
 	};
 
-	const MASTER_POOL_CHAIN_SELECTOR = `0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`;
-
 	class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 		constructor(url) {
 			super(url);
@@ -70,17 +68,18 @@ async function f() {
 	}
 
 	const poolAbi = ['function ccipSendToPool(address, uint256) external returns (bytes32 messageId)'];
+	const promises = [];
 
 	for (const chainSelector in chainSelectors) {
-		if (chainSelector === MASTER_POOL_CHAIN_SELECTOR) continue;
-
 		const url = chainSelectors[chainSelector].urls[Math.floor(Math.random() * chainSelectors[chainSelector].urls.length)];
 		const provider = new FunctionsJsonRpcProvider(url);
 		const wallet = new ethers.Wallet('0x' + secrets.WALLET_PRIVATE_KEY, provider);
 		const signer = wallet.connect(provider);
 		const poolContract = new ethers.Contract(chainSelectors[chainSelector].poolAddress, poolAbi, signer);
-		await poolContract.ccipSendToPool(liquidityProvider, tokenAmount);
+		promises.push(poolContract.ccipSendToPool(liquidityProvider, tokenAmount));
 	}
+
+	await Promise.all(promises);
 
 	return Functions.encodeUint256(1n);
 }

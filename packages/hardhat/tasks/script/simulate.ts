@@ -101,6 +101,8 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     await simulate(path.join(__dirname, "../", "./CLFScripts/dist/pool/automationEval.min.js"), [
       getHashSum(await (await fetch(automationsJsCodeUrl)).text()),
       getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
+      "0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0",
+      "0x186A0",
     ]);
   });
 

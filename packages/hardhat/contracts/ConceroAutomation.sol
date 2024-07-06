@@ -224,10 +224,10 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     }
 
     bytes[] memory args = new bytes[](4);
-    args[0] = abi.encode(s_hashSum);
-    args[1] = abi.encode(s_ethersHashSum);
-    args[2] = abi.encode(liquidityProvider);
-    args[3] = abi.encode(amountToRequest);
+    args[0] = abi.encodePacked(s_hashSum);
+    args[1] = abi.encodePacked(s_ethersHashSum);
+    args[2] = abi.encodePacked(liquidityProvider);
+    args[3] = abi.encodePacked(amountToRequest);
 
     bytes32 reqId = _sendRequest(args, JS_CODE);
 

@@ -48,7 +48,7 @@ async function f() {
 		const signer = wallet.connect(provider);
 		const poolContract = new ethers.Contract(chainSelectors[chainSelector].poolAddress, poolAbi, signer);
 		await poolContract.ccipSendToPool(liquidityProvider, tokenAmount);
-		return Functions.encodeUint256(1n);
 	}
+	return Functions.encodeUint256(1n);
 }
 f();

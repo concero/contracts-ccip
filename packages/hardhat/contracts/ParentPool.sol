@@ -64,7 +64,9 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   //  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
   uint256 private constant MIN_DEPOSIT = 0.1 * 10 ** 6;
   uint256 private constant PRECISION_HANDLER = 10 ** 10;
-  uint256 private constant WITHDRAW_DEADLINE = 597_600;
+  // TODO: Change this value to 6 days in production!!!
+  //  uint256 private constant WITHDRAW_DEADLINE = 597_600;
+  uint256 private constant WITHDRAW_DEADLINE = 60;
   ///@notice Chainlink Functions Gas Limit
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   ///@notice JS Code for Chainlink Functions
@@ -490,6 +492,11 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
   function getUsdcInUse() external view returns (uint256 _usdcInUse) {
     _usdcInUse = s_loansInUse;
+  }
+
+  // TODO: Remove this function after tests
+  function deletePendingWithdrawRequest(address _liquidityProvider) external isProxy onlyOwner {
+    delete s_pendingWithdrawRequests[_liquidityProvider];
   }
 
   //////////////////////////////

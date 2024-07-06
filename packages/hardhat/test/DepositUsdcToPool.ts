@@ -13,7 +13,6 @@ import { abi as ParentPoolAbi } from "../artifacts/contracts/ParentPool.sol/Pare
 import { chainsMap } from "./utils/chainsMap";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
-const senderAddress = process.env.TESTS_WALLET_ADDRESS as Address;
 const usdcAmount = "100000";
 const usdcTokenAddress = process.env.USDC_BASE_SEPOLIA as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
@@ -25,9 +24,7 @@ describe("deposit usdc to pool\n", () => {
     transport: chainsMap[srcChainSelector].viemTransport,
   });
 
-  let viemAccount: PrivateKeyAccount = privateKeyToAccount(
-    ("0x" + process.env.TESTS_WALLET_PRIVATE_KEY) as `0x${string}`,
-  );
+  let viemAccount: PrivateKeyAccount = privateKeyToAccount(("0x" + process.env.DEPLOYER_PRIVATE_KEY) as `0x${string}`);
   let nonce: BigInt;
   let walletClient: WalletClient<HttpTransport, Chain, Account, RpcSchema> = createWalletClient({
     chain: chainsMap[srcChainSelector].viemChain,

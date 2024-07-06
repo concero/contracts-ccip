@@ -25,6 +25,11 @@ const setDonHostedSecretsVersion = async (hre, slotId: number, abi) => {
       chain: viemChain,
     });
     const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
+
+    const { cumulativeGasUsed: setDexRouterGasUsed } = await publicClient.waitForTransactionReceipt({
+      hash: setDstConceroContractHash,
+    });
+
     log(`setDonHostedSecretsVersion tx: ${setDstConceroContractHash}`, "setDonHostedSecretsVersion");
   } catch (error) {
     log(`Error for ${hre.network.name}: ${error.message}`, "setDonHostedSecretsVersion");
@@ -49,6 +54,11 @@ const setForwarderAddress = async (hre, forwarderAddress: string, abi: any) => {
     });
 
     const setForwarderAddressHash = await walletClient.writeContract(setForwarderAddressReq);
+
+    const { cumulativeGasUsed: setDexRouterGasUsed } = await publicClient.waitForTransactionReceipt({
+      hash: setForwarderAddressHash,
+    });
+
     log(`setForwarderAddress tx: ${setForwarderAddressHash}`, "setForwarderAddress");
   } catch (error) {
     log(`Error for ${name}: ${error.message}`, "setForwarderAddress");
@@ -73,6 +83,11 @@ const setHashSum = async (hre, abi: any) => {
     });
 
     const setHashSumHash = await walletClient.writeContract(setHashSumReq);
+
+    const { cumulativeGasUsed: setDexRouterGasUsed } = await publicClient.waitForTransactionReceipt({
+      hash: setHashSumHash,
+    });
+
     log(`setHashSum tx: ${setHashSumHash}`, "setJsHashSum");
   } catch (error) {
     log(`Error for ${hre.network.name}: ${error.message}`, "setJsHashSum");
@@ -97,17 +112,41 @@ const setEthersHashSum = async (hre, abi: any) => {
     });
 
     const setEthersHashSumHash = await walletClient.writeContract(setEthersHashSumReq);
+
+    const { cumulativeGasUsed: setDexRouterGasUsed } = await publicClient.waitForTransactionReceipt({
+      hash: setEthersHashSumHash,
+    });
+
     log(`setEthersHashSum tx: ${setEthersHashSumHash}`, "setEthersHashSum");
   } catch (error) {
     log(`Error for ${hre.network.name}: ${error.message}`, "setEthersHashSum");
   }
 };
 
+async function getCheckUpkeep(chain, abi) {
+  const { viemChain } = chain;
+  const { walletClient, publicClient, account } = getClients(viemChain, chain.url);
+  const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
+
+  const res = await publicClient.readContract({
+    address: automationsContract,
+    abi,
+    functionName: "getCheckUpkeep",
+    account,
+    chain: viemChain,
+  });
+
+  console.log(res);
+}
+
 export async function setAutomationsVariables(hre, slotId: number, forwarderAddress: string) {
   const { abi } = await load("../artifacts/contracts/ConceroAutomation.sol/ConceroAutomation.json");
 
   // await setDonHostedSecretsVersion(hre, slotId, abi);
-  await setForwarderAddress(hre, forwarderAddress, abi);
+  // await setForwarderAddress(hre, forwarderAddress, abi);
   // await setHashSum(hre, abi);
   // await setEthersHashSum(hre, abi);
+
+  const chain = CNetworks[hre.network.name];
+  await getCheckUpkeep(chain, abi);
 }

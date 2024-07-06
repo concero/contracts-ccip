@@ -14,11 +14,11 @@ import { chainsMap } from "./utils/chainsMap";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
 const senderAddress = process.env.TESTS_WALLET_ADDRESS as Address;
-const lpAmount = "100000000000000000";
+const lpAmount = "2479340892017266";
 const lpTokenAddress = process.env.LPTOKEN_BASE_SEPOLIA as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 
-describe("deposit usdc to pool\n", () => {
+describe("withdraw usdc from pool\n", () => {
   let Concero: Concero;
   let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
     chain: chainsMap[srcChainSelector].viemChain,

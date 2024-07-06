@@ -1,5 +1,4 @@
 async function f() {
-	const ethers = await import('npm:ethers');
 	const [_, __, liquidityProvider, tokenAmount] = bytesArgs;
 	const chainSelectors = {
 		[`0x${BigInt('3478487238524512106').toString(16)}`]: {

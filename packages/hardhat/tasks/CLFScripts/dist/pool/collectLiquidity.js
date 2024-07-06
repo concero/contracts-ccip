@@ -28,6 +28,9 @@ async function f() {
 			this.url = url;
 		}
 		async _send(payload) {
+			if (payload.method === 'eth_estimateGas') {
+				return [{jsonrpc: '2.0', id: payload.id, result: '0x1e8480'}];
+			}
 			let resp = await fetch(this.url, {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},

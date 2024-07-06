@@ -56,9 +56,6 @@ async function f() {
 			this.url = url;
 		}
 		async _send(payload) {
-			if (payload.method === 'eth_estimateGas') {
-				return [{jsonrpc: '2.0', id: payload.id, result: '0x1e8480'}];
-			}
 			let resp = await fetch(this.url, {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
@@ -87,12 +84,6 @@ async function f() {
 		const pool = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, provider);
 		promises.push(erc20.balanceOf(chainSelectors[chain].poolAddress));
 		promises.push(pool.s_loansInUse());
-
-		// const [poolBalance, commits] = await Promise.all([
-		// 	erc20.balanceOf(chainSelectors[chain].poolAddress),
-		// 	pool.s_loansInUse(),
-		// ]);
-		// totalBalance += poolBalance + commits;
 	}
 
 	const results = await Promise.all(promises);

@@ -1,6 +1,9 @@
 try {
 	const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';
-	const q = `https://raw.githubusercontent.com/concero/contracts-ccip/fix/automation-function-gas-limit-error/packages/hardhat/tasks/CLFScripts/dist/pool/collectLiquidity.min.js`;
+	const q =
+		'https://raw.githubusercontent.com/concero/contracts-ccip/' +
+		'${CLF_JS_CODE_BRANCH}' +
+		'/packages/hardhat/tasks/CLFScripts/dist/pool/collectLiquidity.min.js';
 	const [t, p] = await Promise.all([fetch(u), fetch(q)]);
 	const [e, c] = await Promise.all([t.text(), p.text()]);
 

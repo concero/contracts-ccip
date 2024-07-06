@@ -57,7 +57,7 @@ async function f() {
 		return Functions.encodeUint256(1n);
 	} catch (e) {
 		const {message, code} = e;
-		if (code === 'NONCE_EXPIRED' || message?.includes('replacement fee too low')) {
+		if (code === 'NONCE_EXPIRED' || message?.includes('replacement fee too low') || message?.includes('already known')) {
 			return Functions.encodeUint256(1n);
 		}
 		throw e;

@@ -164,23 +164,29 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
     if (!dstChainSelector) throw new Error("Destination chain selector not found");
     const dstConceroContract = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
     const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env) as Address;
+    const childPool = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
 
-    const { request: setSenderReq } = await publicClient.simulateContract({
-      address: conceroPoolAddress,
-      functionName: "setConceroContractSender",
-      args: [dstChainSelector, dstConceroContract, 1n],
-      abi,
-      account,
-      viemChain,
-    });
-    const setSenderHash = await walletClient.writeContract(setSenderReq);
-    const { cumulativeGasUsed: setSenderGasUsed } = await publicClient.waitForTransactionReceipt({
-      hash: setSenderHash,
-    });
-    log(
-      `Set ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${dstConceroContract}]. Gas used: ${setSenderGasUsed.toString()}`,
-      "setSenders",
-    );
+    const setSender = async (sender: Address) => {
+      const { request: setSenderReq } = await publicClient.simulateContract({
+        address: conceroPoolAddress,
+        functionName: "setConceroContractSender",
+        args: [dstChainSelector, sender, 1n],
+        abi,
+        account,
+        viemChain,
+      });
+      const setSenderHash = await walletClient.writeContract(setSenderReq);
+      const { cumulativeGasUsed: setSenderGasUsed } = await publicClient.waitForTransactionReceipt({
+        hash: setSenderHash,
+      });
+      log(
+        `Set ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${sender}]. Gas used: ${setSenderGasUsed.toString()}`,
+        "setSenders",
+      );
+    };
+
+    await setSender(dstConceroContract);
+    await setSender(childPool);
   }
 }
 

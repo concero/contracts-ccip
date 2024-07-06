@@ -73,6 +73,9 @@ async function f() {
 	const poolAbi = ['function ccipSendToPool(address, uint256) external returns (bytes32 messageId)'];
 	const promises = [];
 
+	console.log('liquidityProvider', liquidityProvider);
+	console.log('tokenAmount', tokenAmount);
+
 	for (const chainSelector in chainSelectors) {
 		const url = chainSelectors[chainSelector].urls[Math.floor(Math.random() * chainSelectors[chainSelector].urls.length)];
 		const provider = new FunctionsJsonRpcProvider(url);

@@ -13,7 +13,7 @@ task("deploy-automations", "Deploy the automations")
   .addOptionalParam(
     "automationsforwarder",
     "Automations forwarder",
-    "0x9ea696B99E3a42B0AA1f2383F4222fFE04F50393",
+    "0x866267687F55c263eF1D346118d29006625e374D",
     types.string,
   )
   .setAction(async taskArgs => {
@@ -22,12 +22,16 @@ task("deploy-automations", "Deploy the automations")
     const slotId = parseInt(taskArgs.slotid);
 
     if (!taskArgs.skipdeploy) {
-      await deployConceroAutomation(hre);
-    }
+      await deployConceroAutomation(hre, { slotId });
 
-    const chain = CNetworks[hre.network.name];
-    const automationContractAddress = getEnvVar("CONCERO_AUTOMATION_BASE_SEPOLIA");
-    await addCLFConsumer(chain, [automationContractAddress], chain.functionsSubIds[0]);
+      execSync(`yarn hardhat deploy-parent-pool --network baseSepolia --slotid ${slotId} --skipsetvars`, {
+        stdio: "inherit",
+      });
+
+      const chain = CNetworks[hre.network.name];
+      const automationContractAddress = getEnvVar("CONCERO_AUTOMATION_BASE_SEPOLIA");
+      await addCLFConsumer(chain, [automationContractAddress], chain.functionsSubIds[0]);
+    }
 
     await setAutomationsVariables(hre, slotId, taskArgs.automationsforwarder);
   });

@@ -260,17 +260,17 @@ async function getPendingRequest(chain: CNetwork, abi: any) {
 export async function setParentPoolVariables(chain: CNetwork, isSetSecretsNeeded: boolean, slotId: number) {
   const { abi: ParentPoolAbi } = await load("../artifacts/contracts/ParentPool.sol/ParentPool.json");
 
-  // await setParentPoolJsHashes(chain, ParentPoolAbi);
-  // await setParentPoolCap(chain, ParentPoolAbi);
-  //
-  // if (isSetSecretsNeeded) {
-  //   await setParentPoolSecretsVersion(chain, ParentPoolAbi, slotId);
-  //   await setParentPoolSecretsSlotId(chain, ParentPoolAbi, slotId);
-  // }
-  //
-  // await setConceroContractSenders(chain, ParentPoolAbi);
-  // await setPoolsToSend(chain, ParentPoolAbi);
+  await setParentPoolJsHashes(chain, ParentPoolAbi);
+  await setParentPoolCap(chain, ParentPoolAbi);
 
-  await deletePendingRequest(chain, ParentPoolAbi, "0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0");
-  await deletePendingRequest(chain, ParentPoolAbi, "0x1637A2cafe89Ea6d8eCb7cC7378C023f25c892b6");
+  if (isSetSecretsNeeded) {
+    await setParentPoolSecretsVersion(chain, ParentPoolAbi, slotId);
+    await setParentPoolSecretsSlotId(chain, ParentPoolAbi, slotId);
+  }
+
+  await setConceroContractSenders(chain, ParentPoolAbi);
+  await setPoolsToSend(chain, ParentPoolAbi);
+
+  // await deletePendingRequest(chain, ParentPoolAbi, "0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0");
+  // await deletePendingRequest(chain, ParentPoolAbi, "0x1637A2cafe89Ea6d8eCb7cC7378C023f25c892b6");
 }

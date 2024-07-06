@@ -48,8 +48,6 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   uint64 private immutable i_subscriptionId;
   ///@notice MasterPool Proxy address
   address private immutable i_masterPoolProxy;
-  ///@notice variable to store the Chainlink Function DON Slot ID
-  uint8 private immutable i_donHostedSecretsSlotId;
 
   /////////////////////
   ///STATE VARIABLES///
@@ -62,6 +60,8 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   bytes32 internal s_hashSum;
   ///@notice variable to store Ethers Hashsum
   bytes32 internal s_ethersHashSum;
+  ///@notice variable to store the Chainlink Function DON Slot ID
+  uint8 private s_donHostedSecretsSlotId;
 
   /////////////
   ///STORAGE///
@@ -106,7 +106,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ) FunctionsClient(_functionsRouter) Ownable(_owner) {
     i_donId = _donId;
     i_subscriptionId = _subscriptionId;
-    i_donHostedSecretsSlotId = _slotId;
+    s_donHostedSecretsSlotId = _slotId;
     i_masterPoolProxy = _masterPool;
   }
 
@@ -124,12 +124,19 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   /**
    * @notice Function to set the Don Secrets Version from Chainlink Functions
    * @param _version the version
-   * @dev this functions was used inside of ConceroFunctions
    */
   function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
     s_donHostedSecretsVersion = _version;
 
     emit ConceroAutomation_DonSecretVersionUpdated(_version);
+  }
+
+  /**
+   * @notice Function to set the Don Hosted Secrets Slot ID
+   * @param _slotId the slot ID
+   */
+  function setDonHostedSecretsSlotId(uint8 _slotId) external payable onlyOwner {
+    s_donHostedSecretsSlotId = _slotId;
   }
 
   /**
@@ -180,11 +187,25 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
       address liquidityProvider = s_pendingWithdrawRequestsCLA[i];
       IParentPool.WithdrawRequests memory pendingRequest = IParentPool(i_masterPoolProxy).getPendingWithdrawRequest(liquidityProvider);
 
-      if (block.timestamp > pendingRequest.deadline) {
+      if (s_withdrawTriggered[liquidityProvider] == false && block.timestamp > pendingRequest.deadline) {
         _performData = abi.encode(liquidityProvider, pendingRequest.amountToRequest);
         _upkeepNeeded = true;
       }
     }
+  }
+
+  // TODO: REMOVE IN PRODUCTION!!!!!!!!
+  function deleteRequest(address _liquidityProvider) external onlyOwner {
+    uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
+
+    for (uint256 i; i < requestsNumber; ++i) {
+      if (s_pendingWithdrawRequestsCLA[i] == _liquidityProvider) {
+        s_pendingWithdrawRequestsCLA[i] = s_pendingWithdrawRequestsCLA[s_pendingWithdrawRequestsCLA.length - 1];
+        s_pendingWithdrawRequestsCLA.pop();
+      }
+    }
+
+    s_withdrawTriggered[_liquidityProvider] = false;
   }
 
   /**
@@ -205,11 +226,10 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     bytes[] memory args = new bytes[](4);
     args[0] = abi.encode(s_hashSum);
     args[1] = abi.encode(s_ethersHashSum);
-    args[2] = abi.encode(liquidityProvider); //We need to send this as data through CCIP to updated the MasterPool storage.
-    args[3] = abi.encode(amountToRequest); //Amount is the same for all pools
+    args[2] = abi.encode(liquidityProvider);
+    args[3] = abi.encode(amountToRequest);
 
-    //Commented so tests don't fail.
-    bytes32 reqId = _sendRequest(args, JS_CODE); //@No JS code yet
+    bytes32 reqId = _sendRequest(args, JS_CODE);
 
     s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest});
 
@@ -224,7 +244,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   function _sendRequest(bytes[] memory _args, string memory _jsCode) internal returns (bytes32) {
     FunctionsRequest.Request memory req;
     req.initializeRequestForInlineJavaScript(_jsCode);
-    req.addDONHostedSecrets(i_donHostedSecretsSlotId, s_donHostedSecretsVersion);
+    req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
     req.setBytesArgs(_args);
     return _sendRequest(req.encodeCBOR(), i_subscriptionId, CL_FUNCTIONS_CALLBACK_GAS_LIMIT, i_donId);
   }

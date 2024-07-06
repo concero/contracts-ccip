@@ -24,7 +24,9 @@ describe("deposit usdc to pool\n", () => {
     transport: chainsMap[srcChainSelector].viemTransport,
   });
 
-  let viemAccount: PrivateKeyAccount = privateKeyToAccount(("0x" + process.env.DEPLOYER_PRIVATE_KEY) as `0x${string}`);
+  let viemAccount: PrivateKeyAccount = privateKeyToAccount(
+    ("0x" + process.env.TESTS_WALLET_PRIVATE_KEY) as `0x${string}`,
+  );
   let nonce: BigInt;
   let walletClient: WalletClient<HttpTransport, Chain, Account, RpcSchema> = createWalletClient({
     chain: chainsMap[srcChainSelector].viemChain,

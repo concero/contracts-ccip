@@ -20,6 +20,8 @@ task("deploy-parent-pool", "Deploy the pool")
   .addFlag("uploadsecrets", "Set the contract variables")
   .addFlag("mainnet", "Deploy to mainnet")
   .setAction(async taskArgs => {
+    execSync("yarn compile", { stdio: "inherit" });
+
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
     const { name } = hre.network;
@@ -39,8 +41,6 @@ task("deploy-parent-pool", "Deploy the pool")
     if (taskArgs.skipdeploy) {
       log("Skipping deployment", "deploy-parent-pool");
     } else {
-      execSync("yarn compile", { stdio: "inherit" });
-
       await deployParentPool(hre);
       await setParentPoolProxyImplementation(hre, deployableChains);
     }
@@ -49,7 +49,7 @@ task("deploy-parent-pool", "Deploy the pool")
       await uploadDonSecrets(deployableChains, slotId, 4320);
     }
 
-    if (!taskArgs.skipsetvars) {
+    if (!taskArgs.skipsetvars && !taskArgs.deployproxy) {
       await setParentPoolVariables(deployableChains[0], taskArgs.uploadsecrets, slotId);
     }
   });

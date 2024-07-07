@@ -308,13 +308,8 @@ contract ProtocolTest is Test {
 
         //===== Base Proxies
         //====== Update the proxy for the correct address
-        uint256 lastGasPrice = 5767529;
-        uint256 latestLinkUsdcRate = 13_560_000_000_000_000_000;
-        uint256 latestNativeUsdcRate = 3_383_730_000_000_000_000_000;
-        uint256 latestLinkNativeRate = 40091515;
-        bytes memory data = abi.encodeWithSignature("initialize(uint64,uint256,uint256,uint256,uint256)", arbChainSelector, lastGasPrice, latestLinkUsdcRate, latestNativeUsdcRate, latestLinkNativeRate);
         vm.prank(ProxyOwner);
-        proxyInterfaceInfra.upgradeToAndCall(address(orch), data);
+        proxyInterfaceInfra.upgradeToAndCall(address(orch), "");
         vm.prank(ProxyOwner);
         proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
 

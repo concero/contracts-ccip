@@ -17,7 +17,7 @@ contract ParentPoolAndBridgeMainnet is Helpers {
     //This test only work with USDC Mainnet address on Storage::getToken function.
     error ParentPool_AmountBelowMinimum(uint256);
     error ParentPool_MaxCapReached(uint256);
-    event ParentStorage_MasterPoolCapUpdated(uint256 _newCap);
+    event ParentPool_MasterPoolCapUpdated(uint256 _newCap);
     event ParentPool_SuccessfulDeposited(address, uint256 , address);
     event ParentPool_MessageSent(bytes32, uint64, address, address, uint256);
     ///=== Functions Errors
@@ -44,7 +44,7 @@ contract ParentPoolAndBridgeMainnet is Helpers {
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentStorage_MasterPoolCapUpdated(50*10**6);
+        emit ParentPool_MasterPoolCapUpdated(50*10**6);
         wMaster.setPoolCap(50*10**6);
 
         //======= LP Deposits enough to go through, but revert on max Cap
@@ -59,7 +59,7 @@ contract ParentPoolAndBridgeMainnet is Helpers {
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentStorage_MasterPoolCapUpdated(1000*10**6);
+        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
         wMaster.setPoolCap(1000*10**6);
 
         //======= LP Deposits Successfully

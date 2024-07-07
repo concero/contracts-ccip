@@ -210,32 +210,32 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 			});
 		};
 
-		if (chainSelectors[chainSelector].priceFeed.maticUsd) {
-			const maticUsdContract = new ethers.Contract(
-				chainSelectors[chainSelector].priceFeed.maticUsd,
-				priceFeedsAbi,
-				provider,
-			);
-			promises.push(maticUsdContract.latestRoundData());
-		} else {
-			promises.push(promiseUndefined());
-		}
-		if (chainSelectors[chainSelector].priceFeed.ethUsd) {
-			const ethUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.ethUsd, priceFeedsAbi, provider);
-			promises.push(ethUsdContract.latestRoundData());
-		} else {
-			promises.push(promiseUndefined());
-		}
-		if (chainSelectors[chainSelector].priceFeed.avaxUsd) {
-			const avaxUsdContract = new ethers.Contract(
-				chainSelectors[chainSelector].priceFeed.avaxUsd,
-				priceFeedsAbi,
-				provider,
-			);
-			promises.push(avaxUsdContract.latestRoundData());
-		} else {
-			promises.push(promiseUndefined());
-		}
+		// if (chainSelectors[chainSelector].priceFeed.maticUsd) {
+		// 	const maticUsdContract = new ethers.Contract(
+		// 		chainSelectors[chainSelector].priceFeed.maticUsd,
+		// 		priceFeedsAbi,
+		// 		provider,
+		// 	);
+		// 	promises.push(maticUsdContract.latestRoundData());
+		// } else {
+		// 	promises.push(promiseUndefined());
+		// }
+		// if (chainSelectors[chainSelector].priceFeed.ethUsd) {
+		// 	const ethUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.ethUsd, priceFeedsAbi, provider);
+		// 	promises.push(ethUsdContract.latestRoundData());
+		// } else {
+		// 	promises.push(promiseUndefined());
+		// }
+		// if (chainSelectors[chainSelector].priceFeed.avaxUsd) {
+		// 	const avaxUsdContract = new ethers.Contract(
+		// 		chainSelectors[chainSelector].priceFeed.avaxUsd,
+		// 		priceFeedsAbi,
+		// 		provider,
+		// 	);
+		// 	promises.push(avaxUsdContract.latestRoundData());
+		// } else {
+		// 	promises.push(promiseUndefined());
+		// }
 
 		const [linkUsd, usdcUsd, nativeUsd, linkNative, maticUsd, ethUsd, avaxUsd] = await Promise.all(promises);
 

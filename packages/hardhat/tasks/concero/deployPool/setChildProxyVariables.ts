@@ -1,4 +1,4 @@
-import { getClients } from "../../utils/switchChain";
+import { getClients } from "../../utils/getViemClients";
 import load from "../../../utils/load";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import chains from "../../../constants/CNetworks";

@@ -8,7 +8,7 @@ async function f() {
 			],
 			chainId: '0x66eee',
 			usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-			poolAddress: '0x1b0D4932f8cF6E2Dd7f05d41907466739F89d89D',
+			poolAddress: '0xbe43f1eAb754144b31B90Ee2D6E036b9AB3cC5B4',
 		},
 		[`0x${BigInt('5224473277236331295').toString(16)}`]: {
 			urls: [
@@ -18,7 +18,7 @@ async function f() {
 			],
 			chainId: '0xaa37dc',
 			usdcAddress: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
-			poolAddress: '0xE649E7E7e2011004718c5105E5eB8d8950Ee4a4d',
+			poolAddress: '0xE7fB2fE07e73f7407b44040340d95d18aF8C28C9',
 		},
 	};
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];

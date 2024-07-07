@@ -13,7 +13,7 @@ task("deploy-automations", "Deploy the automations")
   .addOptionalParam(
     "automationsforwarder",
     "Automations forwarder",
-    "0xE204f83a342259F9B9C118A7c94a7B635c641E60",
+    "0xC41f0eDfb5A46edc23B1664A63CF647EcA0210E0",
     types.string,
   )
   .setAction(async taskArgs => {

@@ -9,12 +9,6 @@ import {ConceroCCIP} from "../ConceroCCIP.sol";
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
-///@notice error emitted when bridge data is empty
-error Storage_InvalidBridgeData();
-///@notice error emitted when a not allowed caller try to get CCIP information from storage
-error Storage_CallerNotAllowed();
-///@notice error emitted when a non-messenger address call a controlled function
-error Storage_NotMessenger(address caller);
 
 abstract contract Storage is IStorage {
   ///////////////
@@ -67,5 +61,4 @@ abstract contract Storage is IStorage {
   mapping(bytes32 => Request) public s_requests;
   ///@notice Functions: Mapping to keep track of cross-chain gas prices
   mapping(uint64 chainSelector => uint256 lasGasPrice) public s_lastGasPrices;
-
 }

@@ -91,26 +91,26 @@ contract ConceroChildPoolTest is Test {
     ///////////////////////////////////////////////////////////////
 
     //setConceroContractSender
-    event ChildStorage_ConceroSendersUpdated(uint64 chainSelector, address contractAddress, uint256 isAllowed);
+    event ConceroChildPool_ConceroSendersUpdated(uint64 chainSelector, address contractAddress, uint256 isAllowed);
     function test_setConceroContractSender() public {
         vm.prank(Tester);
         vm.expectEmit();
-        emit ChildStorage_ConceroSendersUpdated(mockDestinationChainSelector, mockMasterPoolAddress, 1);
+        emit ConceroChildPool_ConceroSendersUpdated(mockDestinationChainSelector, mockMasterPoolAddress, 1);
         wChild.setConceroContractSender(mockDestinationChainSelector, mockMasterPoolAddress, 1);
 
         assertEq(wChild.s_contractsToReceiveFrom(mockDestinationChainSelector, mockMasterPoolAddress), 1);
     }
 
-    error ChildStorage_NotContractOwner();
-    error ChildStorage_InvalidAddress();
+    error ConceroChildPool_NotContractOwner();
+    error ConceroChildPool_InvalidAddress();
     function test_setConceroContractSenderRevert() public {
         
-        vm.expectRevert(abi.encodeWithSelector(ChildStorage_NotContractOwner.selector));
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_NotContractOwner.selector));
         wChild.setConceroContractSender(mockDestinationChainSelector, mockMasterPoolAddress, 1);
 
         
         vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ChildStorage_InvalidAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InvalidAddress.selector));
         wChild.setConceroContractSender(mockDestinationChainSelector, address(0), 1);
     }
 
@@ -133,7 +133,6 @@ contract ConceroChildPoolTest is Test {
     error ConceroChildPool_CallerIsNotTheProxy(address);
     error ConceroChildPool_CallerIsNotConcero(address);
     error ConceroChildPool_InsufficientBalance();
-    error ConceroChildPool_InvalidAddress();
     function test_childOrchestratorLoanRevert() public {
         vm.prank(Tester);
         usdc.transfer(address(wChild), USDC_INITIAL_BALANCE);

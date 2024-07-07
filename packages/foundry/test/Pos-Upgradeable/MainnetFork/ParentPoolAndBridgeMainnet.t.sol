@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
+import {console} from "forge-std/console.sol";
+
+
 import {Helpers} from "./Helpers.sol";
 import {IConcero, IDexSwap} from "contracts/Interfaces/IConcero.sol";
 import {Storage} from "contracts/Libraries/Storage.sol";
@@ -17,6 +20,12 @@ contract ParentPoolAndBridgeMainnet is Helpers {
     event ParentStorage_MasterPoolCapUpdated(uint256 _newCap);
     event ParentPool_SuccessfulDeposited(address, uint256 , address);
     event ParentPool_MessageSent(bytes32, uint64, address, address, uint256);
+    ///=== Functions Errors
+    error OnlyRouterCanFulfill();
+    error EmptySource();
+    error EmptySecrets();
+    error EmptyArgs();
+    error NoInlineSecrets();
     function test_LiquidityProvidersDepositAndOpenARequest() public setters {
         vm.selectFork(baseMainFork);
 

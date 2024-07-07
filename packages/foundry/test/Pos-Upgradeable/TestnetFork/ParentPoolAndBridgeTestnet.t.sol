@@ -18,7 +18,7 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
     error ParentPool_InsufficientBalance();
     error ParentPool_ActiveRequestNotFulfilledYet();
     error ParentPool_CallerIsNotTheProxy(address);
-    event ParentStorage_MasterPoolCapUpdated(uint256 _newCap);
+    event ParentPool_MasterPoolCapUpdated(uint256 _newCap);
     event ParentPool_SuccessfulDeposited(address, uint256 , address);
     event ParentPool_MessageSent(bytes32, uint64, address, address, uint256);
     event ParentPool_WithdrawRequest(address,address,uint256);
@@ -39,7 +39,7 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentStorage_MasterPoolCapUpdated(50*10**6);
+        emit ParentPool_MasterPoolCapUpdated(50*10**6);
         wMaster.setPoolCap(50*10**6);
 
         //======= LP Deposits enough to go through, but revert on max Cap
@@ -54,7 +54,7 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentStorage_MasterPoolCapUpdated(1000*10**6);
+        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
         wMaster.setPoolCap(1000*10**6);
 
         vm.startPrank(LP);
@@ -74,10 +74,6 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
         uint256 poolBalance = IERC20(ccipBnM).balanceOf(address(wMaster));
         assertEq(poolBalance, depositEnoughAmount/2);
 
-        //======= Mock the Functions call
-        vm.prank(address(wMaster));
-        wMaster.updateUSDCAmountManually(LP, lp.totalSupply(), depositEnoughAmount, 0);
-
         uint256 lpTokenUserBalance = lp.balanceOf(LP);
         assertEq(lpTokenUserBalance, (depositEnoughAmount * 10**18) / 10**6);
 
@@ -93,8 +89,6 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
         emit ParentPool_WithdrawRequest(LP, ccipBnM, block.timestamp + 597_600);
         wMaster.startWithdrawal(lpTokenUserBalance);
         vm.stopPrank();
-
-        wMaster.updateUSDCAmountEarned(LP, lp.totalSupply(), lpTokenUserBalance, depositEnoughAmount/2);
 
         //======= Revert on amount bigger than balance
         vm.startPrank(LP);
@@ -205,7 +199,7 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentStorage_MasterPoolCapUpdated(1000*10**6);
+        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
         wMaster.setPoolCap(1000*10**6);
 
         vm.startPrank(LP);

@@ -109,58 +109,57 @@ contract ParentPoolTest is Test {
     ////////////////////////Admin Functions////////////////////////
     ///////////////////////////////////////////////////////////////
     ///setConceroContractSender///
-    event ParentStorage_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256);
+    event ParentPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256);
     function test_setParentPool() public {
         vm.prank(Tester);
         vm.expectEmit();
-        emit ParentStorage_ConceroSendersUpdated(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
+        emit ParentPool_ConceroSendersUpdated(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
         wMaster.setConceroContractSender(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
 
         assertEq(wMaster.s_contractsToReceiveFrom(mockDestinationChainSelector, address(mockChildPoolAddress)), 1);
     }
 
-    error ParentStorage_NotContractOwner();
-    error ParentStorage_InvalidAddress();
+    error ParentPool_NotContractOwner();
+    error ParentPool_InvalidAddress();
     function test_revertSetParentPool() public {
-        vm.expectRevert(abi.encodeWithSelector(ParentStorage_NotContractOwner.selector));
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_NotContractOwner.selector));
         wMaster.setConceroContractSender(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
         
         vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ParentStorage_InvalidAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_InvalidAddress.selector));
         wMaster.setConceroContractSender(mockDestinationChainSelector, address(0), 1);
     }
 
     //setParentPoolReceiver///
-    event ParentStorage_PoolReceiverUpdated(uint64 chainSelector, address contractAddress);
+    event ParentPool_PoolReceiverUpdated(uint64 chainSelector, address contractAddress);
     function test_setParentPoolReceiver() public {
         vm.prank(Tester);
         vm.expectEmit();
-        emit ParentStorage_PoolReceiverUpdated(mockDestinationChainSelector, address(mockChildPoolAddress));
+        emit ParentPool_PoolReceiverUpdated(mockDestinationChainSelector, address(mockChildPoolAddress));
         wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
 
         assertEq(wMaster.s_poolToSendTo(mockDestinationChainSelector), address(mockChildPoolAddress));
     }
 
     function test_revertSetParentPoolReceiver() public {
-        vm.expectRevert(abi.encodeWithSelector(ParentStorage_NotContractOwner.selector));
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_NotContractOwner.selector));
         wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
         
         vm.prank(Tester);
         wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
 
         vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ParentStorage_InvalidAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_InvalidAddress.selector));
         wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
         
         vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ParentStorage_InvalidAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_InvalidAddress.selector));
         wMaster.setPoolsToSend(mockDestinationChainSelector, address(0));
     }
 
     ///orchestratorLoan///
     error ParentPool_ItsNotOrchestrator(address);
     error ParentPool_InsufficientBalance();
-    error ParentPool_InvalidAddress();
     event ParentPool_SuccessfulDeposited(address, uint256, address);
     error ParentPool_CallerIsNotTheProxy(address);
     function test_orchestratorLoanRevert() external {
@@ -203,7 +202,7 @@ contract ParentPoolTest is Test {
     error ParentPool_AmountBelowMinimum(uint256 amount);
     error ParentPool_ThereIsNoPoolToDistribute();
     error ParentPool_MaxCapReached(uint256);
-    event ParentStorage_MasterPoolCapUpdated(uint256);
+    event ParentPool_MasterPoolCapUpdated(uint256);
     function test_depositLiquidityRevert() public {
         uint256 amountToDeposit = 1*10**5;
         vm.prank(Tester);
@@ -221,7 +220,7 @@ contract ParentPoolTest is Test {
 
         vm.prank(Tester);
         vm.expectEmit();
-        emit ParentStorage_MasterPoolCapUpdated(allowedAmountToDeposit);
+        emit ParentPool_MasterPoolCapUpdated(allowedAmountToDeposit);
         wMaster.setPoolCap(allowedAmountToDeposit);
         
         vm.prank(Tester);
@@ -229,14 +228,14 @@ contract ParentPoolTest is Test {
         wMaster.depositLiquidity(allowedAmountToDeposit);
     }
 
-    event ParentStorage_ChainAndAddressRemoved(uint64 chainSelector);
+    event ParentPool_ChainAndAddressRemoved(uint64 chainSelector);
     function test_removePoolFromArray() public {
         vm.prank(Tester);
         wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
 
         vm.prank(Tester);
         vm.expectEmit();
-        emit ParentStorage_ChainAndAddressRemoved(mockDestinationChainSelector);
+        emit ParentPool_ChainAndAddressRemoved(mockDestinationChainSelector);
         wMaster.removePoolsFromListOfSenders(mockDestinationChainSelector);
     }
 }

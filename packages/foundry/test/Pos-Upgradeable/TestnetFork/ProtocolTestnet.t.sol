@@ -303,7 +303,7 @@ contract ProtocolTestnet is Test {
         op = Orchestrator(address(proxy));
 
         //====== Set the DEXes routers
-        vm.prank(Tester);
+        vm.prank(defaultSender);
         op.setDexRouterAddress(address(mockBase), 1);
         }
 
@@ -419,7 +419,7 @@ contract ProtocolTestnet is Test {
         opDst = Orchestrator(address(proxyDst));
 
         //====== Set the DEXes routers
-        vm.prank(Tester);
+        vm.prank(defaultSender);
         opDst.setDexRouterAddress(address(mockArb), 1);
         }
     }
@@ -442,7 +442,7 @@ contract ProtocolTestnet is Test {
         vm.stopPrank();
 
         ///======= Infra Allowance
-        vm.startPrank(Tester);
+        vm.startPrank(defaultSender);
         op.setDstConceroPool(arbChainSelector, address(childProxy));
         assertEq(op.s_poolReceiver(arbChainSelector), address(wChild));
 
@@ -473,7 +473,7 @@ contract ProtocolTestnet is Test {
         vm.stopPrank();
 
         ///======= Infra Allowance
-        vm.startPrank(Tester);
+        vm.startPrank(defaultSender);
         opDst.setDstConceroPool(baseChainSelector, address(wChild));
         assertEq(opDst.s_poolReceiver(baseChainSelector), address(wChild));
 

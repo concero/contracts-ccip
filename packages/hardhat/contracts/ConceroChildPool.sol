@@ -25,7 +25,11 @@ error ConceroChildPool_CallerIsNotConcero(address caller);
 ///@notice error emitted when the receiver is the address(0)
 error ConceroChildPool_InvalidAddress();
 ///@notice error emitted when the caller is a non-messenger address
-error ChildStorage_NotMessenger(address caller);
+error ConceroChildPool_NotMessenger(address caller);
+///@notice error emitted when the caller is not the owner of the contract
+error ConceroChildPool_NotContractOwner();
+///@notice error emitted when the CCIP message sender is not allowed.
+error ConceroChildPool_SenderNotAllowed(address sender);
 
 contract ConceroChildPool is ChildStorage, CCIPReceiver {
   using SafeERC20 for IERC20;
@@ -33,6 +37,11 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
+  ///////////////
+  ///CONSTANTS///
+  ///////////////
+  ///@notice Magic Number Removal
+  uint256 private constant ALLOWED = 1;
 
   ////////////////
   ///IMMUTABLES///
@@ -49,6 +58,8 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   uint64 private immutable i_parentPoolChainSelector;
   ///@notice immutable variable to store the MasterPool Proxy address
   address private immutable i_parentPoolProxyAddress;
+  ///@notice Contract Owner
+  address immutable i_owner;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -59,6 +70,8 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
   event ConceroChildPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
   ///@notice event emitted in OrchestratorLoan when a loan is taken
   event ConceroChildPool_LoanTaken(address receiver, uint256 amount);
+  ///@notice event emitted when a allowed Cross-chain contract is updated
+  event ConceroChildPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
 
   ///////////////
   ///MODIFIERS///
@@ -75,7 +88,22 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
    * @notice modifier to check if the caller is the an approved messenger
    */
   modifier onlyMessenger() {
-    if (isMessengers(msg.sender) == false) revert ChildStorage_NotMessenger(msg.sender);
+    if (isMessengers(msg.sender) == false) revert ConceroChildPool_NotMessenger(msg.sender);
+    _;
+  }
+
+  modifier onlyOwner() {
+    if (msg.sender != i_owner) revert ConceroChildPool_NotContractOwner();
+    _;
+  }
+
+  /**
+   * @notice CCIP Modifier to check Chains And senders
+   * @param _chainSelector Id of the source chain of the message
+   * @param _sender address of the sender contract
+   */
+  modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
+    if (s_contractsToReceiveFrom[_chainSelector][_sender] != ALLOWED) revert ConceroChildPool_SenderNotAllowed(_sender);
     _;
   }
 
@@ -93,13 +121,14 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
     uint64 _destinationChainSelector,
     address _usdc,
     address _owner
-  ) CCIPReceiver(_ccipRouter) ChildStorage(_owner) {
+  ) CCIPReceiver(_ccipRouter) {
     i_infraProxy = _orchestratorProxy;
     i_childProxy = _childProxy;
     i_linkToken = LinkTokenInterface(_link);
     i_USDC = IERC20(_usdc);
     i_parentPoolChainSelector = _destinationChainSelector;
     i_parentPoolProxyAddress = _masterPoolProxyAddress;
+    i_owner = _owner;
   }
 
   ////////////////////////
@@ -161,6 +190,25 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
     emit ConceroChildPool_LoanTaken(_receiver, _amount);
   }
 
+  ///////////////////////
+  ///SETTERS FUNCTIONS///
+  ///////////////////////
+  /**
+   * @notice function to manage the Cross-chains Concero contracts
+   * @param _chainSelector chain identifications
+   * @param _contractAddress address of the Cross-chains Concero contracts
+   * @param _isAllowed 1 == allowed | Any other value == not allowed
+   * @dev only owner can call it
+   * @dev it's payable to save some gas.
+   * @dev this functions is used on ConceroPool.sol
+   */
+  function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable onlyOwner {
+    if (_contractAddress == address(0)) revert ConceroChildPool_InvalidAddress();
+    s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
+
+    emit ConceroChildPool_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
+  }
+
   ////////////////
   /// INTERNAL ///
   ////////////////
@@ -182,7 +230,7 @@ contract ConceroChildPool is ChildStorage, CCIPReceiver {
 
       if ((transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false) || transaction.ccipMessageId == 0) {
         i_USDC.safeTransfer(_user, amountMinusFees);
-        //We don't subtract it here because the loan was not performed. And the value is not summed into the `s_loanInUse` variable.
+        //We don't subtract it here because the loan was not performed. And the value is not added into the `s_loanInUse` variable.
       } else {
         //subtract the amount from the committed total amount
         s_loansInUse = s_loansInUse - amountMinusFees;

@@ -6,18 +6,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IStorage} from "../Interfaces/IStorage.sol";
 import {ConceroCCIP} from "../ConceroCCIP.sol";
 
-////////////////////////////////////////////////////////
-//////////////////////// ERRORS ////////////////////////
-////////////////////////////////////////////////////////
-
 abstract contract Storage is IStorage {
-  ///////////////
-  ///CONSTANTS///
-  ///////////////
-  ///@notice removing magic-numbers
-  uint256 internal constant APPROVED = 1;
-  uint256 internal constant USDC_DECIMALS = 10 ** 6;
-  uint256 internal constant STANDARD_TOKEN_DECIMALS = 10 ** 18;
 
   /////////////////////
   ///STATE VARIABLES///

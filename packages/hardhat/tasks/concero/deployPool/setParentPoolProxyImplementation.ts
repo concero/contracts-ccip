@@ -2,7 +2,7 @@ import { getEnvVar } from "../../../utils/getEnvVar";
 import { networkEnvKeys } from "../../../constants/CNetworks";
 import { Address, parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { getClients } from "../../utils/switchChain";
+import { getClients } from "../../utils/getViemClients";
 import log from "../../../utils/log";
 import { CNetwork } from "../../../types/CNetwork";
 
@@ -27,5 +27,8 @@ export async function setParentPoolProxyImplementation(hre, liveChains: CNetwork
 
   const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
-  log(`Upgrade to CCIP implementation: gasUsed: ${cumulativeGasUsed}, hash: ${txHash}`, "setProxyImplementation");
+  log(
+    `Upgrade to Parent Pool implementation: gasUsed: ${cumulativeGasUsed}, hash: ${txHash}`,
+    "setProxyImplementation",
+  );
 }

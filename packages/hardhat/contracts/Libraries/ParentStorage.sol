@@ -39,5 +39,4 @@ contract ParentStorage {
   mapping(address _liquidityProvider => IParentPool.WithdrawRequests) public s_pendingWithdrawRequests;
   ///@notice Mapping to keep track of Chainlink Functions requests
   mapping(bytes32 requestId => IParentPool.CLFRequest) public s_requests;
-
 }

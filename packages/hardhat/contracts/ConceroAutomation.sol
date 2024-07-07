@@ -11,6 +11,8 @@ import {IParentPool} from "./Interfaces/IParentPool.sol";
 
 ///@notice error emitted when the caller is not the owner.
 error ConceroAutomation_CallerNotAllowed(address caller);
+error ConceroAutomation_WithdrawAlreadyTriggered(address liquidityProvider);
+error ConceroAutomation_CLFFallbackError(bytes32 requestId);
 
 contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ownable {
   ///////////////////////
@@ -35,7 +37,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000; //@audit do we need this? It's not being used.
   ///@notice JS Code for Chainlink Functions
   string internal constant JS_CODE =
-    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = `https://raw.githubusercontent.com/concero/contracts-ccip/main-proxy/packages/hardhat/tasks/CLFScripts/dist/pool/collectLiquidity.min.js`; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
+    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = `https://raw.githubusercontent.com/concero/contracts-ccip/fix/automation-function-gas-limit-error/packages/hardhat/tasks/CLFScripts/dist/pool/collectLiquidity.min.js`; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255)); } ";
 
   ////////////////
   ///IMMUTABLES///
@@ -46,8 +48,6 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   uint64 private immutable i_subscriptionId;
   ///@notice MasterPool Proxy address
   address private immutable i_masterPoolProxy;
-  ///@notice variable to store the Chainlink Function DON Slot ID
-  uint8 private immutable i_donHostedSecretsSlotId;
 
   /////////////////////
   ///STATE VARIABLES///
@@ -60,21 +60,24 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   bytes32 internal s_hashSum;
   ///@notice variable to store Ethers Hashsum
   bytes32 internal s_ethersHashSum;
+  ///@notice variable to store the Chainlink Function DON Slot ID
+  uint8 private s_donHostedSecretsSlotId;
 
   /////////////
   ///STORAGE///
   /////////////
   ///@notice array to store the withdraw requests of users
-  IParentPool.WithdrawRequests[] s_pendingWithdrawRequestsCLA;
+  address[] public s_pendingWithdrawRequestsCLA;
 
   ///@notice Mapping to keep track of Chainlink Functions requests
-  mapping(bytes32 requestId => PerformWithdrawRequest) public s_requests;
+  mapping(bytes32 requestId => PerformWithdrawRequest) public s_functionsRequests;
+  mapping(address => bool) public s_withdrawTriggered;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
   ///@notice event emitted when a new request is added
-  event ConceroAutomation_RequestAdded(IParentPool.WithdrawRequests request);
+  event ConceroAutomation_RequestAdded(address);
   ///@notice event emitted when the Pool Address is updated
   event ConceroAutomation_PoolAddressUpdated(address pool);
   ///@notice event emitted when the Keeper Address is updated
@@ -103,21 +106,21 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ) FunctionsClient(_functionsRouter) Ownable(_owner) {
     i_donId = _donId;
     i_subscriptionId = _subscriptionId;
-    i_donHostedSecretsSlotId = _slotId;
+    s_donHostedSecretsSlotId = _slotId;
     i_masterPoolProxy = _masterPool;
   }
 
   /**
    * @notice Function to add new withdraw requests to CLA monitoring system
-   * @param _request the WithdrawRequests populated struct
+   * @param _liquidityProvider the WithdrawRequests populated address
    * @dev this function should only be called by the ConceroPool.sol
    */
-  function addPendingWithdrawal(IParentPool.WithdrawRequests memory _request) external {
+  function addPendingWithdrawal(address _liquidityProvider) external {
     if (i_masterPoolProxy != msg.sender) revert ConceroAutomation_CallerNotAllowed(msg.sender);
 
-    s_pendingWithdrawRequestsCLA.push(_request);
+    s_pendingWithdrawRequestsCLA.push(_liquidityProvider);
 
-    emit ConceroAutomation_RequestAdded(_request);
+    emit ConceroAutomation_RequestAdded(_liquidityProvider);
   }
 
   /**
@@ -127,20 +130,32 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    * @return _performData the payload we need to send through performUpkeep to Chainlink functions.
    * @dev this function must be called only by the Chainlink Forwarder unique address
    */
-  function checkUpkeep(bytes calldata /* checkData */) external override returns (bool _upkeepNeeded, bytes memory _performData) {
-    if (msg.sender != s_forwarderAddress) revert ConceroAutomation_CallerNotAllowed(msg.sender);
-
+  function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool _upkeepNeeded, bytes memory _performData) {
     uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
 
     for (uint256 i; i < requestsNumber; ++i) {
-      if (block.timestamp > s_pendingWithdrawRequestsCLA[i].deadline) {
-        _performData = abi.encode(
-          s_pendingWithdrawRequestsCLA[i].liquidityProvider, //address
-          s_pendingWithdrawRequestsCLA[i].amountToRequest //uint256
-        );
+      address liquidityProvider = s_pendingWithdrawRequestsCLA[i];
+      IParentPool.WithdrawRequests memory pendingRequest = IParentPool(i_masterPoolProxy).getPendingWithdrawRequest(liquidityProvider);
+
+      if (s_withdrawTriggered[liquidityProvider] == false && block.timestamp > pendingRequest.deadline) {
+        _performData = abi.encode(liquidityProvider, pendingRequest.amountToRequest);
         _upkeepNeeded = true;
       }
     }
+  }
+
+  // TODO: REMOVE IN PRODUCTION!!!!!!!!
+  function deleteRequest(address _liquidityProvider) external onlyOwner {
+    uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
+
+    for (uint256 i; i < requestsNumber; ++i) {
+      if (s_pendingWithdrawRequestsCLA[i] == _liquidityProvider) {
+        s_pendingWithdrawRequestsCLA[i] = s_pendingWithdrawRequestsCLA[s_pendingWithdrawRequestsCLA.length - 1];
+        s_pendingWithdrawRequestsCLA.pop();
+      }
+    }
+
+    s_withdrawTriggered[_liquidityProvider] = false;
   }
 
   /**
@@ -150,18 +165,23 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    */
   function performUpkeep(bytes calldata _performData) external override {
     if (msg.sender != s_forwarderAddress) revert ConceroAutomation_CallerNotAllowed(msg.sender);
-
     (address liquidityProvider, uint256 amountToRequest) = abi.decode(_performData, (address, uint256));
+
+    if (s_withdrawTriggered[liquidityProvider] == true) {
+      revert ConceroAutomation_WithdrawAlreadyTriggered(liquidityProvider);
+    } else {
+      s_withdrawTriggered[liquidityProvider] = true;
+    }
 
     bytes[] memory args = new bytes[](4);
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
-    args[2] = abi.encode(liquidityProvider); //We need to send this as data through CCIP to updated the MasterPool storage.
-    args[3] = abi.encode(amountToRequest); //Amount is the same for all pools
+    args[2] = abi.encodePacked(liquidityProvider);
+    args[3] = abi.encodePacked(amountToRequest);
 
     bytes32 reqId = _sendRequest(args, JS_CODE);
 
-    s_requests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest});
+    s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest});
 
     emit ConceroAutomation_UpkeepPerformed(reqId);
   }
@@ -220,7 +240,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   function _sendRequest(bytes[] memory _args, string memory _jsCode) internal returns (bytes32) {
     FunctionsRequest.Request memory req;
     req.initializeRequestForInlineJavaScript(_jsCode);
-    req.addDONHostedSecrets(i_donHostedSecretsSlotId, s_donHostedSecretsVersion);
+    req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
     req.setBytesArgs(_args);
     return _sendRequest(req.encodeCBOR(), i_subscriptionId, CL_FUNCTIONS_CALLBACK_GAS_LIMIT, i_donId);
   }
@@ -233,17 +253,21 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    * @dev response & err will never be empty or populated at same time.
    */
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
-    PerformWithdrawRequest storage request = s_requests[requestId];
+    PerformWithdrawRequest storage functionRequest = s_functionsRequests[requestId];
+    address liquidityProvider = functionRequest.liquidityProvider;
 
     if (err.length > 0) {
       emit FunctionsRequestError(requestId);
-      return;
+      revert ConceroAutomation_CLFFallbackError(requestId);
+      // todo: there is no fallback mechanism if CLF fails to trigger liquidity pull from child pools.
+      // todo: if CLF fails, the LP will not be able to retry the withdrawal request.
     }
 
+    s_withdrawTriggered[liquidityProvider] = false;
     uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
 
     for (uint256 i; i < requestsNumber; ++i) {
-      if (s_pendingWithdrawRequestsCLA[i].liquidityProvider == request.liquidityProvider) {
+      if (s_pendingWithdrawRequestsCLA[i] == liquidityProvider) {
         s_pendingWithdrawRequestsCLA[i] = s_pendingWithdrawRequestsCLA[s_pendingWithdrawRequestsCLA.length - 1];
         s_pendingWithdrawRequestsCLA.pop();
       }
@@ -253,7 +277,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ///////////////////////////
   ///PURE & VIEW FUNCTIONS///
   ///////////////////////////
-  function getPendingRequests() external view returns(IParentPool.WithdrawRequests[] memory _request){
-    _request = s_pendingWithdrawRequestsCLA;
+  function getPendingRequests() external view returns (address[] memory _requests) {
+    _requests = s_pendingWithdrawRequestsCLA;
   }
 }

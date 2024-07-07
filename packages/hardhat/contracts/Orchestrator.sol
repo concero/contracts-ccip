@@ -9,7 +9,7 @@ import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {StorageSetters} from "./Libraries/StorageSetters.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
-import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_POLYGON_AMOY, USDC_ARBITRUM_SEPOLIA, USDC_BASE_SEPOLIA, USDC_OPTIMISM_SEPOLIA} from "./Constants.sol";
+import {ConceroCommon} from "./ConceroCommon.sol";
 
 ///////////////////////////////
 /////////////ERROR/////////////
@@ -35,10 +35,7 @@ error Orchestrator_ChainIndexOutOfBounds();
 ///@notice error emitted when the token to bridge is not USDC
 error Orchestrator_InvalidBridgeToken();
 
-contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
-  ///////////////////////
-  ///TYPE DECLARATIONS///
-  ///////////////////////
+contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, StorageSetters {
   using SafeERC20 for IERC20;
 
   ///////////////
@@ -112,7 +109,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
       revert Orchestrator_InvalidSwapData();
     }
 
-    if(_srcSwapData[0].dexType == IDexSwap.DexType.UniswapV2Ether && _srcSwapData[0].fromToken != address(0)) revert Orchestrator_InvalidSwapEtherData();
+    if (_srcSwapData[0].dexType == IDexSwap.DexType.UniswapV2Ether && _srcSwapData[0].fromToken != address(0)) revert Orchestrator_InvalidSwapEtherData();
     _;
   }
 
@@ -215,7 +212,9 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
       if (isFeesNeeded) _nativeAmount -= (_nativeAmount / CONCERO_FEE_FACTOR);
     }
 
-    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, _nativeAmount, _receiver));
+    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
+      abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, _nativeAmount, _receiver)
+    );
     if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
 
     emit Orchestrator_SwapSuccess();
@@ -232,59 +231,11 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
   }
 
   /**
-   * @notice Function to check for allowed tokens on specific networks
-   * @param token The enum flag of the token
-   * @param _chainIndex the index of the chain
-   */
-  function getToken(CCIPToken token, Chain _chainIndex) internal view returns (address) {
-    address[4][2] memory tokens;
-
-    // Initialize BNM addresses
-    tokens[uint(CCIPToken.bnm)][uint(Chain.arb)] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
-    tokens[uint(CCIPToken.bnm)][uint(Chain.base)] = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e; // base
-    tokens[uint(CCIPToken.bnm)][uint(Chain.opt)] = 0x8aF4204e30565DF93352fE8E1De78925F6664dA7; // opt
-    tokens[uint(CCIPToken.bnm)][uint(Chain.pol)] = 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4; // pol
-
-    // Initialize USDC addresses
-    tokens[uint(CCIPToken.usdc)][uint(Chain.arb)] = block.chainid == 42161 ? USDC_ARBITRUM : 	USDC_ARBITRUM_SEPOLIA;
-    tokens[uint(CCIPToken.usdc)][uint(Chain.base)] = block.chainid == 8453 ? USDC_BASE : USDC_BASE_SEPOLIA;
-    tokens[uint(CCIPToken.usdc)][uint(Chain.opt)] = block.chainid == 10 ? USDC_OPTIMISM : USDC_OPTIMISM_SEPOLIA;
-    tokens[uint(CCIPToken.usdc)][uint(Chain.pol)] = block.chainid == 137 ? USDC_POLYGON : USDC_POLYGON_AMOY;
-
-    if (uint256(token) >= tokens.length) revert Orchestrator_TokenTypeOutOfBounds();
-    if (uint256(_chainIndex) >= tokens[uint256(token)].length) revert Orchestrator_ChainIndexOutOfBounds();
-
-    return tokens[uint256(token)][uint256(_chainIndex)];
-  }
-
-  /**
    * @notice Internal function to convert USDC Decimals to LP Decimals
    * @param _amount the amount of USDC
    * @return _adjustedAmount the adjusted amount
    */
   function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
     _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
-  }
-
-  /**
-   * @notice Function to check if a caller address is an allowed messenger
-   * @param _messenger the address of the caller
-   */
-  function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
-    address[] memory messengers = new address[](4); //Number of messengers. To define.
-    messengers[0] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267; //fake messenger from foundry environment
-    messengers[1] = address(0);
-    messengers[2] = address(0);
-    messengers[3] = address(0);
-
-    for (uint256 i; i < messengers.length; ) {
-      if (_messenger == messengers[i]) {
-        return true;
-      }
-      unchecked {
-        ++i;
-      }
-    }
-    return false;
   }
 }

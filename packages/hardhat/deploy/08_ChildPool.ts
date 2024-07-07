@@ -1,6 +1,7 @@
 import { DeployFunction, Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import chains, { networkEnvKeys } from "../constants/CNetworks";
+import chains from "../constants/CNetworks";
+import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
@@ -19,6 +20,7 @@ interface ConstructorArgs {
 const deployChildPool: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment,
   constructorArgs: ConstructorArgs = {},
+  isMainnet = false,
 ) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
@@ -26,13 +28,18 @@ const deployChildPool: DeployFunction = async function (
 
   const { linkToken, ccipRouter, chainSelector } = chains[name];
 
+  const baseChainSelector = isMainnet ? CNetworks.base.chainSelector : CNetworks.baseSepolia.chainSelector;
+  const baseParentPoolProxy = isMainnet
+    ? getEnvVar(`PARENT_POOL_PROXY_BASE`)
+    : getEnvVar(`PARENT_POOL_PROXY_BASE_SEPOLIA`);
+
   const defaultArgs = {
     conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
-    parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_BASE_SEPOLIA`),
+    parentProxyAddress: baseParentPoolProxy,
     childProxyAddress: getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`),
     linkToken: linkToken,
     ccipRouter: ccipRouter,
-    chainSelector: chainSelector,
+    baseChainSelector,
     usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
     owner: deployer,
   };
@@ -49,7 +56,7 @@ const deployChildPool: DeployFunction = async function (
       args.childProxyAddress,
       args.linkToken,
       args.ccipRouter,
-      args.chainSelector,
+      args.baseChainSelector,
       args.usdc,
       args.owner,
     ],

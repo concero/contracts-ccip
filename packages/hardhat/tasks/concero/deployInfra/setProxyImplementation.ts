@@ -1,7 +1,7 @@
 import { getEnvVar } from "../../../utils/getEnvVar";
 import { networkEnvKeys } from "../../../constants/CNetworks";
 import { CNetwork } from "../../../types/CNetwork";
-import { getClients } from "../../utils/switchChain";
+import { getClients } from "../../utils/getViemClients";
 import { privateKeyToAccount } from "viem/accounts";
 import { Address, parseAbi } from "viem";
 import log from "../../../utils/log";
@@ -11,6 +11,10 @@ export async function setProxyImplementation(hre, liveChains: CNetwork[]) {
   const conceroProxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[chainName]}`) as Address;
   const chainId = hre.network.config.chainId;
   const { viemChain } = liveChains.find(chain => chain.chainId === chainId);
+  if (!viemChain) {
+    log(`Chain ${chainId} not found in live chains`, "setProxyImplementation");
+    return;
+  }
   const viemAccount = privateKeyToAccount(`0x${process.env.PROXY_DEPLOYER_PRIVATE_KEY}`);
   const { walletClient, publicClient } = getClients(viemChain, undefined, viemAccount);
   const conceroOrchestratorAddress = getEnvVar(`CONCERO_ORCHESTRATOR_${networkEnvKeys[chainName]}`) as Address;

@@ -24,7 +24,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .addFlag("deployproxy", "Deploy the proxy")
   .addFlag("skipsetvars", "Set the contract variables")
-  .addFlag("uploadsecrets", "Set the contract variables")
+  .addFlag("uploadsecrets", "Upload DON-hosted secrets")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);

@@ -1,7 +1,7 @@
 import { encodeAbiParameters, formatUnits, getContract } from "viem";
 import functionsRouterAbi from "@chainlink/contracts/abi/v0.8/FunctionsRouter.json";
 import linkTokenAbi from "@chainlink/contracts/abi/v0.8/LinkToken.json";
-import { getClients } from "../utils/switchChain";
+import { getClients } from "../utils/getViemClients";
 import { CNetwork } from "../../types/CNetwork";
 import log from "../../utils/log";
 

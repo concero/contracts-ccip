@@ -33,11 +33,12 @@ error Concero_ItsNotOrchestrator(address caller);
 
 contract ConceroBridge is ConceroCCIP {
   using SafeERC20 for IERC20;
-  
+
   ///////////////
   ///CONSTANTS///
   ///////////////
   uint16 internal constant CONCERO_FEE_FACTOR = 1000;
+  uint64 private constant HALF_DST_GAS = 600_000;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -46,8 +47,6 @@ contract ConceroBridge is ConceroCCIP {
   event CCIPSent(bytes32 indexed ccipMessageId, address sender, address recipient, CCIPToken token, uint256 amount, uint64 dstChainSelector);
   /// @notice event emitted when a stuck amount is withdraw
   event Concero_StuckAmountWithdraw(address owner, address token, uint256 amount);
-
-  uint64 private constant HALF_DST_GAS = 600_000;
 
   constructor(
     FunctionsVariables memory _variables,
@@ -152,5 +151,14 @@ contract ConceroBridge is ConceroCCIP {
   function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 _amount) public view returns (uint256) {
     uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector, _amount);
     return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
+  }
+
+  /**
+   * @notice Internal function to convert USDC Decimals to LP Decimals
+   * @param _amount the amount of USDC
+   * @return _adjustedAmount the adjusted amount
+   */
+  function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
+    _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
   }
 }

@@ -62,14 +62,18 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   uint256 private constant ALLOWED = 1;
   uint256 private constant USDC_DECIMALS = 10 ** 6;
   uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
-  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
+  // TODO: Change this value to 100 * 10 ** 6 in production!!!
+  //  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
+  uint256 private constant MIN_DEPOSIT = 0.1 * 10 ** 6;
   uint256 private constant PRECISION_HANDLER = 10 ** 10;
-  uint256 private constant WITHDRAW_DEADLINE = 597_600;
+  // TODO: Change this value to 6 days in production!!!
+  //  uint256 private constant WITHDRAW_DEADLINE = 597_600;
+  uint256 private constant WITHDRAW_DEADLINE = 60;
   ///@notice Chainlink Functions Gas Limit
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   ///@notice JS Code for Chainlink Functions
   string internal constant JS_CODE =
-    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = `https://raw.githubusercontent.com/concero/contracts-ccip/main-proxy/packages/hardhat/tasks/CLFScripts/dist/pool/${BigInt(bytesArgs[2]) === 1n ? '' : 'getBalances'}.min.js`; console.log(q); const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
+    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = `https://raw.githubusercontent.com/concero/contracts-ccip/fix/automation-function-gas-limit-error/packages/hardhat/tasks/CLFScripts/dist/pool/getTotalBalance.min.js`; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
   ////////////////
   ///IMMUTABLES///
@@ -176,6 +180,67 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     i_owner = _owner;
   }
 
+  ///////////////////////
+  ///SETTERS FUNCTIONS///
+  ///////////////////////
+  /**
+   * @notice function to manage the Cross-chain ConceroPool contracts
+   * @param _chainSelector chain identifications
+   * @param _pool address of the Cross-chain ConceroPool contract
+   * @dev only owner can call it
+   * @dev it's payable to save some gas.
+   * @dev this functions is used on ConceroPool.sol
+   */
+  function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
+    if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ParentPool_InvalidAddress();
+    s_poolsToDistribute.push(IParentPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
+
+    s_poolToSendTo[_chainSelector] = _pool;
+
+    emit ParentPool_PoolReceiverUpdated(_chainSelector, _pool);
+  }
+
+  /**
+   * @notice Function to remove Cross-chain address disapproving transfers
+   * @param _chainSelector the CCIP chainSelector for the specific chain
+   */
+  function removePoolsFromListOfSenders(uint64 _chainSelector) external payable onlyOwner {
+    for (uint256 i; i < s_poolsToDistribute.length; ) {
+      if (s_poolsToDistribute[i].chainSelector == _chainSelector) {
+        s_poolsToDistribute[i] = s_poolsToDistribute[s_poolsToDistribute.length - 1];
+        s_poolsToDistribute.pop();
+        delete s_poolToSendTo[_chainSelector];
+      }
+      unchecked {
+        ++i;
+      }
+    }
+  }
+
+  /**
+   * @notice Function to set the Cap of the Master pool.
+   * @param _newCap The new Cap of the pool
+   */
+  function setPoolCap(uint256 _newCap) external payable onlyOwner {
+    s_maxDeposit = _newCap;
+  }
+
+  function setDonHostedSecretsSlotId(uint8 _slotId) external payable onlyOwner {
+    s_donHostedSecretsSlotId = _slotId;
+  }
+
+  function setDonHostedSecretsVersion(uint64 _version) external payable onlyOwner {
+    s_donHostedSecretsVersion = _version;
+  }
+
+  function setHashSum(bytes32 _hashSum) external payable onlyOwner {
+    s_hashSum = _hashSum;
+  }
+
+  function setEthersHashSum(bytes32 _ethersHashSum) external payable onlyOwner {
+    s_ethersHashSum = _ethersHashSum;
+  }
+
   ////////////////////////
   ///EXTERNAL FUNCTIONS///
   ////////////////////////
@@ -239,8 +304,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     if (i_lp.balanceOf(msg.sender) < _lpAmount) revert ParentPool_InsufficientBalance();
     if (s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ParentPool_ActiveRequestNotFulfilledYet();
 
-    uint256 numberOfPools = s_poolsToDistribute.length;
-
     bytes[] memory args = new bytes[](2);
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
@@ -275,7 +338,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     delete s_pendingWithdrawRequests[msg.sender];
 
     emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
-    
+
     IERC20(i_lp).safeTransferFrom(msg.sender, address(this), withdraw.amountToBurn);
 
     i_lp.burn(withdraw.amountToBurn);
@@ -300,23 +363,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
 
     emit ParentPool_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
-  }
-
-  /**
-   * @notice function to manage the Cross-chain ConceroPool contracts
-   * @param _chainSelector chain identifications
-   * @param _pool address of the Cross-chain ConceroPool contract
-   * @dev only owner can call it
-   * @dev it's payable to save some gas.
-   * @dev this functions is used on ConceroPool.sol
-   */
-  function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
-    if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ParentPool_InvalidAddress();
-    s_poolsToDistribute.push(IParentPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
-
-    s_poolToSendTo[_chainSelector] = _pool;
-
-    emit ParentPool_PoolReceiverUpdated(_chainSelector, _pool);
   }
 
   /**
@@ -488,23 +534,9 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       _updateUsdcAmountEarned(request.liquidityProvider, request.lpSupplyBeforeRequest, request.amount, usdcReserve);
     }
   }
-  
-  /**
-   * @notice Internal function to convert USDC Decimals to LP Decimals
-   * @param _usdcAmount the amount of USDC
-   * @return _adjustedAmount the adjusted amount
-   */
-  function _convertToLPTokenDecimals(uint256 _usdcAmount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = (_usdcAmount * LP_TOKEN_DECIMALS) / USDC_DECIMALS;
-  }
 
-  /**
-   * @notice Internal function to convert LP Decimals to USDC Decimals
-   * @param _lpAmount the amount of LP
-   * @return _adjustedAmount the adjusted amount
-   */
-  function _convertToUSDCTokenDecimals(uint256 _lpAmount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = (_lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
+  function getPendingWithdrawRequest(address _liquidityProvider) external view returns (IParentPool.WithdrawRequests memory) {
+    return s_pendingWithdrawRequests[_liquidityProvider];
   }
 
   ///////////////
@@ -558,20 +590,21 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       PRECISION_HANDLER;
     uint256 amountConvertedToUSDC = _convertToUSDCTokenDecimals(amountToWithdraw);
 
+    uint256 amountToWithdrawWithUsdcDecimals = _convertToUSDCTokenDecimals(amountToWithdraw);
+
     IParentPool.WithdrawRequests memory request = IParentPool.WithdrawRequests({
-      amountEarned: amountConvertedToUSDC,
+      amountEarned: amountToWithdrawWithUsdcDecimals,
       amountToBurn: _lpToBurn,
-      amountToRequest: amountConvertedToUSDC / (numberOfPools + 1), //Cross-chain Pools + MasterPool
-      amountToReceive: (amountConvertedToUSDC * numberOfPools) / (numberOfPools + 1), //The portion of the money that is not on MasterPool
+      amountToRequest: amountToWithdrawWithUsdcDecimals / (numberOfPools + 1), //Cross-chain Pools + MasterPool
+      amountToReceive: (amountToWithdrawWithUsdcDecimals * numberOfPools) / (numberOfPools + 1), //The portion of the money that is not on MasterPool
       token: address(i_USDC),
-      liquidityProvider: _liquidityProvider,
       deadline: block.timestamp + WITHDRAW_DEADLINE //6days & 22h
     });
 
-    s_withdrawRequests = s_withdrawRequests + amountConvertedToUSDC / (numberOfPools + 1);
+    s_withdrawRequests = s_withdrawRequests + amountToWithdrawWithUsdcDecimals / (numberOfPools + 1);
 
     s_pendingWithdrawRequests[_liquidityProvider] = request;
-    i_automation.addPendingWithdrawal(request);
+    i_automation.addPendingWithdrawal(_liquidityProvider);
 
     emit ParentPool_RequestUpdated(_liquidityProvider);
   }
@@ -579,11 +612,34 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   ///////////////////////////
   ///VIEW & PURE FUNCTIONS///
   ///////////////////////////
-  function getMaxCap() external view returns(uint256 _maxCap){
+  /**
+   * @notice Internal function to convert USDC Decimals to LP Decimals
+   * @param _usdcAmount the amount of USDC
+   * @return _adjustedAmount the adjusted amount
+   */
+  function _convertToLPTokenDecimals(uint256 _usdcAmount) internal pure returns (uint256 _adjustedAmount) {
+    _adjustedAmount = (_usdcAmount * LP_TOKEN_DECIMALS) / USDC_DECIMALS;
+  }
+
+  /**
+   * @notice Internal function to convert LP Decimals to USDC Decimals
+   * @param _lpAmount the amount of LP
+   * @return _adjustedAmount the adjusted amount
+   */
+  function _convertToUSDCTokenDecimals(uint256 _lpAmount) internal pure returns (uint256 _adjustedAmount) {
+    _adjustedAmount = (_lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
+  }
+
+  function getMaxCap() external view returns (uint256 _maxCap) {
     _maxCap = s_maxDeposit;
   }
 
-  function getUsdcInUse() external view returns(uint256 _usdcInUse){
+  function getUsdcInUse() external view returns (uint256 _usdcInUse) {
     _usdcInUse = s_loansInUse;
+  }
+
+  // TODO: Remove this function after tests
+  function deletePendingWithdrawRequest(address _liquidityProvider) external isProxy onlyOwner {
+    delete s_pendingWithdrawRequests[_liquidityProvider];
   }
 }

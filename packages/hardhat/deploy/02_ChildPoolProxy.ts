@@ -17,7 +17,6 @@ const deployChildProxy: DeployFunction = async function (hre: HardhatRuntimeEnvi
     args: [implementationAddress, proxyDeployer, deployer, "0x"],
     log: true,
     autoMine: true,
-    gasLimit: 2_000_000,
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {

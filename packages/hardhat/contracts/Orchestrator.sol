@@ -130,10 +130,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     _swap(_swapData, msg.value, true, _receiver);
   }
 
-  function bridge(
-    BridgeData memory bridgeData,
-    IDexSwap.SwapData[] calldata dstSwapData
-  ) external validateBridgeData(bridgeData) validateSwapData(dstSwapData) {
+  function bridge(BridgeData memory bridgeData, IDexSwap.SwapData[] calldata dstSwapData) external validateBridgeData(bridgeData) {
     {
       uint256 userBalance = IERC20(getToken(bridgeData.tokenType, i_chainIndex)).balanceOf(msg.sender);
       if (userBalance < bridgeData.amount) revert Orchestrator_InvalidAmount();

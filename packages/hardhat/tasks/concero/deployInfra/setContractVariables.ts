@@ -162,6 +162,9 @@ async function addMessengerToAllowlist(deployableChain: CNetwork, abi: any) {
 
 async function setJsHashes(deployableChain: CNetwork, abi: any) {
   try {
+    console.log(infraSrcJsCodeUrl);
+    console.log(ethersV6CodeUrl);
+
     const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
     const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
     const conceroProxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[srcChainName]}`);

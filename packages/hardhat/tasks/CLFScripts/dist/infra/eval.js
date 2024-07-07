@@ -1,11 +1,11 @@
 try {
-	const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.7.0/dist/ethers.umd.min.js';
+	const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';
 	const [t, p] = await Promise.all([
 		fetch(u),
 		fetch(
 			'https://raw.githubusercontent.com/concero/contracts-ccip/' +
 				'master' +
-				`/packages/hardhat/tasks/CLFScripts/dist/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`,
+				`/packages/hardhat/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`,
 		),
 	]);
 	const [e, c] = await Promise.all([t.text(), p.text()]);

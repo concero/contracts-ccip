@@ -174,7 +174,7 @@ const checkUpkeep = async (hre, abi: any) => {
   }
 };
 
-const deleteRequest = async (hre, abi: any) => {
+const deleteRequest = async (hre, abi: any, reqId: string) => {
   try {
     const chain = CNetworks[hre.network.name];
     const { viemChain } = chain;
@@ -186,7 +186,7 @@ const deleteRequest = async (hre, abi: any) => {
       abi,
       functionName: "deleteRequest",
       account,
-      args: ["0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0"],
+      args: [reqId],
       chain: viemChain,
     });
 
@@ -211,7 +211,7 @@ export async function setAutomationsVariables(hre, slotId: number, forwarderAddr
   await setHashSum(hre, abi);
   await setEthersHashSum(hre, abi);
 
-  // await deleteRequest(hre, abi);
+  // await deleteRequest(hre, abi, "0x");
 
-  // await checkUpkeep(hre, abi);
+  await checkUpkeep(hre, abi);
 }

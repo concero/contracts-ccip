@@ -139,7 +139,13 @@ contract ConceroBridge is ConceroCCIP {
    * @param dstChainSelector the destination blockchain chain selector
    */
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector, uint256 _amount) public view returns (uint256) {
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, i_chainIndex), _amount, address(this), (_amount / 1000), dstChainSelector);
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
+      getToken(tokenType, i_chainIndex),
+      _amount,
+      address(this),
+      (_amount / 1000),
+      dstChainSelector
+    );
     return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
   }
 

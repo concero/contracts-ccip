@@ -43,7 +43,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
 
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
-  ///////////////////////////////////////////////////////////  
+  ///////////////////////////////////////////////////////////
   ///@notice
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   ///@notice
@@ -52,7 +52,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   uint8 private constant CL_SRC_RESPONSE_LENGTH = 192;
   ///@notice JS Code for Chainlink Functions
   string private constant CL_JS_CODE =
-    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( `https://raw.githubusercontent.com/concero/contracts-ccip/feat/mainnet-deploy/packages/hardhat/tasks/CLFScripts/dist/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
+    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.7.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'master' + `/packages/hardhat/tasks/CLFScripts/dist/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
   ////////////////
   ///IMMUTABLES///
@@ -86,7 +86,6 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
   ///@notice emitted when the concero pool address is updated
   event ConceroPoolAddressUpdated(address previousAddress, address pool);
-  
   constructor(
     FunctionsVariables memory _variables,
     uint64 _chainSelector,
@@ -290,18 +289,5 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     s_latestLinkUsdcRate = linkUsdcRate == 0 ? s_latestLinkUsdcRate : linkUsdcRate;
     s_latestNativeUsdcRate = nativeUsdcRate == 0 ? s_latestNativeUsdcRate : nativeUsdcRate;
     s_latestLinkNativeRate = linkNativeRate == 0 ? s_latestLinkNativeRate : linkNativeRate;
-  }
-
-  ///////////////////////////
-  ///VIEW & PURE FUNCTIONS///
-  ///////////////////////////
-
-  /**
-   * @notice Internal function to convert USDC Decimals to LP Decimals
-   * @param _amount the amount of USDC
-   * @return _adjustedAmount the adjusted amount
-   */
-  function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
   }
 }

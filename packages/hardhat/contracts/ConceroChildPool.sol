@@ -31,7 +31,7 @@ error ConceroChildPool_NotContractOwner();
 ///@notice error emitted when the CCIP message sender is not allowed.
 error ConceroChildPool_SenderNotAllowed(address sender);
 
-contract ConceroChildPool is ChildStorage, CCIPReceiver {
+contract ConceroChildPool is CCIPReceiver, ChildStorage {
   using SafeERC20 for IERC20;
 
   ///////////////////////////////////////////////////////////

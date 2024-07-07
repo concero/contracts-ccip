@@ -14,8 +14,8 @@ contract ConceroCommon {
   ///////////////
   ///@notice removing magic-numbers
   uint256 internal constant APPROVED = 1;
-  uint256 internal constant USDC_DECIMALS = 10**6;
-  uint256 internal constant STANDARD_TOKEN_DECIMALS = 10**18;
+  uint256 internal constant USDC_DECIMALS = 10 ** 6;
+  uint256 internal constant STANDARD_TOKEN_DECIMALS = 10 ** 18;
 
   ///////////////
   ///MODIFIERS///
@@ -77,5 +77,18 @@ contract ConceroCommon {
       }
     }
     return false;
+  }
+
+  ///////////////////////////
+  /////INTERNAL FUNCTIONS////
+  ///////////////////////////
+
+  /**
+   * @notice Internal function to convert USDC Decimals to LP Decimals
+   * @param _amount the amount of USDC
+   * @return _adjustedAmount the adjusted amount
+   */
+  function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
+    _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
   }
 }

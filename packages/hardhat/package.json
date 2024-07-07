@@ -107,6 +107,7 @@
     "swc": "^1.0.11",
     "terser": "^5.30.3",
     "velodrome": "https://github.com/velodrome-finance/contracts",
-    "viem": "^2.9.18"
+    "viem": "^2.9.18",
+    "sushiswap-v3-periphery": "https://github.com/sushiswap/v3-periphery"
   }
 }

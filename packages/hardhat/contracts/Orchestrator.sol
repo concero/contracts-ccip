@@ -79,7 +79,6 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   ///////////////
   ///MODIFIERS///
   ///////////////
-
   modifier tokenAmountSufficiency(address token, uint256 amount) {
     if (token != address(0)) {
       uint256 balance = IERC20(token).balanceOf(msg.sender);

@@ -7,6 +7,7 @@ import getHashSum from "../utils/getHashSum";
 import path from "path";
 import fs from "fs";
 import { getEnvVar } from "../utils/getEnvVar";
+import { ethersV6CodeUrl } from "../constants/functionsJsCodeUrls";
 
 interface ConstructorArgs {
   functionsDonId?: number;
@@ -43,11 +44,7 @@ const deployConceroAutomation: DeployFunction = async function (
     functionsSlotId: constructorArgs.slotId || 0,
     donHostedSecretsVersion: donHostedSecretsVersion,
     hashSum: getHashSum(getJS(jsPath, "pool/getTotalBalance")),
-    etherHashSum: getHashSum(
-      await (
-        await fetch("https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js")
-      ).text(),
-    ),
+    etherHashSum: getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
     functionsRouter: functionsRouter,
     parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`),
     owner: deployer,

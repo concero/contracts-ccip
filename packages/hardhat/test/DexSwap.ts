@@ -13,14 +13,15 @@ const senderAddress = process.env.DEPLOYER_ADDRESS;
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON;
 
 const srcTokenAddress = process.env.USDC_POLYGON;
-const srcTokenAmount = "100000"; // 0.1 USDC
+const srcTokenAmount = "1000000"; // 0.1 USDC
 
 const dstTokenAddress = "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"; // DAI on Polygon
-const dstTokenAmount = "999839398359685320";
-const dstTokenAmountMin = "994865072994711760";
+const dstTokenAmount = "999834653329327795";
+const dstTokenAmountMin = "994860351571470442";
 
 const srcContractAddress = process.env.CONCERO_PROXY_POLYGON;
-const uniswapV3RouterAddress = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
+const uniswapV3RouterAddress = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
+const deadline = 1720365695n;
 
 async function approveToken(
   publicClient: PublicClient,
@@ -74,13 +75,15 @@ describe("swap", () => {
   it("should swap", async () => {
     try {
       await approveToken(publicClient, walletClient, srcTokenAddress, srcTokenAmount);
+
       const dexData = encodeAbiParameters(
-        [{ type: "address" }, { type: "uint24" }, { type: "address" }, { type: "uint160" }],
-        [uniswapV3RouterAddress, 100n, senderAddress, 0n],
+        [{ type: "address" }, { type: "uint24" }, { type: "uint160" }, { type: "uint256" }],
+        [uniswapV3RouterAddress, 100n, 0n, deadline],
       );
+
       const swapData = [
         {
-          dexType: 0n,
+          dexType: 3n,
           fromToken: srcTokenAddress,
           fromAmount: BigInt(srcTokenAmount),
           toToken: dstTokenAddress,
@@ -95,7 +98,7 @@ describe("swap", () => {
         abi: ConceroOrchestratorAbi,
         functionName: "swap",
         address: srcContractAddress,
-        args: [swapData],
+        args: [swapData, senderAddress],
         gas: 1_000_000n,
       });
 

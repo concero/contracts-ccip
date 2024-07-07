@@ -408,12 +408,12 @@ contract InfraIntegration is Test {
         vm.startPrank(Tester);
 
         //Parent Pool
-        masterProxy.setConceroContractSender(localChainSelector, address(wChild), 1);
-        masterProxy.setPoolsToSend(localChainSelector, address(wChild));
+        wMaster.setConceroContractSender(localChainSelector, address(wChild), 1);
+        wMaster.setPoolsToSend(localChainSelector, address(wChild));
 
         //Child Pool
-        childProxy.setConceroContractSender(localChainSelector, address(wMaster), 1);
-        childProxy.setConceroContractSender(localChainSelector, address(wInfraSrc), 1);
+        wChild.setConceroContractSender(localChainSelector, address(wMaster), 1);
+        wChild.setConceroContractSender(localChainSelector, address(wInfraSrc), 1);
         vm.stopPrank();
 
         mUSDC.mint(LiquidityProviderWhale, USDC_WHALE_BALANCE);

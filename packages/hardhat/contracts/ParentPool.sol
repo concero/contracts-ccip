@@ -41,6 +41,8 @@ error ParentPool_ItsNotOrchestrator(address caller);
 error ParentPool_MaxCapReached(uint256 maxCap);
 ///@notice error emitted when it's not the proxy calling the function
 error ParentPool_CallerIsNotTheProxy(address caller);
+///@notice error emitted when the caller is not the owner
+error ParentPool_NotContractOwner();
 
 contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   ///////////////////////
@@ -88,6 +90,8 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   bytes32 private immutable i_donId;
   ///@notice Chainlink Functions Protocol Subscription ID
   uint64 private immutable i_subscriptionId;
+  ///@notice Contract Owner
+  address immutable i_owner;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -106,6 +110,16 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   event ParentPool_RequestUpdated(address liquidityProvider);
   ///@notice event emitted when the Functions request return error
   event FunctionsRequestError(bytes32 requestId, IParentPool.RequestType requestType);
+  ///@notice event emitted when a Concero pool is added
+  event ParentPool_PoolReceiverUpdated(uint64 chainSelector, address pool);
+  ///@notice event emitted when a allowed Cross-chain contract is updated
+  event ParentPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
+  ///@notice event emitted in setConceroContract when the address is emitted
+  event ParentPool_ConceroContractUpdated(address concero);
+  ///@notice event emitted when a contract is removed from the distribution array
+  event ParentPool_ChainAndAddressRemoved(uint64 _chainSelector);
+  ///@notice event emitted when the MasterPool Cap is increased
+  event ParentPool_MasterPoolCapUpdated(uint256 _newCap);
 
   ///////////////
   ///MODIFIERS///
@@ -128,6 +142,11 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     _;
   }
 
+  modifier onlyOwner() {
+    if (msg.sender != i_owner) revert ParentPool_NotContractOwner();
+    _;
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////FUNCTIONS//////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
@@ -145,7 +164,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     address _automation,
     address _orchestrator,
     address _owner
-  ) ParentStorage(_owner) CCIPReceiver(_ccipRouter) FunctionsClient(_functionsRouter) {
+  ) CCIPReceiver(_ccipRouter) FunctionsClient(_functionsRouter) {
     i_donId = _donId;
     i_subscriptionId = _subscriptionId;
     i_parentProxy = _parentProxy;
@@ -154,6 +173,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     i_lp = LPToken(_lpToken);
     i_automation = ConceroAutomation(_automation);
     i_infraProxy = _orchestrator;
+    i_owner = _owner;
   }
 
   ////////////////////////
@@ -248,7 +268,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     IParentPool.WithdrawRequests memory withdraw = s_pendingWithdrawRequests[msg.sender];
 
     if (withdraw.amountToReceive > 0) revert ParentPool_AmountNotAvailableYet(withdraw.amountToReceive);
-
     if (withdraw.amountEarned > i_USDC.balanceOf(address(this))) revert ParentPool_InsufficientBalance();
 
     s_withdrawRequests = s_withdrawRequests > withdraw.amountEarned ? s_withdrawRequests - withdraw.amountEarned : 0;
@@ -262,6 +281,86 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     i_lp.burn(withdraw.amountToBurn);
 
     i_USDC.safeTransfer(msg.sender, withdraw.amountEarned);
+  }
+
+  ///////////////////////
+  ///SETTERS FUNCTIONS///
+  ///////////////////////
+  /**
+   * @notice function to manage the Cross-chains Concero contracts
+   * @param _chainSelector chain identifications
+   * @param _contractAddress address of the Cross-chains Concero contracts
+   * @param _isAllowed 1 == allowed | Any other value == not allowed
+   * @dev only owner can call it
+   * @dev it's payable to save some gas.
+   * @dev this functions is used on ConceroPool.sol
+   */
+  function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable onlyOwner {
+    if (_contractAddress == address(0)) revert ParentPool_InvalidAddress();
+    s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
+
+    emit ParentPool_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
+  }
+
+  /**
+   * @notice function to manage the Cross-chain ConceroPool contracts
+   * @param _chainSelector chain identifications
+   * @param _pool address of the Cross-chain ConceroPool contract
+   * @dev only owner can call it
+   * @dev it's payable to save some gas.
+   * @dev this functions is used on ConceroPool.sol
+   */
+  function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
+    if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ParentPool_InvalidAddress();
+    s_poolsToDistribute.push(IParentPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
+
+    s_poolToSendTo[_chainSelector] = _pool;
+
+    emit ParentPool_PoolReceiverUpdated(_chainSelector, _pool);
+  }
+
+  /**
+   * @notice Function to remove Cross-chain address disapproving transfers
+   * @param _chainSelector the CCIP chainSelector for the specific chain
+   */
+  function removePoolsFromListOfSenders(uint64 _chainSelector) external payable onlyOwner {
+    uint256 arrayLength = s_poolsToDistribute.length;
+    for (uint256 i; i < arrayLength; ) {
+      if (s_poolsToDistribute[i].chainSelector == _chainSelector) {
+        s_poolsToDistribute[i] = s_poolsToDistribute[s_poolsToDistribute.length - 1];
+        s_poolsToDistribute.pop();
+        delete s_poolToSendTo[_chainSelector];
+      }
+      unchecked {
+        ++i;
+      }
+    }
+    emit ParentPool_ChainAndAddressRemoved(_chainSelector);
+  }
+
+  /**
+   * @notice Function to set the Cap of the Master pool.
+   * @param _newCap The new Cap of the pool
+   */
+  function setPoolCap(uint256 _newCap) external payable onlyOwner {
+    s_maxDeposit = _newCap;
+    emit ParentPool_MasterPoolCapUpdated(_newCap);
+  }
+
+  function setDonHostedSecretsSlotId(uint8 _slotId) external payable onlyOwner {
+    s_donHostedSecretsSlotId = _slotId;
+  }
+
+  function setDonHostedSecretsVersion(uint64 _version) external payable onlyOwner {
+    s_donHostedSecretsVersion = _version;
+  }
+
+  function setHashSum(bytes32 _hashSum) external payable onlyOwner {
+    s_hashSum = _hashSum;
+  }
+
+  function setEthersHashSum(bytes32 _ethersHashSum) external payable onlyOwner {
+    s_ethersHashSum = _ethersHashSum;
   }
 
   ////////////////
@@ -486,17 +585,5 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
   function getUsdcInUse() external view returns(uint256 _usdcInUse){
     _usdcInUse = s_loansInUse;
-  }
-
-  //////////////////////////////
-  /// HELPER TO REMOVE LATER ///
-  //////////////////////////////
-  //Only used to test locally and mock functions operations.
-  function updateUSDCAmountManually(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _depositedAmount, uint256 _crossChainBalance) external {
-    _updateDepositInfoAndMintLPTokens(_liquidityProvider, _lpSupplyBeforeRequest, _depositedAmount, _crossChainBalance);
-  }
-
-  function updateUSDCAmountEarned(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _lpToBurn, uint256 _totalUSDC) external {
-    _updateUsdcAmountEarned(_liquidityProvider, _lpSupplyBeforeRequest, _lpToBurn, _totalUSDC);
   }
 }

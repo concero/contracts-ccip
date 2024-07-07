@@ -2,7 +2,7 @@
 pragma solidity 0.8.20;
 
 //Foundry
-import {Test, console} from "forge-std/Test.sol";
+import {Test, console2} from "forge-std/Test.sol";
 
 //Master & Infra Contracts
 import {DexSwap} from "contracts/DexSwap.sol";
@@ -337,7 +337,7 @@ contract ProtocolTest is Test {
         op = Orchestrator(address(proxy));
 
         //====== Set the DEXes routers
-        vm.startPrank(Tester);
+        vm.startPrank(defaultSender);
         op.setDexRouterAddress(address(uniswapV2), 1);
         op.setDexRouterAddress(address(sushiV2), 1);
         op.setDexRouterAddress(address(uniswapV3), 1);
@@ -455,7 +455,7 @@ contract ProtocolTest is Test {
         opDst = Orchestrator(address(proxyDst));
 
         //====== Set the DEXes routers
-        vm.startPrank(Tester);
+        vm.startPrank(defaultSender);
         opDst.setDexRouterAddress(address(uniswapV2Arb), 1);
         opDst.setDexRouterAddress(address(sushiV2Arb), 1);
         opDst.setDexRouterAddress(address(uniswapV3Arb), 1);

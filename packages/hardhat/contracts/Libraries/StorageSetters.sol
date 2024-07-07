@@ -38,7 +38,6 @@ contract StorageSetters is Storage {
    */
   function setDexRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner {
     s_routerAllowed[_router] = _isApproved;
-    emit Storage_NewRouterAdded(_router, _isApproved);
   }
 
   /**
@@ -61,7 +60,7 @@ contract StorageSetters is Storage {
    * @param _chainSelector the chain Id
    * @param _gasPrice the cost of gas
    * @dev this function should be called only before the first transaction
-  */
+   */
   function setLastGasPrices(uint64 _chainSelector, uint256 _gasPrice) external onlyOwner {
     s_lastGasPrices[_chainSelector] = _gasPrice;
 
@@ -73,9 +72,9 @@ contract StorageSetters is Storage {
    * @param _latestRate the latest rate
    * @dev this function should be called only before the first transaction
    */
-  function setLatestLinkUsdcRate(uint256 _latestRate) external payable onlyOwner{
+  function setLatestLinkUsdcRate(uint256 _latestRate) external payable onlyOwner {
     s_latestLinkUsdcRate = _latestRate;
-    
+
     emit StorageSetters_LinkUsdcRateUpdated(_latestRate);
   }
 
@@ -84,9 +83,9 @@ contract StorageSetters is Storage {
    * @param _latestRate the latest rate
    * @dev this function should be called only before the first transaction
    */
-  function setLatestNativeUsdcRate(uint256 _latestRate) external payable onlyOwner{
+  function setLatestNativeUsdcRate(uint256 _latestRate) external payable onlyOwner {
     s_latestNativeUsdcRate = _latestRate;
-    
+
     emit StorageSetters_NativeUsdcRateUpdated(_latestRate);
   }
 
@@ -94,13 +93,13 @@ contract StorageSetters is Storage {
    * Function to update the Link To Native rate
    * @param _latestRate the latest Rate
    * @dev this function should be called only before the first transaction
-   * 
+   *
    */
-  function setLatestLinkNativeRate(uint256 _latestRate) external payable onlyOwner{
+  function setLatestLinkNativeRate(uint256 _latestRate) external payable onlyOwner {
     s_latestLinkNativeRate = _latestRate;
-    
+
     emit StorageSetters_LinkNativeRateUpdated(_latestRate);
-  }  
+  }
 
   function setConceroContract(uint64 _chainSelector, address _conceroContract) external onlyOwner {
     s_conceroContracts[_chainSelector] = _conceroContract;

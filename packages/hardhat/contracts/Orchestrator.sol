@@ -9,6 +9,7 @@ import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {StorageSetters} from "./Libraries/StorageSetters.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
+import {ConceroCommon} from "./ConceroCommon.sol";
 
 ///////////////////////////////
 /////////////ERROR/////////////
@@ -28,7 +29,7 @@ error Orchestrator_InvalidSwapEtherData();
 ///@notice error emitted when the token to bridge is not USDC
 error Orchestrator_InvalidBridgeToken();
 
-contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
+contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, StorageSetters {
   using SafeERC20 for IERC20;
 
   ///////////////
@@ -97,7 +98,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
       revert Orchestrator_InvalidSwapData();
     }
 
-    if(_srcSwapData[0].dexType == IDexSwap.DexType.UniswapV2Ether && _srcSwapData[0].fromToken != address(0)) revert Orchestrator_InvalidSwapEtherData();
+    if (_srcSwapData[0].dexType == IDexSwap.DexType.UniswapV2Ether && _srcSwapData[0].fromToken != address(0)) revert Orchestrator_InvalidSwapEtherData();
     _;
   }
 
@@ -119,8 +120,8 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
     uint256 receivedAmount = _swap(srcSwapData, 0, false, address(this));
 
     uint256 toTokenBalanceAfter = IERC20(bridgeToken).balanceOf(address(this));
-    
-    if(toTokenBalanceAfter - toTokenBalanceBefore != receivedAmount) revert Orchestrator_InvalidBridgeToken();
+
+    if (toTokenBalanceAfter - toTokenBalanceBefore != receivedAmount) revert Orchestrator_InvalidBridgeToken();
     bridgeData.amount = receivedAmount;
 
     (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData));
@@ -215,7 +216,9 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, StorageSetters {
       }
     }
 
-    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, _nativeAmount, _receiver));
+    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
+      abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, _nativeAmount, _receiver)
+    );
     if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
 
     emit Orchestrator_SwapSuccess();

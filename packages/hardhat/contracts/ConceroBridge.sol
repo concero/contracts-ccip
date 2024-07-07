@@ -39,6 +39,8 @@ contract ConceroBridge is ConceroCCIP {
   ///////////////
   uint16 internal constant CONCERO_FEE_FACTOR = 1000;
   uint64 private constant HALF_DST_GAS = 600_000;
+  uint256 private constant USDC_DECIMALS = 10 ** 6;
+  uint256 private constant STANDARD_TOKEN_DECIMALS = 10 ** 18;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -152,5 +154,14 @@ contract ConceroBridge is ConceroCCIP {
   function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector) public view returns (uint256) {
     uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector);
     return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / 1 ether;
+  }
+
+  /**
+   * @notice Internal function to convert USDC Decimals to LP Decimals
+   * @param _amount the amount of USDC
+   * @return _adjustedAmount the adjusted amount
+   */
+  function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
+    _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
   }
 }

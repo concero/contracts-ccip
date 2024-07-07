@@ -8,6 +8,7 @@ import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/l
 import {Storage} from "./Libraries/Storage.sol";
 import {IParentPool} from "./Interfaces/IParentPool.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
+import {ConceroCommon} from "./ConceroCommon.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -26,7 +27,7 @@ error AddressNotSet();
 error ConceroFunctions_ItsNotOrchestrator(address caller);
 error TXReleasedFailed(bytes error); // todo: TXReleasE
 
-contract ConceroFunctions is FunctionsClient, Storage {
+contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   ///////////////////////
   ///TYPE DECLARATIONS///
   ///////////////////////
@@ -124,18 +125,18 @@ contract ConceroFunctions is FunctionsClient, Storage {
     s_transactions[ccipMessageId] = Transaction(ccipMessageId, sender, recipient, amount, token, srcChainSelector, false, dstSwapData);
 
     bytes[] memory args = new bytes[](12);
-    args[0] = abi.encode(s_dstJsHashSum);
-    args[1] = abi.encode(s_ethersHashSum);
-    args[2] = abi.encode(RequestType.checkTxSrc);
-    args[3] = abi.encode(s_conceroContracts[srcChainSelector]);
-    args[4] = abi.encode(srcChainSelector);
-    args[5] = abi.encode(blockNumber);
-    args[6] = abi.encode(ccipMessageId);
-    args[7] = abi.encode(sender);
-    args[8] = abi.encode(recipient);
-    args[9] = abi.encode(uint8(token));
-    args[10] = abi.encode(amount);
-    args[11] = abi.encode(CHAIN_SELECTOR);
+    args[0] = abi.encodePacked(s_dstJsHashSum);
+    args[1] = abi.encodePacked(s_ethersHashSum);
+    args[2] = abi.encodePacked(RequestType.checkTxSrc);
+    args[3] = abi.encodePacked(s_conceroContracts[srcChainSelector]);
+    args[4] = abi.encodePacked(srcChainSelector);
+    args[5] = abi.encodePacked(blockNumber);
+    args[6] = abi.encodePacked(ccipMessageId);
+    args[7] = abi.encodePacked(sender);
+    args[8] = abi.encodePacked(recipient);
+    args[9] = abi.encodePacked(uint8(token));
+    args[10] = abi.encodePacked(amount);
+    args[11] = abi.encodePacked(CHAIN_SELECTOR);
 
     bytes32 reqId = sendRequest(args, CL_JS_CODE);
 
@@ -211,18 +212,18 @@ contract ConceroFunctions is FunctionsClient, Storage {
     if (s_conceroContracts[dstChainSelector] == address(0)) revert AddressNotSet();
 
     bytes[] memory args = new bytes[](13);
-    args[0] = abi.encode(s_srcJsHashSum);
-    args[1] = abi.encode(s_ethersHashSum);
-    args[2] = abi.encode(RequestType.addUnconfirmedTxDst);
-    args[3] = abi.encode(s_conceroContracts[dstChainSelector]);
-    args[4] = abi.encode(ccipMessageId);
-    args[5] = abi.encode(sender);
-    args[6] = abi.encode(recipient);
-    args[7] = abi.encode(amount);
-    args[8] = abi.encode(CHAIN_SELECTOR);
-    args[9] = abi.encode(dstChainSelector);
-    args[10] = abi.encode(uint8(token));
-    args[11] = abi.encode(block.number);
+    args[0] = abi.encodePacked(s_srcJsHashSum);
+    args[1] = abi.encodePacked(s_ethersHashSum);
+    args[2] = abi.encodePacked(RequestType.addUnconfirmedTxDst);
+    args[3] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
+    args[4] = abi.encodePacked(ccipMessageId);
+    args[5] = abi.encodePacked(sender);
+    args[6] = abi.encodePacked(recipient);
+    args[7] = abi.encodePacked(amount);
+    args[8] = abi.encodePacked(CHAIN_SELECTOR);
+    args[9] = abi.encodePacked(dstChainSelector);
+    args[10] = abi.encodePacked(uint8(token));
+    args[11] = abi.encodePacked(block.number);
     args[12] = _swapDataToBytes(dstSwapData);
 
     bytes32 reqId = sendRequest(args, CL_JS_CODE);

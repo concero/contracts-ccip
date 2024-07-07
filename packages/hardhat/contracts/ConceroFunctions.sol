@@ -86,7 +86,6 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
   ///@notice emitted when the concero pool address is updated
   event ConceroPoolAddressUpdated(address previousAddress, address pool);
-
   constructor(
     FunctionsVariables memory _variables,
     uint64 _chainSelector,

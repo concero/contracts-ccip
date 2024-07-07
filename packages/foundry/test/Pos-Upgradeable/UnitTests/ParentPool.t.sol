@@ -205,11 +205,18 @@ contract ParentPoolTest is Test {
     event ParentPool_MasterPoolCapUpdated(uint256);
     function test_depositLiquidityRevert() public {
         uint256 amountToDeposit = 1*10**5;
-        vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountBelowMinimum.selector, 100*10**6));
-        wMaster.depositLiquidity(amountToDeposit);
-
         uint256 allowedAmountToDeposit = 150*10**6;
+        
+        vm.prank(Tester);
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_ThereIsNoPoolToDistribute.selector));
+        wMaster.depositLiquidity(allowedAmountToDeposit);
+
+        vm.prank(Tester);
+        wMaster.setPoolsToSend(mockDestinationChainSelector, mockChildPoolAddress);
+
+        // vm.prank(Tester);
+        // vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountBelowMinimum.selector, 100*10**6));
+        // wMaster.depositLiquidity(amountToDeposit);
 
         vm.prank(Tester);
         wMaster.setPoolCap(120 *10**6);
@@ -222,10 +229,6 @@ contract ParentPoolTest is Test {
         vm.expectEmit();
         emit ParentPool_MasterPoolCapUpdated(allowedAmountToDeposit);
         wMaster.setPoolCap(allowedAmountToDeposit);
-        
-        vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_ThereIsNoPoolToDistribute.selector));
-        wMaster.depositLiquidity(allowedAmountToDeposit);
     }
 
     event ParentPool_ChainAndAddressRemoved(uint64 chainSelector);

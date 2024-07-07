@@ -189,9 +189,6 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
     function test_userBridge() public setters {
         vm.selectFork(baseTestFork);
 
-        uint256 lpBalance = IERC20(ccipBnM).balanceOf(LP);
-        uint256 depositLowAmount = 10*10**6;
-
         //======= LP Deposits enough to go through, but revert on max Cap
         uint256 depositEnoughAmount = 100*10**6;
 

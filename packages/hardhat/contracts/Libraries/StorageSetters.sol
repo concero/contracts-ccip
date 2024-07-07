@@ -1,10 +1,9 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Initializable} from "@openzeppelin/upgradeable/contracts/proxy/utils/Initializable.sol";
 import {Storage} from "./Storage.sol";
 
-contract StorageSetters is Storage, Initializable {
+contract StorageSetters is Storage {
   ///////////////////////////////
   /////////////ERROR/////////////
   ///////////////////////////////
@@ -47,19 +46,6 @@ contract StorageSetters is Storage, Initializable {
   modifier onlyOwner() {
     if (msg.sender != i_owner) revert StorageSetters_CallableOnlyByOwner(msg.sender, i_owner);
     _;
-  }
-
-  function initialize(
-    uint64 _arbChainSelector,
-    uint256 _gasPrice,
-    uint256 _linkUSDCRate,
-    uint256 _nativeUSDCRate,
-    uint256 _linkNativeRate
-  ) initializer public {
-    s_lastGasPrices[_arbChainSelector] = _gasPrice;
-    s_latestLinkUsdcRate = _linkUSDCRate;
-    s_latestNativeUsdcRate = _nativeUSDCRate;
-    s_latestLinkNativeRate = _linkNativeRate;
   }
 
   ///////////////////////////

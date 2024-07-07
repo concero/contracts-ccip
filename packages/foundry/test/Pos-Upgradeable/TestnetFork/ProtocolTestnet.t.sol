@@ -272,14 +272,8 @@ contract ProtocolTestnet is Test {
 
         //===== Base Proxies
         //====== Update the proxy for the correct address
-        uint256 lastGasPrice = 5767529;
-        uint256 latestLinkUsdcRate = 13_560_000_000_000_000_000;
-        uint256 latestNativeUsdcRate = 3_383_730_000_000_000_000_000;
-        uint256 latestLinkNativeRate = 40091515;
-        bytes memory data = abi.encodeWithSignature("initialize(uint64,uint256,uint256,uint256,uint256)", arbChainSelector, lastGasPrice, latestLinkUsdcRate, latestNativeUsdcRate, latestLinkNativeRate);
-
         vm.prank(ProxyOwner);
-        proxyInterfaceInfra.upgradeToAndCall(address(orch), data);
+        proxyInterfaceInfra.upgradeToAndCall(address(orch), "");
         vm.prank(ProxyOwner);
         proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
 
@@ -550,12 +544,13 @@ contract ProtocolTestnet is Test {
 
         // ==== Approve Transfer
 
-        vm.startPrank(User);
-        wEth.approve(address(op), amountIn);
-        bytes memory InsufficientFunds = abi.encodeWithSelector(InsufficientFundsForFees.selector, amountOutMin , 161996932573903608);
-        vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, InsufficientFunds));
-        op.swapAndBridge(bridgeData, swapData, swapData);
-        vm.stopPrank();
+        //It will not revert because fee are 0 on the first call.
+        // vm.startPrank(User);
+        // wEth.approve(address(op), amountIn);
+        // bytes memory InsufficientFunds = abi.encodeWithSelector(InsufficientFundsForFees.selector, amountOutMin , 161996932573903608);
+        // vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, InsufficientFunds));
+        // op.swapAndBridge(bridgeData, swapData, swapData);
+        // vm.stopPrank();
 
         IDexSwap.SwapData[] memory swapEmptyData = new IDexSwap.SwapData[](0);
 

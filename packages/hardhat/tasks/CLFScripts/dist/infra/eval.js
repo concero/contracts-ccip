@@ -3,7 +3,9 @@ try {
 	const [t, p] = await Promise.all([
 		fetch(u),
 		fetch(
-			`https://raw.githubusercontent.com/concero/contracts-ccip/feat/mainnet-deploy/packages/hardhat/tasks/CLFScripts/dist/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`,
+			'https://raw.githubusercontent.com/concero/contracts-ccip/' +
+				'master' +
+				`/packages/hardhat/tasks/CLFScripts/dist/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`,
 		),
 	]);
 	const [e, c] = await Promise.all([t.text(), p.text()]);

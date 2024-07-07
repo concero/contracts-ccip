@@ -79,14 +79,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   ///////////////
   ///MODIFIERS///
   ///////////////
-  /**
-   * @notice modifier to check if the caller is the an approved messenger
-   */
-  modifier onlyMessenger() {
-    if (isMessenger(msg.sender) == false) revert Orchestrator_NotMessenger(msg.sender);
-    _;
-  }
-  
+
   modifier tokenAmountSufficiency(address token, uint256 amount) {
     if (token != address(0)) {
       uint256 balance = IERC20(token).balanceOf(msg.sender);
@@ -120,11 +113,11 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] calldata srcSwapData,
     IDexSwap.SwapData[] calldata dstSwapData
-  ) external validateSwapData(srcSwapData) validateBridgeData(bridgeData) validateSwapData(dstSwapData){
-    if(srcSwapData[srcSwapData.length - 1].toToken != getToken(bridgeData.tokenType, i_chainIndex)) revert Orchestrator_InvalidSwapData();
+  ) external validateSwapData(srcSwapData) validateBridgeData(bridgeData) validateSwapData(dstSwapData) {
+    if (srcSwapData[srcSwapData.length - 1].toToken != getToken(bridgeData.tokenType, i_chainIndex)) revert Orchestrator_InvalidSwapData();
     // if(dstSwapData[0].toToken != getToken(bridgeData.tokenType, bridgeData.dstChainSelector)) revert Orchestrator_InvalidSwapData();
 
-    //Swap -> money come back to this contract       
+    //Swap -> money come back to this contract
     bridgeData.amount = _swap(srcSwapData, 0, false, address(this));
 
     (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData));
@@ -141,10 +134,10 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   function bridge(
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] calldata dstSwapData
-  ) external validateBridgeData(bridgeData) validateSwapData(dstSwapData){
+  ) external validateBridgeData(bridgeData) validateSwapData(dstSwapData) {
     {
-    uint256 userBalance = IERC20(getToken(bridgeData.tokenType, i_chainIndex)).balanceOf(msg.sender);
-    if (userBalance < bridgeData.amount) revert Orchestrator_InvalidAmount();
+      uint256 userBalance = IERC20(getToken(bridgeData.tokenType, i_chainIndex)).balanceOf(msg.sender);
+      if (userBalance < bridgeData.amount) revert Orchestrator_InvalidAmount();
     }
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
 
@@ -228,14 +221,5 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   ///////////////////////////
   function getTransactionsInfo(bytes32 _ccipMessageId) external view returns (Transaction memory transaction) {
     transaction = s_transactions[_ccipMessageId];
-  }
-
-  /**
-   * @notice Internal function to convert USDC Decimals to LP Decimals
-   * @param _amount the amount of USDC
-   * @return _adjustedAmount the adjusted amount
-   */
-  function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
   }
 }

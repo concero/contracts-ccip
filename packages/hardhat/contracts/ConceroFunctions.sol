@@ -43,7 +43,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
 
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
-  ///////////////////////////////////////////////////////////  
+  ///////////////////////////////////////////////////////////
   ///@notice
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   ///@notice
@@ -87,17 +87,6 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   ///@notice emitted when the concero pool address is updated
   event ConceroPoolAddressUpdated(address previousAddress, address pool);
 
-  ///////////////
-  ///MODIFIERS///
-  ///////////////
-  /**
-   * @notice modifier to check if the caller is the an approved messenger
-   */
-  modifier onlyMessenger() {
-    if (isMessenger(msg.sender) == false) revert ConceroFunctions_NotMessenger(msg.sender);
-    _;
-  }
-  
   constructor(
     FunctionsVariables memory _variables,
     uint64 _chainSelector,
@@ -301,18 +290,5 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     s_latestLinkUsdcRate = linkUsdcRate == 0 ? s_latestLinkUsdcRate : linkUsdcRate;
     s_latestNativeUsdcRate = nativeUsdcRate == 0 ? s_latestNativeUsdcRate : nativeUsdcRate;
     s_latestLinkNativeRate = linkNativeRate == 0 ? s_latestLinkNativeRate : linkNativeRate;
-  }
-
-  ///////////////////////////
-  ///VIEW & PURE FUNCTIONS///
-  ///////////////////////////
-
-  /**
-   * @notice Internal function to convert USDC Decimals to LP Decimals
-   * @param _amount the amount of USDC
-   * @return _adjustedAmount the adjusted amount
-   */
-  function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
   }
 }

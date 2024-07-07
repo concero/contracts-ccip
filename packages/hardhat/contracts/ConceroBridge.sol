@@ -139,7 +139,13 @@ contract ConceroBridge is ConceroCCIP {
    * @param dstChainSelector the destination blockchain chain selector
    */
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector, uint256 _amount) public view returns (uint256) {
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(getToken(tokenType, i_chainIndex), _amount, address(this), (_amount / 1000), dstChainSelector);
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
+      getToken(tokenType, i_chainIndex),
+      _amount,
+      address(this),
+      (_amount / 1000),
+      dstChainSelector
+    );
     return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
   }
 
@@ -151,14 +157,5 @@ contract ConceroBridge is ConceroCCIP {
   function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 _amount) public view returns (uint256) {
     uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector, _amount);
     return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
-  }
-
-  /**
-   * @notice Internal function to convert USDC Decimals to LP Decimals
-   * @param _amount the amount of USDC
-   * @return _adjustedAmount the adjusted amount
-   */
-  function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
   }
 }

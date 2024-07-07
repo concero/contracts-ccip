@@ -301,10 +301,10 @@ export async function setContractVariables(
   for (const deployableChain of deployableChains) {
     await setDexSwapAllowedRouters(deployableChain, abi); // once
     await setDstConceroPools(deployableChain, abi); // once
-    if (uploadsecrets) {
-      await setDonHostedSecretsVersion(deployableChain, slotId, abi);
-      await setDonSecretsSlotId(deployableChain, slotId, abi);
-    }
+    // if (uploadsecrets) {
+    await setDonHostedSecretsVersion(deployableChain, slotId, abi);
+    await setDonSecretsSlotId(deployableChain, slotId, abi);
+    // }
     await addMessengerToAllowlist(deployableChain, abi); // once
     await setJsHashes(deployableChain, abi);
 

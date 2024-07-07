@@ -261,10 +261,10 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
 
     address tokenReceived = getToken(transaction.token, i_chainIndex);
     uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
+    IDexSwap.SwapData[] memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData[]));
 
-    if (transaction.dstSwapData.length >= 1) {
+    if (swapData.length > 0) {
       IParentPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, address(this));
-      IDexSwap.SwapData[] memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData[]));
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, 0));
       if (swapSuccess == false) revert TXReleasedFailed(swapError);
     } else {

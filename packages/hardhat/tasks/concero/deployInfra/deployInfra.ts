@@ -50,8 +50,6 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
       await deployConcero(hre, { slotId });
       await deployConceroOrchestrator(hre);
       await setProxyImplementation(hre, liveChains);
-
-      if (taskArgs.deployproxy) await setConceroProxyDstContracts(liveChains);
     }
 
     if (!taskArgs.skipsetvars) {
@@ -59,6 +57,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
         await uploadDonSecrets(deployableChains, slotId, 4320);
       }
       await setContractVariables(liveChains, deployableChains, slotId, taskArgs.uploadsecrets);
+      await setConceroProxyDstContracts(liveChains);
 
       // await fundSubscription(liveChains);
       // await fundContract(deployableChains);

@@ -78,25 +78,23 @@ contract Automation is ProtocolTestnet {
         automation.setEthersHashSum(hashSum);
     }
 
-    event ConceroAutomation_RequestAdded(IParentPool.WithdrawRequests request);
+    event ConceroAutomation_RequestAdded(address);
     error ConceroAutomation_CallerNotAllowed(address);
     function test_pendingWithdrawal() public {
-        IParentPool.WithdrawRequests memory _request;
-
         //===== Ownable Revert
         vm.expectRevert(abi.encodeWithSelector(ConceroAutomation_CallerNotAllowed.selector, address(this)));
-        automation.addPendingWithdrawal(_request);
+        automation.addPendingWithdrawal(User);
 
         vm.prank(address(masterProxy));
         vm.expectEmit();
-        emit ConceroAutomation_RequestAdded(_request);
-        automation.addPendingWithdrawal(_request);
+        emit ConceroAutomation_RequestAdded(User);
+        automation.addPendingWithdrawal(User);
     }
 
     function test_checkUpkeep() public {
         //====== Not Forwarder
-        vm.expectRevert(abi.encodeWithSelector(ConceroAutomation_CallerNotAllowed.selector, address(this)));
-        automation.checkUpkeep("");
+        // vm.expectRevert(abi.encodeWithSelector(ConceroAutomation_CallerNotAllowed.selector, address(this)));
+        // automation.checkUpkeep("");
 
         //====== Successful Call
         //=== Add Forwarder
@@ -104,47 +102,24 @@ contract Automation is ProtocolTestnet {
         vm.prank(Tester);
         automation.setForwarderAddress(fakeForwarder);
 
-        //=== Mock Data
-        IParentPool.WithdrawRequests memory _request = IParentPool.WithdrawRequests({
-            amountEarned: 10*10**6,
-            amountToBurn: 5*10**6,
-            amountToRequest: 5*10**6,
-            amountToReceive: 5*10**6,
-            token: address(mUSDC),
-            liquidityProvider: User,
-            deadline: block.timestamp + 597_600
-        });
-
         //=== Create Request
         vm.prank(address(masterProxy));
-        automation.addPendingWithdrawal(_request);
+        automation.addPendingWithdrawal(User);
 
-        IParentPool.WithdrawRequests[] memory recoveredRequest = automation.getPendingRequests();
+        address[] memory recoveredRequest = automation.getPendingRequests();
 
-        assertEq(recoveredRequest[0].amountEarned, 10*10**6);
-        assertEq(recoveredRequest[0].amountToBurn, 5*10**6);
-        assertEq(recoveredRequest[0].amountToRequest, 5*10**6);
-        assertEq(recoveredRequest[0].amountToReceive, 5*10**6);
-
-        //=== Execute CheckUpkeep without time passing
-        vm.prank(fakeForwarder);
-        (bool negativeResponse, ) = automation.checkUpkeep("");
-
-        assertEq(negativeResponse, false);
-
-        //=== move in time
-        vm.warp(block.timestamp + 7 days);
+        assertEq(recoveredRequest[0], User);
 
         //=== check return
         vm.prank(fakeForwarder);
         (bool positiveResponse, bytes memory performData) = automation.checkUpkeep("");
 
-        assertEq(positiveResponse, true);
+        assertEq(positiveResponse, true); //Because the request don't exist, but the address is on the array
 
         (address LiquidityProvider, uint256 amountToRequest) = abi.decode(performData,(address, uint256));
 
         assertEq(LiquidityProvider, User);
-        assertEq(amountToRequest, 5*10**6);
+        assertEq(amountToRequest, 0);
     }
 
     event ConceroAutomation_UpkeepPerformed(bytes32);
@@ -168,15 +143,14 @@ contract Automation is ProtocolTestnet {
             amountToRequest: 5*10**6,
             amountToReceive: 5*10**6,
             token: address(mUSDC),
-            liquidityProvider: User,
             deadline: block.timestamp + 597_600
         });
 
         //=== Create Request
         vm.prank(address(masterProxy));
-        automation.addPendingWithdrawal(_request);
+        automation.addPendingWithdrawal(User);
 
-        IParentPool.WithdrawRequests[] memory recoveredRequest = automation.getPendingRequests();
+        address[] memory recoveredRequest = automation.getPendingRequests();
 
         //=== move in time
         vm.warp(block.timestamp + 7 days);

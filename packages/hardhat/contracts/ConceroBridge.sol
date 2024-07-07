@@ -152,13 +152,4 @@ contract ConceroBridge is ConceroCCIP {
     uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector, _amount);
     return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
   }
-
-  /**
-   * @notice Internal function to convert USDC Decimals to LP Decimals
-   * @param _amount the amount of USDC
-   * @return _adjustedAmount the adjusted amount
-   */
-  function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256 _adjustedAmount) {
-    _adjustedAmount = (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
-  }
 }

@@ -79,14 +79,6 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   ///////////////
   ///MODIFIERS///
   ///////////////
-  /**
-   * @notice modifier to check if the caller is the an approved messenger
-   */
-  modifier onlyMessenger() {
-    if (isMessenger(msg.sender) == false) revert Orchestrator_NotMessenger(msg.sender);
-    _;
-  }
-  
   modifier tokenAmountSufficiency(address token, uint256 amount) {
     if (token != address(0)) {
       uint256 balance = IERC20(token).balanceOf(msg.sender);

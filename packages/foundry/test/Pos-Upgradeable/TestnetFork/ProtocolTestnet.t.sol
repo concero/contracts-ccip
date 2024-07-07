@@ -676,7 +676,6 @@ contract ProtocolTestnet is Test {
         address[] memory path = new address[](2);
         path[0] = address(wEth);
         path[1] = address(tUSDC);
-        address to = address(User);
         uint deadline = block.timestamp + 1800;
 
         vm.deal(User, INITIAL_BALANCE);

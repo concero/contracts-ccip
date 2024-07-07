@@ -180,67 +180,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     i_owner = _owner;
   }
 
-  ///////////////////////
-  ///SETTERS FUNCTIONS///
-  ///////////////////////
-  /**
-   * @notice function to manage the Cross-chain ConceroPool contracts
-   * @param _chainSelector chain identifications
-   * @param _pool address of the Cross-chain ConceroPool contract
-   * @dev only owner can call it
-   * @dev it's payable to save some gas.
-   * @dev this functions is used on ConceroPool.sol
-   */
-  function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
-    if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ParentPool_InvalidAddress();
-    s_poolsToDistribute.push(IParentPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
-
-    s_poolToSendTo[_chainSelector] = _pool;
-
-    emit ParentPool_PoolReceiverUpdated(_chainSelector, _pool);
-  }
-
-  /**
-   * @notice Function to remove Cross-chain address disapproving transfers
-   * @param _chainSelector the CCIP chainSelector for the specific chain
-   */
-  function removePoolsFromListOfSenders(uint64 _chainSelector) external payable onlyOwner {
-    for (uint256 i; i < s_poolsToDistribute.length; ) {
-      if (s_poolsToDistribute[i].chainSelector == _chainSelector) {
-        s_poolsToDistribute[i] = s_poolsToDistribute[s_poolsToDistribute.length - 1];
-        s_poolsToDistribute.pop();
-        delete s_poolToSendTo[_chainSelector];
-      }
-      unchecked {
-        ++i;
-      }
-    }
-  }
-
-  /**
-   * @notice Function to set the Cap of the Master pool.
-   * @param _newCap The new Cap of the pool
-   */
-  function setPoolCap(uint256 _newCap) external payable onlyOwner {
-    s_maxDeposit = _newCap;
-  }
-
-  function setDonHostedSecretsSlotId(uint8 _slotId) external payable onlyOwner {
-    s_donHostedSecretsSlotId = _slotId;
-  }
-
-  function setDonHostedSecretsVersion(uint64 _version) external payable onlyOwner {
-    s_donHostedSecretsVersion = _version;
-  }
-
-  function setHashSum(bytes32 _hashSum) external payable onlyOwner {
-    s_hashSum = _hashSum;
-  }
-
-  function setEthersHashSum(bytes32 _ethersHashSum) external payable onlyOwner {
-    s_ethersHashSum = _ethersHashSum;
-  }
-
   ////////////////////////
   ///EXTERNAL FUNCTIONS///
   ////////////////////////
@@ -366,22 +305,20 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   }
 
   /**
-   * @notice Function to remove Cross-chain address disapproving transfers
-   * @param _chainSelector the CCIP chainSelector for the specific chain
+   * @notice function to manage the Cross-chain ConceroPool contracts
+   * @param _chainSelector chain identifications
+   * @param _pool address of the Cross-chain ConceroPool contract
+   * @dev only owner can call it
+   * @dev it's payable to save some gas.
+   * @dev this functions is used on ConceroPool.sol
    */
-  function removePoolsFromListOfSenders(uint64 _chainSelector) external payable onlyOwner {
-    uint256 arrayLength = s_poolsToDistribute.length;
-    for (uint256 i; i < arrayLength; ) {
-      if (s_poolsToDistribute[i].chainSelector == _chainSelector) {
-        s_poolsToDistribute[i] = s_poolsToDistribute[s_poolsToDistribute.length - 1];
-        s_poolsToDistribute.pop();
-        delete s_poolToSendTo[_chainSelector];
-      }
-      unchecked {
-        ++i;
-      }
-    }
-    emit ParentPool_ChainAndAddressRemoved(_chainSelector);
+  function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
+    if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ParentPool_InvalidAddress();
+    s_poolsToDistribute.push(IParentPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
+
+    s_poolToSendTo[_chainSelector] = _pool;
+
+    emit ParentPool_PoolReceiverUpdated(_chainSelector, _pool);
   }
 
   /**
@@ -390,6 +327,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    */
   function setPoolCap(uint256 _newCap) external payable onlyOwner {
     s_maxDeposit = _newCap;
+
     emit ParentPool_MasterPoolCapUpdated(_newCap);
   }
 
@@ -407,6 +345,24 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
   function setEthersHashSum(bytes32 _ethersHashSum) external payable onlyOwner {
     s_ethersHashSum = _ethersHashSum;
+  }
+
+  /**
+   * @notice Function to remove Cross-chain address disapproving transfers
+   * @param _chainSelector the CCIP chainSelector for the specific chain
+   */
+  function removePoolsFromListOfSenders(uint64 _chainSelector) external payable onlyOwner {
+    for (uint256 i; i < s_poolsToDistribute.length; ) {
+      if (s_poolsToDistribute[i].chainSelector == _chainSelector) {
+        s_poolsToDistribute[i] = s_poolsToDistribute[s_poolsToDistribute.length - 1];
+        s_poolsToDistribute.pop();
+        delete s_poolToSendTo[_chainSelector];
+      }
+      unchecked {
+        ++i;
+      }
+    }
+    emit ParentPool_ChainAndAddressRemoved(_chainSelector);
   }
 
   ////////////////

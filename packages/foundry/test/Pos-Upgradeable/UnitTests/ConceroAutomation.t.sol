@@ -73,7 +73,7 @@ contract ConceroAutomationTest is Test {
     }
 
     //addPendingWithdrawal
-    event ConceroAutomation_RequestAdded(IParentPool.WithdrawRequests request);
+    event ConceroAutomation_RequestAdded(address);
     function test_addPendingWithdraw() public {
         IParentPool.WithdrawRequests memory request = IParentPool.WithdrawRequests ({
             amountEarned: 10*10**6,
@@ -81,14 +81,13 @@ contract ConceroAutomationTest is Test {
             amountToRequest: 0,
             amountToReceive: 0,
             token: address(usdc),
-            liquidityProvider: User,
             deadline: block.timestamp + 7 days
         });
 
         vm.prank(masterProxy);
         vm.expectEmit();
-        emit ConceroAutomation_RequestAdded(request);
-        automation.addPendingWithdrawal(request);
+        emit ConceroAutomation_RequestAdded(User);
+        automation.addPendingWithdrawal(User);
     }
 
     error ConceroAutomation_CallerNotAllowed(address);
@@ -99,12 +98,10 @@ contract ConceroAutomationTest is Test {
             amountToRequest: 0,
             amountToReceive: 0,
             token: address(usdc),
-            liquidityProvider: User,
             deadline: block.timestamp + 7 days
         });
         
         vm.expectRevert(abi.encodeWithSelector(ConceroAutomation_CallerNotAllowed.selector, address(this)));
-        automation.addPendingWithdrawal(request);
+        automation.addPendingWithdrawal(User);
     }
-
 }

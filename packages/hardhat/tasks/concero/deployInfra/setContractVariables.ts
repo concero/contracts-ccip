@@ -1,6 +1,6 @@
 import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
 import { CNetwork } from "../../../types/CNetwork";
-import { getClients } from "../../utils/switchChain";
+import { getClients } from "../../utils/getViemClients";
 import load from "../../../utils/load";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import log from "../../../utils/log";

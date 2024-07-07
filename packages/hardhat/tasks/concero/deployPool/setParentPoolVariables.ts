@@ -1,5 +1,5 @@
 import { CNetwork } from "../../../types/CNetwork";
-import { getClients } from "../../utils/switchChain";
+import { getClients } from "../../utils/getViemClients";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import { networkEnvKeys } from "../../../constants/CNetworks";
 import { ethersV6CodeUrl, parentPoolJsCodeUrl } from "../../../constants/functionsJsCodeUrls";

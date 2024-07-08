@@ -2,36 +2,6 @@ async function f() {
 	try {
 		const [_, __, liquidityProvider, tokenAmount] = bytesArgs;
 		const chainSelectors = {
-			[`0x${BigInt('3478487238524512106').toString(16)}`]: {
-				urls: [
-					`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
-					'https://arbitrum-sepolia-rpc.publicnode.com',
-				],
-				chainId: '0x66eee',
-				usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-				poolAddress: '0xbe43f1eAb754144b31B90Ee2D6E036b9AB3cC5B4',
-			},
-			[`0x${BigInt('5224473277236331295').toString(16)}`]: {
-				urls: [
-					`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://optimism-sepolia.blockpi.network/v1/rpc/public',
-					'https://optimism-sepolia-rpc.publicnode.com',
-				],
-				chainId: '0xaa37dc',
-				usdcAddress: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
-				poolAddress: '0xE7fB2fE07e73f7407b44040340d95d18aF8C28C9',
-			},
-			[`0x${BigInt('4949039107694359620').toString(16)}`]: {
-				urls: [
-					`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://arbitrum.blockpi.network/v1/rpc/public',
-					'https://arbitrum-rpc.publicnode.com',
-				],
-				chainId: '0xa4b1',
-				usdcAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
-				poolAddress: '0xbe43f1eAb754144b31B90Ee2D6E036b9AB3cC5B4',
-			},
 			[`0x${BigInt('4051577828743386545').toString(16)}`]: {
 				urls: [
 					`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,

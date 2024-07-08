@@ -1,38 +1,38 @@
 async function f() {
 	const chainSelectors = {
-		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
-			urls: [
-				`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
-				'https://arbitrum-sepolia-rpc.publicnode.com',
-			],
-			chainId: '0x66eee',
-			usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
-			poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
-		},
-		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
-			urls: [
-				`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://optimism-sepolia.blockpi.network/v1/rpc/public',
-				'https://optimism-sepolia-rpc.publicnode.com',
-			],
-			chainId: '0xaa37dc',
-			usdcAddress: '${USDC_OPTIMISM_SEPOLIA}',
-			poolAddress: '${CHILD_POOL_PROXY_OPTIMISM_SEPOLIA}',
-		},
+		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
+		// 	urls: [
+		// 		`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+		// 		'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
+		// 		'https://arbitrum-sepolia-rpc.publicnode.com',
+		// 	],
+		// 	chainId: '0x66eee',
+		// 	usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
+		// 	poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
+		// },
+		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
+		// 	urls: [
+		// 		`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+		// 		'https://optimism-sepolia.blockpi.network/v1/rpc/public',
+		// 		'https://optimism-sepolia-rpc.publicnode.com',
+		// 	],
+		// 	chainId: '0xaa37dc',
+		// 	usdcAddress: '${USDC_OPTIMISM_SEPOLIA}',
+		// 	poolAddress: '${CHILD_POOL_PROXY_OPTIMISM_SEPOLIA}',
+		// },
 
 		// mainnets
 
-		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
-			urls: [
-				`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://arbitrum.blockpi.network/v1/rpc/public',
-				'https://arbitrum-rpc.publicnode.com',
-			],
-			chainId: '0xa4b1',
-			usdcAddress: '${USDC_ARBITRUM}',
-			poolAddress: '${CHILD_POOL_PROXY_ARBITRUM}',
-		},
+		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
+		// 	urls: [
+		// 		`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
+		// 		'https://arbitrum.blockpi.network/v1/rpc/public',
+		// 		'https://arbitrum-rpc.publicnode.com',
+		// 	],
+		// 	chainId: '0xa4b1',
+		// 	usdcAddress: '${USDC_ARBITRUM}',
+		// 	poolAddress: '${CHILD_POOL_PROXY_ARBITRUM}',
+		// },
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
 			urls: [
 				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
@@ -68,15 +68,8 @@ async function f() {
 	let totalBalance = 0n;
 
 	for (const chain in chainSelectors) {
-		const fallBackProviders = chainSelectors[chain].urls.map(url => {
-			return {
-				provider: new FunctionsJsonRpcProvider(url),
-				priority: Math.random(),
-				stallTimeout: 2000,
-				weight: 1,
-			};
-		});
-		const provider = new ethers.FallbackProvider(fallBackProviders, null, {quorum: 1});
+		const url = chainSelectors[chain].urls[Math.floor(Math.random() * chainSelectors[chain].urls.length)];
+		const provider = new FunctionsJsonRpcProvider(url);
 		const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
 		const pool = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, provider);
 		promises.push(erc20.balanceOf(chainSelectors[chain].poolAddress));

@@ -1,4 +1,4 @@
-import { arbitrumSepolia, baseSepolia, optimismSepolia } from "viem/chains";
+import { arbitrumSepolia, base, baseSepolia, optimismSepolia, polygon } from "viem/chains";
 import { http } from "viem";
 
 export const chainsMap = {
@@ -12,6 +12,15 @@ export const chainsMap = {
   },
   [process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA]: {
     viemChain: arbitrumSepolia,
+    viemTransport: http(),
+  },
+  // mainnets
+  [process.env.CL_CCIP_CHAIN_SELECTOR_BASE]: {
+    viemChain: base,
+    viemTransport: http(),
+  },
+  [process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON]: {
+    viemChain: polygon,
     viemTransport: http(),
   },
 };

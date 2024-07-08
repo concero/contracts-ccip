@@ -8,9 +8,9 @@ import { execSync } from "child_process";
 import uploadDonSecrets from "../../donSecrets/upload";
 import { CNetwork } from "../../../types/CNetwork";
 import deployParentPoolProxy from "../../../deploy/01_ParentPoolProxy";
-import deployParentPool from "../../../deploy/09_ParentPool";
 import { setParentPoolVariables } from "./setParentPoolVariables";
 import { setParentPoolProxyImplementation } from "./setParentPoolProxyImplementation";
+import deployParentPool from "../../../deploy/09_ParentPool";
 
 task("deploy-parent-pool", "Deploy the pool")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
@@ -27,7 +27,7 @@ task("deploy-parent-pool", "Deploy the pool")
     const { name } = hre.network;
     let deployableChains: CNetwork[] = [chains.baseSepolia];
 
-    if (taskArgs.ismainnet) {
+    if (taskArgs.mainnet) {
       deployableChains = [chains.base];
     }
 

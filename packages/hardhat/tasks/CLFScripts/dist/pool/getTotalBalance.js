@@ -38,7 +38,7 @@ async function f() {
 			],
 			chainId: '0x89',
 			usdcAddress: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
-			poolAddress: '0xE7fB2fE07e73f7407b44040340d95d18aF8C28C9',
+			poolAddress: '0x390661e47a0013889b2bA26d1B7d01fdCD8F0bcC',
 		},
 	};
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];

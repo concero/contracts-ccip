@@ -1,21 +1,5 @@
 async function f() {
 	const chainSelectors = {
-		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
-		// 	urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
-		// 	chainId: '0xa869',
-		// 	usdcAddress: '${USDC_FUJI}',
-		// 	poolAddress: '${CHILD_POOL_AVALANCHE_FUJI}',
-		// },
-		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}').toString(16)}`]: {
-		// 	urls: [
-		// 		`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-		// 		'https://ethereum-sepolia-rpc.publicnode.com',
-		// 		'https://ethereum-sepolia.blockpi.network/v1/rpc/public',
-		// 	],
-		// 	chainId: '0xaa36a7',
-		// 	usdcAddress: '${USDC_SEPOLIA}',
-		// 	poolAddress: '${CHILD_POOL_SEPOLIA}',
-		// },
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 			urls: [
 				`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
@@ -36,16 +20,29 @@ async function f() {
 			usdcAddress: '${USDC_OPTIMISM_SEPOLIA}',
 			poolAddress: '${CHILD_POOL_PROXY_OPTIMISM_SEPOLIA}',
 		},
-		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY}').toString(16)}`]: {
-		// 	urls: [
-		// 		`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`,
-		// 		'https://polygon-amoy.blockpi.network/v1/rpc/public',
-		// 		'https://polygon-amoy-bor-rpc.publicnode.com',
-		// 	],
-		// 	chainId: '0x13882',
-		// 	usdcAddress: '${USDC_AMOY}',
-		// 	poolAddress: '${CHILD_POOL_POLYGON_AMOY}',
-		// },
+
+		// mainnets
+
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
+			urls: [
+				`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://arbitrum.blockpi.network/v1/rpc/public',
+				'https://arbitrum-rpc.publicnode.com',
+			],
+			chainId: '0xa4b1',
+			usdcAddress: '${USDC_ARBITRUM}',
+			poolAddress: '${CHILD_POOL_PROXY_ARBITRUM}',
+		},
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
+			urls: [
+				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://polygon.blockpi.network/v1/rpc/public',
+				'https://polygon-bor-rpc.publicnode.com',
+			],
+			chainId: '0x89',
+			usdcAddress: '${USDC_POLYGON}',
+			poolAddress: '${CHILD_POOL_PROXY_POLYGON}',
+		},
 	};
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 	const poolAbi = ['function s_loansInUse() external view returns (uint256)'];

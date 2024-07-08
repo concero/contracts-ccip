@@ -85,7 +85,6 @@ contract InfraProxy is ERC1967Proxy, Storage {
   constructor(
     address _logic,
     address initialOwner,
-    address _implementationOwner,
     bytes memory _data
   ) payable ERC1967Proxy(_logic, _data) {
     _admin = initialOwner;

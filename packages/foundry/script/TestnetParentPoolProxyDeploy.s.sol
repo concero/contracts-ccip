@@ -17,7 +17,6 @@ contract TestnetParentPoolProxyDeploy is Script {
         proxy = new ParentPoolProxy(
             _logic,
             _admin,
-            _storageOwner,
             _data
         );
         vm.stopBroadcast();

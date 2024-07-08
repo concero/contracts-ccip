@@ -15,6 +15,7 @@ import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
 import {ParentStorage} from "contracts/Libraries/ParentStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
+import {Orchestrator} from "./Orchestrator.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -418,22 +419,11 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @dev this function will only be called internally.
    */
   function _ccipSend(uint256 _numberOfPools, uint256 _amountToDistribute) internal returns (bytes32 messageId) {
-    Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
-
-    Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({token: address(i_USDC), amount: _amountToDistribute});
-
-    tokenAmounts[0] = tokenAmount;
 
     for (uint256 i; i < _numberOfPools; ) {
       IParentPool.Pools memory pool = s_poolsToDistribute[i];
 
-      Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
-        receiver: abi.encode(pool.poolAddress),
-        data: abi.encode(address(0), address(0), 0), //Here the 1° address is (0) because this is the Parent Pool and we never send to withdraw in another place.
-        tokenAmounts: tokenAmounts,
-        extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 350_000})),
-        feeToken: address(i_linkToken)
-      });
+      Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), _amountToDistribute, pool.poolAddress);
 
       uint256 fees = IRouterClient(i_ccipRouter).getFee(pool.chainSelector, evm2AnyMessage);
 
@@ -450,6 +440,24 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
         ++i;
       }
     }
+  }
+
+  function _buildCCIPMessage(
+    address _token,
+    uint256 _amount,
+    address _poolAddress
+  ) internal view returns (Client.EVM2AnyMessage memory) {
+    Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
+    tokenAmounts[0] = Client.EVMTokenAmount({token: _token, amount: _amount});
+
+    return
+      Client.EVM2AnyMessage({
+        receiver: abi.encode(_poolAddress),
+        data: abi.encode(address(0), address(0), 0), //Here the 1° address is (0) because this is the Parent Pool and we never send to withdraw in another place.
+        tokenAmounts: tokenAmounts,
+        extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 350_000})),
+        feeToken: address(i_linkToken)
+      });
   }
 
   /**
@@ -521,7 +529,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     //N° lpTokens = (((Total USDC Liq + user deposit) * Total sToken) / Total USDC Liq) - Total sToken
     //If less than ALLOWED, means it's zero.
     uint256 lpTokensToMint = _lpSupplyBeforeRequest > ALLOWED
-      ? (((crossChainBalanceConverted + amountDepositedConverted) * _lpSupplyBeforeRequest) / crossChainBalanceConverted) - _lpSupplyBeforeRequest //@audit Need to optimize it
+      ? (((crossChainBalanceConverted + amountDepositedConverted) * _lpSupplyBeforeRequest) / crossChainBalanceConverted) - _lpSupplyBeforeRequest
       : amountDepositedConverted;
 
     i_lp.mint(_liquidityProvider, lpTokensToMint);
@@ -544,7 +552,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
     uint256 amountToWithdraw = (((_convertToLPTokenDecimals(totalCrossChainBalance) * _lpToBurn) * PRECISION_HANDLER) / _lpSupplyBeforeRequest) /
       PRECISION_HANDLER;
-    uint256 amountConvertedToUSDC = _convertToUSDCTokenDecimals(amountToWithdraw);
 
     uint256 amountToWithdrawWithUsdcDecimals = _convertToUSDCTokenDecimals(amountToWithdraw);
 
@@ -563,6 +570,77 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     i_automation.addPendingWithdrawal(_liquidityProvider);
 
     emit ParentPool_RequestUpdated(_liquidityProvider);
+  }
+
+  function _calculateDepositTransactionFee(uint64 _chainSelector, uint256 _amountToDistribute) internal returns(uint256 _totalUSDCCost){
+    uint256 numberOfPools = s_poolsToDistribute.length;
+    uint256 costOfLinkForLiquidityDistribution;
+
+    //1_487_733 units of gas
+    // depositLiquidity call
+    // Create CLF Request in storage
+
+    // Send the CLF request
+    uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(_chainSelector); //What is this clfPremiumFees?
+
+    // Send CCIP message X times, because it is sent for all pools.
+    // X == Number Of pools
+    for(uint256 i; i < numberOfPools; ){
+      IParentPool.Pools memory pool = s_poolsToDistribute[i];
+      Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), _amountToDistribute, pool.poolAddress);
+
+      costOfLinkForLiquidityDistribution += IRouterClient(i_ccipRouter).getFee(pool.chainSelector, evm2AnyMessage);
+      unchecked {
+        ++i;
+      }
+    }
+
+    // mint LP tokens to liquidityProvider - 483_983
+    uint256 mintAndStorageUpdateCosts = 483_983; //Where should we store this? As a constant or in storage?
+    uint256 lastNativeUSDCRate = Orchestrator(i_infraProxy).s_latestNativeUsdcRate();
+
+    uint256 lastLinkUSDCRate = Orchestrator(i_infraProxy).s_latestLinkUsdcRate();
+
+    _totalUSDCCost = ((costOfLinkForLiquidityDistribution + premiumFee) * lastLinkUSDCRate) + (mintAndStorageUpdateCosts * lastNativeUSDCRate);
+  }
+
+  function _calculateWithdrawTransactionsFee(uint64 _chainSelector, uint256 _amountToReceive) internal returns(uint256 _totalUSDCCost){
+    uint256 numberOfPools = s_poolsToDistribute.length;
+    uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(_chainSelector); //What is this clfPremiumFees?
+    uint256 lastNativeUSDCRate = Orchestrator(i_infraProxy).s_latestNativeUsdcRate();
+    uint256 lastLinkUSDCRate = Orchestrator(i_infraProxy).s_latestLinkUsdcRate();
+
+    // 983_295
+    // startWithdraw call
+    // create request on storage
+    // send CLF request
+
+    //callback an update storage - 489_275
+    uint256 updateStorageAfterCallback = 489_275; //Where should we store this? As a constant or in storage?
+
+    uint256 costOfLinkForLiquidityWithdraw;
+
+    for(uint256 i; i < numberOfPools; ){
+      IParentPool.Pools memory pool = s_poolsToDistribute[i];
+      Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), _amountToReceive, address(this));
+
+      costOfLinkForLiquidityWithdraw += IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage); //here the chainSelector must be Base's?
+      unchecked {
+        ++i;
+      }
+    }
+
+    // 110_748
+    // completeWithdraw call()
+    // mapping registry deleted (Parent Pool)
+    // transfer token from user
+    // burn token
+    // transfer to user
+
+    //How much the sendToPool call cost?
+    uint256 gasPriceOfChildPoolsChains = Orchestrator(i_infraProxy).s_lastGasPrices(_chainSelector);
+
+    _totalUSDCCost = (((premiumFee * 2) + costOfLinkForLiquidityWithdraw) * lastLinkUSDCRate) + (updateStorageAfterCallback * lastNativeUSDCRate);
   }
 
   ///////////////////////////

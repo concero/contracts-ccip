@@ -280,4 +280,8 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   function getPendingRequests() external view returns (address[] memory _requests) {
     _requests = s_pendingWithdrawRequestsCLA;
   }
+  
+  function getPendingWithdrawRequestsLength() public view returns (uint256) {
+    return s_pendingWithdrawRequestsCLA.length;
+  }
 }

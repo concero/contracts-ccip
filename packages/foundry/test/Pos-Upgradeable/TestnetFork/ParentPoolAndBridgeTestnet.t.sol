@@ -255,4 +255,11 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
         // assertTrue(op.s_latestNativeUsdcRate() > 0);
         // assertTrue(op.s_latestLinkNativeRate() > 0);
     }
+
+//     function test_depositCost() public setters {
+//         _calculateDepositTransactionFee();
+// _calculateWithdrawTransactionsFee
+//     }
+
+//     function test_withdrawCosts()
 }

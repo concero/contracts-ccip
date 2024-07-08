@@ -70,6 +70,10 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   // TODO: Change this value to 6 days in production!!!
   //  uint256 private constant WITHDRAW_DEADLINE = 597_600;
   uint256 private constant WITHDRAW_DEADLINE = 60;
+  ///@notice variable to access parent pool costs
+  uint64 private constant BASE_CHAIN_SELECTOR = 15971525489660198786;
+  ///@notice variable to store the costs of updating store on CLF callback
+  uint256 private constant WRITE_FUNCTIONS_COST = 600_000;
   ///@notice Chainlink Functions Gas Limit
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
   ///@notice JS Code for Chainlink Functions
@@ -214,6 +218,9 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     if (numberOfPools < 1) revert ParentPool_ThereIsNoPoolToDistribute();
 
+    uint256 depositFee = _calculateDepositTransactionFee(_usdcAmount);
+    uint256 depositMinusFee = _usdcAmount - _convertToUSDCTokenDecimals(depositFee);
+
     uint256 amountToDistribute = ((_usdcAmount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
 
     bytes[] memory args = new bytes[](2);
@@ -231,6 +238,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     emit ParentPool_SuccessfulDeposited(msg.sender, _usdcAmount, i_USDC);
 
+    i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(depositFee));
     i_USDC.safeTransferFrom(msg.sender, address(this), _usdcAmount);
 
     _ccipSend(numberOfPools, amountToDistribute);
@@ -277,13 +285,16 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     delete s_pendingWithdrawRequests[msg.sender];
 
+    uint256 withdrawFees = _calculateWithdrawTransactionsFee(withdraw.amountEarned);
+    uint256 withdrawAmountMinusFees = withdraw.amountEarned - _convertToUSDCTokenDecimals(withdrawFees);
+
     emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
 
     IERC20(i_lp).safeTransferFrom(msg.sender, address(this), withdraw.amountToBurn);
-
     i_lp.burn(withdraw.amountToBurn);
 
-    i_USDC.safeTransfer(msg.sender, withdraw.amountEarned);
+    i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(withdrawFees));
+    i_USDC.safeTransfer(msg.sender, withdrawAmountMinusFees);
   }
 
   ///////////////////////
@@ -572,75 +583,73 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     emit ParentPool_RequestUpdated(_liquidityProvider);
   }
 
-  function _calculateDepositTransactionFee(uint64 _chainSelector, uint256 _amountToDistribute) internal returns(uint256 _totalUSDCCost){
+  //TODO must be internal on PRODUCTION
+  function _calculateDepositTransactionFee(uint256 _amountToDistribute) public view returns(uint256 _totalUSDCCost){
     uint256 numberOfPools = s_poolsToDistribute.length;
     uint256 costOfLinkForLiquidityDistribution;
+    uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(BASE_CHAIN_SELECTOR);
+    uint256 lastNativeUSDCRate = Orchestrator(i_infraProxy).s_latestNativeUsdcRate();
+    uint256 lastLinkUSDCRate = Orchestrator(i_infraProxy).s_latestLinkUsdcRate();
+    uint256 lastBaseGasPrice = Orchestrator(i_infraProxy).s_lastGasPrices(BASE_CHAIN_SELECTOR);
 
-    //1_487_733 units of gas
-    // depositLiquidity call
-    // Create CLF Request in storage
-
-    // Send the CLF request
-    uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(_chainSelector); //What is this clfPremiumFees?
-
-    // Send CCIP message X times, because it is sent for all pools.
-    // X == Number Of pools
     for(uint256 i; i < numberOfPools; ){
       IParentPool.Pools memory pool = s_poolsToDistribute[i];
-      Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), _amountToDistribute, pool.poolAddress);
+      Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), (_amountToDistribute / (numberOfPools+1)), pool.poolAddress);
 
+      //Link cost for all transactions
       costOfLinkForLiquidityDistribution += IRouterClient(i_ccipRouter).getFee(pool.chainSelector, evm2AnyMessage);
       unchecked {
         ++i;
       }
     }
 
-    // mint LP tokens to liquidityProvider - 483_983
-    uint256 mintAndStorageUpdateCosts = 483_983; //Where should we store this? As a constant or in storage?
-    uint256 lastNativeUSDCRate = Orchestrator(i_infraProxy).s_latestNativeUsdcRate();
-
-    uint256 lastLinkUSDCRate = Orchestrator(i_infraProxy).s_latestLinkUsdcRate();
-
-    _totalUSDCCost = ((costOfLinkForLiquidityDistribution + premiumFee) * lastLinkUSDCRate) + (mintAndStorageUpdateCosts * lastNativeUSDCRate);
+    //_totalUSDCCost
+    //    Pools.length x Calls to distribute liquidity
+    //    1x Functions request sent
+    //    1x Callback Writing to storage
+    _totalUSDCCost = ((costOfLinkForLiquidityDistribution + premiumFee) * lastLinkUSDCRate) + (WRITE_FUNCTIONS_COST * lastNativeUSDCRate);
   }
 
-  function _calculateWithdrawTransactionsFee(uint64 _chainSelector, uint256 _amountToReceive) internal returns(uint256 _totalUSDCCost){
+  function _calculateWithdrawTransactionsFee(uint256 _amountToReceive) public view returns(uint256 _totalUSDCCost){
     uint256 numberOfPools = s_poolsToDistribute.length;
-    uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(_chainSelector); //What is this clfPremiumFees?
+    uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(BASE_CHAIN_SELECTOR);
+    uint256 baseLastGasPrice = tx.gasprice; //Orchestrator(i_infraProxy).s_lastGasPrices(BASE_CHAIN_SELECTOR);
     uint256 lastNativeUSDCRate = Orchestrator(i_infraProxy).s_latestNativeUsdcRate();
     uint256 lastLinkUSDCRate = Orchestrator(i_infraProxy).s_latestLinkUsdcRate();
 
-    // 983_295
-    // startWithdraw call
-    // create request on storage
-    // send CLF request
-
-    //callback an update storage - 489_275
-    uint256 updateStorageAfterCallback = 489_275; //Where should we store this? As a constant or in storage?
-
     uint256 costOfLinkForLiquidityWithdraw;
+    uint256 costOfCCIPSendToPoolExecution;
 
     for(uint256 i; i < numberOfPools; ){
       IParentPool.Pools memory pool = s_poolsToDistribute[i];
       Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), _amountToReceive, address(this));
 
-      costOfLinkForLiquidityWithdraw += IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage); //here the chainSelector must be Base's?
+      //Link cost for all transactions
+      costOfLinkForLiquidityWithdraw += IRouterClient(i_ccipRouter).getFee(BASE_CHAIN_SELECTOR, evm2AnyMessage); //here the chainSelector must be Base's?
+      //USDC costs for all writing from the above transactions
+      costOfCCIPSendToPoolExecution += Orchestrator(i_infraProxy).s_lastGasPrices(pool.chainSelector) * WRITE_FUNCTIONS_COST;
       unchecked {
         ++i;
       }
     }
+    
+    // _totalUSDCCost ==
+    //    2x Functions Calls - Link Cost
+    //    Pools.length x Calls - Link Cost
+    //    Base's gas Cost of callback
+    //    Pools.length x Calls to ccipSendToPool Child Pool function
+    //  Automation Costs?
+    //    SLOAD - 800
+    //    ++i - 5
+    //    Comparing = 3
+    //    STORE - 5_000
+    //    Array Reduction - 5_000
+    //    gasOverhead - 80_000
+    //    Nodes Premium - 50%
+    uint256 arrayLength = i_automation.getPendingWithdrawRequestsLength();
 
-    // 110_748
-    // completeWithdraw call()
-    // mapping registry deleted (Parent Pool)
-    // transfer token from user
-    // burn token
-    // transfer to user
-
-    //How much the sendToPool call cost?
-    uint256 gasPriceOfChildPoolsChains = Orchestrator(i_infraProxy).s_lastGasPrices(_chainSelector);
-
-    _totalUSDCCost = (((premiumFee * 2) + costOfLinkForLiquidityWithdraw) * lastLinkUSDCRate) + (updateStorageAfterCallback * lastNativeUSDCRate);
+    uint256 automationCost = (((808 * arrayLength) + 10_000 + 80_000) * 150) / 100;
+    _totalUSDCCost = (((premiumFee * 2) + costOfLinkForLiquidityWithdraw + automationCost) * lastLinkUSDCRate) + ((WRITE_FUNCTIONS_COST * baseLastGasPrice) * lastNativeUSDCRate) + costOfCCIPSendToPoolExecution;
   }
 
   ///////////////////////////

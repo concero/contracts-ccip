@@ -245,8 +245,8 @@ contract ProtocolTest is Test {
         );
 
         //====== Deploy the proxy with the dummy Orch to get the address
-        proxy = proxyDeployBase.run(address(orchEmpty), ProxyOwner, Tester, "");
-        masterProxy = masterProxyDeploy.run(address(orchEmpty), ProxyOwner, Tester, "");
+        proxy = proxyDeployBase.run(address(orchEmpty), ProxyOwner, "");
+        masterProxy = masterProxyDeploy.run(address(orchEmpty), ProxyOwner, "");
         proxyInterfaceInfra = ITransparentUpgradeableProxy(address(proxy));
         proxyInterfaceMaster = ITransparentUpgradeableProxy(address(masterProxy));
 
@@ -381,10 +381,10 @@ contract ProtocolTest is Test {
             address(0),
             1
         );
-        childProxy = childProxyDeploy.run(address(orchEmptyDst), ProxyOwner, Tester, "");
+        childProxy = childProxyDeploy.run(address(orchEmptyDst), ProxyOwner, "");
 
         //====== Deploy the proxy with the dummy Orch
-        proxyDst = proxyDeployArbitrum.run(address(orchEmptyDst), ProxyOwner, Tester, "");
+        proxyDst = proxyDeployArbitrum.run(address(orchEmptyDst), ProxyOwner, "");
 
         proxyInterfaceInfraArb = ITransparentUpgradeableProxy(address(proxyDst));
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));

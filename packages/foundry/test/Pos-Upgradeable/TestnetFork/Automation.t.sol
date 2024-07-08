@@ -136,16 +136,6 @@ contract Automation is ProtocolTestnet {
         vm.prank(Tester);
         automation.setForwarderAddress(fakeForwarder);
 
-        //=== Mock Data
-        IParentPool.WithdrawRequests memory _request = IParentPool.WithdrawRequests({
-            amountEarned: 10*10**6,
-            amountToBurn: 5*10**6,
-            amountToRequest: 5*10**6,
-            amountToReceive: 5*10**6,
-            token: address(mUSDC),
-            deadline: block.timestamp + 597_600
-        });
-
         //=== Create Request
         vm.prank(address(masterProxy));
         automation.addPendingWithdrawal(User);
@@ -157,11 +147,9 @@ contract Automation is ProtocolTestnet {
 
         //=== check return
         vm.prank(fakeForwarder);
-        (bool positiveResponse, bytes memory performData) = automation.checkUpkeep("");
+        (/*bool positiveResponse*/, bytes memory performData) = automation.checkUpkeep("");
 
         //=== Simulate Perform Withdraw
-        bytes32 reqId = 0;
-
         vm.prank(fakeForwarder);
         automation.performUpkeep(performData);
 

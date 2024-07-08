@@ -9,7 +9,6 @@ contract InfraProxyDeploy is Script {
     function run(
         address _logic,
         address _admin,
-        address _proxyOwner,
         bytes memory _data
     ) public returns(InfraProxy proxy){
 
@@ -17,7 +16,6 @@ contract InfraProxyDeploy is Script {
         proxy = new InfraProxy(
             _logic,
             _admin,
-            _proxyOwner,
             _data
         );
         vm.stopBroadcast();

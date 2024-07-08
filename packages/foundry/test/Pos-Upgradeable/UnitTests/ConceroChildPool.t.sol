@@ -63,7 +63,7 @@ contract ConceroChildPoolTest is Test {
         usdc = new USDC("USDC", "USDC", Tester, USDC_INITIAL_BALANCE);
 
         //======= Deploy proxies
-        childProxy = childProxyDeploy.run(address(childDeploy), proxyOwner, Tester, "");
+        childProxy = childProxyDeploy.run(address(childDeploy), proxyOwner, "");
 
         //======= Wraps on the interface to update later 
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));

@@ -9,7 +9,6 @@ contract ParentPoolProxyDeploy is Script {
     function run(
         address _logic,
         address _admin,
-        address _storageOwner,
         bytes memory _data
     ) public returns(ParentPoolProxy proxy){
 
@@ -17,7 +16,6 @@ contract ParentPoolProxyDeploy is Script {
         proxy = new ParentPoolProxy(
             _logic,
             _admin,
-            _storageOwner,
             _data
         );
         vm.stopBroadcast();

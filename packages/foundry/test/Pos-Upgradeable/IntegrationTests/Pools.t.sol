@@ -124,7 +124,7 @@ contract PoolsTesting is Test{
         ////////////////////////////////////////////////
 
         //Dummy address initially
-        masterProxy = masterProxyDeploy.run(address(usdc), proxyOwner, Tester, "");
+        masterProxy = masterProxyDeploy.run(address(usdc), proxyOwner, "");
         masterInterface = ITransparentUpgradeableProxy(address(masterProxy));
 
         lp = lpDeploy.run(Tester, address(masterProxy));
@@ -154,7 +154,7 @@ contract PoolsTesting is Test{
         );
 
         //Dummy address initially
-        childProxy = childProxyDeploy.run(address(usdc), proxyOwner, Tester, "");
+        childProxy = childProxyDeploy.run(address(usdc), proxyOwner, "");
         childInterface = ITransparentUpgradeableProxy(address(childProxy));
         child = childDeploy.run(
             Orchestrator, //infra

@@ -202,8 +202,8 @@ contract Infra is Test {
         );
 
         //====== Deploy the proxy with the dummy Orch to get the address
-        proxy = proxyDeployBase.run(address(orchEmpty), ProxyOwner, Tester, "");
-        masterProxy = masterProxyDeploy.run(address(orchEmpty), ProxyOwner, Tester, "");
+        proxy = proxyDeployBase.run(address(orchEmpty), ProxyOwner, "");
+        masterProxy = masterProxyDeploy.run(address(orchEmpty), ProxyOwner, "");
         proxyInterfaceInfra = ITransparentUpgradeableProxy(address(proxy));
         proxyInterfaceMaster = ITransparentUpgradeableProxy(address(masterProxy));
 
@@ -360,7 +360,6 @@ contract Infra is Test {
     }
 
     function test_revertInfraSetDonHostedSecretsVersion() public {
-        uint64 previousValue = 0;
         uint64 newVersion = 10;
 
         vm.prank(Tester);

@@ -28,8 +28,8 @@ contract DEXMock {
         uint amountOutMin,
         address[] calldata path,
         address to,
-        uint deadline
-    ) external returns (uint[] memory amounts){
+        uint /*deadline*/
+    ) external returns (uint[] memory /*amounts*/){
 
         address[] memory route = new address[](path.length);
         route = path;
@@ -41,7 +41,7 @@ contract DEXMock {
     }
 
     //Uniswap Single
-    function exactInputSingle(ISwapRouter02.ExactInputSingleParams memory _params) external returns(uint256 amount){
+    function exactInputSingle(ISwapRouter02.ExactInputSingleParams memory _params) external returns(uint256 /*amount*/){
 
         IERC20(_params.tokenIn).safeTransferFrom(msg.sender, address(this), _params.amountIn);
 
@@ -66,8 +66,8 @@ contract DEXMock {
         uint amountOutMin,
         address[] calldata path,
         address to,
-        uint deadline
-    ) external payable returns (uint[] memory amounts){
+        uint /*deadline*/
+    ) external payable returns (uint[] memory /*amounts*/){
         address[] memory route = new address[](path.length);
         route = path;
 

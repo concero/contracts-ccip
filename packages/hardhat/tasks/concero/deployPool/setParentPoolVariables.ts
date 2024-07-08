@@ -197,29 +197,33 @@ async function setPoolsToSend(chain: CNetwork, abi: any) {
   if (!chainName) throw new Error("Chain name not found");
 
   for (const dstChain of liveChains) {
-    if (dstChain.chainId === chain.chainId) continue;
+    try {
+      if (dstChain.chainId === chain.chainId) continue;
 
-    const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
-    if (!dstChainName) throw new Error("Destination chain name not found");
-    const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
-    const dstPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env);
+      const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
+      if (!dstChainName) throw new Error("Destination chain name not found");
+      const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
+      const dstPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env);
 
-    const { request: setReceiverReq } = await publicClient.simulateContract({
-      address: conceroPoolAddress,
-      functionName: "setPoolsToSend",
-      args: [dstChainSelector, dstPoolAddress],
-      abi,
-      account,
-      viemChain,
-    });
-    const setReceiverHash = await walletClient.writeContract(setReceiverReq);
-    const { cumulativeGasUsed: setReceiverGasUsed } = await publicClient.waitForTransactionReceipt({
-      hash: setReceiverHash,
-    });
-    log(
-      `Set ${chainName}:${conceroPoolAddress} receiver[${dstChainName}:${dstPoolAddress}]. Gas used: ${setReceiverGasUsed.toString()}`,
-      "setPoolsToSend",
-    );
+      const { request: setReceiverReq } = await publicClient.simulateContract({
+        address: conceroPoolAddress,
+        functionName: "setPoolsToSend",
+        args: [dstChainSelector, dstPoolAddress],
+        abi,
+        account,
+        viemChain,
+      });
+      const setReceiverHash = await walletClient.writeContract(setReceiverReq);
+      const { cumulativeGasUsed: setReceiverGasUsed } = await publicClient.waitForTransactionReceipt({
+        hash: setReceiverHash,
+      });
+      log(
+        `Set ${chainName}:${conceroPoolAddress} receiver[${dstChainName}:${dstPoolAddress}]. Gas used: ${setReceiverGasUsed.toString()}`,
+        "setPoolsToSend",
+      );
+    } catch (error) {
+      log(`Error ${error?.message}`, "setPoolsToSend");
+    }
   }
 }
 

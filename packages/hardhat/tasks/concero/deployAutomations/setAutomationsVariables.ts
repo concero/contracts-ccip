@@ -207,9 +207,9 @@ export async function setAutomationsVariables(hre, slotId: number, forwarderAddr
 
   await setDonHostedSecretsVersion(hre, slotId, abi);
   await setDonHostedSecretsSlotId(hre, slotId, abi);
-  await setForwarderAddress(hre, forwarderAddress, abi);
   await setHashSum(hre, abi);
   await setEthersHashSum(hre, abi);
+  await setForwarderAddress(hre, forwarderAddress, abi);
 
   // await deleteRequest(hre, abi, "0x");
 

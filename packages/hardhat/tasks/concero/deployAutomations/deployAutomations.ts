@@ -2,13 +2,14 @@ import { task, types } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import deployConceroAutomation from "../../../deploy/06_ConceroAutomation";
 import { setAutomationsVariables } from "./setAutomationsVariables";
-import CNetworks from "../../../constants/CNetworks";
+import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import { execSync } from "child_process";
 import addCLFConsumer from "../../sub/add";
 
 task("deploy-automations", "Deploy the automations")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
+  .addFlag("mainnet", "")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .addOptionalParam(
     "automationsforwarder",
@@ -24,12 +25,12 @@ task("deploy-automations", "Deploy the automations")
     if (!taskArgs.skipdeploy) {
       await deployConceroAutomation(hre, { slotId });
 
-      execSync(`yarn hardhat deploy-parent-pool --network baseSepolia --slotid ${slotId} --skipsetvars`, {
-        stdio: "inherit",
-      });
+      // execSync(`yarn hardhat deploy-parent-pool --network baseSepolia --slotid ${slotId} --skipsetvars`, {
+      //   stdio: "inherit",
+      // });
 
       const chain = CNetworks[hre.network.name];
-      const automationContractAddress = getEnvVar("CONCERO_AUTOMATION_BASE_SEPOLIA");
+      const automationContractAddress = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[hre.network.name]}`);
       await addCLFConsumer(chain, [automationContractAddress], chain.functionsSubIds[0]);
     }
 

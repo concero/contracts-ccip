@@ -8,7 +8,7 @@ import {IConcero} from "./Interfaces/IConcero.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {StorageSetters} from "./Libraries/StorageSetters.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
-import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
+import {IOrchestrator, IOrchestratorViewDelegate} from "./Interfaces/IOrchestrator.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 
 ///////////////////////////////
@@ -108,11 +108,30 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   ////////////////////
   ///DELEGATE CALLS///
   ////////////////////
+
+  ////////////////////////
+  /////VIEW FUNCTIONS/////
+  ////////////////////////
+
+  function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) external view returns (uint256) {
+    return IOrchestratorViewDelegate(address(this)).getSrcTotalFeeInUsdcViaDelegateCall(tokenType, dstChainSelector, amount);
+  }
+
+  function getSrcTotalFeeInUsdcViaDelegateCall(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) external returns (uint256) {
+    (bool success, bytes memory data) = i_concero.delegatecall(
+      abi.encodeWithSelector(IConcero.getSrcTotalFeeInUsdc.selector, tokenType, dstChainSelector, amount)
+    );
+
+    if (success == false) revert Orchestrator_UnableToCompleteDelegateCall(data);
+
+    return _convertToUSDCDecimals(abi.decode(data, (uint256)));
+  }
+
   function swapAndBridge(
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] calldata srcSwapData,
     IDexSwap.SwapData[] calldata dstSwapData
-  ) external validateSwapData(srcSwapData) validateBridgeData(bridgeData) validateSwapData(dstSwapData) {
+  ) external validateSwapData(srcSwapData) validateBridgeData(bridgeData) {
     if (srcSwapData[srcSwapData.length - 1].toToken != getToken(bridgeData.tokenType, i_chainIndex)) revert Orchestrator_InvalidSwapData();
     // if(dstSwapData[0].toToken != getToken(bridgeData.tokenType, bridgeData.dstChainSelector)) revert Orchestrator_InvalidSwapData();
 

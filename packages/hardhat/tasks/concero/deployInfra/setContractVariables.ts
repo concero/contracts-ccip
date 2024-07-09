@@ -226,14 +226,20 @@ export async function setDonSecretsSlotId(deployableChain: CNetwork, slotId: num
   }
 }
 
-const allowedRouters = {
-  "137": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+const allowedRouters: Record<string, Address> = {
+  "137": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+  "8453": "0x2626664c2603336E57B271c5C0b26F421741e481",
 };
 
 export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: any) {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
   const conceroProxy = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dcName]}`);
-  const allowedRouter = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
+
+  if (!deployableChain.chainId) {
+    return log(`No chainId for ${dcName}`, "setDexRouterAddress");
+  }
+
+  const allowedRouter = allowedRouters[deployableChain.chainId];
   const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
 
   try {

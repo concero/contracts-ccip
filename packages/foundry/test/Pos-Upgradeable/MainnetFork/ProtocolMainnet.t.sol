@@ -150,6 +150,10 @@ contract ProtocolMainnet is Test {
     FunctionsRouter functionsRouterBase = FunctionsRouter(0xf9B8fc078197181C841c296C876945aaa425B278);
     bytes32 donIdBase = 0x66756e2d626173652d6d61696e6e65742d310000000000000000000000000000;
     address linkOwnerBase = 0x7B0328745A01634c32eFAf041d91432a075B308D;
+    bytes32 etherHashSum = 0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4;
+    bytes32 hashSum = 0x06a7e0b6224a17f3938fef1f9ea5c3de949134a66cf8cb8483b76449714a4504;
+    uint64 donVersion = 1720426529;
+    uint8 slotId = 3;
 
     //Arb Mainnet variables
     address linkArb = 0xf97f4df75117a78c1A5a0DBb814Af92458539FB4;
@@ -270,7 +274,7 @@ contract ProtocolMainnet is Test {
 
         concero = conceroDeployBase.run(
             IStorage.FunctionsVariables ({
-                subscriptionId: 15, //uint64 _subscriptionId,
+                subscriptionId: 14, //uint64 _subscriptionId,
                 donId: donIdBase,
                 functionsRouter: address(functionsRouterBase)
             }),
@@ -397,7 +401,7 @@ contract ProtocolMainnet is Test {
 
         conceroDst = conceroDeployArbitrum.run(
             IStorage.FunctionsVariables ({
-                subscriptionId: 0, //uint64 _subscriptionId,
+                subscriptionId: 22, //uint64 _subscriptionId,
                 donId: donIdArb,
                 functionsRouter: address(functionsRouterArb)
             }),
@@ -469,6 +473,7 @@ contract ProtocolMainnet is Test {
         vm.selectFork(baseMainFork);
 
         //====== Setters
+        ///== Pools
         vm.startPrank(Tester);
         wMaster.setPoolsToSend(arbChainSelector, address(childProxy));
         assertEq(wMaster.s_poolToSendTo(arbChainSelector), address(wChild));
@@ -478,6 +483,23 @@ contract ProtocolMainnet is Test {
 
         wMaster.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
         assertEq(wMaster.s_contractsToReceiveFrom(arbChainSelector, address(conceroDst)), 1);
+
+        wMaster.setDonHostedSecretsSlotId(slotId);
+
+        wMaster.setDonHostedSecretsVersion(donVersion);
+
+        wMaster.setHashSum(hashSum);
+
+        wMaster.setEthersHashSum(etherHashSum);
+        vm.stopPrank();
+
+        ///== Infra
+        vm.startPrank(defaultSender);
+        op.setDstConceroPool(arbChainSelector, address(wChild));
+        assertEq(op.s_poolReceiver(arbChainSelector), address(wChild));
+
+        op.setConceroContract(arbChainSelector, address(opDst));
+        assertEq(op.s_conceroContracts(arbChainSelector), address(opDst));
         vm.stopPrank();
 
         vm.startPrank(address(subOwner));
@@ -490,14 +512,22 @@ contract ProtocolMainnet is Test {
         //ARBITRUM
         vm.selectFork(arbitrumMainFork);
         //====== Setters
+        ///== Pools
         vm.startPrank(Tester);
-
         wChild.setConceroContractSender(baseChainSelector, address(wMaster), 1);
         assertEq(wChild.s_contractsToReceiveFrom(baseChainSelector, address(wMaster)), 1);
 
         wChild.setConceroContractSender(baseChainSelector, address(concero), 1);
         assertEq(wChild.s_contractsToReceiveFrom(baseChainSelector, address(concero)), 1);
+        vm.stopPrank();
 
+        ///== Infra
+        vm.startPrank(defaultSender);
+        opDst.setConceroContract(baseChainSelector, address(op));
+        assertEq(opDst.s_conceroContracts(baseChainSelector), address(op));
+
+        opDst.setDstConceroPool(baseChainSelector, address(wMaster));
+        assertEq(opDst.s_poolReceiver(baseChainSelector), address(wMaster));
         vm.stopPrank();
 
         vm.startPrank(address(subOwner));
@@ -1809,60 +1839,104 @@ contract ProtocolMainnet is Test {
     ////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// BRIDGE MODULE ///////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////
-    // function test_swapAndBridgeMainnet() public {
-    //     vm.selectFork(arbMainFork);
-    //     assertEq(tUSDC.balanceOf(address(User)), 0);
+    function test_swapAndBridgeMainnet() public setters {
+        vm.selectFork(arbitrumMainFork);
+        assertEq(aUSDC.balanceOf(address(User)), 0);
 
-    //     vm.selectFork(baseMainFork);
+        vm.selectFork(baseMainFork);
 
-    //     helper();
+        helper();
 
-    //     //SRC swap
-    //     assertEq(wEth.balanceOf(address(op)), 0);
+        ///////////////////////// SRC swap /////////////////////////
+        assertEq(wEth.balanceOf(address(op)), 0);
 
-    //     uint256 amountInSrc = 1*10**17;
-    //     uint256 amountOutSrc = 350*10*6;
+        uint256 amountInSrc = 1*10**17;
+        uint256 amountOutSrc = 350*10*6;
 
-    //     IDexSwap.SwapData[] memory swapDataSrc = new IDexSwap.SwapData[](1);
+        IDexSwap.SwapData[] memory swapDataSrc = new IDexSwap.SwapData[](1);
 
-    //     swapDataSrc[0] = IDexSwap.SwapData({
-    //         dexType: IDexSwap.DexType.UniswapV3Single,
-    //         fromToken: address(wEth),
-    //         fromAmount: amountInSrc,
-    //         toToken: address(mUSDC),
-    //         toAmount: amountOutSrc,
-    //         toAmountMin: amountOutSrc,
-    //         dexData: abi.encode(uniswapV3, 500, 0, block.timestamp + 1800)
-    //     });
+        swapDataSrc[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV3Single,
+            fromToken: address(wEth),
+            fromAmount: amountInSrc,
+            toToken: address(mUSDC),
+            toAmount: amountOutSrc,
+            toAmountMin: amountOutSrc,
+            dexData: abi.encode(uniswapV3, 500, 0, block.timestamp + 1800)
+        });
 
-    //     assertEq(wEth.balanceOf(address(op)), 1*10**17 / 1000);
+        ///////////////////////// Bridge /////////////////////////
+        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+            tokenType: IStorage.CCIPToken.usdc,
+            amount: amountOutSrc,
+            dstChainSelector: arbChainSelector,
+            receiver: User
+        });
 
-    //     //Bridge
-    //     IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
-    //         tokenType: IStorage.CCIPToken.usdc,
-    //         amount: amountOutSrc,
-    //         dstChainSelector: arbChainSelector,
-    //         receiver: User
-    //     });
+        ///////////////////////// DST Swap /////////////////////////
+        uint256 amountInDst = 350*10*6;
+        uint256 amountOutDst = 1*10**16;
 
-    //     //DST Swap
+        IDexSwap.SwapData[] memory swapDataDst = new IDexSwap.SwapData[](1);
 
-    //     uint256 amountInSrc = 1*10**17;
-    //     uint256 amountOutSrc = 350*10*6;
+        swapDataDst[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV3Single,
+            fromToken: address(aUSDC),
+            fromAmount: 0,
+            toToken: address(wEth),
+            toAmount: amountOutDst,
+            toAmountMin: amountOutDst,
+            dexData: abi.encode(uniswapV3Arb, 500, 0, block.timestamp + 1800)
+        });
 
-    //     IDexSwap.SwapData[] memory swapDataSrc = new IDexSwap.SwapData[](1);
+        ///======= Revert Over fromAmount === 0
+        vm.startPrank(User);
+        wEth.approve(address(op), amountInSrc);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidSwapData.selector));
+        op.swapAndBridge(bridgeData, swapDataSrc, swapDataDst);
 
-    //     swapDataSrc[0] = IDexSwap.SwapData({
-    //         dexType: IDexSwap.DexType.UniswapV3Single,
-    //         fromToken: address(wEth),
-    //         fromAmount: amountOutSrc,
-    //         toToken: address(mUSDC),
-    //         toAmount: amountOutSrc,
-    //         toAmountMin: amountOutSrc,
-    //         dexData: abi.encode(uniswapV3, 500, 0, block.timestamp + 1800)
-    //     });
+        swapDataDst[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV3Single,
+            fromToken: address(aUSDC),
+            fromAmount: amountInDst,
+            toToken: address(wEth),
+            toAmount: amountOutDst,
+            toAmountMin: 0,
+            dexData: abi.encode(uniswapV3Arb, 500, 0, block.timestamp + 1800)
+        });
 
-    //     vm.startPrank(User);
-    //     wEth.approve(address(op), amountIn);
-    // }
+        ///======= Revert Over toAmountMin === 0
+        vm.startPrank(User);
+        wEth.approve(address(op), amountInSrc);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidSwapData.selector));
+        op.swapAndBridge(bridgeData, swapDataSrc, swapDataDst);
+
+        IDexSwap.SwapData[] memory swapDataDstMulti = new IDexSwap.SwapData[](2);
+
+        swapDataDstMulti[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV3Single,
+            fromToken: address(aUSDC),
+            fromAmount: amountInDst,
+            toToken: address(wEth),
+            toAmount: amountOutDst,
+            toAmountMin: amountOutDst,
+            dexData: abi.encode(uniswapV3Arb, 500, 0, block.timestamp + 1800)
+        });
+
+        swapDataDstMulti[1] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV3Single,
+            fromToken: address(aUSDC),
+            fromAmount: amountInDst,
+            toToken: address(wEth),
+            toAmount: amountOutDst,
+            toAmountMin: amountOutDst,
+            dexData: abi.encode(uniswapV3Arb, 500, 0, block.timestamp + 1800)
+        });
+
+        ///======= Revert Over Destination Multi-Hops === 0
+        vm.startPrank(User);
+        wEth.approve(address(op), amountInSrc);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidSwapData.selector));
+        op.swapAndBridge(bridgeData, swapDataSrc, swapDataDstMulti);
+    }
 }

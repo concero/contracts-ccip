@@ -63,9 +63,13 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   uint256 private constant ALLOWED = 1;
   uint256 private constant USDC_DECIMALS = 10 ** 6;
   uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
-   uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
+  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
   uint256 private constant PRECISION_HANDLER = 10 ** 10;
-   uint256 private constant WITHDRAW_DEADLINE = 597_600;
+  uint256 private constant WITHDRAW_DEADLINE = 597_600;
+  uint256 private constant ITERATION_COSTS = 808;
+  uint256 private constant ARRAY_MANIPULATION = 10_000;
+  uint256 private constant AUTOMATION_OVERHEARD = 80_000;
+  uint256 private constant NODE_PREMIUM = 150;
   ///@notice variable to access parent pool costs
   uint64 private constant BASE_CHAIN_SELECTOR = 15971525489660198786;
   ///@notice variable to store the costs of updating store on CLF callback
@@ -579,8 +583,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     emit ParentPool_RequestUpdated(_liquidityProvider);
   }
 
-  //TODO must be internal in PRODUCTION
-  function _calculateDepositTransactionFee(uint256 _amountToDistribute) public view returns(uint256 _totalUSDCCost){
+  function _calculateDepositTransactionFee(uint256 _amountToDistribute) internal view returns(uint256 _totalUSDCCost){
     uint256 numberOfPools = s_poolsToDistribute.length;
     uint256 costOfLinkForLiquidityDistribution;
     uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(BASE_CHAIN_SELECTOR);
@@ -606,8 +609,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     _totalUSDCCost = ((costOfLinkForLiquidityDistribution + premiumFee) * lastLinkUSDCRate) + ((WRITE_FUNCTIONS_COST * lastBaseGasPrice) * lastNativeUSDCRate);
   }
 
-  //TODO must be internal in PRODUCTION
-  function _calculateWithdrawTransactionsFee(uint256 _amountToReceive) public view returns(uint256 _totalUSDCCost){
+  function _calculateWithdrawTransactionsFee(uint256 _amountToReceive) internal view returns(uint256 _totalUSDCCost){
     uint256 numberOfPools = s_poolsToDistribute.length;
     uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(BASE_CHAIN_SELECTOR);
     uint256 baseLastGasPrice = tx.gasprice; //Orchestrator(i_infraProxy).s_lastGasPrices(BASE_CHAIN_SELECTOR);
@@ -645,7 +647,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     //    Nodes Premium - 50%
     uint256 arrayLength = i_automation.getPendingWithdrawRequestsLength();
 
-    uint256 automationCost = (((808 * arrayLength) + 10_000 + 80_000) * 150) / 100;
+    uint256 automationCost = (((ITERATION_COSTS * arrayLength) + ARRAY_MANIPULATION + AUTOMATION_OVERHEARD) * NODE_PREMIUM) / 100;
     _totalUSDCCost = (((premiumFee * 2) + costOfLinkForLiquidityWithdraw + automationCost) * lastLinkUSDCRate) + ((WRITE_FUNCTIONS_COST * baseLastGasPrice) * lastNativeUSDCRate) + costOfCCIPSendToPoolExecution;
   }
 

@@ -1,24 +1,14 @@
 async function f() {
 	const chainSelectors = {
-		[`0x${BigInt('3478487238524512106').toString(16)}`]: {
+		[`0x${BigInt('4051577828743386545').toString(16)}`]: {
 			urls: [
-				`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
-				'https://arbitrum-sepolia-rpc.publicnode.com',
+				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://polygon.blockpi.network/v1/rpc/public',
+				'https://polygon-bor-rpc.publicnode.com',
 			],
-			chainId: '0x66eee',
-			usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-			poolAddress: '0x1b0D4932f8cF6E2Dd7f05d41907466739F89d89D',
-		},
-		[`0x${BigInt('5224473277236331295').toString(16)}`]: {
-			urls: [
-				`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://optimism-sepolia.blockpi.network/v1/rpc/public',
-				'https://optimism-sepolia-rpc.publicnode.com',
-			],
-			chainId: '0xaa37dc',
-			usdcAddress: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
-			poolAddress: '0xE649E7E7e2011004718c5105E5eB8d8950Ee4a4d',
+			chainId: '0x89',
+			usdcAddress: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+			poolAddress: '0x390661e47a0013889b2bA26d1B7d01fdCD8F0bcC',
 		},
 	};
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
@@ -42,15 +32,8 @@ async function f() {
 	const promises = [];
 	let totalBalance = 0n;
 	for (const chain in chainSelectors) {
-		const fallBackProviders = chainSelectors[chain].urls.map(url => {
-			return {
-				provider: new FunctionsJsonRpcProvider(url),
-				priority: Math.random(),
-				stallTimeout: 2000,
-				weight: 1,
-			};
-		});
-		const provider = new ethers.FallbackProvider(fallBackProviders, null, {quorum: 1});
+		const url = chainSelectors[chain].urls[Math.floor(Math.random() * chainSelectors[chain].urls.length)];
+		const provider = new FunctionsJsonRpcProvider(url);
 		const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
 		const pool = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, provider);
 		promises.push(erc20.balanceOf(chainSelectors[chain].poolAddress));

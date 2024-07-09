@@ -139,7 +139,9 @@
 		},
 		[`0x${BigInt('4051577828743386545').toString(16)}`]: {
 			urls: [
+				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 				'https://polygon.blockpi.network/v1/rpc/public',
+				'https://polygon-bor-rpc.publicnode.com',
 			],
 			chainId: '0x89',
 			nativeCurrency: 'matic',
@@ -341,7 +343,7 @@
 		const signer = wallet.connect(provider);
 		const abi = [
 			'function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256, bytes) external',
-			'function s_transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool)',
+			'function s_transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool, bytes)',
 		];
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);

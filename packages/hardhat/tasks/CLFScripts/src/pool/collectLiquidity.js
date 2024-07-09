@@ -3,52 +3,49 @@ async function f() {
 		const [_, __, liquidityProvider, tokenAmount] = bytesArgs;
 
 		const chainSelectors = {
-			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
-			// 	urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
-			// 	chainId: '0xa869',
-			// 	usdcAddress: '${USDC_FUJI}',
-			// 	poolAddress: '${CONCEROPOOL_AVALANCHE_FUJI}',
-			// },
-			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}').toString(16)}`]: {
+			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 			// 	urls: [
-			// 		`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-			// 		'https://ethereum-sepolia-rpc.publicnode.com',
-			// 		'https://ethereum-sepolia.blockpi.network/v1/rpc/public',
+			// 		`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+			// 		'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
+			// 		'https://arbitrum-sepolia-rpc.publicnode.com',
 			// 	],
-			// 	chainId: '0xaa36a7',
-			// 	usdcAddress: '${USDC_SEPOLIA}',
-			// 	poolAddress: '${CONCEROPOOL_SEPOLIA}',
+			// 	chainId: '0x66eee',
+			// 	usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
+			// 	poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
 			// },
-			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
-				urls: [
-					`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
-					'https://arbitrum-sepolia-rpc.publicnode.com',
-				],
-				chainId: '0x66eee',
-				usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
-				poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
-			},
-			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
-				urls: [
-					`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://optimism-sepolia.blockpi.network/v1/rpc/public',
-					'https://optimism-sepolia-rpc.publicnode.com',
-				],
-				chainId: '0xaa37dc',
-				usdcAddress: '${USDC_OPTIMISM_SEPOLIA}',
-				poolAddress: '${CHILD_POOL_PROXY_OPTIMISM_SEPOLIA}',
-			},
-			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY}').toString(16)}`]: {
+			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
 			// 	urls: [
-			// 		`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`,
-			// 		'https://polygon-amoy.blockpi.network/v1/rpc/public',
-			// 		'https://polygon-amoy-bor-rpc.publicnode.com',
+			// 		`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+			// 		'https://optimism-sepolia.blockpi.network/v1/rpc/public',
+			// 		'https://optimism-sepolia-rpc.publicnode.com',
 			// 	],
-			// 	chainId: '0x13882',
-			// 	usdcAddress: '${USDC_AMOY}',
-			// 	poolAddress: '${CONCEROPOOL_POLYGON_AMOY}',
+			// 	chainId: '0xaa37dc',
+			// 	usdcAddress: '${USDC_OPTIMISM_SEPOLIA}',
+			// 	poolAddress: '${CHILD_POOL_PROXY_OPTIMISM_SEPOLIA}',
 			// },
+
+			// mainnets
+
+			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
+			// 	urls: [
+			// 		`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
+			// 		'https://arbitrum.blockpi.network/v1/rpc/public',
+			// 		'https://arbitrum-rpc.publicnode.com',
+			// 	],
+			// 	chainId: '0xa4b1',
+			// 	usdcAddress: '${USDC_ARBITRUM}',
+			// 	poolAddress: '${CHILD_POOL_PROXY_ARBITRUM}',
+			// },
+			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
+				urls: [
+					`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://polygon.blockpi.network/v1/rpc/public',
+					'https://polygon-bor-rpc.publicnode.com',
+				],
+				chainId: '0x89',
+				usdcAddress: '${USDC_POLYGON}',
+				poolAddress: '${CHILD_POOL_PROXY_POLYGON}',
+			},
 		};
 
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {

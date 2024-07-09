@@ -17,53 +17,60 @@ async function setConceroProxySender(hre) {
   if (!chainName) throw new Error("Chain name not found");
 
   for (const dstChain of liveChains) {
-    if (dstChain.chainId === chain.chainId) continue;
+    try {
+      if (dstChain.chainId === chain.chainId) continue;
 
-    const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
-    if (!dstChainName) throw new Error("Destination chain name not found");
-    if (!dstChainSelector) throw new Error("Destination chain selector not found");
-    const dstConceroAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
-    const dstConceroPoolAddress =
-      dstChain.chainId === CNetworks.base.chainId || dstChain.chainId === CNetworks.baseSepolia.chainId
-        ? (getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address)
-        : (getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address);
-    const conceroPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env) as Address;
+      const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
+      if (!dstChainName) throw new Error("Destination chain name not found");
+      if (!dstChainSelector) throw new Error("Destination chain selector not found");
+      const dstConceroAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
+      const dstConceroPoolAddress =
+        dstChain.chainId === CNetworks.base.chainId || dstChain.chainId === CNetworks.baseSepolia.chainId
+          ? (getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address)
+          : (getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address);
+      const conceroPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env) as Address;
 
-    const { request: setSenderReq } = await publicClient.simulateContract({
-      address: conceroPoolAddress,
-      functionName: "setConceroContractSender",
-      args: [dstChainSelector, dstConceroAddress, 1n],
-      abi,
-      account,
-      viemChain,
-    });
-    const setSenderHash = await walletClient.writeContract(setSenderReq);
-    const { cumulativeGasUsed: setSenderGasUsed } = await publicClient.waitForTransactionReceipt({
-      hash: setSenderHash,
-    });
-    log(
-      `Set ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${dstConceroAddress}]. Gas used: ${setSenderGasUsed.toString()}`,
-      "setConceroContractSender",
-    );
+      const { request: setSenderReq } = await publicClient.simulateContract({
+        address: conceroPoolAddress,
+        functionName: "setConceroContractSender",
+        args: [dstChainSelector, dstConceroAddress, 1n],
+        abi,
+        account,
+        viemChain,
+      });
+      const setSenderHash = await walletClient.writeContract(setSenderReq);
+      const { cumulativeGasUsed: setSenderGasUsed } = await publicClient.waitForTransactionReceipt({
+        hash: setSenderHash,
+      });
+      log(
+        `Set ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${dstConceroAddress}]. Gas used: ${setSenderGasUsed.toString()}`,
+        "setConceroContractSender",
+      );
 
-    const { request: setPoolReq } = await publicClient.simulateContract({
-      address: conceroPoolAddress,
-      functionName: "setConceroContractSender",
-      args: [dstChainSelector, dstConceroPoolAddress, 1n],
-      abi,
-      account,
-      viemChain,
-    });
-    const setPoolHash = await walletClient.writeContract(setPoolReq);
+      const { request: setPoolReq } = await publicClient.simulateContract({
+        address: conceroPoolAddress,
+        functionName: "setConceroContractSender",
+        args: [dstChainSelector, dstConceroPoolAddress, 1n],
+        abi,
+        account,
+        viemChain,
+      });
+      const setPoolHash = await walletClient.writeContract(setPoolReq);
 
-    const { cumulativeGasUsed: setPoolGasUsed } = await publicClient.waitForTransactionReceipt({
-      hash: setPoolHash,
-    });
+      const { cumulativeGasUsed: setPoolGasUsed } = await publicClient.waitForTransactionReceipt({
+        hash: setPoolHash,
+      });
 
-    log(
-      `Set ${chainName}:${conceroPoolAddress} pool[${dstChainName}:${dstConceroPoolAddress}]. Gas used: ${setPoolGasUsed.toString()}`,
-      "setPool",
-    );
+      log(
+        `Set ${chainName}:${conceroPoolAddress} pool[${dstChainName}:${dstConceroPoolAddress}]. Gas used: ${setPoolGasUsed.toString()}`,
+        "setConceroContractSender",
+      );
+    } catch (error) {
+      log(
+        `Error setting ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${dstConceroAddress}]`,
+        "setConceroContractSender",
+      );
+    }
   }
 }
 

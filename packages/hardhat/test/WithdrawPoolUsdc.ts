@@ -14,7 +14,7 @@ import { chainsMap } from "./utils/chainsMap";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
 const senderAddress = process.env.TESTS_WALLET_ADDRESS as Address;
-const lpAmount = "100000000000000000";
+const lpAmount = "10000000000000000000";
 const lpTokenAddress = process.env.LPTOKEN_BASE_SEPOLIA as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 

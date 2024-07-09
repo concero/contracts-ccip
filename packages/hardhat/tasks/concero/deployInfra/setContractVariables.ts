@@ -128,38 +128,6 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
   }
 }
 
-async function addMessengerToAllowlist(deployableChain: CNetwork, abi: any) {
-  const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
-  const conceroProxy = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dcName]}`);
-  const messengerWallet = getEnvVar("MESSENGER_ADDRESS");
-
-  try {
-    const { request: addToAllowlistReq } = await publicClient.simulateContract({
-      address: conceroProxy,
-      abi,
-      functionName: "setConceroMessenger",
-      account,
-      args: [messengerWallet, 1n],
-      chain: dcViemChain,
-    });
-    const addToAllowlistHash = await walletClient.writeContract(addToAllowlistReq);
-    const { cumulativeGasUsed: addToAllowlistGasUsed } = await publicClient.waitForTransactionReceipt({
-      hash: addToAllowlistHash,
-    });
-    log(
-      `Set ${dcName}:${conceroProxy} allowlist[${messengerWallet}]. Gas used: ${addToAllowlistGasUsed.toString()}`,
-      "setConceroMessenger",
-    );
-  } catch (error) {
-    if (error.message.includes("Address already in allowlist")) {
-      log(`${messengerWallet} was already added to allowlist of ${conceroProxy}`, "setConceroMessenger");
-    } else {
-      log(`Error for ${dcName}: ${error.message}`, "setConceroMessenger");
-    }
-  }
-}
-
 async function setJsHashes(deployableChain: CNetwork, abi: any) {
   try {
     const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
@@ -301,11 +269,11 @@ export async function setContractVariables(
   for (const deployableChain of deployableChains) {
     await setDexSwapAllowedRouters(deployableChain, abi); // once
     await setDstConceroPools(deployableChain, abi); // once
-    if (uploadsecrets) {
-      await setDonHostedSecretsVersion(deployableChain, slotId, abi);
-      await setDonSecretsSlotId(deployableChain, slotId, abi);
-    }
-    await addMessengerToAllowlist(deployableChain, abi); // once
+    // if (uploadsecrets) {
+    await setDonHostedSecretsVersion(deployableChain, slotId, abi);
+    await setDonSecretsSlotId(deployableChain, slotId, abi);
+    // }
+
     await setJsHashes(deployableChain, abi);
 
     // REMOVE IN PROD!!!

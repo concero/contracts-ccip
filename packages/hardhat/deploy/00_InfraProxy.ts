@@ -17,7 +17,6 @@ const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEn
     args: [implementationAddress, proxyDeployer, deployer, "0x"],
     log: true,
     autoMine: true,
-    gasLimit: 2_000_000,
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {

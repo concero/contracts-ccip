@@ -70,7 +70,10 @@ const deployConcero: DeployFunction = async function (
       donId: functionsDonId,
       functionsRouter: functionsRouter,
     },
-    conceroPoolAddress: getEnvVar(`CONCEROPOOL_${networkEnvKeys[name]}`),
+    conceroPoolAddress:
+      name === "base" || name === "baseSepolia"
+        ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`)
+        : getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`),
     conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
   };
 

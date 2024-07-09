@@ -10,11 +10,11 @@ import { PublicClient } from "viem/clients/createPublicClient";
 import { WalletClient } from "viem/clients/createWalletClient";
 
 const senderAddress = process.env.DEPLOYER_ADDRESS;
-const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
-const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA;
-const srcTokenAddress = process.env.USDC_BASE_SEPOLIA;
+const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE;
+const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON;
+const srcTokenAddress = process.env.USDC_BASE;
 const srcTokenAmount = "1000000";
-const srcContractAddress = process.env.CONCERO_PROXY_BASE_SEPOLIA;
+const srcContractAddress = process.env.CONCERO_PROXY_BASE;
 
 async function approveToken(
   publicClient: PublicClient,
@@ -58,7 +58,7 @@ async function approveToken(
 }
 
 describe("bridge", () => {
-  const { viemChain, url } = chains.baseSepolia;
+  const { viemChain, url } = chains.base;
   const { walletClient, publicClient, account } = getClients(
     viemChain,
     url,

@@ -27,12 +27,6 @@ error Orchestrator_InvalidBridgeData();
 error Orchestrator_InvalidSwapData();
 ///@notice error emitted when the ether swap data is corrupted
 error Orchestrator_InvalidSwapEtherData();
-///@notice error emitted when a non-messenger address calls
-error Orchestrator_NotMessenger(address);
-///@notice error emitted when the chosen token is not allowed
-error Orchestrator_TokenTypeOutOfBounds();
-///@notice error emitted when the chain index is incorrect
-error Orchestrator_ChainIndexOutOfBounds();
 ///@notice error emitted when the token to bridge is not USDC
 error Orchestrator_InvalidBridgeToken();
 

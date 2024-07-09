@@ -19,7 +19,8 @@ interface IStorage {
     arb,
     base,
     opt,
-    pol
+    pol,
+    avax
   }
 
   ///@notice Function Request

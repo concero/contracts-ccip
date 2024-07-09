@@ -1,8 +1,6 @@
 // Purpose: To have a single source of truth for networks across the project
 import { type CNetwork, CNetworkNames } from "../types/CNetwork";
 import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
-import { privateKeyToAddress } from "viem/accounts";
-import { arbitrumSepolia, avalancheFuji, baseSepolia, optimismSepolia, sepolia } from "viem/chains";
 import {
   arbitrum,
   arbitrumSepolia,
@@ -333,6 +331,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     functionsDonIdAlias: process.env.CLF_DONID_AVALANCHE_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_AVALANCHE,
     functionsSubIds: [process.env.CLF_SUBID_AVALANCHE],
+    conceroChainIndex: "4",
     functionsGatewayUrls: functionsGatewayUrls.mainnet,
     donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_AVALANCHE,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_AVALANCHE,

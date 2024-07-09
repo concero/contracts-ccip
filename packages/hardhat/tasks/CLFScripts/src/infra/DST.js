@@ -54,6 +54,9 @@
 				confirmations: 3n,
 				chainId: '0x13882',
 			},
+
+			// mainnets
+
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
 				urls: [
 					`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
@@ -74,12 +77,21 @@
 			},
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
 				urls: [
-					// `https://base.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
+					`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
 					'https://base.blockpi.network/v1/rpc/public',
 					'https://base-rpc.publicnode.com',
 				],
 				confirmations: 3n,
 				chainId: '0x2105',
+			},
+			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}').toString(16)}`]: {
+				urls: [
+					`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://avalanche.blockpi.network/v1/rpc/public',
+					'https://avalanche-c-chain-rpc.publicnode.com',
+				],
+				confirmations: 3n,
+				chainId: '0xa86a',
 			},
 		};
 

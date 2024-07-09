@@ -113,9 +113,12 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 				ethUsd: '${ETH_USD_PRICEFEED_POLYGON_AMOY}',
 			},
 		},
+
+		// mainnets
+
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
 			urls: [
-				// `https://base.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
+				`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
 				'https://base.blockpi.network/v1/rpc/public',
 				'https://base-rpc.publicnode.com',
 			],

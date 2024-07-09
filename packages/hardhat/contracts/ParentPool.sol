@@ -218,10 +218,10 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     if (numberOfPools < 1) revert ParentPool_ThereIsNoPoolToDistribute();
 
-    uint256 depositFee = _calculateDepositTransactionFee(_usdcAmount);
-    uint256 depositMinusFee = _usdcAmount - _convertToUSDCTokenDecimals(depositFee);
+    // uint256 depositFee = _calculateDepositTransactionFee(_usdcAmount);
+    // uint256 depositMinusFee = _usdcAmount - _convertToUSDCTokenDecimals(depositFee);
 
-    uint256 amountToDistribute = ((depositMinusFee * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
+    uint256 amountToDistribute = ((_usdcAmount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
 
     bytes[] memory args = new bytes[](2);
     args[0] = abi.encodePacked(s_hashSum);
@@ -233,13 +233,13 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       liquidityProvider: msg.sender,
       usdcBeforeRequest: i_USDC.balanceOf(address(this)) + s_loansInUse,
       lpSupplyBeforeRequest: i_lp.totalSupply(),
-      amount: depositMinusFee
+      amount: _usdcAmount
     });
 
     emit ParentPool_SuccessfulDeposited(msg.sender, _usdcAmount, i_USDC);
 
     i_USDC.safeTransferFrom(msg.sender, address(this), _usdcAmount);
-    i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(depositFee));
+    // i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(depositFee));
 
     _ccipSend(numberOfPools, amountToDistribute);
   }
@@ -285,16 +285,16 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     delete s_pendingWithdrawRequests[msg.sender];
 
-    uint256 withdrawFees = _calculateWithdrawTransactionsFee(withdraw.amountEarned);
-    uint256 withdrawAmountMinusFees = withdraw.amountEarned - _convertToUSDCTokenDecimals(withdrawFees);
+    // uint256 withdrawFees = _calculateWithdrawTransactionsFee(withdraw.amountEarned);
+    // uint256 withdrawAmountMinusFees = withdraw.amountEarned - _convertToUSDCTokenDecimals(withdrawFees);
 
-    emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdrawAmountMinusFees);
+    emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
 
     IERC20(i_lp).safeTransferFrom(msg.sender, address(this), withdraw.amountToBurn);
     i_lp.burn(withdraw.amountToBurn);
 
-    i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(withdrawFees));
-    i_USDC.safeTransfer(msg.sender, withdrawAmountMinusFees);
+    // i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(withdrawFees));
+    i_USDC.safeTransfer(msg.sender, withdraw.amountEarned);
   }
 
   ///////////////////////

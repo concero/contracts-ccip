@@ -111,6 +111,53 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   }
 
   /**
+   * @notice Function to set the Chainlink Automation Forwarder
+   * @param _forwarderAddress the unique forward address
+   * @dev this address will be used inside of revert statements
+   */
+  function setForwarderAddress(address _forwarderAddress) external onlyOwner {
+    s_forwarderAddress = _forwarderAddress;
+
+    emit ConceroAutomation_ForwarderAddressUpdated(_forwarderAddress);
+  }
+
+  /**
+   * @notice Function to set the Don Secrets Version from Chainlink Functions
+   * @param _version the version
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
+    s_donHostedSecretsVersion = _version;
+
+    emit ConceroAutomation_DonSecretVersionUpdated(_version);
+  }
+
+  function setDonHostedSecretsSlotId(uint8 _slotId) external onlyOwner {
+    s_donHostedSecretsSlotId = _slotId;
+  }
+
+  /**
+   * @notice Function to set the Source JS code for Chainlink Functions
+   * @param _hashSum  the JsCode
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setJsHashSum(bytes32 _hashSum) external onlyOwner {
+    s_hashSum = _hashSum;
+
+    emit ConceroAutomation_HashSumUpdated(_hashSum);
+  }
+
+  /**
+   * @notice Function to set the Ethers JS code for Chainlink Functions
+   * @param _hashSum the JsCode
+   * @dev this functions was used inside of ConceroFunctions
+   */
+  function setEthersHashSum(bytes32 _hashSum) external payable onlyOwner {
+    s_ethersHashSum = _hashSum;
+    emit ConceroAutomation_EthersHashSumUpdated(_hashSum);
+  }
+
+  /**
    * @notice Function to add new withdraw requests to CLA monitoring system
    * @param _liquidityProvider the WithdrawRequests populated address
    * @dev this function should only be called by the ConceroPool.sol
@@ -184,49 +231,6 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest});
 
     emit ConceroAutomation_UpkeepPerformed(reqId);
-  }
-
-  /**
-   * @notice Function to set the Chainlink Automation Forwarder
-   * @param _forwarderAddress the unique forward address
-   * @dev this address will be used inside of revert statements
-   */
-  function setForwarderAddress(address _forwarderAddress) external onlyOwner {
-    s_forwarderAddress = _forwarderAddress;
-
-    emit ConceroAutomation_ForwarderAddressUpdated(_forwarderAddress);
-  }
-
-  /**
-   * @notice Function to set the Don Secrets Version from Chainlink Functions
-   * @param _version the version
-   * @dev this functions was used inside of ConceroFunctions
-   */
-  function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
-    s_donHostedSecretsVersion = _version;
-
-    emit ConceroAutomation_DonSecretVersionUpdated(_version);
-  }
-
-  /**
-   * @notice Function to set the Source JS code for Chainlink Functions
-   * @param _hashSum  the JsCode
-   * @dev this functions was used inside of ConceroFunctions
-   */
-  function setJsHashSum(bytes32 _hashSum) external onlyOwner {
-    s_hashSum = _hashSum;
-
-    emit ConceroAutomation_HashSumUpdated(_hashSum);
-  }
-
-  /**
-   * @notice Function to set the Ethers JS code for Chainlink Functions
-   * @param _hashSum the JsCode
-   * @dev this functions was used inside of ConceroFunctions
-   */
-  function setEthersHashSum(bytes32 _hashSum) external payable onlyOwner {
-    s_ethersHashSum = _hashSum;
-    emit ConceroAutomation_EthersHashSumUpdated(_hashSum);
   }
 
   //////////////

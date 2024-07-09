@@ -147,9 +147,9 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
 			urls: [
-				// `https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 				'https://polygon.blockpi.network/v1/rpc/public',
-				// 'https://polygon-bor-rpc.publicnode.com',
+				'https://polygon-bor-rpc.publicnode.com',
 			],
 			chainId: '0x89',
 			nativeCurrency: 'matic',
@@ -362,7 +362,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		const signer = wallet.connect(provider);
 		const abi = [
 			'function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256, bytes) external',
-			'function s_transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool)',
+			'function s_transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool, bytes)',
 		];
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);

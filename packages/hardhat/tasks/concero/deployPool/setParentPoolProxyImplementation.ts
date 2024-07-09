@@ -10,7 +10,15 @@ export async function setParentPoolProxyImplementation(hre, liveChains: CNetwork
   const { name: chainName } = hre.network;
   const conceroProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}`) as Address;
   const chainId = hre.network.config.chainId;
-  const { viemChain } = liveChains.find(chain => chain.chainId === chainId);
+  const chain = liveChains.find(c => {
+    return c.chainId?.toString() === chainId.toString();
+  });
+
+  if (!chain) {
+    throw new Error(`Chain not found: ${chainId}`);
+  }
+
+  const { viemChain } = chain;
   const viemAccount = privateKeyToAccount(`0x${process.env.PROXY_DEPLOYER_PRIVATE_KEY}`);
   const { walletClient, publicClient } = getClients(viemChain, undefined, viemAccount);
   const parentPoolAddress = getEnvVar(`PARENT_POOL_${networkEnvKeys[chainName]}`) as Address;

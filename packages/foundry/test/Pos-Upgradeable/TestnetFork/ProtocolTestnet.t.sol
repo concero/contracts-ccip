@@ -311,9 +311,11 @@ contract ProtocolTestnet is Test {
         LinkToken(linkBase).mint(address(User), 10*10**18);
 
         vm.prank(0xd5CCdabF11E3De8d2F64022e232aC18001B8acAC);
-        ERC20Mock(ccipBnM).mint(address(LP), 1000 * 10**18);
+        ERC20Mock(ccipBnM).mint(address(LP), 1000 * 10**6);
         vm.prank(0xd5CCdabF11E3De8d2F64022e232aC18001B8acAC);
-        ERC20Mock(ccipBnM).mint(address(User), 100 * 10**18);
+        ERC20Mock(ccipBnM).mint(address(User), 100 * 10**6);
+        vm.prank(0xd5CCdabF11E3De8d2F64022e232aC18001B8acAC);
+        ERC20Mock(ccipBnM).mint(address(mockBase), 1000 * 10**6);
 
         /////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
         //================ SWITCH CHAINS ====================\\
@@ -571,14 +573,6 @@ contract ProtocolTestnet is Test {
             dstChainSelector: arbChainSelector,
             receiver: User
         });
-
-        IDexSwap.SwapData[] memory swap = new IDexSwap.SwapData[](0);
-
-        vm.startPrank(User);
-        tUSDC.approve(address(op), USDC_INITIAL_BALANCE + 1);
-        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidSwapData.selector));
-        op.bridge(data, swap);
-        vm.stopPrank();
         
         uint amountIn = 29510000000000;
         uint amountOutMin = 9*10**4;

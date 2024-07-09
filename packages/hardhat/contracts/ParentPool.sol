@@ -63,13 +63,9 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   uint256 private constant ALLOWED = 1;
   uint256 private constant USDC_DECIMALS = 10 ** 6;
   uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
-  // TODO: Change this value to 100 * 10 ** 6 in production!!!
-  //  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
-  uint256 private constant MIN_DEPOSIT = 0.1 * 10 ** 6;
+   uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
   uint256 private constant PRECISION_HANDLER = 10 ** 10;
-  // TODO: Change this value to 6 days in production!!!
-  //  uint256 private constant WITHDRAW_DEADLINE = 597_600;
-  uint256 private constant WITHDRAW_DEADLINE = 60;
+   uint256 private constant WITHDRAW_DEADLINE = 597_600;
   ///@notice variable to access parent pool costs
   uint64 private constant BASE_CHAIN_SELECTOR = 15971525489660198786;
   ///@notice variable to store the costs of updating store on CLF callback
@@ -221,7 +217,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     uint256 depositFee = _calculateDepositTransactionFee(_usdcAmount);
     uint256 depositMinusFee = _usdcAmount - _convertToUSDCTokenDecimals(depositFee);
 
-    uint256 amountToDistribute = ((_usdcAmount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
+    uint256 amountToDistribute = ((depositMinusFee * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
 
     bytes[] memory args = new bytes[](2);
     args[0] = abi.encodePacked(s_hashSum);
@@ -233,13 +229,13 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       liquidityProvider: msg.sender,
       usdcBeforeRequest: i_USDC.balanceOf(address(this)) + s_loansInUse,
       lpSupplyBeforeRequest: i_lp.totalSupply(),
-      amount: _usdcAmount
+      amount: depositMinusFee
     });
 
     emit ParentPool_SuccessfulDeposited(msg.sender, _usdcAmount, i_USDC);
 
-    i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(depositFee));
     i_USDC.safeTransferFrom(msg.sender, address(this), _usdcAmount);
+    i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(depositFee));
 
     _ccipSend(numberOfPools, amountToDistribute);
   }
@@ -288,7 +284,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     uint256 withdrawFees = _calculateWithdrawTransactionsFee(withdraw.amountEarned);
     uint256 withdrawAmountMinusFees = withdraw.amountEarned - _convertToUSDCTokenDecimals(withdrawFees);
 
-    emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
+    emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdrawAmountMinusFees);
 
     IERC20(i_lp).safeTransferFrom(msg.sender, address(this), withdraw.amountToBurn);
     i_lp.burn(withdraw.amountToBurn);
@@ -583,14 +579,14 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     emit ParentPool_RequestUpdated(_liquidityProvider);
   }
 
-  //TODO must be internal on PRODUCTION
+  //TODO must be internal in PRODUCTION
   function _calculateDepositTransactionFee(uint256 _amountToDistribute) public view returns(uint256 _totalUSDCCost){
     uint256 numberOfPools = s_poolsToDistribute.length;
     uint256 costOfLinkForLiquidityDistribution;
     uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(BASE_CHAIN_SELECTOR);
     uint256 lastNativeUSDCRate = Orchestrator(i_infraProxy).s_latestNativeUsdcRate();
     uint256 lastLinkUSDCRate = Orchestrator(i_infraProxy).s_latestLinkUsdcRate();
-    uint256 lastBaseGasPrice = Orchestrator(i_infraProxy).s_lastGasPrices(BASE_CHAIN_SELECTOR);
+    uint256 lastBaseGasPrice = tx.gasprice; //Orchestrator(i_infraProxy).s_lastGasPrices(BASE_CHAIN_SELECTOR);
 
     for(uint256 i; i < numberOfPools; ){
       IParentPool.Pools memory pool = s_poolsToDistribute[i];
@@ -607,9 +603,10 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     //    Pools.length x Calls to distribute liquidity
     //    1x Functions request sent
     //    1x Callback Writing to storage
-    _totalUSDCCost = ((costOfLinkForLiquidityDistribution + premiumFee) * lastLinkUSDCRate) + (WRITE_FUNCTIONS_COST * lastNativeUSDCRate);
+    _totalUSDCCost = ((costOfLinkForLiquidityDistribution + premiumFee) * lastLinkUSDCRate) + ((WRITE_FUNCTIONS_COST * lastBaseGasPrice) * lastNativeUSDCRate);
   }
 
+  //TODO must be internal in PRODUCTION
   function _calculateWithdrawTransactionsFee(uint256 _amountToReceive) public view returns(uint256 _totalUSDCCost){
     uint256 numberOfPools = s_poolsToDistribute.length;
     uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(BASE_CHAIN_SELECTOR);

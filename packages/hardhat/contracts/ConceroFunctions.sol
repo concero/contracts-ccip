@@ -31,6 +31,8 @@ error ConceroFunctions_NotMessenger(address);
 error ConceroFunctions_TokenTypeOutOfBounds();
 ///@notice error emitted when the chain index is incorrect
 error ConceroFunctions_ChainIndexOutOfBounds();
+///@notice
+error ConceroFunctions_PayloadNotAllowed();
 
 error TXReleasedFailed(bytes error); // todo: TXReleasE
 
@@ -240,18 +242,11 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   function _swapDataToBytes(IDexSwap.SwapData[] calldata _swapData) private pure returns (bytes memory _encodedData) {
     uint256 numberOfSwaps = _swapData.length;
     if (numberOfSwaps == 0) return abi.encode(uint(0));
+    if (numberOfSwaps > 1) revert ConceroFunctions_PayloadNotAllowed();
 
-    for (uint256 i; i < numberOfSwaps; i++) {
-      _encodedData = abi.encode(
-        _swapData[i].dexType,
-        _swapData[i].fromToken,
-        _swapData[i].fromAmount,
-        _swapData[i].toToken,
-        _swapData[i].toAmount,
-        _swapData[i].toAmountMin,
-        _swapData[i].dexData
-      );
-    }
+    _encodedData = abi.encode(
+      _swapData[0]
+    );
   }
 
   function _handleDstFunctionsResponse(Request storage request) internal {
@@ -261,8 +256,10 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
 
     address tokenReceived = getToken(transaction.token, i_chainIndex);
     uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
+    IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](5);
+    swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData[]));
 
-    if (transaction.dstSwapData.length >= 1) {
+    if (swapData.length >= 1) {
       IParentPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, address(this));
       IDexSwap.SwapData[] memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData[]));
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, 0));

@@ -256,10 +256,82 @@ contract ParentPoolAndBridgeTestnet is HelpersTestnet {
         // assertTrue(op.s_latestLinkNativeRate() > 0);
     }
 
-//     function test_depositCost() public setters {
-//         _calculateDepositTransactionFee();
-// _calculateWithdrawTransactionsFee
-//     }
+    //Callback isn't performed on forked environment
+    // function test_PoolFees() public setters {
+    //     vm.selectFork(baseTestFork);
+    //     uint256 lpBnMBalance = 1000*10**6;
 
-//     function test_withdrawCosts()
+    //     assertEq(IERC20(ccipBnM).balanceOf(LP), lpBnMBalance);
+
+    //     assertEq(IERC20(ccipBnM).balanceOf(address(wMaster)),0);
+    //     assertEq(lp.balanceOf(address(LP)), 0);
+
+    //     vm.prank(LP);
+    //     IERC20(ccipBnM).approve(address(wMaster), 500*10**6);
+    //     vm.prank(LP);
+    //     wMaster.depositLiquidity(500*10**6);
+    //     ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+
+    //     vm.selectFork(baseTestFork);
+    //     assertEq(IERC20(ccipBnM).balanceOf(address(wMaster)), 250*10**6);
+    //     assertEq(IERC20(ccipBnM).balanceOf(address(LP)), 500*10**6);
+    //     assertTrue(lp.balanceOf(address(LP)) > 400*10**18);
+
+    //     /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    //     // helper();
+        
+    //     // uint amountIn = 1*10**17;
+    //     // uint amountOutMin = 350*10**6;
+    //     // address[] memory path = new address[](2);
+    //     // path[0] = address(wEth);
+    //     // path[1] = address(ccipBnM);
+    //     // address to = address(op);
+    //     // uint deadline = block.timestamp + 1800;
+
+    //     // IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+    //     // swapData[0] = IDexSwap.SwapData({
+    //     //                     dexType: IDexSwap.DexType.UniswapV2,
+    //     //                     fromToken: address(wEth),
+    //     //                     fromAmount: amountIn,
+    //     //                     toToken: address(tUSDC),
+    //     //                     toAmount: amountOutMin,
+    //     //                     toAmountMin: amountOutMin,
+    //     //                     dexData: abi.encode(mockBase, path, to, deadline)
+    //     // });
+
+    //     // /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    //     // IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+    //     //     tokenType: IStorage.CCIPToken.usdc,
+    //     //     amount: 300 *10**6,
+    //     //     dstChainSelector: arbChainSelector,
+    //     //     receiver: User
+    //     // });
+
+    //     // /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        
+    //     // uint amountInDst = 300*10**6;
+    //     // uint amountOutMinDst = 1*10**17;
+    //     // address[] memory pathDst = new address[](2);
+    //     // pathDst[0] = address(ccipBnMArb);
+    //     // pathDst[1] = address(arbWEth);
+    //     // address toDst = address(User);
+    //     // uint deadlineDst = block.timestamp + 1800;
+
+    //     // IDexSwap.SwapData[] memory swapDstData = new IDexSwap.SwapData[](1);
+    //     // swapDstData[0] = IDexSwap.SwapData({
+    //     //                     dexType: IDexSwap.DexType.UniswapV2,
+    //     //                     fromToken: address(wEth),
+    //     //                     fromAmount: amountInDst,
+    //     //                     toToken: address(tUSDC),
+    //     //                     toAmount: amountOutMinDst,
+    //     //                     toAmountMin: amountOutMinDst,
+    //     //                     dexData: abi.encode(mockArb, pathDst, toDst, deadlineDst)
+    //     // });
+
+    //     // // ==== Approve Transfer
+    //     // vm.startPrank(User);
+    //     // wEth.approve(address(op), 0.1 ether);
+    //     // op.swapAndBridge(bridgeData, swapData, swapDstData);
+    //     // vm.stopPrank();
+    // }
 }

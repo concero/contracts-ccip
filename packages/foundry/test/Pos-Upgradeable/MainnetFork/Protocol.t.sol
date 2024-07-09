@@ -159,7 +159,7 @@ contract ProtocolTest is Test {
     address ProxyOwner = makeAddr("ProxyOwner");
     address Tester = makeAddr("Tester");
     address User = makeAddr("User");
-    address Messenger = makeAddr("Messenger");
+    address Messenger = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
     address LP = makeAddr("LiquidityProvider");
     address defaultSender = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
     address subOwner = 0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0;

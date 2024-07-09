@@ -35,11 +35,11 @@ contract ParentPoolAndBridgeMainnet is Helpers {
         uint256 depositLowAmount = 10*10**6;
 
         //======= LP Deposits Low Amount of USDC on the Main Pool to revert on Min Amount
-        // vm.startPrank(LP);
-        // mUSDC.approve(address(wMaster), depositLowAmount);
-        // vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountBelowMinimum.selector, 100*10**6));
-        // wMaster.depositLiquidity(depositLowAmount);
-        // vm.stopPrank();
+        vm.startPrank(LP);
+        mUSDC.approve(address(wMaster), depositLowAmount);
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountBelowMinimum.selector, 100*10**6));
+        wMaster.depositLiquidity(depositLowAmount);
+        vm.stopPrank();
 
         //======= Increase the CAP
         vm.expectEmit();

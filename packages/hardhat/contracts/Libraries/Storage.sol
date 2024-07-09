@@ -1,12 +1,13 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 import {IDexSwap} from "../Interfaces/IDexSwap.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IStorage} from "../Interfaces/IStorage.sol";
 import {ConceroCCIP} from "../ConceroCCIP.sol";
 
-abstract contract Storage is IStorage {
+abstract contract Storage is ReentrancyGuard, IStorage {
 
   /////////////////////
   ///STATE VARIABLES///

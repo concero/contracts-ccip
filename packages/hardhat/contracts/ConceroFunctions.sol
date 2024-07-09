@@ -239,7 +239,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
 
   function _swapDataToBytes(IDexSwap.SwapData[] calldata _swapData) private pure returns (bytes memory _encodedData) {
     if (_swapData.length == 0) {
-      _encodedData = abi.encode(uint(0));
+      _encodedData = new bytes(1);
     } else {
       _encodedData = abi.encode(_swapData[0]);
     }
@@ -252,9 +252,9 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
 
     address tokenReceived = getToken(transaction.token, i_chainIndex);
     uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
-    IDexSwap.SwapData memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData));
 
-    if (swapData.fromToken != address(0)) {
+    if (transaction.dstSwapData.length > 1) {
+      IDexSwap.SwapData memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData));
       IDexSwap.SwapData[] memory swapDataArray = new IDexSwap.SwapData[](1);
       swapData.fromAmount = amount;
       swapDataArray[0] = swapData;

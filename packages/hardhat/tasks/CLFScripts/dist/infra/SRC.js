@@ -108,6 +108,7 @@
 		},
 		[`0x${BigInt('15971525489660198786').toString(16)}`]: {
 			urls: [
+				`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
 				'https://base.blockpi.network/v1/rpc/public',
 				'https://base-rpc.publicnode.com',
 			],

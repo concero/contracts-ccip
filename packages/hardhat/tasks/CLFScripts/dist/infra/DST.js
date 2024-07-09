@@ -74,11 +74,21 @@
 			},
 			[`0x${BigInt('15971525489660198786').toString(16)}`]: {
 				urls: [
+					`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
 					'https://base.blockpi.network/v1/rpc/public',
 					'https://base-rpc.publicnode.com',
 				],
 				confirmations: 3n,
 				chainId: '0x2105',
+			},
+			[`0x${BigInt('6433500567565415381').toString(16)}`]: {
+				urls: [
+					`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://avalanche.blockpi.network/v1/rpc/public',
+					'https://avalanche-c-chain-rpc.publicnode.com',
+				],
+				confirmations: 3n,
+				chainId: '0xa86a',
 			},
 		};
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {

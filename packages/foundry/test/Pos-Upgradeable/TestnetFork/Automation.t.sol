@@ -142,6 +142,8 @@ contract Automation is ProtocolTestnet {
 
         address[] memory recoveredRequest = automation.getPendingRequests();
 
+        assertEq(recoveredRequest[0], User);
+
         //=== move in time
         vm.warp(block.timestamp + 7 days);
 

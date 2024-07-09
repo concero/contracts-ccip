@@ -36,8 +36,8 @@ contract DEXMock {
 
         IERC20(route[0]).safeTransferFrom(msg.sender, address(this), amountIn);
 
-        IERC20(route[1]).safeTransfer(to, amountOutMin);
         emit DexMock_Transferred();
+        IERC20(route[1]).safeTransfer(to, amountOutMin);
     }
 
     //Uniswap Single

@@ -104,7 +104,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     uint256 swapDataLength = _srcSwapData.length;
 
     if(swapDataLength > 0){
-      if (swapDataLength > 5 || _srcSwapData[0].fromAmount == 0 || _srcSwapData[0].toAmountMin == 0) {
+      if (swapDataLength > 1 || _srcSwapData[0].fromAmount == 0 || _srcSwapData[0].toAmountMin == 0) {
         revert Orchestrator_InvalidSwapData();
       }
     }

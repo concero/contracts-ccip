@@ -8,7 +8,7 @@ import {IConcero} from "./Interfaces/IConcero.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {StorageSetters} from "./Libraries/StorageSetters.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
-import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
+import {IOrchestrator, IOrchestratorViewDelegate} from "./Interfaces/IOrchestrator.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON} from "./Constants.sol";
 
@@ -120,6 +120,25 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   ////////////////////
   ///DELEGATE CALLS///
   ////////////////////
+
+  ////////////////////////
+  /////VIEW FUNCTIONS/////
+  ////////////////////////
+
+  function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) external view returns (uint256) {
+    return IOrchestratorViewDelegate(address(this)).getSrcTotalFeeInUsdcViaDelegateCall(tokenType, dstChainSelector, amount);
+  }
+
+  function getSrcTotalFeeInUsdcViaDelegateCall(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) external returns (uint256) {
+    (bool success, bytes memory data) = i_concero.delegatecall(
+      abi.encodeWithSelector(IConcero.getSrcTotalFeeInUsdc.selector, tokenType, dstChainSelector, amount)
+    );
+
+    if (success == false) revert Orchestrator_UnableToCompleteDelegateCall(data);
+
+    return _convertToUSDCDecimals(abi.decode(data, (uint256)));
+  }
+
   function swapAndBridge(
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] calldata srcSwapData,

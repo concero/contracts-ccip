@@ -59,20 +59,25 @@ contract ConceroBridge is ConceroCCIP {
     address _proxy
   ) ConceroCCIP(_variables, _chainSelector, _chainIndex, _link, _ccipRouter, _dexSwap, _pool, _proxy) {}
 
+  // 7081968
+  // 1939049
+
+  // 000001163429400000
+
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
   function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] calldata dstSwapData) external {
     if (address(this) != i_proxy) revert Concero_ItsNotOrchestrator(address(this));
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
-    uint256 totalSrcFee = getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount);
+    uint256 totalSrcFee = _convertToUSDCDecimals(_getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount));
     uint256 mockedLpFee = getDstTotalFeeInUsdc(bridgeData.amount);
 
-    if (bridgeData.amount < _convertToUSDCDecimals(totalSrcFee + mockedLpFee)) {
+    if (bridgeData.amount < totalSrcFee + mockedLpFee) {
       revert InsufficientFundsForFees(bridgeData.amount, totalSrcFee);
     }
 
-    uint256 amount = bridgeData.amount - _convertToUSDCDecimals(totalSrcFee);
+    uint256 amount = bridgeData.amount - totalSrcFee;
     uint256 actualLpFee = getDstTotalFeeInUsdc(amount);
 
     bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, bridgeData.receiver, actualLpFee);
@@ -110,30 +115,6 @@ contract ConceroBridge is ConceroCCIP {
   }
 
   /**
-   * @notice Function to get the total amount of fees on the source
-   * @param tokenType the position of the CCIPToken enum
-   * @param dstChainSelector the destination blockchain chain selector
-   * @param amount the amount of value the fees will calculated over.
-   */
-  function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) public view returns (uint256) {
-    // @notice cl functions fee
-    uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
-
-    // @notice cl ccip fee
-    uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector, amount);
-
-    // @notice concero fee
-    uint256 conceroFee = amount / CONCERO_FEE_FACTOR;
-
-    // @notice gas fee
-    uint256 messengerDstGasInNative = HALF_DST_GAS * s_lastGasPrices[dstChainSelector];
-    uint256 messengerSrcGasInNative = HALF_DST_GAS * s_lastGasPrices[CHAIN_SELECTOR];
-    uint256 messengerGasFeeInUsdc = ((messengerDstGasInNative + messengerSrcGasInNative) * s_latestNativeUsdcRate) / STANDARD_TOKEN_DECIMALS;
-
-    return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + messengerGasFeeInUsdc);
-  }
-
-  /**
    * @notice Function to get the total amount of CCIP fees in Link
    * @param tokenType the position of the CCIPToken enum
    * @param dstChainSelector the destination blockchain chain selector
@@ -157,5 +138,32 @@ contract ConceroBridge is ConceroCCIP {
   function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 _amount) public view returns (uint256) {
     uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector, _amount);
     return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
+  }
+  /**
+   * @notice Function to get the total amount of fees on the source
+   * @param tokenType the position of the CCIPToken enum
+   * @param dstChainSelector the destination blockchain chain selector
+   * @param amount the amount of value the fees will calculated over.
+   */
+  function _getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) internal view returns (uint256) {
+    // @notice cl functions fee
+    uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
+
+    // @notice cl ccip fee
+    uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector, amount);
+
+    // @notice concero fee
+    uint256 conceroFee = amount / CONCERO_FEE_FACTOR;
+
+    // @notice gas fee
+    uint256 messengerDstGasInNative = HALF_DST_GAS * s_lastGasPrices[dstChainSelector];
+    uint256 messengerSrcGasInNative = HALF_DST_GAS * s_lastGasPrices[CHAIN_SELECTOR];
+    uint256 messengerGasFeeInUsdc = ((messengerDstGasInNative + messengerSrcGasInNative) * s_latestNativeUsdcRate) / STANDARD_TOKEN_DECIMALS;
+
+    return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + messengerGasFeeInUsdc);
+  }
+
+  function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) external view returns (uint256) {
+    return _getSrcTotalFeeInUsdc(tokenType, dstChainSelector, amount);
   }
 }

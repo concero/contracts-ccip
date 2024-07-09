@@ -262,7 +262,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
       IParentPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, address(this));
 
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-        abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapDataArray, transaction.recipient)
+        abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapDataArray, 0, transaction.recipient)
       );
       if (swapSuccess == false) revert TXReleasedFailed(swapError);
     } else {

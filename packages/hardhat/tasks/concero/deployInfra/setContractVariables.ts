@@ -229,6 +229,8 @@ export async function setDonSecretsSlotId(deployableChain: CNetwork, slotId: num
 const allowedRouters: Record<string, Address> = {
   "137": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
   "8453": "0x2626664c2603336E57B271c5C0b26F421741e481",
+  "42161": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+  "43114": "0xbb00FF08d01D300023C629E8fFfFcb65A5a578cE",
 };
 
 export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: any) {

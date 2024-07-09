@@ -2,6 +2,16 @@ async function f() {
 	try {
 		const [_, __, liquidityProvider, tokenAmount] = bytesArgs;
 		const chainSelectors = {
+			[`0x${BigInt('4949039107694359620').toString(16)}`]: {
+				urls: [
+					`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://arbitrum.blockpi.network/v1/rpc/public',
+					'https://arbitrum-rpc.publicnode.com',
+				],
+				chainId: '0xa4b1',
+				usdcAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+				poolAddress: '0xbe43f1eAb754144b31B90Ee2D6E036b9AB3cC5B4',
+			},
 			[`0x${BigInt('4051577828743386545').toString(16)}`]: {
 				urls: [
 					`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
@@ -10,6 +20,16 @@ async function f() {
 				],
 				chainId: '0x89',
 				usdcAddress: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+				poolAddress: '0x390661e47a0013889b2bA26d1B7d01fdCD8F0bcC',
+			},
+			[`0x${BigInt('6433500567565415381').toString(16)}`]: {
+				urls: [
+					`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://avalanche.blockpi.network/v1/rpc/public',
+					'https://avalanche-c-chain-rpc.publicnode.com',
+				],
+				chainId: '0xa86a',
+				usdcAddress: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
 				poolAddress: '0x390661e47a0013889b2bA26d1B7d01fdCD8F0bcC',
 			},
 		};

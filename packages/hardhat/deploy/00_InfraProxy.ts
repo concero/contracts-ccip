@@ -23,6 +23,7 @@ const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEn
     log: true,
     autoMine: true,
     gasPrice: gasPrice.toString(),
+    gasLimit: "1000000",
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {

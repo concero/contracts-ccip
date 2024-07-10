@@ -59,14 +59,16 @@ contract ConceroBridge is ConceroCCIP {
     address _proxy
   ) ConceroCCIP(_variables, _chainSelector, _chainIndex, _link, _ccipRouter, _dexSwap, _pool, _proxy) {}
 
-  // 7081968
-  // 1939049
-
-  // 000001163429400000
-
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
+  /**
+   * @notice Function responsible to trigger CCIP and start the bridging process
+   * @param bridgeData The bytes data payload with transaction infos
+   * @param dstSwapData The bytes data payload with destination swap Data
+   * @dev dstSwapData can be empty if there is no swap on destination
+   * @dev this function should only be able to called thought infra Proxy
+   */
   function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] calldata dstSwapData) external {
     if (address(this) != i_proxy) revert Concero_ItsNotOrchestrator(address(this));
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
@@ -139,6 +141,7 @@ contract ConceroBridge is ConceroCCIP {
     uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector, _amount);
     return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
   }
+  
   /**
    * @notice Function to get the total amount of fees on the source
    * @param tokenType the position of the CCIPToken enum

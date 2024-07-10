@@ -430,7 +430,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @dev this function will only be called internally.
    */
   function _ccipSend(uint256 _numberOfPools, uint256 _amountToDistribute) internal returns (bytes32 messageId) {
-
     for (uint256 i; i < _numberOfPools; ) {
       IParentPool.Pools memory pool = s_poolsToDistribute[i];
 
@@ -453,11 +452,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     }
   }
 
-  function _buildCCIPMessage(
-    address _token,
-    uint256 _amount,
-    address _poolAddress
-  ) internal view returns (Client.EVM2AnyMessage memory) {
+  function _buildCCIPMessage(address _token, uint256 _amount, address _poolAddress) internal view returns (Client.EVM2AnyMessage memory) {
     Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
     tokenAmounts[0] = Client.EVMTokenAmount({token: _token, amount: _amount});
 
@@ -631,7 +626,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   //       ++i;
   //     }
   //   }
-    
+
   //   // _totalUSDCCost ==
   //   //    2x Functions Calls - Link Cost
   //   //    Pools.length x Calls - Link Cost

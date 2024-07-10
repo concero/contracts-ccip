@@ -158,4 +158,9 @@ contract ConceroChildPoolTest is Test {
         childPool.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(Orchestrator));
     }
     
+    error ConceroChildPool_NotMessenger(address);
+    function test_onlyMessengerCanCall() public {
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_NotMessenger.selector, address(this)));
+        wChild.ccipSendToPool(Tester, 1000*10**6);
+    }
 }

@@ -275,8 +275,8 @@ contract Infra is Test {
         wMaster = ParentPool(payable(address(masterProxy)));
 
         //====== Update the MINTER on the LP Token
-        // vm.prank(Tester);
-        // lp.grantRole(keccak256("MINTER_ROLE"), address(wMaster));
+        vm.prank(Tester);
+        lp.grantRole(keccak256("MINTER_ROLE"), address(wMaster));
         }
     }
 

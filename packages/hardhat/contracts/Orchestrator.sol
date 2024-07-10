@@ -103,7 +103,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   modifier validateDstSwapData(IDexSwap.SwapData[] memory _srcSwapData) {
     uint256 swapDataLength = _srcSwapData.length;
 
-    if(swapDataLength > 0){
+    if (swapDataLength > 0) {
       if (swapDataLength > 1 || _srcSwapData[0].fromAmount == 0 || _srcSwapData[0].toAmountMin == 0) {
         revert Orchestrator_InvalidSwapData();
       }
@@ -137,7 +137,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] calldata srcSwapData,
     IDexSwap.SwapData[] memory dstSwapData
-  ) external validateSwapData(srcSwapData) validateBridgeData(bridgeData) validateDstSwapData(dstSwapData) nonReentrant{
+  ) external validateSwapData(srcSwapData) validateBridgeData(bridgeData) validateDstSwapData(dstSwapData) nonReentrant {
     if (srcSwapData[srcSwapData.length - 1].toToken != getToken(bridgeData.tokenType, i_chainIndex)) revert Orchestrator_InvalidSwapData();
 
     //Swap -> money come back to this contract
@@ -145,7 +145,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
 
     bridgeData.amount = amountReceivedFromSwap;
 
-    if(dstSwapData.length > 0){
+    if (dstSwapData.length > 0) {
       dstSwapData[0].fromAmount = amountReceivedFromSwap;
       dstSwapData[0].fromToken = _getDestinationTokenAddress(bridgeData.dstChainSelector);
     }
@@ -157,7 +157,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   function swap(
     IDexSwap.SwapData[] calldata _swapData,
     address _receiver
-  ) external payable validateSwapData(_swapData) tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount) nonReentrant{
+  ) external payable validateSwapData(_swapData) tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount) nonReentrant {
     _swap(_swapData, msg.value, true, _receiver);
   }
 
@@ -170,7 +170,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
       if (userBalance < bridgeData.amount) revert Orchestrator_InvalidAmount();
     }
 
-    if(dstSwapData.length > 0){
+    if (dstSwapData.length > 0) {
       dstSwapData[0].fromAmount = bridgeData.amount;
       dstSwapData[0].fromToken = _getDestinationTokenAddress(bridgeData.dstChainSelector);
     }
@@ -252,14 +252,14 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   }
 
   //TODO: Add new if statements if new chains are added
-  function _getDestinationTokenAddress(uint64 _chainSelector) internal pure returns(address _token){
-    if(_chainSelector == CHAIN_SELECTOR_ARBITRUM){
+  function _getDestinationTokenAddress(uint64 _chainSelector) internal pure returns (address _token) {
+    if (_chainSelector == CHAIN_SELECTOR_ARBITRUM) {
       _token = USDC_ARBITRUM;
-    } else if(_chainSelector == CHAIN_SELECTOR_BASE){
+    } else if (_chainSelector == CHAIN_SELECTOR_BASE) {
       _token = USDC_BASE;
-    } else if(_chainSelector == CHAIN_SELECTOR_OPTIMISM ){
+    } else if (_chainSelector == CHAIN_SELECTOR_OPTIMISM) {
       _token = USDC_OPTIMISM;
-    } else if(_chainSelector == CHAIN_SELECTOR_POLYGON){
+    } else if (_chainSelector == CHAIN_SELECTOR_POLYGON) {
       _token = USDC_POLYGON;
     }
   }

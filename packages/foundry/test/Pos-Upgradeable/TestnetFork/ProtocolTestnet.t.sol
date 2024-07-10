@@ -1111,6 +1111,19 @@ contract ProtocolTestnet is Test {
         automation.setDonHostedSecretsVersion(secretVersion);
     }
 
+    event ConceroAutomation_DonHostedSlotId(uint8);
+    function test_setDonHostedSecretsSlotId() public {
+        uint8 slotId = 3;
+
+        vm.expectRevert(abi.encodeWithSelector(OwnableUnauthorizedAccount.selector, address(this)));
+        automation.setDonHostedSecretsSlotId(slotId);
+
+        vm.prank(Tester);
+        vm.expectEmit();
+        emit ConceroAutomation_DonHostedSlotId(slotId);
+        automation.setDonHostedSecretsSlotId(slotId);
+    }
+
     event ConceroAutomation_HashSumUpdated(bytes32);
     function test_setSrcJsHashSum() public {
         bytes32 hashSum = 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124;
@@ -1188,6 +1201,7 @@ contract ProtocolTestnet is Test {
     }
 
     event ConceroAutomation_UpkeepPerformed(bytes32);
+    error ConceroAutomation_WithdrawAlreadyTriggered(address liquidityProvider);
     function test_performUpkeep() public setters{
         vm.selectFork(baseTestFork);
 
@@ -1205,6 +1219,10 @@ contract ProtocolTestnet is Test {
         vm.prank(address(masterProxy));
         automation.addPendingWithdrawal(User);
 
+        uint256 length = automation.getPendingWithdrawRequestsLength();
+
+        assertEq(length, 1);
+
         address[] memory recoveredRequest = automation.getPendingRequests();
 
         assertEq(recoveredRequest[0], User);
@@ -1220,9 +1238,9 @@ contract ProtocolTestnet is Test {
         vm.prank(fakeForwarder);
         automation.performUpkeep(performData);
 
-        // (address liquidityProvider, uint256 amountToRequest) = automation.s_requests(reqId);
-
-        // assertEq(liquidityProvider, User);
-        // assertEq(amountToRequest, 5*10**6);
+        //=== Try to perform Withdraw again to revert
+        vm.prank(fakeForwarder);
+        vm.expectRevert(abi.encodeWithSelector(ConceroAutomation_WithdrawAlreadyTriggered.selector, User));
+        automation.performUpkeep(performData);
     }
 }

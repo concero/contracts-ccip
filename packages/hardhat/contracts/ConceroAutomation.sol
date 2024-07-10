@@ -71,7 +71,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
   ///@notice Mapping to keep track of Chainlink Functions requests
   mapping(bytes32 requestId => PerformWithdrawRequest) public s_functionsRequests;
-  mapping(address => bool) public s_withdrawTriggered;
+  mapping(address liquidityProvider => bool isTriggered) public s_withdrawTriggered;
 
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
@@ -88,6 +88,8 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   event ConceroAutomation_UpkeepPerformed(bytes32 reqId);
   ///@notice event emitted when the Don Secret is Updated
   event ConceroAutomation_DonSecretVersionUpdated(uint64 version);
+  ///@notice event emitted when the Don Slot ID is updated
+  event ConceroAutomation_DonHostedSlotId(uint8 slotId);
   ///@notice event emitted when the hashSum of Chainlink Function is updated
   event ConceroAutomation_HashSumUpdated(bytes32 hashSum);
   ///@notice event emitted when the Ethers HashSum is updated
@@ -134,6 +136,8 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
   function setDonHostedSecretsSlotId(uint8 _slotId) external onlyOwner {
     s_donHostedSecretsSlotId = _slotId;
+
+    emit ConceroAutomation_DonHostedSlotId(_slotId);
   }
 
   /**
@@ -268,6 +272,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     }
 
     s_withdrawTriggered[liquidityProvider] = false;
+
     uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
 
     for (uint256 i; i < requestsNumber; ++i) {
@@ -284,7 +289,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   function getPendingRequests() external view returns (address[] memory _requests) {
     _requests = s_pendingWithdrawRequestsCLA;
   }
-  
+
   function getPendingWithdrawRequestsLength() public view returns (uint256) {
     return s_pendingWithdrawRequestsCLA.length;
   }

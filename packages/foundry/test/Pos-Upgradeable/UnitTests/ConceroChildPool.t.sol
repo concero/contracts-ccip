@@ -152,5 +152,10 @@ contract ConceroChildPoolTest is Test {
         wChild.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
     }
 
+    function test_notProxyRevert() public {
+        vm.prank(Orchestrator);
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_CallerIsNotTheProxy.selector, address(childPool)));
+        childPool.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(Orchestrator));
+    }
     
 }

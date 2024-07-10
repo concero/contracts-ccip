@@ -78,8 +78,8 @@ contract DexSwap is IDexSwap, Storage {
     uint256 swapDataLength = _swapData.length;
 
     for (uint256 i; i < swapDataLength; ) {
-      if(swapDataLength > 1 && i < swapDataLength -1 ){
-        if(_swapData[i].dexType == DexType.UniswapV2Ether && _swapData[i + 1].dexType == DexType.UniswapV2Ether) revert DexSwap_InvalidPath();
+      if (swapDataLength > 1 && i < swapDataLength - 1) {
+        if (_swapData[i].dexType == DexType.UniswapV2Ether && _swapData[i + 1].dexType == DexType.UniswapV2Ether) revert DexSwap_InvalidPath();
       }
 
       uint256 previousBalance = _swapData[i].toToken == address(0) ? address(this).balance : IERC20(_swapData[i].toToken).balanceOf(address(this));
@@ -249,13 +249,13 @@ contract DexSwap is IDexSwap, Storage {
    * @dev This function can execute swap in any protocol compatible with ISwapRouter
    */
   function _swapSushiV3Multi(IDexSwap.SwapData memory _swapData, address _recipient) private {
-    if(_swapData.dexData.length < APPROVED) revert DexSwap_EmptyDexData();
+    if (_swapData.dexData.length < APPROVED) revert DexSwap_EmptyDexData();
     (address routerAddress, bytes memory path, uint256 deadline) = abi.decode(_swapData.dexData, (address, bytes, uint256));
-    
+
     (address firstToken, address lastToken) = _extractTokens(path);
-    
+
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
-    if (firstToken != _swapData.fromToken || lastToken != _swapData.toToken ) revert DexSwap_InvalidPath();
+    if (firstToken != _swapData.fromToken || lastToken != _swapData.toToken) revert DexSwap_InvalidPath();
 
     ISushiRouterV3.ExactInputParams memory params = ISushiRouterV3.ExactInputParams({
       path: path,
@@ -276,9 +276,9 @@ contract DexSwap is IDexSwap, Storage {
    * @dev This function can execute swap in any protocol compatible
    */
   function _swapUniV3Multi(IDexSwap.SwapData memory _swapData, address _recipient) private {
-    if(_swapData.dexData.length < APPROVED) revert DexSwap_EmptyDexData();
+    if (_swapData.dexData.length < APPROVED) revert DexSwap_EmptyDexData();
     (address routerAddress, bytes memory path, uint256 deadline) = abi.decode(_swapData.dexData, (address, bytes, uint256));
-    
+
     (address firstToken, address lastToken) = _extractTokens(path);
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
@@ -320,7 +320,7 @@ contract DexSwap is IDexSwap, Storage {
     (address routerAddress, IRouter.Route[] memory routes, uint256 deadline) = abi.decode(_swapData.dexData, (address, IRouter.Route[], uint256));
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
-    if (routes[0].from != _swapData.fromToken || routes[routes.length -1].to != _swapData.toToken) revert DexSwap_InvalidPath();
+    if (routes[0].from != _swapData.fromToken || routes[routes.length - 1].to != _swapData.toToken) revert DexSwap_InvalidPath();
 
     IERC20(routes[0].from).safeIncreaseAllowance(routerAddress, _swapData.fromAmount);
 
@@ -354,7 +354,7 @@ contract DexSwap is IDexSwap, Storage {
     (address routerAddress, address[] memory path, uint256 deadline) = abi.decode(_swapData.dexData, (address, address[], uint256));
 
     if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
-    if (_swapData.fromToken != address(0) || path[0] != i_wEth || path[path.length -1] != _swapData.toToken) revert DexSwap_InvalidPath();
+    if (_swapData.fromToken != address(0) || path[0] != i_wEth || path[path.length - 1] != _swapData.toToken) revert DexSwap_InvalidPath();
 
     IUniswapV2Router02(routerAddress).swapExactETHForTokens{value: _etherAmount}(_swapData.toAmountMin, path, _recipient, deadline);
   }
@@ -362,7 +362,7 @@ contract DexSwap is IDexSwap, Storage {
   ///////////////////////
   /// Helper Function ///
   ///////////////////////
-  function _extractTokens(bytes memory _path) private pure returns(address _firstToken, address _lastToken){
+  function _extractTokens(bytes memory _path) private pure returns (address _firstToken, address _lastToken) {
     uint256 pathSize = _path.length;
 
     bytes memory tokenBytes = _path.slice(0, 20);

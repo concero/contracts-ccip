@@ -71,7 +71,7 @@ contract ParentPoolTest is Test {
         usdc = new USDC("USDC", "USDC", Tester, USDC_INITIAL_BALANCE);
 
         //======= Deploy proxies
-        masterProxy = masterProxyDeploy.run(address(lpDeploy), proxyOwner, Tester, "");
+        masterProxy = masterProxyDeploy.run(address(lpDeploy), proxyOwner, "");
 
         //======= Wraps on the interface to update later 
         proxyInterfaceMaster = ITransparentUpgradeableProxy(address(masterProxy));
@@ -204,7 +204,6 @@ contract ParentPoolTest is Test {
     error ParentPool_MaxCapReached(uint256);
     event ParentPool_MasterPoolCapUpdated(uint256);
     function test_depositLiquidityRevert() public {
-        uint256 amountToDeposit = 1*10**5;
         uint256 allowedAmountToDeposit = 150*10**6;
         
         vm.prank(Tester);

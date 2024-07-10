@@ -17,7 +17,6 @@ contract TestnetChildPoolProxyDeploy is Script {
         proxy = new ChildPoolProxy(
             _logic,
             _admin,
-            _storageOwner,
             _data
         );
         vm.stopBroadcast();

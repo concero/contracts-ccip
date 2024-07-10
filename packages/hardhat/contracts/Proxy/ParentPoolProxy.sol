@@ -85,7 +85,6 @@ contract ParentPoolProxy is ERC1967Proxy, ParentStorage {
   constructor(
     address _logic,
     address initialOwner,
-    address _implementationOwner,
     bytes memory _data
   ) payable ERC1967Proxy(_logic, _data) {
     _admin = initialOwner;

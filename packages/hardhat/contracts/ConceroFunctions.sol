@@ -31,6 +31,8 @@ error ConceroFunctions_NotMessenger(address);
 error ConceroFunctions_TokenTypeOutOfBounds();
 ///@notice error emitted when the chain index is incorrect
 error ConceroFunctions_ChainIndexOutOfBounds();
+///@notice
+error ConceroFunctions_PayloadNotAllowed();
 
 error TXReleasedFailed(bytes error); // todo: TXReleasE
 

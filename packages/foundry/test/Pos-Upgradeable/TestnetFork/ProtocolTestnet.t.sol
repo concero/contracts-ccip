@@ -21,6 +21,8 @@ import {ChildPoolProxy} from "contracts/Proxy/ChildPoolProxy.sol";
 //Interfaces
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 import {IStorage} from "contracts/Interfaces/IStorage.sol";
+import {IConcero, IDexSwap} from "contracts/Interfaces/IConcero.sol";
+import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 
 //Protocol Storage
 import {Storage} from "contracts/Libraries/Storage.sol";
@@ -208,8 +210,8 @@ contract ProtocolTestnet is Test {
         );
 
         //====== Deploy the proxy with the dummy Orch to get the address
-        proxy = proxyDeployBase.run(address(orchEmpty), ProxyOwner, Tester, "");
-        masterProxy = masterProxyDeploy.run(address(orchEmpty), ProxyOwner, Tester, "");
+        proxy = proxyDeployBase.run(address(orchEmpty), ProxyOwner, "");
+        masterProxy = masterProxyDeploy.run(address(orchEmpty), ProxyOwner, "");
         proxyInterfaceInfra = ITransparentUpgradeableProxy(address(proxy));
         proxyInterfaceMaster = ITransparentUpgradeableProxy(address(masterProxy));
 
@@ -311,9 +313,11 @@ contract ProtocolTestnet is Test {
         LinkToken(linkBase).mint(address(User), 10*10**18);
 
         vm.prank(0xd5CCdabF11E3De8d2F64022e232aC18001B8acAC);
-        ERC20Mock(ccipBnM).mint(address(LP), 1000 * 10**18);
+        ERC20Mock(ccipBnM).mint(address(LP), 1000 * 10**6);
         vm.prank(0xd5CCdabF11E3De8d2F64022e232aC18001B8acAC);
-        ERC20Mock(ccipBnM).mint(address(User), 100 * 10**18);
+        ERC20Mock(ccipBnM).mint(address(User), 100 * 10**6);
+        vm.prank(0xd5CCdabF11E3De8d2F64022e232aC18001B8acAC);
+        ERC20Mock(ccipBnM).mint(address(mockBase), 1000 * 10**6);
 
         /////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
         //================ SWITCH CHAINS ====================\\
@@ -344,10 +348,10 @@ contract ProtocolTestnet is Test {
             address(0),
             1
         );
-        childProxy = childProxyDeploy.run(address(orchEmptyDst), ProxyOwner, Tester, "");
+        childProxy = childProxyDeploy.run(address(orchEmptyDst), ProxyOwner, "");
 
         //====== Deploy the proxy with the dummy Orch
-        proxyDst = proxyDeployArbitrum.run(address(orchEmptyDst), ProxyOwner, Tester, "");
+        proxyDst = proxyDeployArbitrum.run(address(orchEmptyDst), ProxyOwner, "");
 
         proxyInterfaceInfraArb = ITransparentUpgradeableProxy(address(proxyDst));
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
@@ -418,6 +422,9 @@ contract ProtocolTestnet is Test {
         }
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////// HELPERS MODULE ///////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////
     modifier setters(){
         //================ SWITCH CHAINS ====================\\
         //BASE
@@ -504,9 +511,9 @@ contract ProtocolTestnet is Test {
         assertEq(wEth.balanceOf(LP), LP_INITIAL_BALANCE);
     }
 
-    ////////////////
-    /// REVERTS ////
-    ////////////////
+    ////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////// MODIFIERS ///////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
 
     error InsufficientFundsForFees(uint256, uint256);
     error Orchestrator_UnableToCompleteDelegateCall(bytes);
@@ -544,7 +551,7 @@ contract ProtocolTestnet is Test {
 
         // ==== Approve Transfer
 
-        //It will not revert because fee are 0 on the first call.
+        //It will not revert because fees are 0 on the first call.
         // vm.startPrank(User);
         // wEth.approve(address(op), amountIn);
         // bytes memory InsufficientFunds = abi.encodeWithSelector(InsufficientFundsForFees.selector, amountOutMin , 161996932573903608);
@@ -571,14 +578,6 @@ contract ProtocolTestnet is Test {
             dstChainSelector: arbChainSelector,
             receiver: User
         });
-
-        IDexSwap.SwapData[] memory swap = new IDexSwap.SwapData[](0);
-
-        vm.startPrank(User);
-        tUSDC.approve(address(op), USDC_INITIAL_BALANCE + 1);
-        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidSwapData.selector));
-        op.bridge(data, swap);
-        vm.stopPrank();
         
         uint amountIn = 29510000000000;
         uint amountOutMin = 9*10**4;
@@ -725,11 +724,10 @@ contract ProtocolTestnet is Test {
 
     error Storage_CallableOnlyByOwner(address, address);
     event Orchestrator_FeeWithdrawal(address, uint256);
-
     error Orchestrator_OnlyRouterCanFulfill();
     error UnexpectedRequestID(bytes32);
     error ConceroFunctions_ItsNotOrchestrator(address);
-    function test_oracleFulfillment() public {
+    function test_oracleFulfillmentRevert() public {
         bytes32 requestId = 0x47e4710d8d5d8e8598e8ab4ab6639c6aa7124620476f299e5abab3634a24036a;
 
         vm.prank(User);
@@ -744,5 +742,505 @@ contract ProtocolTestnet is Test {
         //==== Mock a direct call
         vm.expectRevert(abi.encodeWithSelector(ConceroFunctions_ItsNotOrchestrator.selector, address(concero)));
         concero.fulfillRequestWrapper(requestId, "", "");
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////// POOL MODULE ///////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
+
+    error ParentPool_AmountBelowMinimum(uint256);
+    error ParentPool_MaxCapReached(uint256);
+    error ParentPool_AmountNotAvailableYet(uint256);
+    error ParentPool_InsufficientBalance();
+    error ParentPool_ActiveRequestNotFulfilledYet();
+    error ParentPool_CallerIsNotTheProxy(address);
+    event ParentPool_MasterPoolCapUpdated(uint256 _newCap);
+    event ParentPool_SuccessfulDeposited(address, uint256 , address);
+    event ParentPool_MessageSent(bytes32, uint64, address, address, uint256);
+    event ParentPool_WithdrawRequest(address,address,uint256);
+    event ParentPool_Withdrawn(address,address,uint256);
+    // function test_LiquidityProvidersDepositAndOpenARequest() public setters {
+    //     vm.selectFork(baseTestFork);
+
+    //     uint256 lpBalance = IERC20(ccipBnM).balanceOf(LP);
+    //     uint256 depositLowAmount = 10*10**6;
+
+    //     //======= LP Deposits Low Amount of USDC on the Main Pool to revert on Min Amount
+    //     vm.startPrank(LP);
+    //     IERC20(ccipBnM).approve(address(wMaster), depositLowAmount);
+    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountBelowMinimum.selector, 100*10**6));
+    //     wMaster.depositLiquidity(depositLowAmount);
+    //     vm.stopPrank();
+
+    //     //======= Increase the CAP
+    //     vm.expectEmit();
+    //     vm.prank(Tester);
+    //     emit ParentPool_MasterPoolCapUpdated(50*10**6);
+    //     wMaster.setPoolCap(50*10**6);
+
+    //     //======= LP Deposits enough to go through, but revert on max Cap
+    //     uint256 depositEnoughAmount = 100*10**6;
+
+    //     vm.startPrank(LP);
+    //     IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
+    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_MaxCapReached.selector, 50*10**6));
+    //     wMaster.depositLiquidity(depositEnoughAmount);
+    //     vm.stopPrank();
+
+    //     //======= Increase the CAP
+    //     vm.expectEmit();
+    //     vm.prank(Tester);
+    //     emit ParentPool_MasterPoolCapUpdated(1000*10**6);
+    //     wMaster.setPoolCap(1000*10**6);
+
+    //     vm.startPrank(LP);
+    //     IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
+    //     wMaster.depositLiquidity(depositEnoughAmount);
+    //     ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+    //     vm.stopPrank();
+
+    //     //======= Switch to Base
+    //     vm.selectFork(baseTestFork);
+
+    //     //======= Check LP balance
+    //     assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance - depositEnoughAmount);
+
+    //     //======= We check the pool balance;
+    //                 //Here, the LP Fees will be compounding directly for the LP address
+    //     uint256 poolBalance = IERC20(ccipBnM).balanceOf(address(wMaster));
+    //     assertEq(poolBalance, depositEnoughAmount/2);
+
+    //     uint256 lpTokenUserBalance = lp.balanceOf(LP);
+    //     // assertEq(lpTokenUserBalance, (depositEnoughAmount * 10**18) / 10**6);
+
+    //     //======= Revert on amount bigger than balance
+    //     vm.startPrank(LP);
+    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_InsufficientBalance.selector));
+    //     wMaster.startWithdrawal(lpTokenUserBalance + 10);
+    //     vm.stopPrank();
+
+    //     //======= Request Withdraw without any accrued fee
+    //     vm.startPrank(LP);
+    //     vm.expectEmit();
+    //     emit ParentPool_WithdrawRequest(LP, ccipBnM, block.timestamp + 597_600);
+    //     wMaster.startWithdrawal(lpTokenUserBalance);
+    //     vm.stopPrank();
+
+    //     //======= Revert on amount bigger than balance
+    //     vm.startPrank(LP);
+    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_ActiveRequestNotFulfilledYet.selector));
+    //     wMaster.startWithdrawal(lpTokenUserBalance);
+    //     vm.stopPrank();
+
+    //     //======= No operations are made. Advance time
+    //     vm.warp(7 days);
+
+    //     //======= Revert Because money not arrived yet
+    //     vm.startPrank(LP);
+    //     lp.approve(address(wMaster), lpTokenUserBalance);
+    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountNotAvailableYet.selector, 50*10**6));
+    //     wMaster.completeWithdrawal();
+    //     vm.stopPrank();
+
+    //     //======= Switch to Arbitrum
+    //     vm.selectFork(arbitrumTestFork);
+
+    //     //======= Calls ChildPool to send the money
+    //     vm.prank(Messenger);
+    //     wChild.ccipSendToPool(LP, depositEnoughAmount/2);
+    //     ccipLocalSimulatorFork.switchChainAndRouteMessage(baseTestFork);
+
+    //     //======= Revert because balance was used.
+    //     vm.prank(address(wMaster));
+    //     IERC20(ccipBnM).transfer(User, 10*10**6);
+
+    //     vm.startPrank(LP);
+    //     lp.approve(address(wMaster), lpTokenUserBalance);
+    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_InsufficientBalance.selector));
+    //     wMaster.completeWithdrawal();
+    //     vm.stopPrank();
+
+    //     vm.prank(address(User));
+    //     IERC20(ccipBnM).transfer(address(wMaster), 10*10**6);
+
+    //     vm.startPrank(LP);
+    //     lp.approve(address(wMaster), lpTokenUserBalance);
+    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_CallerIsNotTheProxy.selector, address(pool)));
+    //     pool.completeWithdrawal();
+    //     vm.stopPrank();
+
+    //     //======= Withdraw after the lock period and cross-chain transference
+    //     vm.startPrank(LP);
+    //     lp.approve(address(wMaster), lpTokenUserBalance);
+    //     wMaster.completeWithdrawal();
+    //     vm.stopPrank();
+
+    //     // //======= Check LP balance
+    //     assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance);
+    // }
+
+    //Callback isn't performed on forked environment
+    // function test_PoolFees() public setters {
+    //     vm.selectFork(baseTestFork);
+    //     uint256 lpBnMBalance = 1000*10**6;
+
+    //     assertEq(IERC20(ccipBnM).balanceOf(LP), lpBnMBalance);
+
+    //     assertEq(IERC20(ccipBnM).balanceOf(address(wMaster)),0);
+    //     assertEq(lp.balanceOf(address(LP)), 0);
+
+    //     vm.prank(LP);
+    //     IERC20(ccipBnM).approve(address(wMaster), 500*10**6);
+    //     vm.prank(LP);
+    //     wMaster.depositLiquidity(500*10**6);
+    //     ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+
+    //     vm.selectFork(baseTestFork);
+    //     assertEq(IERC20(ccipBnM).balanceOf(address(wMaster)), 250*10**6);
+    //     assertEq(IERC20(ccipBnM).balanceOf(address(LP)), 500*10**6);
+    //     assertTrue(lp.balanceOf(address(LP)) > 400*10**18);
+
+    //     /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    //     // helper();
+        
+    //     // uint amountIn = 1*10**17;
+    //     // uint amountOutMin = 350*10**6;
+    //     // address[] memory path = new address[](2);
+    //     // path[0] = address(wEth);
+    //     // path[1] = address(ccipBnM);
+    //     // address to = address(op);
+    //     // uint deadline = block.timestamp + 1800;
+
+    //     // IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+    //     // swapData[0] = IDexSwap.SwapData({
+    //     //                     dexType: IDexSwap.DexType.UniswapV2,
+    //     //                     fromToken: address(wEth),
+    //     //                     fromAmount: amountIn,
+    //     //                     toToken: address(tUSDC),
+    //     //                     toAmount: amountOutMin,
+    //     //                     toAmountMin: amountOutMin,
+    //     //                     dexData: abi.encode(mockBase, path, to, deadline)
+    //     // });
+
+    //     // /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    //     // IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+    //     //     tokenType: IStorage.CCIPToken.usdc,
+    //     //     amount: 300 *10**6,
+    //     //     dstChainSelector: arbChainSelector,
+    //     //     receiver: User
+    //     // });
+
+    //     // /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        
+    //     // uint amountInDst = 300*10**6;
+    //     // uint amountOutMinDst = 1*10**17;
+    //     // address[] memory pathDst = new address[](2);
+    //     // pathDst[0] = address(ccipBnMArb);
+    //     // pathDst[1] = address(arbWEth);
+    //     // address toDst = address(User);
+    //     // uint deadlineDst = block.timestamp + 1800;
+
+    //     // IDexSwap.SwapData[] memory swapDstData = new IDexSwap.SwapData[](1);
+    //     // swapDstData[0] = IDexSwap.SwapData({
+    //     //                     dexType: IDexSwap.DexType.UniswapV2,
+    //     //                     fromToken: address(wEth),
+    //     //                     fromAmount: amountInDst,
+    //     //                     toToken: address(tUSDC),
+    //     //                     toAmount: amountOutMinDst,
+    //     //                     toAmountMin: amountOutMinDst,
+    //     //                     dexData: abi.encode(mockArb, pathDst, toDst, deadlineDst)
+    //     // });
+
+    //     // // ==== Approve Transfer
+    //     // vm.startPrank(User);
+    //     // wEth.approve(address(op), 0.1 ether);
+    //     // op.swapAndBridge(bridgeData, swapData, swapDstData);
+    //     // vm.stopPrank();
+    // }
+
+    ////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////// BRIDGE MODULE ///////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
+    
+    error Concero_ItsNotOrchestrator(address);
+    function test_swapAndBridgeWithoutFunctions() public setters{
+        helper();
+
+        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        
+        uint amountIn = 1*10**17;
+        uint amountOutMin = 350*10**6;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(tUSDC);
+        address to = address(op);
+        uint deadline = block.timestamp + 1800;
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(tUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(mockBase, path, to, deadline)
+        });
+
+        /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+            tokenType: IStorage.CCIPToken.usdc,
+            amount: 350 *10**6,
+            dstChainSelector: arbChainSelector,
+            receiver: User
+        });
+
+        // ==== Approve Transfer
+        vm.startPrank(User);
+        wEth.approve(address(op), 0.1 ether);
+        vm.expectRevert(abi.encodeWithSelector(Concero_ItsNotOrchestrator.selector, address(concero)));
+        concero.startBridge(bridgeData, swapData);
+
+        op.swapAndBridge(bridgeData, swapData, swapData);
+        vm.stopPrank();
+    }
+
+    function test_userBridge() public setters {
+        vm.selectFork(baseTestFork);
+
+        //======= LP Deposits enough to go through, but revert on max Cap
+        uint256 depositEnoughAmount = 100*10**6;
+
+        //======= Increase the CAP
+        vm.expectEmit();
+        vm.prank(Tester);
+        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
+        wMaster.setPoolCap(1000*10**6);
+
+        vm.startPrank(LP);
+        IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
+        wMaster.depositLiquidity(depositEnoughAmount);
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+        vm.stopPrank();
+
+        //====== Check Receiver balance
+        assertEq(IERC20(ccipBnMArb).balanceOf(User), 0);
+        assertEq(IERC20(ccipBnMArb).balanceOf(address(wChild)), depositEnoughAmount / 2);
+
+        vm.selectFork(baseTestFork);
+
+        //====== Mock the payload
+        uint256 amountToSend = 10 *10**6;
+
+        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+            tokenType: IStorage.CCIPToken.bnm,
+            amount: amountToSend,
+            dstChainSelector: arbChainSelector,
+            receiver: User
+        });
+
+        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        
+        uint amountIn = 1*10**17;
+        uint amountOutMin = 350*10**6;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(tUSDC);
+        address to = address(op);
+        uint deadline = block.timestamp + 1800;
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(tUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(mockBase, path, to, deadline)
+        });
+
+        vm.startPrank(User);
+        IERC20(ccipBnM).approve(address(op), amountToSend);
+        op.bridge(bridgeData, swapData);
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+        vm.stopPrank();
+
+        //====== Check Receiver balance
+        assertEq(IERC20(ccipBnMArb).balanceOf(User), 9990000); //Amount - fee = 9831494
+        
+        // assertTrue(op.s_lastGasPrices(arbChainSelector) > 0);
+        // assertTrue(op.s_latestLinkUsdcRate() > 0);
+        // assertTrue(op.s_latestNativeUsdcRate() > 0);
+        // assertTrue(op.s_latestLinkNativeRate() > 0);
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////// AUTOMATION MODULE ///////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+    event ConceroAutomation_ForwarderAddressUpdated(address);
+    function test_addForwarder() public {
+        address fakeForwarder = address(0x1);
+
+        //===== Ownable Revert
+        vm.expectRevert(abi.encodeWithSelector(OwnableUnauthorizedAccount.selector, address(this)));
+        automation.setForwarderAddress(fakeForwarder);
+
+        //====== Success
+        vm.prank(Tester);
+        vm.expectEmit();
+        emit ConceroAutomation_ForwarderAddressUpdated(fakeForwarder);
+        automation.setForwarderAddress(fakeForwarder);
+    }
+
+    event ConceroAutomation_DonSecretVersionUpdated(uint64);
+    error OwnableUnauthorizedAccount(address);
+    function test_setDonHostedSecretsVersion() public {
+        uint64 secretVersion = 2;
+
+        //===== Ownable Revert
+        vm.expectRevert(abi.encodeWithSelector(OwnableUnauthorizedAccount.selector, address(this)));
+        automation.setDonHostedSecretsVersion(secretVersion);
+
+        //====== Success
+        vm.prank(Tester);
+        vm.expectEmit();
+        emit ConceroAutomation_DonSecretVersionUpdated(secretVersion);
+        automation.setDonHostedSecretsVersion(secretVersion);
+    }
+
+    event ConceroAutomation_DonHostedSlotId(uint8);
+    function test_setDonHostedSecretsSlotId() public {
+        uint8 slotId = 3;
+
+        vm.expectRevert(abi.encodeWithSelector(OwnableUnauthorizedAccount.selector, address(this)));
+        automation.setDonHostedSecretsSlotId(slotId);
+
+        vm.prank(Tester);
+        vm.expectEmit();
+        emit ConceroAutomation_DonHostedSlotId(slotId);
+        automation.setDonHostedSecretsSlotId(slotId);
+    }
+
+    event ConceroAutomation_HashSumUpdated(bytes32);
+    function test_setSrcJsHashSum() public {
+        bytes32 hashSum = 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124;
+
+        //===== Ownable Revert
+        vm.expectRevert(abi.encodeWithSelector(OwnableUnauthorizedAccount.selector, address(this)));
+        automation.setJsHashSum(hashSum);
+
+        //====== Success
+
+        vm.prank(Tester);
+        vm.expectEmit();
+        emit ConceroAutomation_HashSumUpdated(hashSum);
+        automation.setJsHashSum(hashSum); 
+    }
+
+    event ConceroAutomation_EthersHashSumUpdated(bytes32);
+    function test_setEthersHashSum() public {
+        bytes32 hashSum = 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124;
+
+        //===== Ownable Revert
+        vm.expectRevert(abi.encodeWithSelector(OwnableUnauthorizedAccount.selector, address(this)));
+        automation.setEthersHashSum(hashSum);
+
+        //====== Success
+
+        vm.prank(Tester);
+        vm.expectEmit();
+        emit ConceroAutomation_EthersHashSumUpdated(hashSum);
+        automation.setEthersHashSum(hashSum);
+    }
+
+    event ConceroAutomation_RequestAdded(address);
+    error ConceroAutomation_CallerNotAllowed(address);
+    function test_pendingWithdrawal() public {
+        //===== Ownable Revert
+        vm.expectRevert(abi.encodeWithSelector(ConceroAutomation_CallerNotAllowed.selector, address(this)));
+        automation.addPendingWithdrawal(User);
+
+        vm.prank(address(masterProxy));
+        vm.expectEmit();
+        emit ConceroAutomation_RequestAdded(User);
+        automation.addPendingWithdrawal(User);
+    }
+
+    function test_checkUpkeep() public {
+        //====== Not Forwarder
+        // vm.expectRevert(abi.encodeWithSelector(ConceroAutomation_CallerNotAllowed.selector, address(this)));
+        // automation.checkUpkeep("");
+
+        //====== Successful Call
+        //=== Add Forwarder
+        address fakeForwarder = address(0x1);
+        vm.prank(Tester);
+        automation.setForwarderAddress(fakeForwarder);
+
+        //=== Create Request
+        vm.prank(address(masterProxy));
+        automation.addPendingWithdrawal(User);
+
+        address[] memory recoveredRequest = automation.getPendingRequests();
+
+        assertEq(recoveredRequest[0], User);
+
+        //=== check return
+        vm.prank(fakeForwarder);
+        (bool positiveResponse, bytes memory performData) = automation.checkUpkeep("");
+
+        assertEq(positiveResponse, true); //Because the request don't exist, but the address is on the array
+
+        (address LiquidityProvider, uint256 amountToRequest) = abi.decode(performData,(address, uint256));
+
+        assertEq(LiquidityProvider, User);
+        assertEq(amountToRequest, 0);
+    }
+
+    event ConceroAutomation_UpkeepPerformed(bytes32);
+    error ConceroAutomation_WithdrawAlreadyTriggered(address liquidityProvider);
+    function test_performUpkeep() public setters{
+        vm.selectFork(baseTestFork);
+
+        //====== Not Forwarder
+        vm.expectRevert(abi.encodeWithSelector(ConceroAutomation_CallerNotAllowed.selector, address(this)));
+        automation.performUpkeep("");
+
+        //====== Successful Call
+        //=== Add Forwarder
+        address fakeForwarder = address(0x1);
+        vm.prank(Tester);
+        automation.setForwarderAddress(fakeForwarder);
+
+        //=== Create Request
+        vm.prank(address(masterProxy));
+        automation.addPendingWithdrawal(User);
+
+        uint256 length = automation.getPendingWithdrawRequestsLength();
+
+        assertEq(length, 1);
+
+        address[] memory recoveredRequest = automation.getPendingRequests();
+
+        assertEq(recoveredRequest[0], User);
+
+        //=== move in time
+        vm.warp(block.timestamp + 7 days);
+
+        //=== check return
+        vm.prank(fakeForwarder);
+        (/*bool positiveResponse*/, bytes memory performData) = automation.checkUpkeep("");
+
+        //=== Simulate Perform Withdraw
+        vm.prank(fakeForwarder);
+        automation.performUpkeep(performData);
+
+        //=== Try to perform Withdraw again to revert
+        vm.prank(fakeForwarder);
+        vm.expectRevert(abi.encodeWithSelector(ConceroAutomation_WithdrawAlreadyTriggered.selector, User));
+        automation.performUpkeep(performData);
     }
 }

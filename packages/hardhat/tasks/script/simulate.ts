@@ -71,6 +71,9 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
       "0xf721b413e0a040abe87f48aff9801c78f037cab36cb43c72bd115ccec7845d27",
     ]);
 
+    // 4051577828743386545
+    // 4051577828743386545n
+
     // await simulate(path.join(__dirname, "../", "./CLFScripts/dist/eval.min.js"), [
     //   "0x1c5cf42d2b714c7f86edd64fb9b0c45b1fbd3dcac9831837d857f302833953e4", // srcJsHashSum
     //   "0x05f8cc312ae3687e5581353da9c5889b92d232f7776c8b81dc234fb330fda265", // ethers hash sum

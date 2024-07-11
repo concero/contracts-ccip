@@ -296,9 +296,14 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 	const getAverageSrcGasPrice = gasPrice => {
 		let res = gasPrice;
 		const bigIntSrcChainSelector = BigInt(srcChainSelector);
-		console.log("BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}')", BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}'));
 		if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}')) {
+			console.log("BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}')", BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}'));
+			console.log('srcChainSelector: ', BigInt(srcChainSelector));
+
 			res = gasPrice > 110000000000n ? 110000000000n : gasPrice;
+
+			console.log('gasPrice: ', gasPrice);
+			console.log('res: ', res);
 		} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}')) {
 			res = gasPrice > 64000000n ? 64000000n : gasPrice;
 		} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}')) {

@@ -276,9 +276,12 @@
 	const getAverageSrcGasPrice = gasPrice => {
 		let res = gasPrice;
 		const bigIntSrcChainSelector = BigInt(srcChainSelector);
-		console.log("BigInt('4051577828743386545')", BigInt('4051577828743386545'));
 		if (bigIntSrcChainSelector === BigInt('4051577828743386545')) {
+			console.log("BigInt('4051577828743386545')", BigInt('4051577828743386545'));
+			console.log('srcChainSelector: ', BigInt(srcChainSelector));
 			res = gasPrice > 110000000000n ? 110000000000n : gasPrice;
+			console.log('gasPrice: ', gasPrice);
+			console.log('res: ', res);
 		} else if (bigIntSrcChainSelector === BigInt('15971525489660198786')) {
 			res = gasPrice > 64000000n ? 64000000n : gasPrice;
 		} else if (bigIntSrcChainSelector === BigInt('4949039107694359620')) {

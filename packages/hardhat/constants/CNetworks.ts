@@ -299,7 +299,8 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   },
   polygon: {
     chainId: 137,
-    url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    // url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    url: "https://polygon-rpc.com",
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_POLYGON,
     functionsDonIdAlias: process.env.CLF_DONID_POLYGON_ALIAS,

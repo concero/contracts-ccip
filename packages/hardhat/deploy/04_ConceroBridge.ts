@@ -97,7 +97,7 @@ const deployConcero: DeployFunction = async function (
       args.conceroProxyAddress,
     ],
     autoMine: true,
-    // gasPrice: higherGasPrice,
+    gasPrice: higherGasPrice,
     // gasLimit: "4000000",
   })) as Deployment;
 

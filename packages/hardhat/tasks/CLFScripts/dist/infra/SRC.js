@@ -273,6 +273,19 @@
 		}
 		return _gasPrice;
 	};
+	const getAverageSrcGasPrice = gasPrice => {
+		let res = gasPrice;
+		if (srcChainSelector === `0x${BigInt('16281711391670634445').toString(16)}`) {
+			res = gasPrice > 110000000000n ? 110000000000n : gasPrice;
+		} else if (srcChainSelector === `0x${BigInt('10344971235874465080').toString(16)}`) {
+			res = gasPrice > 64000000n ? 64000000n : gasPrice;
+		} else if (srcChainSelector === `0x${BigInt('4949039107694359620').toString(16)}`) {
+			res = gasPrice > 1300000000n ? 1300000000n : gasPrice;
+		} else if (srcChainSelector === `0x${BigInt('6433500567565415381').toString(16)}`) {
+			res = gasPrice > 10713000000n ? 10713000000n : gasPrice;
+		}
+		return res;
+	};
 	let nonce = 0;
 	let retries = 0;
 	let gasPrice;
@@ -363,9 +376,10 @@
 			getPriceRates(srcChainProvider, srcChainSelector),
 		]);
 		const dstGasPriceInSrcCurrency = getDstGasPriceInSrcCurrency(gasPrice, srcPriceFeeds);
+		const srcGasPrice = getAverageSrcGasPrice(srcFeeData.gasPrice);
 		return constructResult([
 			dstGasPriceInSrcCurrency,
-			srcFeeData.gasPrice,
+			srcGasPrice,
 			dstChainSelector,
 			srcPriceFeeds.linkUsdc,
 			srcPriceFeeds.nativeUsdc,

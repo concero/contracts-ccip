@@ -43,16 +43,28 @@ export async function setConceroProxyDstContracts(liveChains: CNetwork[]) {
 
   for (const chain of liveChains) {
     const { viemChain, url, name } = chain;
-    try {
-      const srcConceroProxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`);
-      const { walletClient, publicClient, account } = getClients(viemChain, url);
+    const srcConceroProxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`);
+    const { walletClient, publicClient, account } = getClients(viemChain, url);
 
-      for (const dstChain of liveChains) {
+    for (const dstChain of liveChains) {
+      try {
         const { name: dstName, chainSelector: dstChainSelector } = dstChain;
         if (dstName !== name) {
           const dstProxyContract = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dstName]}`);
 
-          const { request: setDstConceroContractReq } = await publicClient.simulateContract({
+          // const gasPrice = await publicClient.getGasPrice();
+
+          // const { request: setDstConceroContractReq } = await publicClient.simulateContract({
+          //   address: srcConceroProxyAddress as Address,
+          //   abi,
+          //   functionName: "setConceroContract",
+          //   account,
+          //   args: [dstChainSelector, dstProxyContract],
+          //   chain: viemChain,
+          // });
+          // const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
+
+          const setDstConceroContractHash = await walletClient.writeContract({
             address: srcConceroProxyAddress as Address,
             abi,
             functionName: "setConceroContract",
@@ -60,18 +72,19 @@ export async function setConceroProxyDstContracts(liveChains: CNetwork[]) {
             args: [dstChainSelector, dstProxyContract],
             chain: viemChain,
           });
-          const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
+
           const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({
             hash: setDstConceroContractHash,
+            timeout: 0,
           });
           log(
             `Set ${name}:${srcConceroProxyAddress} dstConceroContract[${dstName}, ${dstProxyContract}]. Gas used: ${setDstConceroContractGasUsed.toString()}`,
             "setConceroProxyDstContracts",
           );
         }
+      } catch (error) {
+        log(`Error for ${name}: ${error.message}`, "setConceroProxyDstContracts");
       }
-    } catch (error) {
-      log(`Error for ${name}: ${error.message}`, "setConceroProxyDstContracts");
     }
   }
 }

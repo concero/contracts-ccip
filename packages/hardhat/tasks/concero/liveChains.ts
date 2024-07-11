@@ -8,4 +8,4 @@ import chains from "../../constants/CNetworks";
 //   // chains.polygonAmoy,
 // ];
 
-export const liveChains: CNetwork[] = [chains.base, chains.polygon, chains.arbitrum, chains.avalanche];
+export const liveChains: CNetwork[] = [chains.polygon, chains.base, chains.arbitrum, chains.avalanche];

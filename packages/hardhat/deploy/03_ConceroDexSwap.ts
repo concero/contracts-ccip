@@ -23,6 +23,7 @@ const deployConceroDexSwap: DeployFunction = async function (hre: HardhatRuntime
     args: [conceroProxyAddress, fakeAddressRemoveInProd],
     log: true,
     autoMine: true,
+    gasPrice: gasPrice.mul(2),
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {

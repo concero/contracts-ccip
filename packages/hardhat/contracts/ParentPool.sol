@@ -63,7 +63,8 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   uint256 private constant ALLOWED = 1;
   uint256 private constant USDC_DECIMALS = 10 ** 6;
   uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
-  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
+  //  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
+  uint256 private constant MIN_DEPOSIT = 10 * 10 ** 6;
   uint256 private constant PRECISION_HANDLER = 10 ** 10;
   uint256 private constant WITHDRAW_DEADLINE = 597_600;
   uint256 private constant ITERATION_COSTS = 808;

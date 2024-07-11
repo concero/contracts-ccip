@@ -275,13 +275,14 @@
 	};
 	const getAverageSrcGasPrice = gasPrice => {
 		let res = gasPrice;
-		if (srcChainSelector === `0x${BigInt('4051577828743386545').toString(16)}`) {
+		const bigIntSrcChainSelector = BigInt(srcChainSelector);
+		if (bigIntSrcChainSelector === BigInt('4051577828743386545')) {
 			res = gasPrice > 110000000000n ? 110000000000n : gasPrice;
-		} else if (srcChainSelector === `0x${BigInt('15971525489660198786').toString(16)}`) {
+		} else if (bigIntSrcChainSelector === BigInt('15971525489660198786')) {
 			res = gasPrice > 64000000n ? 64000000n : gasPrice;
-		} else if (srcChainSelector === `0x${BigInt('4949039107694359620').toString(16)}`) {
+		} else if (bigIntSrcChainSelector === BigInt('4949039107694359620')) {
 			res = gasPrice > 1300000000n ? 1300000000n : gasPrice;
-		} else if (srcChainSelector === `0x${BigInt('6433500567565415381').toString(16)}`) {
+		} else if (bigIntSrcChainSelector === BigInt('6433500567565415381')) {
 			res = gasPrice > 10713000000n ? 10713000000n : gasPrice;
 		}
 		return res;

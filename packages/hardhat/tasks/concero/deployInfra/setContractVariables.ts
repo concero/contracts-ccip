@@ -288,13 +288,16 @@ export async function setContractVariables(
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
   for (const deployableChain of deployableChains) {
-    await setDexSwapAllowedRouters(deployableChain, abi); // once
-    await setDstConceroPools(deployableChain, abi); // once
+    // await setDexSwapAllowedRouters(deployableChain, abi); // once
+    // await setDstConceroPools(deployableChain, abi); // once
     // if (uploadsecrets) {
-    await setDonHostedSecretsVersion(deployableChain, slotId, abi);
-    await setDonSecretsSlotId(deployableChain, slotId, abi);
+    // await setDonHostedSecretsVersion(deployableChain, slotId, abi);
+    // await setDonSecretsSlotId(deployableChain, slotId, abi);
     // }
 
     await setJsHashes(deployableChain, abi);
   }
 }
+
+// 30010371483 - src pol
+//    64000000

@@ -298,6 +298,3 @@ export async function setContractVariables(
     await setJsHashes(deployableChain, abi);
   }
 }
-
-// 30010371483 - src pol
-//    64000000

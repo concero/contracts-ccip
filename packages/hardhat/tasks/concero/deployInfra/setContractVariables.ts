@@ -279,6 +279,44 @@ export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: a
   }
 }
 
+export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: any) {
+  const fees: Record<string, bigint> = {
+    "137": 33131965864723535n,
+    "42161": 20000000000000000n,
+    "8453": 60000000000000000n,
+    "43114": 240000000000000000n,
+  };
+
+  const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
+  const conceroProxy = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dcName]}`);
+  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+
+  for (const chain of liveChains) {
+    try {
+      const { request: setFunctionsPremiumFeesReq } = await publicClient.simulateContract({
+        address: conceroProxy as Address,
+        abi,
+        functionName: "setClfPremiumFees",
+        account,
+        args: [chain.chainSelector, fees[chain.chainId?.toString()]],
+        chain: dcViemChain,
+      });
+
+      const setFunctionsPremiumFeesHash = await walletClient.writeContract(setFunctionsPremiumFeesReq);
+      const { cumulativeGasUsed: setFunctionsPremiumFeesGasUsed } = await publicClient.waitForTransactionReceipt({
+        hash: setFunctionsPremiumFeesHash,
+      });
+
+      log(
+        `Set ${dcName}:${conceroProxy} functionsPremiumFees[${fees[chain.chainId?.toString()]}. Gas used: ${setFunctionsPremiumFeesGasUsed.toString()}`,
+        "setClfPremiumFees",
+      );
+    } catch (error) {
+      log(`Error for ${dcName}: ${error.message}`, "setClfPremiumFees");
+    }
+  }
+}
+
 export async function setContractVariables(
   liveChains: CNetwork[],
   deployableChains: CNetwork[],
@@ -288,13 +326,13 @@ export async function setContractVariables(
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
   for (const deployableChain of deployableChains) {
-    // await setDexSwapAllowedRouters(deployableChain, abi); // once
-    // await setDstConceroPools(deployableChain, abi); // once
-    // if (uploadsecrets) {
-    // await setDonHostedSecretsVersion(deployableChain, slotId, abi);
-    // await setDonSecretsSlotId(deployableChain, slotId, abi);
-    // }
+    await setDexSwapAllowedRouters(deployableChain, abi); // once
+    await setDstConceroPools(deployableChain, abi); // once
 
+    await setDonHostedSecretsVersion(deployableChain, slotId, abi);
+    await setDonSecretsSlotId(deployableChain, slotId, abi);
+
+    await setFunctionsPremiumFees(deployableChain, abi);
     await setJsHashes(deployableChain, abi);
   }
 }

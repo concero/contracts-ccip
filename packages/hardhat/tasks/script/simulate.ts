@@ -71,6 +71,9 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
       "0xf721b413e0a040abe87f48aff9801c78f037cab36cb43c72bd115ccec7845d27",
     ]);
 
+    // 0.252252162643023070
+    // 25.06559219644602
+
     // BigInt('4051577828743386545') 4051577828743386545n
     // srcChainSelector:  4051577828743386545n
     // gasPrice:  30000000026n

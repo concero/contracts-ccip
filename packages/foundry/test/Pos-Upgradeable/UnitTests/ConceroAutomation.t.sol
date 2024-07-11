@@ -7,7 +7,7 @@ import {AutomationDeploy} from "../../../script/AutomationDeploy.s.sol";
 
 import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
 
-import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
+import {IPool} from "contracts/Interfaces/IPool.sol";
 
 import {USDC} from "../../Mocks/USDC.sol";
 

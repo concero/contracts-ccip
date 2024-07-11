@@ -15,8 +15,6 @@ interface IDexSwap {
     UniswapV2Ether
   }
 
-  error InvalidSwapData();
-
   ///@notice Concero Struct to track DEX Data
   struct SwapData {
     DexType dexType;

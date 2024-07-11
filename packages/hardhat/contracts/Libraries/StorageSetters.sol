@@ -10,34 +10,30 @@ contract StorageSetters is Storage {
 
   ///@notice error emitted when the input is the address(0)
   error StorageSetters_InvalidAddress();
+  ///@notice error emitted when a non-owner address call access controlled functions
   error StorageSetters_CallableOnlyByOwner(address msgSender, address owner);
-
-  ///////////////
-  ///CONSTANTS///
-  ///////////////
 
   ///////////////
   ///IMMUTABLE///
   ///////////////
   address internal immutable i_owner;
 
+  ///@notice event emitted when the CLF Premium fee is updated
   event CLFPremiumFeeUpdated(uint64 chainSelector, uint256 previousValue, uint256 feeAmount);
+  ///@notice event emitted when a new Concero Contract is added or updated
   event ConceroContractUpdated(uint64 chainSelector, address conceroContract);
+  ///@notice event emitted when the CLF secret is updated
   event DonSecretVersionUpdated(uint64 previousDonSecretVersion, uint64 newDonSecretVersion);
+  ///@notice event emitted when the CLF slot id is updated
   event DonSlotIdUpdated(uint8 previousDonSlot, uint8 newDonSlot);
+  ///@notice event emitted when the Destination JS Hash Sum is updated
   event DestinationJsHashSumUpdated(bytes32 previousDstHashSum, bytes32 newDstHashSum);
+  ///@notice event emitted when the Source JS Hash Sum is updated
   event SourceJsHashSumUpdated(bytes32 previousSrcHashSum, bytes32 newSrcHashSum);
+  ///@notice event emitted when the Ethers hash sum is updated
   event EthersHashSumUpdated(bytes32 previousValue, bytes32 hashSum);
   ///@notice event emitted when a new router address is added
   event Storage_NewRouterAdded(address router, uint256 isApproved);
-  ///@notice event emitted a cross-chain Gas price is updated.
-  event StorageSetters_LastGasPriceUpdated(uint64 chainSelector, uint256 feeAmount);
-  ///@notice event emitted when the Link to Usdc rate is updated
-  event StorageSetters_LinkUsdcRateUpdated(uint256 amount);
-  ///@notice event emitted when the Native to Usdc rate is updated
-  event StorageSetters_NativeUsdcRateUpdated(uint256 amount);
-  ///@notice event emitted when the Link to Native rate is updated
-  event StorageSetters_LinkNativeRateUpdated(uint256 amount);
 
   constructor(address _initialOwner) {
     i_owner = _initialOwner;
@@ -101,13 +97,13 @@ contract StorageSetters is Storage {
   /// CONTRACT ADDRESSES///
   /////////////////////////
   function setConceroContract(uint64 _chainSelector, address _conceroContract) external onlyOwner {
-    if(_conceroContract == address(0)) revert StorageSetters_InvalidAddress();
+    if (_conceroContract == address(0)) revert StorageSetters_InvalidAddress();
     s_conceroContracts[_chainSelector] = _conceroContract;
     emit ConceroContractUpdated(_chainSelector, _conceroContract);
   }
 
   function setDstConceroPool(uint64 _chainSelector, address _pool) external payable onlyOwner {
-    if(_pool == address(0)) revert StorageSetters_InvalidAddress();
+    if (_pool == address(0)) revert StorageSetters_InvalidAddress();
     s_poolReceiver[_chainSelector] = _pool;
   }
 
@@ -117,7 +113,7 @@ contract StorageSetters is Storage {
    * @param _isApproved 1 == Approved | Any other value is not Approved.
    */
   function setDexRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner {
-    if(_router == address(0)) revert StorageSetters_InvalidAddress();
+    if (_router == address(0)) revert StorageSetters_InvalidAddress();
     s_routerAllowed[_router] = _isApproved;
     emit Storage_NewRouterAdded(_router, _isApproved);
   }

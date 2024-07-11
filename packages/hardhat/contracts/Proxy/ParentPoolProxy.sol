@@ -6,7 +6,6 @@ pragma solidity ^0.8.20;
 import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IERC1967} from "@openzeppelin/contracts/interfaces/IERC1967.sol";
-import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 import {ParentStorage} from "../Libraries/ParentStorage.sol";
 

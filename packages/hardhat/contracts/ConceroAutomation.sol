@@ -7,7 +7,7 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/autom
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 
-import {IParentPool} from "./Interfaces/IParentPool.sol";
+import {IPool} from "./Interfaces/IPool.sol";
 
 ///@notice error emitted when the caller is not the owner.
 error ConceroAutomation_CallerNotAllowed(address caller);
@@ -186,7 +186,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
     for (uint256 i; i < requestsNumber; ++i) {
       address liquidityProvider = s_pendingWithdrawRequestsCLA[i];
-      IParentPool.WithdrawRequests memory pendingRequest = IParentPool(i_masterPoolProxy).getPendingWithdrawRequest(liquidityProvider);
+      IPool.WithdrawRequests memory pendingRequest = IPool(i_masterPoolProxy).getPendingWithdrawRequest(liquidityProvider);
 
       if (s_withdrawTriggered[liquidityProvider] == false && block.timestamp > pendingRequest.deadline) {
         _performData = abi.encode(liquidityProvider, pendingRequest.amountToRequest);

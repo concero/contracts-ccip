@@ -47,7 +47,8 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
   ///@notice
-  uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
+  uint32 public constant CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT = 150_000;
+  uint32 public constant CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT = 300_000;
   ///@notice
   uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
   ///@notice
@@ -143,7 +144,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     args[10] = abi.encodePacked(amount);
     args[11] = abi.encodePacked(CHAIN_SELECTOR);
 
-    bytes32 reqId = sendRequest(args, CL_JS_CODE);
+    bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT);
 
     s_requests[reqId].requestType = RequestType.checkTxSrc;
     s_requests[reqId].isPending = true;
@@ -157,12 +158,12 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
    * @param args the arguments for the request as bytes array
    * @param jsCode the JScode that will be executed.
    */
-  function sendRequest(bytes[] memory args, string memory jsCode) internal returns (bytes32) {
+  function sendRequest(bytes[] memory args, string memory jsCode, uint32 gasLimit) internal returns (bytes32) {
     FunctionsRequest.Request memory req;
     req.initializeRequestForInlineJavaScript(jsCode);
     req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
     req.setBytesArgs(args);
-    return _sendRequest(req.encodeCBOR(), i_subscriptionId, CL_FUNCTIONS_CALLBACK_GAS_LIMIT, i_donId);
+    return _sendRequest(req.encodeCBOR(), i_subscriptionId, gasLimit, i_donId);
   }
 
   function fulfillRequestWrapper(bytes32 requestId, bytes memory response, bytes memory err) external {
@@ -231,7 +232,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     args[11] = abi.encodePacked(block.number);
     args[12] = _swapDataToBytes(dstSwapData);
 
-    bytes32 reqId = sendRequest(args, CL_JS_CODE);
+    bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT);
     s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;
     s_requests[reqId].isPending = true;
     s_requests[reqId].ccipMessageId = ccipMessageId;

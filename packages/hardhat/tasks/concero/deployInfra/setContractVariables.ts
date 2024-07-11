@@ -283,8 +283,5 @@ export async function setContractVariables(
     // }
 
     await setJsHashes(deployableChain, abi);
-
-    // REMOVE IN PROD!!!
-    // await resetLastGasPrices(deployableChain, liveChains, abi);
   }
 }

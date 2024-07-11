@@ -47,6 +47,8 @@ const deployChildPool: DeployFunction = async function (
   // Merge defaultArgs with constructorArgs
   const args = { ...defaultArgs, ...constructorArgs };
 
+  const gasPrice = await hre.ethers.provider.getGasPrice();
+
   console.log("Deploying ChildPool...");
   const deployChildPool = (await deploy("ConceroChildPool", {
     from: deployer,

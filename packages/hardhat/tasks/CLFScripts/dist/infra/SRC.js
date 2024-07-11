@@ -273,24 +273,6 @@
 		}
 		return _gasPrice;
 	};
-	const getAverageSrcGasPrice = gasPrice => {
-		let res = gasPrice;
-		const bigIntSrcChainSelector = BigInt(srcChainSelector);
-		if (bigIntSrcChainSelector === BigInt('4051577828743386545')) {
-			console.log("BigInt('4051577828743386545')", BigInt('4051577828743386545'));
-			console.log('srcChainSelector: ', BigInt(srcChainSelector));
-			res = gasPrice > 110000000000n ? 110000000000n : gasPrice;
-			console.log('gasPrice: ', gasPrice);
-			console.log('res: ', res);
-		} else if (bigIntSrcChainSelector === BigInt('15971525489660198786')) {
-			res = gasPrice > 64000000n ? 64000000n : gasPrice;
-		} else if (bigIntSrcChainSelector === BigInt('4949039107694359620')) {
-			res = gasPrice > 1300000000n ? 1300000000n : gasPrice;
-		} else if (bigIntSrcChainSelector === BigInt('6433500567565415381')) {
-			res = gasPrice > 10713000000n ? 10713000000n : gasPrice;
-		}
-		return res;
-	};
 	let nonce = 0;
 	let retries = 0;
 	let gasPrice;
@@ -381,10 +363,9 @@
 			getPriceRates(srcChainProvider, srcChainSelector),
 		]);
 		const dstGasPriceInSrcCurrency = getDstGasPriceInSrcCurrency(gasPrice, srcPriceFeeds);
-		const srcGasPrice = getAverageSrcGasPrice(srcFeeData.gasPrice);
 		return constructResult([
 			dstGasPriceInSrcCurrency,
-			srcGasPrice,
+			srcFeeData.gasPrice,
 			dstChainSelector,
 			srcPriceFeeds.linkUsdc,
 			srcPriceFeeds.nativeUsdc,

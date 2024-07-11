@@ -98,10 +98,11 @@ contract ConceroBridge is ConceroCCIP {
     uint256 srcGasPrice = s_lastGasPrices[CHAIN_SELECTOR];
     uint256 dstGasPrice = s_lastGasPrices[dstChainSelector];
     uint256 srcClFeeInLink = clfPremiumFees[CHAIN_SELECTOR] +
-      ((srcGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT)) * s_latestLinkNativeRate) /
+      (((srcGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT)) * s_latestLinkNativeRate) / STANDARD_TOKEN_DECIMALS) /
       STANDARD_TOKEN_DECIMALS;
     uint256 dstClFeeInLink = clfPremiumFees[dstChainSelector] +
       ((dstGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT)) * s_latestLinkNativeRate) /
+      STANDARD_TOKEN_DECIMALS /
       STANDARD_TOKEN_DECIMALS;
 
     return srcClFeeInLink + dstClFeeInLink;

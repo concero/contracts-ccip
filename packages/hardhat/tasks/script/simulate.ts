@@ -71,8 +71,14 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
       "0xf721b413e0a040abe87f48aff9801c78f037cab36cb43c72bd115ccec7845d27",
     ]);
 
-    // 4051577828743386545
-    // 4051577828743386545n
+    // BigInt('4051577828743386545') 4051577828743386545n
+    // srcChainSelector:  4051577828743386545n
+    // gasPrice:  30000000026n
+    // res:  30000000026n
+    //       30000000000
+    //       86000000000
+    //        1000000000
+    //      110000000000n
 
     // await simulate(path.join(__dirname, "../", "./CLFScripts/dist/eval.min.js"), [
     //   "0x1c5cf42d2b714c7f86edd64fb9b0c45b1fbd3dcac9831837d857f302833953e4", // srcJsHashSum

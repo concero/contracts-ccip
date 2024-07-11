@@ -293,26 +293,20 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		return _gasPrice;
 	};
 
-	const getAverageSrcGasPrice = gasPrice => {
-		let res = gasPrice;
-		const bigIntSrcChainSelector = BigInt(srcChainSelector);
-		if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}')) {
-			console.log("BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}')", BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}'));
-			console.log('srcChainSelector: ', BigInt(srcChainSelector));
-
-			res = gasPrice > 110000000000n ? 110000000000n : gasPrice;
-
-			console.log('gasPrice: ', gasPrice);
-			console.log('res: ', res);
-		} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}')) {
-			res = gasPrice > 64000000n ? 64000000n : gasPrice;
-		} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}')) {
-			res = gasPrice > 1300000000n ? 1300000000n : gasPrice;
-		} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}')) {
-			res = gasPrice > 10713000000n ? 10713000000n : gasPrice;
-		}
-		return res;
-	};
+	// const getAverageSrcGasPrice = gasPrice => {
+	// 	let res = gasPrice;
+	// 	const bigIntSrcChainSelector = BigInt(srcChainSelector);
+	// 	if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}')) {
+	// 		res = gasPrice > 110000000000n ? 110000000000n : gasPrice;
+	// 	} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}')) {
+	// 		res = gasPrice > 64000000n ? 64000000n : gasPrice;
+	// 	} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}')) {
+	// 		res = gasPrice > 1300000000n ? 1300000000n : gasPrice;
+	// 	} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}')) {
+	// 		res = gasPrice > 10713000000n ? 10713000000n : gasPrice;
+	// 	}
+	// 	return res;
+	// };
 
 	let nonce = 0;
 	let retries = 0;
@@ -408,11 +402,10 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		]);
 
 		const dstGasPriceInSrcCurrency = getDstGasPriceInSrcCurrency(gasPrice, srcPriceFeeds);
-		const srcGasPrice = getAverageSrcGasPrice(srcFeeData.gasPrice);
 
 		return constructResult([
 			dstGasPriceInSrcCurrency,
-			srcGasPrice,
+			srcFeeData.gasPrice,
 			dstChainSelector,
 			srcPriceFeeds.linkUsdc,
 			srcPriceFeeds.nativeUsdc,

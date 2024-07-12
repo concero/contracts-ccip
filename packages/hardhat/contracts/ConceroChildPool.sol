@@ -54,8 +54,6 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
   LinkTokenInterface private immutable i_linkToken;
   ///@notice immutable variable to store the USDC address.
   IERC20 private immutable i_USDC;
-  ///@notice immutable variable to store the MasterPool chain selector
-  uint64 private immutable i_parentPoolChainSelector;
   ///@notice immutable variable to store the MasterPool Proxy address
   address private immutable i_parentPoolProxyAddress;
   ///@notice Contract Owner
@@ -72,6 +70,8 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
   event ConceroChildPool_LoanTaken(address receiver, uint256 amount);
   ///@notice event emitted when a allowed Cross-chain contract is updated
   event ConceroChildPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
+  ///@notice event emitted when a new pool is added
+  event ConceroChildPool_PoolReceiverUpdated(uint64 chainSelector, address pool);
 
   ///////////////
   ///MODIFIERS///
@@ -141,7 +141,7 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
    * @param _amount amount of the token to be sent
    * @dev This function will sent the address of the user as data. This address will be used to update the mapping on MasterPool.
    */
-  function ccipSendToPool(address _liquidityProviderAddress, uint256 _amount) external onlyMessenger isProxy returns (bytes32 messageId) {
+  function ccipSendToPool(uint64 _chainSelector, address _liquidityProviderAddress, uint256 _amount) external onlyMessenger isProxy returns (bytes32 messageId) {
     if (_amount > i_USDC.balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
 
     Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
@@ -151,23 +151,23 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
     tokenAmounts[0] = tokenAmount;
 
     Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
-      receiver: abi.encode(i_parentPoolProxyAddress),
+      receiver: abi.encode(s_poolToSendTo[_chainSelector]),
       data: abi.encode(_liquidityProviderAddress, address(0), 0), //0== lp fee. It will always be zero because here we just processing withdraws
       tokenAmounts: tokenAmounts,
       extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
       feeToken: address(i_linkToken)
     });
 
-    uint256 fees = IRouterClient(i_ccipRouter).getFee(i_parentPoolChainSelector, evm2AnyMessage);
+    uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
 
     if (fees > i_linkToken.balanceOf(address(this))) revert ConceroChildPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
     i_USDC.approve(i_ccipRouter, _amount);
     i_linkToken.approve(i_ccipRouter, fees);
 
-    emit ConceroChildPool_MessageSent(messageId, i_parentPoolChainSelector, i_parentPoolProxyAddress, address(i_linkToken), fees);
+    emit ConceroChildPool_MessageSent(messageId, _chainSelector, s_poolToSendTo[_chainSelector], address(i_linkToken), fees);
 
-    messageId = IRouterClient(i_ccipRouter).ccipSend(i_parentPoolChainSelector, evm2AnyMessage);
+    messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
   }
 
   /**
@@ -207,6 +207,22 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
     s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
 
     emit ConceroChildPool_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
+  }
+
+  /**
+   * @notice function to manage the Cross-chain ConceroPool contracts
+   * @param _chainSelector chain identifications
+   * @param _pool address of the Cross-chain ConceroPool contract
+   * @dev only owner can call it
+   * @dev it's payable to save some gas.
+   * @dev this functions is used on ConceroPool.sol
+   */
+  function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
+    if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ConceroChildPool_InvalidAddress();
+
+    s_poolToSendTo[_chainSelector] = _pool;
+
+    emit ConceroChildPool_PoolReceiverUpdated(_chainSelector, _pool);
   }
 
   ////////////////

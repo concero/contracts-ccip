@@ -24,6 +24,8 @@ import {Orchestrator} from "./Orchestrator.sol";
 error ParentPool_InsufficientBalance();
 ///@notice error emitted when the receiver is the address(0)
 error ParentPool_InvalidAddress();
+///@notice error emitted when the caller is not a valid Messenger
+error ParentPool_NotMessenger(address caller);
 ///@notice error emitted when the CCIP message sender is not allowed.
 error ParentPool_SenderNotAllowed(address _sender);
 ///@notice error emitted when an attempt to create a new request is made while other is still active.
@@ -156,6 +158,14 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     _;
   }
 
+  /**
+   * @notice modifier to check if the caller is the an approved messenger
+   */
+  modifier onlyMessenger() {
+    if (isMessenger(msg.sender) == false) revert ParentPool_NotMessenger(msg.sender);
+    _;
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////FUNCTIONS//////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
@@ -241,7 +251,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     i_USDC.safeTransferFrom(msg.sender, address(this), _usdcAmount);
     // i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(depositFee));
 
-    _ccipSend(numberOfPools, amountToDistribute);
+    _distributeLiquidity(numberOfPools, amountToDistribute);
   }
 
   /**
@@ -295,6 +305,12 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     // i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(withdrawFees));
     i_USDC.safeTransfer(msg.sender, withdraw.amountEarned);
+  }
+
+  function rebalancePools(uint64 _chainSelector, uint256 _amountToSend) external onlyMessenger{
+    if(s_poolsToSendTo[_chainSelector] == address(0)) revert ParentPool_InvalidAddress();
+
+    _ccipSend(_chainSelector, s_poolToSendTo[_chainSelector], _amountToSend);
   }
 
   ///////////////////////
@@ -364,8 +380,10 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @param _chainSelector the CCIP chainSelector for the specific chain
    */
   function removePoolsFromListOfSenders(uint64 _chainSelector) external payable onlyOwner {
+    address removedPool;
     for (uint256 i; i < s_poolsToDistribute.length; ) {
       if (s_poolsToDistribute[i].chainSelector == _chainSelector) {
+        removedPool = s_poolToSendTo[_chainSelector];
         s_poolsToDistribute[i] = s_poolsToDistribute[s_poolsToDistribute.length - 1];
         s_poolsToDistribute.pop();
         delete s_poolToSendTo[_chainSelector];
@@ -375,6 +393,10 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       }
     }
     emit ParentPool_ChainAndAddressRemoved(_chainSelector);
+
+    //send through functions?
+    //_chainSelector / removedPool / s_poolsToDistribute.length +1 (ParentPool included)
+    // functions query balance, divide by number of pools left and trigger the transfer in each chain
   }
 
   ////////////////
@@ -426,30 +448,39 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   }
 
   /**
-   * @notice Function to distribute funds automatically right after LP deposits into the pool
-   * @dev this function will only be called internally.
+   * @notice helper function to distribute liquidity after LP deposits.
+   * @param _numberOfPools number of pools to receive liquidity
+   * @param _amountToDistribute amount of USDC should be distributed to the pools.
    */
-  function _ccipSend(uint256 _numberOfPools, uint256 _amountToDistribute) internal returns (bytes32 messageId) {
+  function _distributeLiquidity(uint256 _numberOfPools, uint256 _amountToDistribute) internal {
     for (uint256 i; i < _numberOfPools; ) {
       IPool.Pools memory pool = s_poolsToDistribute[i];
 
-      Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), _amountToDistribute, pool.poolAddress);
-
-      uint256 fees = IRouterClient(i_ccipRouter).getFee(pool.chainSelector, evm2AnyMessage);
-
-      if (fees > i_linkToken.balanceOf(address(this))) revert ParentPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
-
-      i_USDC.approve(i_ccipRouter, _amountToDistribute);
-      i_linkToken.approve(i_ccipRouter, fees);
-
-      messageId = IRouterClient(i_ccipRouter).ccipSend(pool.chainSelector, evm2AnyMessage);
-
-      emit ParentPool_MessageSent(messageId, pool.chainSelector, pool.poolAddress, address(i_linkToken), fees);
+      _ccipSend(pool.chainSelector, pool.poolAddress, _amountToDistribute);
 
       unchecked {
         ++i;
       }
     }
+  }
+
+  /**
+   * @notice Function to distribute funds automatically right after LP deposits into the pool
+   * @dev this function will only be called internally.
+   */
+  function _ccipSend(uint64 _chainSelector, address _poolAddress, uint256 _amountToDistribute) internal returns (bytes32 messageId) {
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), _amountToDistribute, _poolAddress);
+
+    uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
+
+    if (fees > i_linkToken.balanceOf(address(this))) revert ParentPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
+
+    i_USDC.approve(i_ccipRouter, _amountToDistribute);
+    i_linkToken.approve(i_ccipRouter, fees);
+
+    messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
+
+    emit ParentPool_MessageSent(messageId, _chainSelector, _poolAddress, address(i_linkToken), fees);
   }
 
   function _buildCCIPMessage(address _token, uint256 _amount, address _poolAddress) internal view returns (Client.EVM2AnyMessage memory) {
@@ -675,8 +706,26 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     _usdcInUse = s_loansInUse;
   }
 
-  // TODO: Remove this function after tests
-  function deletePendingWithdrawRequest(address _liquidityProvider) external isProxy onlyOwner {
-    delete s_pendingWithdrawRequests[_liquidityProvider];
+  /**
+   * @notice Function to check if a caller address is an allowed messenger
+   * @param _messenger the address of the caller
+   */
+  function isMessenger(address _messenger) internal pure returns (bool isMessenger) {
+    address[] memory messengers = new address[](4); //Number of messengers. To define.
+    messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
+    messengers[1] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267;
+    messengers[2] = address(0);
+    messengers[3] = address(0);
+
+    for (uint256 i; i < messengers.length; ) {
+      if (_messenger == messengers[i]) {
+        return true;
+      }
+      unchecked {
+        ++i;
+      }
+    }
+    return false;
   }
+
 }

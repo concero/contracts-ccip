@@ -75,7 +75,6 @@ contract ConceroChildPoolTest is Test {
             address(childProxy),
             mockLinkTokenAddress,
             mockSourceRouter,
-            mockDestinationChainSelector,
             address(usdc),
             Tester
         );
@@ -161,6 +160,6 @@ contract ConceroChildPoolTest is Test {
     error ConceroChildPool_NotMessenger(address);
     function test_onlyMessengerCanCall() public {
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_NotMessenger.selector, address(this)));
-        wChild.ccipSendToPool(Tester, 1000*10**6);
+        wChild.ccipSendToPool(mockDestinationChainSelector, Tester, 1000*10**6);
     }
 }

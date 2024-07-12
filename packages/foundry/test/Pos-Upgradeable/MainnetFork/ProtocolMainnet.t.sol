@@ -429,7 +429,6 @@ contract ProtocolMainnet is Test {
             address(childProxy),
             linkArb,
             ccipRouterArb,
-            baseChainSelector,
             address(aUSDC),
             Tester
         );
@@ -475,7 +474,7 @@ contract ProtocolMainnet is Test {
         //====== Setters
         ///== Pools
         vm.startPrank(Tester);
-        wMaster.setPoolsToSend(arbChainSelector, address(childProxy));
+        wMaster.setPoolsToSend(arbChainSelector, address(childProxy), false);
         assertEq(wMaster.s_poolToSendTo(arbChainSelector), address(wChild));
 
         wMaster.setConceroContractSender(arbChainSelector, address(wChild), 1);

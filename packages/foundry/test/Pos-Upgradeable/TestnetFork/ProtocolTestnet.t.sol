@@ -392,7 +392,6 @@ contract ProtocolTestnet is Test {
             address(childProxy),
             linkArb,
             ccipRouterArb,
-            baseChainSelector,
             address(ccipBnMArb),
             Tester
         );
@@ -433,7 +432,7 @@ contract ProtocolTestnet is Test {
 
         ///======= Pools Allowance
         vm.startPrank(Tester);
-        wMaster.setPoolsToSend(arbChainSelector, address(childProxy));
+        wMaster.setPoolsToSend(arbChainSelector, address(childProxy), false);
         assertEq(wMaster.s_poolToSendTo(arbChainSelector), address(wChild));
 
         wMaster.setConceroContractSender(arbChainSelector, address(wChild), 1);
@@ -888,20 +887,20 @@ contract ProtocolTestnet is Test {
     function test_ccipSendToPool() public {
         vm.prank(Messenger);
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InsufficientBalance.selector));
-        wChild.ccipSendToPool(Tester, 10*10**6);
+        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6);
 
         vm.prank(0xd5CCdabF11E3De8d2F64022e232aC18001B8acAC);
         ERC20Mock(ccipBnMArb).mint(address(wChild), 1000 * 10**6);
 
         vm.prank(Messenger);
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_NotEnoughLinkBalance.selector, 0, 7043276117429745));
-        wChild.ccipSendToPool(Tester, 10*10**6);
+        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6);
 
         vm.prank(0x4281eCF07378Ee595C564a59048801330f3084eE);
         LinkToken(linkArb).transfer(address(wChild), 10*10**18);
 
         vm.prank(Messenger);
-        wChild.ccipSendToPool(Tester, 10*10**6);
+        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6);
     }
 
     function test_orchestratorLoanRevertBecauseOfAmount() public setters {

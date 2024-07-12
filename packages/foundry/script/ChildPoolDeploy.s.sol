@@ -13,7 +13,6 @@ contract ChildPoolDeploy is Script {
         address _childProxy,
         address _link,
         address _ccipRouter,
-        uint64 _destinationChainSelector,
         address _usdc,
         address _owner
     ) public returns(ConceroChildPool child){
@@ -24,7 +23,6 @@ contract ChildPoolDeploy is Script {
             _childProxy, 
             _link, 
             _ccipRouter,
-            _destinationChainSelector, 
             _usdc, 
             _owner
         );

@@ -118,7 +118,6 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
     address _childProxy,
     address _link,
     address _ccipRouter,
-    uint64 _destinationChainSelector,
     address _usdc,
     address _owner
   ) CCIPReceiver(_ccipRouter) {
@@ -126,7 +125,6 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
     i_childProxy = _childProxy;
     i_linkToken = LinkTokenInterface(_link);
     i_USDC = IERC20(_usdc);
-    i_parentPoolChainSelector = _destinationChainSelector;
     i_parentPoolProxyAddress = _masterPoolProxyAddress;
     i_owner = _owner;
   }
@@ -136,11 +134,11 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
   ////////////////////////
 
   /**
-   * @notice Function to Distribute Liquidity across Concero Pools
-   * @param _liquidityProviderAddress The liquidity provider that requested Withdraw
+   * @notice Function to Distribute Liquidity across Concero Pools and process withdrawals
+   * @param _liquidityProviderAddress The liquidity provider that requested Withdraw. If it's a rebalance, it will be address(0)
    * @param _amount amount of the token to be sent
    * @dev This function will sent the address of the user as data. This address will be used to update the mapping on MasterPool.
-   */
+  */
   function ccipSendToPool(uint64 _chainSelector, address _liquidityProviderAddress, uint256 _amount) external onlyMessenger isProxy returns (bytes32 messageId) {
     if (_amount > i_USDC.balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
 
@@ -152,7 +150,7 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
 
     Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
       receiver: abi.encode(s_poolToSendTo[_chainSelector]),
-      data: abi.encode(_liquidityProviderAddress, address(0), 0), //0== lp fee. It will always be zero because here we just processing withdraws
+      data: abi.encode(_liquidityProviderAddress, address(0), 0), //0== lp fee. It will always be zero because here we are only processing withdraws
       tokenAmounts: tokenAmounts,
       extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
       feeToken: address(i_linkToken)

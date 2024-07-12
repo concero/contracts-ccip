@@ -369,7 +369,6 @@ contract InfraIntegration is Test {
             address(childProxy),
             link,
             ccipRouterLocalDst,
-            localChainSelector,
             address(mUSDC),
             Tester
         );
@@ -409,7 +408,7 @@ contract InfraIntegration is Test {
 
         //Parent Pool
         wMaster.setConceroContractSender(localChainSelector, address(wChild), 1);
-        wMaster.setPoolsToSend(localChainSelector, address(wChild));
+        wMaster.setPoolsToSend(localChainSelector, address(wChild), false);
 
         //Child Pool
         wChild.setConceroContractSender(localChainSelector, address(wMaster), 1);

@@ -307,8 +307,14 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     i_USDC.safeTransfer(msg.sender, withdraw.amountEarned);
   }
 
-  function rebalancePools(uint64 _chainSelector, uint256 _amountToSend) external onlyMessenger{
-    if(s_poolsToSendTo[_chainSelector] == address(0)) revert ParentPool_InvalidAddress();
+  /**
+   * @notice Function called by Messenger to re-balance USDC between pools after and addition or exclusion
+   * @param _chainSelector the chain selector to be sent
+   * @param _notUsedHere in parent pool, is always address(0). We maintain it here so we can standardize the function to CLF calls.
+   * @param _amountToSend the amount to redistribute between pools.
+   */
+  function ccipSendToPool(uint64 _chainSelector, address _notUsedHere, uint256 _amountToSend) external isProxy onlyMessenger {
+    if(s_poolToSendTo[_chainSelector] == address(0)) revert ParentPool_InvalidAddress();
 
     _ccipSend(_chainSelector, s_poolToSendTo[_chainSelector], _amountToSend);
   }
@@ -325,7 +331,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @dev it's payable to save some gas.
    * @dev this functions is used on ConceroPool.sol
    */
-  function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable onlyOwner {
+  function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable isProxy onlyOwner {
     if (_contractAddress == address(0)) revert ParentPool_InvalidAddress();
     s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
 
@@ -340,38 +346,58 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @dev it's payable to save some gas.
    * @dev this functions is used on ConceroPool.sol
    */
-  function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
+  function setPoolsToSend(uint64 _chainSelector, address _pool, bool isRebalance) external payable isProxy onlyOwner {
     if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ParentPool_InvalidAddress();
     s_poolsToDistribute.push(IPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
 
     s_poolToSendTo[_chainSelector] = _pool;
 
     emit ParentPool_PoolReceiverUpdated(_chainSelector, _pool);
+
+    if(isRebalance == true) {
+      //send through functions?
+      //_chainSelector / s_poolsToDistribute.length +1 (ParentPool included)
+      // 1. functions query balance
+      // 2. divide balance by number of pools left
+      // 3. Trigger the transfer in each chain
+
+      // bytes[] memory args = new bytes[](4);
+      // args[0] = abi.encodePacked(s_hashSum);
+      // args[1] = abi.encodePacked(s_ethersHashSum);
+      // args[2] = abi.encodePacked(_chainSelector);
+      // args[3] = abi.encodePacked(s_poolsToDistribute.length + 1);
+
+      // bytes32 requestId = _sendRequest(args, REBALANCE_JS_CODE);
+
+      // s_requests[requestId] = CLFRebalance({
+
+      // });
+    }
   }
 
   /**
    * @notice Function to set the Cap of the Master pool.
    * @param _newCap The new Cap of the pool
    */
-  function setPoolCap(uint256 _newCap) external payable onlyOwner {
+  function setPoolCap(uint256 _newCap) external payable isProxy onlyOwner {
     s_maxDeposit = _newCap;
 
     emit ParentPool_MasterPoolCapUpdated(_newCap);
   }
 
-  function setDonHostedSecretsSlotId(uint8 _slotId) external payable onlyOwner {
+  function setDonHostedSecretsSlotId(uint8 _slotId) external payable isProxy onlyOwner {
     s_donHostedSecretsSlotId = _slotId;
   }
 
-  function setDonHostedSecretsVersion(uint64 _version) external payable onlyOwner {
+  function setDonHostedSecretsVersion(uint64 _version) external payable isProxy onlyOwner {
     s_donHostedSecretsVersion = _version;
   }
 
-  function setHashSum(bytes32 _hashSum) external payable onlyOwner {
+  function setHashSum(bytes32 _hashSum) external payable isProxy onlyOwner {
     s_hashSum = _hashSum;
   }
 
-  function setEthersHashSum(bytes32 _ethersHashSum) external payable onlyOwner {
+  function setEthersHashSum(bytes32 _ethersHashSum) external payable isProxy onlyOwner {
     s_ethersHashSum = _ethersHashSum;
   }
 
@@ -379,7 +405,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @notice Function to remove Cross-chain address disapproving transfers
    * @param _chainSelector the CCIP chainSelector for the specific chain
    */
-  function removePoolsFromListOfSenders(uint64 _chainSelector) external payable onlyOwner {
+  function removePoolsFromListOfSenders(uint64 _chainSelector) external payable isProxy onlyOwner {
     address removedPool;
     for (uint256 i; i < s_poolsToDistribute.length; ) {
       if (s_poolsToDistribute[i].chainSelector == _chainSelector) {
@@ -392,11 +418,31 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
         ++i;
       }
     }
+
     emit ParentPool_ChainAndAddressRemoved(_chainSelector);
 
     //send through functions?
-    //_chainSelector / removedPool / s_poolsToDistribute.length +1 (ParentPool included)
-    // functions query balance, divide by number of pools left and trigger the transfer in each chain
+      //_chainSelector / removedPool / s_poolsToDistribute.length +1 (ParentPool included)
+      // 1. functions query balance [balanceOf() + s_loansInUse] from deletedPool
+      // 2. divide balance by number of pools left [being sent as args]
+      // 3. Trigger the transfer sending money to other pools
+        //-> Ideally one at time nested in only one CLF call.
+          // Why is that? Because one transfer call can fail and will not affect others.
+        //Q1. It's possible for this JS code to hold the chainSelectors for every chain and compare to the one is deleted?
+        //Q2. The one being deleted don
+
+    // bytes[] memory args = new bytes[](5);
+    // args[0] = abi.encodePacked(s_hashSum);
+    // args[1] = abi.encodePacked(s_ethersHashSum);
+    // args[2] = abi.encodePacked(_chainSelector);
+    // args[3] = abi.encodePacked(removedPool);
+    // args[4] = abi.encodePacked(s_poolsToDistribute.length + 1);
+
+    // bytes32 requestId = _sendRequest(args, REBALANCE_JS_CODE);
+
+    // s_requests[requestId] = CLFRebalance({
+
+    // });
   }
 
   ////////////////
@@ -710,7 +756,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @notice Function to check if a caller address is an allowed messenger
    * @param _messenger the address of the caller
    */
-  function isMessenger(address _messenger) internal pure returns (bool isMessenger) {
+  function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
     address[] memory messengers = new address[](4); //Number of messengers. To define.
     messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
     messengers[1] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267;

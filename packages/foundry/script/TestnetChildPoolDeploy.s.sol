@@ -11,7 +11,6 @@ contract TestnetChildPoolDeploy is Script {
     address _childProxy = 0xb9b4eb0088cD3d98fF7A30a8e7DeE5eCdcC290B2;
     address _link = 0xE4aB69C077896252FAFBD49EFD26B5D171A32410;
     address _ccipRouter = 0xD3b06cEbF099CE7DA4AcCf578aaebFDBd6e88a93;
-    uint64 _destinationChainSelector = 10344971235874465080;
     address _usdc = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
     address _owner = 0x5FA769922a6428758fb44453815e2c436c57C3c7;    
     
@@ -22,8 +21,7 @@ contract TestnetChildPoolDeploy is Script {
             _masterPoolProxyAddress,
             _childProxy, 
             _link, 
-            _ccipRouter,
-            _destinationChainSelector, 
+            _ccipRouter, 
             _usdc, 
             _owner
         );

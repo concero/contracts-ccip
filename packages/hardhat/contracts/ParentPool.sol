@@ -129,6 +129,8 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   event ParentPool_ConceroContractUpdated(address concero);
   ///@notice event emitted when a contract is removed from the distribution array
   event ParentPool_ChainAndAddressRemoved(uint64 _chainSelector);
+  ///@notice event emitted when a pool is removed and the redistribution process start
+  event ParentPool_RedistributionStarted(bytes32 requestId);
   ///@notice event emitted when the MasterPool Cap is increased
   event ParentPool_MasterPoolCapUpdated(uint256 _newCap);
 
@@ -226,7 +228,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     uint256 numberOfPools = s_poolsToDistribute.length;
 
-    if (numberOfPools < 1) revert ParentPool_ThereIsNoPoolToDistribute();
+    if (numberOfPools < ALLOWED) revert ParentPool_ThereIsNoPoolToDistribute();
 
     // uint256 depositFee = _calculateDepositTransactionFee(_usdcAmount);
     // uint256 depositMinusFee = _usdcAmount - _convertToUSDCTokenDecimals(depositFee);
@@ -251,7 +253,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     i_USDC.safeTransferFrom(msg.sender, address(this), _usdcAmount);
     // i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(depositFee));
 
-    _distributeLiquidity(numberOfPools, amountToDistribute);
+    _distributeLiquidity(amountToDistribute);
   }
 
   /**
@@ -308,15 +310,13 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   }
 
   /**
-   * @notice Function called by Messenger to re-balance USDC between pools after and addition or exclusion
-   * @param _chainSelector the chain selector to be sent
-   * @param _notUsedHere in parent pool, is always address(0). We maintain it here so we can standardize the function to CLF calls.
+   * @notice Function called by Messenger to send USDC to a recently added pool.
+   * @param _chainSelector The chain selector of the new pool
    * @param _amountToSend the amount to redistribute between pools.
    */
-  function ccipSendToPool(uint64 _chainSelector, address _notUsedHere, uint256 _amountToSend) external isProxy onlyMessenger {
-    if(s_poolToSendTo[_chainSelector] == address(0)) revert ParentPool_InvalidAddress();
-
-    _ccipSend(_chainSelector, s_poolToSendTo[_chainSelector], _amountToSend);
+  function distributeLiquidity(uint64 _chainSelector, uint256 _amountToSend) external isProxy onlyMessenger {
+    if (s_poolToSendTo[_chainSelector] == address(0)) revert ParentPool_InvalidAddress();
+    _ccipSend(_chainSelector, _amountToSend);
   }
 
   ///////////////////////
@@ -336,43 +336,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
 
     emit ParentPool_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
-  }
-
-  /**
-   * @notice function to manage the Cross-chain ConceroPool contracts
-   * @param _chainSelector chain identifications
-   * @param _pool address of the Cross-chain ConceroPool contract
-   * @dev only owner can call it
-   * @dev it's payable to save some gas.
-   * @dev this functions is used on ConceroPool.sol
-   */
-  function setPoolsToSend(uint64 _chainSelector, address _pool, bool isRebalance) external payable isProxy onlyOwner {
-    if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ParentPool_InvalidAddress();
-    s_poolsToDistribute.push(IPool.Pools({chainSelector: _chainSelector, poolAddress: _pool}));
-
-    s_poolToSendTo[_chainSelector] = _pool;
-
-    emit ParentPool_PoolReceiverUpdated(_chainSelector, _pool);
-
-    if(isRebalance == true) {
-      //send through functions?
-      //_chainSelector / s_poolsToDistribute.length +1 (ParentPool included)
-      // 1. functions query balance
-      // 2. divide balance by number of pools left
-      // 3. Trigger the transfer in each chain
-
-      // bytes[] memory args = new bytes[](4);
-      // args[0] = abi.encodePacked(s_hashSum);
-      // args[1] = abi.encodePacked(s_ethersHashSum);
-      // args[2] = abi.encodePacked(_chainSelector);
-      // args[3] = abi.encodePacked(s_poolsToDistribute.length + 1);
-
-      // bytes32 requestId = _sendRequest(args, REBALANCE_JS_CODE);
-
-      // s_requests[requestId] = CLFRebalance({
-
-      // });
-    }
   }
 
   /**
@@ -402,13 +365,50 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   }
 
   /**
+   * @notice function to manage the Cross-chain ConceroPool contracts
+   * @param _chainSelector chain identifications
+   * @param _pool address of the Cross-chain ConceroPool contract
+   * @dev only owner can call it
+   * @dev it's payable to save some gas.
+   * @dev this functions is used on ConceroPool.sol
+   */
+  function setPoolsToSend(uint64 _chainSelector, address _pool, bool isRebalance) external payable isProxy onlyOwner {
+    if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ParentPool_InvalidAddress();
+
+    s_poolsToDistribute.push(_chainSelector);
+    s_poolToSendTo[_chainSelector] = _pool;
+
+    emit ParentPool_PoolReceiverUpdated(_chainSelector, _pool);
+
+    if(isRebalance == true) {
+      //send through functions?
+      // 1. functions query balance from every pool(Child+Parent) using (balanceOf+s_loansInUse)
+      // 2. divide balance by the number of pools + parent
+      // 3. Trigger the transfer in each chain. Inputs: chainSelector of the new chain. Amount to send.
+
+      bytes[] memory args = new bytes[](4);
+      args[0] = abi.encodePacked(s_hashSum);
+      args[1] = abi.encodePacked(s_ethersHashSum);
+      args[2] = abi.encodePacked(_chainSelector);
+      args[3] = abi.encodePacked(s_poolsToDistribute.length + 1);
+
+      bytes32 requestId/* = _sendRequest(args, REBALANCE_JS_CODE)*/;
+
+      // s_requests[requestId] = CLFRebalance({
+      // });
+
+      emit ParentPool_RedistributionStarted(requestId);
+    }
+  }
+
+  /**
    * @notice Function to remove Cross-chain address disapproving transfers
    * @param _chainSelector the CCIP chainSelector for the specific chain
    */
   function removePoolsFromListOfSenders(uint64 _chainSelector) external payable isProxy onlyOwner {
     address removedPool;
     for (uint256 i; i < s_poolsToDistribute.length; ) {
-      if (s_poolsToDistribute[i].chainSelector == _chainSelector) {
+      if (s_poolsToDistribute[i] == _chainSelector) {
         removedPool = s_poolToSendTo[_chainSelector];
         s_poolsToDistribute[i] = s_poolsToDistribute[s_poolsToDistribute.length - 1];
         s_poolsToDistribute.pop();
@@ -422,27 +422,18 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     emit ParentPool_ChainAndAddressRemoved(_chainSelector);
 
     //send through functions?
-      //_chainSelector / removedPool / s_poolsToDistribute.length +1 (ParentPool included)
-      // 1. functions query balance [balanceOf() + s_loansInUse] from deletedPool
-      // 2. divide balance by number of pools left [being sent as args]
-      // 3. Trigger the transfer sending money to other pools
-        //-> Ideally one at time nested in only one CLF call.
-          // Why is that? Because one transfer call can fail and will not affect others.
-        //Q1. It's possible for this JS code to hold the chainSelectors for every chain and compare to the one is deleted?
-        //Q2. The one being deleted don
+      // 1. Trigger the liquidatePool functions to transfer money equally to other pools
 
-    // bytes[] memory args = new bytes[](5);
-    // args[0] = abi.encodePacked(s_hashSum);
-    // args[1] = abi.encodePacked(s_ethersHashSum);
-    // args[2] = abi.encodePacked(_chainSelector);
-    // args[3] = abi.encodePacked(removedPool);
-    // args[4] = abi.encodePacked(s_poolsToDistribute.length + 1);
+    bytes[] memory args = new bytes[](5);
+    args[0] = abi.encodePacked(s_hashSum);
+    args[1] = abi.encodePacked(s_ethersHashSum);
 
-    // bytes32 requestId = _sendRequest(args, REBALANCE_JS_CODE);
+    bytes32 requestId /*= _sendRequest(args, REBALANCE_JS_CODE)*/;
 
     // s_requests[requestId] = CLFRebalance({
-
     // });
+
+    emit ParentPool_RedistributionStarted(requestId);
   }
 
   ////////////////
@@ -495,14 +486,13 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
   /**
    * @notice helper function to distribute liquidity after LP deposits.
-   * @param _numberOfPools number of pools to receive liquidity
    * @param _amountToDistribute amount of USDC should be distributed to the pools.
    */
-  function _distributeLiquidity(uint256 _numberOfPools, uint256 _amountToDistribute) internal {
-    for (uint256 i; i < _numberOfPools; ) {
-      IPool.Pools memory pool = s_poolsToDistribute[i];
+  function _distributeLiquidity(uint256 _amountToDistribute) internal {
+    uint256 numberOfPools = s_poolsToDistribute.length;
+    for (uint256 i; i < numberOfPools; ) {
 
-      _ccipSend(pool.chainSelector, pool.poolAddress, _amountToDistribute);
+      _ccipSend(s_poolsToDistribute[i], _amountToDistribute);
 
       unchecked {
         ++i;
@@ -514,8 +504,8 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @notice Function to distribute funds automatically right after LP deposits into the pool
    * @dev this function will only be called internally.
    */
-  function _ccipSend(uint64 _chainSelector, address _poolAddress, uint256 _amountToDistribute) internal returns (bytes32 messageId) {
-    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), _amountToDistribute, _poolAddress);
+  function _ccipSend(uint64 _chainSelector, uint256 _amountToDistribute) internal returns (bytes32 messageId) {
+    Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(_chainSelector, address(i_USDC), _amountToDistribute);
 
     uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
 
@@ -526,16 +516,16 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
 
-    emit ParentPool_MessageSent(messageId, _chainSelector, _poolAddress, address(i_linkToken), fees);
+    emit ParentPool_MessageSent(messageId, _chainSelector, s_poolToSendTo[_chainSelector], address(i_linkToken), fees);
   }
 
-  function _buildCCIPMessage(address _token, uint256 _amount, address _poolAddress) internal view returns (Client.EVM2AnyMessage memory) {
+  function _buildCCIPMessage(uint64 _chainSelector, address _token, uint256 _amount) internal view returns (Client.EVM2AnyMessage memory) {
     Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
     tokenAmounts[0] = Client.EVMTokenAmount({token: _token, amount: _amount});
 
     return
       Client.EVM2AnyMessage({
-        receiver: abi.encode(_poolAddress),
+        receiver: abi.encode(s_poolToSendTo[_chainSelector]),
         data: abi.encode(address(0), address(0), 0), //Here the 1° address is (0) because this is the Parent Pool and we never send to withdraw in another place.
         tokenAmounts: tokenAmounts,
         extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 350_000})),
@@ -660,11 +650,10 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   //   uint256 lastBaseGasPrice = tx.gasprice; //Orchestrator(i_infraProxy).s_lastGasPrices(BASE_CHAIN_SELECTOR);
 
   //   for(uint256 i; i < numberOfPools; ){
-  //     IPool.Pools memory pool = s_poolsToDistribute[i];
-  //     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), (_amountToDistribute / (numberOfPools+1)), pool.poolAddress);
+  //     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), (_amountToDistribute / (numberOfPools+1)), s_poolToSendTo[s_poolsToDistribute[i]]);
 
   //     //Link cost for all transactions
-  //     costOfLinkForLiquidityDistribution += IRouterClient(i_ccipRouter).getFee(pool.chainSelector, evm2AnyMessage);
+  //     costOfLinkForLiquidityDistribution += IRouterClient(i_ccipRouter).getFee(s_poolsToDistribute[i], evm2AnyMessage);
   //     unchecked {
   //       ++i;
   //     }
@@ -688,13 +677,12 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   //   uint256 costOfCCIPSendToPoolExecution;
 
   //   for(uint256 i; i < numberOfPools; ){
-  //     IPool.Pools memory pool = s_poolsToDistribute[i];
   //     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), _amountToReceive, address(this));
 
   //     //Link cost for all transactions
   //     costOfLinkForLiquidityWithdraw += IRouterClient(i_ccipRouter).getFee(BASE_CHAIN_SELECTOR, evm2AnyMessage); //here the chainSelector must be Base's?
   //     //USDC costs for all writing from the above transactions
-  //     costOfCCIPSendToPoolExecution += Orchestrator(i_infraProxy).s_lastGasPrices(pool.chainSelector) * WRITE_FUNCTIONS_COST;
+  //     costOfCCIPSendToPoolExecution += Orchestrator(i_infraProxy).s_lastGasPrices(s_poolsToDistribute[i]) * WRITE_FUNCTIONS_COST;
   //     unchecked {
   //       ++i;
   //     }

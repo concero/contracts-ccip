@@ -15,12 +15,6 @@ interface IPool {
     uint256 deadline;
   }
 
-  ///@notice `ccipSend` to distribute liquidity
-  struct Pools {
-    uint64 chainSelector;
-    address poolAddress;
-  }
-
   ///@notice Struct to track Functions Requests Type
   enum RequestType {
     GetTotalUSDC, //Deposits

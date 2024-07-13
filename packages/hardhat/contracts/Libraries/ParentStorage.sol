@@ -29,7 +29,7 @@ contract ParentStorage {
   ///STORAGE///
   /////////////
   ///@notice array of Pools to receive Liquidity through `ccipSend` function
-  IPool.Pools[] s_poolsToDistribute;
+  uint64[] s_poolsToDistribute;
 
   ///@notice Mapping to keep track of allowed pool receiver
   mapping(uint64 chainSelector => address pool) public s_poolToSendTo;

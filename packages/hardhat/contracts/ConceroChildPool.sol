@@ -10,6 +10,7 @@ import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interface
 import {ChildStorage} from "contracts/Libraries/ChildStorage.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
+import {IPool} from "contracts/Interfaces/IPool.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -30,6 +31,8 @@ error ConceroChildPool_NotMessenger(address caller);
 error ConceroChildPool_NotContractOwner();
 ///@notice error emitted when the CCIP message sender is not allowed.
 error ConceroChildPool_SenderNotAllowed(address sender);
+///@notice error emitted if the array is empty.
+error ConceroChildPool_ThereIsNoPoolToDistribute();
 
 contract ConceroChildPool is CCIPReceiver, ChildStorage {
   using SafeERC20 for IERC20;
@@ -72,6 +75,8 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
   event ConceroChildPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
   ///@notice event emitted when a new pool is added
   event ConceroChildPool_PoolReceiverUpdated(uint64 chainSelector, address pool);
+  ///@notice event emitted when a pool is removed
+  event ConceroChildPool_ChainAndAddressRemoved(uint64 chainSelector);
 
   ///////////////
   ///MODIFIERS///
@@ -134,38 +139,44 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
   ////////////////////////
 
   /**
-   * @notice Function to Distribute Liquidity across Concero Pools and process withdrawals
-   * @param _liquidityProviderAddress The liquidity provider that requested Withdraw. If it's a rebalance, it will be address(0)
-   * @param _amount amount of the token to be sent
-   * @dev This function will sent the address of the user as data. This address will be used to update the mapping on MasterPool.
-  */
-  function ccipSendToPool(uint64 _chainSelector, address _liquidityProviderAddress, uint256 _amount) external onlyMessenger isProxy returns (bytes32 messageId) {
-    if (_amount > i_USDC.balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
+   * @notice Function called by Messenger process withdraw calls
+   * @param _chainSelector The destination chain selector will always be from Parent Pool
+   * @param _liquidityProvider the LP that requested withdraw.
+   * @param _amountToSend the amount to redistribute between pools.
+   */
+  function ccipSendToPool(uint64 _chainSelector, address _liquidityProvider, uint256 _amountToSend) external isProxy onlyMessenger {
+    if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroChildPool_InvalidAddress();
+    _ccipSend(_chainSelector, _liquidityProvider, _amountToSend);
+  }
 
-    Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
+  /**
+   * @notice Function called by Messenger to send USDC to a recently added pool.
+   * @param _chainSelector The chain selector of the new pool
+   * @param _amountToSend the amount to redistribute between pools.
+   */
+  function distributeLiquidity(uint64 _chainSelector, uint256 _amountToSend) external isProxy onlyMessenger {
+    if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroChildPool_InvalidAddress();
+    _ccipSend(_chainSelector, address(0), _amountToSend);
+  }
 
-    Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({token: address(i_USDC), amount: _amount});
+  /**
+   * @notice helper function to remove and distribute liquidity when a pool is removed.
+   * @dev this functions should be called only if there is no transaction being processed
+   * @dev If Orchestrator took a loan and the money didn't rebalance yet, it will be left behind.
+   */
+  function liquidatePool() external isProxy onlyMessenger {
+    uint256 numberOfPools = s_poolsToDistribute.length;
+    if (numberOfPools < ALLOWED) revert ConceroChildPool_ThereIsNoPoolToDistribute();
 
-    tokenAmounts[0] = tokenAmount;
+    uint256 amountToSentToEachPool = (i_USDC.balanceOf(address(this)) / numberOfPools) - 1;
 
-    Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
-      receiver: abi.encode(s_poolToSendTo[_chainSelector]),
-      data: abi.encode(_liquidityProviderAddress, address(0), 0), //0== lp fee. It will always be zero because here we are only processing withdraws
-      tokenAmounts: tokenAmounts,
-      extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
-      feeToken: address(i_linkToken)
-    });
-
-    uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
-
-    if (fees > i_linkToken.balanceOf(address(this))) revert ConceroChildPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
-
-    i_USDC.approve(i_ccipRouter, _amount);
-    i_linkToken.approve(i_ccipRouter, fees);
-
-    emit ConceroChildPool_MessageSent(messageId, _chainSelector, s_poolToSendTo[_chainSelector], address(i_linkToken), fees);
-
-    messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
+    for (uint256 i; i < numberOfPools; ) {
+      //This is a function to deal with adding&removing pools. So, the second param will always be address(0)
+      _ccipSend(s_poolsToDistribute[i], address(0), amountToSentToEachPool);
+      unchecked {
+        ++i;
+      }
+    }
   }
 
   /**
@@ -200,7 +211,7 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
    * @dev it's payable to save some gas.
    * @dev this functions is used on ConceroPool.sol
    */
-  function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable onlyOwner {
+  function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable isProxy onlyOwner {
     if (_contractAddress == address(0)) revert ConceroChildPool_InvalidAddress();
     s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
 
@@ -213,14 +224,34 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
    * @param _pool address of the Cross-chain ConceroPool contract
    * @dev only owner can call it
    * @dev it's payable to save some gas.
-   * @dev this functions is used on ConceroPool.sol
    */
-  function setPoolsToSend(uint64 _chainSelector, address _pool) external payable onlyOwner {
+  function setPoolsToSend(uint64 _chainSelector, address _pool) external payable isProxy onlyOwner {
     if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ConceroChildPool_InvalidAddress();
 
+    s_poolsToDistribute.push(_chainSelector);
     s_poolToSendTo[_chainSelector] = _pool;
 
     emit ConceroChildPool_PoolReceiverUpdated(_chainSelector, _pool);
+  }
+
+  /**
+   * @notice Function to remove Cross-chain address disapproving transfers
+   * @param _chainSelector the CCIP chainSelector for the specific chain
+   */
+  function removePoolsFromListOfSenders(uint64 _chainSelector) external payable isProxy onlyOwner {
+
+    for (uint256 i; i < s_poolsToDistribute.length; ) {
+      if (s_poolsToDistribute[i] == _chainSelector) {
+        s_poolsToDistribute[i] = s_poolsToDistribute[s_poolsToDistribute.length - 1];
+        s_poolsToDistribute.pop();
+        delete s_poolToSendTo[_chainSelector];
+      }
+      unchecked {
+        ++i;
+      }
+    }
+
+    emit ConceroChildPool_ChainAndAddressRemoved(_chainSelector);
   }
 
   ////////////////
@@ -258,6 +289,42 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
       any2EvmMessage.destTokenAmounts[0].token,
       any2EvmMessage.destTokenAmounts[0].amount
     );
+  }
+
+  /**
+   * @notice Function to Distribute Liquidity across Concero Pools and process withdrawals
+   * @param _liquidityProviderAddress The liquidity provider that requested Withdraw. If it's a rebalance, it will be address(0)
+   * @param _amount amount of the token to be sent
+   * @dev This function will sent the address of the user as data. This address will be used to update the mapping on ParentPool.
+   * @dev when processing withdrawals, the _chainSelector will always be the index 0 of s_poolsToDistribute
+  */
+  function _ccipSend(uint64 _chainSelector, address _liquidityProviderAddress, uint256 _amount) internal onlyMessenger isProxy returns (bytes32 messageId) {
+    if (_amount > i_USDC.balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
+
+    Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
+
+    Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({token: address(i_USDC), amount: _amount});
+
+    tokenAmounts[0] = tokenAmount;
+
+    Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
+      receiver: abi.encode(s_poolToSendTo[_chainSelector]),
+      data: abi.encode(_liquidityProviderAddress, address(0), 0), //0== lp fee. It will always be zero because here we are only processing withdraws
+      tokenAmounts: tokenAmounts,
+      extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
+      feeToken: address(i_linkToken)
+    });
+
+    uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
+
+    if (fees > i_linkToken.balanceOf(address(this))) revert ConceroChildPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
+
+    i_USDC.approve(i_ccipRouter, _amount);
+    i_linkToken.approve(i_ccipRouter, fees);
+
+    emit ConceroChildPool_MessageSent(messageId, _chainSelector, s_poolToSendTo[_chainSelector], address(i_linkToken), fees);
+
+    messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
   }
 
   ///////////////////////////

@@ -381,10 +381,11 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     emit ParentPool_PoolReceiverUpdated(_chainSelector, _pool);
 
     if(isRebalance == true) {
-      //send through functions?
-      // 1. functions query balance from every pool(Child+Parent) using (balanceOf+s_loansInUse)
-      // 2. divide balance by the number of pools + parent
-      // 3. Trigger the transfer in each chain. Inputs: chainSelector of the new chain. Amount to send.
+      //balancePool = Query balance from ChildPools & ParentPool
+      //totalBalance = balancePool1 + balancePool2 + balancePool3
+      //expectedBalance = totalBalance / newNumberOfPools
+      //amountToDistribute = balancePool - expectedBalance (for each, besides the new one)
+      //trigger distributeLiquidity(_chainSelector, _amountToDistribute)
 
       bytes[] memory args = new bytes[](4);
       args[0] = abi.encodePacked(s_hashSum);
@@ -424,9 +425,11 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     //send through functions?
       // 1. Trigger the liquidatePool functions to transfer money equally to other pools
 
-    bytes[] memory args = new bytes[](5);
+    bytes[] memory args = new bytes[](4);
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
+    args[2] = abi.encodePacked(_chainSelector);
+    args[3] = abi.encodePacked(removedPool);
 
     bytes32 requestId /*= _sendRequest(args, REBALANCE_JS_CODE)*/;
 

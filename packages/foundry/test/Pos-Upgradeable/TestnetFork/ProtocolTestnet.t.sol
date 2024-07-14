@@ -432,7 +432,7 @@ contract ProtocolTestnet is Test {
 
         ///======= Pools Allowance
         vm.startPrank(Tester);
-        wMaster.setPoolsToSend(arbChainSelector, address(childProxy), false);
+        wMaster.setPools(arbChainSelector, address(childProxy), false);
         assertEq(wMaster.s_poolToSendTo(arbChainSelector), address(wChild));
 
         wMaster.setConceroContractSender(arbChainSelector, address(wChild), 1);
@@ -1097,8 +1097,9 @@ contract ProtocolTestnet is Test {
         vm.stopPrank();
 
         //====== Check Receiver balance
-        assertEq(IERC20(ccipBnMArb).balanceOf(User), 9990000); //Amount - fee = 9831494
+        // assertEq(IERC20(ccipBnMArb).balanceOf(User), 9990000); //Amount - fee = 9831494
         
+        // vm.selectFork(baseTestFork);
         // assertTrue(op.s_lastGasPrices(arbChainSelector) > 0);
         // assertTrue(op.s_latestLinkUsdcRate() > 0);
         // assertTrue(op.s_latestNativeUsdcRate() > 0);

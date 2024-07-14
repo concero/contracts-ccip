@@ -45,5 +45,5 @@ abstract contract Storage is ReentrancyGuard, IStorage {
   ///@notice Functions: Mapping to keep track of Chainlink Functions requests
   mapping(bytes32 => Request) public s_requests;
   ///@notice Functions: Mapping to keep track of cross-chain gas prices
-  mapping(uint64 chainSelector => uint256 lasGasPrice) public s_lastGasPrices;
+  mapping(uint64 chainSelector => uint256 lastGasPrice) public s_lastGasPrices;
 }

@@ -130,35 +130,35 @@ contract ParentPoolTest is Test {
         wMaster.setConceroContractSender(mockDestinationChainSelector, address(0), 1);
     }
 
-    //setPoolsToSend///
+    //setPools///
     event ParentPool_PoolReceiverUpdated(uint64 chainSelector, address contractAddress);
-    function test_setPoolsToSend() public {
+    function test_setPools() public {
         vm.prank(Tester);
         vm.expectEmit();
         emit ParentPool_PoolReceiverUpdated(mockDestinationChainSelector, address(mockChildPoolAddress));
-        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress), false);
+        wMaster.setPools(mockDestinationChainSelector, address(mockChildPoolAddress), false);
 
         assertEq(wMaster.s_poolToSendTo(mockDestinationChainSelector), address(mockChildPoolAddress));
     }
 
     event ParentPool_RedistributionStarted(bytes32);
-    function test_revertSetPoolsToSend() public {
+    function test_revertSetPools() public {
         vm.expectRevert(abi.encodeWithSelector(ParentPool_NotContractOwner.selector));
-        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress), false);
+        wMaster.setPools(mockDestinationChainSelector, address(mockChildPoolAddress), false);
         
         vm.prank(Tester);
         vm.expectEmit();
         emit ParentPool_PoolReceiverUpdated(mockDestinationChainSelector, address(mockChildPoolAddress));
         emit ParentPool_RedistributionStarted(0); //requestId == 0 because CLF is disabled.
-        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress), true);
+        wMaster.setPools(mockDestinationChainSelector, address(mockChildPoolAddress), true);
 
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(ParentPool_InvalidAddress.selector));
-        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress), false);
+        wMaster.setPools(mockDestinationChainSelector, address(mockChildPoolAddress), false);
         
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(ParentPool_InvalidAddress.selector));
-        wMaster.setPoolsToSend(mockDestinationChainSelector, address(0), false);
+        wMaster.setPools(mockDestinationChainSelector, address(0), false);
     }
 
     function test_distributeLiquidity() public {
@@ -198,7 +198,7 @@ contract ParentPoolTest is Test {
         
         //===== Add a Fake pool
         vm.prank(Tester);
-        wMaster.setPoolsToSend(mockDestinationChainSelector, mockChildPoolAddress, false);
+        wMaster.setPools(mockDestinationChainSelector, mockChildPoolAddress, false);
 
         //===== Cap is Zero
         vm.prank(Tester);
@@ -222,7 +222,7 @@ contract ParentPoolTest is Test {
         wMaster.depositLiquidity(allowedAmountToDeposit);
 
         vm.prank(Tester);
-        wMaster.setPoolsToSend(mockDestinationChainSelector, mockChildPoolAddress, false);
+        wMaster.setPools(mockDestinationChainSelector, mockChildPoolAddress, false);
 
         // vm.prank(Tester);
         // vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountBelowMinimum.selector, 100*10**6));
@@ -244,12 +244,12 @@ contract ParentPoolTest is Test {
     event ParentPool_ChainAndAddressRemoved(uint64 chainSelector);
     function test_removePoolFromArray() public {
         vm.prank(Tester);
-        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress), false);
+        wMaster.setPools(mockDestinationChainSelector, address(mockChildPoolAddress), false);
 
         vm.prank(Tester);
         vm.expectEmit();
         emit ParentPool_ChainAndAddressRemoved(mockDestinationChainSelector);
         emit ParentPool_RedistributionStarted(0); //requestId == 0 because CLF is disabled
-        wMaster.removePoolsFromListOfSenders(mockDestinationChainSelector);
+        wMaster.removePools(mockDestinationChainSelector);
     }
 }

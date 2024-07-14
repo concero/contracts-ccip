@@ -225,7 +225,7 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
    * @dev only owner can call it
    * @dev it's payable to save some gas.
    */
-  function setPoolsToSend(uint64 _chainSelector, address _pool) external payable isProxy onlyOwner {
+  function setPools(uint64 _chainSelector, address _pool) external payable isProxy onlyOwner {
     if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ConceroChildPool_InvalidAddress();
 
     s_poolsToDistribute.push(_chainSelector);
@@ -238,7 +238,7 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
    * @notice Function to remove Cross-chain address disapproving transfers
    * @param _chainSelector the CCIP chainSelector for the specific chain
    */
-  function removePoolsFromListOfSenders(uint64 _chainSelector) external payable isProxy onlyOwner {
+  function removePools(uint64 _chainSelector) external payable isProxy onlyOwner {
 
     for (uint256 i; i < s_poolsToDistribute.length; ) {
       if (s_poolsToDistribute[i] == _chainSelector) {

@@ -474,7 +474,7 @@ contract ProtocolMainnet is Test {
         //====== Setters
         ///== Pools
         vm.startPrank(Tester);
-        wMaster.setPoolsToSend(arbChainSelector, address(childProxy), false);
+        wMaster.setPools(arbChainSelector, address(childProxy), false);
         assertEq(wMaster.s_poolToSendTo(arbChainSelector), address(wChild));
 
         wMaster.setConceroContractSender(arbChainSelector, address(wChild), 1);

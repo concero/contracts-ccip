@@ -47,6 +47,7 @@ error ParentPool_CallerIsNotTheProxy(address caller);
 ///@notice error emitted when the caller is not the owner
 error ParentPool_NotContractOwner();
 
+//todo: ConceroParentPool
 contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   ///////////////////////
   ///TYPE DECLARATIONS///
@@ -372,6 +373,8 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @dev it's payable to save some gas.
    * @dev this functions is used on ConceroPool.sol
    */
+
+  //todo: setPools
   function setPoolsToSend(uint64 _chainSelector, address _pool, bool isRebalance) external payable isProxy onlyOwner {
     if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ParentPool_InvalidAddress();
 
@@ -380,7 +383,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     emit ParentPool_PoolReceiverUpdated(_chainSelector, _pool);
 
-    if(isRebalance == true) {
+    if (isRebalance == true) {
       //balancePool = Query balance from ChildPools & ParentPool
       //totalBalance = balancePool1 + balancePool2 + balancePool3
       //expectedBalance = totalBalance / newNumberOfPools
@@ -393,7 +396,8 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       args[2] = abi.encodePacked(_chainSelector);
       args[3] = abi.encodePacked(s_poolsToDistribute.length + 1);
 
-      bytes32 requestId/* = _sendRequest(args, REBALANCE_JS_CODE)*/;
+      //todo: @nikita pools have to track requests in order to prevent 4 nodes triggering a rebalance on the same pool
+      bytes32 requestId /* = _sendRequest(args, REBALANCE_JS_CODE)*/;
 
       // s_requests[requestId] = CLFRebalance({
       // });
@@ -406,6 +410,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @notice Function to remove Cross-chain address disapproving transfers
    * @param _chainSelector the CCIP chainSelector for the specific chain
    */
+  //todo: removePools
   function removePoolsFromListOfSenders(uint64 _chainSelector) external payable isProxy onlyOwner {
     address removedPool;
     for (uint256 i; i < s_poolsToDistribute.length; ) {
@@ -423,7 +428,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     emit ParentPool_ChainAndAddressRemoved(_chainSelector);
 
     //send through functions?
-      // 1. Trigger the liquidatePool functions to transfer money equally to other pools
+    // 1. Trigger the liquidatePool functions to transfer money equally to other pools
 
     bytes[] memory args = new bytes[](4);
     args[0] = abi.encodePacked(s_hashSum);
@@ -431,6 +436,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     args[2] = abi.encodePacked(_chainSelector);
     args[3] = abi.encodePacked(removedPool);
 
+    //todo: @nikita pools have to track requests in order to prevent 4 nodes triggering a liquidation on the same pool
     bytes32 requestId /*= _sendRequest(args, REBALANCE_JS_CODE)*/;
 
     // s_requests[requestId] = CLFRebalance({
@@ -494,7 +500,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   function _distributeLiquidity(uint256 _amountToDistribute) internal {
     uint256 numberOfPools = s_poolsToDistribute.length;
     for (uint256 i; i < numberOfPools; ) {
-
       _ccipSend(s_poolsToDistribute[i], _amountToDistribute);
 
       unchecked {
@@ -764,5 +769,4 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     }
     return false;
   }
-
 }

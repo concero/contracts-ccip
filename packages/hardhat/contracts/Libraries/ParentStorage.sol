@@ -3,11 +3,12 @@ pragma solidity 0.8.20;
 
 import {IPool} from "contracts/Interfaces/IPool.sol";
 
-contract ParentStorage {  
+// todo: ParentPoolStorage
+contract ParentStorage {
   /////////////////////
   ///STATE VARIABLES///
   /////////////////////
-  
+
   ///@notice variable to store the max value that can be deposited on this pool
   uint256 public s_maxDeposit;
   ///@notice variable to store the amount that will be temporary used by Chainlink Functions

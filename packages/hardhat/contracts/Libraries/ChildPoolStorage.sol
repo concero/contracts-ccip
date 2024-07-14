@@ -1,8 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-// todo: ChildPoolStorage
-contract ChildStorage {
+contract ChildPoolStorage {
   /////////////////////
   ///STATE VARIABLES///
   /////////////////////

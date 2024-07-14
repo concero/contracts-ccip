@@ -300,13 +300,13 @@ async function removePools(chain: CNetwork, abi, chainSelectors: string[]) {
     });
     log(
       `Remove ${chainName}:${chainSelector} from list of senders. Gas used: ${deletePoolGasUsed.toString()}`,
-      "removePoolFromListOfSenders",
+      "removePools",
     );
   }
 }
 
 export async function setParentPoolVariables(chain: CNetwork, isSetSecretsNeeded: boolean, slotId: number) {
-  const { abi: ParentPoolAbi } = await load("../artifacts/contracts/ParentPool.sol/ParentPool.json");
+  const { abi: ParentPoolAbi } = await load("../artifacts/contracts/ConceroParentPool.sol/ConceroParentPool.json");
 
   await setParentPoolJsHashes(chain, ParentPoolAbi);
   await setParentPoolCap(chain, ParentPoolAbi);

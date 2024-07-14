@@ -9,7 +9,6 @@ contract ChildPoolDeploy is Script {
     
     function run(
         address _orchestratorProxy,
-        address _masterPoolProxyAddress,
         address _childProxy,
         address _link,
         address _ccipRouter,
@@ -19,7 +18,6 @@ contract ChildPoolDeploy is Script {
         vm.startBroadcast();
         child = new ConceroChildPool(
             _orchestratorProxy,
-            _masterPoolProxyAddress,
             _childProxy, 
             _link, 
             _ccipRouter,

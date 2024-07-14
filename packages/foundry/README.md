@@ -75,8 +75,8 @@ Our tests don't cover Automation & Functions, once the JavaScript code is still 
 - contracts/ConceroChildPool.sol
 - contracts/ConceroAutomation.sol
 - contracts/LPToken.sol**
-- Libraries/ParentStorage.sol - it's ParentPool.sol Storage
-- Libraries/ChildStorage.sol - it's ConceroChildPool.sol Storage
+- Libraries/ParentPoolStorage.sol - it's ParentPool.sol Storage
+- Libraries/ChildPoolStorage.sol - it's ConceroChildPool.sol Storage
 - Proxy/ParentPoolProxy.sol***
 - Proxy/ChildPoolProxy.sol***
 ```

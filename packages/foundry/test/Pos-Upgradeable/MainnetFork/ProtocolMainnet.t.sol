@@ -7,7 +7,7 @@ import {console} from "forge-std/console.sol";
 
 //Master & Infra Contracts
 import {DexSwap} from "contracts/DexSwap.sol";
-import {ParentPool} from "contracts/ParentPool.sol";
+import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {ConceroBridge} from "contracts/ConceroBridge.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
 import {LPToken} from "contracts/LPToken.sol";
@@ -71,7 +71,7 @@ interface IWETH is IERC20 {
 contract ProtocolMainnet is Test {
     //==== Instantiate Base Contracts
     DexSwap public dex;
-    ParentPool public pool;
+    ConceroParentPool public pool;
     ConceroBridge public concero;
     Orchestrator public orch;
     Orchestrator public orchEmpty;
@@ -115,7 +115,7 @@ contract ProtocolMainnet is Test {
     //==== Wrapped contract
     Orchestrator op;
     Orchestrator opDst;
-    ParentPool wMaster;
+    ConceroParentPool wMaster;
     ConceroChildPool wChild;
 
 
@@ -318,7 +318,7 @@ contract ProtocolMainnet is Test {
         vm.prank(ProxyOwner);
         proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
 
-        wMaster = ParentPool(payable(address(masterProxy)));
+        wMaster = ConceroParentPool(payable(address(masterProxy)));
 
         //=== Base Contracts
         vm.makePersistent(address(proxy));
@@ -425,7 +425,6 @@ contract ProtocolMainnet is Test {
 
         child = childDeployArbitrum.run(
             address(proxyDst),
-            address(masterProxy),
             address(childProxy),
             linkArb,
             ccipRouterArb,
@@ -1753,11 +1752,11 @@ contract ProtocolMainnet is Test {
     //////////////////////////////////////////////////////////////////////////////////
 
     //This test only work with USDC Mainnet address on Storage::getToken function.
-    error ParentPool_AmountBelowMinimum(uint256);
-    error ParentPool_MaxCapReached(uint256);
-    event ParentPool_MasterPoolCapUpdated(uint256 _newCap);
-    event ParentPool_SuccessfulDeposited(address, uint256 , address);
-    event ParentPool_MessageSent(bytes32, uint64, address, address, uint256);
+    error ConceroParentPool_AmountBelowMinimum(uint256);
+    error ConceroParentPool_MaxCapReached(uint256);
+    event ConceroParentPool_MasterPoolCapUpdated(uint256 _newCap);
+    event ConceroParentPool_SuccessfulDeposited(address, uint256 , address);
+    event ConceroParentPool_MessageSent(bytes32, uint64, address, address, uint256);
     ///=== Functions Errors
     error OnlyRouterCanFulfill();
     error EmptySource();
@@ -1775,14 +1774,14 @@ contract ProtocolMainnet is Test {
         //======= LP Deposits Low Amount of USDC on the Main Pool to revert on Min Amount
         vm.startPrank(LP);
         mUSDC.approve(address(wMaster), depositLowAmount);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountBelowMinimum.selector, 100*10**6));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_AmountBelowMinimum.selector, 100*10**6));
         wMaster.depositLiquidity(depositLowAmount);
         vm.stopPrank();
 
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentPool_MasterPoolCapUpdated(50*10**6);
+        emit ConceroParentPool_MasterPoolCapUpdated(50*10**6);
         wMaster.setPoolCap(50*10**6);
 
         //======= LP Deposits enough to go through, but revert on max Cap
@@ -1790,14 +1789,14 @@ contract ProtocolMainnet is Test {
 
         vm.startPrank(LP);
         mUSDC.approve(address(wMaster), depositEnoughAmount);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_MaxCapReached.selector, 50*10**6));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_MaxCapReached.selector, 50*10**6));
         wMaster.depositLiquidity(depositEnoughAmount);
         vm.stopPrank();
 
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
+        emit ConceroParentPool_MasterPoolCapUpdated(1000*10**6);
         wMaster.setPoolCap(1000*10**6);
 
         //======= LP Deposits Successfully

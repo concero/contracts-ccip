@@ -7,7 +7,7 @@ import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
-import {ChildStorage} from "contracts/Libraries/ChildStorage.sol";
+import {ChildPoolStorage} from "contracts/Libraries/ChildPoolStorage.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
 import {IPool} from "contracts/Interfaces/IPool.sol";
@@ -34,7 +34,7 @@ error ConceroChildPool_SenderNotAllowed(address sender);
 ///@notice error emitted if the array is empty.
 error ConceroChildPool_ThereIsNoPoolToDistribute();
 
-contract ConceroChildPool is CCIPReceiver, ChildStorage {
+contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
   using SafeERC20 for IERC20;
 
   ///////////////////////////////////////////////////////////
@@ -57,8 +57,6 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
   LinkTokenInterface private immutable i_linkToken;
   ///@notice immutable variable to store the USDC address.
   IERC20 private immutable i_USDC;
-  ///@notice immutable variable to store the MasterPool Proxy address
-  address private immutable i_parentPoolProxyAddress;
   ///@notice Contract Owner
   address immutable i_owner;
 
@@ -119,7 +117,6 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
 
   constructor(
     address _orchestratorProxy,
-    address _masterPoolProxyAddress,
     address _childProxy,
     address _link,
     address _ccipRouter,
@@ -130,7 +127,6 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
     i_childProxy = _childProxy;
     i_linkToken = LinkTokenInterface(_link);
     i_USDC = IERC20(_usdc);
-    i_parentPoolProxyAddress = _masterPoolProxyAddress;
     i_owner = _owner;
   }
 
@@ -335,7 +331,7 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
    * @notice Function to check if a caller address is an allowed messenger
    * @param _messenger the address of the caller
    */
-  function isMessenger(address _messenger) internal pure returns (bool isMessenger) {
+  function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
     address[] memory messengers = new address[](4); //Number of messengers. To define.
     messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
     messengers[1] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267;

@@ -71,7 +71,6 @@ contract ConceroChildPoolTest is Test {
         //======= Deploy MasterPool
         childPool = childDeploy.run(
             Orchestrator,
-            address(0),
             address(childProxy),
             mockLinkTokenAddress,
             mockSourceRouter,

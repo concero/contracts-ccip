@@ -4,7 +4,7 @@ pragma solidity 0.8.20;
 import {IPool} from "contracts/Interfaces/IPool.sol";
 
 // todo: ParentPoolStorage
-contract ParentStorage {  
+contract ParentPoolStorage {  
   /////////////////////
   ///STATE VARIABLES///
   /////////////////////

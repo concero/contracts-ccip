@@ -6,7 +6,7 @@ import {Test, console} from "forge-std/Test.sol";
 
 //Master & Infra Contracts
 import {DexSwap} from "contracts/DexSwap.sol";
-import {ParentPool} from "contracts/ParentPool.sol";
+import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {ConceroBridge} from "contracts/ConceroBridge.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
 import {LPToken} from "contracts/LPToken.sol";
@@ -73,7 +73,7 @@ interface IWETH is IERC20 {
 contract ProtocolTestnet is Test {
     //==== Instantiate Base Contracts
     DexSwap public dex;
-    ParentPool public pool;
+    ConceroParentPool public pool;
     ConceroBridge public concero;
     Orchestrator public orch;
     Orchestrator public orchEmpty;
@@ -119,7 +119,7 @@ contract ProtocolTestnet is Test {
     //==== Wrapped contract
     Orchestrator op;
     Orchestrator opDst;
-    ParentPool wMaster;
+    ConceroParentPool wMaster;
     ConceroChildPool wChild;
 
 
@@ -280,7 +280,7 @@ contract ProtocolTestnet is Test {
         vm.prank(ProxyOwner);
         proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
 
-        wMaster = ParentPool(payable(address(masterProxy)));
+        wMaster = ConceroParentPool(payable(address(masterProxy)));
 
         //=== Base Contracts
         vm.makePersistent(address(proxy));
@@ -388,7 +388,6 @@ contract ProtocolTestnet is Test {
 
         child = childDeployArbitrum.run(
             address(proxyDst),
-            address(masterProxy),
             address(childProxy),
             linkArb,
             ccipRouterArb,
@@ -748,17 +747,17 @@ contract ProtocolTestnet is Test {
     ////////////////////////////////// POOL MODULE ///////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////
 
-    error ParentPool_AmountBelowMinimum(uint256);
-    error ParentPool_MaxCapReached(uint256);
-    error ParentPool_AmountNotAvailableYet(uint256);
-    error ParentPool_InsufficientBalance();
-    error ParentPool_ActiveRequestNotFulfilledYet();
-    error ParentPool_CallerIsNotTheProxy(address);
-    event ParentPool_MasterPoolCapUpdated(uint256 _newCap);
-    event ParentPool_SuccessfulDeposited(address, uint256 , address);
-    event ParentPool_MessageSent(bytes32, uint64, address, address, uint256);
-    event ParentPool_WithdrawRequest(address,address,uint256);
-    event ParentPool_Withdrawn(address,address,uint256);
+    error ConceroParentPool_AmountBelowMinimum(uint256);
+    error ConceroParentPool_MaxCapReached(uint256);
+    error ConceroParentPool_AmountNotAvailableYet(uint256);
+    error ConceroParentPool_InsufficientBalance();
+    error ConceroParentPool_ActiveRequestNotFulfilledYet();
+    error ConceroParentPool_CallerIsNotTheProxy(address);
+    event ConceroParentPool_MasterPoolCapUpdated(uint256 _newCap);
+    event ConceroParentPool_SuccessfulDeposited(address, uint256 , address);
+    event ConceroParentPool_MessageSent(bytes32, uint64, address, address, uint256);
+    event ConceroParentPool_WithdrawRequest(address,address,uint256);
+    event ConceroParentPool_Withdrawn(address,address,uint256);
     ///CCIP Local doesn't allow USDC transfer in forked environment. We use ccip-BnM here. But it breaks when querying balances.
     function test_LiquidityProvidersDepositAndOpenARequest() public setters {
         vm.selectFork(baseTestFork);
@@ -769,14 +768,14 @@ contract ProtocolTestnet is Test {
         //======= LP Deposits Low Amount of USDC on the Main Pool to revert on Min Amount
         vm.startPrank(LP);
         IERC20(ccipBnM).approve(address(wMaster), depositLowAmount);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountBelowMinimum.selector, 100*10**6));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_AmountBelowMinimum.selector, 100*10**6));
         wMaster.depositLiquidity(depositLowAmount);
         vm.stopPrank();
 
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentPool_MasterPoolCapUpdated(50*10**6);
+        emit ConceroParentPool_MasterPoolCapUpdated(50*10**6);
         wMaster.setPoolCap(50*10**6);
 
         //======= LP Deposits enough to go through, but revert on max Cap
@@ -784,14 +783,14 @@ contract ProtocolTestnet is Test {
 
         vm.startPrank(LP);
         IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_MaxCapReached.selector, 50*10**6));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_MaxCapReached.selector, 50*10**6));
         wMaster.depositLiquidity(depositEnoughAmount);
         vm.stopPrank();
 
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
+        emit ConceroParentPool_MasterPoolCapUpdated(1000*10**6);
         wMaster.setPoolCap(1000*10**6);
 
         vm.startPrank(LP);
@@ -816,20 +815,20 @@ contract ProtocolTestnet is Test {
 
         //======= Revert on amount bigger than balance
         vm.startPrank(LP);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_InsufficientBalance.selector));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InsufficientBalance.selector));
         wMaster.startWithdrawal(lpTokenUserBalance + 10);
         vm.stopPrank();
 
         //======= Request Withdraw without any accrued fee
         vm.startPrank(LP);
         vm.expectEmit();
-        emit ParentPool_WithdrawRequest(LP, ccipBnM, block.timestamp + 597_600);
+        emit ConceroParentPool_WithdrawRequest(LP, ccipBnM, block.timestamp + 597_600);
         wMaster.startWithdrawal(lpTokenUserBalance);
         vm.stopPrank();
 
         //======= Revert on amount bigger than balance
         // vm.startPrank(LP);
-        // vm.expectRevert(abi.encodeWithSelector(ParentPool_ActiveRequestNotFulfilledYet.selector));
+        // vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_ActiveRequestNotFulfilledYet.selector));
         // wMaster.startWithdrawal(lpTokenUserBalance);
         // vm.stopPrank();
 
@@ -839,7 +838,7 @@ contract ProtocolTestnet is Test {
         // //======= Revert Because money not arrived yet
         // vm.startPrank(LP);
         // lp.approve(address(wMaster), lpTokenUserBalance);
-        // vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountNotAvailableYet.selector, 50*10**6));
+        // vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_AmountNotAvailableYet.selector, 50*10**6));
         // wMaster.completeWithdrawal();
         // vm.stopPrank();
 
@@ -857,7 +856,7 @@ contract ProtocolTestnet is Test {
 
         // vm.startPrank(LP);
         // lp.approve(address(wMaster), lpTokenUserBalance);
-        // vm.expectRevert(abi.encodeWithSelector(ParentPool_InsufficientBalance.selector));
+        // vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InsufficientBalance.selector));
         // wMaster.completeWithdrawal();
         // vm.stopPrank();
 
@@ -866,7 +865,7 @@ contract ProtocolTestnet is Test {
 
         // vm.startPrank(LP);
         // lp.approve(address(wMaster), lpTokenUserBalance);
-        // vm.expectRevert(abi.encodeWithSelector(ParentPool_CallerIsNotTheProxy.selector, address(pool)));
+        // vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_CallerIsNotTheProxy.selector, address(pool)));
         // pool.completeWithdrawal();
         // vm.stopPrank();
 
@@ -1044,7 +1043,7 @@ contract ProtocolTestnet is Test {
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
+        emit ConceroParentPool_MasterPoolCapUpdated(1000*10**6);
         wMaster.setPoolCap(1000*10**6);
 
         vm.startPrank(LP);

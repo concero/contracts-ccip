@@ -13,7 +13,7 @@ import {ConceroAutomation} from "./ConceroAutomation.sol";
 import {LPToken} from "./LPToken.sol";
 import {IPool} from "contracts/Interfaces/IPool.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
-import {ParentStorage} from "contracts/Libraries/ParentStorage.sol";
+import {ParentPoolStorage} from "contracts/Libraries/ParentPoolStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
 import {Orchestrator} from "./Orchestrator.sol";
 
@@ -21,34 +21,34 @@ import {Orchestrator} from "./Orchestrator.sol";
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
 ///@notice error emitted when the balance is not sufficient
-error ParentPool_InsufficientBalance();
+error ConceroParentPool_InsufficientBalance();
 ///@notice error emitted when the receiver is the address(0)
-error ParentPool_InvalidAddress();
+error ConceroParentPool_InvalidAddress();
 ///@notice error emitted when the caller is not a valid Messenger
-error ParentPool_NotMessenger(address caller);
+error ConceroParentPool_NotMessenger(address caller);
 ///@notice error emitted when the CCIP message sender is not allowed.
-error ParentPool_SenderNotAllowed(address _sender);
+error ConceroParentPool_SenderNotAllowed(address _sender);
 ///@notice error emitted when an attempt to create a new request is made while other is still active.
-error ParentPool_ActiveRequestNotFulfilledYet();
+error ConceroParentPool_ActiveRequestNotFulfilledYet();
 ///@notice error emitted when the contract doesn't have enough link balance
-error ParentPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
+error ConceroParentPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
 ///@notice error emitted when a LP try to deposit liquidity on the contract without pools
-error ParentPool_ThereIsNoPoolToDistribute();
+error ConceroParentPool_ThereIsNoPoolToDistribute();
 ///@notice emitted in depositLiquidity when the input amount is not enough
-error ParentPool_AmountBelowMinimum(uint256 minAmount);
+error ConceroParentPool_AmountBelowMinimum(uint256 minAmount);
 ///@notice emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
-error ParentPool_AmountNotAvailableYet(uint256 received);
+error ConceroParentPool_AmountNotAvailableYet(uint256 received);
 ///@notice error emitted when the caller is not the Orchestrator
-error ParentPool_ItsNotOrchestrator(address caller);
+error ConceroParentPool_ItsNotOrchestrator(address caller);
 ///@notice error emitted when the max amount accepted by the pool is reached
-error ParentPool_MaxCapReached(uint256 maxCap);
+error ConceroParentPool_MaxCapReached(uint256 maxCap);
 ///@notice error emitted when it's not the proxy calling the function
-error ParentPool_CallerIsNotTheProxy(address caller);
+error ConceroParentPool_CallerIsNotTheProxy(address caller);
 ///@notice error emitted when the caller is not the owner
-error ParentPool_NotContractOwner();
+error ConceroParentPool_NotContractOwner();
 
 //todo: ConceroParentPool
-contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
+contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
   ///////////////////////
   ///TYPE DECLARATIONS///
   ///////////////////////
@@ -86,7 +86,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   ////////////////
   ///IMMUTABLES///
   ////////////////
-  ///@notice ParentPool proxy address
+  ///@notice ConceroParentPool proxy address
   address private immutable i_parentProxy;
   ///@notice Orchestrator Proxy immutable address
   address private immutable i_infraProxy;
@@ -109,31 +109,31 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////
   ///@notice event emitted when a new withdraw request is made
-  event ParentPool_WithdrawRequest(address caller, IERC20 token, uint256 deadline);
+  event ConceroParentPool_WithdrawRequest(address caller, IERC20 token, uint256 deadline);
   ///@notice event emitted when a value is withdraw from the contract
-  event ParentPool_Withdrawn(address indexed to, address token, uint256 amount);
+  event ConceroParentPool_Withdrawn(address indexed to, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain tx is received.
-  event ParentPool_CCIPReceived(bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, address token, uint256 amount);
+  event ConceroParentPool_CCIPReceived(bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain message is sent.
-  event ParentPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
+  event ConceroParentPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
   ///@notice event emitted in depositLiquidity when a deposit is successful executed
-  event ParentPool_SuccessfulDeposited(address indexed liquidityProvider, uint256 _amount, IERC20 _token);
+  event ConceroParentPool_SuccessfulDeposited(address indexed liquidityProvider, uint256 _amount, IERC20 _token);
   ///@notice event emitted when a request is updated with the total USDC to withdraw
-  event ParentPool_RequestUpdated(address liquidityProvider);
+  event ConceroParentPool_RequestUpdated(address liquidityProvider);
   ///@notice event emitted when the Functions request return error
   event FunctionsRequestError(bytes32 requestId, IPool.RequestType requestType);
   ///@notice event emitted when a Concero pool is added
-  event ParentPool_PoolReceiverUpdated(uint64 chainSelector, address pool);
+  event ConceroParentPool_PoolReceiverUpdated(uint64 chainSelector, address pool);
   ///@notice event emitted when a allowed Cross-chain contract is updated
-  event ParentPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
+  event ConceroParentPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
   ///@notice event emitted in setConceroContract when the address is emitted
-  event ParentPool_ConceroContractUpdated(address concero);
+  event ConceroParentPool_ConceroContractUpdated(address concero);
   ///@notice event emitted when a contract is removed from the distribution array
-  event ParentPool_ChainAndAddressRemoved(uint64 _chainSelector);
+  event ConceroParentPool_ChainAndAddressRemoved(uint64 _chainSelector);
   ///@notice event emitted when a pool is removed and the redistribution process start
-  event ParentPool_RedistributionStarted(bytes32 requestId);
+  event ConceroParentPool_RedistributionStarted(bytes32 requestId);
   ///@notice event emitted when the MasterPool Cap is increased
-  event ParentPool_MasterPoolCapUpdated(uint256 _newCap);
+  event ConceroParentPool_MasterPoolCapUpdated(uint256 _newCap);
 
   ///////////////
   ///MODIFIERS///
@@ -144,7 +144,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @param _sender address of the sender contract
    */
   modifier onlyAllowlistedSenderAndChainSelector(uint64 _chainSelector, address _sender) {
-    if (s_contractsToReceiveFrom[_chainSelector][_sender] != ALLOWED) revert ParentPool_SenderNotAllowed(_sender);
+    if (s_contractsToReceiveFrom[_chainSelector][_sender] != ALLOWED) revert ConceroParentPool_SenderNotAllowed(_sender);
     _;
   }
 
@@ -152,12 +152,12 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @notice modifier to ensure if the function is being executed in the proxy context.
    */
   modifier isProxy() {
-    if (address(this) != i_parentProxy) revert ParentPool_CallerIsNotTheProxy(address(this));
+    if (address(this) != i_parentProxy) revert ConceroParentPool_CallerIsNotTheProxy(address(this));
     _;
   }
 
   modifier onlyOwner() {
-    if (msg.sender != i_owner) revert ParentPool_NotContractOwner();
+    if (msg.sender != i_owner) revert ConceroParentPool_NotContractOwner();
     _;
   }
 
@@ -165,7 +165,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @notice modifier to check if the caller is the an approved messenger
    */
   modifier onlyMessenger() {
-    if (isMessenger(msg.sender) == false) revert ParentPool_NotMessenger(msg.sender);
+    if (isMessenger(msg.sender) == false) revert ConceroParentPool_NotMessenger(msg.sender);
     _;
   }
 
@@ -210,9 +210,9 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @dev for ether transfer, the _receiver need to be known and trusted
    */
   function orchestratorLoan(address _token, uint256 _amount, address _receiver) external payable isProxy {
-    if (msg.sender != i_infraProxy) revert ParentPool_ItsNotOrchestrator(msg.sender);
-    if (_receiver == address(0)) revert ParentPool_InvalidAddress();
-    if (_amount > (IERC20(_token).balanceOf(address(this)) - s_withdrawRequests)) revert ParentPool_InsufficientBalance();
+    if (msg.sender != i_infraProxy) revert ConceroParentPool_ItsNotOrchestrator(msg.sender);
+    if (_receiver == address(0)) revert ConceroParentPool_InvalidAddress();
+    if (_amount > (IERC20(_token).balanceOf(address(this)) - s_withdrawRequests)) revert ConceroParentPool_InsufficientBalance();
 
     s_loansInUse = s_loansInUse + _amount;
 
@@ -224,12 +224,12 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @param _usdcAmount the amount to be deposited
    */
   function depositLiquidity(uint256 _usdcAmount) external isProxy {
-    if (_usdcAmount < MIN_DEPOSIT) revert ParentPool_AmountBelowMinimum(MIN_DEPOSIT);
-    if (s_maxDeposit != 0 && s_maxDeposit < _usdcAmount + i_USDC.balanceOf(address(this)) + s_loansInUse) revert ParentPool_MaxCapReached(s_maxDeposit);
+    if (_usdcAmount < MIN_DEPOSIT) revert ConceroParentPool_AmountBelowMinimum(MIN_DEPOSIT);
+    if (s_maxDeposit != 0 && s_maxDeposit < _usdcAmount + i_USDC.balanceOf(address(this)) + s_loansInUse) revert ConceroParentPool_MaxCapReached(s_maxDeposit);
 
     uint256 numberOfPools = s_poolsToDistribute.length;
 
-    if (numberOfPools < ALLOWED) revert ParentPool_ThereIsNoPoolToDistribute();
+    if (numberOfPools < ALLOWED) revert ConceroParentPool_ThereIsNoPoolToDistribute();
 
     // uint256 depositFee = _calculateDepositTransactionFee(_usdcAmount);
     // uint256 depositMinusFee = _usdcAmount - _convertToUSDCTokenDecimals(depositFee);
@@ -249,7 +249,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       amount: _usdcAmount
     });
 
-    emit ParentPool_SuccessfulDeposited(msg.sender, _usdcAmount, i_USDC);
+    emit ConceroParentPool_SuccessfulDeposited(msg.sender, _usdcAmount, i_USDC);
 
     i_USDC.safeTransferFrom(msg.sender, address(this), _usdcAmount);
     // i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(depositFee));
@@ -262,8 +262,8 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @param _lpAmount the amount of lp token the user wants to burn to get USDC back.
    */
   function startWithdrawal(uint256 _lpAmount) external isProxy {
-    if (i_lp.balanceOf(msg.sender) < _lpAmount) revert ParentPool_InsufficientBalance();
-    if (s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ParentPool_ActiveRequestNotFulfilledYet();
+    if (i_lp.balanceOf(msg.sender) < _lpAmount) revert ConceroParentPool_InsufficientBalance();
+    if (s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ConceroParentPool_ActiveRequestNotFulfilledYet();
 
     bytes[] memory args = new bytes[](2);
     args[0] = abi.encodePacked(s_hashSum);
@@ -279,7 +279,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       amount: _lpAmount
     });
 
-    emit ParentPool_WithdrawRequest(msg.sender, i_USDC, block.timestamp + WITHDRAW_DEADLINE);
+    emit ConceroParentPool_WithdrawRequest(msg.sender, i_USDC, block.timestamp + WITHDRAW_DEADLINE);
   }
 
   /**
@@ -291,8 +291,8 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   function completeWithdrawal() external isProxy {
     IPool.WithdrawRequests memory withdraw = s_pendingWithdrawRequests[msg.sender];
 
-    if (withdraw.amountToReceive > 0) revert ParentPool_AmountNotAvailableYet(withdraw.amountToReceive);
-    if (withdraw.amountEarned > i_USDC.balanceOf(address(this))) revert ParentPool_InsufficientBalance();
+    if (withdraw.amountToReceive > 0) revert ConceroParentPool_AmountNotAvailableYet(withdraw.amountToReceive);
+    if (withdraw.amountEarned > i_USDC.balanceOf(address(this))) revert ConceroParentPool_InsufficientBalance();
 
     s_withdrawRequests = s_withdrawRequests > withdraw.amountEarned ? s_withdrawRequests - withdraw.amountEarned : 0;
 
@@ -301,7 +301,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     // uint256 withdrawFees = _calculateWithdrawTransactionsFee(withdraw.amountEarned);
     // uint256 withdrawAmountMinusFees = withdraw.amountEarned - _convertToUSDCTokenDecimals(withdrawFees);
 
-    emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
+    emit ConceroParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
 
     IERC20(i_lp).safeTransferFrom(msg.sender, address(this), withdraw.amountToBurn);
     i_lp.burn(withdraw.amountToBurn);
@@ -316,7 +316,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @param _amountToSend the amount to redistribute between pools.
    */
   function distributeLiquidity(uint64 _chainSelector, uint256 _amountToSend) external isProxy onlyMessenger {
-    if (s_poolToSendTo[_chainSelector] == address(0)) revert ParentPool_InvalidAddress();
+    if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroParentPool_InvalidAddress();
     _ccipSend(_chainSelector, _amountToSend);
   }
 
@@ -333,10 +333,10 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @dev this functions is used on ConceroPool.sol
    */
   function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable isProxy onlyOwner {
-    if (_contractAddress == address(0)) revert ParentPool_InvalidAddress();
+    if (_contractAddress == address(0)) revert ConceroParentPool_InvalidAddress();
     s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
 
-    emit ParentPool_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
+    emit ConceroParentPool_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
   }
 
   /**
@@ -346,7 +346,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   function setPoolCap(uint256 _newCap) external payable isProxy onlyOwner {
     s_maxDeposit = _newCap;
 
-    emit ParentPool_MasterPoolCapUpdated(_newCap);
+    emit ConceroParentPool_MasterPoolCapUpdated(_newCap);
   }
 
   function setDonHostedSecretsSlotId(uint8 _slotId) external payable isProxy onlyOwner {
@@ -374,12 +374,12 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @dev this functions is used on ConceroPool.sol
    */
   function setPools(uint64 _chainSelector, address _pool, bool isRebalance) external payable isProxy onlyOwner {
-    if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ParentPool_InvalidAddress();
+    if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ConceroParentPool_InvalidAddress();
 
     s_poolsToDistribute.push(_chainSelector);
     s_poolToSendTo[_chainSelector] = _pool;
 
-    emit ParentPool_PoolReceiverUpdated(_chainSelector, _pool);
+    emit ConceroParentPool_PoolReceiverUpdated(_chainSelector, _pool);
 
     if (isRebalance == true) {
       //balancePool = Query balance from ChildPools & ParentPool
@@ -400,7 +400,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       // s_requests[requestId] = CLFRebalance({
       // });
 
-      emit ParentPool_RedistributionStarted(requestId);
+      emit ConceroParentPool_RedistributionStarted(requestId);
     }
   }
 
@@ -422,7 +422,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       }
     }
 
-    emit ParentPool_ChainAndAddressRemoved(_chainSelector);
+    emit ConceroParentPool_ChainAndAddressRemoved(_chainSelector);
 
     //send through functions?
     // 1. Trigger the liquidatePool functions to transfer money equally to other pools
@@ -439,7 +439,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     // s_requests[requestId] = CLFRebalance({
     // });
 
-    emit ParentPool_RedistributionStarted(requestId);
+    emit ConceroParentPool_RedistributionStarted(requestId);
   }
 
   ////////////////
@@ -481,7 +481,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       s_withdrawRequests = s_withdrawRequests + any2EvmMessage.destTokenAmounts[0].amount;
     }
 
-    emit ParentPool_CCIPReceived(
+    emit ConceroParentPool_CCIPReceived(
       any2EvmMessage.messageId,
       any2EvmMessage.sourceChainSelector,
       abi.decode(any2EvmMessage.sender, (address)),
@@ -514,14 +514,14 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
 
-    if (fees > i_linkToken.balanceOf(address(this))) revert ParentPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
+    if (fees > i_linkToken.balanceOf(address(this))) revert ConceroParentPool_NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
     i_USDC.approve(i_ccipRouter, _amountToDistribute);
     i_linkToken.approve(i_ccipRouter, fees);
 
     messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
 
-    emit ParentPool_MessageSent(messageId, _chainSelector, s_poolToSendTo[_chainSelector], address(i_linkToken), fees);
+    emit ConceroParentPool_MessageSent(messageId, _chainSelector, s_poolToSendTo[_chainSelector], address(i_linkToken), fees);
   }
 
   function _buildCCIPMessage(uint64 _chainSelector, address _token, uint256 _amount) internal view returns (Client.EVM2AnyMessage memory) {
@@ -643,7 +643,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     s_pendingWithdrawRequests[_liquidityProvider] = request;
     i_automation.addPendingWithdrawal(_liquidityProvider);
 
-    emit ParentPool_RequestUpdated(_liquidityProvider);
+    emit ConceroParentPool_RequestUpdated(_liquidityProvider);
   }
 
   // function _calculateDepositTransactionFee(uint256 _amountToDistribute) internal view returns(uint256 _totalUSDCCost){

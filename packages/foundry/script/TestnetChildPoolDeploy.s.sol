@@ -7,7 +7,6 @@ import {ConceroChildPool} from "contracts/ConceroChildPool.sol";
 contract TestnetChildPoolDeploy is Script {
 
     address _orchestratorProxy = address(0);
-    address _masterPoolProxyAddress = 0x4f4549e3349144C1eFD843f778FDcAaAbc65C9E3;
     address _childProxy = 0xb9b4eb0088cD3d98fF7A30a8e7DeE5eCdcC290B2;
     address _link = 0xE4aB69C077896252FAFBD49EFD26B5D171A32410;
     address _ccipRouter = 0xD3b06cEbF099CE7DA4AcCf578aaebFDBd6e88a93;
@@ -18,7 +17,6 @@ contract TestnetChildPoolDeploy is Script {
         vm.startBroadcast();
         child = new ConceroChildPool(
             _orchestratorProxy,
-            _masterPoolProxyAddress,
             _childProxy, 
             _link, 
             _ccipRouter, 

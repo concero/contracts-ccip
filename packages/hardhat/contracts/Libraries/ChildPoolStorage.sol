@@ -13,7 +13,7 @@ contract ChildPoolStorage {
   /////////////
   ///STORAGE///
   /////////////
-  ///@notice array of Pools to receive Liquidity through `ccipSend` function
+  ///@notice array of chain IDS of Pools to receive Liquidity through `ccipSend` function
   uint64[] s_poolsToDistribute;
 
   ///@notice Mapping to keep track of allowed pool senders

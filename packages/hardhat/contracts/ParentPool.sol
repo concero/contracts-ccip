@@ -16,6 +16,7 @@ import {IStorage} from "./Interfaces/IStorage.sol";
 import {ParentStorage} from "contracts/Libraries/ParentStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
 import {Orchestrator} from "./Orchestrator.sol";
+import {LibConcero} from "./Libraries/LibConcero.sol"; // todo: Only used by withdraw. Remove in production
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -678,5 +679,17 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   // TODO: Remove this function after tests
   function deletePendingWithdrawRequest(address _liquidityProvider) external isProxy onlyOwner {
     delete s_pendingWithdrawRequests[_liquidityProvider];
+  }
+
+  // TODO: REMOVE IN PRODUCTION
+  function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
+    uint256 balance = LibConcero.getBalance(token, address(this));
+    if (balance < amount) revert ParentPool_InsufficientBalance();
+
+    if (token != address(0)) {
+      LibConcero.transferERC20(token, amount, recipient);
+    } else {
+      payable(recipient).transfer(amount);
+    }
   }
 }

@@ -70,7 +70,7 @@ contract InfraProxy is ERC1967Proxy, Storage {
   ///@notice constant variable to hold a mock address to pause transactions.
   ///@dev this will be used in a if statement on the fallback function+
   ///@dev this address needs to be a contract and set before deployment.
-  address constant SAFE_LOCK = 0xde11Bc6a6c47EeaB0476C85672EA7f932f1a78Ed; //Mainnet mock
+  address constant SAFE_LOCK = 0x00c4d25487297C4fc1341aa840a4F56e474f6A0d;
 
   /**
    * @dev The proxy caller is the current admin, and can't fallback to the proxy target.
@@ -82,11 +82,7 @@ contract InfraProxy is ERC1967Proxy, Storage {
    * backed by the implementation at `_logic`, and optionally initialized with `_data` as explained in
    * {ERC1967Proxy-constructor}.
    */
-  constructor(
-    address _logic,
-    address initialOwner,
-    bytes memory _data
-  ) payable ERC1967Proxy(_logic, _data) {
+  constructor(address _logic, address initialOwner, bytes memory _data) payable ERC1967Proxy(_logic, _data) {
     _admin = initialOwner;
     // Set the storage value and emit an event for ERC-1967 compatibility
     ERC1967Utils.changeAdmin(_proxyAdmin());

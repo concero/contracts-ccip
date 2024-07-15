@@ -1,9 +1,10 @@
 {
-    "name": "foundry-workspace",
-    "version": "1.0.0",
-    "private": true,
-    "dependencies": {
-      "@chainlink/contracts-ccip": "^1.4.0",
-      "sushiswap-v3-periphery": "https://github.com/sushiswap/v3-periphery"
-    }
+  "name": "foundry-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@chainlink/contracts-ccip": "^1.4.0",
+    "@uniswap/v3-periphery": "https://github.com/sushiswap/v3-periphery",
+    "sushiswap-v3-periphery": "https://github.com/sushiswap/v3-periphery"
   }
+}

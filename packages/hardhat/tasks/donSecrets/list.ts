@@ -1,9 +1,8 @@
 import { SecretsManager } from "@chainlink/functions-toolkit";
-import chains, { networkEnvKeys } from "../../constants/CNetworks";
-import updateEnvVariable from "../../utils/updateEnvVariable";
+import chains from "../../constants/CNetworks";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { liveChains } from "../concero/deployInfra";
+import { liveChains } from "../concero/deployInfra/deployInfra";
 import { CNetwork } from "../../types/CNetwork";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import log from "../../utils/log";
@@ -41,8 +40,7 @@ async function listSecrets(chain: CNetwork): Promise<{ [slotId: number]: { versi
   return allSecrets;
 }
 
-// run with: yarn hardhat clf-donsecrets-list --network avalancheFuji
-task("clf-donsecrets-list", "Displays encrypted secrets hosted on the DON")
+task("clf-list-secrets", "Displays encrypted secrets hosted on the DON")
   .addFlag("all", "List secrets from all chains")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");

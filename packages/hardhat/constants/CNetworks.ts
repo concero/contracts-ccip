@@ -1,13 +1,29 @@
 // Purpose: To have a single source of truth for networks across the project
 import { type CNetwork, CNetworkNames } from "../types/CNetwork";
 import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
-import { arbitrumSepolia, avalancheFuji, baseSepolia, optimismSepolia, sepolia } from "viem/chains";
+import {
+  arbitrum,
+  arbitrumSepolia,
+  avalanche,
+  avalancheFuji,
+  base,
+  baseSepolia,
+  optimismSepolia,
+  polygon,
+  polygonAmoy,
+  sepolia,
+} from "viem/chains";
 
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
 const deployerPK = process.env.DEPLOYER_PRIVATE_KEY;
+const proxyDeployerPK = process.env.PROXY_DEPLOYER_PRIVATE_KEY;
 
 if (!deployerPK) {
   throw new Error("DEPLOYER_PRIVATE_KEY is not set");
+}
+
+if (!proxyDeployerPK) {
+  throw new Error("PROXY_DEPLOYER_PRIVATE_KEY is not set");
 }
 
 export const networkEnvKeys: Record<string, string> = {
@@ -25,6 +41,7 @@ export const networkEnvKeys: Record<string, string> = {
   arbitrumSepolia: "ARBITRUM_SEPOLIA",
   avalancheFuji: "FUJI",
   baseSepolia: "BASE_SEPOLIA",
+  polygonAmoy: "POLYGON_AMOY",
 };
 
 export const functionsGatewayUrls = {
@@ -34,7 +51,7 @@ export const functionsGatewayUrls = {
 
 const CNetworks: Record<CNetworkNames, CNetwork> = {
   localhost: {
-    accounts: [deployerPK],
+    accounts: [deployerPK, proxyDeployerPK],
     // mock CLF data
     functionsDonId: process.env.CLF_DONID_SEPOLIA,
     functionsDonIdAlias: process.env.CLF_DONID_SEPOLIA_ALIAS,
@@ -83,7 +100,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   sepolia: {
     chainId: 11155111,
     url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-    accounts: [deployerPK],
+    accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_SEPOLIA,
     functionsDonIdAlias: process.env.CLF_DONID_SEPOLIA_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_SEPOLIA,
@@ -95,6 +112,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     linkToken: process.env.LINK_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_SEPOLIA,
     ccipBnmToken: process.env.CCIPBNM_SEPOLIA,
+    usdc: process.env.USDC_SEPOLIA,
     ccipRouter: process.env.CL_CCIP_ROUTER_SEPOLIA,
     viemChain: sepolia,
     name: "sepolia",
@@ -102,7 +120,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   avalancheFuji: {
     chainId: 43113,
     url: `https://avalanche-fuji.infura.io/v3/${process.env.INFURA_API_KEY}`,
-    accounts: [deployerPK],
+    accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_FUJI,
     functionsDonIdAlias: process.env.CLF_DONID_FUJI_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_FUJI,
@@ -114,6 +132,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     linkToken: process.env.LINK_FUJI,
     linkPriceFeed: process.env.LINK_PRICEFEED_FUJI,
     ccipBnmToken: process.env.CCIPBNM_FUJI,
+    usdc: process.env.USDC_FUJI,
     ccipRouter: process.env.CL_CCIP_ROUTER_FUJI,
     viemChain: avalancheFuji,
     name: "avalancheFuji",
@@ -121,7 +140,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   optimismSepolia: {
     chainId: 11155420,
     url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-    accounts: [deployerPK],
+    accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_OPTIMISM_SEPOLIA,
     functionsDonIdAlias: process.env.CLF_DONID_OPTIMISM_SEPOLIA_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_OPTIMISM_SEPOLIA,
@@ -134,6 +153,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     linkToken: process.env.LINK_OPTIMISM_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_OPTIMISM_SEPOLIA,
     ccipBnmToken: process.env.CCIPBNM_OPTIMISM_SEPOLIA,
+    usdc: process.env.USDC_OPTIMISM_SEPOLIA,
     ccipRouter: process.env.CL_CCIP_ROUTER_OPTIMISM_SEPOLIA,
     viemChain: optimismSepolia,
     name: "optimismSepolia",
@@ -147,7 +167,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   arbitrumSepolia: {
     chainId: 421614,
     url: `https://arbitrum-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-    accounts: [deployerPK],
+    accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_ARBITRUM_SEPOLIA,
     functionsDonIdAlias: process.env.CLF_DONID_ARBITRUM_SEPOLIA_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_ARBITRUM_SEPOLIA,
@@ -160,6 +180,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     linkToken: process.env.LINK_ARBITRUM_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_ARBITRUM_SEPOLIA,
     ccipBnmToken: process.env.CCIPBNM_ARBITRUM_SEPOLIA,
+    usdc: process.env.USDC_ARBITRUM_SEPOLIA,
     ccipRouter: process.env.CL_CCIP_ROUTER_ARBITRUM_SEPOLIA,
     viemChain: arbitrumSepolia,
     name: "arbitrumSepolia",
@@ -173,7 +194,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   baseSepolia: {
     chainId: 84532,
     url: `https://base-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
-    accounts: [deployerPK],
+    accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_BASE_SEPOLIA,
     functionsDonIdAlias: process.env.CLF_DONID_BASE_SEPOLIA_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_BASE_SEPOLIA,
@@ -186,6 +207,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     linkToken: process.env.LINK_BASE_SEPOLIA,
     linkPriceFeed: process.env.LINK_PRICEFEED_BASE_SEPOLIA,
     ccipBnmToken: process.env.CCIPBNM_BASE_SEPOLIA,
+    usdc: process.env.USDC_BASE_SEPOLIA,
     ccipRouter: process.env.CL_CCIP_ROUTER_BASE_SEPOLIA,
     viemChain: baseSepolia,
     name: "baseSepolia",
@@ -196,66 +218,131 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
       linkToNativePriceFeeds: process.env.LINK_NATIVE_PRICEFEED_BASE_SEPOLIA!,
     },
   },
+  polygonAmoy: {
+    chainId: 80002,
+    url: `https://polygon-amoy.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    accounts: [deployerPK, proxyDeployerPK],
+    functionsDonId: process.env.CLF_DONID_POLYGON_AMOY,
+    functionsDonIdAlias: process.env.CLF_DONID_POLYGON_AMOY_ALIAS,
+    functionsRouter: process.env.CLF_ROUTER_POLYGON_AMOY,
+    functionsSubIds: [process.env.CLF_SUBID_POLYGON_AMOY],
+    functionsGatewayUrls: functionsGatewayUrls.testnet,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_POLYGON_AMOY,
+    chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY,
+    conceroChainIndex: "3",
+    confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
+    linkToken: process.env.LINK_POLYGON_AMOY,
+    linkPriceFeed: process.env.LINK_PRICEFEED_POLYGON_AMOY,
+    ccipBnmToken: process.env.CCIPBNM_POLYGON_AMOY,
+    ccipRouter: process.env.CL_CCIP_ROUTER_POLYGON_AMOY,
+    viemChain: polygonAmoy,
+    name: "polygonAmoy",
+    priceFeed: {
+      linkToUsdPriceFeeds: process.env.LINK_USD_PRICEFEED_POLYGON_AMOY!,
+      usdcToUsdPriceFeeds: process.env.USDC_USD_PRICEFEED_POLYGON_AMOY!,
+      nativeToUsdPriceFeeds: process.env.NATIVE_USD_PRICEFEED_POLYGON_AMOY!,
+      linkToNativePriceFeeds: process.env.LINK_NATIVE_PRICEFEED_POLYGON_AMOY!,
+    },
+  },
   // MAINNETS
-  // mainnet: {
-  //   url: `https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // goerli: {
-  //   url: `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // arbitrum: {
-  //   url: `https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // optimism: {
-  //   url: `https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // polygon: {
-  //   url: `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // polygonZkEvm: {
-  //   url: `https://polygonzkevm-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // polygonZkEvmTestnet: {
-  //   url: `https://polygonzkevm-testnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
-  //   accounts: [deployerPrivateKey],
-  // },
-  // gnosis: {
-  //   url: "https://rpc.gnosischain.com",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // chiado: {
-  //   url: "https://rpc.chiadochain.net",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // base: {
-  //   url: "https://mainnet.base.org",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // baseGoerli: {
-  //   url: "https://goerli.base.org",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // scrollSepolia: {
-  //   url: "https://sepolia-rpc.scroll.io",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // scroll: {
-  //   url: "https://rpc.scroll.io",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // pgn: {
-  //   url: "https://rpc.publicgoods.network",
-  //   accounts: [deployerPrivateKey],
-  // },
-  // pgnTestnet: {
-  //   url: "https://sepolia.publicgoods.network",
-  //   accounts: [deployerPrivateKey],
-  // },
+  base: {
+    chainId: 8453,
+    url: "https://base-rpc.publicnode.com",
+    accounts: [deployerPK, proxyDeployerPK],
+    functionsDonId: process.env.CLF_DONID_BASE,
+    functionsDonIdAlias: process.env.CLF_DONID_BASE_ALIAS,
+    functionsRouter: process.env.CLF_ROUTER_BASE,
+    functionsSubIds: [process.env.CLF_SUBID_BASE],
+    functionsGatewayUrls: functionsGatewayUrls.mainnet,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_BASE,
+    chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_BASE,
+    conceroChainIndex: "1",
+    confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
+    linkToken: process.env.LINK_BASE,
+    linkPriceFeed: process.env.LINK_PRICEFEED_BASE,
+    ccipBnmToken: process.env.CCIPBNM_BASE_SEPOLIA,
+    ccipRouter: process.env.CL_CCIP_ROUTER_BASE,
+    viemChain: base,
+    name: "base",
+    priceFeed: {
+      linkToUsdPriceFeeds: process.env.LINK_USD_PRICEFEED_BASE!,
+      usdcToUsdPriceFeeds: process.env.USDC_USD_PRICEFEED_BASE!,
+      nativeToUsdPriceFeeds: process.env.NATIVE_USD_PRICEFEED_BASE!,
+      linkToNativePriceFeeds: process.env.LINK_NATIVE_PRICEFEED_BASE!,
+    },
+  },
+  arbitrum: {
+    chainId: 42161,
+    url: `https://arbitrum-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    accounts: [deployerPK, proxyDeployerPK],
+    functionsDonId: process.env.CLF_DONID_ARBITRUM,
+    functionsDonIdAlias: process.env.CLF_DONID_ARBITRUM_ALIAS,
+    functionsRouter: process.env.CLF_ROUTER_ARBITRUM,
+    functionsSubIds: [process.env.CLF_SUBID_ARBITRUM],
+    functionsGatewayUrls: functionsGatewayUrls.mainnet,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_ARBITRUM,
+    chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM,
+    conceroChainIndex: "0",
+    confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
+    linkToken: process.env.LINK_ARBITRUM,
+    linkPriceFeed: process.env.LINK_PRICEFEED_ARBITRUM,
+    ccipBnmToken: process.env.CCIPBNM_ARBITRUM,
+    ccipRouter: process.env.CL_CCIP_ROUTER_ARBITRUM,
+    viemChain: arbitrum,
+    name: "arbitrum",
+    priceFeed: {
+      linkToUsdPriceFeeds: process.env.LINK_USD_PRICEFEED_ARBITRUM!,
+      usdcToUsdPriceFeeds: process.env.USDC_USD_PRICEFEED_ARBITRUM!,
+      nativeToUsdPriceFeeds: process.env.NATIVE_USD_PRICEFEED_ARBITRUM!,
+      linkToNativePriceFeeds: process.env.LINK_NATIVE_PRICEFEED_ARBITRUM!,
+    },
+  },
+  polygon: {
+    chainId: 137,
+    url: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+    // url: "https://polygon-rpc.com",
+    accounts: [deployerPK, proxyDeployerPK],
+    functionsDonId: process.env.CLF_DONID_POLYGON,
+    functionsDonIdAlias: process.env.CLF_DONID_POLYGON_ALIAS,
+    functionsRouter: process.env.CLF_ROUTER_POLYGON,
+    functionsSubIds: [process.env.CLF_SUBID_POLYGON],
+    functionsGatewayUrls: functionsGatewayUrls.mainnet,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_POLYGON,
+    chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON,
+    conceroChainIndex: "3",
+    confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
+    linkToken: process.env.LINK_POLYGON,
+    linkPriceFeed: process.env.LINK_PRICEFEED_POLYGON,
+    ccipBnmToken: process.env.CCIPBNM_POLYGON_AMOY,
+    ccipRouter: process.env.CL_CCIP_ROUTER_POLYGON,
+    viemChain: polygon,
+    name: "polygon",
+    priceFeed: {
+      linkToUsdPriceFeeds: process.env.LINK_USD_PRICEFEED_POLYGON!,
+      usdcToUsdPriceFeeds: process.env.USDC_USD_PRICEFEED_POLYGON_AMOY!,
+      nativeToUsdPriceFeeds: process.env.NATIVE_USD_PRICEFEED_POLYGON_AMOY!,
+      linkToNativePriceFeeds: process.env.LINK_NATIVE_PRICEFEED_POLYGON_AMOY!,
+    },
+  },
+  avalanche: {
+    chainId: 43114,
+    url: `https://avalanche-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    accounts: [deployerPK, proxyDeployerPK],
+    functionsDonId: process.env.CLF_DONID_AVALANCHE,
+    functionsDonIdAlias: process.env.CLF_DONID_AVALANCHE_ALIAS,
+    functionsRouter: process.env.CLF_ROUTER_AVALANCHE,
+    functionsSubIds: [process.env.CLF_SUBID_AVALANCHE],
+    conceroChainIndex: "4",
+    functionsGatewayUrls: functionsGatewayUrls.mainnet,
+    donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_AVALANCHE,
+    chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_AVALANCHE,
+    confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
+    linkToken: process.env.LINK_AVALANCHE,
+    linkPriceFeed: process.env.LINK_PRICEFEED_AVALANCHE,
+    ccipBnmToken: process.env.CCIPBNM_FUJI,
+    ccipRouter: process.env.CL_CCIP_ROUTER_AVALANCHE,
+    viemChain: avalanche,
+    name: "avalanche",
+  },
 };
 export default CNetworks;

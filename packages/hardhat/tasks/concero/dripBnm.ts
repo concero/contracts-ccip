@@ -1,7 +1,7 @@
 import { CNetwork } from "../../types/CNetwork";
-import { getClients } from "../utils/switchChain";
+import { getClients } from "../utils/getViemClients";
 import chains from "../../constants/CNetworks";
-import { liveChains } from "./deployInfra";
+import { liveChains } from "./deployInfra/deployInfra";
 import { task } from "hardhat/config";
 
 export async function dripBnm(chains: CNetwork[], amount: number = 20) {

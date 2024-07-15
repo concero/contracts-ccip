@@ -15,7 +15,7 @@
     "imports-on-top": "error",
     "compiler-version": [
       "off",
-      "^0.8.19"
+      "^0.8.20"
     ],
     "const-name-snakecase": "off",
     "constructor-syntax": "error",

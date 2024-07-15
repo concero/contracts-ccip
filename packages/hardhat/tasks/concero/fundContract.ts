@@ -1,11 +1,10 @@
 import { CNetwork } from "../../types/CNetwork";
 import ierc20Abi from "@chainlink/contracts/abi/v0.8/IERC20.json";
-import { getClients } from "../utils/switchChain";
-import { networkEnvKeys } from "../../constants/CNetworks";
+import { getClients } from "../utils/getViemClients";
+import chains, { networkEnvKeys } from "../../constants/CNetworks";
 import { dripBnm } from "./dripBnm";
 import { task } from "hardhat/config";
-import { liveChains } from "./deployInfra";
-import chains from "../../constants/CNetworks";
+import { liveChains } from "./deployInfra/deployInfra";
 import { getEnvVar } from "../../utils/getEnvVar";
 import log from "../../utils/log";
 
@@ -34,7 +33,7 @@ export async function fundContract(chains: CNetwork[], amount: number = 1) {
   try {
     for (const chain of chains) {
       const { name, viemChain, ccipBnmToken, url } = chain;
-      const contract = getEnvVar(`CONCEROCCIP_${networkEnvKeys[name]}`);
+      const contract = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`);
       const { walletClient, publicClient, account } = getClients(viemChain, url);
       await ensureDeployerBnMBalance(chains);
       const { request: sendReq } = await publicClient.simulateContract({

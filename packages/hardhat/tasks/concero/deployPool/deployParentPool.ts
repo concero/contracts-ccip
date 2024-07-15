@@ -19,7 +19,6 @@ task("deploy-parent-pool", "Deploy the pool")
   .addFlag("deployproxy", "Deploy the proxy")
   .addFlag("skipsetvars", "Set the contract variables")
   .addFlag("uploadsecrets", "Set the contract variables")
-  .addFlag("mainnet", "Deploy to mainnet")
   .setAction(async taskArgs => {
     execSync("yarn compile", { stdio: "inherit" });
 

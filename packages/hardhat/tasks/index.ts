@@ -12,7 +12,6 @@ import accept from "./sub/accept";
 import transferTokens from "./utils/transferTokens";
 import remove from "./sub/remove";
 import timeout from "./sub/timeout";
-import deployInfraProxy from "./concero/deployInfra/deployInfraProxy";
 import deployConceroDexSwap from "./concero/deployInfra/deployConceroDexSwap";
 import deployConceroOrchestrator from "./concero/deployInfra/deployConceroOrchestrator";
 import withdrawInfraProxy from "./concero/withdraw/withdrawInfraProxy";
@@ -30,7 +29,6 @@ export default {
   simulate,
   build,
   deployCCIPInfrastructure,
-  deployInfraProxy,
   deployConceroDexSwap,
   deployConceroOrchestrator,
   fundContract,

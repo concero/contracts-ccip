@@ -12,7 +12,7 @@ import { abi as ParentPoolAbi } from "../artifacts/contracts/ParentPool.sol/Pare
 import { chainsMap } from "./utils/chainsMap";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE;
-const usdcAmount = "100000000";
+const usdcAmount = "100000000"; // 100 USDC
 const usdcTokenAddress = process.env.USDC_BASE as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE as Address;
 

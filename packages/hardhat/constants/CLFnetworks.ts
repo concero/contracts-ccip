@@ -11,8 +11,6 @@ const isSimulation = process.argv.length === 3 && process.argv[2] === "functions
 // console.log(process.env.LINK_MAINNET);
 // Set EVM private keys (required)
 const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
-
-// TODO @dev - set this to run the accept.js task.
 const SECOND_PRIVATE_KEY = process.env.MESSENGER_PRIVATE_KEY;
 
 if (!isTestEnvironment && !isSimulation && !PRIVATE_KEY) {

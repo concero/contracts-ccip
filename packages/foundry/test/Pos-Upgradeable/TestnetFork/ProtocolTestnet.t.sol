@@ -597,11 +597,47 @@ contract ProtocolTestnet is Test {
                             dexData: abi.encode(mockBase, path, to, deadline)
         });
 
-
         vm.startPrank(User);
         tUSDC.approve(address(op), USDC_INITIAL_BALANCE + 1);
         vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidAmount.selector));
         op.bridge(data, swapData);
+        vm.stopPrank();
+
+        ///==================== Ether Check
+        
+
+        //===== Mock the value.
+                //In this case, the value is passed as a param through the function
+                //Also is transferred in the call
+        amountIn = 1*10**17;
+
+        //===== Mock the data for payload to send to the function
+        uint256 amountOut = 350*10*6;
+
+        path[0] = address(wEth);
+        path[1] = address(mUSDC);
+        to = address(User);
+        deadline = block.timestamp + 1800;
+
+        //===== Gives User some ether and checks the balance
+        vm.deal(User, 1*10**17);
+        assertEq(User.balance, 1*10**17);
+
+        //===== Mock the payload to send on the function
+        swapData[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV2Ether,
+            fromToken: address(0),
+            fromAmount: 1*10**16,
+            toToken: address(mUSDC),
+            toAmount: amountOut,
+            toAmountMin: amountOut,
+            dexData: abi.encode(mockBase, path, deadline)
+        });
+
+        //===== Start transaction calling the function and passing the payload
+        vm.startPrank(User);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidAmount.selector));
+        op.swap{value: amountIn}(swapData, User);
         vm.stopPrank();
     }
 
@@ -992,7 +1028,7 @@ contract ProtocolTestnet is Test {
     ////////////////////////////////////////////////////////////////////////////////////
     
     error Concero_ItsNotOrchestrator(address);
-    function test_swapAndBridgeWithoutFunctions() public setters{
+    function test_swapAndBridgeTestnet() public setters{
         helper();
 
         /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\

@@ -30,7 +30,7 @@ contract ParentPoolStorage {
   ///STORAGE///
   /////////////
   ///@notice array of Pools to receive Liquidity through `ccipSend` function
-  uint64[] s_poolsToDistribute;
+  uint64[] s_poolChainSelectors;
 
   ///@notice Mapping to keep track of valid pools to transfer in case of liquidation or rebalance
   mapping(uint64 chainSelector => address pool) public s_poolToSendTo;

@@ -473,14 +473,14 @@ contract ProtocolMainnet is Test {
         //====== Setters
         ///== Pools
         vm.startPrank(Tester);
-        wMaster.setPools(arbChainSelector, address(childProxy), false);
+        wMaster.setPools(arbChainSelector, address(wChild), false);
         assertEq(wMaster.s_poolToSendTo(arbChainSelector), address(wChild));
 
         wMaster.setConceroContractSender(arbChainSelector, address(wChild), 1);
         assertEq(wMaster.s_contractsToReceiveFrom(arbChainSelector, address(wChild)), 1);
 
-        wMaster.setConceroContractSender(arbChainSelector, address(conceroDst), 1);
-        assertEq(wMaster.s_contractsToReceiveFrom(arbChainSelector, address(conceroDst)), 1);
+        wMaster.setConceroContractSender(arbChainSelector, address(opDst), 1);
+        assertEq(wMaster.s_contractsToReceiveFrom(arbChainSelector, address(opDst)), 1);
 
         wMaster.setDonHostedSecretsSlotId(slotId);
 
@@ -500,6 +500,7 @@ contract ProtocolMainnet is Test {
         assertEq(op.s_conceroContracts(arbChainSelector), address(opDst));
         vm.stopPrank();
 
+        ///== Chainlink Functions
         vm.startPrank(baseSubOwner);
         functionsRouterBase.addConsumer(14, address(op));
         functionsRouterBase.addConsumer(14, address(wMaster));

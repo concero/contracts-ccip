@@ -231,10 +231,10 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
 
     if (numberOfPools < ALLOWED) revert ConceroParentPool_ThereIsNoPoolToDistribute();
 
-    // uint256 depositFee = _calculateDepositTransactionFee(_usdcAmount);
-    // uint256 depositMinusFee = _usdcAmount - _convertToUSDCTokenDecimals(depositFee);
+    uint256 depositFee = _calculateDepositTransactionFee(_usdcAmount);
+    uint256 depositMinusFee = _usdcAmount - _convertToUSDCTokenDecimals(depositFee);
 
-    uint256 amountToDistribute = ((_usdcAmount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
+    uint256 amountToDistribute = ((depositMinusFee * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
 
     bytes[] memory args = new bytes[](2);
     args[0] = abi.encodePacked(s_hashSum);
@@ -246,13 +246,13 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
       liquidityProvider: msg.sender,
       usdcBeforeRequest: i_USDC.balanceOf(address(this)) + s_loansInUse,
       lpSupplyBeforeRequest: i_lp.totalSupply(),
-      amount: _usdcAmount
+      amount: depositMinusFee
     });
 
     emit ConceroParentPool_SuccessfulDeposited(msg.sender, _usdcAmount, i_USDC);
 
     i_USDC.safeTransferFrom(msg.sender, address(this), _usdcAmount);
-    // i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(depositFee));
+    i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(depositFee));
 
     _distributeLiquidity(amountToDistribute);
   }
@@ -298,16 +298,16 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
 
     delete s_pendingWithdrawRequests[msg.sender];
 
-    // uint256 withdrawFees = _calculateWithdrawTransactionsFee(withdraw.amountEarned);
-    // uint256 withdrawAmountMinusFees = withdraw.amountEarned - _convertToUSDCTokenDecimals(withdrawFees);
+    uint256 withdrawFees = _calculateWithdrawTransactionsFee(withdraw.amountEarned);
+    uint256 withdrawAmountMinusFees = withdraw.amountEarned - _convertToUSDCTokenDecimals(withdrawFees);
 
-    emit ConceroParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
+    emit ConceroParentPool_Withdrawn(msg.sender, address(i_USDC), withdrawAmountMinusFees);
 
     IERC20(i_lp).safeTransferFrom(msg.sender, address(this), withdraw.amountToBurn);
     i_lp.burn(withdraw.amountToBurn);
 
-    // i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(withdrawFees));
-    i_USDC.safeTransfer(msg.sender, withdraw.amountEarned);
+    i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(withdrawFees));
+    i_USDC.safeTransfer(msg.sender, withdrawAmountMinusFees);
   }
 
   /**
@@ -646,71 +646,71 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     emit ConceroParentPool_RequestUpdated(_liquidityProvider);
   }
 
-  // function _calculateDepositTransactionFee(uint256 _amountToDistribute) internal view returns(uint256 _totalUSDCCost){
-  //   uint256 numberOfPools = s_poolChainSelectors.length;
-  //   uint256 costOfLinkForLiquidityDistribution;
-  //   uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(BASE_CHAIN_SELECTOR);
-  //   uint256 lastNativeUSDCRate = Orchestrator(i_infraProxy).s_latestNativeUsdcRate();
-  //   uint256 lastLinkUSDCRate = Orchestrator(i_infraProxy).s_latestLinkUsdcRate();
-  //   uint256 lastBaseGasPrice = tx.gasprice; //Orchestrator(i_infraProxy).s_lastGasPrices(BASE_CHAIN_SELECTOR);
+  function _calculateDepositTransactionFee(uint256 _amountToDistribute) internal view returns(uint256 _totalUSDCCost){
+    uint256 numberOfPools = s_poolChainSelectors.length;
+    uint256 costOfLinkForLiquidityDistribution;
+    uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(BASE_CHAIN_SELECTOR);
+    uint256 lastNativeUSDCRate = Orchestrator(i_infraProxy).s_latestNativeUsdcRate();
+    uint256 lastLinkUSDCRate = Orchestrator(i_infraProxy).s_latestLinkUsdcRate();
+    uint256 lastBaseGasPrice = tx.gasprice; //Orchestrator(i_infraProxy).s_lastGasPrices(BASE_CHAIN_SELECTOR);
 
-  //   for(uint256 i; i < numberOfPools; ){
-  //     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), (_amountToDistribute / (numberOfPools+1)), s_poolToSendTo[s_poolChainSelectors[i]]);
+    for(uint256 i; i < numberOfPools; ){
+      Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(s_poolChainSelectors[i], address(i_USDC), (_amountToDistribute / (numberOfPools+1)));
 
-  //     //Link cost for all transactions
-  //     costOfLinkForLiquidityDistribution += IRouterClient(i_ccipRouter).getFee(s_poolChainSelectors[i], evm2AnyMessage);
-  //     unchecked {
-  //       ++i;
-  //     }
-  //   }
+      //Link cost for all transactions
+      costOfLinkForLiquidityDistribution += IRouterClient(i_ccipRouter).getFee(s_poolChainSelectors[i], evm2AnyMessage);
+      unchecked {
+        ++i;
+      }
+    }
 
-  //   //_totalUSDCCost
-  //   //    Pools.length x Calls to distribute liquidity
-  //   //    1x Functions request sent
-  //   //    1x Callback Writing to storage
-  //   _totalUSDCCost = ((costOfLinkForLiquidityDistribution + premiumFee) * lastLinkUSDCRate) + ((WRITE_FUNCTIONS_COST * lastBaseGasPrice) * lastNativeUSDCRate);
-  // }
+    //_totalUSDCCost
+    //    Pools.length x Calls to distribute liquidity
+    //    1x Functions request sent
+    //    1x Callback Writing to storage
+    _totalUSDCCost = ((costOfLinkForLiquidityDistribution + premiumFee) * lastLinkUSDCRate) + ((WRITE_FUNCTIONS_COST * lastBaseGasPrice) * lastNativeUSDCRate);
+  }
 
-  // function _calculateWithdrawTransactionsFee(uint256 _amountToReceive) internal view returns(uint256 _totalUSDCCost){
-  //   uint256 numberOfPools = s_poolChainSelectors.length;
-  //   uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(BASE_CHAIN_SELECTOR);
-  //   uint256 baseLastGasPrice = tx.gasprice; //Orchestrator(i_infraProxy).s_lastGasPrices(BASE_CHAIN_SELECTOR);
-  //   uint256 lastNativeUSDCRate = Orchestrator(i_infraProxy).s_latestNativeUsdcRate();
-  //   uint256 lastLinkUSDCRate = Orchestrator(i_infraProxy).s_latestLinkUsdcRate();
+  function _calculateWithdrawTransactionsFee(uint256 _amountToReceive) internal view returns(uint256 _totalUSDCCost){
+    uint256 numberOfPools = s_poolChainSelectors.length;
+    uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(BASE_CHAIN_SELECTOR);
+    uint256 baseLastGasPrice = tx.gasprice; //Orchestrator(i_infraProxy).s_lastGasPrices(BASE_CHAIN_SELECTOR);
+    uint256 lastNativeUSDCRate = Orchestrator(i_infraProxy).s_latestNativeUsdcRate();
+    uint256 lastLinkUSDCRate = Orchestrator(i_infraProxy).s_latestLinkUsdcRate();
 
-  //   uint256 costOfLinkForLiquidityWithdraw;
-  //   uint256 costOfCCIPSendToPoolExecution;
+    uint256 costOfLinkForLiquidityWithdraw;
+    uint256 costOfCCIPSendToPoolExecution;
 
-  //   for(uint256 i; i < numberOfPools; ){
-  //     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), _amountToReceive, address(this));
+    for(uint256 i; i < numberOfPools; ){
+      Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(s_poolChainSelectors[i], address(i_USDC), _amountToReceive);
 
-  //     //Link cost for all transactions
-  //     costOfLinkForLiquidityWithdraw += IRouterClient(i_ccipRouter).getFee(BASE_CHAIN_SELECTOR, evm2AnyMessage); //here the chainSelector must be Base's?
-  //     //USDC costs for all writing from the above transactions
-  //     costOfCCIPSendToPoolExecution += Orchestrator(i_infraProxy).s_lastGasPrices(s_poolChainSelectors[i]) * WRITE_FUNCTIONS_COST;
-  //     unchecked {
-  //       ++i;
-  //     }
-  //   }
+      //Link cost for all transactions
+      costOfLinkForLiquidityWithdraw += IRouterClient(i_ccipRouter).getFee(s_poolChainSelectors[i], evm2AnyMessage);
+      //USDC costs for all writing from the above transactions
+      costOfCCIPSendToPoolExecution += Orchestrator(i_infraProxy).s_lastGasPrices(s_poolChainSelectors[i]) * WRITE_FUNCTIONS_COST;
+      unchecked {
+        ++i;
+      }
+    }
 
-  //   // _totalUSDCCost ==
-  //   //    2x Functions Calls - Link Cost
-  //   //    Pools.length x Calls - Link Cost
-  //   //    Base's gas Cost of callback
-  //   //    Pools.length x Calls to ccipSendToPool Child Pool function
-  //   //  Automation Costs?
-  //   //    SLOAD - 800
-  //   //    ++i - 5
-  //   //    Comparing = 3
-  //   //    STORE - 5_000
-  //   //    Array Reduction - 5_000
-  //   //    gasOverhead - 80_000
-  //   //    Nodes Premium - 50%
-  //   uint256 arrayLength = i_automation.getPendingWithdrawRequestsLength();
+    // _totalUSDCCost ==
+    //    2x Functions Calls - Link Cost
+    //    Pools.length x Calls - Link Cost
+    //    Base's gas Cost of callback
+    //    Pools.length x Calls to ccipSendToPool Child Pool function
+    //  Automation Costs?
+    //    SLOAD - 800
+    //    ++i - 5
+    //    Comparing = 3
+    //    STORE - 5_000
+    //    Array Reduction - 5_000
+    //    gasOverhead - 80_000
+    //    Nodes Premium - 50%
+    uint256 arrayLength = i_automation.getPendingWithdrawRequestsLength();
 
-  //   uint256 automationCost = (((ITERATION_COSTS * arrayLength) + ARRAY_MANIPULATION + AUTOMATION_OVERHEARD) * NODE_PREMIUM) / 100;
-  //   _totalUSDCCost = (((premiumFee * 2) + costOfLinkForLiquidityWithdraw + automationCost) * lastLinkUSDCRate) + ((WRITE_FUNCTIONS_COST * baseLastGasPrice) * lastNativeUSDCRate) + costOfCCIPSendToPoolExecution;
-  // }
+    uint256 automationCost = (((ITERATION_COSTS * arrayLength) + ARRAY_MANIPULATION + AUTOMATION_OVERHEARD) * NODE_PREMIUM) / 100;
+    _totalUSDCCost = (((premiumFee * 2) + costOfLinkForLiquidityWithdraw + automationCost) * lastLinkUSDCRate) + ((WRITE_FUNCTIONS_COST * baseLastGasPrice) * lastNativeUSDCRate) + costOfCCIPSendToPoolExecution;
+  }
 
   ///////////////////////////
   ///VIEW & PURE FUNCTIONS///

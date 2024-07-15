@@ -146,6 +146,8 @@ contract ProtocolTestnet is Test {
     address ccipBnM = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e;
     address ccipBnMArb = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D;
     address registryAddress = 0x8B1565DbAF0577F2F3b474334b068C95687f4FcE;
+    bytes32 etherHashSum = 0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4;
+    bytes32 hashSum = 0x06a7e0b6224a17f3938fef1f9ea5c3de949134a66cf8cb8483b76449714a4504;
 
     //Arb Testnet variables
     address linkArb = 0xb1D4538B4571d411F07960EF2838Ce337FE1E80E;
@@ -157,7 +159,7 @@ contract ProtocolTestnet is Test {
     address ProxyOwner = makeAddr("ProxyOwner");
     address Tester = makeAddr("Tester");
     address User = makeAddr("User");
-    address Messenger = makeAddr("Messenger");
+    address Messenger = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
     address LP = makeAddr("LiquidityProvider");
     address defaultSender = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
     address subOwnerBase = 0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0;
@@ -397,8 +399,11 @@ contract ProtocolTestnet is Test {
 
         wChild = ConceroChildPool(payable(address(childProxy)));
 
+        //====== Wrap the proxy as the implementation
+        opDst = Orchestrator(address(proxyDst));
+
         //=== Arbitrum Contracts
-        vm.makePersistent(address(proxyDst));
+        vm.makePersistent(address(opDst));
         vm.makePersistent(address(dexDst));
         vm.makePersistent(address(child));
         vm.makePersistent(address(conceroDst));
@@ -411,9 +416,6 @@ contract ProtocolTestnet is Test {
         proxyInterfaceInfraArb.upgradeToAndCall(address(orchDst), "");
         vm.prank(ProxyOwner);
         proxyInterfaceChild.upgradeToAndCall(address(child), "");
-
-        //====== Wrap the proxy as the implementation
-        opDst = Orchestrator(address(proxyDst));
 
         //====== Set the DEXes routers
         vm.prank(defaultSender);
@@ -443,10 +445,17 @@ contract ProtocolTestnet is Test {
 
         ///======= Infra Allowance
         vm.startPrank(defaultSender);
-        op.setDstConceroPool(arbChainSelector, address(childProxy));
+        op.setDstConceroPool(arbChainSelector, address(wChild));
         assertEq(op.s_poolReceiver(arbChainSelector), address(wChild));
 
         op.setConceroContract(arbChainSelector, address(proxyDst));
+
+        op.setClfPremiumFees(10344971235874465080, 1847290640394088);
+        op.setDonHostedSecretsVersion(1720259252);
+        op.setDonHostedSecretsSlotID(3);
+        op.setDstJsHashSum(hashSum);
+        op.setSrcJsHashSum(hashSum);
+        op.setEthersHashSum(etherHashSum);
 
         vm.stopPrank();
 
@@ -474,14 +483,22 @@ contract ProtocolTestnet is Test {
 
         ///======= Infra Allowance
         vm.startPrank(defaultSender);
-        opDst.setDstConceroPool(baseChainSelector, address(wChild));
-        assertEq(opDst.s_poolReceiver(baseChainSelector), address(wChild));
+        opDst.setDstConceroPool(baseChainSelector, address(wMaster));
+        assertEq(opDst.s_poolReceiver(baseChainSelector), address(wMaster));
 
         opDst.setConceroContract(baseChainSelector, address(op));
+
+        opDst.setClfPremiumFees(3478487238524512106, 4000000000000000);
+        opDst.setDonHostedSecretsVersion(1718547517);
+        opDst.setDonHostedSecretsSlotID(3);
+        opDst.setDstJsHashSum(hashSum);
+        opDst.setSrcJsHashSum(hashSum);
+        opDst.setEthersHashSum(etherHashSum);
         vm.stopPrank();
 
         vm.startPrank(address(subOwnerArb));
         functionsRouterArb.addConsumer(53, address(opDst));
+        functionsRouterArb.addConsumer(53, address(conceroDst));        
         vm.stopPrank();
 
         vm.prank(0x4281eCF07378Ee595C564a59048801330f3084eE);
@@ -1141,7 +1158,50 @@ contract ProtocolTestnet is Test {
         // assertTrue(op.s_latestLinkNativeRate() > 0);
     }
 
+    //Reverting because of an Invalid Opcode
+    event UnconfirmedTXAdded(bytes32 indexed ccipMessageId, address sender, address recipient, uint256 amount, IStorage.CCIPToken token, uint64 srcChainSelector);
+    function test_addUnconfirmedTX() public setters {
+        vm.selectFork(arbitrumTestFork);
 
+        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+        
+        uint amountIn = 1*10**17;
+        uint amountOutMin = 350*10**6;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(aUSDC);
+        address to = address(op);
+        uint deadline = block.timestamp + 1800;
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(tUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(mockBase, path, to, deadline)
+        });
+
+        /////////////////////////// FUNCTION INPUT MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+        bytes32 ccipId = 0xb41f78fe0c25b7fa0b18ade5bdc972f4163eae5b2d2b1e19d104b11c7bfaf9a1;
+        address sender = 0x5cb738DAe833Ec21fe65ae1719fAd8ab8cE7f23D;
+        address recipient = 0x5cb738DAe833Ec21fe65ae1719fAd8ab8cE7f23D;
+        uint256 amount = 10000000;
+        uint8 token = 0;
+
+        vm.prank(Messenger);
+        vm.expectEmit();
+        emit UnconfirmedTXAdded(ccipId, sender, recipient, amount, IStorage.CCIPToken(token), baseChainSelector);
+        opDst.addUnconfirmedTX(ccipId, sender, recipient, amount, baseChainSelector, IStorage.CCIPToken(token), block.number, abi.encode(swapData[0]));
+    }
+
+    function test_getSrcTotalFeeInUsdcViaDelegateCall() public setters {
+        uint256 fee = op.getSrcTotalFeeInUsdc(IStorage.CCIPToken.bnm, arbChainSelector, 10*10**6);
+        assertEq(fee, 0);
+    }
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// AUTOMATION MODULE ///////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////

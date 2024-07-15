@@ -188,8 +188,13 @@ contract ParentPoolTest is Test {
         vm.startPrank(Orchestrator);
         vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_CallerIsNotTheProxy.selector, address(masterPool)));
         masterPool.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
-
         vm.stopPrank();
+
+        vm.prank(Tester);
+        usdc.transfer(address(wMaster), USDC_INITIAL_BALANCE);
+        vm.prank(Orchestrator);
+        wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
+
     }
 
     //It will revert on ccip call
@@ -204,10 +209,16 @@ contract ParentPoolTest is Test {
         vm.prank(Tester);
         usdc.approve(address(wMaster), allowedAmountToDeposit);
 
+        uint256 capNow = wMaster.getMaxCap();
+        assertEq(capNow, 0);
+
         //CCIP being called means deposit went through, so the purpose is fulfilled
         vm.prank(Tester);
         vm.expectRevert();
         wMaster.depositLiquidity(allowedAmountToDeposit);
+
+        uint256 inUse = wMaster.getUsdcInUse();
+        assertEq(inUse, 0);
     }
 
     error ConceroParentPool_AmountBelowMinimum(uint256 amount);
@@ -252,4 +263,10 @@ contract ParentPoolTest is Test {
         emit ConceroParentPool_RedistributionStarted(0); //requestId == 0 because CLF is disabled
         wMaster.removePools(mockDestinationChainSelector);
     }
+
+    function test_startWithdrawRevert() public {
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InsufficientBalance.selector));
+        wMaster.startWithdrawal(10*10**18);
+    }
+
 }

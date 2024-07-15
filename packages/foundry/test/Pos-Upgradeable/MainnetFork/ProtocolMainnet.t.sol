@@ -118,7 +118,6 @@ contract ProtocolMainnet is Test {
     ConceroParentPool wMaster;
     ConceroChildPool wChild;
 
-
     //==== Create the instance to forked tokens
     IWETH wEth;
     IWETH arbWEth;
@@ -167,6 +166,7 @@ contract ProtocolMainnet is Test {
     address Messenger = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
     address LP = makeAddr("LiquidityProvider");
     address defaultSender = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
+    address baseSubOwner = 0xddDd5f804B9D293dce8819d232e8D76381605a62;
     address subOwner = 0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0;
 
     uint256 baseMainFork;
@@ -500,7 +500,7 @@ contract ProtocolMainnet is Test {
         assertEq(op.s_conceroContracts(arbChainSelector), address(opDst));
         vm.stopPrank();
 
-        vm.startPrank(address(subOwner));
+        vm.startPrank(baseSubOwner);
         functionsRouterBase.addConsumer(14, address(op));
         functionsRouterBase.addConsumer(14, address(wMaster));
         functionsRouterBase.addConsumer(14, address(automation));
@@ -528,7 +528,7 @@ contract ProtocolMainnet is Test {
         assertEq(opDst.s_poolReceiver(baseChainSelector), address(wMaster));
         vm.stopPrank();
 
-        vm.startPrank(address(subOwner));
+        vm.startPrank(address(baseSubOwner));
         functionsRouterArb.addConsumer(22, address(opDst));
         functionsRouterArb.addConsumer(22, address(wChild));
         vm.stopPrank();

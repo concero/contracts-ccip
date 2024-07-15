@@ -14,7 +14,7 @@ contract ChildPoolStorage {
   ///STORAGE///
   /////////////
   ///@notice array of chain IDS of Pools to receive Liquidity through `ccipSend` function
-  uint64[] s_poolsToDistribute;
+  uint64[] s_poolChainSelectors;
 
   ///@notice Mapping to keep track of allowed pool senders
   mapping(uint64 chainSelector => mapping(address conceroContract => uint256)) public s_contractsToReceiveFrom;

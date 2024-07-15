@@ -4,7 +4,7 @@ export type CLFSecrets = {
   INFURA_API_KEY: envString;
   ALCHEMY_API_KEY: envString;
 };
-// const jsPath = "./tasks/CLFScripts";
+
 const secrets: CLFSecrets = {
   WALLET_PRIVATE_KEY: process.env.MESSENGER_PRIVATE_KEY,
   INFURA_API_KEY: process.env.INFURA_API_KEY,

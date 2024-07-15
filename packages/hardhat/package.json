@@ -18,7 +18,7 @@
     "forge-clean": "cd ./test/forge/ && forge clean",
     "verify": "hardhat etherscan-verify",
     "hardhat-verify": "hardhat verify",
-    "clean": "rm -rf ./artifacts ./cache ./coverage ./typechain-types",
+    "clean": "rm -rf ./artifacts ./cache ./coverage ./typechain-types ./deployments",
     "solhint": "solhint ./contracts/**/*.sol",
     "solhint:fix": "solhint --fix ./contracts/**/*.sol",
     "gas-report": "REPORT_GAS=true hardhat test --network hardhat",
@@ -89,7 +89,7 @@
     "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
     "@nomicfoundation/hardhat-viem": "^2.0.0",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
-    "@openzeppelin/contracts": "^4.8.1",
+    "@openzeppelin/contracts": "^5.0.2",
     "@swc/core": "^1.4.13",
     "@swc/helpers": "^0.5.9",
     "@typechain/ethers-v6": "^0.5.1",
@@ -103,9 +103,11 @@
     "qrcode": "^1.5.1",
     "regenerator-runtime": "^0.14.1",
     "solhint-plugin-chainlink-solidity": "git+https://github.com/smartcontractkit/chainlink-solhint-rules.git#v1.2.1",
+    "solidity-bytes-utils": "0.8.0",
     "swc": "^1.0.11",
     "terser": "^5.30.3",
     "velodrome": "https://github.com/velodrome-finance/contracts",
-    "viem": "^2.9.18"
+    "viem": "^2.9.18",
+    "sushiswap-v3-periphery": "https://github.com/sushiswap/v3-periphery"
   }
 }

@@ -227,7 +227,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     if (_usdcAmount < MIN_DEPOSIT) revert ConceroParentPool_AmountBelowMinimum(MIN_DEPOSIT);
     if (s_maxDeposit != 0 && s_maxDeposit < _usdcAmount + i_USDC.balanceOf(address(this)) + s_loansInUse) revert ConceroParentPool_MaxCapReached(s_maxDeposit);
 
-    uint256 numberOfPools = s_poolsToDistribute.length;
+    uint256 numberOfPools = s_poolChainSelectors.length;
 
     if (numberOfPools < ALLOWED) revert ConceroParentPool_ThereIsNoPoolToDistribute();
 
@@ -376,7 +376,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
   function setPools(uint64 _chainSelector, address _pool, bool isRebalance) external payable isProxy onlyOwner {
     if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ConceroParentPool_InvalidAddress();
 
-    s_poolsToDistribute.push(_chainSelector);
+    s_poolChainSelectors.push(_chainSelector);
     s_poolToSendTo[_chainSelector] = _pool;
 
     emit ConceroParentPool_PoolReceiverUpdated(_chainSelector, _pool);
@@ -392,7 +392,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
       args[0] = abi.encodePacked(s_hashSum);
       args[1] = abi.encodePacked(s_ethersHashSum);
       args[2] = abi.encodePacked(_chainSelector);
-      args[3] = abi.encodePacked(s_poolsToDistribute.length + 1);
+      args[3] = abi.encodePacked(s_poolChainSelectors.length + 1);
 
       //todo: @nikita pools have to track requests in order to prevent 4 nodes triggering a rebalance on the same pool
       bytes32 requestId /* = _sendRequest(args, REBALANCE_JS_CODE)*/;
@@ -410,11 +410,11 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
    */
   function removePools(uint64 _chainSelector) external payable isProxy onlyOwner {
     address removedPool;
-    for (uint256 i; i < s_poolsToDistribute.length; ) {
-      if (s_poolsToDistribute[i] == _chainSelector) {
+    for (uint256 i; i < s_poolChainSelectors.length; ) {
+      if (s_poolChainSelectors[i] == _chainSelector) {
         removedPool = s_poolToSendTo[_chainSelector];
-        s_poolsToDistribute[i] = s_poolsToDistribute[s_poolsToDistribute.length - 1];
-        s_poolsToDistribute.pop();
+        s_poolChainSelectors[i] = s_poolChainSelectors[s_poolChainSelectors.length - 1];
+        s_poolChainSelectors.pop();
         delete s_poolToSendTo[_chainSelector];
       }
       unchecked {
@@ -495,9 +495,9 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
    * @param _amountToDistribute amount of USDC should be distributed to the pools.
    */
   function _distributeLiquidity(uint256 _amountToDistribute) internal {
-    uint256 numberOfPools = s_poolsToDistribute.length;
+    uint256 numberOfPools = s_poolChainSelectors.length;
     for (uint256 i; i < numberOfPools; ) {
-      _ccipSend(s_poolsToDistribute[i], _amountToDistribute);
+      _ccipSend(s_poolChainSelectors[i], _amountToDistribute);
 
       unchecked {
         ++i;
@@ -620,7 +620,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
    * @dev _totalUSDCCrossChain MUST have 10**6 decimals.
    */
   function _updateUsdcAmountEarned(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _lpToBurn, uint256 _totalUSDCCrossChain) private {
-    uint256 numberOfPools = s_poolsToDistribute.length;
+    uint256 numberOfPools = s_poolChainSelectors.length;
     uint256 totalCrossChainBalance = _totalUSDCCrossChain + i_USDC.balanceOf(address(this)) + s_loansInUse;
 
     //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
@@ -647,7 +647,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
   }
 
   // function _calculateDepositTransactionFee(uint256 _amountToDistribute) internal view returns(uint256 _totalUSDCCost){
-  //   uint256 numberOfPools = s_poolsToDistribute.length;
+  //   uint256 numberOfPools = s_poolChainSelectors.length;
   //   uint256 costOfLinkForLiquidityDistribution;
   //   uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(BASE_CHAIN_SELECTOR);
   //   uint256 lastNativeUSDCRate = Orchestrator(i_infraProxy).s_latestNativeUsdcRate();
@@ -655,10 +655,10 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
   //   uint256 lastBaseGasPrice = tx.gasprice; //Orchestrator(i_infraProxy).s_lastGasPrices(BASE_CHAIN_SELECTOR);
 
   //   for(uint256 i; i < numberOfPools; ){
-  //     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), (_amountToDistribute / (numberOfPools+1)), s_poolToSendTo[s_poolsToDistribute[i]]);
+  //     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(address(i_USDC), (_amountToDistribute / (numberOfPools+1)), s_poolToSendTo[s_poolChainSelectors[i]]);
 
   //     //Link cost for all transactions
-  //     costOfLinkForLiquidityDistribution += IRouterClient(i_ccipRouter).getFee(s_poolsToDistribute[i], evm2AnyMessage);
+  //     costOfLinkForLiquidityDistribution += IRouterClient(i_ccipRouter).getFee(s_poolChainSelectors[i], evm2AnyMessage);
   //     unchecked {
   //       ++i;
   //     }
@@ -672,7 +672,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
   // }
 
   // function _calculateWithdrawTransactionsFee(uint256 _amountToReceive) internal view returns(uint256 _totalUSDCCost){
-  //   uint256 numberOfPools = s_poolsToDistribute.length;
+  //   uint256 numberOfPools = s_poolChainSelectors.length;
   //   uint256 premiumFee = Orchestrator(i_infraProxy).clfPremiumFees(BASE_CHAIN_SELECTOR);
   //   uint256 baseLastGasPrice = tx.gasprice; //Orchestrator(i_infraProxy).s_lastGasPrices(BASE_CHAIN_SELECTOR);
   //   uint256 lastNativeUSDCRate = Orchestrator(i_infraProxy).s_latestNativeUsdcRate();
@@ -687,7 +687,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
   //     //Link cost for all transactions
   //     costOfLinkForLiquidityWithdraw += IRouterClient(i_ccipRouter).getFee(BASE_CHAIN_SELECTOR, evm2AnyMessage); //here the chainSelector must be Base's?
   //     //USDC costs for all writing from the above transactions
-  //     costOfCCIPSendToPoolExecution += Orchestrator(i_infraProxy).s_lastGasPrices(s_poolsToDistribute[i]) * WRITE_FUNCTIONS_COST;
+  //     costOfCCIPSendToPoolExecution += Orchestrator(i_infraProxy).s_lastGasPrices(s_poolChainSelectors[i]) * WRITE_FUNCTIONS_COST;
   //     unchecked {
   //       ++i;
   //     }

@@ -161,14 +161,14 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
    * @dev If Orchestrator took a loan and the money didn't rebalance yet, it will be left behind.
    */
   function liquidatePool() external isProxy onlyMessenger {
-    uint256 numberOfPools = s_poolsToDistribute.length;
+    uint256 numberOfPools = s_poolChainSelectors.length;
     if (numberOfPools < ALLOWED) revert ConceroChildPool_ThereIsNoPoolToDistribute();
 
     uint256 amountToSentToEachPool = (i_USDC.balanceOf(address(this)) / numberOfPools) - 1;
 
     for (uint256 i; i < numberOfPools; ) {
       //This is a function to deal with adding&removing pools. So, the second param will always be address(0)
-      _ccipSend(s_poolsToDistribute[i], address(0), amountToSentToEachPool);
+      _ccipSend(s_poolChainSelectors[i], address(0), amountToSentToEachPool);
       unchecked {
         ++i;
       }
@@ -224,7 +224,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
   function setPools(uint64 _chainSelector, address _pool) external payable isProxy onlyOwner {
     if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) revert ConceroChildPool_InvalidAddress();
 
-    s_poolsToDistribute.push(_chainSelector);
+    s_poolChainSelectors.push(_chainSelector);
     s_poolToSendTo[_chainSelector] = _pool;
 
     emit ConceroChildPool_PoolReceiverUpdated(_chainSelector, _pool);
@@ -236,10 +236,10 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
    */
   function removePools(uint64 _chainSelector) external payable isProxy onlyOwner {
 
-    for (uint256 i; i < s_poolsToDistribute.length; ) {
-      if (s_poolsToDistribute[i] == _chainSelector) {
-        s_poolsToDistribute[i] = s_poolsToDistribute[s_poolsToDistribute.length - 1];
-        s_poolsToDistribute.pop();
+    for (uint256 i; i < s_poolChainSelectors.length; ) {
+      if (s_poolChainSelectors[i] == _chainSelector) {
+        s_poolChainSelectors[i] = s_poolChainSelectors[s_poolChainSelectors.length - 1];
+        s_poolChainSelectors.pop();
         delete s_poolToSendTo[_chainSelector];
       }
       unchecked {
@@ -292,7 +292,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
    * @param _liquidityProviderAddress The liquidity provider that requested Withdraw. If it's a rebalance, it will be address(0)
    * @param _amount amount of the token to be sent
    * @dev This function will sent the address of the user as data. This address will be used to update the mapping on ParentPool.
-   * @dev when processing withdrawals, the _chainSelector will always be the index 0 of s_poolsToDistribute
+   * @dev when processing withdrawals, the _chainSelector will always be the index 0 of s_poolChainSelectors
   */
   function _ccipSend(uint64 _chainSelector, address _liquidityProviderAddress, uint256 _amount) internal onlyMessenger isProxy returns (bytes32 messageId) {
     if (_amount > i_USDC.balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();

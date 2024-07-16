@@ -973,13 +973,14 @@ contract ProtocolTestnet is Test {
         vm.startPrank(LP);
         IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
         bytes32 request = wMaster.depositLiquidity(depositEnoughAmount);
-        // ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
         vm.stopPrank();
 
+        assertEq(IERC20(ccipBnM).balanceOf(address(wMaster)), depositEnoughAmount);
         assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance - depositEnoughAmount);
 
         vm.prank(Tester);
         wMaster.helperFulfillCLFRequest(request, abi.encode(0), new bytes(0));
+        // ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
 
         assertEq(IERC20(lp).balanceOf(LP), 100*10**18);
     }

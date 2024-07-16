@@ -958,6 +958,7 @@ contract ProtocolTestnet is Test {
     //     // vm.stopPrank();
     // }
 
+    event ParentPool_RequestUpdated(address liquidityProvider);
     function test_distributeAfterFulFill() public setters{
         vm.selectFork(baseTestFork);
 
@@ -979,10 +980,17 @@ contract ProtocolTestnet is Test {
         assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance - depositEnoughAmount);
 
         vm.prank(Tester);
-        wMaster.helperFulfillCLFRequest(request, abi.encode(0), new bytes(0));
-        // ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+        wMaster.helperFulfillCLFRequest(request, abi.encode(depositEnoughAmount), new bytes(0));
 
         assertEq(IERC20(lp).balanceOf(LP), 100*10**18);
+
+        vm.prank(LP);
+        bytes32 requestW = wMaster.startWithdrawal(100*10**18);
+
+        vm.prank(Tester);
+        vm.expectEmit();
+        emit ParentPool_RequestUpdated(LP);
+        wMaster.helperFulfillCLFRequest(requestW, abi.encode(50*10**6), new bytes(0));
     }
 
     event FunctionsRequestError(bytes32 requestId, IParentPool.RequestType);
@@ -1013,6 +1021,7 @@ contract ProtocolTestnet is Test {
 
         assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance);
     }
+
     ////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// BRIDGE MODULE ///////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////

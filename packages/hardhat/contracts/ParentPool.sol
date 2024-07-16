@@ -221,8 +221,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     // uint256 depositFee = _calculateDepositTransactionFee(_usdcAmount);
     // uint256 depositMinusFee = _usdcAmount - _convertToUSDCTokenDecimals(depositFee);
 
-    uint256 amountToDistribute = ((_usdcAmount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
-
     bytes[] memory args = new bytes[](2);
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
@@ -231,7 +229,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     s_requests[requestId] = IParentPool.CLFRequest({
       requestType: IParentPool.RequestType.GetTotalUSDC,
       liquidityProvider: msg.sender,
-      usdcBeforeRequest: i_USDC.balanceOf(address(this)) + s_loansInUse,
+      parentPoolUsdcBeforeRequest: i_USDC.balanceOf(address(this)) + s_loansInUse,
       lpSupplyBeforeRequest: i_lp.totalSupply(),
       amount: _usdcAmount
     });
@@ -240,8 +238,6 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     i_USDC.safeTransferFrom(msg.sender, address(this), _usdcAmount);
     // i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(depositFee));
-
-    _ccipSend(numberOfPools, amountToDistribute);
   }
 
   /**
@@ -261,7 +257,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     s_requests[requestId] = IParentPool.CLFRequest({
       requestType: IParentPool.RequestType.PerformWithdrawal,
       liquidityProvider: msg.sender,
-      usdcBeforeRequest: 0,
+      parentPoolUsdcBeforeRequest: 0,
       lpSupplyBeforeRequest: i_lp.totalSupply(),
       amount: _lpAmount
     });
@@ -490,15 +486,22 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
     IParentPool.CLFRequest storage request = s_requests[requestId];
 
-    if (err.length > 0) {
+    if (err.length > 0 && request.requestType == IParentPool.RequestType.GetTotalUSDC) {
+      emit FunctionsRequestError(requestId, request.requestType);
+      i_USDC.safeTransfer(request.liquidityProvider, request.amount);
+      return;
+    } else {
       emit FunctionsRequestError(requestId, request.requestType);
       return;
     }
 
     uint256 crossChainBalance = abi.decode(response, (uint256));
-    uint256 usdcReserve = request.usdcBeforeRequest + crossChainBalance;
+    uint256 usdcReserve = request.parentPoolUsdcBeforeRequest + crossChainBalance;
 
     if (request.requestType == IParentPool.RequestType.GetTotalUSDC) {
+      uint256 numberOfPools = s_poolsToDistribute.length;
+      uint256 amountToDistribute = ((request.parentPoolUsdcBeforeRequest * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
+      _ccipSend(numberOfPools, amountToDistribute);
       _updateDepositInfoAndMintLPTokens(request.liquidityProvider, request.lpSupplyBeforeRequest, request.amount, usdcReserve);
     } else if (request.requestType == IParentPool.RequestType.PerformWithdrawal) {
       _updateUsdcAmountEarned(request.liquidityProvider, request.lpSupplyBeforeRequest, request.amount, usdcReserve);

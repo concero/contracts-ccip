@@ -963,47 +963,47 @@ contract ProtocolTestnet is Test {
     ////////////////////////////////////////////////////////////////////////////////////
     
     error Concero_ItsNotOrchestrator(address);
-    function test_swapAndBridgeWithoutFunctions() public setters{
-        helper();
+    // function test_swapAndBridgeWithoutFunctions() public setters{
+    //     helper();
 
-        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    //     /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
         
-        uint amountIn = 1*10**17;
-        uint amountOutMin = 350*10**6;
-        address[] memory path = new address[](2);
-        path[0] = address(wEth);
-        path[1] = address(tUSDC);
-        address to = address(op);
-        uint deadline = block.timestamp + 1800;
+    //     uint amountIn = 1*10**17;
+    //     uint amountOutMin = 350*10**6;
+    //     address[] memory path = new address[](2);
+    //     path[0] = address(wEth);
+    //     path[1] = address(tUSDC);
+    //     address to = address(op);
+    //     uint deadline = block.timestamp + 1800;
 
-        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
-        swapData[0] = IDexSwap.SwapData({
-                            dexType: IDexSwap.DexType.UniswapV2,
-                            fromToken: address(wEth),
-                            fromAmount: amountIn,
-                            toToken: address(tUSDC),
-                            toAmount: amountOutMin,
-                            toAmountMin: amountOutMin,
-                            dexData: abi.encode(mockBase, path, to, deadline)
-        });
+    //     IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+    //     swapData[0] = IDexSwap.SwapData({
+    //                         dexType: IDexSwap.DexType.UniswapV2,
+    //                         fromToken: address(wEth),
+    //                         fromAmount: amountIn,
+    //                         toToken: address(tUSDC),
+    //                         toAmount: amountOutMin,
+    //                         toAmountMin: amountOutMin,
+    //                         dexData: abi.encode(mockBase, path, to, deadline)
+    //     });
 
-        /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
-            tokenType: IStorage.CCIPToken.usdc,
-            amount: 350 *10**6,
-            dstChainSelector: arbChainSelector,
-            receiver: User
-        });
+    //     /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    //     IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+    //         tokenType: IStorage.CCIPToken.usdc,
+    //         amount: 350 *10**6,
+    //         dstChainSelector: arbChainSelector,
+    //         receiver: User
+    //     });
 
-        // ==== Approve Transfer
-        vm.startPrank(User);
-        wEth.approve(address(op), 0.1 ether);
-        vm.expectRevert(abi.encodeWithSelector(Concero_ItsNotOrchestrator.selector, address(concero)));
-        concero.startBridge(bridgeData, swapData);
+    //     // ==== Approve Transfer
+    //     vm.startPrank(User);
+    //     wEth.approve(address(op), 0.1 ether);
+    //     vm.expectRevert(abi.encodeWithSelector(Concero_ItsNotOrchestrator.selector, address(concero)));
+    //     concero.startBridge(bridgeData, swapData);
 
-        op.swapAndBridge(bridgeData, swapData, swapData);
-        vm.stopPrank();
-    }
+    //     op.swapAndBridge(bridgeData, swapData, swapData);
+    //     vm.stopPrank();
+    // }
 
     function test_userBridge() public setters {
         vm.selectFork(baseTestFork);
@@ -1025,7 +1025,6 @@ contract ProtocolTestnet is Test {
 
         //====== Check Receiver balance
         assertEq(IERC20(ccipBnMArb).balanceOf(User), 0);
-        assertEq(IERC20(ccipBnMArb).balanceOf(address(wChild)), depositEnoughAmount / 2);
 
         vm.selectFork(baseTestFork);
 

@@ -500,7 +500,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     if (request.requestType == IParentPool.RequestType.GetTotalUSDC) {
       uint256 numberOfPools = s_poolsToDistribute.length;
-      uint256 amountToDistribute = ((request.parentPoolUsdcBeforeRequest * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
+      uint256 amountToDistribute = ((request.amount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
       _ccipSend(numberOfPools, amountToDistribute);
       _updateDepositInfoAndMintLPTokens(request.liquidityProvider, request.lpSupplyBeforeRequest, request.amount, usdcReserve);
     } else if (request.requestType == IParentPool.RequestType.PerformWithdrawal) {

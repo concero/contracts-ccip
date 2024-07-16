@@ -958,6 +958,60 @@ contract ProtocolTestnet is Test {
     //     // vm.stopPrank();
     // }
 
+    function test_distributeAfterFulFill() public setters{
+        vm.selectFork(baseTestFork);
+
+        uint256 lpBalance = IERC20(ccipBnM).balanceOf(LP);
+        uint256 depositEnoughAmount = 100*10**6;
+
+        //======= Increase the CAP
+        vm.expectEmit();
+        vm.prank(Tester);
+        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
+        wMaster.setPoolCap(1000*10**6);
+
+        vm.startPrank(LP);
+        IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
+        bytes32 request = wMaster.depositLiquidity(depositEnoughAmount);
+        // ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+        vm.stopPrank();
+
+        assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance - depositEnoughAmount);
+
+        vm.prank(Tester);
+        wMaster.helperFulfillCLFRequest(request, abi.encode(0), new bytes(0));
+
+        assertEq(IERC20(lp).balanceOf(LP), 100*10**18);
+    }
+
+    event FunctionsRequestError(bytes32 requestId, IParentPool.RequestType);
+    function test_distributeReturnAfterFulFill() public setters{
+        vm.selectFork(baseTestFork);
+
+        uint256 lpBalance = IERC20(ccipBnM).balanceOf(LP);
+        uint256 depositEnoughAmount = 100*10**6;
+
+        //======= Increase the CAP
+        vm.expectEmit();
+        vm.prank(Tester);
+        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
+        wMaster.setPoolCap(1000*10**6);
+
+        vm.startPrank(LP);
+        IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
+        bytes32 request = wMaster.depositLiquidity(depositEnoughAmount);
+        // ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+        vm.stopPrank();
+
+        assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance - depositEnoughAmount);
+
+        vm.prank(Tester);
+        vm.expectEmit();
+        emit FunctionsRequestError(request, IParentPool.RequestType.GetTotalUSDC);
+        wMaster.helperFulfillCLFRequest(request, "", abi.encode("failed"));
+
+        assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance);
+    }
     ////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// BRIDGE MODULE ///////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////

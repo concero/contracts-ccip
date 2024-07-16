@@ -210,7 +210,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @notice Function for user to deposit liquidity of allowed tokens
    * @param _usdcAmount the amount to be deposited
    */
-  function depositLiquidity(uint256 _usdcAmount) external isProxy {
+  function depositLiquidity(uint256 _usdcAmount) external isProxy returns(bytes32 _requestId) {
     if (_usdcAmount < MIN_DEPOSIT) revert ParentPool_AmountBelowMinimum(MIN_DEPOSIT);
     if (s_maxDeposit != 0 && s_maxDeposit < _usdcAmount + i_USDC.balanceOf(address(this)) + s_loansInUse) revert ParentPool_MaxCapReached(s_maxDeposit);
 
@@ -225,8 +225,8 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
 
-    bytes32 requestId = _sendRequest(args, JS_CODE);
-    s_requests[requestId] = IParentPool.CLFRequest({
+    _requestId = _sendRequest(args, JS_CODE);
+    s_requests[_requestId] = IParentPool.CLFRequest({
       requestType: IParentPool.RequestType.GetTotalUSDC,
       liquidityProvider: msg.sender,
       parentPoolUsdcBeforeRequest: i_USDC.balanceOf(address(this)) + s_loansInUse,
@@ -490,7 +490,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
       emit FunctionsRequestError(requestId, request.requestType);
       i_USDC.safeTransfer(request.liquidityProvider, request.amount);
       return;
-    } else {
+    } else if (err.length > 0){
       emit FunctionsRequestError(requestId, request.requestType);
       return;
     }
@@ -681,5 +681,9 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   // TODO: Remove this function after tests
   function deletePendingWithdrawRequest(address _liquidityProvider) external isProxy onlyOwner {
     delete s_pendingWithdrawRequests[_liquidityProvider];
+  }
+
+  function helperFulfillCLFRequest(bytes32 requestId, bytes memory response, bytes memory err) external isProxy onlyOwner{
+    fulfillRequest(requestId, response, err);
   }
 }

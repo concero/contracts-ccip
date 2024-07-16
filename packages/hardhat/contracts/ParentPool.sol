@@ -244,7 +244,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * @notice Function to allow Liquidity Providers to start the Withdraw of their USDC deposited
    * @param _lpAmount the amount of lp token the user wants to burn to get USDC back.
    */
-  function startWithdrawal(uint256 _lpAmount) external isProxy {
+  function startWithdrawal(uint256 _lpAmount) external isProxy returns(bytes32 _requestId){
     if (i_lp.balanceOf(msg.sender) < _lpAmount) revert ParentPool_InsufficientBalance();
     if (s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ParentPool_ActiveRequestNotFulfilledYet();
 
@@ -252,9 +252,9 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
 
-    bytes32 requestId = _sendRequest(args, JS_CODE);
+    _requestId = _sendRequest(args, JS_CODE);
 
-    s_requests[requestId] = IParentPool.CLFRequest({
+    s_requests[_requestId] = IParentPool.CLFRequest({
       requestType: IParentPool.RequestType.PerformWithdrawal,
       liquidityProvider: msg.sender,
       parentPoolUsdcBeforeRequest: 0,
@@ -488,6 +488,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     if (err.length > 0 && request.requestType == IParentPool.RequestType.GetTotalUSDC) {
       emit FunctionsRequestError(requestId, request.requestType);
+      //clear request
       i_USDC.safeTransfer(request.liquidityProvider, request.amount);
       return;
     } else if (err.length > 0){
@@ -501,6 +502,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     if (request.requestType == IParentPool.RequestType.GetTotalUSDC) {
       uint256 numberOfPools = s_poolsToDistribute.length;
       uint256 amountToDistribute = ((request.amount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
+      //TODO: s_pendingDeposits 
       _ccipSend(numberOfPools, amountToDistribute);
       _updateDepositInfoAndMintLPTokens(request.liquidityProvider, request.lpSupplyBeforeRequest, request.amount, usdcReserve);
     } else if (request.requestType == IParentPool.RequestType.PerformWithdrawal) {

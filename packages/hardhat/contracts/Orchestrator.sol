@@ -23,8 +23,10 @@ error Orchestrator_InvalidAmount();
 error Orchestrator_OnlyRouterCanFulfill();
 ///@notice error emitted when some params of Bridge Data are empty
 error Orchestrator_InvalidBridgeData();
-///@notice error emitted when an empty swapData is the input
+///@notice error emitted when an invalid swapData is the input
 error Orchestrator_InvalidSwapData();
+///@notice error emitted when an invalid Dst swapData is the input
+error Orchestrator_InvalidDstSwapData();
 ///@notice error emitted when the ether swap data is corrupted
 error Orchestrator_InvalidSwapEtherData();
 ///@notice error emitted when the token to bridge is not USDC
@@ -89,10 +91,10 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     _;
   }
 
-  modifier validateSwapData(IDexSwap.SwapData[] calldata _srcSwapData) {
+  modifier validateSwapData(IDexSwap.SwapData[] memory _srcSwapData) {
     uint256 swapDataLength = _srcSwapData.length;
 
-    if (swapDataLength == 0 || swapDataLength > 5 || _srcSwapData[0].fromAmount == 0 || _srcSwapData[0].toAmountMin == 0) {
+    if (swapDataLength < 1 || swapDataLength > 5 || _srcSwapData[0].fromAmount == 0 || _srcSwapData[0].toAmountMin == 0) {
       revert Orchestrator_InvalidSwapData();
     }
 
@@ -105,7 +107,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
 
     if (swapDataLength > 0) {
       if (swapDataLength > 1 || _srcSwapData[0].fromAmount == 0 || _srcSwapData[0].toAmountMin == 0) {
-        revert Orchestrator_InvalidSwapData();
+        revert Orchestrator_InvalidDstSwapData();
       }
     }
     _;
@@ -135,7 +137,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
 
   function swapAndBridge(
     BridgeData memory bridgeData,
-    IDexSwap.SwapData[] calldata srcSwapData,
+    IDexSwap.SwapData[] memory srcSwapData,
     IDexSwap.SwapData[] memory dstSwapData
   ) external validateSwapData(srcSwapData) validateBridgeData(bridgeData) validateDstSwapData(dstSwapData) nonReentrant {
     if (srcSwapData[srcSwapData.length - 1].toToken != getToken(bridgeData.tokenType, i_chainIndex)) revert Orchestrator_InvalidSwapData();

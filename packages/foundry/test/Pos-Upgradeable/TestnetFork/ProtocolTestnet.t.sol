@@ -1022,6 +1022,47 @@ contract ProtocolTestnet is Test {
         assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance);
     }
 
+    error ParentPool_TxAlreadyRemoved(bytes32 ccipMessageId);
+    function test_depositCCIPTracking() public setters{
+        vm.selectFork(baseTestFork);
+
+        uint256 lpBalance = IERC20(ccipBnM).balanceOf(LP);
+        uint256 depositEnoughAmount = 100*10**6;
+
+        //======= Increase the CAP
+        vm.expectEmit();
+        vm.prank(Tester);
+        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
+        wMaster.setPoolCap(1000*10**6);
+
+        vm.startPrank(LP);
+        IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
+        bytes32 request = wMaster.depositLiquidity(depositEnoughAmount);
+        vm.stopPrank();
+
+        assertEq(wMaster.s_pendingDepositTransfers(), depositEnoughAmount);
+
+        vm.prank(Tester);
+        wMaster.helperFulfillCLFRequest(request, abi.encode(depositEnoughAmount), new bytes(0));
+
+        assertEq(wMaster.s_pendingDepositTransfers(), 0);
+
+        IParentPool.CCIPPendingDeposits[] memory requests = new IParentPool.CCIPPendingDeposits[](4);
+        requests = wMaster.getCCIPPendingDeposits();
+        assertEq(requests.length, 1);
+        
+        bytes32 deletedTX = requests[0].transactionId;
+
+        vm.prank(Messenger);
+        wMaster.removeCCIPTX(deletedTX);
+
+        requests = wMaster.getCCIPPendingDeposits();
+        assertEq(requests.length, 0);
+
+        vm.prank(Messenger);
+        vm.expectRevert(abi.encodeWithSelector(ParentPool_TxAlreadyRemoved.selector, deletedTX));
+        wMaster.removeCCIPTX(deletedTX);
+    }
     ////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// BRIDGE MODULE ///////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////

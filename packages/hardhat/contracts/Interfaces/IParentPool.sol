@@ -21,6 +21,13 @@ interface IParentPool {
     address poolAddress;
   }
 
+  ///@notice Struct to hold ccip sent transactions
+  struct CCIPPendingDeposits{
+    bytes32 transactionId;
+    uint64 destinationChainSelector;
+    uint256 amount;
+  }
+
   ///@notice Struct to track Functions Requests Type
   enum RequestType {
     GetTotalUSDC, //Deposits

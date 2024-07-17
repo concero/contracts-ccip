@@ -215,8 +215,10 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     if (s_maxDeposit != 0 && s_maxDeposit < _usdcAmount + i_USDC.balanceOf(address(this)) + s_loansInUse) revert ParentPool_MaxCapReached(s_maxDeposit);
 
     uint256 numberOfPools = s_poolsToDistribute.length;
-
     if (numberOfPools < 1) revert ParentPool_ThereIsNoPoolToDistribute();
+
+    uint256 parentPoolUSDC = (i_USDC.balanceOf(address(this)) + s_loansInUse) - s_pendingDepositTransfers;
+    s_pendingDepositTransfers = s_pendingDepositTransfers + _usdcAmount;
 
     // uint256 depositFee = _calculateDepositTransactionFee(_usdcAmount);
     // uint256 depositMinusFee = _usdcAmount - _convertToUSDCTokenDecimals(depositFee);
@@ -229,7 +231,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     s_requests[_requestId] = IParentPool.CLFRequest({
       requestType: IParentPool.RequestType.GetTotalUSDC,
       liquidityProvider: msg.sender,
-      parentPoolUsdcBeforeRequest: i_USDC.balanceOf(address(this)) + s_loansInUse,
+      parentPoolUsdcBeforeRequest: parentPoolUSDC,
       lpSupplyBeforeRequest: i_lp.totalSupply(),
       amount: _usdcAmount
     });
@@ -440,6 +442,12 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
       messageId = IRouterClient(i_ccipRouter).ccipSend(pool.chainSelector, evm2AnyMessage);
 
+      s_ccipDeposits.push(IParentPool.CCIPPendingDeposits({
+        transactionId: messageId,
+        destinationChainSelector: pool.chainSelector,
+        amount: _amountToDistribute
+      }));
+
       emit ParentPool_MessageSent(messageId, pool.chainSelector, pool.poolAddress, address(i_linkToken), fees);
 
       unchecked {
@@ -502,7 +510,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     if (request.requestType == IParentPool.RequestType.GetTotalUSDC) {
       uint256 numberOfPools = s_poolsToDistribute.length;
       uint256 amountToDistribute = ((request.amount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
-      //TODO: s_pendingDeposits 
+      s_pendingDepositTransfers = s_pendingDepositTransfers - request.amount;
       _ccipSend(numberOfPools, amountToDistribute);
       _updateDepositInfoAndMintLPTokens(request.liquidityProvider, request.lpSupplyBeforeRequest, request.amount, usdcReserve);
     } else if (request.requestType == IParentPool.RequestType.PerformWithdrawal) {
@@ -678,6 +686,10 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
   function getUsdcInUse() external view returns (uint256 _usdcInUse) {
     _usdcInUse = s_loansInUse;
+  }
+
+  function getCCIPPendingDeposits() external view returns(IParentPool.CCIPPendingDeposits[] memory requests){
+    requests = s_ccipDeposits;
   }
 
   // TODO: Remove this function after tests

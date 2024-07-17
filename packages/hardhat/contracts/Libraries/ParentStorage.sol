@@ -10,6 +10,8 @@ contract ParentStorage {
   
   ///@notice variable to store the max value that can be deposited on this pool
   uint256 public s_maxDeposit;
+  ///@notice variable to store not processed amounts deposited by LPs
+  uint256 s_pendingDepositTransfers;
   ///@notice variable to store the amount that will be temporary used by Chainlink Functions
   uint256 public s_loansInUse;
   ///@notice variable to store the amount requested in withdraws
@@ -30,6 +32,7 @@ contract ParentStorage {
   /////////////
   ///@notice array of Pools to receive Liquidity through `ccipSend` function
   IParentPool.Pools[] s_poolsToDistribute;
+  IParentPool.CCIPPendingDeposits[] s_ccipDeposits;
 
   ///@notice Mapping to keep track of allowed pool receiver
   mapping(uint64 chainSelector => address pool) public s_poolToSendTo;

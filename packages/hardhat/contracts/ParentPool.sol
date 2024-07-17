@@ -44,6 +44,10 @@ error ParentPool_MaxCapReached(uint256 maxCap);
 error ParentPool_CallerIsNotTheProxy(address caller);
 ///@notice error emitted when the caller is not the owner
 error ParentPool_NotContractOwner();
+///@notice error emitted when the caller is a non-messenger address
+error ConceroParentPool_NotMessenger(address caller);
+///@notice error emitted when the input TX was already removed
+error ParentPool_TxAlreadyRemoved(bytes32 ccipMessageId);
 
 contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   ///////////////////////
@@ -148,6 +152,14 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    */
   modifier isProxy() {
     if (address(this) != i_parentProxy) revert ParentPool_CallerIsNotTheProxy(address(this));
+    _;
+  }
+
+  /**
+   * @notice modifier to check if the caller is the an approved messenger
+   */
+  modifier onlyMessenger() {
+    if (isMessengers(msg.sender) == false) revert ConceroParentPool_NotMessenger(msg.sender);
     _;
   }
 
@@ -293,6 +305,20 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
     // i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(withdrawFees));
     i_USDC.safeTransfer(msg.sender, withdraw.amountEarned);
+  }
+
+  function removeCCIPTX(bytes32 _ccipMessageId) external isProxy onlyMessenger {
+    if(s_ccipDepositsMapping[_ccipMessageId].transactionId != _ccipMessageId) revert ParentPool_TxAlreadyRemoved(_ccipMessageId);
+    uint256 numberOfPendingTX = s_ccipDeposits.length;
+
+    for(uint256 i; i < numberOfPendingTX;){
+      if(s_ccipDeposits[i].transactionId == _ccipMessageId){
+        s_ccipDeposits[i] = s_ccipDeposits[numberOfPendingTX - 1];
+        s_ccipDeposits.pop();
+        delete s_ccipDepositsMapping[_ccipMessageId];
+        return;
+      }
+    }
   }
 
   ///////////////////////
@@ -442,11 +468,13 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
 
       messageId = IRouterClient(i_ccipRouter).ccipSend(pool.chainSelector, evm2AnyMessage);
 
-      s_ccipDeposits.push(IParentPool.CCIPPendingDeposits({
+      IParentPool.CCIPPendingDeposits memory pending = IParentPool.CCIPPendingDeposits({
         transactionId: messageId,
         destinationChainSelector: pool.chainSelector,
         amount: _amountToDistribute
-      }));
+      });
+      s_ccipDepositsMapping[messageId] = pending;
+      s_ccipDeposits.push(pending);
 
       emit ParentPool_MessageSent(messageId, pool.chainSelector, pool.poolAddress, address(i_linkToken), fees);
 
@@ -494,10 +522,15 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
     IParentPool.CLFRequest storage request = s_requests[requestId];
 
+    //If request fails and it's a type GetTotalUSDC, which means it a deposit request:
     if (err.length > 0 && request.requestType == IParentPool.RequestType.GetTotalUSDC) {
+      // we will update storage, removing the amount from s_pendingDepositTransfers
+      s_pendingDepositTransfers = s_pendingDepositTransfers - request.amount;
+      // emit ad event informing listeners about the failure
       emit FunctionsRequestError(requestId, request.requestType);
-      //clear request
+      // transfer the money back to the LP
       i_USDC.safeTransfer(request.liquidityProvider, request.amount);
+      // and return.
       return;
     } else if (err.length > 0){
       emit FunctionsRequestError(requestId, request.requestType);
@@ -507,11 +540,17 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     uint256 crossChainBalance = abi.decode(response, (uint256));
     uint256 usdcReserve = request.parentPoolUsdcBeforeRequest + crossChainBalance;
 
+    //If request don't fail, and is a GetTotalUSDC
     if (request.requestType == IParentPool.RequestType.GetTotalUSDC) {
+      //we calculate the number of pools
       uint256 numberOfPools = s_poolsToDistribute.length;
+      //calculate the amount to send to each pool
       uint256 amountToDistribute = ((request.amount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
+      //remove the total amount from `s_pendingDepositTransfers` storage
       s_pendingDepositTransfers = s_pendingDepositTransfers - request.amount;
+      //call _ccipSend to distribute. This have already been refactored in other branch
       _ccipSend(numberOfPools, amountToDistribute);
+      //mint the number of LP tokens to LP
       _updateDepositInfoAndMintLPTokens(request.liquidityProvider, request.lpSupplyBeforeRequest, request.amount, usdcReserve);
     } else if (request.requestType == IParentPool.RequestType.PerformWithdrawal) {
       _updateUsdcAmountEarned(request.liquidityProvider, request.lpSupplyBeforeRequest, request.amount, usdcReserve);
@@ -692,7 +731,29 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     requests = s_ccipDeposits;
   }
 
-  // TODO: Remove this function after tests
+  /**
+   * @notice Function to check if a caller address is an allowed messenger
+   * @param _messenger the address of the caller
+   */
+  function isMessengers(address _messenger) internal pure returns (bool isMessenger) {
+    address[] memory messengers = new address[](4); //Number of messengers. To define.
+    messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
+    messengers[1] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267;
+    messengers[2] = address(0);
+    messengers[3] = address(0);
+
+    for (uint256 i; i < messengers.length; ) {
+      if (_messenger == messengers[i]) {
+        return true;
+      }
+      unchecked {
+        ++i;
+      }
+    }
+    return false;
+  }
+
+  // TODO: Remove both functions after tests
   function deletePendingWithdrawRequest(address _liquidityProvider) external isProxy onlyOwner {
     delete s_pendingWithdrawRequests[_liquidityProvider];
   }

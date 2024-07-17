@@ -227,14 +227,6 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
   }
 
-  function _swapDataToBytes(IDexSwap.SwapData[] calldata _swapData) private pure returns (bytes memory _encodedData) {
-    if (_swapData.length == 0) {
-      _encodedData = new bytes(1);
-    } else {
-      _encodedData = abi.encode(_swapData[0]);
-    }
-  }
-
   function _handleDstFunctionsResponse(Request storage request) internal {
     Transaction storage transaction = s_transactions[request.ccipMessageId];
 
@@ -249,14 +241,14 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
       swapData.fromAmount = amount;
       swapDataArray[0] = swapData;
 
-	    IPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, address(this));
+      IPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, address(this));
 
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
         abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapDataArray, 0, transaction.recipient)
       );
       if (swapSuccess == false) revert TXReleasedFailed(swapError);
     } else {
-	    IPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, transaction.recipient);
+      IPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, transaction.recipient);
     }
 
     emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
@@ -284,7 +276,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   /////////////////////////////
   function _swapDataToBytes(IDexSwap.SwapData[] calldata _swapData) private pure returns (bytes memory _encodedData) {
     if (_swapData.length == 0) {
-      _encodedData = abi.encode(uint(0));
+      _encodedData = new bytes(1);
     } else {
       _encodedData = abi.encode(_swapData[0]);
     }

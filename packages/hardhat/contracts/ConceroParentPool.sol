@@ -771,7 +771,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
   // TODO: REMOVE IN PRODUCTION
   function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
     uint256 balance = LibConcero.getBalance(token, address(this));
-    if (balance < amount) revert ParentPool_InsufficientBalance();
+    if (balance < amount) revert ConceroParentPool_InsufficientBalance();
 
     if (token != address(0)) {
       LibConcero.transferERC20(token, amount, recipient);

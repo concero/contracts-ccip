@@ -11,7 +11,7 @@ contract ParentStorage {
   ///@notice variable to store the max value that can be deposited on this pool
   uint256 public s_maxDeposit;
   ///@notice variable to store not processed amounts deposited by LPs
-  uint256 s_pendingDepositTransfers;
+  uint256 public s_pendingDepositTransfers;
   ///@notice variable to store the amount that will be temporary used by Chainlink Functions
   uint256 public s_loansInUse;
   ///@notice variable to store the amount requested in withdraws

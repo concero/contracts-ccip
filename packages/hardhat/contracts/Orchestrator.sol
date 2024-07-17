@@ -10,7 +10,7 @@ import {StorageSetters} from "./Libraries/StorageSetters.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 import {IOrchestrator, IOrchestratorViewDelegate} from "./Interfaces/IOrchestrator.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
-import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON} from "./Constants.sol";
+import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_AVALANCHE, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE} from "./Constants.sol";
 
 ///////////////////////////////
 /////////////ERROR/////////////
@@ -257,10 +257,12 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
       _token = USDC_ARBITRUM;
     } else if (_chainSelector == CHAIN_SELECTOR_BASE) {
       _token = USDC_BASE;
-    } else if (_chainSelector == CHAIN_SELECTOR_OPTIMISM) {
-      _token = USDC_OPTIMISM;
     } else if (_chainSelector == CHAIN_SELECTOR_POLYGON) {
       _token = USDC_POLYGON;
+    } else if (_chainSelector == CHAIN_SELECTOR_AVALANCHE) {
+      _token = USDC_AVALANCHE;
+    } else {
+      revert Orchestrator_InvalidBridgeToken();
     }
   }
 

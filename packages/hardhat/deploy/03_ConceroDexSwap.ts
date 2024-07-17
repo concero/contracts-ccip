@@ -15,6 +15,7 @@ const deployConceroDexSwap: DeployFunction = async function (hre: HardhatRuntime
   ////////REMOVE IN PROD!/////
   ////////////////////////////
   const fakeAddressRemoveInProd = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
+  const gasPrice = await hre.ethers.provider.getGasPrice();
 
   console.log("Deploying ConceroDexSwap...");
   const deployResult = (await deploy("DexSwap", {
@@ -22,6 +23,7 @@ const deployConceroDexSwap: DeployFunction = async function (hre: HardhatRuntime
     args: [conceroProxyAddress, fakeAddressRemoveInProd],
     log: true,
     autoMine: true,
+    gasPrice: gasPrice.mul(2),
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {

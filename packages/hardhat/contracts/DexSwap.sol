@@ -80,23 +80,24 @@ contract DexSwap is IDexSwap, Storage {
 
       if (_swapData[i].dexType == DexType.UniswapV3Single) {
         _swapUniV3Single(_swapData[i], destinationAddress);
-      } else if (_swapData[i].dexType == DexType.SushiV3Single) {
-        _swapSushiV3Single(_swapData[i], destinationAddress);
-      } else if (_swapData[i].dexType == DexType.UniswapV2) {
-        _swapUniV2Like(_swapData[i], destinationAddress);
-      } else if (_swapData[i].dexType == DexType.UniswapV2FoT) {
-        _swapUniV2LikeFoT(_swapData[i], destinationAddress);
-      } else if (_swapData[i].dexType == DexType.SushiV3Multi) {
-        _swapSushiV3Multi(_swapData[i], destinationAddress);
+        //      } else if (_swapData[i].dexType == DexType.SushiV3Single) {
+        //        _swapSushiV3Single(_swapData[i], destinationAddress);
+        //      } else if (_swapData[i].dexType == DexType.UniswapV2) {
+        //        _swapUniV2Like(_swapData[i], destinationAddress);
+        //      } else if (_swapData[i].dexType == DexType.UniswapV2FoT) {
+        //        _swapUniV2LikeFoT(_swapData[i], destinationAddress);
+        //      } else if (_swapData[i].dexType == DexType.SushiV3Multi) {
+        //        _swapSushiV3Multi(_swapData[i], destinationAddress);
       } else if (_swapData[i].dexType == DexType.UniswapV3Multi) {
         _swapUniV3Multi(_swapData[i], destinationAddress);
-      } else if (_swapData[i].dexType == DexType.Aerodrome) {
-        _swapDrome(_swapData[i], destinationAddress);
-      } else if (_swapData[i].dexType == DexType.AerodromeFoT) {
-        _swapDromeFoT(_swapData[i], destinationAddress);
-      } else if (_swapData[i].dexType == DexType.UniswapV2Ether) {
-        _swapEtherOnUniV2Like(_swapData[i], _etherAmount, destinationAddress);
       }
+      //      } else if (_swapData[i].dexType == DexType.Aerodrome) {
+      //        _swapDrome(_swapData[i], destinationAddress);
+      //      } else if (_swapData[i].dexType == DexType.AerodromeFoT) {
+      //        _swapDromeFoT(_swapData[i], destinationAddress);
+      //      } else if (_swapData[i].dexType == DexType.UniswapV2Ether) {
+      //        _swapEtherOnUniV2Like(_swapData[i], _etherAmount, destinationAddress);
+      //      }
 
       //@audit ADJUSTED
       uint256 postBalance = _swapData[i].toToken == address(0) ? address(this).balance : IERC20(_swapData[i].toToken).balanceOf(address(this));

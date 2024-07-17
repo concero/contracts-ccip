@@ -14,7 +14,7 @@ const deployChildProxy: DeployFunction = async function (hre: HardhatRuntimeEnvi
   console.log("Deploying ChildProxy...");
   const deployChildProxy = (await deploy("ChildPoolProxy", {
     from: proxyDeployer,
-    args: [implementationAddress, proxyDeployer, deployer, "0x"],
+    args: [implementationAddress, proxyDeployer, "0x"],
     log: true,
     autoMine: true,
   })) as Deployment;

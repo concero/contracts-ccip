@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_POLYGON_AMOY, USDC_ARBITRUM_SEPOLIA, USDC_BASE_SEPOLIA, USDC_OPTIMISM_SEPOLIA} from "./Constants.sol";
+import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_POLYGON_AMOY, USDC_ARBITRUM_SEPOLIA, USDC_BASE_SEPOLIA, USDC_OPTIMISM_SEPOLIA, USDC_AVALANCHE} from "./Constants.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
 
 error ConceroCommon_NotMessenger(address _messenger);
@@ -37,7 +37,7 @@ contract ConceroCommon {
    * @param _chainIndex the index of the chain
    */
   function getToken(IStorage.CCIPToken token, IStorage.Chain _chainIndex) internal view returns (address) {
-    address[4][2] memory tokens;
+    address[5][2] memory tokens;
 
     // Initialize BNM addresses
     tokens[uint(IStorage.CCIPToken.bnm)][uint(IStorage.Chain.arb)] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
@@ -50,6 +50,7 @@ contract ConceroCommon {
     tokens[uint(IStorage.CCIPToken.usdc)][uint(IStorage.Chain.base)] = block.chainid == 8453 ? USDC_BASE : USDC_BASE_SEPOLIA;
     tokens[uint(IStorage.CCIPToken.usdc)][uint(IStorage.Chain.opt)] = block.chainid == 10 ? USDC_OPTIMISM : USDC_OPTIMISM_SEPOLIA;
     tokens[uint(IStorage.CCIPToken.usdc)][uint(IStorage.Chain.pol)] = block.chainid == 137 ? USDC_POLYGON : USDC_POLYGON_AMOY;
+    tokens[uint(IStorage.CCIPToken.usdc)][uint(IStorage.Chain.avax)] = block.chainid == 43114 ? USDC_AVALANCHE : USDC_AVALANCHE;
 
     if (uint256(token) > tokens.length) revert ConceroCommon_TokenTypeOutOfBounds();
     if (uint256(_chainIndex) > tokens[uint256(token)].length) revert ConceroCommon_ChainIndexOutOfBounds();

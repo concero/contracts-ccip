@@ -19,10 +19,11 @@ const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEn
   console.log("Deploying InfraProxy...");
   const conceroProxyDeployment = (await deploy("InfraProxy", {
     from: proxyDeployer,
-    args: [implementationAddress, proxyDeployer, deployer, "0x"],
+    args: [implementationAddress, proxyDeployer, "0x"],
     log: true,
     autoMine: true,
-    gasPrice: gasPrice.toString(),
+    // gasPrice: gasPrice.toString(),
+    // gasLimit: "1000000",
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {

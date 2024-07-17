@@ -80,6 +80,9 @@ const deployConcero: DeployFunction = async function (
   // Merge defaultArgs with constructorArgs
   const args = { ...defaultArgs, ...constructorArgs };
 
+  const gasPrice = await hre.ethers.provider.getGasPrice();
+  const higherGasPrice = hre.ethers.BigNumber.from(gasPrice).mul(2).toString();
+
   const deployment = (await deploy("ConceroBridge", {
     from: deployer,
     log: true,
@@ -94,6 +97,8 @@ const deployConcero: DeployFunction = async function (
       args.conceroProxyAddress,
     ],
     autoMine: true,
+    gasPrice: higherGasPrice,
+    // gasLimit: "4000000",
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {

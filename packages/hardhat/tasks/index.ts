@@ -12,7 +12,6 @@ import accept from "./sub/accept";
 import transferTokens from "./utils/transferTokens";
 import remove from "./sub/remove";
 import timeout from "./sub/timeout";
-import deployInfraProxy from "./concero/deployInfra/deployInfraProxy";
 import deployConceroDexSwap from "./concero/deployInfra/deployConceroDexSwap";
 import deployConceroOrchestrator from "./concero/deployInfra/deployConceroOrchestrator";
 import withdrawInfraProxy from "./concero/withdraw/withdrawInfraProxy";
@@ -20,6 +19,7 @@ import deployParentPool from "./concero/deployPool/deployParentPool";
 import deployLpToken from "./concero/deployLpToken/deployLpToken";
 import deployAutomations from "./concero/deployAutomations/deployAutomations";
 import deployChildPool from "./concero/deployPool/deployChildPool";
+// import deployWithCreate3 from "./concero/deployWithCreate3";
 
 export default {
   billing,
@@ -29,7 +29,6 @@ export default {
   simulate,
   build,
   deployCCIPInfrastructure,
-  deployInfraProxy,
   deployConceroDexSwap,
   deployConceroOrchestrator,
   fundContract,

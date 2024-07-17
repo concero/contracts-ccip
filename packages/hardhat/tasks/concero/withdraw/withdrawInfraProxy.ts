@@ -18,15 +18,14 @@ const getBalance = async (tokenAddress: Address, account: Address, chain: CNetwo
   });
 };
 
-const withdrawToken = async (chain: CNetwork) => {
+const withdrawToken = async (chain: CNetwork, tokenAddress) => {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = chain;
   const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
   const conceroProxy = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dcName]}`);
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
-  const usdcAddress = getEnvVar(`USDC_${networkEnvKeys[dcName]}`);
 
   try {
-    const usdBalance = await getBalance(usdcAddress, conceroProxy, chain);
+    const usdBalance = await getBalance(tokenAddress, conceroProxy, chain);
     console.log(usdBalance);
 
     if (usdBalance < 1n) {
@@ -39,7 +38,7 @@ const withdrawToken = async (chain: CNetwork) => {
       abi,
       functionName: "withdraw",
       account,
-      args: [account.address, usdcAddress, usdBalance],
+      args: [account.address, tokenAddress, usdBalance],
       chain: dcViemChain,
     });
     const hash = await walletClient.writeContract(withdrawReq);
@@ -53,11 +52,14 @@ const withdrawToken = async (chain: CNetwork) => {
   }
 };
 
-task("withdraw-infra-proxy", "Withdraws the token from the proxy contract").setAction(async taskArgs => {
-  const { name } = hre.network;
-  if (name !== "localhost" && name !== "hardhat") {
-    await withdrawToken(chains[name]);
-  }
-});
+// todo: can be withdraw with --infra-proxy flag to be applied to multiple contracts
+task("withdraw-infra-proxy", "Withdraws the token from the proxy contract")
+  .addParam("tokenaddress", "Token Address")
+  .setAction(async taskArgs => {
+    const { name } = hre.network;
+    if (name !== "localhost" && name !== "hardhat") {
+      await withdrawToken(chains[name], taskArgs.tokenaddress);
+    }
+  });
 
 export default {};

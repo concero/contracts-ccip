@@ -7,16 +7,12 @@ import { getEnvVar } from "../../../utils/getEnvVar";
 import { execSync } from "child_process";
 import addCLFConsumer from "../../sub/add";
 
+//todo: rename task deploy-pool-clfcla, rename contract to clfcla?
 task("deploy-automations", "Deploy the automations")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
-  .addFlag("mainnet", "")
+  .addFlag("skipsetvars", "Skip setting the variables")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
-  .addOptionalParam(
-    "automationsforwarder",
-    "Automations forwarder",
-    "0x5D03f756F9F2884D2D95b39B8364a5b420502C85",
-    types.string,
-  )
+  .addOptionalParam("forwarder", "Automations forwarder address", undefined, types.string)
   .setAction(async taskArgs => {
     execSync("yarn compile", { stdio: "inherit" });
     const hre: HardhatRuntimeEnvironment = require("hardhat");
@@ -33,8 +29,7 @@ task("deploy-automations", "Deploy the automations")
       const automationContractAddress = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[hre.network.name]}`);
       await addCLFConsumer(chain, [automationContractAddress], chain.functionsSubIds[0]);
     }
-
-    await setAutomationsVariables(hre, slotId, taskArgs.automationsforwarder);
+    if (!taskArgs.skipsetvars) await setAutomationsVariables(hre, slotId, taskArgs.forwarder);
   });
 
 export default {};

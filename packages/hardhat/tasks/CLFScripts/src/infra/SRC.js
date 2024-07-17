@@ -113,9 +113,12 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 				ethUsd: '${ETH_USD_PRICEFEED_POLYGON_AMOY}',
 			},
 		},
+
+		// mainnets
+
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
 			urls: [
-				// `https://base.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
+				`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
 				'https://base.blockpi.network/v1/rpc/public',
 				'https://base-rpc.publicnode.com',
 			],
@@ -289,6 +292,22 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 
 		return _gasPrice;
 	};
+
+	// const getAverageSrcGasPrice = gasPrice => {
+	// 	let res = gasPrice;
+	// 	const bigIntSrcChainSelector = BigInt(srcChainSelector);
+	// 	if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}')) {
+	// 		res = gasPrice > 110000000000n ? 110000000000n : gasPrice;
+	// 	} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}')) {
+	// 		res = gasPrice > 64000000n ? 64000000n : gasPrice;
+	// 	} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}')) {
+	// 		res = gasPrice > 1300000000n ? 1300000000n : gasPrice;
+	// 	} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}')) {
+	// 		res = gasPrice > 10713000000n ? 10713000000n : gasPrice;
+	// 	}
+	// 	return res;
+	// };
+
 	let nonce = 0;
 	let retries = 0;
 	let gasPrice;

@@ -69,7 +69,7 @@ contract ChildPoolProxy is ChildPoolStorage, ERC1967Proxy {
   ///@notice constant variable to hold a mock address to pause transactions.
   ///@dev this will be used in a if statement on the fallback function+
   ///@dev this address needs to be a contract and set before deployment.
-  address constant SAFE_LOCK = 0xde11Bc6a6c47EeaB0476C85672EA7f932f1a78Ed; //Mainnet mock
+  address constant SAFE_LOCK = 0x00c4d25487297C4fc1341aa840a4F56e474f6A0d;
 
   /**
    * @dev The proxy caller is the current admin, and can't fallback to the proxy target.

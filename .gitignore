@@ -30,3 +30,10 @@ node_modules
 packages/hardhat/deployments
 packages/hardhat/test/forge/lib/
 packages/foundry/lib
+
+# ignoring all js files in /hardhat/
+packages/hardhat/**/*.js
+packages/nextjs/**/*.js
+
+# except for the CLF js dist files
+!packages/hardhat/tasks/CLFScripts/dist/**/*.js

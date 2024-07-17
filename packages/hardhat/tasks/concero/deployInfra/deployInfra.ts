@@ -58,9 +58,6 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
       }
       await setContractVariables(liveChains, deployableChains, slotId, taskArgs.uploadsecrets);
       await setConceroProxyDstContracts(liveChains);
-
-      // await fundSubscription(liveChains);
-      // await fundContract(deployableChains);
     }
   });
 

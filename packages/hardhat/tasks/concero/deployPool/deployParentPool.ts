@@ -1,6 +1,7 @@
 import { task, types } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import chains, { networkEnvKeys } from "../../../constants/CNetworks";
+import chains from "../../../constants/CNetworks";
+import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import addCLFConsumer from "../../sub/add";
 import log from "../../../utils/log";
@@ -18,18 +19,13 @@ task("deploy-parent-pool", "Deploy the pool")
   .addFlag("deployproxy", "Deploy the proxy")
   .addFlag("skipsetvars", "Set the contract variables")
   .addFlag("uploadsecrets", "Set the contract variables")
-  .addFlag("mainnet", "Deploy to mainnet")
   .setAction(async taskArgs => {
     execSync("yarn compile", { stdio: "inherit" });
 
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
     const { name } = hre.network;
-    let deployableChains: CNetwork[] = [chains.baseSepolia];
-
-    if (taskArgs.mainnet) {
-      deployableChains = [chains.base];
-    }
+    const deployableChains: CNetwork[] = [CNetworks[hre.network.name]];
 
     if (taskArgs.deployproxy) {
       await deployParentPoolProxy(hre);

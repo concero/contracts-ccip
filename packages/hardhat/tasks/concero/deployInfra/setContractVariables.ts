@@ -43,16 +43,28 @@ export async function setConceroProxyDstContracts(liveChains: CNetwork[]) {
 
   for (const chain of liveChains) {
     const { viemChain, url, name } = chain;
-    try {
-      const srcConceroProxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`);
-      const { walletClient, publicClient, account } = getClients(viemChain, url);
+    const srcConceroProxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`);
+    const { walletClient, publicClient, account } = getClients(viemChain, url);
 
-      for (const dstChain of liveChains) {
+    for (const dstChain of liveChains) {
+      try {
         const { name: dstName, chainSelector: dstChainSelector } = dstChain;
         if (dstName !== name) {
           const dstProxyContract = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dstName]}`);
 
-          const { request: setDstConceroContractReq } = await publicClient.simulateContract({
+          // const gasPrice = await publicClient.getGasPrice();
+
+          // const { request: setDstConceroContractReq } = await publicClient.simulateContract({
+          //   address: srcConceroProxyAddress as Address,
+          //   abi,
+          //   functionName: "setConceroContract",
+          //   account,
+          //   args: [dstChainSelector, dstProxyContract],
+          //   chain: viemChain,
+          // });
+          // const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
+
+          const setDstConceroContractHash = await walletClient.writeContract({
             address: srcConceroProxyAddress as Address,
             abi,
             functionName: "setConceroContract",
@@ -60,18 +72,19 @@ export async function setConceroProxyDstContracts(liveChains: CNetwork[]) {
             args: [dstChainSelector, dstProxyContract],
             chain: viemChain,
           });
-          const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
+
           const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({
             hash: setDstConceroContractHash,
+            timeout: 0,
           });
           log(
             `Set ${name}:${srcConceroProxyAddress} dstConceroContract[${dstName}, ${dstProxyContract}]. Gas used: ${setDstConceroContractGasUsed.toString()}`,
             "setConceroProxyDstContracts",
           );
         }
+      } catch (error) {
+        log(`Error for ${name}: ${error.message}`, "setConceroProxyDstContracts");
       }
-    } catch (error) {
-      log(`Error for ${name}: ${error.message}`, "setConceroProxyDstContracts");
     }
   }
 }
@@ -229,6 +242,8 @@ export async function setDonSecretsSlotId(deployableChain: CNetwork, slotId: num
 const allowedRouters: Record<string, Address> = {
   "137": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
   "8453": "0x2626664c2603336E57B271c5C0b26F421741e481",
+  "42161": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+  "43114": "0xbb00FF08d01D300023C629E8fFfFcb65A5a578cE",
 };
 
 export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: any) {
@@ -264,6 +279,44 @@ export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: a
   }
 }
 
+export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: any) {
+  const fees: Record<string, bigint> = {
+    "137": 33131965864723535n,
+    "42161": 20000000000000000n,
+    "8453": 60000000000000000n,
+    "43114": 240000000000000000n,
+  };
+
+  const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
+  const conceroProxy = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dcName]}`);
+  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+
+  for (const chain of liveChains) {
+    try {
+      const { request: setFunctionsPremiumFeesReq } = await publicClient.simulateContract({
+        address: conceroProxy as Address,
+        abi,
+        functionName: "setClfPremiumFees",
+        account,
+        args: [chain.chainSelector, fees[chain.chainId?.toString()]],
+        chain: dcViemChain,
+      });
+
+      const setFunctionsPremiumFeesHash = await walletClient.writeContract(setFunctionsPremiumFeesReq);
+      const { cumulativeGasUsed: setFunctionsPremiumFeesGasUsed } = await publicClient.waitForTransactionReceipt({
+        hash: setFunctionsPremiumFeesHash,
+      });
+
+      log(
+        `Set ${dcName}:${conceroProxy} functionsPremiumFees[${fees[chain.chainId?.toString()]}. Gas used: ${setFunctionsPremiumFeesGasUsed.toString()}`,
+        "setClfPremiumFees",
+      );
+    } catch (error) {
+      log(`Error for ${dcName}: ${error.message}`, "setClfPremiumFees");
+    }
+  }
+}
+
 export async function setContractVariables(
   liveChains: CNetwork[],
   deployableChains: CNetwork[],
@@ -275,14 +328,11 @@ export async function setContractVariables(
   for (const deployableChain of deployableChains) {
     await setDexSwapAllowedRouters(deployableChain, abi); // once
     await setDstConceroPools(deployableChain, abi); // once
-    // if (uploadsecrets) {
+
     await setDonHostedSecretsVersion(deployableChain, slotId, abi);
     await setDonSecretsSlotId(deployableChain, slotId, abi);
-    // }
 
+    await setFunctionsPremiumFees(deployableChain, abi);
     await setJsHashes(deployableChain, abi);
-
-    // REMOVE IN PROD!!!
-    // await resetLastGasPrices(deployableChain, liveChains, abi);
   }
 }

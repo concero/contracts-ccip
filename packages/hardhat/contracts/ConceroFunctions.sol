@@ -38,15 +38,16 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
-  ///@notice constant variable to store CLF callback gas limit
-  uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
-  ///@notice constant variable to store the fixed CLF gas overheard
+  ///@notice
+  uint32 public constant CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT = 150_000;
+  uint32 public constant CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT = 300_000;
+  ///@notice
   uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
-  ///@notice constant variable to help check for CLF response
+  ///@notice
   uint8 private constant CL_SRC_RESPONSE_LENGTH = 192;
   ///@notice JS Code for Chainlink Functions
   string private constant CL_JS_CODE =
-    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'master' + `/packages/hardhat/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
+    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( 'https://raw.githubusercontent.com/concero/contracts-ccip/' + '002' + `/packages/hardhat/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
   ////////////////
   ///IMMUTABLES///
@@ -73,7 +74,6 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   event UnconfirmedTXSent(bytes32 indexed ccipMessageId, address sender, address recipient, uint256 amount, CCIPToken token, uint64 dstChainSelector);
   ///@notice emitted when a Unconfirmed TX is added by a cross-chain TX
   event UnconfirmedTXAdded(bytes32 indexed ccipMessageId, address sender, address recipient, uint256 amount, CCIPToken token, uint64 srcChainSelector);
-  ///@notice emitted when _handleDstFunctionsResponse finalize the process of transferring users token after cross-chain tx.
   event TXReleased(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, address token, uint256 amount);
   ///@notice emitted when on destination when a TX is validated.
   event TXConfirmed(bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, uint256 amount, CCIPToken token);
@@ -131,13 +131,26 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     args[10] = abi.encodePacked(amount);
     args[11] = abi.encodePacked(CHAIN_SELECTOR);
 
-    bytes32 reqId = sendRequest(args, CL_JS_CODE);
+    bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT);
 
     s_requests[reqId].requestType = RequestType.checkTxSrc;
     s_requests[reqId].isPending = true;
     s_requests[reqId].ccipMessageId = ccipMessageId;
 
     emit UnconfirmedTXAdded(ccipMessageId, sender, recipient, amount, token, srcChainSelector);
+  }
+
+  /**
+   * @notice Function to send a Request to Chainlink Functions
+   * @param args the arguments for the request as bytes array
+   * @param jsCode the JScode that will be executed.
+   */
+  function sendRequest(bytes[] memory args, string memory jsCode, uint32 gasLimit) internal returns (bytes32) {
+    FunctionsRequest.Request memory req;
+    req.initializeRequestForInlineJavaScript(jsCode);
+    req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
+    req.setBytesArgs(args);
+    return _sendRequest(req.encodeCBOR(), i_subscriptionId, gasLimit, i_donId);
   }
 
   function fulfillRequestWrapper(bytes32 requestId, bytes memory response, bytes memory err) external {
@@ -149,19 +162,6 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   ////////////////////////
   ///INTERNAL FUNCTIONS///
   ////////////////////////
-
-  /**
-   * @notice Function to send a Request to Chainlink Functions
-   * @param args the arguments for the request as bytes array
-   * @param jsCode the JScode that will be executed.
-   */
-  function sendRequest(bytes[] memory args, string memory jsCode) internal returns (bytes32) {
-    FunctionsRequest.Request memory req;
-    req.initializeRequestForInlineJavaScript(jsCode);
-    req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
-    req.setBytesArgs(args);
-    return _sendRequest(req.encodeCBOR(), i_subscriptionId, CL_FUNCTIONS_CALLBACK_GAS_LIMIT, i_donId);
-  }
 
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
     Request storage request = s_requests[requestId];
@@ -219,12 +219,20 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     args[11] = abi.encodePacked(block.number);
     args[12] = _swapDataToBytes(dstSwapData);
 
-    bytes32 reqId = sendRequest(args, CL_JS_CODE);
+    bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT);
     s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;
     s_requests[reqId].isPending = true;
     s_requests[reqId].ccipMessageId = ccipMessageId;
 
     emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
+  }
+
+  function _swapDataToBytes(IDexSwap.SwapData[] calldata _swapData) private pure returns (bytes memory _encodedData) {
+    if (_swapData.length == 0) {
+      _encodedData = new bytes(1);
+    } else {
+      _encodedData = abi.encode(_swapData[0]);
+    }
   }
 
   function _handleDstFunctionsResponse(Request storage request) internal {
@@ -234,21 +242,21 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
 
     address tokenReceived = getToken(transaction.token, i_chainIndex);
     uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
-    IDexSwap.SwapData memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData));
 
-    if (swapData.fromToken != address(0)) {
+    if (transaction.dstSwapData.length > 1) {
+      IDexSwap.SwapData memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData));
       IDexSwap.SwapData[] memory swapDataArray = new IDexSwap.SwapData[](1);
       swapData.fromAmount = amount;
       swapDataArray[0] = swapData;
 
-      IPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, address(this));
+	    IPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, address(this));
 
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
         abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapDataArray, 0, transaction.recipient)
       );
       if (swapSuccess == false) revert TXReleasedFailed(swapError);
     } else {
-      IPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, transaction.recipient);
+	    IPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, transaction.recipient);
     }
 
     emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);

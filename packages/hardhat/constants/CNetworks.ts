@@ -1,8 +1,6 @@
 // Purpose: To have a single source of truth for networks across the project
 import { type CNetwork, CNetworkNames } from "../types/CNetwork";
 import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
-import { privateKeyToAddress } from "viem/accounts";
-import { arbitrumSepolia, avalancheFuji, baseSepolia, optimismSepolia, sepolia } from "viem/chains";
 import {
   arbitrum,
   arbitrumSepolia,
@@ -301,7 +299,8 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   },
   polygon: {
     chainId: 137,
-    url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    url: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+    // url: "https://polygon-rpc.com",
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_POLYGON,
     functionsDonIdAlias: process.env.CLF_DONID_POLYGON_ALIAS,
@@ -333,6 +332,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     functionsDonIdAlias: process.env.CLF_DONID_AVALANCHE_ALIAS,
     functionsRouter: process.env.CLF_ROUTER_AVALANCHE,
     functionsSubIds: [process.env.CLF_SUBID_AVALANCHE],
+    conceroChainIndex: "4",
     functionsGatewayUrls: functionsGatewayUrls.mainnet,
     donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_AVALANCHE,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_AVALANCHE,

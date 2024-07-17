@@ -1,6 +1,3 @@
-import hre from "hardhat";
-
-const { SubscriptionManager } = require("@chainlink/functions-toolkit");
 import { task } from "hardhat/config";
 import chains from "../../constants/CNetworks";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -9,15 +6,24 @@ import { formatEther } from "viem";
 import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import { TransactionOptions } from "@chainlink/functions-toolkit";
 
+const { SubscriptionManager } = require("@chainlink/functions-toolkit");
+
+/* MAKE SURE TO accept ToS in the Functions UI if they haven't been accepted yet, otherwise will throw an error */
 task("clf-sub-accept", "Accepts ownership of an Functions subscription after a transfer is requested")
   .addParam("subid", "Subscription ID")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const { linkToken, functionsRouter, confirmations, name, url } = chains[hre.network.name];
-    const { signer } = await getEthersSignerAndProvider(url);
-
+    const { signer } = getEthersSignerAndProvider(url);
+    // const { signer: v6Signer, provider: v6Provider } = getEthersV6SignerAndProvider(url);
+    // const { gasPrice } = await v6Provider.getFeeData();
     const subscriptionId = parseInt(taskArgs.subid);
-    const txOptions: TransactionOptions = { confirmations, overrides: { gasLimit: 500000n } };
+
+    // tip: polygon might require custom gas price
+    const txOptions: TransactionOptions = {
+      confirmations,
+      overrides: { gasLimit: 500000n },
+    };
 
     const sm = new SubscriptionManager({
       signer,

@@ -28,7 +28,7 @@ async function f() {
 
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
 				urls: [
-					`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 					'https://arbitrum.blockpi.network/v1/rpc/public',
 					'https://arbitrum-rpc.publicnode.com',
 				],

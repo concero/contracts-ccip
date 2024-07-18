@@ -1030,6 +1030,33 @@ contract ProtocolMainnet is Test {
         op.swap(swapData, User);
     }
 
+    function test_swapEtherUniV3SingleMock() public {
+        vm.selectFork(baseMainFork);
+        uint256 amountIn = 1*10**17;
+        uint256 amountOut = 350*10*6;
+
+        vm.deal(User, amountIn);
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+
+        swapData[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV3Single,
+            fromToken: address(0),
+            fromAmount: amountIn,
+            toToken: address(mUSDC),
+            toAmount: amountOut,
+            toAmountMin: amountOut,
+            dexData: abi.encode(uniswapV3, 500, 0, block.timestamp + 1800)
+        });
+
+        vm.startPrank(User);
+
+        op.swap{value: amountIn}(swapData, User);
+
+        assertEq(address(op).balance, 100000000000000);
+        assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
+    }
+
     function test_swapSushiV3MultiMock() public {
         helper();
 
@@ -1209,6 +1236,35 @@ contract ProtocolMainnet is Test {
         bytes memory emptyDexData = abi.encodeWithSelector(DexSwap_EmptyDexData.selector);
         vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, emptyDexData));
         op.swap(swapData, User);
+    }
+
+    function test_swapEtherUniV3MultiMock() public {
+        vm.selectFork(baseMainFork);
+        vm.deal(User, 1*10**18);
+
+        uint24 poolFee = 500;
+        uint256 amountIn = 1*10**17;
+        uint256 amountOut = 1*10**16;
+
+        bytes memory path = abi.encodePacked(wEth, poolFee, mUSDC, poolFee, wEth);
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV3Multi,
+            fromToken: address(0),
+            fromAmount: amountIn,
+            toToken: address(wEth),
+            toAmount: amountOut,
+            toAmountMin: amountOut,
+            dexData: abi.encode(uniswapV3, path, block.timestamp + 1800)
+        });
+
+        vm.startPrank(User);
+        op.swap{value: amountIn}(swapData, User);
+
+        assertEq(User.balance, 1*10**18 - amountIn);
+        assertEq(address(op).balance, 100000000000000);
+        assertTrue(wEth.balanceOf(User) > amountOut);
     }
 
     function test_revertSwapUniV3MultiMockInvalidPath() public {

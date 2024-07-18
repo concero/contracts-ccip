@@ -21,7 +21,7 @@ async function simulate(pathToFile, args) {
   console.log("Simulating script:", pathToFile);
 
   let promises = [];
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 1; i++) {
     promises.push(
       simulateScript({
         source: fs.readFileSync(pathToFile, "utf8"),

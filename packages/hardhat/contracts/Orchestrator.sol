@@ -135,6 +135,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     if (srcSwapData[srcSwapData.length - 1].toToken != getToken(bridgeData.tokenType, i_chainIndex)) revert Orchestrator_InvalidSwapData();
 
     //Swap -> money come back to this contract
+    // todo: 0 -> msg.value
     uint256 amountReceivedFromSwap = _swap(srcSwapData, 0, false, address(this));
 
     bridgeData.amount = amountReceivedFromSwap;
@@ -233,6 +234,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   //////////////////////////
   /// INTERNAL FUNCTIONS ///
   //////////////////////////
+
   function _swap(IDexSwap.SwapData[] memory swapData, uint256 _nativeAmount, bool isFeesNeeded, address _receiver) internal returns (uint256) {
     address fromToken = swapData[0].fromToken;
     uint256 fromAmount = swapData[0].fromAmount;
@@ -246,7 +248,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     } else {
       if (isFeesNeeded) swapData[0].fromAmount = _nativeAmount - (_nativeAmount / CONCERO_FEE_FACTOR);
 
-      if (swapData[0].dexType != IDexSwap.DexType.UniswapV2Ether){
+      if (swapData[0].dexType != IDexSwap.DexType.UniswapV2Ether) {
         address wrapped = getWrappedNative();
         swapData[0].fromToken = address(wrapped);
         IWETH(wrapped).deposit{value: swapData[0].fromAmount}();

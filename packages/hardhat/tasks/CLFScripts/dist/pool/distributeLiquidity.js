@@ -88,7 +88,9 @@ try {
 	console.log('poolsTotalBalance:', poolsTotalBalance);
 	const newPoolsCount = Object.keys(chainSelectors).length + 1;
 	const newPoolBalance = poolsTotalBalance / BigInt(newPoolsCount);
+	console.log('newPoolBalance:', newPoolBalance);
 	const distributeAmountPromises = [];
+	let totalAmount = 0n;
 	for (const chain in chainSelectors) {
 		if (chain === newPoolChainSelector) continue;
 		const url = chainSelectors[chain].urls[Math.floor(Math.random() * chainSelectors[chain].urls.length)];
@@ -97,9 +99,11 @@ try {
 		const signer = wallet.connect(provider);
 		const poolContract = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, signer);
 		const amountToDistribute = poolsBalances[chain] - newPoolBalance;
+		totalAmount += amountToDistribute;
 		console.log(`amountToDistribute on ${chainSelectors[chain].chainId}:`, amountToDistribute);
 	}
 	await Promise.all(distributeAmountPromises);
+	console.log('totalAmount:', totalAmount);
 	return Functions.encodeUint256(1n);
 } catch (e) {
 	const {message, code} = e;

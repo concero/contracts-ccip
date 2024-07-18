@@ -33,6 +33,7 @@ error ConceroChildPool_NotContractOwner();
 error ConceroChildPool_SenderNotAllowed(address sender);
 ///@notice error emitted if the array is empty.
 error ConceroChildPool_ThereIsNoPoolToDistribute();
+error ConceroChildPool_RequestAlreadyProceeded(bytes32 reqId);
 
 contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
   using SafeERC20 for IERC20;
@@ -115,14 +116,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
   /////////////////////////////////////////////////////////////////////////////
   receive() external payable {}
 
-  constructor(
-    address _orchestratorProxy,
-    address _childProxy,
-    address _link,
-    address _ccipRouter,
-    address _usdc,
-    address _owner
-  ) CCIPReceiver(_ccipRouter) {
+  constructor(address _orchestratorProxy, address _childProxy, address _link, address _ccipRouter, address _usdc, address _owner) CCIPReceiver(_ccipRouter) {
     i_infraProxy = _orchestratorProxy;
     i_childProxy = _childProxy;
     i_linkToken = LinkTokenInterface(_link);
@@ -150,8 +144,12 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
    * @param _chainSelector The chain selector of the new pool
    * @param _amountToSend the amount to redistribute between pools.
    */
-  function distributeLiquidity(uint64 _chainSelector, uint256 _amountToSend) external isProxy onlyMessenger {
+  function distributeLiquidity(uint64 _chainSelector, uint256 _amountToSend, bytes32 distributeLiquidityRequestId) external isProxy onlyMessenger {
     if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroChildPool_InvalidAddress();
+    if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
+      revert ConceroChildPool_RequestAlreadyProceeded(distributeLiquidityRequestId);
+    }
+    s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
     _ccipSend(_chainSelector, address(0), _amountToSend);
   }
 
@@ -235,7 +233,6 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
    * @param _chainSelector the CCIP chainSelector for the specific chain
    */
   function removePools(uint64 _chainSelector) external payable isProxy onlyOwner {
-
     for (uint256 i; i < s_poolChainSelectors.length; ) {
       if (s_poolChainSelectors[i] == _chainSelector) {
         s_poolChainSelectors[i] = s_poolChainSelectors[s_poolChainSelectors.length - 1];
@@ -293,7 +290,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
    * @param _amount amount of the token to be sent
    * @dev This function will sent the address of the user as data. This address will be used to update the mapping on ParentPool.
    * @dev when processing withdrawals, the _chainSelector will always be the index 0 of s_poolChainSelectors
-  */
+   */
   function _ccipSend(uint64 _chainSelector, address _liquidityProviderAddress, uint256 _amount) internal onlyMessenger isProxy returns (bytes32 messageId) {
     if (_amount > i_USDC.balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
 

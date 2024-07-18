@@ -389,17 +389,15 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
       //amountToDistribute = balancePool - expectedBalance (for each, besides the new one)
       //trigger distributeLiquidity(_chainSelector, _amountToDistribute)
 
-      bytes[] memory args = new bytes[](4);
+      bytes[] memory args = new bytes[](5);
       args[0] = abi.encodePacked(s_hashSum);
       args[1] = abi.encodePacked(s_ethersHashSum);
-      args[2] = abi.encodePacked(_chainSelector);
-      args[3] = abi.encodePacked(s_poolChainSelectors.length + 1);
+      args[2] = abi.encodePacked(0);
+      args[3] = abi.encodePacked(_chainSelector);
+      args[4] = abi.encodePacked(s_poolChainSelectors.length + 1);
 
       //todo: @nikita pools have to track requests in order to prevent 4 nodes triggering a rebalance on the same pool
-      bytes32 requestId /* = _sendRequest(args, REBALANCE_JS_CODE)*/;
-
-      // s_requests[requestId] = CLFRebalance({
-      // });
+      bytes32 requestId = _sendRequest(args, JS_CODE);
 
       emit ConceroParentPool_RedistributionStarted(requestId);
     }

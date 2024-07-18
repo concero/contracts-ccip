@@ -213,7 +213,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     uint256 amount,
     uint64 dstChainSelector,
     CCIPToken token,
-    IDexSwap.SwapData[] calldata dstSwapData
+    IDexSwap.SwapData[] memory dstSwapData
   ) internal {
     if (s_conceroContracts[dstChainSelector] == address(0)) revert AddressNotSet();
 
@@ -240,7 +240,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
   }
 
-  function _swapDataToBytes(IDexSwap.SwapData[] calldata _swapData) private pure returns (bytes memory _encodedData) {
+  function _swapDataToBytes(IDexSwap.SwapData[] memory _swapData) private pure returns (bytes memory _encodedData) {
     if (_swapData.length == 0) {
       _encodedData = new bytes(1);
     } else {

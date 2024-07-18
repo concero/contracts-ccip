@@ -73,7 +73,7 @@ contract DexSwap is IDexSwap, Storage {
    * @param _swapData a struct array that contains dex information.
    * @dev only the Orchestrator contract should be able to call this function
    */
-  function conceroEntry(IDexSwap.SwapData[] memory _swapData, uint256 _etherAmount, address _recipient) external payable {
+  function conceroEntry(IDexSwap.SwapData[] memory _swapData, address _recipient) external payable {
     if (address(this) != i_proxy) revert DexSwap_ItsNotOrchestrator(address(this));
     uint256 swapDataLength = _swapData.length;
 
@@ -108,8 +108,6 @@ contract DexSwap is IDexSwap, Storage {
       //        _swapDrome(_swapData[i], destinationAddress);
       //      } else if (_swapData[i].dexType == DexType.AerodromeFoT) {
       //        _swapDromeFoT(_swapData[i], destinationAddress);
-      //      } else if (_swapData[i].dexType == DexType.UniswapV2Ether) {
-      //        _swapEtherOnUniV2Like(_swapData[i], _etherAmount, destinationAddress);
       //      }
 
       //@audit ADJUSTED
@@ -343,21 +341,6 @@ contract DexSwap is IDexSwap, Storage {
     IERC20(routes[0].from).safeIncreaseAllowance(routerAddress, _swapData.fromAmount);
 
     IRouter(routerAddress).swapExactTokensForTokensSupportingFeeOnTransferTokens(_swapData.fromAmount, _swapData.toAmountMin, routes, _recipient, deadline);
-  }
-
-  /**
-   * @notice This function can be used with any Uniswap forked router
-   * @param _swapData the encoded swap data
-   * @param _etherAmount the ether amount to swap
-   */
-  function _swapEtherOnUniV2Like(IDexSwap.SwapData memory _swapData, uint256 _etherAmount, address _recipient) private {
-    if (_swapData.dexData.length < APPROVED) revert DexSwap_EmptyDexData();
-    (address routerAddress, address[] memory path, uint256 deadline) = abi.decode(_swapData.dexData, (address, address[], uint256));
-
-    if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
-    if (_swapData.fromToken != address(0) || path[0] != i_wEth || path[path.length - 1] != _swapData.toToken) revert DexSwap_InvalidPath();
-
-    IUniswapV2Router02(routerAddress).swapExactETHForTokens{value: _etherAmount}(_swapData.toAmountMin, path, _recipient, deadline);
   }
 
   ///////////////////////

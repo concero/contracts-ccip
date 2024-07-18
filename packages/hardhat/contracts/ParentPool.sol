@@ -277,25 +277,25 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * the withdraw will be finalize. If not, it must revert
    */
   function completeWithdrawal() external isProxy {
-    IParentPool.WithdrawRequests memory withdraw = s_pendingWithdrawRequests[msg.sender];
+    IParentPool.WithdrawRequests memory withdrawReq = s_pendingWithdrawRequests[msg.sender];
 
-    if (withdraw.amountToReceive > 0) revert ParentPool_AmountNotAvailableYet(withdraw.amountToReceive);
-    if (withdraw.amountEarned > i_USDC.balanceOf(address(this))) revert ParentPool_InsufficientBalance();
+    if (withdrawReq.amountToReceive > 0) revert ParentPool_AmountNotAvailableYet(withdrawReq.amountToReceive);
+    if (withdrawReq.amountEarned > i_USDC.balanceOf(address(this))) revert ParentPool_InsufficientBalance();
 
-    s_withdrawRequests = s_withdrawRequests > withdraw.amountEarned ? s_withdrawRequests - withdraw.amountEarned : 0;
+    s_withdrawRequests = s_withdrawRequests > withdrawReq.amountEarned ? s_withdrawRequests - withdrawReq.amountEarned : 0;
 
     delete s_pendingWithdrawRequests[msg.sender];
 
-    // uint256 withdrawFees = _calculateWithdrawTransactionsFee(withdraw.amountEarned);
-    // uint256 withdrawAmountMinusFees = withdraw.amountEarned - _convertToUSDCTokenDecimals(withdrawFees);
+    // uint256 withdrawFees = _calculateWithdrawTransactionsFee(withdrawReq.amountEarned);
+    // uint256 withdrawAmountMinusFees = withdrawReq.amountEarned - _convertToUSDCTokenDecimals(withdrawFees);
 
-    emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
+    emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdrawReq.amountEarned);
 
-    IERC20(i_lp).safeTransferFrom(msg.sender, address(this), withdraw.amountToBurn);
-    i_lp.burn(withdraw.amountToBurn);
+    IERC20(i_lp).safeTransferFrom(msg.sender, address(this), withdrawReq.amountToBurn);
+    i_lp.burn(withdrawReq.amountToBurn);
 
     // i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(withdrawFees));
-    i_USDC.safeTransfer(msg.sender, withdraw.amountEarned);
+    i_USDC.safeTransfer(msg.sender, withdrawReq.amountEarned);
   }
 
   ///////////////////////

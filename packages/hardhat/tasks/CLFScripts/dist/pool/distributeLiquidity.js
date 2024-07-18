@@ -62,6 +62,7 @@
 			for (const chain in chainSelectors) {
 				if (chain === newPoolChainSelector) continue;
 				const url = chainSelectors[chain].urls[Math.floor(Math.random() * chainSelectors[chain].urls.length)];
+				console.log(url);
 				const provider = new FunctionsJsonRpcProvider(url);
 				const gasPrice = await provider.getFeeData();
 				console.log(gasPrice);

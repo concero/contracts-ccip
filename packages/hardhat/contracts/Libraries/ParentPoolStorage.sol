@@ -4,7 +4,7 @@ pragma solidity 0.8.20;
 import {IPool} from "contracts/Interfaces/IPool.sol";
 
 // todo: ParentPoolStorage
-contract ParentPoolStorage {  
+contract ParentPoolStorage {
   /////////////////////
   ///STATE VARIABLES///
   /////////////////////
@@ -40,4 +40,10 @@ contract ParentPoolStorage {
   mapping(address _liquidityProvider => IPool.WithdrawRequests) public s_pendingWithdrawRequests;
   ///@notice Mapping to keep track of Chainlink Functions requests
   mapping(bytes32 requestId => IPool.CLFRequest) public s_requests;
+
+  ////////////////////////
+  ////NEW STORAGE VARS////
+  ////////////////////////
+
+  mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;
 }

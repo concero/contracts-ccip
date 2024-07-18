@@ -3,7 +3,7 @@
 const ethers = await import('npm:ethers@6.10.0');
 
 try {
-	const [_, __, ___, newPoolChainSelector] = bytesArgs;
+	const [_, __, ___, newPoolChainSelector, distributeLiquidityRequestId] = bytesArgs;
 	const chainSelectors = {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
 			urls: [
@@ -48,7 +48,10 @@ try {
 	};
 
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
-	const poolAbi = ['function s_loansInUse() external view returns (uint256)'];
+	const poolAbi = [
+		'function s_loansInUse() external view returns (uint256)',
+		'function distributeLiquidity(uint64, uint256, bytes32) external',
+	];
 
 	const chainSelectorsArr = Object.keys(chainSelectors);
 
@@ -97,7 +100,6 @@ try {
 
 	const poolsBalances = await getPoolsBalances();
 	const poolsTotalBalance = chainSelectorsArr.reduce((acc, pool) => acc + poolsBalances[pool], 0n);
-	console.log('poolsTotalBalance:', poolsTotalBalance);
 	const newPoolsCount = Object.keys(chainSelectors).length + 1;
 	const newPoolBalance = poolsTotalBalance / BigInt(newPoolsCount);
 	const distributeAmountPromises = [];
@@ -124,4 +126,5 @@ try {
 	}
 	throw e;
 }
+
 // })();

@@ -20,4 +20,10 @@ contract ChildPoolStorage {
   mapping(uint64 chainSelector => mapping(address conceroContract => uint256)) public s_contractsToReceiveFrom;
   ///@notice Mapping to keep track of valid pools to transfer in case of liquidation or rebalance
   mapping(uint64 chainSelector => address pools) public s_poolToSendTo;
+
+  ////////////////////////
+  ////NEW STORAGE VARS////
+  ////////////////////////
+
+  mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;
 }

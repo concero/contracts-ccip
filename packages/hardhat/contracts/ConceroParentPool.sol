@@ -47,6 +47,7 @@ error ConceroParentPool_MaxCapReached(uint256 maxCap);
 error ConceroParentPool_CallerIsNotTheProxy(address caller);
 ///@notice error emitted when the caller is not the owner
 error ConceroParentPool_NotContractOwner();
+error ConceroParentPool_RequestAlreadyProceeded(bytes32 requestId);
 
 //todo: ConceroParentPool
 contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
@@ -316,8 +317,12 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
    * @param _chainSelector The chain selector of the new pool
    * @param _amountToSend the amount to redistribute between pools.
    */
-  function distributeLiquidity(uint64 _chainSelector, uint256 _amountToSend) external isProxy onlyMessenger {
+  function distributeLiquidity(uint64 _chainSelector, uint256 _amountToSend, bytes32 distributeLiquidityRequestId) external isProxy onlyMessenger {
     if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroParentPool_InvalidAddress();
+    if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
+      revert ConceroParentPool_RequestAlreadyProceeded(distributeLiquidityRequestId);
+    }
+    s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
     _ccipSend(_chainSelector, _amountToSend);
   }
 
@@ -383,20 +388,15 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     emit ConceroParentPool_PoolReceiverUpdated(_chainSelector, _pool);
 
     if (isRebalance == true) {
-      //balancePool = Query balance from ChildPools & ParentPool
-      //totalBalance = balancePool1 + balancePool2 + balancePool3
-      //expectedBalance = totalBalance / newNumberOfPools
-      //amountToDistribute = balancePool - expectedBalance (for each, besides the new one)
-      //trigger distributeLiquidity(_chainSelector, _amountToDistribute)
+      bytes32 distributeLiquidityRequestId = keccak256(abi.encodePacked(block.timestamp, block.number, _chainSelector, block.prevrandao));
 
       bytes[] memory args = new bytes[](5);
       args[0] = abi.encodePacked(s_hashSum);
       args[1] = abi.encodePacked(s_ethersHashSum);
-      args[2] = abi.encodePacked(0);
+      args[2] = new bytes(1);
       args[3] = abi.encodePacked(_chainSelector);
-      args[4] = abi.encodePacked(s_poolChainSelectors.length + 1);
+      args[4] = abi.encodePacked(distributeLiquidityRequestId);
 
-      //todo: @nikita pools have to track requests in order to prevent 4 nodes triggering a rebalance on the same pool
       bytes32 requestId = _sendRequest(args, JS_CODE);
 
       emit ConceroParentPool_RedistributionStarted(requestId);

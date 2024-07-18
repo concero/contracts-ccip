@@ -361,7 +361,7 @@ contract ProtocolMainnet is Test {
         //===== Arbitrum Routers
         uniswapV2Arb = IUniswapV2Router02(0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24);
         sushiV2Arb = IUniswapV2Router02(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506);
-        uniswapV3Arb = ISwapRouter02(0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45);
+        uniswapV3Arb = ISwapRouter02(0xE592427A0AEce92De3Edee1F18E0157C05861564);
         sushiV3Arb = ISwapRouter(0x8A21F6768C1f8075791D08546Dadf6daA0bE820c);
 
         //===== Arbitrum Tokens
@@ -1030,7 +1030,7 @@ contract ProtocolMainnet is Test {
         op.swap(swapData, User);
     }
 
-    function test_swapEtherUniV3SingleMock() public {
+    function test_swapEtherUniV3SingleBase() public {
         vm.selectFork(baseMainFork);
         uint256 amountIn = 1*10**17;
         uint256 amountOut = 350*10*6;
@@ -1055,6 +1055,33 @@ contract ProtocolMainnet is Test {
 
         assertEq(address(op).balance, 100000000000000);
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
+    }
+
+    function test_swapEtherUniV3SingleArb() public {
+        vm.selectFork(arbitrumMainFork);
+        uint256 amountIn = 1*10**17;
+        uint256 amountOut = 350*10*6;
+
+        vm.deal(User, amountIn);
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+
+        swapData[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV3Single,
+            fromToken: address(0),
+            fromAmount: amountIn,
+            toToken: address(aUSDC),
+            toAmount: amountOut,
+            toAmountMin: amountOut,
+            dexData: abi.encode(uniswapV3Arb, 500, 0, block.timestamp + 1800)
+        });
+
+        vm.startPrank(User);
+
+        opDst.swap{value: amountIn}(swapData, User);
+
+        assertEq(address(opDst).balance, 100000000000000);
+        assertTrue(aUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
     }
 
     function test_swapSushiV3MultiMock() public {

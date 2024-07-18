@@ -220,7 +220,7 @@ contract DexSwap is IDexSwap, Storage {
         recipient: _recipient,
         deadline: deadline,
         amountIn: _swapData.fromAmount,
-        amountOutMinimum: _swapData.toAmountMin,
+        amountOutMinimum: _swapData.toAmountMin,  
         sqrtPriceLimitX96: sqrtPriceLimitX96
       });
 

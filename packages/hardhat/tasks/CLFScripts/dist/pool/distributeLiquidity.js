@@ -63,8 +63,8 @@
 				if (chain === newPoolChainSelector) continue;
 				const url = chainSelectors[chain].urls[Math.floor(Math.random() * chainSelectors[chain].urls.length)];
 				const provider = new FunctionsJsonRpcProvider(url);
-				const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
-				console.log(erc20);
+				const gasPrice = await provider.getFeeData();
+				console.log(gasPrice);
 			}
 			const balances = {};
 			const chainSelectorsArr = Object.keys(chainSelectors);

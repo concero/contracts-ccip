@@ -11,6 +11,7 @@ import {LibConcero} from "./Libraries/LibConcero.sol";
 import {IOrchestrator, IOrchestratorViewDelegate} from "./Interfaces/IOrchestrator.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_AVALANCHE, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE} from "./Constants.sol";
+import {CHAIN_ID_AVALANCHE, WRAPPED_NATIVE_AVALANCHE, CHAIN_ID_ETHEREUM, WRAPPED_NATIVE_ETHEREUM, CHAIN_ID_ARBITRUM, WRAPPED_NATIVE_ARBITRUM, CHAIN_ID_BASE, WRAPPED_NATIVE_BASE, CHAIN_ID_OPTIMISM, WRAPPED_NATIVE_OPTIMISM, CHAIN_ID_POLYGON, WRAPPED_NATIVE_POLYGON} from "./Constants.sol";
 
 ///////////////////////////////
 /////////////ERROR/////////////
@@ -29,6 +30,16 @@ error Orchestrator_InvalidSwapData();
 error Orchestrator_InvalidSwapEtherData();
 ///@notice error emitted when the token to bridge is not USDC
 error Orchestrator_InvalidBridgeToken();
+///@notice error emitted when the token is not supported
+error Orchestrator_ChainNotSupported();
+
+////////////////////////////////////
+/////////////INTERFACES/////////////
+////////////////////////////////////
+interface IWETH is IERC20 {
+  function deposit() external payable;
+  function withdraw(uint256) external;
+}
 
 contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, StorageSetters {
   using SafeERC20 for IERC20;
@@ -139,7 +150,9 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     IDexSwap.SwapData[] memory dstSwapData
   ) external validateSwapData(srcSwapData) validateBridgeData(bridgeData) validateDstSwapData(dstSwapData) nonReentrant {
     if (srcSwapData[srcSwapData.length - 1].toToken != getToken(bridgeData.tokenType, i_chainIndex)) revert Orchestrator_InvalidSwapData();
-
+    if (IERC20(srcSwapData[0].fromToken).balanceOf(msg.sender) < srcSwapData[0].fromAmount) revert Orchestrator_InvalidAmount();
+    
+    {
     //Swap -> money come back to this contract
     uint256 amountReceivedFromSwap = _swap(srcSwapData, 0, false, address(this));
 
@@ -148,6 +161,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     if (dstSwapData.length > 0) {
       dstSwapData[0].fromAmount = amountReceivedFromSwap;
       dstSwapData[0].fromToken = _getDestinationTokenAddress(bridgeData.dstChainSelector);
+    }
     }
 
     (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData));
@@ -237,11 +251,14 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
       LibConcero.transferFromERC20(fromToken, msg.sender, address(this), fromAmount);
       if (isFeesNeeded) swapData[0].fromAmount -= (fromAmount / CONCERO_FEE_FACTOR);
     } else {
-      if (isFeesNeeded) _nativeAmount -= (_nativeAmount / CONCERO_FEE_FACTOR);
+      if (isFeesNeeded) swapData[0].fromAmount = _nativeAmount - (_nativeAmount / CONCERO_FEE_FACTOR);
+      address wrapped = getWrappedNative();
+      swapData[0].fromToken = address(wrapped);
+      IWETH(wrapped).deposit{value: swapData[0].fromAmount}();
     }
 
     (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-      abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, _nativeAmount, _receiver)
+      abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, _receiver)
     );
     if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
 
@@ -263,6 +280,26 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
       _token = USDC_AVALANCHE;
     } else {
       revert Orchestrator_InvalidBridgeToken();
+    }
+  }
+
+  function getWrappedNative() internal view returns (address _wrappedAddress) {
+    uint256 chainId = block.chainid;
+
+    if (chainId == CHAIN_ID_AVALANCHE) {
+      _wrappedAddress = WRAPPED_NATIVE_AVALANCHE;
+    } else if (chainId == CHAIN_ID_ETHEREUM) {
+      _wrappedAddress = WRAPPED_NATIVE_ETHEREUM;
+    } else if (chainId == CHAIN_ID_ARBITRUM) {
+      _wrappedAddress = WRAPPED_NATIVE_ARBITRUM;
+    } else if (chainId == CHAIN_ID_BASE) {
+      _wrappedAddress = WRAPPED_NATIVE_BASE;
+    } else if (chainId == CHAIN_ID_OPTIMISM) {
+      _wrappedAddress = WRAPPED_NATIVE_OPTIMISM;
+    } else if (chainId == CHAIN_ID_POLYGON) {
+      _wrappedAddress = WRAPPED_NATIVE_POLYGON;
+    } else {
+      revert Orchestrator_ChainNotSupported();
     }
   }
 

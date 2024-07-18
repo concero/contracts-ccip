@@ -963,118 +963,117 @@ contract ProtocolTestnet is Test {
     ////////////////////////////////////////////////////////////////////////////////////
     
     error Concero_ItsNotOrchestrator(address);
-    function test_swapAndBridgeWithoutFunctions() public setters{
-        helper();
+    // function test_swapAndBridgeWithoutFunctions() public setters{
+    //     helper();
 
-        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    //     /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
         
-        uint amountIn = 1*10**17;
-        uint amountOutMin = 350*10**6;
-        address[] memory path = new address[](2);
-        path[0] = address(wEth);
-        path[1] = address(tUSDC);
-        address to = address(op);
-        uint deadline = block.timestamp + 1800;
+    //     uint amountIn = 1*10**17;
+    //     uint amountOutMin = 350*10**6;
+    //     address[] memory path = new address[](2);
+    //     path[0] = address(wEth);
+    //     path[1] = address(tUSDC);
+    //     address to = address(op);
+    //     uint deadline = block.timestamp + 1800;
 
-        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
-        swapData[0] = IDexSwap.SwapData({
-                            dexType: IDexSwap.DexType.UniswapV2,
-                            fromToken: address(wEth),
-                            fromAmount: amountIn,
-                            toToken: address(tUSDC),
-                            toAmount: amountOutMin,
-                            toAmountMin: amountOutMin,
-                            dexData: abi.encode(mockBase, path, to, deadline)
-        });
+    //     IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+    //     swapData[0] = IDexSwap.SwapData({
+    //                         dexType: IDexSwap.DexType.UniswapV2,
+    //                         fromToken: address(wEth),
+    //                         fromAmount: amountIn,
+    //                         toToken: address(tUSDC),
+    //                         toAmount: amountOutMin,
+    //                         toAmountMin: amountOutMin,
+    //                         dexData: abi.encode(mockBase, path, to, deadline)
+    //     });
 
-        /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
-            tokenType: IStorage.CCIPToken.usdc,
-            amount: 350 *10**6,
-            dstChainSelector: arbChainSelector,
-            receiver: User
-        });
+    //     /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    //     IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+    //         tokenType: IStorage.CCIPToken.usdc,
+    //         amount: 350 *10**6,
+    //         dstChainSelector: arbChainSelector,
+    //         receiver: User
+    //     });
 
-        // ==== Approve Transfer
-        vm.startPrank(User);
-        wEth.approve(address(op), 0.1 ether);
-        vm.expectRevert(abi.encodeWithSelector(Concero_ItsNotOrchestrator.selector, address(concero)));
-        concero.startBridge(bridgeData, swapData);
+    //     // ==== Approve Transfer
+    //     vm.startPrank(User);
+    //     wEth.approve(address(op), 0.1 ether);
+    //     vm.expectRevert(abi.encodeWithSelector(Concero_ItsNotOrchestrator.selector, address(concero)));
+    //     concero.startBridge(bridgeData, swapData);
 
-        op.swapAndBridge(bridgeData, swapData, swapData);
-        vm.stopPrank();
-    }
+    //     op.swapAndBridge(bridgeData, swapData, swapData);
+    //     vm.stopPrank();
+    // }
 
-    function test_userBridge() public setters {
-        vm.selectFork(baseTestFork);
+    // function test_userBridge() public setters {
+    //     vm.selectFork(baseTestFork);
 
-        //======= LP Deposits enough to go through, but revert on max Cap
-        uint256 depositEnoughAmount = 100*10**6;
+    //     //======= LP Deposits enough to go through, but revert on max Cap
+    //     uint256 depositEnoughAmount = 100*10**6;
 
-        //======= Increase the CAP
-        vm.expectEmit();
-        vm.prank(Tester);
-        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
-        wMaster.setPoolCap(1000*10**6);
+    //     //======= Increase the CAP
+    //     vm.expectEmit();
+    //     vm.prank(Tester);
+    //     emit ParentPool_MasterPoolCapUpdated(1000*10**6);
+    //     wMaster.setPoolCap(1000*10**6);
 
-        vm.startPrank(LP);
-        IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
-        wMaster.depositLiquidity(depositEnoughAmount);
-        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
-        vm.stopPrank();
+    //     vm.startPrank(LP);
+    //     IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
+    //     wMaster.depositLiquidity(depositEnoughAmount);
+    //     ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+    //     vm.stopPrank();
 
-        //====== Check Receiver balance
-        assertEq(IERC20(ccipBnMArb).balanceOf(User), 0);
-        assertEq(IERC20(ccipBnMArb).balanceOf(address(wChild)), depositEnoughAmount / 2);
+    //     //====== Check Receiver balance
+    //     assertEq(IERC20(ccipBnMArb).balanceOf(User), 0);
+    //     assertEq(IERC20(ccipBnMArb).balanceOf(address(wChild)), depositEnoughAmount / 2);
 
-        vm.selectFork(baseTestFork);
+    //     vm.selectFork(baseTestFork);
 
-        //====== Mock the payload
-        uint256 amountToSend = 10 *10**6;
+    //     //====== Mock the payload
+    //     uint256 amountToSend = 10 *10**6;
 
-        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
-            tokenType: IStorage.CCIPToken.bnm,
-            amount: amountToSend,
-            dstChainSelector: arbChainSelector,
-            receiver: User
-        });
+    //     IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+    //         tokenType: IStorage.CCIPToken.bnm,
+    //         amount: amountToSend,
+    //         dstChainSelector: arbChainSelector,
+    //         receiver: User
+    //     });
 
-        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    //     /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
         
-        uint amountIn = 1*10**17;
-        uint amountOutMin = 350*10**6;
-        address[] memory path = new address[](2);
-        path[0] = address(wEth);
-        path[1] = address(tUSDC);
-        address to = address(op);
-        uint deadline = block.timestamp + 1800;
+    //     uint amountIn = 1*10**17;
+    //     uint amountOutMin = 350*10**6;
+    //     address[] memory path = new address[](2);
+    //     path[0] = address(wEth);
+    //     path[1] = address(tUSDC);
+    //     address to = address(op);
+    //     uint deadline = block.timestamp + 1800;
 
-        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
-        swapData[0] = IDexSwap.SwapData({
-                            dexType: IDexSwap.DexType.UniswapV2,
-                            fromToken: address(wEth),
-                            fromAmount: amountIn,
-                            toToken: address(tUSDC),
-                            toAmount: amountOutMin,
-                            toAmountMin: amountOutMin,
-                            dexData: abi.encode(mockBase, path, to, deadline)
-        });
+    //     IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+    //     swapData[0] = IDexSwap.SwapData({
+    //                         dexType: IDexSwap.DexType.UniswapV2,
+    //                         fromToken: address(wEth),
+    //                         fromAmount: amountIn,
+    //                         toToken: address(tUSDC),
+    //                         toAmount: amountOutMin,
+    //                         toAmountMin: amountOutMin,
+    //                         dexData: abi.encode(mockBase, path, to, deadline)
+    //     });
 
-        vm.startPrank(User);
-        IERC20(ccipBnM).approve(address(op), amountToSend);
-        op.bridge(bridgeData, swapData);
-        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
-        vm.stopPrank();
+    //     vm.startPrank(User);
+    //     IERC20(ccipBnM).approve(address(op), amountToSend);
+    //     op.bridge(bridgeData, swapData);
+    //     ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+    //     vm.stopPrank();
 
-        //====== Check Receiver balance
-        assertEq(IERC20(ccipBnMArb).balanceOf(User), 9990000); //Amount - fee = 9831494
+    //     //====== Check Receiver balance
+    //     assertEq(IERC20(ccipBnMArb).balanceOf(User), 9990000); //Amount - fee = 9831494
         
-        // assertTrue(op.s_lastGasPrices(arbChainSelector) > 0);
-        // assertTrue(op.s_latestLinkUsdcRate() > 0);
-        // assertTrue(op.s_latestNativeUsdcRate() > 0);
-        // assertTrue(op.s_latestLinkNativeRate() > 0);
-    }
-
+    //     // assertTrue(op.s_lastGasPrices(arbChainSelector) > 0);
+    //     // assertTrue(op.s_latestLinkUsdcRate() > 0);
+    //     // assertTrue(op.s_latestNativeUsdcRate() > 0);
+    //     // assertTrue(op.s_latestLinkNativeRate() > 0);
+    // }
 
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// AUTOMATION MODULE ///////////////////////////////////

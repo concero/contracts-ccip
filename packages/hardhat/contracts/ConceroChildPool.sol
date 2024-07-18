@@ -10,6 +10,7 @@ import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interface
 import {ChildStorage} from "contracts/Libraries/ChildStorage.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
+import {LibConcero} from "./Libraries/LibConcero.sol"; // todo: Only used by withdraw. Remove in production
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -246,6 +247,17 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
     );
   }
 
+  // TODO: REMOVE IN PRODUCTION
+  function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
+    uint256 balance = LibConcero.getBalance(token, address(this));
+    if (balance < amount) revert ConceroChildPool_InsufficientBalance();
+
+    if (token != address(0)) {
+      LibConcero.transferERC20(token, amount, recipient);
+    } else {
+      payable(recipient).transfer(amount);
+    }
+  }
   ///////////////////////////
   ///VIEW & PURE FUNCTIONS///
   ///////////////////////////

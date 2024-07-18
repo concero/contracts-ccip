@@ -106,7 +106,7 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
         "0x186A0",
       ]);
     } else if (taskArgs.function === "pool_distribute_liq") {
-      await simulate(path.join(__dirname, "../", "./CLFScripts/dist/pool/parentPoolEval.min.js"), [
+      await simulate(path.join(__dirname, "../", "./CLFScripts/dist/pool/distributeLiquidity.min.js"), [
         getHashSum(await (await fetch(parentPoolDistributeLiqJsCodeUrl)).text()),
         getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
         "0x1",

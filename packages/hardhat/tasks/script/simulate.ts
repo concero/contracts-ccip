@@ -109,8 +109,10 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
       await simulate(path.join(__dirname, "../", "./CLFScripts/dist/pool/distributeLiquidity.min.js"), [
         getHashSum(await (await fetch(parentPoolDistributeLiqJsCodeUrl)).text()),
         getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
-        "0x1",
-        "0x383A1891AE1915B1",
+        "0x1", // functions req type
+        "0x383a1891ae1915b1",
+        "0x05f8cc312ae3687e5581353da9c5889b92d232f7776c8b81dc234fb330fda265", // req id
+        "0x1", // distribute liq type
       ]);
     }
   });

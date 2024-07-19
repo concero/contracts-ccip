@@ -1,4 +1,6 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10');
+
+return (async () => {
 	try {
 		const [_, __, ___, newPoolChainSelector, distributeLiquidityRequestId, distributionType] = bytesArgs;
 		const chainSelectors = {

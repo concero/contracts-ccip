@@ -158,7 +158,12 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
    * @dev this functions should be called only if there is no transaction being processed
    * @dev If Orchestrator took a loan and the money didn't rebalance yet, it will be left behind.
    */
-  function liquidatePool() external isProxy onlyMessenger {
+  function liquidatePool(bytes32 distributeLiquidityRequestId) external isProxy onlyMessenger {
+    if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
+      revert ConceroChildPool_RequestAlreadyProceeded(distributeLiquidityRequestId);
+    }
+    s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
+
     uint256 numberOfPools = s_poolChainSelectors.length;
     if (numberOfPools < ALLOWED) revert ConceroChildPool_ThereIsNoPoolToDistribute();
 

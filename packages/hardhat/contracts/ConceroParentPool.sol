@@ -57,6 +57,16 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
   using FunctionsRequest for FunctionsRequest.Request;
   using SafeERC20 for IERC20;
 
+  enum FunctionsRequestType {
+    getTotalPoolsBalance,
+    distributeLiquidity
+  }
+
+  enum DistributeLiquidityType {
+    addPool,
+    removePool
+  }
+
   ///////////////////////////////////////////////////////////
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
@@ -238,9 +248,10 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
 
     uint256 amountToDistribute = ((_usdcAmount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
 
-    bytes[] memory args = new bytes[](2);
+    bytes[] memory args = new bytes[](3);
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
+    args[2] = abi.encodePacked(FunctionsRequestType.getTotalPoolsBalance);
 
     bytes32 requestId = _sendRequest(args, JS_CODE);
     s_requests[requestId] = IPool.CLFRequest({
@@ -388,14 +399,17 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     emit ConceroParentPool_PoolReceiverUpdated(_chainSelector, _pool);
 
     if (isRebalance == true) {
-      bytes32 distributeLiquidityRequestId = keccak256(abi.encodePacked(block.timestamp, block.number, _chainSelector, block.prevrandao));
+      bytes32 distributeLiquidityRequestId = keccak256(
+        abi.encodePacked(_pool, _chainSelector, DistributeLiquidityType.addPool, block.timestamp, block.number, block.prevrandao)
+      );
 
-      bytes[] memory args = new bytes[](5);
+      bytes[] memory args = new bytes[](6);
       args[0] = abi.encodePacked(s_hashSum);
       args[1] = abi.encodePacked(s_ethersHashSum);
-      args[2] = new bytes(1);
+      args[2] = abi.encodePacked(FunctionsRequestType.distributeLiquidity);
       args[3] = abi.encodePacked(_chainSelector);
       args[4] = abi.encodePacked(distributeLiquidityRequestId);
+      args[5] = abi.encodePacked(DistributeLiquidityType.addPool);
 
       bytes32 requestId = _sendRequest(args, JS_CODE);
 
@@ -423,20 +437,19 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
 
     emit ConceroParentPool_ChainAndAddressRemoved(_chainSelector);
 
-    //send through functions?
-    // 1. Trigger the liquidatePool functions to transfer money equally to other pools
+    bytes32 distributeLiquidityRequestId = keccak256(
+      abi.encodePacked(removedPool, _chainSelector, DistributeLiquidityType.removePool, block.timestamp, block.number, block.prevrandao)
+    );
 
-    bytes[] memory args = new bytes[](4);
+    bytes[] memory args = new bytes[](6);
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
-    args[2] = abi.encodePacked(_chainSelector);
-    args[3] = abi.encodePacked(removedPool);
+    args[2] = abi.encodePacked(FunctionsRequestType.distributeLiquidity);
+    args[3] = abi.encodePacked(_chainSelector);
+    args[4] = abi.encodePacked(distributeLiquidityRequestId);
+    args[5] = abi.encodePacked(DistributeLiquidityType.removePool);
 
-    //todo: @nikita pools have to track requests in order to prevent 4 nodes triggering a liquidation on the same pool
-    bytes32 requestId /*= _sendRequest(args, REBALANCE_JS_CODE)*/;
-
-    // s_requests[requestId] = CLFRebalance({
-    // });
+    bytes32 requestId = _sendRequest(args, JS_CODE);
 
     emit ConceroParentPool_RedistributionStarted(requestId);
   }

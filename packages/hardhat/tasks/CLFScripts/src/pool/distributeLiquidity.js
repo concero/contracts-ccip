@@ -48,7 +48,7 @@
 		const poolAbi = [
 			'function s_loansInUse() external view returns (uint256)',
 			'function distributeLiquidity(uint64, uint256, bytes32) external',
-			'function liquidatePool() external',
+			'function liquidatePool(bytes32) external',
 		];
 
 		const chainSelectorsArr = Object.keys(chainSelectors);
@@ -131,7 +131,11 @@
 			const signer = getSignerByChainSelector(newPoolChainSelector);
 			const poolContract = new ethers.Contract(chainSelectors[newPoolChainSelector].poolAddress, poolAbi, signer);
 			await poolContract.liquidatePool(distributeLiquidityRequestId);
+
+			return Functions.encodeUint256(1n);
 		}
+
+		throw new Error('Invalid distribution type');
 	} catch (e) {
 		const {message, code} = e;
 		if (code === 'NONCE_EXPIRED' || message?.includes('replacement fee too low') || message?.includes('already known')) {

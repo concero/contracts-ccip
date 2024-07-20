@@ -10,7 +10,7 @@ async function f() {
 				],
 				chainId: '0x66eee',
 				usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-				poolAddress: '0x938d5c15d83D850d94D95E60dc5d605d1e4D221B',
+				poolAddress: '0x107428C0fE92327a60272c4C9B3d2ef4dDaC4a6A',
 			},
 			[`0x${BigInt('5224473277236331295').toString(16)}`]: {
 				urls: [
@@ -30,7 +30,7 @@ async function f() {
 				],
 				chainId: '0xa869',
 				usdcAddress: '0x5425890298aed601595a70ab815c96711a31bc65',
-				poolAddress: '',
+				poolAddress: '0x2F76a32Fa252E57c45e245aeCe84B40A55a904D7',
 			},
 		};
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {

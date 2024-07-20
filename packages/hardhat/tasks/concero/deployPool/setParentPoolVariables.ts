@@ -208,7 +208,7 @@ async function setPools(chain: CNetwork, abi: any) {
       const { request: setReceiverReq } = await publicClient.simulateContract({
         address: conceroPoolAddress,
         functionName: "setPools",
-        args: [dstChainSelector, dstPoolAddress],
+        args: [dstChainSelector, dstPoolAddress, false],
         abi,
         account,
         viemChain,
@@ -276,15 +276,6 @@ async function removePools(chain: CNetwork, abi, chainSelectors: string[]) {
   const parentPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
 
   for (const chainSelector of chainSelectors) {
-    // const { request: deletePoolReq } = await publicClient.simulateContract({
-    //   address: parentPoolAddress,
-    //   abi,
-    //   functionName: "removePools",
-    //   args: [chainSelector],
-    //   account,
-    //   viemChain,
-    // });
-
     const deletePoolHash = await walletClient.writeContract({
       address: parentPoolAddress,
       abi,
@@ -318,8 +309,4 @@ export async function setParentPoolVariables(chain: CNetwork, isSetSecretsNeeded
 
   await setPools(chain, ParentPoolAbi);
   await setConceroContractSenders(chain, ParentPoolAbi);
-
-  // await removePools(chain, ParentPoolAbi, ["3478487238524512106", "5224473277236331295"]);
-  // await deletePendingRequest(chain, ParentPoolAbi, "0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0");
-  // await deletePendingRequest(chain, ParentPoolAbi, "0x1637A2cafe89Ea6d8eCb7cC7378C023f25c892b6");
 }

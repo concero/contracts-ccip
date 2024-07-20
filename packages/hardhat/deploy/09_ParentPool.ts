@@ -47,7 +47,7 @@ const deployParentPool: DeployFunction = async function (
   const args = { ...defaultArgs, ...constructorArgs };
 
   console.log("Deploying ParentPool...");
-  const deployParentPool = (await deploy("ParentPool", {
+  const deployParentPool = (await deploy("ConceroParentPool", {
     from: deployer,
     args: [
       args.parentProxyAddress,

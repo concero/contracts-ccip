@@ -22,8 +22,8 @@ contract ParentPoolStorage {
   bytes32 internal s_hashSum;
   ///@notice variable to store Ethers Hashsum
   bytes32 internal s_ethersHashSum;
-	///@notice variable to store not processed amounts deposited by LPs
-	uint256 public s_pendingDepositTransfers;
+  ///@notice variable to store not processed amounts deposited by LPs
+  uint256 public s_pendingDepositTransfers;
   ///@notice gap to reserve storage in the contract for future variable additions
   uint256[49] __gap;
 
@@ -47,6 +47,6 @@ contract ParentPoolStorage {
   ////////////////////////
 
   mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;
-	mapping(bytes32 messageId => IParentPool.CCIPPendingDeposits) internal s_ccipDepositsMapping;
-	IParentPool.CCIPPendingDeposits[] s_ccipDeposits;
+  mapping(bytes32 messageId => IPool.CCIPPendingDeposits) internal s_ccipDepositsMapping;
+  IPool.CCIPPendingDeposits[] s_ccipDeposits;
 }

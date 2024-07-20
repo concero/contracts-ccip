@@ -1,6 +1,5 @@
 import { task, types } from "hardhat/config";
 import { execSync } from "child_process";
-import { liveChains } from "../liveChains";
 
 const executeCommand = (command: string) => {
   execSync(command, { stdio: "inherit" });
@@ -8,15 +7,16 @@ const executeCommand = (command: string) => {
 
 task("deploy-all-pools", "Deploy all pool")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
-  .addFlag("testnet", "is testnet deploy")
+  .addFlag("mainnet", "is CLF_SUBID_BASE_SEPOLIA deploy")
   .setAction(async taskArgs => {
     const slotId = parseInt(taskArgs.slotid);
-    const parentPoolNetwork = taskArgs.testnet ? "baseSepolia" : "base";
+    const parentPoolNetwork = taskArgs.mainnet ? "base" : "baseSepolia";
+
     executeCommand(
       `yarn hardhat deploy-parent-pool --network ${parentPoolNetwork} --slotid ${slotId} --deployproxy --skipdeploy --skipsetvars`,
     );
 
-    executeCommand(`yarn hardhat deploy-automations --network base --slotid ${slotId}`);
+    executeCommand(`yarn hardhat deploy-automations --network ${parentPoolNetwork} --slotid ${slotId}`);
 
     for (const chain of liveChains) {
       if (chain.name === "base" || chain.name === "baseSepolia") continue;
@@ -30,9 +30,7 @@ task("deploy-all-pools", "Deploy all pool")
 
     executeCommand(`yarn hardhat deploy-lp-token --network ${parentPoolNetwork}`);
 
-    executeCommand(
-      `yarn hardhat deploy-parent-pool --network ${taskArgs.testnet ? "baseSepolia" : "base"} --slotid ${slotId}`,
-    );
+    executeCommand(`yarn hardhat deploy-parent-pool --network ${parentPoolNetwork} --slotid ${slotId}`);
   });
 
 export default {};

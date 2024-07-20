@@ -11,10 +11,10 @@ import { approve } from "./utils/approve";
 import { abi as ParentPoolAbi } from "../artifacts/contracts/ConceroParentPool.sol/ConceroParentPool.json";
 import { chainsMap } from "./utils/chainsMap";
 
-const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE;
-const usdcAmount = "100000000"; // 100 USDC
-const usdcTokenAddress = process.env.USDC_BASE as Address;
-const poolAddress = process.env.PARENT_POOL_PROXY_BASE as Address;
+const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
+const usdcAmount = "1000000";
+const usdcTokenAddress = process.env.USDC_BASE_SEPOLIA as Address;
+const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 
 describe("deposit usdc to pool\n", () => {
   let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({

@@ -4,8 +4,8 @@ import chains from "../../constants/CNetworks";
 export const liveChains: CNetwork[] = [
   chains.baseSepolia,
   chains.arbitrumSepolia,
-  chains.optimismSepolia,
   chains.avalancheFuji,
+  // chains.optimismSepolia,
   // chains.polygonAmoy,
 ];
 

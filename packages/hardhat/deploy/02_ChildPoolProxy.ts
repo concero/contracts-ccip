@@ -9,7 +9,7 @@ const deployChildProxy: DeployFunction = async function (hre: HardhatRuntimeEnvi
   const { deployer, proxyDeployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
-  const implementationAddress = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`);
+  const implementationAddress = getEnvVar(`CHILD_POOL_${networkEnvKeys[name]}`);
 
   console.log("Deploying ChildProxy...");
   const deployChildProxy = (await deploy("ChildPoolProxy", {
@@ -17,6 +17,7 @@ const deployChildProxy: DeployFunction = async function (hre: HardhatRuntimeEnvi
     args: [implementationAddress, proxyDeployer, "0x"],
     log: true,
     autoMine: true,
+    gasLimit: 3_000_000,
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {

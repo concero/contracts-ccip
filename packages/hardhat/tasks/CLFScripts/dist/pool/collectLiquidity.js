@@ -2,35 +2,35 @@ async function f() {
 	try {
 		const [_, __, liquidityProvider, tokenAmount] = bytesArgs;
 		const chainSelectors = {
-			[`0x${BigInt('4949039107694359620').toString(16)}`]: {
+			[`0x${BigInt('3478487238524512106').toString(16)}`]: {
 				urls: [
-					`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://arbitrum.blockpi.network/v1/rpc/public',
-					'https://arbitrum-rpc.publicnode.com',
+					`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
+					'https://arbitrum-sepolia-rpc.publicnode.com',
 				],
-				chainId: '0xa4b1',
-				usdcAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
-				poolAddress: '0xb26f41a682601c70872B67667b30037f910E6c83',
+				chainId: '0x66eee',
+				usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
+				poolAddress: '0xd1D330527Cd8ccee0300BBde5CD9deC740560464',
 			},
-			[`0x${BigInt('4051577828743386545').toString(16)}`]: {
+			[`0x${BigInt('5224473277236331295').toString(16)}`]: {
 				urls: [
-					`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://polygon.blockpi.network/v1/rpc/public',
-					'https://polygon-bor-rpc.publicnode.com',
+					`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://optimism-sepolia.blockpi.network/v1/rpc/public',
+					'https://optimism-sepolia-rpc.publicnode.com',
 				],
-				chainId: '0x89',
-				usdcAddress: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
-				poolAddress: '0x1bb4233765838Ee69076845D10fa231c8cd500a3',
+				chainId: '0xaa37dc',
+				usdcAddress: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
+				poolAddress: '0xb0260E0A79cb31a196bB798005ff7b20E1E79E2F',
 			},
-			[`0x${BigInt('6433500567565415381').toString(16)}`]: {
+			[`0x${BigInt('14767482510784806043').toString(16)}`]: {
 				urls: [
-					`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://avalanche.blockpi.network/v1/rpc/public',
-					'https://avalanche-c-chain-rpc.publicnode.com',
+					`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://avalanche-fuji-c-chain-rpc.publicnode.com',
+					'https://avalanche-fuji.blockpi.network/v1/rpc/public',
 				],
-				chainId: '0xa86a',
-				usdcAddress: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
-				poolAddress: '0x1bb4233765838Ee69076845D10fa231c8cd500a3',
+				chainId: '0xa869',
+				usdcAddress: '0x5425890298aed601595a70ab815c96711a31bc65',
+				poolAddress: '0xA80a668566517BeE1ab71df78B384e6281b02625',
 			},
 		};
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {

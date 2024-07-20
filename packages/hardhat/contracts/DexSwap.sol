@@ -7,13 +7,11 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {ISwapRouter as ISushiRouterV3} from "sushiswap-v3-periphery/contracts/interfaces/ISwapRouter.sol";
-import {TransferHelper} from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
 import {ISwapRouter02, IV3SwapRouter} from "./Interfaces/ISwapRouter02.sol";
 import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
 import {Storage} from "./Libraries/Storage.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
-import {LibConcero} from "./Libraries/LibConcero.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -28,10 +26,6 @@ error DexSwap_RouterNotAllowed();
 error DexSwap_InvalidPath();
 ///@notice error emitted if a swapData has invalid tokens
 error DexSwap_SwapDataNotChained(address toToken, address fromToken);
-///@notice error emitted if a not-owner-address call the function
-error DexSwap_CallableOnlyByOwner(address caller, address owner);
-///@notice error emitted when the DexData is not valid
-error DexSwap_InvalidDexData();
 
 contract DexSwap is IDexSwap, Storage {
   using SafeERC20 for IERC20;
@@ -48,17 +42,10 @@ contract DexSwap is IDexSwap, Storage {
   ///////////////
   ///IMMUTABLE///
   ///////////////
+  ///@notice immutable variable to infra-proxy address.
   address private immutable i_proxy;
   ///@notice immutable variable to hold wEth address
   address private immutable i_wEth;
-
-  ////////////////////////////////////////////////////////
-  //////////////////////// EVENTS ////////////////////////
-  ////////////////////////////////////////////////////////
-  ///@notice event emitted when the orchestrator address is updated
-  event DexSwap_OrchestratorContractUpdated(address previousAddress, address orchestrator);
-  ///@notice event emitted when value locked in the contract is removed
-  event DexSwap_RemovingDust(address receiver, uint256 amount);
 
   /////////////////////////////////////////////////////////////////
   ////////////////////////////FUNCTIONS////////////////////////////

@@ -2,7 +2,7 @@
 pragma solidity 0.8.20;
 
 import {Script, console2} from "../lib/forge-std/src/Script.sol";
-import {ParentPool} from "contracts/ParentPool.sol";
+import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 
 contract ParentPoolDeploy is Script {
 
@@ -19,9 +19,9 @@ contract ParentPoolDeploy is Script {
         address _automation,
         address _orchestrator,
         address _owner
-    ) public returns(ParentPool pool){
+    ) public returns(ConceroParentPool pool){
         vm.startBroadcast();
-        pool = new ParentPool(
+        pool = new ConceroParentPool(
             _proxy,
             _link,
             _donId,

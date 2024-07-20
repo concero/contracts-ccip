@@ -3,9 +3,7 @@ pragma solidity 0.8.20;
 
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import {IDexSwap} from "../Interfaces/IDexSwap.sol";
 import {IStorage} from "../Interfaces/IStorage.sol";
-import {ConceroCCIP} from "../ConceroCCIP.sol";
 
 abstract contract Storage is ReentrancyGuard, IStorage {
 
@@ -34,9 +32,6 @@ abstract contract Storage is ReentrancyGuard, IStorage {
   /////////////
   ///STORAGE///
   /////////////
-  ///@notice array of Pools to receive Liquidity through `ccipSend` function
-  Pools[] poolsToDistribute;
-
   ///@notice Concero: Mapping to keep track of CLF fees for different chains
   mapping(uint64 => uint256) public clfPremiumFees;
   ///@notice DexSwap: mapping to keep track of allowed routers to perform swaps. 1 == Allowed.
@@ -50,5 +45,5 @@ abstract contract Storage is ReentrancyGuard, IStorage {
   ///@notice Functions: Mapping to keep track of Chainlink Functions requests
   mapping(bytes32 => Request) public s_requests;
   ///@notice Functions: Mapping to keep track of cross-chain gas prices
-  mapping(uint64 chainSelector => uint256 lasGasPrice) public s_lastGasPrices;
+  mapping(uint64 chainSelector => uint256 lastGasPrice) public s_lastGasPrices;
 }

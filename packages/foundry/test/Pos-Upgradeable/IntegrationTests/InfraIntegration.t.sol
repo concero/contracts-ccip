@@ -6,7 +6,7 @@ import {Test, console} from "forge-std/Test.sol";
 
 //Master & Infra Contracts
 import {DexSwap} from "contracts/DexSwap.sol";
-import {ParentPool} from "contracts/ParentPool.sol";
+import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {ConceroBridge} from "contracts/ConceroBridge.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
 import {LPToken} from "contracts/LPToken.sol";
@@ -69,7 +69,7 @@ contract InfraIntegration is Test {
 
     //==== Instantiate Base Contracts
     DexSwap public dex;
-    ParentPool public pool;
+    ConceroParentPool public pool;
     ConceroBridge public concero;
     Orchestrator public orch;
     Orchestrator public orchEmpty;
@@ -114,7 +114,7 @@ contract InfraIntegration is Test {
     //==== Wrapped contract
     Orchestrator wInfraSrc;
     Orchestrator wInfraDst;
-    ParentPool wMaster;
+    ConceroParentPool wMaster;
     ConceroChildPool wChild;
 
 
@@ -296,7 +296,7 @@ contract InfraIntegration is Test {
         vm.prank(ProxyOwner);
         proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
 
-        wMaster = ParentPool(payable(address(masterProxy)));
+        wMaster = ConceroParentPool(payable(address(masterProxy)));
 
         //====== Update the MINTER on the LP Token
         vm.prank(Tester);
@@ -365,11 +365,9 @@ contract InfraIntegration is Test {
 
         child = childDeployArbitrum.run(
             address(proxyDst),
-            address(masterProxy),
             address(childProxy),
             link,
             ccipRouterLocalDst,
-            localChainSelector,
             address(mUSDC),
             Tester
         );
@@ -409,7 +407,7 @@ contract InfraIntegration is Test {
 
         //Parent Pool
         wMaster.setConceroContractSender(localChainSelector, address(wChild), 1);
-        wMaster.setPoolsToSend(localChainSelector, address(wChild));
+        wMaster.setPools(localChainSelector, address(wChild), false);
 
         //Child Pool
         wChild.setConceroContractSender(localChainSelector, address(wMaster), 1);

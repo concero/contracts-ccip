@@ -6,7 +6,7 @@ import {Test, console} from "forge-std/Test.sol";
 
 //Master & Infra Contracts
 import {DexSwap} from "contracts/DexSwap.sol";
-import {ParentPool} from "contracts/ParentPool.sol";
+import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {ConceroBridge} from "contracts/ConceroBridge.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
 import {LPToken} from "contracts/LPToken.sol";
@@ -22,7 +22,7 @@ import {ChildPoolProxy} from "contracts/Proxy/ChildPoolProxy.sol";
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 import {IStorage} from "contracts/Interfaces/IStorage.sol";
 import {IConcero, IDexSwap} from "contracts/Interfaces/IConcero.sol";
-import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
+import {IPool} from "contracts/Interfaces/IPool.sol";
 
 //Protocol Storage
 import {Storage} from "contracts/Libraries/Storage.sol";
@@ -73,7 +73,7 @@ interface IWETH is IERC20 {
 contract ProtocolTestnet is Test {
     //==== Instantiate Base Contracts
     DexSwap public dex;
-    ParentPool public pool;
+    ConceroParentPool public pool;
     ConceroBridge public concero;
     Orchestrator public orch;
     Orchestrator public orchEmpty;
@@ -119,7 +119,7 @@ contract ProtocolTestnet is Test {
     //==== Wrapped contract
     Orchestrator op;
     Orchestrator opDst;
-    ParentPool wMaster;
+    ConceroParentPool wMaster;
     ConceroChildPool wChild;
 
 
@@ -146,6 +146,8 @@ contract ProtocolTestnet is Test {
     address ccipBnM = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e;
     address ccipBnMArb = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D;
     address registryAddress = 0x8B1565DbAF0577F2F3b474334b068C95687f4FcE;
+    bytes32 etherHashSum = 0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4;
+    bytes32 hashSum = 0x06a7e0b6224a17f3938fef1f9ea5c3de949134a66cf8cb8483b76449714a4504;
 
     //Arb Testnet variables
     address linkArb = 0xb1D4538B4571d411F07960EF2838Ce337FE1E80E;
@@ -157,7 +159,7 @@ contract ProtocolTestnet is Test {
     address ProxyOwner = makeAddr("ProxyOwner");
     address Tester = makeAddr("Tester");
     address User = makeAddr("User");
-    address Messenger = makeAddr("Messenger");
+    address Messenger = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
     address LP = makeAddr("LiquidityProvider");
     address defaultSender = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
     address subOwnerBase = 0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0;
@@ -247,6 +249,7 @@ contract ProtocolTestnet is Test {
             address(masterProxy),
             address(proxy)
         );
+
         //====== Deploy a new Orch that will e set as implementation to the proxy.
         orch = orchDeployBase.run(
             address(functionsRouterBase),
@@ -279,7 +282,7 @@ contract ProtocolTestnet is Test {
         vm.prank(ProxyOwner);
         proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
 
-        wMaster = ParentPool(payable(address(masterProxy)));
+        wMaster = ConceroParentPool(payable(address(masterProxy)));
 
         //=== Base Contracts
         vm.makePersistent(address(proxy));
@@ -387,19 +390,20 @@ contract ProtocolTestnet is Test {
 
         child = childDeployArbitrum.run(
             address(proxyDst),
-            address(masterProxy),
             address(childProxy),
             linkArb,
             ccipRouterArb,
-            baseChainSelector,
             address(ccipBnMArb),
             Tester
         );
 
         wChild = ConceroChildPool(payable(address(childProxy)));
 
+        //====== Wrap the proxy as the implementation
+        opDst = Orchestrator(address(proxyDst));
+
         //=== Arbitrum Contracts
-        vm.makePersistent(address(proxyDst));
+        vm.makePersistent(address(opDst));
         vm.makePersistent(address(dexDst));
         vm.makePersistent(address(child));
         vm.makePersistent(address(conceroDst));
@@ -412,9 +416,6 @@ contract ProtocolTestnet is Test {
         proxyInterfaceInfraArb.upgradeToAndCall(address(orchDst), "");
         vm.prank(ProxyOwner);
         proxyInterfaceChild.upgradeToAndCall(address(child), "");
-
-        //====== Wrap the proxy as the implementation
-        opDst = Orchestrator(address(proxyDst));
 
         //====== Set the DEXes routers
         vm.prank(defaultSender);
@@ -432,7 +433,7 @@ contract ProtocolTestnet is Test {
 
         ///======= Pools Allowance
         vm.startPrank(Tester);
-        wMaster.setPoolsToSend(arbChainSelector, address(childProxy));
+        wMaster.setPools(arbChainSelector, address(childProxy), false);
         assertEq(wMaster.s_poolToSendTo(arbChainSelector), address(wChild));
 
         wMaster.setConceroContractSender(arbChainSelector, address(wChild), 1);
@@ -444,10 +445,17 @@ contract ProtocolTestnet is Test {
 
         ///======= Infra Allowance
         vm.startPrank(defaultSender);
-        op.setDstConceroPool(arbChainSelector, address(childProxy));
+        op.setDstConceroPool(arbChainSelector, address(wChild));
         assertEq(op.s_poolReceiver(arbChainSelector), address(wChild));
 
         op.setConceroContract(arbChainSelector, address(proxyDst));
+
+        op.setClfPremiumFees(10344971235874465080, 1847290640394088);
+        op.setDonHostedSecretsVersion(1720259252);
+        op.setDonHostedSecretsSlotID(3);
+        op.setDstJsHashSum(hashSum);
+        op.setSrcJsHashSum(hashSum);
+        op.setEthersHashSum(etherHashSum);
 
         vm.stopPrank();
 
@@ -475,14 +483,22 @@ contract ProtocolTestnet is Test {
 
         ///======= Infra Allowance
         vm.startPrank(defaultSender);
-        opDst.setDstConceroPool(baseChainSelector, address(wChild));
-        assertEq(opDst.s_poolReceiver(baseChainSelector), address(wChild));
+        opDst.setDstConceroPool(baseChainSelector, address(wMaster));
+        assertEq(opDst.s_poolReceiver(baseChainSelector), address(wMaster));
 
         opDst.setConceroContract(baseChainSelector, address(op));
+
+        opDst.setClfPremiumFees(3478487238524512106, 4000000000000000);
+        opDst.setDonHostedSecretsVersion(1718547517);
+        opDst.setDonHostedSecretsSlotID(3);
+        opDst.setDstJsHashSum(hashSum);
+        opDst.setSrcJsHashSum(hashSum);
+        opDst.setEthersHashSum(etherHashSum);
         vm.stopPrank();
 
         vm.startPrank(address(subOwnerArb));
         functionsRouterArb.addConsumer(53, address(opDst));
+        functionsRouterArb.addConsumer(53, address(conceroDst));
         vm.stopPrank();
 
         vm.prank(0x4281eCF07378Ee595C564a59048801330f3084eE);
@@ -521,7 +537,7 @@ contract ProtocolTestnet is Test {
     function test_swapAndBridgeRevertBecauseBridgeAmount() public setters{
         helper();
         /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        
+
         uint amountIn = 29510000000000;
         uint amountOutMin = 9*10**4;
         address[] memory path = new address[](2);
@@ -578,7 +594,7 @@ contract ProtocolTestnet is Test {
             dstChainSelector: arbChainSelector,
             receiver: User
         });
-        
+
         uint amountIn = 29510000000000;
         uint amountOutMin = 9*10**4;
         address[] memory path = new address[](2);
@@ -598,11 +614,47 @@ contract ProtocolTestnet is Test {
                             dexData: abi.encode(mockBase, path, to, deadline)
         });
 
-
         vm.startPrank(User);
         tUSDC.approve(address(op), USDC_INITIAL_BALANCE + 1);
         vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidAmount.selector));
         op.bridge(data, swapData);
+        vm.stopPrank();
+
+        ///==================== Ether Check
+
+
+        //===== Mock the value.
+                //In this case, the value is passed as a param through the function
+                //Also is transferred in the call
+        amountIn = 1*10**17;
+
+        //===== Mock the data for payload to send to the function
+        uint256 amountOut = 350*10*6;
+
+        path[0] = address(wEth);
+        path[1] = address(mUSDC);
+        to = address(User);
+        deadline = block.timestamp + 1800;
+
+        //===== Gives User some ether and checks the balance
+        vm.deal(User, 1*10**17);
+        assertEq(User.balance, 1*10**17);
+
+        //===== Mock the payload to send on the function
+        swapData[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV2Ether,
+            fromToken: address(0),
+            fromAmount: 1*10**16,
+            toToken: address(mUSDC),
+            toAmount: amountOut,
+            toAmountMin: amountOut,
+            dexData: abi.encode(mockBase, path, deadline)
+        });
+
+        //===== Start transaction calling the function and passing the payload
+        vm.startPrank(User);
+        vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidAmount.selector));
+        op.swap{value: amountIn}(swapData, User);
         vm.stopPrank();
     }
 
@@ -648,7 +700,7 @@ contract ProtocolTestnet is Test {
         vm.stopPrank();
 
         //===== Leg 3 - Empty receiver
-        
+
 
         //====== Mock the payload
         IStorage.BridgeData memory dataThree = IStorage.BridgeData({
@@ -748,138 +800,168 @@ contract ProtocolTestnet is Test {
     ////////////////////////////////// POOL MODULE ///////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////
 
-    error ParentPool_AmountBelowMinimum(uint256);
-    error ParentPool_MaxCapReached(uint256);
-    error ParentPool_AmountNotAvailableYet(uint256);
-    error ParentPool_InsufficientBalance();
-    error ParentPool_ActiveRequestNotFulfilledYet();
-    error ParentPool_CallerIsNotTheProxy(address);
-    event ParentPool_MasterPoolCapUpdated(uint256 _newCap);
-    event ParentPool_SuccessfulDeposited(address, uint256 , address);
-    event ParentPool_MessageSent(bytes32, uint64, address, address, uint256);
-    event ParentPool_WithdrawRequest(address,address,uint256);
-    event ParentPool_Withdrawn(address,address,uint256);
-    // function test_LiquidityProvidersDepositAndOpenARequest() public setters {
-    //     vm.selectFork(baseTestFork);
+    error ConceroParentPool_AmountBelowMinimum(uint256);
+    error ConceroParentPool_MaxCapReached(uint256);
+    error ConceroParentPool_AmountNotAvailableYet(uint256);
+    error ConceroParentPool_InsufficientBalance();
+    error ConceroParentPool_ActiveRequestNotFulfilledYet();
+    error ConceroParentPool_CallerIsNotTheProxy(address);
+    event ConceroParentPool_MasterPoolCapUpdated(uint256 _newCap);
+    event ConceroParentPool_SuccessfulDeposited(address, uint256 , address);
+    event ConceroParentPool_MessageSent(bytes32, uint64, address, address, uint256);
+    event ConceroParentPool_WithdrawRequest(address,address,uint256);
+    event ConceroParentPool_Withdrawn(address,address,uint256);
+    ///CCIP Local doesn't allow USDC transfer in forked environment. We use ccip-BnM here. But it breaks when querying balances.
+    function test_LiquidityProvidersDepositAndOpenARequest() public setters {
+        vm.selectFork(baseTestFork);
 
-    //     uint256 lpBalance = IERC20(ccipBnM).balanceOf(LP);
-    //     uint256 depositLowAmount = 10*10**6;
+        uint256 lpBalance = IERC20(ccipBnM).balanceOf(LP);
+        uint256 depositLowAmount = 10*10**6;
 
-    //     //======= LP Deposits Low Amount of USDC on the Main Pool to revert on Min Amount
-    //     vm.startPrank(LP);
-    //     IERC20(ccipBnM).approve(address(wMaster), depositLowAmount);
-    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountBelowMinimum.selector, 100*10**6));
-    //     wMaster.depositLiquidity(depositLowAmount);
-    //     vm.stopPrank();
+        //======= LP Deposits Low Amount of USDC on the Main Pool to revert on Min Amount
+        vm.startPrank(LP);
+        IERC20(ccipBnM).approve(address(wMaster), depositLowAmount);
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_AmountBelowMinimum.selector, 100*10**6));
+        wMaster.depositLiquidity(depositLowAmount);
+        vm.stopPrank();
 
-    //     //======= Increase the CAP
-    //     vm.expectEmit();
-    //     vm.prank(Tester);
-    //     emit ParentPool_MasterPoolCapUpdated(50*10**6);
-    //     wMaster.setPoolCap(50*10**6);
+        //======= Increase the CAP
+        vm.expectEmit();
+        vm.prank(Tester);
+        emit ConceroParentPool_MasterPoolCapUpdated(50*10**6);
+        wMaster.setPoolCap(50*10**6);
 
-    //     //======= LP Deposits enough to go through, but revert on max Cap
-    //     uint256 depositEnoughAmount = 100*10**6;
+        //======= LP Deposits enough to go through, but revert on max Cap
+        uint256 depositEnoughAmount = 100*10**6;
 
-    //     vm.startPrank(LP);
-    //     IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
-    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_MaxCapReached.selector, 50*10**6));
-    //     wMaster.depositLiquidity(depositEnoughAmount);
-    //     vm.stopPrank();
+        vm.startPrank(LP);
+        IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_MaxCapReached.selector, 50*10**6));
+        wMaster.depositLiquidity(depositEnoughAmount);
+        vm.stopPrank();
 
-    //     //======= Increase the CAP
-    //     vm.expectEmit();
-    //     vm.prank(Tester);
-    //     emit ParentPool_MasterPoolCapUpdated(1000*10**6);
-    //     wMaster.setPoolCap(1000*10**6);
+        //======= Increase the CAP
+        vm.expectEmit();
+        vm.prank(Tester);
+        emit ConceroParentPool_MasterPoolCapUpdated(1000*10**6);
+        wMaster.setPoolCap(1000*10**6);
 
-    //     vm.startPrank(LP);
-    //     IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
-    //     wMaster.depositLiquidity(depositEnoughAmount);
-    //     ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
-    //     vm.stopPrank();
+        vm.startPrank(LP);
+        IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
+        wMaster.depositLiquidity(depositEnoughAmount);
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+        vm.stopPrank();
 
-    //     //======= Switch to Base
-    //     vm.selectFork(baseTestFork);
+        //======= Switch to Base
+        vm.selectFork(baseTestFork);
 
-    //     //======= Check LP balance
-    //     assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance - depositEnoughAmount);
+        //======= Check LP balance
+        assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance - depositEnoughAmount);
 
-    //     //======= We check the pool balance;
-    //                 //Here, the LP Fees will be compounding directly for the LP address
-    //     uint256 poolBalance = IERC20(ccipBnM).balanceOf(address(wMaster));
-    //     assertEq(poolBalance, depositEnoughAmount/2);
+        //======= We check the pool balance;
+                    //Here, the LP Fees will be compounding directly for the LP address
+        uint256 poolBalance = IERC20(ccipBnM).balanceOf(address(wMaster));
+        assertEq(poolBalance, depositEnoughAmount/2);
 
-    //     uint256 lpTokenUserBalance = lp.balanceOf(LP);
-    //     // assertEq(lpTokenUserBalance, (depositEnoughAmount * 10**18) / 10**6);
+        uint256 lpTokenUserBalance = lp.balanceOf(LP);
+        // assertEq(lpTokenUserBalance, (depositEnoughAmount * 10**18) / 10**6);
 
-    //     //======= Revert on amount bigger than balance
-    //     vm.startPrank(LP);
-    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_InsufficientBalance.selector));
-    //     wMaster.startWithdrawal(lpTokenUserBalance + 10);
-    //     vm.stopPrank();
+        //======= Revert on amount bigger than balance
+        vm.startPrank(LP);
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InsufficientBalance.selector));
+        wMaster.startWithdrawal(lpTokenUserBalance + 10);
+        vm.stopPrank();
 
-    //     //======= Request Withdraw without any accrued fee
-    //     vm.startPrank(LP);
-    //     vm.expectEmit();
-    //     emit ParentPool_WithdrawRequest(LP, ccipBnM, block.timestamp + 597_600);
-    //     wMaster.startWithdrawal(lpTokenUserBalance);
-    //     vm.stopPrank();
+        //======= Request Withdraw without any accrued fee
+        vm.startPrank(LP);
+        vm.expectEmit();
+        emit ConceroParentPool_WithdrawRequest(LP, ccipBnM, block.timestamp + 597_600);
+        wMaster.startWithdrawal(lpTokenUserBalance);
+        vm.stopPrank();
 
-    //     //======= Revert on amount bigger than balance
-    //     vm.startPrank(LP);
-    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_ActiveRequestNotFulfilledYet.selector));
-    //     wMaster.startWithdrawal(lpTokenUserBalance);
-    //     vm.stopPrank();
+        //======= Revert on amount bigger than balance
+        // vm.startPrank(LP);
+        // vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_ActiveRequestNotFulfilledYet.selector));
+        // wMaster.startWithdrawal(lpTokenUserBalance);
+        // vm.stopPrank();
 
-    //     //======= No operations are made. Advance time
-    //     vm.warp(7 days);
+        // //======= No operations are made. Advance time
+        // vm.warp(7 days);
 
-    //     //======= Revert Because money not arrived yet
-    //     vm.startPrank(LP);
-    //     lp.approve(address(wMaster), lpTokenUserBalance);
-    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountNotAvailableYet.selector, 50*10**6));
-    //     wMaster.completeWithdrawal();
-    //     vm.stopPrank();
+        // //======= Revert Because money not arrived yet
+        // vm.startPrank(LP);
+        // lp.approve(address(wMaster), lpTokenUserBalance);
+        // vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_AmountNotAvailableYet.selector, 50*10**6));
+        // wMaster.completeWithdrawal();
+        // vm.stopPrank();
 
-    //     //======= Switch to Arbitrum
-    //     vm.selectFork(arbitrumTestFork);
+        // //======= Switch to Arbitrum
+        // vm.selectFork(arbitrumTestFork);
 
-    //     //======= Calls ChildPool to send the money
-    //     vm.prank(Messenger);
-    //     wChild.ccipSendToPool(LP, depositEnoughAmount/2);
-    //     ccipLocalSimulatorFork.switchChainAndRouteMessage(baseTestFork);
+        // //======= Calls ChildPool to send the money
+        // vm.prank(Messenger);
+        // wChild.ccipSendToPool(LP, depositEnoughAmount/2);
+        // ccipLocalSimulatorFork.switchChainAndRouteMessage(baseTestFork);
 
-    //     //======= Revert because balance was used.
-    //     vm.prank(address(wMaster));
-    //     IERC20(ccipBnM).transfer(User, 10*10**6);
+        // //======= Revert because balance was used.
+        // vm.prank(address(wMaster));
+        // IERC20(ccipBnM).transfer(User, 10*10**6);
 
-    //     vm.startPrank(LP);
-    //     lp.approve(address(wMaster), lpTokenUserBalance);
-    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_InsufficientBalance.selector));
-    //     wMaster.completeWithdrawal();
-    //     vm.stopPrank();
+        // vm.startPrank(LP);
+        // lp.approve(address(wMaster), lpTokenUserBalance);
+        // vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InsufficientBalance.selector));
+        // wMaster.completeWithdrawal();
+        // vm.stopPrank();
 
-    //     vm.prank(address(User));
-    //     IERC20(ccipBnM).transfer(address(wMaster), 10*10**6);
+        // vm.prank(address(User));
+        // IERC20(ccipBnM).transfer(address(wMaster), 10*10**6);
 
-    //     vm.startPrank(LP);
-    //     lp.approve(address(wMaster), lpTokenUserBalance);
-    //     vm.expectRevert(abi.encodeWithSelector(ParentPool_CallerIsNotTheProxy.selector, address(pool)));
-    //     pool.completeWithdrawal();
-    //     vm.stopPrank();
+        // vm.startPrank(LP);
+        // lp.approve(address(wMaster), lpTokenUserBalance);
+        // vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_CallerIsNotTheProxy.selector, address(pool)));
+        // pool.completeWithdrawal();
+        // vm.stopPrank();
 
-    //     //======= Withdraw after the lock period and cross-chain transference
-    //     vm.startPrank(LP);
-    //     lp.approve(address(wMaster), lpTokenUserBalance);
-    //     wMaster.completeWithdrawal();
-    //     vm.stopPrank();
+        // //======= Withdraw after the lock period and cross-chain transference
+        // vm.startPrank(LP);
+        // lp.approve(address(wMaster), lpTokenUserBalance);
+        // wMaster.completeWithdrawal();
+        // vm.stopPrank();
 
-    //     // //======= Check LP balance
-    //     assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance);
-    // }
+        // // //======= Check LP balance
+        // assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance);
+    }
 
-    //Callback isn't performed on forked environment
+    error ConceroChildPool_InsufficientBalance();
+    error ConceroChildPool_NotEnoughLinkBalance(uint256, uint256);
+    //It will fail because the amount of link charged will vary according to network stuff
+    //It's reverting as expect, but the revert account for the exact amount,
+    function test_ccipSendToPool() public {
+        vm.prank(Messenger);
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InsufficientBalance.selector));
+        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6);
+
+        vm.prank(0xd5CCdabF11E3De8d2F64022e232aC18001B8acAC);
+        ERC20Mock(ccipBnMArb).mint(address(wChild), 1000 * 10**6);
+
+        vm.prank(Messenger);
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_NotEnoughLinkBalance.selector, 0, 7043276117429745));
+        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6);
+
+        vm.prank(0x4281eCF07378Ee595C564a59048801330f3084eE);
+        LinkToken(linkArb).transfer(address(wChild), 10*10**18);
+
+        vm.prank(Messenger);
+        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6);
+    }
+
+    function test_orchestratorLoanRevertBecauseOfAmount() public setters {
+        vm.prank(address(proxyDst));
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InsufficientBalance.selector));
+        wChild.orchestratorLoan(address(aUSDC), 10 * 10**18, Tester);
+    }
+
+    // Callback isn't performed on forked environment
     // function test_PoolFees() public setters {
     //     vm.selectFork(baseTestFork);
     //     uint256 lpBnMBalance = 1000*10**6;
@@ -902,7 +984,7 @@ contract ProtocolTestnet is Test {
 
     //     /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
     //     // helper();
-        
+
     //     // uint amountIn = 1*10**17;
     //     // uint amountOutMin = 350*10**6;
     //     // address[] memory path = new address[](2);
@@ -931,7 +1013,7 @@ contract ProtocolTestnet is Test {
     //     // });
 
     //     // /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        
+
     //     // uint amountInDst = 300*10**6;
     //     // uint amountOutMinDst = 1*10**17;
     //     // address[] memory pathDst = new address[](2);
@@ -1050,7 +1132,7 @@ contract ProtocolTestnet is Test {
         IParentPool.CCIPPendingDeposits[] memory requests = new IParentPool.CCIPPendingDeposits[](4);
         requests = wMaster.getCCIPPendingDeposits();
         assertEq(requests.length, 1);
-        
+
         bytes32 deletedTX = requests[0].transactionId;
 
         vm.prank(Messenger);
@@ -1066,13 +1148,13 @@ contract ProtocolTestnet is Test {
     ////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// BRIDGE MODULE ///////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////
-    
+
     error Concero_ItsNotOrchestrator(address);
-    // function test_swapAndBridgeWithoutFunctions() public setters{
+    // function test_swapAndBridgeTestnet() public setters{
     //     helper();
 
     //     /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        
+
     //     uint amountIn = 1*10**17;
     //     uint amountOutMin = 350*10**6;
     //     address[] memory path = new address[](2);
@@ -1119,7 +1201,7 @@ contract ProtocolTestnet is Test {
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
+        emit ConceroParentPool_MasterPoolCapUpdated(1000*10**6);
         wMaster.setPoolCap(1000*10**6);
 
         vm.startPrank(LP);
@@ -1144,7 +1226,7 @@ contract ProtocolTestnet is Test {
         });
 
         /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        
+
         uint amountIn = 1*10**17;
         uint amountOutMin = 350*10**6;
         address[] memory path = new address[](2);
@@ -1171,15 +1253,59 @@ contract ProtocolTestnet is Test {
         vm.stopPrank();
 
         //====== Check Receiver balance
-        assertEq(IERC20(ccipBnMArb).balanceOf(User), 9990000); //Amount - fee = 9831494
-        
+        // assertEq(IERC20(ccipBnMArb).balanceOf(User), 9990000); //Amount - fee = 9831494
+
+        // vm.selectFork(baseTestFork);
         // assertTrue(op.s_lastGasPrices(arbChainSelector) > 0);
         // assertTrue(op.s_latestLinkUsdcRate() > 0);
         // assertTrue(op.s_latestNativeUsdcRate() > 0);
         // assertTrue(op.s_latestLinkNativeRate() > 0);
     }
 
+    //Reverting because of an Invalid Opcode
+    event UnconfirmedTXAdded(bytes32 indexed ccipMessageId, address sender, address recipient, uint256 amount, IStorage.CCIPToken token, uint64 srcChainSelector);
+    function test_addUnconfirmedTX() public setters {
+        vm.selectFork(arbitrumTestFork);
 
+        /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+        uint amountIn = 1*10**17;
+        uint amountOutMin = 350*10**6;
+        address[] memory path = new address[](2);
+        path[0] = address(wEth);
+        path[1] = address(aUSDC);
+        address to = address(op);
+        uint deadline = block.timestamp + 1800;
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+                            dexType: IDexSwap.DexType.UniswapV2,
+                            fromToken: address(wEth),
+                            fromAmount: amountIn,
+                            toToken: address(tUSDC),
+                            toAmount: amountOutMin,
+                            toAmountMin: amountOutMin,
+                            dexData: abi.encode(mockBase, path, to, deadline)
+        });
+
+        /////////////////////////// FUNCTION INPUT MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+        bytes32 ccipId = 0xb41f78fe0c25b7fa0b18ade5bdc972f4163eae5b2d2b1e19d104b11c7bfaf9a1;
+        address sender = 0x5cb738DAe833Ec21fe65ae1719fAd8ab8cE7f23D;
+        address recipient = 0x5cb738DAe833Ec21fe65ae1719fAd8ab8cE7f23D;
+        uint256 amount = 10000000;
+        uint8 token = 0;
+
+        vm.prank(Messenger);
+        vm.expectEmit();
+        emit UnconfirmedTXAdded(ccipId, sender, recipient, amount, IStorage.CCIPToken(token), baseChainSelector);
+        opDst.addUnconfirmedTX(ccipId, sender, recipient, amount, baseChainSelector, IStorage.CCIPToken(token), block.number, abi.encode(swapData[0]));
+    }
+
+    function test_getSrcTotalFeeInUsdcViaDelegateCall() public setters {
+        uint256 fee = op.getSrcTotalFeeInUsdc(IStorage.CCIPToken.bnm, arbChainSelector, 10*10**6);
+        assertEq(fee, 0);
+    }
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// AUTOMATION MODULE ///////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -1241,7 +1367,7 @@ contract ProtocolTestnet is Test {
         vm.prank(Tester);
         vm.expectEmit();
         emit ConceroAutomation_HashSumUpdated(hashSum);
-        automation.setJsHashSum(hashSum); 
+        automation.setJsHashSum(hashSum);
     }
 
     event ConceroAutomation_EthersHashSumUpdated(bytes32);

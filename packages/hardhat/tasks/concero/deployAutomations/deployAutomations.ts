@@ -21,10 +21,6 @@ task("deploy-automations", "Deploy the automations")
     if (!taskArgs.skipdeploy) {
       await deployConceroAutomation(hre, { slotId });
 
-      // execSync(`yarn hardhat deploy-parent-pool --network baseSepolia --slotid ${slotId} --skipsetvars`, {
-      //   stdio: "inherit",
-      // });
-
       const chain = CNetworks[hre.network.name];
       const automationContractAddress = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[hre.network.name]}`);
       await addCLFConsumer(chain, [automationContractAddress], chain.functionsSubIds[0]);

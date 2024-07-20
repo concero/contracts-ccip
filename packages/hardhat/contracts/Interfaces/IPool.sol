@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-interface IParentPool {
+interface IPool {
   ///////////////////////
   ///TYPE DECLARATIONS///
   ///////////////////////
@@ -54,12 +54,6 @@ interface IParentPool {
   //////////////////////////////////FUNCTIONS//////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   function orchestratorLoan(address _token, uint256 _amount, address _receiver) external;
-
-  function withdrawLiquidityRequest(address _token, uint256 _amount) external;
-
-  function depositEther() external payable;
-
-  function depositToken(address _token, uint256 _amount) external;
 
   function getPendingWithdrawRequest(address _liquidityProvider) external view returns (WithdrawRequests memory);
 }

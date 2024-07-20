@@ -45,8 +45,6 @@ error ConceroParentPool_ItsNotOrchestrator(address caller);
 error ConceroParentPool_MaxCapReached(uint256 maxCap);
 ///@notice error emitted when it's not the proxy calling the function
 error ConceroParentPool_CallerIsNotTheProxy(address caller);
-///@notice error emitted when the caller is a non-messenger address
-error ConceroParentPool_NotMessenger(address caller);
 ///@notice error emitted when the input TX was already removed
 error ParentPool_TxAlreadyRemoved(bytes32 ccipMessageId);
 error ConceroParentPool_NotContractOwner();
@@ -243,9 +241,9 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
    * @notice Function for user to deposit liquidity of allowed tokens
    * @param _usdcAmount the amount to be deposited
    */
-  function depositLiquidity(uint256 _usdcAmount) external isProxy returns(bytes32 _requestId) {
+  function depositLiquidity(uint256 _usdcAmount) external isProxy {
     if (_usdcAmount < MIN_DEPOSIT) revert ConceroParentPool_AmountBelowMinimum(MIN_DEPOSIT);
-    if (s_maxDeposit != 0 && s_maxDeposit < _usdcAmount + i_USDC.balanceOf(address(this)) + s_loansInUse) revert ParentPool_MaxCapReached(s_maxDeposit);
+    if (s_maxDeposit != 0 && s_maxDeposit < _usdcAmount + i_USDC.balanceOf(address(this)) + s_loansInUse) revert ConceroParentPool_MaxCapReached(s_maxDeposit);
 
     uint256 numberOfPools = s_poolChainSelectors.length;
 
@@ -345,11 +343,11 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
   }
 
   function removeCCIPTX(bytes32 _ccipMessageId) external isProxy onlyMessenger {
-    if(s_ccipDepositsMapping[_ccipMessageId].transactionId != _ccipMessageId) revert ParentPool_TxAlreadyRemoved(_ccipMessageId);
+    if (s_ccipDepositsMapping[_ccipMessageId].transactionId != _ccipMessageId) revert ParentPool_TxAlreadyRemoved(_ccipMessageId);
     uint256 numberOfPendingTX = s_ccipDeposits.length;
 
-    for(uint256 i; i < numberOfPendingTX;){
-      if(s_ccipDeposits[i].transactionId == _ccipMessageId){
+    for (uint256 i; i < numberOfPendingTX; ) {
+      if (s_ccipDeposits[i].transactionId == _ccipMessageId) {
         s_ccipDeposits[i] = s_ccipDeposits[numberOfPendingTX - 1];
         s_ccipDeposits.pop();
         delete s_ccipDepositsMapping[_ccipMessageId];
@@ -553,15 +551,14 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     i_linkToken.approve(i_ccipRouter, fees);
 
     messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
-      messageId = IRouterClient(i_ccipRouter).ccipSend(pool.chainSelector, evm2AnyMessage);
 
-      IParentPool.CCIPPendingDeposits memory pending = IParentPool.CCIPPendingDeposits({
-        transactionId: messageId,
-        destinationChainSelector: pool.chainSelector,
-        amount: _amountToDistribute
-      });
-      s_ccipDepositsMapping[messageId] = pending;
-      s_ccipDeposits.push(pending);
+    IPool.CCIPPendingDeposits memory pending = IPool.CCIPPendingDeposits({
+      transactionId: messageId,
+      destinationChainSelector: _chainSelector,
+      amount: _amountToDistribute
+    });
+    s_ccipDepositsMapping[messageId] = pending;
+    s_ccipDeposits.push(pending);
 
     emit ConceroParentPool_MessageSent(messageId, _chainSelector, s_poolToSendTo[_chainSelector], address(i_linkToken), fees);
   }
@@ -614,7 +611,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
       i_USDC.safeTransfer(request.liquidityProvider, request.amount);
       // and return.
       return;
-    } else if (err.length > 0){
+    } else if (err.length > 0) {
       emit FunctionsRequestError(requestId, request.requestType);
       return;
     }
@@ -629,8 +626,8 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
       uint256 amountToDistribute = ((request.amount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
       //remove the total amount from `s_pendingDepositTransfers` storage
       s_pendingDepositTransfers = s_pendingDepositTransfers - request.amount;
-      //call _ccipSend to distribute. This have already been refactored in other branch
-      _ccipSend(numberOfPools, amountToDistribute);
+      //call _distributeLiquidity to distribute. This have already been refactored in other branch
+      _distributeLiquidity(amountToDistribute);
       //mint the number of LP tokens to LP
       _updateDepositInfoAndMintLPTokens(request.liquidityProvider, request.lpSupplyBeforeRequest, request.amount, usdcReserve);
     } else if (request.requestType == IPool.RequestType.PerformWithdrawal) {
@@ -838,7 +835,9 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     } else {
       payable(recipient).transfer(amount);
     }
-  function getCCIPPendingDeposits() external view returns(IParentPool.CCIPPendingDeposits[] memory requests){
+  }
+
+  function getCCIPPendingDeposits() external view returns (IPool.CCIPPendingDeposits[] memory requests) {
     requests = s_ccipDeposits;
   }
 
@@ -869,7 +868,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     delete s_pendingWithdrawRequests[_liquidityProvider];
   }
 
-  function helperFulfillCLFRequest(bytes32 requestId, bytes memory response, bytes memory err) external isProxy onlyOwner{
+  function helperFulfillCLFRequest(bytes32 requestId, bytes memory response, bytes memory err) external isProxy onlyOwner {
     fulfillRequest(requestId, response, err);
   }
 }

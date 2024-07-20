@@ -1,5 +1,6 @@
 import { task, types } from "hardhat/config";
 import { execSync } from "child_process";
+import { liveChains } from "../liveChains";
 
 const executeCommand = (command: string) => {
   execSync(command, { stdio: "inherit" });
@@ -11,6 +12,8 @@ task("deploy-all-pools", "Deploy all pool")
   .setAction(async taskArgs => {
     const slotId = parseInt(taskArgs.slotid);
     const parentPoolNetwork = taskArgs.mainnet ? "base" : "baseSepolia";
+
+    executeCommand(`yarn hardhat clean`);
 
     executeCommand(
       `yarn hardhat deploy-parent-pool --network ${parentPoolNetwork} --slotid ${slotId} --deployproxy --skipdeploy --skipsetvars`,

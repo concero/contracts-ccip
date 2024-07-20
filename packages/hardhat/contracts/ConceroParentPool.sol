@@ -255,7 +255,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     // uint256 depositFee = _calculateDepositTransactionFee(_usdcAmount);
     // uint256 depositMinusFee = _usdcAmount - _convertToUSDCTokenDecimals(depositFee);
 
-    bytes[] memory args = new bytes[](2);
+    bytes[] memory args = new bytes[](3);
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
     args[2] = abi.encodePacked(FunctionsRequestType.getTotalPoolsBalance);
@@ -810,7 +810,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
   function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
     address[] memory messengers = new address[](4); //Number of messengers. To define.
     messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
-    messengers[1] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267;
+    messengers[1] = address(0);
     messengers[2] = address(0);
     messengers[3] = address(0);
 
@@ -839,28 +839,6 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
 
   function getCCIPPendingDeposits() external view returns (IPool.CCIPPendingDeposits[] memory requests) {
     requests = s_ccipDeposits;
-  }
-
-  /**
-   * @notice Function to check if a caller address is an allowed messenger
-   * @param _messenger the address of the caller
-   */
-  function isMessengers(address _messenger) internal pure returns (bool isMessenger) {
-    address[] memory messengers = new address[](4); //Number of messengers. To define.
-    messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
-    messengers[1] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267; //TODO: Remove in production
-    messengers[2] = address(0);
-    messengers[3] = address(0);
-
-    for (uint256 i; i < messengers.length; ) {
-      if (_messenger == messengers[i]) {
-        return true;
-      }
-      unchecked {
-        ++i;
-      }
-    }
-    return false;
   }
 
   // TODO: Remove both functions after tests

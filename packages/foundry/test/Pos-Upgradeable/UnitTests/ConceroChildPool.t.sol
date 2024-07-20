@@ -71,11 +71,9 @@ contract ConceroChildPoolTest is Test {
         //======= Deploy MasterPool
         childPool = childDeploy.run(
             Orchestrator,
-            address(0),
             address(childProxy),
             mockLinkTokenAddress,
             mockSourceRouter,
-            mockDestinationChainSelector,
             address(usdc),
             Tester
         );
@@ -158,4 +156,9 @@ contract ConceroChildPoolTest is Test {
         childPool.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(Orchestrator));
     }
     
+    error ConceroChildPool_NotMessenger(address);
+    function test_onlyMessengerCanCall() public {
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_NotMessenger.selector, address(this)));
+        wChild.ccipSendToPool(mockDestinationChainSelector, Tester, 1000*10**6);
+    }
 }

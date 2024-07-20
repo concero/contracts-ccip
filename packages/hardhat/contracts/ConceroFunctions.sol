@@ -6,7 +6,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {Storage} from "./Libraries/Storage.sol";
-import {IParentPool} from "./Interfaces/IParentPool.sol";
+import {IPool} from "./Interfaces/IPool.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 
@@ -16,7 +16,7 @@ import {ConceroCommon} from "./ConceroCommon.sol";
 ///@notice error emitted when a TX was already added
 error TXAlreadyExists(bytes32 txHash, bool isConfirmed);
 ///@notice error emitted when a unexpected ID is added
-error UnexpectedRequestID(bytes32);
+error UnexpectedRequestID(bytes32 requestId);
 ///@notice error emitted when a transaction does not exist
 error TxDoesNotExist();
 ///@notice error emitted when a transaction was already confirmed
@@ -25,15 +25,7 @@ error TxAlreadyConfirmed();
 error AddressNotSet();
 ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
 error ConceroFunctions_ItsNotOrchestrator(address caller);
-///@notice error emitted when a non-messenger address calls
-error ConceroFunctions_NotMessenger(address);
-///@notice error emitted when the chosen token is not allowed
-error ConceroFunctions_TokenTypeOutOfBounds();
-///@notice error emitted when the chain index is incorrect
-error ConceroFunctions_ChainIndexOutOfBounds();
-///@notice
-error ConceroFunctions_PayloadNotAllowed();
-
+///@notice error emitted when the delegatecall to DexSwap fails
 error TXReleasedFailed(bytes error); // todo: TXReleasE
 
 contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
@@ -89,6 +81,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
   ///@notice emitted when the concero pool address is updated
   event ConceroPoolAddressUpdated(address previousAddress, address pool);
+
   constructor(
     FunctionsVariables memory _variables,
     uint64 _chainSelector,
@@ -109,12 +102,6 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   ///////////////////////////////////////////////////////////////
   ///////////////////////////Functions///////////////////////////
   ///////////////////////////////////////////////////////////////
-
-  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
-    return amount / 1000;
-    //@audit we can have loss of precision here?
-  }
-
   function addUnconfirmedTX(
     bytes32 ccipMessageId,
     address sender,
@@ -240,14 +227,6 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
   }
 
-  function _swapDataToBytes(IDexSwap.SwapData[] calldata _swapData) private pure returns (bytes memory _encodedData) {
-    if (_swapData.length == 0) {
-      _encodedData = new bytes(1);
-    } else {
-      _encodedData = abi.encode(_swapData[0]);
-    }
-  }
-
   function _handleDstFunctionsResponse(Request storage request) internal {
     Transaction storage transaction = s_transactions[request.ccipMessageId];
 
@@ -262,14 +241,14 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
       swapData.fromAmount = amount;
       swapDataArray[0] = swapData;
 
-      IParentPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, address(this));
+      IPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, address(this));
 
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
         abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapDataArray, 0, transaction.recipient)
       );
       if (swapSuccess == false) revert TXReleasedFailed(swapError);
     } else {
-      IParentPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, transaction.recipient);
+      IPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, transaction.recipient);
     }
 
     emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
@@ -290,5 +269,21 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     s_latestLinkUsdcRate = linkUsdcRate == 0 ? s_latestLinkUsdcRate : linkUsdcRate;
     s_latestNativeUsdcRate = nativeUsdcRate == 0 ? s_latestNativeUsdcRate : nativeUsdcRate;
     s_latestLinkNativeRate = linkNativeRate == 0 ? s_latestLinkNativeRate : linkNativeRate;
+  }
+
+  /////////////////////////////
+  /// VIEW & PURE FUNCTIONS ///
+  /////////////////////////////
+  function _swapDataToBytes(IDexSwap.SwapData[] calldata _swapData) private pure returns (bytes memory _encodedData) {
+    if (_swapData.length == 0) {
+      _encodedData = new bytes(1);
+    } else {
+      _encodedData = abi.encode(_swapData[0]);
+    }
+  }
+
+  function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
+    return amount / 1000;
+    //@audit we can have loss of precision here?
   }
 }

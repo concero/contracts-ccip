@@ -19,6 +19,7 @@ import deployParentPool from "./concero/deployPool/deployParentPool";
 import deployLpToken from "./concero/deployLpToken/deployLpToken";
 import deployAutomations from "./concero/deployAutomations/deployAutomations";
 import deployChildPool from "./concero/deployPool/deployChildPool";
+import deployAllPools from "./concero/deployPool/deployAllPools";
 // import deployWithCreate3 from "./concero/deployWithCreate3";
 
 export default {
@@ -43,4 +44,5 @@ export default {
   deployLpToken,
   deployAutomations,
   deployChildPool,
+  deployAllPools,
 };

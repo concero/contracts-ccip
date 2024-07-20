@@ -8,7 +8,7 @@ import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
 import {LPTokenDeploy} from "../../../script/LPTokenDeploy.s.sol";
 import {ParentPoolProxyDeploy} from "../../../script/ParentPoolProxyDeploy.s.sol";
 
-import {ParentPool} from "contracts/ParentPool.sol";
+import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {LPToken} from "contracts/LPToken.sol";
 
 import {ParentPoolProxy} from "contracts/Proxy/ParentPoolProxy.sol";
@@ -18,7 +18,7 @@ import {USDC} from "../../Mocks/USDC.sol";
 
 contract ParentPoolTest is Test {
     //==== Instantiate Contracts
-    ParentPool public masterPool;
+    ConceroParentPool public masterPool;
     LPToken public lp;
     
     //==== Instantiate Proxies
@@ -31,7 +31,7 @@ contract ParentPoolTest is Test {
     ParentPoolProxyDeploy masterProxyDeploy;
 
     //==== Wrapped contract
-    ParentPool wMaster;
+    ConceroParentPool wMaster;
 
     //======= Instantiate Mock
     USDC public usdc;
@@ -102,83 +102,99 @@ contract ParentPoolTest is Test {
         vm.prank(Tester);
         lp.grantRole(keccak256("MINTER_ROLE"), address(masterPool));
 
-        wMaster = ParentPool(payable(address(masterProxy)));
+        wMaster = ConceroParentPool(payable(address(masterProxy)));
     }
 
     ///////////////////////////////////////////////////////////////
     ////////////////////////Admin Functions////////////////////////
     ///////////////////////////////////////////////////////////////
     ///setConceroContractSender///
-    event ParentPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256);
-    function test_setParentPool() public {
+    event ConceroParentPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256);
+    function test_setConceroContractSender() public {
         vm.prank(Tester);
         vm.expectEmit();
-        emit ParentPool_ConceroSendersUpdated(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
+        emit ConceroParentPool_ConceroSendersUpdated(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
         wMaster.setConceroContractSender(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
 
         assertEq(wMaster.s_contractsToReceiveFrom(mockDestinationChainSelector, address(mockChildPoolAddress)), 1);
     }
 
-    error ParentPool_NotContractOwner();
-    error ParentPool_InvalidAddress();
+    error ConceroParentPool_NotContractOwner();
+    error ConceroParentPool_InvalidAddress();
     function test_revertSetParentPool() public {
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_NotContractOwner.selector));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_NotContractOwner.selector));
         wMaster.setConceroContractSender(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
         
         vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_InvalidAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InvalidAddress.selector));
         wMaster.setConceroContractSender(mockDestinationChainSelector, address(0), 1);
     }
 
-    //setParentPoolReceiver///
-    event ParentPool_PoolReceiverUpdated(uint64 chainSelector, address contractAddress);
-    function test_setParentPoolReceiver() public {
+    //setPools///
+    event ConceroParentPool_PoolReceiverUpdated(uint64 chainSelector, address contractAddress);
+    function test_setPools() public {
         vm.prank(Tester);
         vm.expectEmit();
-        emit ParentPool_PoolReceiverUpdated(mockDestinationChainSelector, address(mockChildPoolAddress));
-        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
+        emit ConceroParentPool_PoolReceiverUpdated(mockDestinationChainSelector, address(mockChildPoolAddress));
+        wMaster.setPools(mockDestinationChainSelector, address(mockChildPoolAddress), false);
 
         assertEq(wMaster.s_poolToSendTo(mockDestinationChainSelector), address(mockChildPoolAddress));
     }
 
-    function test_revertSetParentPoolReceiver() public {
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_NotContractOwner.selector));
-        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
+    event ConceroParentPool_RedistributionStarted(bytes32);
+    function test_revertSetPools() public {
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_NotContractOwner.selector));
+        wMaster.setPools(mockDestinationChainSelector, address(mockChildPoolAddress), false);
         
         vm.prank(Tester);
-        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
+        vm.expectEmit();
+        emit ConceroParentPool_PoolReceiverUpdated(mockDestinationChainSelector, address(mockChildPoolAddress));
+        emit ConceroParentPool_RedistributionStarted(0); //requestId == 0 because CLF is disabled.
+        wMaster.setPools(mockDestinationChainSelector, address(mockChildPoolAddress), true);
 
         vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_InvalidAddress.selector));
-        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InvalidAddress.selector));
+        wMaster.setPools(mockDestinationChainSelector, address(mockChildPoolAddress), false);
         
         vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_InvalidAddress.selector));
-        wMaster.setPoolsToSend(mockDestinationChainSelector, address(0));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InvalidAddress.selector));
+        wMaster.setPools(mockDestinationChainSelector, address(0), false);
+    }
+
+    function test_distributeLiquidity() public {
+        uint64 fakeChainSelector = 15165481213213213;
+        vm.prank(Messenger);
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InvalidAddress.selector));
+        wMaster.distributeLiquidity(fakeChainSelector, 10*10**6);
     }
 
     ///orchestratorLoan///
-    error ParentPool_ItsNotOrchestrator(address);
-    error ParentPool_InsufficientBalance();
-    event ParentPool_SuccessfulDeposited(address, uint256, address);
-    error ParentPool_CallerIsNotTheProxy(address);
+    error ConceroParentPool_ItsNotOrchestrator(address);
+    error ConceroParentPool_InsufficientBalance();
+    event ConceroParentPool_SuccessfulDeposited(address, uint256, address);
+    error ConceroParentPool_CallerIsNotTheProxy(address);
     function test_orchestratorLoanRevert() external {
 
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_ItsNotOrchestrator.selector, address(this)));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_ItsNotOrchestrator.selector, address(this)));
         wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
 
         vm.startPrank(Orchestrator);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_InvalidAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InvalidAddress.selector));
         wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
 
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_InsufficientBalance.selector));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InsufficientBalance.selector));
         wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
 
         vm.startPrank(Orchestrator);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_CallerIsNotTheProxy.selector, address(masterPool)));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_CallerIsNotTheProxy.selector, address(masterPool)));
         masterPool.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
-
         vm.stopPrank();
+
+        vm.prank(Tester);
+        usdc.transfer(address(wMaster), USDC_INITIAL_BALANCE);
+        vm.prank(Orchestrator);
+        wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
+
     }
 
     //It will revert on ccip call
@@ -187,57 +203,70 @@ contract ParentPoolTest is Test {
         
         //===== Add a Fake pool
         vm.prank(Tester);
-        wMaster.setPoolsToSend(mockDestinationChainSelector, mockChildPoolAddress);
+        wMaster.setPools(mockDestinationChainSelector, mockChildPoolAddress, false);
 
         //===== Cap is Zero
         vm.prank(Tester);
         usdc.approve(address(wMaster), allowedAmountToDeposit);
 
+        uint256 capNow = wMaster.getMaxCap();
+        assertEq(capNow, 0);
+
         //CCIP being called means deposit went through, so the purpose is fulfilled
         vm.prank(Tester);
         vm.expectRevert();
         wMaster.depositLiquidity(allowedAmountToDeposit);
+
+        uint256 inUse = wMaster.getUsdcInUse();
+        assertEq(inUse, 0);
     }
 
-    error ParentPool_AmountBelowMinimum(uint256 amount);
-    error ParentPool_ThereIsNoPoolToDistribute();
-    error ParentPool_MaxCapReached(uint256);
-    event ParentPool_MasterPoolCapUpdated(uint256);
+    error ConceroParentPool_AmountBelowMinimum(uint256 amount);
+    error ConceroParentPool_ThereIsNoPoolToDistribute();
+    error ConceroParentPool_MaxCapReached(uint256);
+    event ConceroParentPool_MasterPoolCapUpdated(uint256);
     function test_depositLiquidityRevert() public {
         uint256 allowedAmountToDeposit = 150*10**6;
         
         vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_ThereIsNoPoolToDistribute.selector));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_ThereIsNoPoolToDistribute.selector));
         wMaster.depositLiquidity(allowedAmountToDeposit);
 
         vm.prank(Tester);
-        wMaster.setPoolsToSend(mockDestinationChainSelector, mockChildPoolAddress);
+        wMaster.setPools(mockDestinationChainSelector, mockChildPoolAddress, false);
 
         // vm.prank(Tester);
-        // vm.expectRevert(abi.encodeWithSelector(ParentPool_AmountBelowMinimum.selector, 100*10**6));
+        // vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_AmountBelowMinimum.selector, 100*10**6));
         // wMaster.depositLiquidity(amountToDeposit);
 
         vm.prank(Tester);
         wMaster.setPoolCap(120 *10**6);
 
         vm.prank(Tester);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_MaxCapReached.selector, 120 *10**6));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_MaxCapReached.selector, 120 *10**6));
         wMaster.depositLiquidity(allowedAmountToDeposit);
 
         vm.prank(Tester);
         vm.expectEmit();
-        emit ParentPool_MasterPoolCapUpdated(allowedAmountToDeposit);
+        emit ConceroParentPool_MasterPoolCapUpdated(allowedAmountToDeposit);
         wMaster.setPoolCap(allowedAmountToDeposit);
     }
 
-    event ParentPool_ChainAndAddressRemoved(uint64 chainSelector);
+    event ConceroParentPool_ChainAndAddressRemoved(uint64 chainSelector);
     function test_removePoolFromArray() public {
         vm.prank(Tester);
-        wMaster.setPoolsToSend(mockDestinationChainSelector, address(mockChildPoolAddress));
+        wMaster.setPools(mockDestinationChainSelector, address(mockChildPoolAddress), false);
 
         vm.prank(Tester);
         vm.expectEmit();
-        emit ParentPool_ChainAndAddressRemoved(mockDestinationChainSelector);
-        wMaster.removePoolsFromListOfSenders(mockDestinationChainSelector);
+        emit ConceroParentPool_ChainAndAddressRemoved(mockDestinationChainSelector);
+        emit ConceroParentPool_RedistributionStarted(0); //requestId == 0 because CLF is disabled
+        wMaster.removePools(mockDestinationChainSelector);
     }
+
+    function test_startWithdrawRevert() public {
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InsufficientBalance.selector));
+        wMaster.startWithdrawal(10*10**18);
+    }
+
 }

@@ -10,7 +10,7 @@ import {StorageSetters} from "./Libraries/StorageSetters.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 import {IOrchestrator, IOrchestratorViewDelegate} from "./Interfaces/IOrchestrator.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
-import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON} from "./Constants.sol";
+import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_AVALANCHE, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE} from "./Constants.sol";
 
 ///////////////////////////////
 /////////////ERROR/////////////
@@ -88,6 +88,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
 
   modifier validateBridgeData(BridgeData memory _bridgeData) {
     if (_bridgeData.amount == 0 || _bridgeData.dstChainSelector == 0 || _bridgeData.receiver == address(0)) revert Orchestrator_InvalidBridgeData();
+    if (_bridgeData.tokenType != CCIPToken.usdc && _bridgeData.tokenType != CCIPToken.bnm) revert Orchestrator_InvalidBridgeToken();
     _;
   }
 
@@ -116,25 +117,6 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   ////////////////////
   ///DELEGATE CALLS///
   ////////////////////
-
-  ////////////////////////
-  /////VIEW FUNCTIONS/////
-  ////////////////////////
-
-  function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) external view returns (uint256) {
-    return IOrchestratorViewDelegate(address(this)).getSrcTotalFeeInUsdcViaDelegateCall(tokenType, dstChainSelector, amount);
-  }
-
-  function getSrcTotalFeeInUsdcViaDelegateCall(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) external returns (uint256) {
-    (bool success, bytes memory data) = i_concero.delegatecall(
-      abi.encodeWithSelector(IConcero.getSrcTotalFeeInUsdc.selector, tokenType, dstChainSelector, amount)
-    );
-
-    if (success == false) revert Orchestrator_UnableToCompleteDelegateCall(data);
-
-    return _convertToUSDCDecimals(abi.decode(data, (uint256)));
-  }
-
   function swapAndBridge(
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] memory srcSwapData,
@@ -214,6 +196,19 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     emit Orchestrator_RequestFulfilled(requestId);
   }
 
+  function getSrcTotalFeeInUsdcViaDelegateCall(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) external returns (uint256) {
+    (bool success, bytes memory data) = i_concero.delegatecall(
+      abi.encodeWithSelector(IConcero.getSrcTotalFeeInUsdc.selector, tokenType, dstChainSelector, amount)
+    );
+
+    if (success == false) revert Orchestrator_UnableToCompleteDelegateCall(data);
+
+    return _convertToUSDCDecimals(abi.decode(data, (uint256)));
+  }
+
+  //////////////////////////
+  /// EXTERNAL FUNCTIONS ///
+  //////////////////////////
   function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
     uint256 balance = LibConcero.getBalance(token, address(this));
     if (balance < amount) revert Orchestrator_InvalidAmount();
@@ -259,16 +254,22 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
       _token = USDC_ARBITRUM;
     } else if (_chainSelector == CHAIN_SELECTOR_BASE) {
       _token = USDC_BASE;
-    } else if (_chainSelector == CHAIN_SELECTOR_OPTIMISM) {
-      _token = USDC_OPTIMISM;
     } else if (_chainSelector == CHAIN_SELECTOR_POLYGON) {
       _token = USDC_POLYGON;
+    } else if (_chainSelector == CHAIN_SELECTOR_AVALANCHE) {
+      _token = USDC_AVALANCHE;
+    } else {
+      revert Orchestrator_InvalidBridgeToken();
     }
   }
 
   ///////////////////////////
   ///VIEW & PURE FUNCTIONS///
   ///////////////////////////
+  function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) external view returns (uint256) {
+    return IOrchestratorViewDelegate(address(this)).getSrcTotalFeeInUsdcViaDelegateCall(tokenType, dstChainSelector, amount);
+  }
+
   function getTransactionsInfo(bytes32 _ccipMessageId) external view returns (Transaction memory transaction) {
     transaction = s_transactions[_ccipMessageId];
   }

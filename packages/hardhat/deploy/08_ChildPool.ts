@@ -52,16 +52,7 @@ const deployChildPool: DeployFunction = async function (
   console.log("Deploying ChildPool...");
   const deployChildPool = (await deploy("ConceroChildPool", {
     from: deployer,
-    args: [
-      args.conceroProxyAddress,
-      args.parentProxyAddress,
-      args.childProxyAddress,
-      args.linkToken,
-      args.ccipRouter,
-      args.baseChainSelector,
-      args.usdc,
-      args.owner,
-    ],
+    args: [args.conceroProxyAddress, args.childProxyAddress, args.linkToken, args.ccipRouter, args.usdc, args.owner],
     log: true,
     autoMine: true,
   })) as Deployment;

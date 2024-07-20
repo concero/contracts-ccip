@@ -7,7 +7,7 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/autom
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 
-import {IParentPool} from "./Interfaces/IParentPool.sol";
+import {IPool} from "./Interfaces/IPool.sol";
 
 ///@notice error emitted when the caller is not the owner.
 error ConceroAutomation_CallerNotAllowed(address caller);
@@ -37,7 +37,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000; //@audit do we need this? It's not being used.
   ///@notice JS Code for Chainlink Functions
   string internal constant JS_CODE =
-    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = 'https://raw.githubusercontent.com/concero/contracts-ccip/' + '002' + '/packages/hardhat/tasks/CLFScripts/dist/pool/collectLiquidity.min.js'; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
+    "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'feat/pool-rebalancing' + '/packages/hardhat/tasks/CLFScripts/dist/pool/collectLiquidity.min.js'; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
   ////////////////
   ///IMMUTABLES///
@@ -186,7 +186,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
     for (uint256 i; i < requestsNumber; ++i) {
       address liquidityProvider = s_pendingWithdrawRequestsCLA[i];
-      IParentPool.WithdrawRequests memory pendingRequest = IParentPool(i_masterPoolProxy).getPendingWithdrawRequest(liquidityProvider);
+      IPool.WithdrawRequests memory pendingRequest = IPool(i_masterPoolProxy).getPendingWithdrawRequest(liquidityProvider);
 
       if (s_withdrawTriggered[liquidityProvider] == false && block.timestamp > pendingRequest.deadline) {
         _performData = abi.encode(liquidityProvider, pendingRequest.amountToRequest);

@@ -2,8 +2,8 @@ try {
 	const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';
 	const q =
 		'https://raw.githubusercontent.com/concero/contracts-ccip/' +
-		'002' +
-		'/packages/hardhat/tasks/CLFScripts/dist/pool/getTotalBalance.min.js';
+		'feat/pool-rebalancing' +
+		`/packages/hardhat/tasks/CLFScripts/dist/pool/${bytesArgs[2] === '0x1' ? 'distributeLiquidity' : 'getTotalBalance'}.min.js`;
 	const [t, p] = await Promise.all([fetch(u), fetch(q)]);
 	const [e, c] = await Promise.all([t.text(), p.text()]);
 	const g = async s => {

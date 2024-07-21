@@ -151,17 +151,17 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   ) external validateSwapData(srcSwapData) validateBridgeData(bridgeData) validateDstSwapData(dstSwapData) nonReentrant {
     if (srcSwapData[srcSwapData.length - 1].toToken != getToken(bridgeData.tokenType, i_chainIndex)) revert Orchestrator_InvalidSwapData();
     if (IERC20(srcSwapData[0].fromToken).balanceOf(msg.sender) < srcSwapData[0].fromAmount) revert Orchestrator_InvalidAmount();
-    
+
     {
-    //Swap -> money come back to this contract
-    uint256 amountReceivedFromSwap = _swap(srcSwapData, 0, false, address(this));
+      //Swap -> money come back to this contract
+      uint256 amountReceivedFromSwap = _swap(srcSwapData, 0, false, address(this));
 
-    bridgeData.amount = amountReceivedFromSwap;
+      bridgeData.amount = amountReceivedFromSwap;
 
-    if (dstSwapData.length > 0) {
-      dstSwapData[0].fromAmount = amountReceivedFromSwap;
-      dstSwapData[0].fromToken = _getDestinationTokenAddress(bridgeData.dstChainSelector);
-    }
+      if (dstSwapData.length > 0) {
+        dstSwapData[0].fromAmount = amountReceivedFromSwap;
+        dstSwapData[0].fromToken = _getDestinationTokenAddress(bridgeData.dstChainSelector);
+      }
     }
 
     (bool bridgeSuccess, bytes memory bridgeError) = i_concero.delegatecall(abi.encodeWithSelector(IConcero.startBridge.selector, bridgeData, dstSwapData));
@@ -257,9 +257,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
       IWETH(wrapped).deposit{value: swapData[0].fromAmount}();
     }
 
-    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-      abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, _receiver)
-    );
+    (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, _receiver));
     if (swapSuccess == false) revert Orchestrator_UnableToCompleteDelegateCall(swapError);
 
     emit Orchestrator_SwapSuccess();

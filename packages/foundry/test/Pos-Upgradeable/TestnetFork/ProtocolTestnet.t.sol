@@ -1104,8 +1104,15 @@ contract ProtocolTestnet is Test {
         assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance);
     }
 
+    ///21/07/2024
+    ///This test function tests the following functions:
+        //depositLiquidity
+        //completeDeposit
+        //fulfillRequest *mocked through helper
+        //removeCCIPTX
     error ConceroParentPool_TxAlreadyRemoved(bytes32 ccipMessageId);
-    function test_depositCCIPTracking() public setters{
+    error ConceroParentPool_NotAllowedToComplete();
+    function test_depositAndCCIPTracking() public setters{
         vm.selectFork(baseTestFork);
 
         uint256 lpBalance = IERC20(ccipBnM).balanceOf(LP);
@@ -1118,16 +1125,31 @@ contract ProtocolTestnet is Test {
         wMaster.setPoolCap(1000*10**6);
 
         vm.startPrank(LP);
-        IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
         bytes32 request = wMaster.depositLiquidity(depositEnoughAmount);
         vm.stopPrank();
 
-        assertEq(wMaster.s_moneyOnTheWay(), depositEnoughAmount);
+        assertEq(wMaster.s_moneyOnTheWay(), 0);
 
         vm.prank(Tester);
         wMaster.helperFulfillCLFRequest(request, abi.encode(depositEnoughAmount), new bytes(0));
 
+        IPool.CLFRequest memory requestCLF = wMaster.getCLFRequest(request);
+
+        //First Deposit
+        assertEq(requestCLF.usdcAmountForThisRequest, depositEnoughAmount);
+        assertEq(requestCLF.liquidityProvider, LP);
         assertEq(wMaster.s_moneyOnTheWay(), 0);
+
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_NotAllowedToComplete.selector));
+        wMaster.completeDeposit(request);
+
+        vm.startPrank(LP);
+        IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
+        wMaster.completeDeposit(request);
+        vm.stopPrank();
+
+        assertEq(wMaster.s_moneyOnTheWay(), depositEnoughAmount / 2);
+        assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance - depositEnoughAmount);
 
         IPool.CCIPPendingDeposits[] memory requests = new IPool.CCIPPendingDeposits[](4);
         requests = wMaster.getCCIPPendingDeposits();
@@ -1140,11 +1162,13 @@ contract ProtocolTestnet is Test {
 
         requests = wMaster.getCCIPPendingDeposits();
         assertEq(requests.length, 0);
+        assertEq(wMaster.s_moneyOnTheWay(), 0);
 
         vm.prank(Messenger);
         vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_TxAlreadyRemoved.selector, deletedTX));
         wMaster.removeCCIPTX(deletedTX);
     }
+
     ////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// BRIDGE MODULE ///////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////

@@ -254,12 +254,12 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     // uint256 depositFee = _calculateDepositTransactionFee(_usdcAmount);
     // uint256 depositMinusFee = _usdcAmount - _convertToUSDCTokenDecimals(depositFee);
 
-    bytes[] memory args = new bytes[](2);
+    bytes[] memory args = new bytes[](3);
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
     args[2] = abi.encodePacked(FunctionsRequestType.getTotalPoolsBalance);
 
-    bytes32 requestId = _sendRequest(args, JS_CODE);
+    requestId = _sendRequest(args, JS_CODE);
     s_requests[requestId] = IPool.CLFRequest({
       requestType: IPool.RequestType.GetTotalUSDC,
       liquidityProvider: msg.sender,
@@ -272,7 +272,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
   }
 
   function completeDeposit(bytes32 _depositRequest) external {
-    IPool.CLFRequest memory request = s_requests[_depositRequest];
+    IPool.CLFRequest storage request = s_requests[_depositRequest];
     if( msg.sender != request.liquidityProvider) revert ConceroParentPool_NotAllowedToComplete();
 
     uint256 numberOfPools = s_poolChainSelectors.length;
@@ -280,8 +280,6 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     
     request.usdcAmountForThisRequest = request.usdcAmountForThisRequest + s_moneyOnTheWay;
     request.lpSupplyForThisRequest = i_lp.totalSupply();
-    
-    s_moneyOnTheWay = s_moneyOnTheWay + request.amount;
 
     i_USDC.safeTransferFrom(msg.sender, address(this), request.amount);
     
@@ -573,6 +571,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
       destinationChainSelector: _chainSelector,
       amount: _amountToDistribute
     });
+    s_moneyOnTheWay = s_moneyOnTheWay + _amountToDistribute;
     s_ccipDepositsMapping[messageId] = pending;
     s_ccipDeposits.push(pending);
 
@@ -874,5 +873,9 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
 
   function helperFulfillCLFRequest(bytes32 requestId, bytes memory response, bytes memory err) external isProxy onlyOwner {
     fulfillRequest(requestId, response, err);
+  }
+
+  function getCLFRequest(bytes32 _requestId) external returns (IPool.CLFRequest memory request) {
+    request = s_requests[_requestId];
   }
 }

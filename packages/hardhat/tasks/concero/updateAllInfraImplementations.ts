@@ -8,6 +8,7 @@ task(
 ).setAction(async taskArgs => {
   for (const chain of liveChains) {
     const networkName = chain.name;
+    //todo: this can be done in parallel
     execSync(`yarn hardhat deploy-infra --network ${networkName} --skipsetvars`, { stdio: "inherit" });
   }
 });

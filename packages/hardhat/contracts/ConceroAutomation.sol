@@ -13,6 +13,7 @@ import {IPool} from "./Interfaces/IPool.sol";
 error ConceroAutomation_CallerNotAllowed(address caller);
 error ConceroAutomation_WithdrawAlreadyTriggered(address liquidityProvider);
 error ConceroAutomation_CLFFallbackError(bytes32 requestId);
+error ConceroAutomation__WithdrawRequestPerformed();
 
 contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ownable {
   ///////////////////////
@@ -23,6 +24,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   struct PerformWithdrawRequest {
     address liquidityProvider;
     uint256 amount;
+    bool failed;
   }
 
   ///////////////////////////////////////////////////////////
@@ -33,8 +35,6 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ///////////////
   ///@notice Chainlink Functions Gas Limit
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
-  ///@notice Chainlink Function Gas Overhead
-  uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000; //@audit do we need this? It's not being used.
   ///@notice JS Code for Chainlink Functions
   string internal constant JS_CODE =
     "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'feat/pool-rebalancing' + '/packages/hardhat/tasks/CLFScripts/dist/pool/collectLiquidity.min.js'; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
@@ -195,20 +195,6 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     }
   }
 
-  // TODO: REMOVE IN PRODUCTION!!!!!!!!
-  function deleteRequest(address _liquidityProvider) external onlyOwner {
-    uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
-
-    for (uint256 i; i < requestsNumber; ++i) {
-      if (s_pendingWithdrawRequestsCLA[i] == _liquidityProvider) {
-        s_pendingWithdrawRequestsCLA[i] = s_pendingWithdrawRequestsCLA[s_pendingWithdrawRequestsCLA.length - 1];
-        s_pendingWithdrawRequestsCLA.pop();
-      }
-    }
-
-    s_withdrawTriggered[_liquidityProvider] = false;
-  }
-
   /**
    * @notice Chainlink Automation function that will perform storage update and call Chainlink Functions
    * @param _performData the performData encoded in checkUpkeep function
@@ -231,8 +217,26 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     args[3] = abi.encodePacked(amountToRequest);
 
     bytes32 reqId = _sendRequest(args, JS_CODE);
+    
+    s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest, failed: false});
 
-    s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest});
+    emit ConceroAutomation_UpkeepPerformed(reqId);
+  }
+
+  function retryPerformWithdrawalRequest(bytes32 _requestId) external {
+    PerformWithdrawRequest storage functionRequest = s_functionsRequests[_requestId];
+    address liquidityProviderAddress = functionRequest.liquidityProvider;
+    if (msg.sender != liquidityProviderAddress || s_withdrawTriggered[liquidityProviderAddress] != true || functionRequest.failed == false) revert ConceroAutomation__WithdrawRequestPerformed();
+
+    bytes[] memory args = new bytes[](4);
+    args[0] = abi.encodePacked(s_hashSum);
+    args[1] = abi.encodePacked(s_ethersHashSum);
+    args[2] = abi.encodePacked(liquidityProviderAddress);
+    args[3] = abi.encodePacked(functionRequest.amount);
+
+    bytes32 reqId = _sendRequest(args, JS_CODE);
+
+    s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProviderAddress, amount: functionRequest.amount, failed: false});
 
     emit ConceroAutomation_UpkeepPerformed(reqId);
   }
@@ -266,7 +270,8 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
     if (err.length > 0) {
       emit FunctionsRequestError(requestId);
-      revert ConceroAutomation_CLFFallbackError(requestId);
+      functionRequest.failed = true;
+      return;
       // todo: there is no fallback mechanism if CLF fails to trigger liquidity pull from child pools.
       // todo: if CLF fails, the LP will not be able to retry the withdrawal request.
     }
@@ -292,5 +297,10 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
   function getPendingWithdrawRequestsLength() public view returns (uint256) {
     return s_pendingWithdrawRequestsCLA.length;
+  }
+
+  //TODO: Remove after testing
+  function helperFulfillCLFRequest(bytes32 requestId, bytes memory response, bytes memory err) external onlyOwner {
+    fulfillRequest(requestId, response, err);
   }
 }

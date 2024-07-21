@@ -3,6 +3,7 @@ pragma solidity 0.8.20;
 
 //Foundry
 import {Test, console} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 //Master & Infra Contracts
 import {DexSwap} from "contracts/DexSwap.sol";
@@ -1422,10 +1423,6 @@ contract ProtocolTestnet is Test {
     }
 
     function test_checkUpkeep() public {
-        //====== Not Forwarder
-        // vm.expectRevert(abi.encodeWithSelector(ConceroAutomation_CallerNotAllowed.selector, address(this)));
-        // automation.checkUpkeep("");
-
         //====== Successful Call
         //=== Add Forwarder
         address fakeForwarder = address(0x1);
@@ -1494,5 +1491,120 @@ contract ProtocolTestnet is Test {
         vm.prank(fakeForwarder);
         vm.expectRevert(abi.encodeWithSelector(ConceroAutomation_WithdrawAlreadyTriggered.selector, User));
         automation.performUpkeep(performData);
+    }
+
+    //////////////////////////// POOL & AUTOMATION /////////////////////////////////////
+    //21/07/2024
+    /// Test to check functionality of the retry tx mechanism implemented on ConceroAutomation.sol
+        ///This test cover, mainly, automation functions but uses some of pools also.
+            /// addPendingWithdrawal
+            /// checkUpkeep *manually triggered
+            /// performUpkeep *manually triggered
+            /// _sendRequest
+            /// fulfillRequest *manually triggered
+            /// retryPerformWithdrawalRequest
+    error ConceroAutomation__WithdrawRequestPerformed();
+    function test_poolDepositAndAutomationWithdrawRetry() public setters{
+        vm.selectFork(baseTestFork);
+
+        //=== Add Forwarder
+        address fakeForwarder = address(0x1);
+        vm.prank(Tester);
+        automation.setForwarderAddress(fakeForwarder);
+
+        uint256 lpBalance = IERC20(ccipBnM).balanceOf(LP);
+        uint256 depositEnoughAmount = 100*10**6;
+
+        //======= Increase the CAP
+        vm.expectEmit();
+        vm.prank(Tester);
+        emit ConceroParentPool_MasterPoolCapUpdated(1000*10**6);
+        wMaster.setPoolCap(1000*10**6);
+
+        vm.startPrank(LP);
+        bytes32 request = wMaster.depositLiquidity(depositEnoughAmount);
+        vm.stopPrank();
+
+        assertEq(wMaster.s_moneyOnTheWay(), 0);
+
+        vm.prank(Tester);
+        wMaster.helperFulfillCLFRequest(request, abi.encode(depositEnoughAmount), new bytes(0));
+
+        IPool.CLFRequest memory requestCLF = wMaster.getCLFRequest(request);
+
+        //First Deposit
+        assertEq(requestCLF.usdcAmountForThisRequest, depositEnoughAmount);
+        assertEq(requestCLF.liquidityProvider, LP);
+        assertEq(wMaster.s_moneyOnTheWay(), 0);
+
+        vm.startPrank(LP);
+        IERC20(ccipBnM).approve(address(wMaster), depositEnoughAmount);
+        wMaster.completeDeposit(request);
+        ccipLocalSimulatorFork.switchChainAndRouteMessage(arbitrumTestFork);
+        vm.stopPrank();
+
+        assertEq(IERC20(ccipBnMArb).balanceOf(address(wChild)), depositEnoughAmount / 2);
+
+        vm.selectFork(baseTestFork);
+        assertEq(wMaster.s_moneyOnTheWay(), depositEnoughAmount / 2);
+        assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance - depositEnoughAmount);
+
+        IPool.CCIPPendingDeposits[] memory requests = new IPool.CCIPPendingDeposits[](4);
+        requests = wMaster.getCCIPPendingDeposits();
+        assertEq(requests.length, 1);
+
+        bytes32 deletedTX = requests[0].transactionId;
+
+        vm.prank(Messenger);
+        wMaster.removeCCIPTX(deletedTX);
+
+        //////////////// AUTOMATION PART ////////////////////////////////
+        uint256 amountOfLPTokens = IERC20(lp).balanceOf(LP);
+
+        ///===== Open a Withdrawal Request
+        vm.prank(LP);
+        bytes32 requestIdWith = wMaster.startWithdrawal(amountOfLPTokens);
+
+        ///===== Manually fulfill the request using the helper
+        vm.prank(Tester);
+        wMaster.helperFulfillCLFRequest(requestIdWith, abi.encode(depositEnoughAmount / 2), new bytes(0));
+
+        vm.warp(block.timestamp + 7 days);
+
+        ///===== Check Upkeep and Performs it.
+        (bool _upkeepNeeded, bytes memory _performData) = automation.checkUpkeep("");
+
+        vm.recordLogs();
+
+        vm.prank(fakeForwarder);
+        automation.performUpkeep(_performData);
+
+        vm.prank(fakeForwarder);
+        vm.expectRevert(abi.encodeWithSelector(ConceroAutomation_WithdrawAlreadyTriggered.selector, LP));
+        automation.performUpkeep(_performData);
+
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+
+        bytes32 performReqId = abi.decode(entries[3].data, (bytes32));
+
+        vm.prank(Tester);
+        automation.helperFulfillCLFRequest(performReqId, new bytes(0), "error");
+
+        vm.recordLogs();
+        ///====== Retry TX
+        vm.prank(LP);
+        automation.retryPerformWithdrawalRequest(performReqId);
+
+        entries = vm.getRecordedLogs();
+
+        performReqId = abi.decode(entries[3].data, (bytes32));
+
+        vm.prank(Tester);
+        automation.helperFulfillCLFRequest(performReqId, new bytes(0), new bytes(0));
+        
+        ///====== Retry a successful TX
+        vm.prank(LP);
+        vm.expectRevert(abi.encodeWithSelector(ConceroAutomation__WithdrawRequestPerformed.selector));
+        automation.retryPerformWithdrawalRequest(performReqId);
     }
 }

@@ -5,7 +5,7 @@ import {IDexSwap} from "./IDexSwap.sol";
 import {IStorage} from "./IStorage.sol";
 
 interface IConcero is IStorage {
-  function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] calldata dstSwapData) external;
+  function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] memory dstSwapData) external;
 
   function fulfillRequestWrapper(bytes32 requestId, bytes memory response, bytes memory err) external;
 

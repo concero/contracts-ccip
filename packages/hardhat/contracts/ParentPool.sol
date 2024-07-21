@@ -16,6 +16,7 @@ import {IStorage} from "./Interfaces/IStorage.sol";
 import {ParentStorage} from "contracts/Libraries/ParentStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
 import {Orchestrator} from "./Orchestrator.sol";
+import {LibConcero} from "./Libraries/LibConcero.sol"; // todo: Only used by withdraw. Remove in production
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -276,25 +277,25 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
    * the withdraw will be finalize. If not, it must revert
    */
   function completeWithdrawal() external isProxy {
-    IParentPool.WithdrawRequests memory withdraw = s_pendingWithdrawRequests[msg.sender];
+    IParentPool.WithdrawRequests memory withdrawReq = s_pendingWithdrawRequests[msg.sender];
 
-    if (withdraw.amountToReceive > 0) revert ParentPool_AmountNotAvailableYet(withdraw.amountToReceive);
-    if (withdraw.amountEarned > i_USDC.balanceOf(address(this))) revert ParentPool_InsufficientBalance();
+    if (withdrawReq.amountToReceive > 0) revert ParentPool_AmountNotAvailableYet(withdrawReq.amountToReceive);
+    if (withdrawReq.amountEarned > i_USDC.balanceOf(address(this))) revert ParentPool_InsufficientBalance();
 
-    s_withdrawRequests = s_withdrawRequests > withdraw.amountEarned ? s_withdrawRequests - withdraw.amountEarned : 0;
+    s_withdrawRequests = s_withdrawRequests > withdrawReq.amountEarned ? s_withdrawRequests - withdrawReq.amountEarned : 0;
 
     delete s_pendingWithdrawRequests[msg.sender];
 
-    // uint256 withdrawFees = _calculateWithdrawTransactionsFee(withdraw.amountEarned);
-    // uint256 withdrawAmountMinusFees = withdraw.amountEarned - _convertToUSDCTokenDecimals(withdrawFees);
+    // uint256 withdrawFees = _calculateWithdrawTransactionsFee(withdrawReq.amountEarned);
+    // uint256 withdrawAmountMinusFees = withdrawReq.amountEarned - _convertToUSDCTokenDecimals(withdrawFees);
 
-    emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdraw.amountEarned);
+    emit ParentPool_Withdrawn(msg.sender, address(i_USDC), withdrawReq.amountEarned);
 
-    IERC20(i_lp).safeTransferFrom(msg.sender, address(this), withdraw.amountToBurn);
-    i_lp.burn(withdraw.amountToBurn);
+    IERC20(i_lp).safeTransferFrom(msg.sender, address(this), withdrawReq.amountToBurn);
+    i_lp.burn(withdrawReq.amountToBurn);
 
     // i_USDC.safeTransfer(i_infraProxy, _convertToUSDCTokenDecimals(withdrawFees));
-    i_USDC.safeTransfer(msg.sender, withdraw.amountEarned);
+    i_USDC.safeTransfer(msg.sender, withdrawReq.amountEarned);
   }
 
   ///////////////////////
@@ -678,5 +679,17 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
   // TODO: Remove this function after tests
   function deletePendingWithdrawRequest(address _liquidityProvider) external isProxy onlyOwner {
     delete s_pendingWithdrawRequests[_liquidityProvider];
+  }
+
+  // TODO: REMOVE IN PRODUCTION
+  function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
+    uint256 balance = LibConcero.getBalance(token, address(this));
+    if (balance < amount) revert ParentPool_InsufficientBalance();
+
+    if (token != address(0)) {
+      LibConcero.transferERC20(token, amount, recipient);
+    } else {
+      payable(recipient).transfer(amount);
+    }
   }
 }

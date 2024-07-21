@@ -37,8 +37,8 @@ interface IPool {
   struct CLFRequest {
     RequestType requestType;
     address liquidityProvider; //address to check and pool the index from the array
-    uint256 parentPoolUsdcBeforeRequest;
-    uint256 lpSupplyBeforeRequest;
+    uint256 usdcAmountForThisRequest;
+    uint256 lpSupplyForThisRequest;
     uint256 amount; //USDC or LP according to the request
   }
 

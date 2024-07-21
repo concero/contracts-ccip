@@ -1040,7 +1040,7 @@ contract ProtocolTestnet is Test {
     //     // vm.stopPrank();
     // }
 
-    event ParentPool_RequestUpdated(address liquidityProvider);
+    event ConceroParentPool_RequestUpdated(address liquidityProvider);
     function test_distributeAfterFulFill() public setters{
         vm.selectFork(baseTestFork);
 
@@ -1050,7 +1050,7 @@ contract ProtocolTestnet is Test {
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
+        emit ConceroParentPool_MasterPoolCapUpdated(1000*10**6);
         wMaster.setPoolCap(1000*10**6);
 
         vm.startPrank(LP);
@@ -1071,11 +1071,11 @@ contract ProtocolTestnet is Test {
 
         vm.prank(Tester);
         vm.expectEmit();
-        emit ParentPool_RequestUpdated(LP);
+        emit ConceroParentPool_RequestUpdated(LP);
         wMaster.helperFulfillCLFRequest(requestW, abi.encode(50*10**6), new bytes(0));
     }
 
-    event FunctionsRequestError(bytes32 requestId, IParentPool.RequestType);
+    event FunctionsRequestError(bytes32 requestId, IPool.RequestType);
     function test_distributeReturnAfterFulFill() public setters{
         vm.selectFork(baseTestFork);
 
@@ -1085,7 +1085,7 @@ contract ProtocolTestnet is Test {
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
+        emit ConceroParentPool_MasterPoolCapUpdated(1000*10**6);
         wMaster.setPoolCap(1000*10**6);
 
         vm.startPrank(LP);
@@ -1098,13 +1098,13 @@ contract ProtocolTestnet is Test {
 
         vm.prank(Tester);
         vm.expectEmit();
-        emit FunctionsRequestError(request, IParentPool.RequestType.GetTotalUSDC);
+        emit FunctionsRequestError(request, IPool.RequestType.GetTotalUSDC);
         wMaster.helperFulfillCLFRequest(request, "", abi.encode("failed"));
 
         assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance);
     }
 
-    error ParentPool_TxAlreadyRemoved(bytes32 ccipMessageId);
+    error ConceroParentPool_TxAlreadyRemoved(bytes32 ccipMessageId);
     function test_depositCCIPTracking() public setters{
         vm.selectFork(baseTestFork);
 
@@ -1114,7 +1114,7 @@ contract ProtocolTestnet is Test {
         //======= Increase the CAP
         vm.expectEmit();
         vm.prank(Tester);
-        emit ParentPool_MasterPoolCapUpdated(1000*10**6);
+        emit ConceroParentPool_MasterPoolCapUpdated(1000*10**6);
         wMaster.setPoolCap(1000*10**6);
 
         vm.startPrank(LP);
@@ -1122,14 +1122,14 @@ contract ProtocolTestnet is Test {
         bytes32 request = wMaster.depositLiquidity(depositEnoughAmount);
         vm.stopPrank();
 
-        assertEq(wMaster.s_pendingDepositTransfers(), depositEnoughAmount);
+        assertEq(wMaster.s_moneyOnTheWay(), depositEnoughAmount);
 
         vm.prank(Tester);
         wMaster.helperFulfillCLFRequest(request, abi.encode(depositEnoughAmount), new bytes(0));
 
-        assertEq(wMaster.s_pendingDepositTransfers(), 0);
+        assertEq(wMaster.s_moneyOnTheWay(), 0);
 
-        IParentPool.CCIPPendingDeposits[] memory requests = new IParentPool.CCIPPendingDeposits[](4);
+        IPool.CCIPPendingDeposits[] memory requests = new IPool.CCIPPendingDeposits[](4);
         requests = wMaster.getCCIPPendingDeposits();
         assertEq(requests.length, 1);
 
@@ -1142,7 +1142,7 @@ contract ProtocolTestnet is Test {
         assertEq(requests.length, 0);
 
         vm.prank(Messenger);
-        vm.expectRevert(abi.encodeWithSelector(ParentPool_TxAlreadyRemoved.selector, deletedTX));
+        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_TxAlreadyRemoved.selector, deletedTX));
         wMaster.removeCCIPTX(deletedTX);
     }
     ////////////////////////////////////////////////////////////////////////////////////
@@ -1356,7 +1356,6 @@ contract ProtocolTestnet is Test {
 
     event ConceroAutomation_HashSumUpdated(bytes32);
     function test_setSrcJsHashSum() public {
-        bytes32 hashSum = 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124;
 
         //===== Ownable Revert
         vm.expectRevert(abi.encodeWithSelector(OwnableUnauthorizedAccount.selector, address(this)));
@@ -1372,7 +1371,6 @@ contract ProtocolTestnet is Test {
 
     event ConceroAutomation_EthersHashSumUpdated(bytes32);
     function test_setEthersHashSum() public {
-        bytes32 hashSum = 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124;
 
         //===== Ownable Revert
         vm.expectRevert(abi.encodeWithSelector(OwnableUnauthorizedAccount.selector, address(this)));

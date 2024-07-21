@@ -734,8 +734,8 @@ contract ProtocolMainnet is Test {
     //     assertTrue(mUSDC.balanceOf(User) >= amountOutMin);
     //     vm.stopPrank();
 
-        vm.prank(defaultSender);
-        op.withdraw(defaultSender, address(wEth), amountIn / 1000);
+        // vm.prank(defaultSender);
+        // op.withdraw(defaultSender, address(wEth), amountIn / 1000);
 
     //     //=================================== Revert Leg =========================================\\
 
@@ -1495,8 +1495,10 @@ contract ProtocolMainnet is Test {
     //     assertEq(address(op).balance, 1*10**17 / 1000);
     //     assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
 
-    vm.prank(defaultSender);
-        op.withdraw(defaultSender, address(0), amountIn / 1000);//     ////================================ Empty Dex Data =================================\\\\\\
+        // vm.prank(defaultSender);
+        // op.withdraw(defaultSender, address(0), amountIn / 1000);
+    
+    ////================================ Empty Dex Data =================================\\\\\\
     //     swapData[0] = IDexSwap.SwapData({
     //         dexType: IDexSwap.DexType.UniswapV2Ether,
     //         fromToken: address(0),

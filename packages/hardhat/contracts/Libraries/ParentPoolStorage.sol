@@ -23,7 +23,7 @@ contract ParentPoolStorage {
   ///@notice variable to store Ethers Hashsum
   bytes32 internal s_ethersHashSum;
   ///@notice variable to store not processed amounts deposited by LPs
-  uint256 public s_pendingDepositTransfers;
+  uint256 public s_moneyOnTheWay;
   ///@notice gap to reserve storage in the contract for future variable additions
   uint256[49] __gap;
 

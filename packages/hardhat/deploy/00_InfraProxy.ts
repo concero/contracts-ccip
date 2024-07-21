@@ -14,7 +14,7 @@ const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEn
 
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = CNetworks[name];
   const { publicClient } = getClients(dcViemChain, dcUrl);
-  const gasPrice = await publicClient.getGasPrice();
+  // const gasPrice = await publicClient.getGasPrice();
 
   console.log("Deploying InfraProxy...");
   const conceroProxyDeployment = (await deploy("InfraProxy", {

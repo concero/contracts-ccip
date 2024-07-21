@@ -69,7 +69,7 @@ contract ConceroBridge is ConceroCCIP {
    * @dev dstSwapData can be empty if there is no swap on destination
    * @dev this function should only be able to called thought infra Proxy
    */
-  function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] calldata dstSwapData) external {
+  function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] memory dstSwapData) external {
     if (address(this) != i_proxy) revert Concero_ItsNotOrchestrator(address(this));
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
     uint256 totalSrcFee = _convertToUSDCDecimals(_getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount));
@@ -81,6 +81,7 @@ contract ConceroBridge is ConceroCCIP {
 
     uint256 amount = bridgeData.amount - totalSrcFee;
     uint256 actualLpFee = getDstTotalFeeInUsdc(amount);
+    dstSwapData[0].fromAmount = amount;
 
     bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, bridgeData.receiver, actualLpFee);
     emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);

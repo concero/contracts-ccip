@@ -30,7 +30,7 @@ contract ConceroCCIP is ConceroFunctions {
   //////////////////////// VARIABLES ////////////////////////
   ///////////////////////////////////////////////////////////
 
-  uint64 private constant CCIP_CALLBACK_GAS_LIMIT = 90_000;
+  uint64 private constant CCIP_CALLBACK_GAS_LIMIT = 150_000;
 
   ////////////////
   ///IMMUTABLES///

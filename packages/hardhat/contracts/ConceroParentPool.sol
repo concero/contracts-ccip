@@ -292,7 +292,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
    * @notice Function to allow Liquidity Providers to start the Withdraw of their USDC deposited
    * @param _lpAmount the amount of lp token the user wants to burn to get USDC back.
    */
-  function startWithdrawal(uint256 _lpAmount) external isProxy returns (bytes32 requestId) {
+  function startWithdrawal(uint256 _lpAmount) external isProxy returns (bytes32 requestId) { //Remove return after testing
     if (i_lp.balanceOf(msg.sender) < _lpAmount) revert ConceroParentPool_InsufficientBalance();
     if (s_pendingWithdrawRequests[msg.sender].amountToBurn > 0) revert ConceroParentPool_ActiveRequestNotFulfilledYet();
 
@@ -300,7 +300,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
 
-    bytes32 requestId = _sendRequest(args, JS_CODE);
+    requestId = _sendRequest(args, JS_CODE);
 
     s_requests[requestId] = IPool.CLFRequest({
       requestType: IPool.RequestType.PerformWithdrawal,
@@ -629,11 +629,8 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     uint256 crossChainBalance = abi.decode(response, (uint256));
 
     if (request.requestType == IPool.RequestType.GetTotalUSDC) {
-
       request.usdcAmountForThisRequest = (i_USDC.balanceOf(address(this)) + s_loansInUse + crossChainBalance);
-
     } else if (request.requestType == IPool.RequestType.PerformWithdrawal) {
-      uint256 usdcReserve = request.usdcAmountForThisRequest + crossChainBalance;
       _updateUsdcAmountEarned(request.liquidityProvider, request.lpSupplyForThisRequest, request.amount, crossChainBalance);
     }
   }

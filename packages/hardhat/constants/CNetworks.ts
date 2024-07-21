@@ -326,7 +326,8 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   },
   avalanche: {
     chainId: 43114,
-    url: `https://avalanche-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    url: `https://avax.meowrpc.com\t`,
+    // url: `https://avalanche-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_AVALANCHE,
     functionsDonIdAlias: process.env.CLF_DONID_AVALANCHE_ALIAS,

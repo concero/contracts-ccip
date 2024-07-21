@@ -97,8 +97,7 @@ const deployConcero: DeployFunction = async function (
       args.conceroProxyAddress,
     ],
     autoMine: true,
-    gasPrice: higherGasPrice,
-    // gasLimit: "4000000",
+    gasLimit: "4000000",
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {

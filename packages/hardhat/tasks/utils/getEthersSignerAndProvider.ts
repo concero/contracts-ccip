@@ -2,6 +2,8 @@ import { ethers } from "ethers-v5";
 import { ethers as ethersv6 } from "ethers"; //v6;
 
 //todo: deployer PK to be passed as arg
+//todo: rename to getEthersV5SignerAndProvider
+//todo: make sure v5 is only used in chainlink functions subscriptionManager, remove v5 from setContractVariables and other non-clf tasks
 export function getEthersSignerAndProvider(chain_url: string) {
   const provider = new ethers.providers.JsonRpcProvider(chain_url);
   const signer = new ethers.Wallet(`0x${process.env.DEPLOYER_PRIVATE_KEY}`, provider);

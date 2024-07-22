@@ -36,23 +36,23 @@ describe("deposit usdc to pool\n", () => {
   };
 
   it("should deposit usdc to pool", async () => {
-    try {
-      await callApprovals();
+    await callApprovals();
 
-      const transactionHash = await walletClient.writeContract({
-        abi: ParentPoolAbi,
-        functionName: "depositLiquidity",
-        address: poolAddress as Address,
-        args: [BigInt(usdcAmount)],
-        gas: 3_000_000n,
-      });
+    const transactionHash = await walletClient.writeContract({
+      abi: ParentPoolAbi,
+      functionName: "depositLiquidity",
+      address: poolAddress as Address,
+      args: [BigInt(usdcAmount)],
+      gas: 3_000_000n,
+    });
 
-      const { status } = await srcPublicClient.waitForTransactionReceipt({ hash: transactionHash });
+    const { status } = await srcPublicClient.waitForTransactionReceipt({ hash: transactionHash });
 
-      console.log("transactionHash: ", transactionHash);
-      console.log("status: ", status, "\n");
-    } catch (error) {
-      console.error("Error: ", error);
+    console.log("transactionHash: ", transactionHash);
+    console.log("status: ", status, "\n");
+
+    if (status === "reverted") {
+      throw new Error("Transaction reverted");
     }
   }).timeout(0);
 });

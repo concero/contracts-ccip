@@ -148,9 +148,8 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] calldata srcSwapData,
     IDexSwap.SwapData[] memory dstSwapData
-  ) external validateSwapData(srcSwapData) validateBridgeData(bridgeData) validateDstSwapData(dstSwapData) nonReentrant {
+  ) external tokenAmountSufficiency(srcSwapData[0].fromToken, srcSwapData[0].fromAmount) validateSwapData(srcSwapData) validateBridgeData(bridgeData) validateDstSwapData(dstSwapData) payable nonReentrant {
     if (srcSwapData[srcSwapData.length - 1].toToken != getToken(bridgeData.tokenType, i_chainIndex)) revert Orchestrator_InvalidSwapData();
-    if (IERC20(srcSwapData[0].fromToken).balanceOf(msg.sender) < srcSwapData[0].fromAmount) revert Orchestrator_InvalidAmount();
 
     {
       //Swap -> money come back to this contract
@@ -245,7 +244,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     uint256 fromAmount = swapData[0].fromAmount;
     address toToken = swapData[swapData.length - 1].toToken;
 
-    uint256 toTokenBalanceBefore = IERC20(toToken).balanceOf(address(this));
+    uint256 toTokenBalanceBefore = LibConcero.getBalance(toToken, address(this));
 
     if (fromToken != address(0)) {
       LibConcero.transferFromERC20(fromToken, msg.sender, address(this), fromAmount);
@@ -262,7 +261,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
 
     emit Orchestrator_SwapSuccess();
 
-    uint256 toTokenBalanceAfter = IERC20(toToken).balanceOf(address(this));
+    uint256 toTokenBalanceAfter = LibConcero.getBalance(toToken, address(this));
     return toTokenBalanceAfter - toTokenBalanceBefore;
   }
 

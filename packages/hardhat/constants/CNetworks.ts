@@ -273,7 +273,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   },
   arbitrum: {
     chainId: 42161,
-    url: `https://arbitrum-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_ARBITRUM,
     functionsDonIdAlias: process.env.CLF_DONID_ARBITRUM_ALIAS,

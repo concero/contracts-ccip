@@ -245,7 +245,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     uint256 fromAmount = swapData[0].fromAmount;
     address toToken = swapData[swapData.length - 1].toToken;
 
-    uint256 toTokenBalanceBefore = IERC20(toToken).balanceOf(address(this));
+    uint256 toTokenBalanceBefore = LibConcero.getBalance(toToken, address(this));
 
     if (fromToken != address(0)) {
       LibConcero.transferFromERC20(fromToken, msg.sender, address(this), fromAmount);
@@ -262,7 +262,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
 
     emit Orchestrator_SwapSuccess();
 
-    uint256 toTokenBalanceAfter = IERC20(toToken).balanceOf(address(this));
+    uint256 toTokenBalanceAfter = LibConcero.getBalance(toToken, address(this));
     return toTokenBalanceAfter - toTokenBalanceBefore;
   }
 

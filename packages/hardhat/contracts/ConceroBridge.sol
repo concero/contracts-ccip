@@ -81,7 +81,6 @@ contract ConceroBridge is ConceroCCIP {
 
     uint256 amount = bridgeData.amount - totalSrcFee;
     uint256 actualLpFee = getDstTotalFeeInUsdc(amount);
-    dstSwapData[0].fromAmount = amount;
 
     bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, bridgeData.receiver, actualLpFee);
     emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);

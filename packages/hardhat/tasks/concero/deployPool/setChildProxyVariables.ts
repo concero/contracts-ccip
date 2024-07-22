@@ -88,15 +88,16 @@ async function addPoolsToAllChains(hre) {
   if (!chainName) throw new Error("Chain name not found");
 
   for (const dstChain of liveChains) {
+    const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
+    const poolAddressToAdd =
+      dstChain.chainId === CNetworks.base.chainId || dstChain.chainId === CNetworks.baseSepolia.chainId
+        ? (getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dstChain.name]}` as keyof env) as Address)
+        : (getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChain.name]}` as keyof env) as Address);
+
     try {
-      const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
       if (!dstChainName) throw new Error("Destination chain name not found");
       if (!dstChainSelector) throw new Error("Destination chain selector not found");
 
-      const poolAddressToAdd =
-        dstChain.chainId === CNetworks.base.chainId || dstChain.chainId === CNetworks.baseSepolia.chainId
-          ? (getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dstChain.name]}` as keyof env) as Address)
-          : (getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChain.name]}` as keyof env) as Address);
       const conceroPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env) as Address;
 
       const { request: setPoolReq } = await publicClient.simulateContract({
@@ -108,7 +109,6 @@ async function addPoolsToAllChains(hre) {
         viemChain,
       });
       const setPoolHash = await walletClient.writeContract(setPoolReq);
-
       const { cumulativeGasUsed: setPoolGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setPoolHash,
       });
@@ -118,10 +118,7 @@ async function addPoolsToAllChains(hre) {
         "addPoolsToAllChains",
       );
     } catch (error) {
-      log(
-        `Error adding pool for chain ${dstChain.name}. Pool address: ${poolAddressToAdd}`,
-        "addPoolsToAllChains",
-      );
+      log(`Error adding pool for chain ${dstChain.name}. Pool address: ${poolAddressToAdd}`, "addPoolsToAllChains");
     }
   }
 }

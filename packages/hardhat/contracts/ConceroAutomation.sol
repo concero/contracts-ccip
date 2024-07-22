@@ -217,7 +217,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     args[3] = abi.encodePacked(amountToRequest);
 
     bytes32 reqId = _sendRequest(args, JS_CODE);
-    
+
     s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest, failed: false});
 
     emit ConceroAutomation_UpkeepPerformed(reqId);
@@ -226,7 +226,8 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   function retryPerformWithdrawalRequest(bytes32 _requestId) external {
     PerformWithdrawRequest storage functionRequest = s_functionsRequests[_requestId];
     address liquidityProviderAddress = functionRequest.liquidityProvider;
-    if (msg.sender != liquidityProviderAddress || s_withdrawTriggered[liquidityProviderAddress] != true || functionRequest.failed == false) revert ConceroAutomation__WithdrawRequestPerformed();
+    if (msg.sender != liquidityProviderAddress || s_withdrawTriggered[liquidityProviderAddress] != true || functionRequest.failed == false)
+      revert ConceroAutomation__WithdrawRequestPerformed();
 
     bytes[] memory args = new bytes[](4);
     args[0] = abi.encodePacked(s_hashSum);

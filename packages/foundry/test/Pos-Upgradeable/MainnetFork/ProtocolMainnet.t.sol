@@ -1055,6 +1055,48 @@ contract ProtocolMainnet is Test {
         assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
     }
 
+    //22/07/2024
+        ///This test checks for payable functionality in
+        //swapAndBridge function
+        //startBridge function
+        //it will not hold fees in the contract because is a first call and we don't have fees settled yet
+        //It successed
+    function test_swapAndBridgeEtherUniV3SingleBase() public setters {
+        vm.selectFork(baseMainFork);
+        uint256 amountIn = 1*10**17;
+        uint256 amountOut = 350*10*6;
+
+        vm.deal(User, amountIn);
+
+        ///////////////////////// Src Swap /////////////////////////
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+
+        swapData[0] = IDexSwap.SwapData({
+            dexType: IDexSwap.DexType.UniswapV3Single,
+            fromToken: address(0),
+            fromAmount: amountIn,
+            toToken: address(mUSDC),
+            toAmount: amountOut,
+            toAmountMin: amountOut,
+            dexData: abi.encode(uniswapV3, 500, 0, block.timestamp + 1800)
+        });
+
+        ///////////////////////// Bridge /////////////////////////
+        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+            tokenType: IStorage.CCIPToken.usdc,
+            amount: amountOut,
+            dstChainSelector: arbChainSelector,
+            receiver: User
+        });
+
+        IDexSwap.SwapData[] memory swapDataDst = new IDexSwap.SwapData[](0);
+
+        vm.startPrank(User);
+
+        op.swapAndBridge{value: amountIn}(bridgeData, swapData, swapDataDst);
+    }
+
     function test_swapEtherUniV3SingleArb() public {
         vm.selectFork(arbitrumMainFork);
         uint256 amountIn = 1*10**17;

@@ -2,11 +2,13 @@
 pragma solidity 0.8.20;
 
 import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_POLYGON_AMOY, USDC_ARBITRUM_SEPOLIA, USDC_BASE_SEPOLIA, USDC_OPTIMISM_SEPOLIA, USDC_AVALANCHE} from "./Constants.sol";
+import {CHAIN_ID_AVALANCHE, WRAPPED_NATIVE_AVALANCHE, CHAIN_ID_ETHEREUM, WRAPPED_NATIVE_ETHEREUM, CHAIN_ID_ARBITRUM, WRAPPED_NATIVE_ARBITRUM, CHAIN_ID_BASE, WRAPPED_NATIVE_BASE, CHAIN_ID_POLYGON, WRAPPED_NATIVE_POLYGON} from "./Constants.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
 
 error ConceroCommon_NotMessenger(address _messenger);
 error ConceroCommon_ChainIndexOutOfBounds();
 error ConceroCommon_TokenTypeOutOfBounds();
+error ConceroCommon_ChainNotSupported();
 
 contract ConceroCommon {
   ///////////////
@@ -78,6 +80,24 @@ contract ConceroCommon {
       }
     }
     return false;
+  }
+
+  function getWrappedNative() internal view returns (address _wrappedAddress) {
+    uint256 chainId = block.chainid;
+
+    if (chainId == CHAIN_ID_AVALANCHE) {
+      _wrappedAddress = WRAPPED_NATIVE_AVALANCHE;
+    } else if (chainId == CHAIN_ID_ETHEREUM) {
+      _wrappedAddress = WRAPPED_NATIVE_ETHEREUM;
+    } else if (chainId == CHAIN_ID_ARBITRUM) {
+      _wrappedAddress = WRAPPED_NATIVE_ARBITRUM;
+    } else if (chainId == CHAIN_ID_BASE) {
+      _wrappedAddress = WRAPPED_NATIVE_BASE;
+    } else if (chainId == CHAIN_ID_POLYGON) {
+      _wrappedAddress = WRAPPED_NATIVE_POLYGON;
+    } else {
+      revert ConceroCommon_ChainNotSupported();
+    }
   }
 
   ///////////////////////////

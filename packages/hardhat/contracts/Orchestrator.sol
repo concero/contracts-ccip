@@ -63,6 +63,9 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   event Orchestrator_RequestFulfilled(bytes32 requestId);
   ///@notice emitted if swap successed
   event Orchestrator_SwapSuccess();
+  event Orchestrator_StartBridge();
+  event Orchestrator_StartSwapAndBridge();
+  event Orchestrator_StartSwap();
 
   constructor(address _functionsRouter, address _dexSwap, address _concero, address _pool, address _proxy, uint8 _chainIndex) StorageSetters(msg.sender) {
     i_functionsRouter = _functionsRouter;
@@ -150,6 +153,8 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     validateDstSwapData(dstSwapData)
     nonReentrant
   {
+    emit Orchestrator_StartSwapAndBridge();
+
     if (srcSwapData[srcSwapData.length - 1].toToken != getToken(bridgeData.tokenType, i_chainIndex)) revert Orchestrator_InvalidSwapData();
 
     {
@@ -172,6 +177,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     IDexSwap.SwapData[] calldata _swapData,
     address _receiver
   ) external payable validateSwapData(_swapData) tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount) nonReentrant {
+    emit Orchestrator_StartSwap();
     _swap(_swapData, msg.value, true, _receiver);
   }
 
@@ -179,6 +185,8 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] memory dstSwapData
   ) external validateBridgeData(bridgeData) validateDstSwapData(dstSwapData) nonReentrant {
+    emit Orchestrator_StartBridge();
+
     {
       uint256 userBalance = IERC20(getToken(bridgeData.tokenType, i_chainIndex)).balanceOf(msg.sender);
       if (userBalance < bridgeData.amount) revert Orchestrator_InvalidAmount();

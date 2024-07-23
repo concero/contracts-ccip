@@ -73,6 +73,8 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     i_chainIndex = Chain(_chainIndex);
   }
 
+  receive() external payable {}
+
   ///////////////
   ///MODIFIERS///
   ///////////////
@@ -176,7 +178,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
   function bridge(
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] memory dstSwapData
-  ) external validateBridgeData(bridgeData) validateDstSwapData(dstSwapData) {
+  ) external validateBridgeData(bridgeData) validateDstSwapData(dstSwapData) nonReentrant {
     {
       uint256 userBalance = IERC20(getToken(bridgeData.tokenType, i_chainIndex)).balanceOf(msg.sender);
       if (userBalance < bridgeData.amount) revert Orchestrator_InvalidAmount();

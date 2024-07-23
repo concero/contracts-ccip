@@ -26,4 +26,5 @@ contract ChildPoolStorage {
   ////////////////////////
 
   mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;
+  mapping(bytes32 => bool) public s_withdrawRequests;
 }

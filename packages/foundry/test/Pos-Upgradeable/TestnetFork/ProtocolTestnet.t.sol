@@ -935,25 +935,43 @@ contract ProtocolTestnet is Test {
 
     error ConceroChildPool_InsufficientBalance();
     error ConceroChildPool_NotEnoughLinkBalance(uint256, uint256);
+    error ConceroChildPool_WithdrawAlreadyPerformed();
+    error ConceroChildPool_InvalidAddress();
     //It will fail because the amount of link charged will vary according to network stuff
     //It's reverting as expect, but the revert account for the exact amount,
+    ///23/07/2024
+        ///Test Updated to check for double calls to the same withdrawId.
+        ///It stores the withdrawId and check against it in the next call.
     function test_ccipSendToPool() public {
+        bytes32 withdrawId = 0x66756e2d626173652d7365706f6c69612d310000000000000000000000000000;
+
+        vm.prank(Messenger);
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InvalidAddress.selector));
+        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6, withdrawId);
+
+        vm.prank(Tester);
+        wChild.setPools(baseChainSelector, address(wMaster));
+
         vm.prank(Messenger);
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InsufficientBalance.selector));
-        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6);
+        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6, withdrawId);
 
         vm.prank(0xd5CCdabF11E3De8d2F64022e232aC18001B8acAC);
         ERC20Mock(ccipBnMArb).mint(address(wChild), 1000 * 10**6);
 
         vm.prank(Messenger);
-        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_NotEnoughLinkBalance.selector, 0, 7043276117429745));
-        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6);
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_NotEnoughLinkBalance.selector, 0, 6578949993457741));
+        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6, withdrawId);
 
         vm.prank(0x4281eCF07378Ee595C564a59048801330f3084eE);
         LinkToken(linkArb).transfer(address(wChild), 10*10**18);
 
         vm.prank(Messenger);
-        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6);
+        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6, withdrawId);
+
+        vm.prank(Messenger);
+        vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_WithdrawAlreadyPerformed.selector));
+        wChild.ccipSendToPool(baseChainSelector, Tester, 10*10**6, withdrawId);
     }
 
     function test_orchestratorLoanRevertBecauseOfAmount() public setters {
@@ -1503,6 +1521,10 @@ contract ProtocolTestnet is Test {
             /// _sendRequest
             /// fulfillRequest *manually triggered
             /// retryPerformWithdrawalRequest
+    //23/07/2024
+        //Function updated to check for the WithdrawId
+        //It's possible to track it by adding and event on ConceroParentPool and ConceroAutomation. like this: event Log(string, bytes32);
+        //And adding it to sensitive functions like startWithdraw, fulfillRequest, retryPerformWithdrawalRequest
     error ConceroAutomation__WithdrawRequestPerformed();
     function test_poolDepositAndAutomationWithdrawRetry() public setters{
         vm.selectFork(baseTestFork);
@@ -1565,6 +1587,10 @@ contract ProtocolTestnet is Test {
         vm.prank(LP);
         bytes32 requestIdWith = wMaster.startWithdrawal(amountOfLPTokens);
 
+        ///===== Request Withdraw ID Checking
+        IPool.CLFRequest memory requestCLFWithdraw = wMaster.getCLFRequest(requestIdWith);
+        assertTrue(requestCLFWithdraw.withdrawId != 0);
+
         ///===== Manually fulfill the request using the helper
         vm.prank(Tester);
         wMaster.helperFulfillCLFRequest(requestIdWith, abi.encode(depositEnoughAmount / 2), new bytes(0));
@@ -1579,13 +1605,15 @@ contract ProtocolTestnet is Test {
         vm.prank(fakeForwarder);
         automation.performUpkeep(_performData);
 
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+
         vm.prank(fakeForwarder);
         vm.expectRevert(abi.encodeWithSelector(ConceroAutomation_WithdrawAlreadyTriggered.selector, LP));
         automation.performUpkeep(_performData);
 
-        Vm.Log[] memory entries = vm.getRecordedLogs();
-
         bytes32 performReqId = abi.decode(entries[3].data, (bytes32));
+
+        console.logBytes32(performReqId);
 
         vm.prank(Tester);
         automation.helperFulfillCLFRequest(performReqId, new bytes(0), "error");
@@ -1597,7 +1625,11 @@ contract ProtocolTestnet is Test {
 
         entries = vm.getRecordedLogs();
 
-        performReqId = abi.decode(entries[3].data, (bytes32));
+        console.log(entries.length); //Always 4
+
+        performReqId = abi.decode(entries[3].data, (bytes32)); //decode the last index that is the new CLF requestId
+        
+        console.logBytes32(performReqId);
 
         vm.prank(Tester);
         automation.helperFulfillCLFRequest(performReqId, new bytes(0), new bytes(0));

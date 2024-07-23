@@ -95,6 +95,8 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   event ConceroAutomation_HashSumUpdated(bytes32 hashSum);
   ///@notice event emitted when the Ethers HashSum is updated
   event ConceroAutomation_EthersHashSumUpdated(bytes32 hashSum);
+  ///@notice event emitted when a LP retries a withdrawal request
+  event ConceroAutomation_RetryPerformed(bytes32 reqId);
 
   /////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////FUNCTIONS//////////////////////////////////
@@ -182,7 +184,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    * @return _performData the payload we need to send through performUpkeep to Chainlink functions.
    * @dev this function must be called only by the Chainlink Forwarder unique address
    */
-  function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool _upkeepNeeded, bytes memory _performData) {
+  function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool, bytes memory) {
     uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
 
     for (uint256 i; i < requestsNumber; ++i) {
@@ -190,8 +192,9 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
       IPool.WithdrawRequests memory pendingRequest = IPool(i_masterPoolProxy).getPendingWithdrawRequest(liquidityProvider);
 
       if (s_withdrawTriggered[liquidityProvider] == false && block.timestamp > pendingRequest.deadline) {
-        _performData = abi.encode(liquidityProvider, pendingRequest.amountToRequest, pendingRequest.withdrawId);
-        _upkeepNeeded = true;
+        bytes memory _performData = abi.encode(liquidityProvider, pendingRequest.amountToRequest, pendingRequest.withdrawId);
+        bool _upkeepNeeded = true;
+        return (_upkeepNeeded, _performData);
       }
     }
   }
@@ -244,7 +247,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
     s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProviderAddress, amount: functionRequest.amount, withdrawId: functionRequest.withdrawId, failed: false});
 
-    emit ConceroAutomation_UpkeepPerformed(reqId);
+    emit ConceroAutomation_RetryPerformed(reqId);
   }
 
   //////////////

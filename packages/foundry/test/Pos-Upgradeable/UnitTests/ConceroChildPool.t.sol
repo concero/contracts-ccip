@@ -158,7 +158,9 @@ contract ConceroChildPoolTest is Test {
     
     error ConceroChildPool_NotMessenger(address);
     function test_onlyMessengerCanCall() public {
+        bytes32 withdrawId = 0x66756e2d626173652d7365706f6c69612d310000000000000000000000000000;
+
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_NotMessenger.selector, address(this)));
-        wChild.ccipSendToPool(mockDestinationChainSelector, Tester, 1000*10**6);
+        wChild.ccipSendToPool(mockDestinationChainSelector, Tester, 1000*10**6, withdrawId);
     }
 }

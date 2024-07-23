@@ -34,6 +34,7 @@ error ConceroChildPool_SenderNotAllowed(address sender);
 ///@notice error emitted if the array is empty.
 error ConceroChildPool_ThereIsNoPoolToDistribute();
 error ConceroChildPool_RequestAlreadyProceeded(bytes32 reqId);
+error ConceroChildPool_WithdrawAlreadyPerformed();
 
 contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
   using SafeERC20 for IERC20;
@@ -134,8 +135,12 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
    * @param _liquidityProvider the LP that requested withdraw.
    * @param _amountToSend the amount to redistribute between pools.
    */
-  function ccipSendToPool(uint64 _chainSelector, address _liquidityProvider, uint256 _amountToSend) external isProxy onlyMessenger {
+  function ccipSendToPool(uint64 _chainSelector, address _liquidityProvider, uint256 _amountToSend, bytes32 _withdrawId) external isProxy onlyMessenger {
     if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroChildPool_InvalidAddress();
+    if (s_withdrawRequests[_withdrawId] == true) revert ConceroChildPool_WithdrawAlreadyPerformed();
+
+    s_withdrawRequests[_withdrawId] = true;
+    
     _ccipSend(_chainSelector, _liquidityProvider, _amountToSend);
   }
 

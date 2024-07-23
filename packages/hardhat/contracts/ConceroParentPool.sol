@@ -700,7 +700,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
       deadline: block.timestamp + WITHDRAW_DEADLINE, //6days & 22h
       withdrawId: _withdrawId
     });
-
+    
     s_withdrawRequests = s_withdrawRequests + amountToWithdrawWithUsdcDecimals / (numberOfPools + 1);
 
     s_pendingWithdrawRequests[_liquidityProvider] = request;
@@ -877,7 +877,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     fulfillRequest(requestId, response, err);
   }
 
-  function getCLFRequest(bytes32 _requestId) external returns (IPool.CLFRequest memory request) {
+  function getCLFRequest(bytes32 _requestId) external view returns (IPool.CLFRequest memory request) {
     request = s_requests[_requestId];
   }
 }

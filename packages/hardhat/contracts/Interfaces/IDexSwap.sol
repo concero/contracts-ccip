@@ -12,7 +12,9 @@ interface IDexSwap {
     UniswapV3Multi,
     Aerodrome,
     AerodromeFoT,
-    UniswapV2Ether
+    UniswapV2Ether,
+    WrapNative,
+    UnwrapWNative
   }
 
   error InvalidSwapData();

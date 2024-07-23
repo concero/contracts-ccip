@@ -16,6 +16,7 @@ import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 import {IPeripheryPayments} from "@uniswap/v3-periphery/contracts/interfaces/IPeripheryPayments.sol";
+import {IWETH} from "./Interfaces/IWETH.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -112,11 +113,27 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
   }
 
   function _performSwap(IDexSwap.SwapData memory _swapData, address destinationAddress) private {
-    if (_swapData.dexType == DexType.UniswapV3Single) {
+    DexType dexType = _swapData.dexType;
+
+    if (dexType == DexType.UniswapV3Single) {
       _swapUniV3Single(_swapData, destinationAddress);
-    } else if (_swapData.dexType == DexType.UniswapV3Multi) {
+    } else if (dexType == DexType.UniswapV3Multi) {
       _swapUniV3Multi(_swapData, destinationAddress);
+    } else if (dexType == DexType.WrapNative) {
+      _wrapNative(_swapData, destinationAddress);
+    } else if (dexType == DexType.UnwrapWNative) {
+      _unwrapWNative(_swapData, destinationAddress);
     }
+  }
+
+  function _wrapNative(IDexSwap.SwapData memory _swapData, address _recipient) private {
+    address wrappedNative = getWrappedNative();
+    IWETH(wrappedNative).deposit{value: _swapData.fromAmount}();
+  }
+
+  function _unwrapWNative(IDexSwap.SwapData memory _swapData, address _recipient) private {
+    address routerAddress = abi.decode(_swapData.dexData, (address));
+    IPeripheryPayments(routerAddress).unwrapWETH9(_swapData.fromAmount, _recipient);
   }
 
   /**

@@ -32,14 +32,6 @@ error Orchestrator_InvalidBridgeToken();
 ///@notice error emitted when the token is not supported
 error Orchestrator_ChainNotSupported();
 
-////////////////////////////////////
-/////////////INTERFACES/////////////
-////////////////////////////////////
-interface IWETH is IERC20 {
-  function deposit() external payable;
-  function withdraw(uint256) external;
-}
-
 contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, StorageSetters {
   using SafeERC20 for IERC20;
 
@@ -258,9 +250,6 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
       if (isFeesNeeded) swapData[0].fromAmount -= (fromAmount / CONCERO_FEE_FACTOR);
     } else {
       if (isFeesNeeded) swapData[0].fromAmount = _nativeAmount - (_nativeAmount / CONCERO_FEE_FACTOR);
-      address wrapped = getWrappedNative();
-      swapData[0].fromToken = address(wrapped);
-      IWETH(wrapped).deposit{value: swapData[0].fromAmount}();
     }
 
     (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, _receiver));

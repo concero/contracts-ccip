@@ -35,6 +35,7 @@ error DexSwap_SwapDataNotChained(address toToken, address fromToken);
 error DexSwap_CallableOnlyByOwner(address caller, address owner);
 ///@notice error emitted when the DexData is not valid
 error DexSwap_InvalidDexData();
+error DexSwap_UnwrapWNativeFailed();
 
 contract DexSwap is IDexSwap, ConceroCommon, Storage {
   using SafeERC20 for IERC20;
@@ -120,20 +121,26 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
     } else if (dexType == DexType.UniswapV3Multi) {
       _swapUniV3Multi(_swapData, destinationAddress);
     } else if (dexType == DexType.WrapNative) {
-      _wrapNative(_swapData, destinationAddress);
+      _wrapNative(_swapData);
     } else if (dexType == DexType.UnwrapWNative) {
       _unwrapWNative(_swapData, destinationAddress);
     }
   }
 
-  function _wrapNative(IDexSwap.SwapData memory _swapData, address _recipient) private {
+  function _wrapNative(IDexSwap.SwapData memory _swapData) private {
     address wrappedNative = getWrappedNative();
     IWETH(wrappedNative).deposit{value: _swapData.fromAmount}();
   }
 
   function _unwrapWNative(IDexSwap.SwapData memory _swapData, address _recipient) private {
-    address routerAddress = abi.decode(_swapData.dexData, (address));
-    IPeripheryPayments(routerAddress).unwrapWETH9(_swapData.fromAmount, _recipient);
+    if (_swapData.fromToken != getWrappedNative()) revert DexSwap_InvalidDexData();
+
+    IWETH(_swapData.fromToken).withdraw(_swapData.fromAmount);
+
+    (bool sent, ) = _recipient.call{value: _swapData.fromAmount}("");
+    if (sent == false) {
+      revert DexSwap_UnwrapWNativeFailed();
+    }
   }
 
   /**

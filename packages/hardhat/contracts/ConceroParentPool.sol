@@ -266,7 +266,8 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
       liquidityProvider: msg.sender,
       usdcAmountForThisRequest: 0,
       lpSupplyForThisRequest: i_lp.totalSupply(),
-      amount: _usdcAmount
+      amount: _usdcAmount,
+      withdrawId: 0
     });
 
     emit ConceroParentPool_SuccessfulDeposited(msg.sender, _usdcAmount, i_USDC);
@@ -309,7 +310,8 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
       liquidityProvider: msg.sender,
       usdcAmountForThisRequest: 0,
       lpSupplyForThisRequest: i_lp.totalSupply(),
-      amount: _lpAmount
+      amount: _lpAmount,
+      withdrawId: keccak256(abi.encodePacked(msg.sender, _lpAmount, block.number))
     });
 
     emit ConceroParentPool_WithdrawRequest(msg.sender, i_USDC, block.timestamp + WITHDRAW_DEADLINE);
@@ -633,7 +635,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     if (request.requestType == IPool.RequestType.GetTotalUSDC) {
       request.usdcAmountForThisRequest = (i_USDC.balanceOf(address(this)) + s_loansInUse + crossChainBalance);
     } else if (request.requestType == IPool.RequestType.PerformWithdrawal) {
-      _updateUsdcAmountEarned(request.liquidityProvider, request.lpSupplyForThisRequest, request.amount, crossChainBalance);
+      _updateUsdcAmountEarned(request.liquidityProvider, request.lpSupplyForThisRequest, request.amount, crossChainBalance, request.withdrawId);
     }
   }
 
@@ -679,7 +681,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
    * @dev This function must be called only by an allowed Messenger & must not revert
    * @dev _totalUSDCCrossChain MUST have 10**6 decimals.
    */
-  function _updateUsdcAmountEarned(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _lpToBurn, uint256 _totalUSDCCrossChain) private {
+  function _updateUsdcAmountEarned(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _lpToBurn, uint256 _totalUSDCCrossChain, bytes32 _withdrawId) private {
     uint256 numberOfPools = s_poolChainSelectors.length;
     uint256 totalCrossChainBalance = _totalUSDCCrossChain + i_USDC.balanceOf(address(this)) + s_loansInUse + s_moneyOnTheWay;
 
@@ -695,7 +697,8 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
       amountToRequest: amountToWithdrawWithUsdcDecimals / (numberOfPools + 1), //Cross-chain Pools + MasterPool
       amountToReceive: (amountToWithdrawWithUsdcDecimals * numberOfPools) / (numberOfPools + 1), //The portion of the money that is not on MasterPool
       token: address(i_USDC),
-      deadline: block.timestamp + WITHDRAW_DEADLINE //6days & 22h
+      deadline: block.timestamp + WITHDRAW_DEADLINE, //6days & 22h
+      withdrawId: _withdrawId
     });
 
     s_withdrawRequests = s_withdrawRequests + amountToWithdrawWithUsdcDecimals / (numberOfPools + 1);

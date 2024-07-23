@@ -24,6 +24,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   struct PerformWithdrawRequest {
     address liquidityProvider;
     uint256 amount;
+    bytes32 withdrawId;
     bool failed;
   }
 
@@ -189,7 +190,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
       IPool.WithdrawRequests memory pendingRequest = IPool(i_masterPoolProxy).getPendingWithdrawRequest(liquidityProvider);
 
       if (s_withdrawTriggered[liquidityProvider] == false && block.timestamp > pendingRequest.deadline) {
-        _performData = abi.encode(liquidityProvider, pendingRequest.amountToRequest);
+        _performData = abi.encode(liquidityProvider, pendingRequest.amountToRequest, pendingRequest.withdrawId);
         _upkeepNeeded = true;
       }
     }
@@ -202,7 +203,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    */
   function performUpkeep(bytes calldata _performData) external override {
     if (msg.sender != s_forwarderAddress) revert ConceroAutomation_CallerNotAllowed(msg.sender);
-    (address liquidityProvider, uint256 amountToRequest) = abi.decode(_performData, (address, uint256));
+    (address liquidityProvider, uint256 amountToRequest, bytes32 withdrawId) = abi.decode(_performData, (address, uint256, bytes32));
 
     if (s_withdrawTriggered[liquidityProvider] == true) {
       revert ConceroAutomation_WithdrawAlreadyTriggered(liquidityProvider);
@@ -210,34 +211,38 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
       s_withdrawTriggered[liquidityProvider] = true;
     }
 
-    bytes[] memory args = new bytes[](4);
+    bytes[] memory args = new bytes[](5);
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
     args[2] = abi.encodePacked(liquidityProvider);
     args[3] = abi.encodePacked(amountToRequest);
+    args[4] = abi.encodePacked(withdrawId);
 
     bytes32 reqId = _sendRequest(args, JS_CODE);
 
-    s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest, failed: false});
+    s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest, withdrawId: withdrawId, failed: false});
 
     emit ConceroAutomation_UpkeepPerformed(reqId);
   }
 
   function retryPerformWithdrawalRequest(bytes32 _requestId) external {
-    PerformWithdrawRequest storage functionRequest = s_functionsRequests[_requestId];
+    PerformWithdrawRequest memory functionRequest = s_functionsRequests[_requestId];
+
     address liquidityProviderAddress = functionRequest.liquidityProvider;
-    if (msg.sender != liquidityProviderAddress || s_withdrawTriggered[liquidityProviderAddress] != true || functionRequest.failed == false)
+    
+    if (msg.sender != liquidityProviderAddress || s_withdrawTriggered[liquidityProviderAddress] != true || functionRequest.failed == false || functionRequest.withdrawId == 0)
       revert ConceroAutomation__WithdrawRequestPerformed();
 
-    bytes[] memory args = new bytes[](4);
+    bytes[] memory args = new bytes[](5);
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
     args[2] = abi.encodePacked(liquidityProviderAddress);
     args[3] = abi.encodePacked(functionRequest.amount);
+    args[4] = abi.encodePacked(functionRequest.withdrawId);
 
     bytes32 reqId = _sendRequest(args, JS_CODE);
 
-    s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProviderAddress, amount: functionRequest.amount, failed: false});
+    s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProviderAddress, amount: functionRequest.amount, withdrawId: functionRequest.withdrawId, failed: false});
 
     emit ConceroAutomation_UpkeepPerformed(reqId);
   }

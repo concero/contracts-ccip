@@ -20,7 +20,10 @@ const deployConceroDexSwap: DeployFunction = async function (hre: HardhatRuntime
   console.log("Deploying ConceroDexSwap...");
   const deployResult = (await deploy("DexSwap", {
     from: deployer,
-    args: [conceroProxyAddress, fakeAddressRemoveInProd],
+    args: [
+      conceroProxyAddress,
+      // fakeAddressRemoveInProd
+    ],
     log: true,
     autoMine: true,
   })) as Deployment;

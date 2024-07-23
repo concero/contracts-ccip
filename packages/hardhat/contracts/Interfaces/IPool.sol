@@ -13,6 +13,7 @@ interface IPool {
     uint256 amountToReceive;
     address token;
     uint256 deadline;
+    bytes32 withdrawId;
   }
 
   ///@notice `ccipSend` to distribute liquidity
@@ -40,6 +41,7 @@ interface IPool {
     uint256 usdcAmountForThisRequest;
     uint256 lpSupplyForThisRequest;
     uint256 amount; //USDC or LP according to the request
+    bytes32 withdrawId;
   }
 
   ////////////////////////////////////////////////////////

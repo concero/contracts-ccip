@@ -11,7 +11,6 @@ import {LibConcero} from "./Libraries/LibConcero.sol";
 import {IOrchestrator, IOrchestratorViewDelegate} from "./Interfaces/IOrchestrator.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_AVALANCHE, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE} from "./Constants.sol";
-import {CHAIN_ID_AVALANCHE, WRAPPED_NATIVE_AVALANCHE, CHAIN_ID_ETHEREUM, WRAPPED_NATIVE_ETHEREUM, CHAIN_ID_ARBITRUM, WRAPPED_NATIVE_ARBITRUM, CHAIN_ID_BASE, WRAPPED_NATIVE_BASE, CHAIN_ID_POLYGON, WRAPPED_NATIVE_POLYGON} from "./Constants.sol";
 
 ///////////////////////////////
 /////////////ERROR/////////////
@@ -148,7 +147,15 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     BridgeData memory bridgeData,
     IDexSwap.SwapData[] calldata srcSwapData,
     IDexSwap.SwapData[] memory dstSwapData
-  ) external tokenAmountSufficiency(srcSwapData[0].fromToken, srcSwapData[0].fromAmount) validateSwapData(srcSwapData) validateBridgeData(bridgeData) validateDstSwapData(dstSwapData) payable nonReentrant {
+  )
+    external
+    payable
+    tokenAmountSufficiency(srcSwapData[0].fromToken, srcSwapData[0].fromAmount)
+    validateSwapData(srcSwapData)
+    validateBridgeData(bridgeData)
+    validateDstSwapData(dstSwapData)
+    nonReentrant
+  {
     if (srcSwapData[srcSwapData.length - 1].toToken != getToken(bridgeData.tokenType, i_chainIndex)) revert Orchestrator_InvalidSwapData();
 
     {
@@ -277,24 +284,6 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
       _token = USDC_AVALANCHE;
     } else {
       revert Orchestrator_InvalidBridgeToken();
-    }
-  }
-
-  function getWrappedNative() internal view returns (address _wrappedAddress) {
-    uint256 chainId = block.chainid;
-
-    if (chainId == CHAIN_ID_AVALANCHE) {
-      _wrappedAddress = WRAPPED_NATIVE_AVALANCHE;
-    } else if (chainId == CHAIN_ID_ETHEREUM) {
-      _wrappedAddress = WRAPPED_NATIVE_ETHEREUM;
-    } else if (chainId == CHAIN_ID_ARBITRUM) {
-      _wrappedAddress = WRAPPED_NATIVE_ARBITRUM;
-    } else if (chainId == CHAIN_ID_BASE) {
-      _wrappedAddress = WRAPPED_NATIVE_BASE;
-    } else if (chainId == CHAIN_ID_POLYGON) {
-      _wrappedAddress = WRAPPED_NATIVE_POLYGON;
-    } else {
-      revert Orchestrator_ChainNotSupported();
     }
   }
 

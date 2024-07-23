@@ -244,7 +244,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     if (_swapData.length == 0) {
       _encodedData = new bytes(1);
     } else {
-      _encodedData = abi.encode(_swapData[0]);
+      _encodedData = abi.encode(_swapData);
     }
   }
 
@@ -257,15 +257,13 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
     if (transaction.dstSwapData.length > 1) {
-      IDexSwap.SwapData memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData));
-      IDexSwap.SwapData[] memory swapDataArray = new IDexSwap.SwapData[](1);
-      swapData.fromAmount = amount;
-      swapDataArray[0] = swapData;
+      IDexSwap.SwapData[] memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData[]));
+      swapData[0].fromAmount = amount;
 
       IParentPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, address(this));
 
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-        abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapDataArray, transaction.recipient)
+        abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, transaction.recipient)
       );
       if (swapSuccess == false) revert TXReleasedFailed(swapError);
     } else {

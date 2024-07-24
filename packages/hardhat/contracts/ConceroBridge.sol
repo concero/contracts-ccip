@@ -29,7 +29,7 @@ error NothingToWithdraw();
 ///@notice error emitted when there is no native value to withdraw
 error FailedToWithdrawEth(address owner, address target, uint256 value);
 ///@notice error emitted when a non orchestrator address call startBridge
-error Concero_ItsNotOrchestrator(address caller);
+error Concero_ItsNotProxy(address caller);
 
 contract ConceroBridge is ConceroCCIP {
   using SafeERC20 for IERC20;
@@ -70,19 +70,20 @@ contract ConceroBridge is ConceroCCIP {
    * @dev this function should only be able to called thought infra Proxy
    */
   function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] memory dstSwapData) external payable {
-    if (address(this) != i_proxy) revert Concero_ItsNotOrchestrator(address(this));
+    if (address(this) != i_proxy) revert Concero_ItsNotProxy(address(this));
     address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
     uint256 totalSrcFee = _convertToUSDCDecimals(_getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount));
-    uint256 mockedLpFee = getDstTotalFeeInUsdc(bridgeData.amount);
 
-    if (bridgeData.amount < totalSrcFee + mockedLpFee) {
+    if (bridgeData.amount < totalSrcFee) {
       revert InsufficientFundsForFees(bridgeData.amount, totalSrcFee);
     }
 
     uint256 amount = bridgeData.amount - totalSrcFee;
-    uint256 actualLpFee = getDstTotalFeeInUsdc(amount);
+    uint256 lpFee = getDstTotalFeeInUsdc(amount);
 
-    bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, bridgeData.receiver, actualLpFee);
+    bytes32 ccipMessageId = _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, amount, bridgeData.receiver, lpFee);
+    // TODO: add uniq id with all argument including dstSwapData
+    //    bytes32 id = keccak256(abi.encodePacked(ccipMessageId, bridgeData, dstSwapData));
     emit CCIPSent(ccipMessageId, msg.sender, bridgeData.receiver, bridgeData.tokenType, amount, bridgeData.dstChainSelector);
     sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData.receiver, amount, bridgeData.dstChainSelector, bridgeData.tokenType, dstSwapData);
   }

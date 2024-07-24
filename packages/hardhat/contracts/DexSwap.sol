@@ -74,15 +74,13 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
    * @param _swapData a struct array that contains dex information.
    * @dev only the Orchestrator contract should be able to call this function
    */
+
+  // TODO: rename to entrypoint
   function conceroEntry(IDexSwap.SwapData[] memory _swapData, address _recipient) external payable {
     if (address(this) != i_proxy) revert DexSwap_ItsNotOrchestrator(address(this));
     uint256 swapDataLength = _swapData.length;
 
     for (uint256 i; i < swapDataLength; ) {
-      if (swapDataLength > 1 && i < swapDataLength - 1) {
-        if (_swapData[i].dexType == DexType.UniswapV2Ether && _swapData[i + 1].dexType == DexType.UniswapV2Ether) revert DexSwap_InvalidPath();
-      }
-
       uint256 previousBalance = LibConcero.getBalance(_swapData[i].toToken, address(this));
       address destinationAddress;
 

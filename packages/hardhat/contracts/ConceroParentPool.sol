@@ -277,14 +277,14 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
 
     uint256 numberOfPools = s_poolChainSelectors.length;
     uint256 amountToDistribute = ((request.amount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
-    
+
     request.usdcAmountForThisRequest = request.usdcAmountForThisRequest + s_moneyOnTheWay;
     request.lpSupplyForThisRequest = i_lp.totalSupply();
 
     i_USDC.safeTransferFrom(msg.sender, address(this), request.amount);
-    
+
     _distributeLiquidity(amountToDistribute);
-    
+
     _updateDepositInfoAndMintLPTokens(request.liquidityProvider, request.lpSupplyForThisRequest, request.amount, request.usdcAmountForThisRequest);
   }
 
@@ -619,7 +619,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     //If request fails and it's a type GetTotalUSDC, which means it's a deposit request:
     if (err.length > 0 && request.requestType == IPool.RequestType.GetTotalUSDC) {
       // emit ad event informing listeners about the failure
-      emit FunctionsRequestError(requestId, request.requestType); 
+      emit FunctionsRequestError(requestId, request.requestType);
       return;
     } else if (err.length > 0) {
       emit FunctionsRequestError(requestId, request.requestType);

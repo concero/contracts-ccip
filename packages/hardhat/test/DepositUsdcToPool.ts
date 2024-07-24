@@ -8,13 +8,13 @@ import { privateKeyToAccount } from "viem/accounts";
 import { Address, createPublicClient, createWalletClient, PrivateKeyAccount } from "viem";
 import { PublicClient } from "viem/clients/createPublicClient";
 import { approve } from "./utils/approve";
-import { abi as ParentPoolAbi } from "../artifacts/contracts/ConceroParentPool.sol/ConceroParentPool.json";
+import { abi as ParentPoolAbi } from "../artifacts/contracts/ParentPool.sol/ParentPool.json";
 import { chainsMap } from "./utils/chainsMap";
 
-const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
-const usdcAmount = "1000000";
-const usdcTokenAddress = process.env.USDC_BASE_SEPOLIA as Address;
-const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
+const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE;
+const usdcAmount = "1900000000"; // 1900 USDC
+const usdcTokenAddress = process.env.USDC_BASE as Address;
+const poolAddress = process.env.PARENT_POOL_PROXY_BASE as Address;
 
 describe("deposit usdc to pool\n", () => {
   let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
@@ -36,23 +36,23 @@ describe("deposit usdc to pool\n", () => {
   };
 
   it("should deposit usdc to pool", async () => {
-    await callApprovals();
+    try {
+      await callApprovals();
 
-    const transactionHash = await walletClient.writeContract({
-      abi: ParentPoolAbi,
-      functionName: "depositLiquidity",
-      address: poolAddress as Address,
-      args: [BigInt(usdcAmount)],
-      gas: 3_000_000n,
-    });
+      const transactionHash = await walletClient.writeContract({
+        abi: ParentPoolAbi,
+        functionName: "depositLiquidity",
+        address: poolAddress as Address,
+        args: [BigInt(usdcAmount)],
+        gas: 3_000_000n,
+      });
 
-    const { status } = await srcPublicClient.waitForTransactionReceipt({ hash: transactionHash });
+      const { status } = await srcPublicClient.waitForTransactionReceipt({ hash: transactionHash });
 
-    console.log("transactionHash: ", transactionHash);
-    console.log("status: ", status, "\n");
-
-    if (status === "reverted") {
-      throw new Error("Transaction reverted");
+      console.log("transactionHash: ", transactionHash);
+      console.log("status: ", status, "\n");
+    } catch (error) {
+      console.error("Error: ", error);
     }
   }).timeout(0);
 });

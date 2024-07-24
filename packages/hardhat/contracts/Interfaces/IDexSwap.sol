@@ -12,7 +12,9 @@ interface IDexSwap {
     UniswapV3Multi,
     Aerodrome,
     AerodromeFoT,
-    UniswapV2Ether
+    UniswapV2Ether,
+    WrapNative,
+    UnwrapWNative
   }
 
   ///@notice Concero Struct to track DEX Data
@@ -31,5 +33,5 @@ interface IDexSwap {
    * @param _swapData a struct array that contains dex information.
    * @dev only the Orchestrator contract should be able to call this function
    */
-  function conceroEntry(SwapData[] memory _swapData, uint256 nativeAmount, address _recipient) external payable;
+  function conceroEntry(SwapData[] memory _swapData, address _recipient) external payable;
 }

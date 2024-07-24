@@ -11,6 +11,6 @@ remappings = [
     "@chainlink/=../hardhat/node_modules/@chainlink/",
     "solidity-bytes-utils/=../hardhat/node_modules/solidity-bytes-utils/",
     "sushiswap-v3-periphery/contracts/=../hardhat/node_modules/sushiswap-v3-periphery/contracts/",
-    "forge-std/=node_modules/forge-std/",
+    "forge-std/=lib/forge-std/src/",
     "contracts/=../hardhat/contracts/"
 ]

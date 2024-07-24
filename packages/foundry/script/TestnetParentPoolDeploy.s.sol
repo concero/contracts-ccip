@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {Script, console2} from "../lib/forge-std/src/Script.sol";
+import {Script, console2} from "forge-std/Script.sol";
 import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 
 contract TestnetParentPoolDeploy is Script {
@@ -16,7 +16,7 @@ contract TestnetParentPoolDeploy is Script {
     address _automation = address(0);
     address _orchestrator = address(0);
     address _owner = 0xd2Cb8786C0Ec3680C55C9256371F3577fE1C6A9e;
-    
+
     function run() public returns(ConceroParentPool pool){
         vm.startBroadcast();
         pool = new ConceroParentPool(

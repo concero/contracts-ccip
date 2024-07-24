@@ -27,7 +27,7 @@ contract ConceroCommon {
    * @notice modifier to check if the caller is the an approved messenger
    */
   modifier onlyMessenger() {
-    if (isMessenger(msg.sender) == false) revert ConceroCommon_NotMessenger(msg.sender);
+    if (!isMessenger(msg.sender)) revert ConceroCommon_NotMessenger(msg.sender);
     _;
   }
 
@@ -36,10 +36,10 @@ contract ConceroCommon {
   ///////////////////////////
   /**
    * @notice Function to check for allowed tokens on specific networks
-   * @param token The enum flag of the token
+   * @param tokenType The enum flag of the token
    * @param _chainIndex the index of the chain
    */
-  function getToken(IStorage.CCIPToken token, IStorage.Chain _chainIndex) internal view returns (address) {
+  function getUSDCAddressByChainIndex(IStorage.CCIPToken tokenType, IStorage.Chain _chainIndex) internal view returns (address) {
     address[5][2] memory tokens;
 
     // Initialize BNM addresses
@@ -55,10 +55,10 @@ contract ConceroCommon {
     tokens[uint(IStorage.CCIPToken.usdc)][uint(IStorage.Chain.pol)] = block.chainid == 137 ? USDC_POLYGON : USDC_POLYGON_AMOY;
     tokens[uint(IStorage.CCIPToken.usdc)][uint(IStorage.Chain.avax)] = block.chainid == 43114 ? USDC_AVALANCHE : USDC_AVALANCHE;
 
-    if (uint256(token) > tokens.length) revert ConceroCommon_TokenTypeOutOfBounds();
-    if (uint256(_chainIndex) > tokens[uint256(token)].length) revert ConceroCommon_ChainIndexOutOfBounds();
+    if (uint256(tokenType) > tokens.length) revert ConceroCommon_TokenTypeOutOfBounds();
+    if (uint256(_chainIndex) > tokens[uint256(tokenType)].length) revert ConceroCommon_ChainIndexOutOfBounds();
 
-    return tokens[uint256(token)][uint256(_chainIndex)];
+    return tokens[uint256(tokenType)][uint256(_chainIndex)];
   }
 
   /**

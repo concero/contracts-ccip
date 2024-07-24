@@ -227,7 +227,7 @@ contract ConceroChildPool is CCIPReceiver, ChildStorage {
 
     //If receivedFee > 0, it means is user transaction. If receivedFee == 0, means it's a deposit from ParentPool
     if (receivedFee > 0) {
-      IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransactionsInfo(any2EvmMessage.messageId);
+      IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransaction(any2EvmMessage.messageId);
 
       if ((transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false) || transaction.ccipMessageId == 0) {
         i_USDC.safeTransfer(_user, amountMinusFees);

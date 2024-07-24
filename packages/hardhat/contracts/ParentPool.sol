@@ -397,7 +397,7 @@ contract ParentPool is CCIPReceiver, FunctionsClient, ParentStorage {
     uint256 amountMinusFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
 
     if (receivedFee > 0) {
-      IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransactionsInfo(any2EvmMessage.messageId);
+      IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransaction(any2EvmMessage.messageId);
 
       if ((transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false) || transaction.ccipMessageId == 0) {
         i_USDC.safeTransfer(_user, amountMinusFees);

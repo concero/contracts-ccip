@@ -16,6 +16,7 @@ contract ConceroCommon {
   ///////////////
   ///@notice removing magic-numbers
   uint256 internal constant APPROVED = 1;
+  // TODO: move to value
   uint256 internal constant USDC_DECIMALS = 10 ** 6;
   uint256 internal constant STANDARD_TOKEN_DECIMALS = 10 ** 18;
 

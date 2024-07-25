@@ -1,9 +1,10 @@
 [profile.default]
-src = "src"
+src = "../hardhat/contracts"
 out = "out"
-libs = ["lib", "../hardhat/contracts/"]
+libs = ["lib", "../hardhat/node_modules", "../hardhat/contracts"]
 
 remappings = [
+    "@openzeppelin/contracts/mocks/=lib/openzeppelin-contracts/contracts/mocks/",
     "@openzeppelin/=../hardhat/node_modules/@openzeppelin/",
     "@uniswap/=../hardhat/node_modules/@uniswap/",
     "velodrome/=../hardhat/node_modules/velodrome/",

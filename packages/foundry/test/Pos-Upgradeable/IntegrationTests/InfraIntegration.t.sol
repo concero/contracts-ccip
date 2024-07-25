@@ -43,7 +43,7 @@ import {ChildPoolDeploy} from "../../../script/ChildPoolDeploy.s.sol";
 import {ChildPoolProxyDeploy} from "../../../script/ChildPoolProxyDeploy.s.sol";
 
 //Mocks
-import {ERC20Mock} from "@openzeppelin/contracts-v0.7/mocks/ERC20Mock.sol";
+import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {USDC} from "../../Mocks/USDC.sol";
 import {DEXMock} from "../../Mocks/DEXMock.sol";
 

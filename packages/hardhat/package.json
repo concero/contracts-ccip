@@ -82,6 +82,7 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "ethers": "^5.0.0",
     "@chainlink/contracts": "^1.0.0",
     "@chainlink/contracts-ccip": "^1.4.0",
     "@chainlink/functions-toolkit": "^0.2.8",
@@ -99,7 +100,6 @@
     "@uniswap/v3-periphery": "https://github.com/sushiswap/v3-periphery",
     "dotenv": "^16.4.5",
     "envfile": "^6.18.0",
-    "ethers": "6.12.1",
     "hardhat-change-network": "^0.0.7",
     "qrcode": "^1.5.1",
     "regenerator-runtime": "^0.14.1",

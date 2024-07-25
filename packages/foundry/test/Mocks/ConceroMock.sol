@@ -33,5 +33,4 @@ contract ConceroMock is ConceroBridge {
     function getBnmToken() public pure returns (CCIPToken){
         return CCIPToken.bnm;
     }
-
 }

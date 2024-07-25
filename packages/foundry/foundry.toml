@@ -4,13 +4,20 @@ out = "out"
 libs = ["lib", "../hardhat/contracts/"]
 
 remappings = [
-    "@openzeppelin/=../hardhat/node_modules/@openzeppelin/",
-    "@uniswap/=../hardhat/node_modules/@uniswap/",
-    "velodrome/=../hardhat/node_modules/velodrome/",
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/upgradeable/contracts/=lib/openzeppelin-contracts-upgradeable/contracts/",
+    "@uniswap/v2-periphery/contracts/=lib/v2-periphery/contracts/",
+    "@uniswap/v3-periphery/contracts/=lib/v3-periphery/contracts/",
+    "@uniswap/v3-core/contracts/=lib/v3-core/contracts",
+    "velodrome/contracts/=lib/contracts/contracts/",
     "@uniswap/swap-router-contracts/contracts/=lib/swap-router-contracts/contracts/",
-    "@chainlink/=../hardhat/node_modules/@chainlink/",
-    "solidity-bytes-utils/=../hardhat/node_modules/solidity-bytes-utils/",
-    "sushiswap-v3-periphery/contracts/=../hardhat/node_modules/sushiswap-v3-periphery/contracts/",
-    "forge-std/=node_modules/forge-std/",
-    "contracts/=../hardhat/contracts/"
+    "@chainlink/contracts/=lib/chainlink/contracts/",
+    "@starterKit/=lib/foundry-starter-kit",
+    "contracts/=../hardhat/contracts/",
+    "solidity-bytes-utils/=lib/solidity-bytes-utils/",
+    "sushiswap-v3-periphery/contracts/=node_modules/sushiswap-v3-periphery/contracts/"
 ]
+
+
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

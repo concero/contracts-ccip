@@ -270,7 +270,7 @@ contract ProtocolMainnet is Test {
         );
 
         // DexSwap Contract
-        dex = dexDeployBase.run(address(proxy), address(wEth));
+        dex = dexDeployBase.run(address(proxy));
 
         concero = conceroDeployBase.run(
             IStorage.FunctionsVariables ({
@@ -334,7 +334,7 @@ contract ProtocolMainnet is Test {
         lp.grantRole(keccak256("MINTER_ROLE"), address(wMaster));
 
         //====== Wrap the proxy as the implementation
-        op = Orchestrator(address(proxy));
+        op = Orchestrator(payable(proxy));
 
         //====== Set the DEXes routers
         vm.startPrank(defaultSender);
@@ -395,8 +395,7 @@ contract ProtocolMainnet is Test {
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
 
         dexDst = dexDeployArbitrum.run(
-            address(proxyDst),
-            address(arbWEth)
+            address(proxyDst)
         );
 
         conceroDst = conceroDeployArbitrum.run(
@@ -452,7 +451,7 @@ contract ProtocolMainnet is Test {
         proxyInterfaceChild.upgradeToAndCall(address(child), "");
 
         //====== Wrap the proxy as the implementation
-        opDst = Orchestrator(address(proxyDst));
+        opDst = Orchestrator(payable(proxyDst));
 
         //====== Set the DEXes routers
         vm.startPrank(defaultSender);
@@ -735,7 +734,7 @@ contract ProtocolMainnet is Test {
     //     assertEq(wEth.balanceOf(address(op)), amountIn / 1000);
     //     assertTrue(mUSDC.balanceOf(User) >= amountOutMin);
     //     vm.stopPrank();
-        
+
     //     //=================================== Revert Leg =========================================\\
 
     //     ///==== Invalid Path
@@ -762,7 +761,7 @@ contract ProtocolMainnet is Test {
     //     vm.stopPrank();
 
     //     ///==== Invalid Router
-        
+
     //     swapData[0] = IDexSwap.SwapData({
     //                         dexType: IDexSwap.DexType.UniswapV2,
     //                         fromToken: address(wEth),
@@ -784,7 +783,7 @@ contract ProtocolMainnet is Test {
     //     vm.stopPrank();
 
     //     ///==== Invalid dexData
-        
+
     //     swapData[0] = IDexSwap.SwapData({
     //                         dexType: IDexSwap.DexType.UniswapV2,
     //                         fromToken: address(wEth),
@@ -925,7 +924,7 @@ contract ProtocolMainnet is Test {
     //     assertTrue(mUSDC.balanceOf(address(User))> USDC_INITIAL_BALANCE + amountOut);
 
     //     //=================================== Revert Leg =========================================\\
-        
+
     //     swapData[0] = IDexSwap.SwapData({
     //                         dexType: IDexSwap.DexType.SushiV3Single,
     //                         fromToken: address(wEth),
@@ -944,7 +943,7 @@ contract ProtocolMainnet is Test {
     //     vm.stopPrank();
 
     //     //=================================== Revert Leg =========================================\\
-        
+
     //     swapData[0] = IDexSwap.SwapData({
     //                         dexType: IDexSwap.DexType.SushiV3Single,
     //                         fromToken: address(wEth),
@@ -1156,7 +1155,7 @@ contract ProtocolMainnet is Test {
     //     assertTrue(wEth.balanceOf(address(User)) >= INITIAL_BALANCE - amountIn + amountOut);
 
     //     //=================================== Revert Leg =========================================\\
-        
+
     //     swapData[0] = IDexSwap.SwapData({
     //         dexType: IDexSwap.DexType.SushiV3Multi,
     //         fromToken: address(wEth),
@@ -1174,7 +1173,7 @@ contract ProtocolMainnet is Test {
     //     op.swap(swapData, User);
 
     //     //=================================== Revert Leg =========================================\\
-        
+
     //     swapData[0] = IDexSwap.SwapData({
     //         dexType: IDexSwap.DexType.SushiV3Multi,
     //         fromToken: address(wEth),
@@ -1269,7 +1268,7 @@ contract ProtocolMainnet is Test {
         op.swap(swapData, User);
 
         //=================================== Revert Leg =========================================\\
-        
+
         swapData[0] = IDexSwap.SwapData({
             dexType: IDexSwap.DexType.UniswapV3Multi,
             fromToken: address(wEth),
@@ -1287,7 +1286,7 @@ contract ProtocolMainnet is Test {
         op.swap(swapData, User);
 
         //=================================== Revert Leg =========================================\\
-        
+
         swapData[0] = IDexSwap.SwapData({
             dexType: IDexSwap.DexType.UniswapV3Multi,
             fromToken: address(wEth),
@@ -1361,7 +1360,7 @@ contract ProtocolMainnet is Test {
         bytes memory encodedError = abi.encodeWithSelector(DexSwap_InvalidPath.selector);
         vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, encodedError));
         op.swap(swapData, User);
-        
+
         vm.stopPrank();
     }
 
@@ -1404,7 +1403,7 @@ contract ProtocolMainnet is Test {
     //     assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
 
     //     ///============================= Invalid Path Revert
-        
+
     //     swapData[0] = IDexSwap.SwapData({
     //         dexType: IDexSwap.DexType.Aerodrome,
     //         fromToken: address(mUSDC),
@@ -1498,7 +1497,7 @@ contract ProtocolMainnet is Test {
     //     assertTrue(mUSDC.balanceOf(address(User)) > USDC_INITIAL_BALANCE + amountOut);
 
     //     ///============================= Invalid Path Revert
-        
+
     //     swapData[0] = IDexSwap.SwapData({
     //         dexType: IDexSwap.DexType.Aerodrome,
     //         fromToken: address(mUSDC),
@@ -1603,8 +1602,8 @@ contract ProtocolMainnet is Test {
 
     //     //==== Initiate transaction
 
-    //     /////=============== TEST CHAINED TX =====================\\\\\        
-        
+    //     /////=============== TEST CHAINED TX =====================\\\\\
+
     //     amountIn = 350*10**5;
     //     amountOutMin = 1*10**16;
     //     path = new address[](2);
@@ -1670,7 +1669,7 @@ contract ProtocolMainnet is Test {
 
     error DexSwap_ItsNotOrchestrator(address);
     function test_revertConceroEntry() public {
-        
+
         helper();
 
         uint amountIn = 1*10**17;
@@ -1696,12 +1695,12 @@ contract ProtocolMainnet is Test {
 
         vm.expectRevert(abi.encodeWithSelector(DexSwap_ItsNotOrchestrator.selector, address(dex)));
         dex.conceroEntry(swapData, User);
-        
+
         IDexSwap.SwapData[] memory emptyData = new IDexSwap.SwapData[](0);
 
         vm.expectRevert(abi.encodeWithSelector(Orchestrator_InvalidSwapData.selector));
         op.swap(emptyData, User);
-        
+
         IDexSwap.SwapData[] memory fullData = new IDexSwap.SwapData[](6);
         fullData[0] = IDexSwap.SwapData({
                             dexType: IDexSwap.DexType.UniswapV2,

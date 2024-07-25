@@ -231,7 +231,7 @@ contract ProtocolTestnet is Test {
         );
 
         // DexSwap Contract
-        dex = dexDeployBase.run(address(proxy), address(wEth));
+        dex = dexDeployBase.run(address(proxy));
 
         concero = conceroDeployBase.run(
             IStorage.FunctionsVariables ({
@@ -296,7 +296,7 @@ contract ProtocolTestnet is Test {
         lp.grantRole(keccak256("MINTER_ROLE"), address(wMaster));
 
         //====== Wrap the proxy as the implementation
-        op = Orchestrator(address(proxy));
+        op = Orchestrator(payable(proxy));
 
         //====== Set the DEXes routers
         vm.prank(defaultSender);
@@ -357,8 +357,7 @@ contract ProtocolTestnet is Test {
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
 
         dexDst = dexDeployArbitrum.run(
-            address(proxyDst),
-            address(arbWEth)
+            address(proxyDst)
         );
 
         conceroDst = conceroDeployArbitrum.run(
@@ -414,7 +413,7 @@ contract ProtocolTestnet is Test {
         proxyInterfaceChild.upgradeToAndCall(address(child), "");
 
         //====== Wrap the proxy as the implementation
-        opDst = Orchestrator(address(proxyDst));
+        opDst = Orchestrator(payable(proxyDst));
 
         //====== Set the DEXes routers
         vm.prank(defaultSender);
@@ -521,7 +520,7 @@ contract ProtocolTestnet is Test {
     function test_swapAndBridgeRevertBecauseBridgeAmount() public setters{
         helper();
         /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        
+
         uint amountIn = 29510000000000;
         uint amountOutMin = 9*10**4;
         address[] memory path = new address[](2);
@@ -578,7 +577,7 @@ contract ProtocolTestnet is Test {
             dstChainSelector: arbChainSelector,
             receiver: User
         });
-        
+
         uint amountIn = 29510000000000;
         uint amountOutMin = 9*10**4;
         address[] memory path = new address[](2);
@@ -648,7 +647,7 @@ contract ProtocolTestnet is Test {
         vm.stopPrank();
 
         //===== Leg 3 - Empty receiver
-        
+
 
         //====== Mock the payload
         IStorage.BridgeData memory dataThree = IStorage.BridgeData({
@@ -902,7 +901,7 @@ contract ProtocolTestnet is Test {
 
     //     /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
     //     // helper();
-        
+
     //     // uint amountIn = 1*10**17;
     //     // uint amountOutMin = 350*10**6;
     //     // address[] memory path = new address[](2);
@@ -931,7 +930,7 @@ contract ProtocolTestnet is Test {
     //     // });
 
     //     // /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        
+
     //     // uint amountInDst = 300*10**6;
     //     // uint amountOutMinDst = 1*10**17;
     //     // address[] memory pathDst = new address[](2);
@@ -961,13 +960,13 @@ contract ProtocolTestnet is Test {
     ////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////// BRIDGE MODULE ///////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////
-    
+
     error Concero_ItsNotOrchestrator(address);
     // function test_swapAndBridgeWithoutFunctions() public setters{
     //     helper();
 
     //     /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        
+
     //     uint amountIn = 1*10**17;
     //     uint amountOutMin = 350*10**6;
     //     address[] memory path = new address[](2);
@@ -1040,7 +1039,7 @@ contract ProtocolTestnet is Test {
     //     });
 
     //     /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        
+
     //     uint amountIn = 1*10**17;
     //     uint amountOutMin = 350*10**6;
     //     address[] memory path = new address[](2);
@@ -1068,7 +1067,7 @@ contract ProtocolTestnet is Test {
 
     //     //====== Check Receiver balance
     //     assertEq(IERC20(ccipBnMArb).balanceOf(User), 9990000); //Amount - fee = 9831494
-        
+
     //     // assertTrue(op.s_lastGasPrices(arbChainSelector) > 0);
     //     // assertTrue(op.s_latestLinkUsdcRate() > 0);
     //     // assertTrue(op.s_latestNativeUsdcRate() > 0);
@@ -1136,7 +1135,7 @@ contract ProtocolTestnet is Test {
         vm.prank(Tester);
         vm.expectEmit();
         emit ConceroAutomation_HashSumUpdated(hashSum);
-        automation.setJsHashSum(hashSum); 
+        automation.setJsHashSum(hashSum);
     }
 
     event ConceroAutomation_EthersHashSumUpdated(bytes32);

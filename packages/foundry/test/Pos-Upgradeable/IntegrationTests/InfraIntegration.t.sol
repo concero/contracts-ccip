@@ -240,7 +240,7 @@ contract InfraIntegration is Test {
         );
 
         // DexSwap Contract
-        dex = dexDeployBase.run(address(proxy), address(wEth));
+        dex = dexDeployBase.run(address(proxy));
 
         concero = conceroDeployBase.run(
             IStorage.FunctionsVariables ({
@@ -303,7 +303,7 @@ contract InfraIntegration is Test {
         lp.grantRole(keccak256("MINTER_ROLE"), address(wMaster));
 
         //====== Wrap the proxy as the implementation
-        wInfraSrc = Orchestrator(address(proxy));
+        wInfraSrc = Orchestrator(payable(proxy));
 
         /////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
         //================ SWITCH CHAINS ====================\\
@@ -335,8 +335,7 @@ contract InfraIntegration is Test {
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
 
         dexDst = dexDeployArbitrum.run(
-            address(proxyDst),
-            address(wrappedNative)
+            address(proxyDst)
         );
 
         conceroDst = conceroDeployArbitrum.run(
@@ -375,7 +374,7 @@ contract InfraIntegration is Test {
         );
 
         wChild = ConceroChildPool(payable(address(childProxy)));
-        
+
         //====== Update the proxy for the correct address
         vm.prank(ProxyOwner);
         proxyInterfaceInfraArb.upgradeToAndCall(address(orchDst), "");
@@ -383,7 +382,7 @@ contract InfraIntegration is Test {
         proxyInterfaceChild.upgradeToAndCall(address(child), "");
 
         //====== Wrap the proxy as the implementation
-        wInfraDst = Orchestrator(address(proxyDst));
+        wInfraDst = Orchestrator(payable(proxyDst));
         }
     }
 

@@ -270,7 +270,7 @@ contract ProtocolMainnet is Test {
         );
 
         // DexSwap Contract
-        dex = dexDeployBase.run(address(proxy), address(wEth));
+        dex = dexDeployBase.run(address(proxy));
 
         concero = conceroDeployBase.run(
             IStorage.FunctionsVariables ({
@@ -334,7 +334,7 @@ contract ProtocolMainnet is Test {
         lp.grantRole(keccak256("MINTER_ROLE"), address(wMaster));
 
         //====== Wrap the proxy as the implementation
-        op = Orchestrator(address(proxy));
+        op = Orchestrator(payable(proxy));
 
         //====== Set the DEXes routers
         vm.startPrank(defaultSender);
@@ -395,8 +395,7 @@ contract ProtocolMainnet is Test {
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
 
         dexDst = dexDeployArbitrum.run(
-            address(proxyDst),
-            address(arbWEth)
+            address(proxyDst)
         );
 
         conceroDst = conceroDeployArbitrum.run(
@@ -450,7 +449,7 @@ contract ProtocolMainnet is Test {
         proxyInterfaceChild.upgradeToAndCall(address(child), "");
 
         //====== Wrap the proxy as the implementation
-        opDst = Orchestrator(address(proxyDst));
+        opDst = Orchestrator(payable(proxyDst));
 
         //====== Set the DEXes routers
         vm.startPrank(defaultSender);
@@ -736,6 +735,7 @@ contract ProtocolMainnet is Test {
 
         // vm.prank(defaultSender);
         // op.withdraw(defaultSender, address(wEth), amountIn / 1000);
+
 
     //     //=================================== Revert Leg =========================================\\
 
@@ -1497,6 +1497,13 @@ contract ProtocolMainnet is Test {
 
         // vm.prank(defaultSender);
         // op.withdraw(defaultSender, address(0), amountIn / 1000);
+    //     /////=============== TEST CHAINED TX =====================\\\\\
+
+    //     amountIn = 350*10**5;
+    //     amountOutMin = 1*10**16;
+    //     path = new address[](2);
+    //     path[0] = address(mUSDC);
+    //     path[1] = address(wEth);
 
     ////================================ Empty Dex Data =================================\\\\\\
     //     swapData[0] = IDexSwap.SwapData({
@@ -1514,20 +1521,17 @@ contract ProtocolMainnet is Test {
     //     assertEq(User.balance, 1*10**17);
 
     //     vm.startPrank(User);
-    //     bytes memory emptyDexData = abi.encodeWithSelector(DexSwap_EmptyDexData.selector);
-    //     vm.expectRevert(abi.encodeWithSelector(Orchestrator_UnableToCompleteDelegateCall.selector, emptyDexData));
-    //     op.swap{value: amountIn}(swapData, User);
-    //     vm.stopPrank();
+    //     wEth.approve(address(op), amountIn);
 
-    //     ////================================ Router not allowed =================================\\\\\\
+    //     IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](2);
     //     swapData[0] = IDexSwap.SwapData({
-    //         dexType: IDexSwap.DexType.UniswapV2Ether,
-    //         fromToken: address(0),
-    //         fromAmount: amountIn,
-    //         toToken: address(mUSDC),
-    //         toAmount: amountOut,
-    //         toAmountMin: amountOut,
-    //         dexData: abi.encode(User, path, deadline)
+    //                         dexType: IDexSwap.DexType.UniswapV2,
+    //                         fromToken: address(wEth),
+    //                         fromAmount: amountIn,
+    //                         toToken: address(mUSDC),
+    //                         toAmount: amountOutMin,
+    //                         toAmountMin: amountOutMin,
+    //                         dexData: abi.encode(sushiV2, path, deadline)
     //     });
 
     //     vm.startPrank(User);
@@ -1686,7 +1690,7 @@ contract ProtocolMainnet is Test {
         });
 
         vm.expectRevert(abi.encodeWithSelector(DexSwap_ItsNotOrchestrator.selector, address(dex)));
-        dex.conceroEntry(swapData, 0, User);
+        dex.conceroEntry(swapData, User);
 
         IDexSwap.SwapData[] memory emptyData = new IDexSwap.SwapData[](0);
 

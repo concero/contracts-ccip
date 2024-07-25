@@ -6,9 +6,9 @@ import {DexSwap} from "contracts/DexSwap.sol";
 
 contract DexSwapDeploy is Script {
 
-    function run(address _proxy, address _wEth) public returns(DexSwap dexSwap){
+    function run(address _proxy) public returns(DexSwap dexSwap){
         vm.startBroadcast();
-        dexSwap = new DexSwap(_proxy, _wEth);
+        dexSwap = new DexSwap(_proxy);
         vm.stopBroadcast();
     }
 }

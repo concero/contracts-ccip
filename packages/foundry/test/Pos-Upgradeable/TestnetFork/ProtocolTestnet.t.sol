@@ -233,7 +233,7 @@ contract ProtocolTestnet is Test {
         );
 
         // DexSwap Contract
-        dex = dexDeployBase.run(address(proxy), address(wEth));
+        dex = dexDeployBase.run(address(proxy));
 
         concero = conceroDeployBase.run(
             IStorage.FunctionsVariables ({
@@ -299,7 +299,7 @@ contract ProtocolTestnet is Test {
         lp.grantRole(keccak256("MINTER_ROLE"), address(wMaster));
 
         //====== Wrap the proxy as the implementation
-        op = Orchestrator(address(proxy));
+        op = Orchestrator(payable(proxy));
 
         //====== Set the DEXes routers
         vm.prank(defaultSender);
@@ -360,8 +360,7 @@ contract ProtocolTestnet is Test {
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
 
         dexDst = dexDeployArbitrum.run(
-            address(proxyDst),
-            address(arbWEth)
+            address(proxyDst)
         );
 
         conceroDst = conceroDeployArbitrum.run(
@@ -416,6 +415,9 @@ contract ProtocolTestnet is Test {
         proxyInterfaceInfraArb.upgradeToAndCall(address(orchDst), "");
         vm.prank(ProxyOwner);
         proxyInterfaceChild.upgradeToAndCall(address(child), "");
+
+        //====== Wrap the proxy as the implementation
+        opDst = Orchestrator(payable(proxyDst));
 
         //====== Set the DEXes routers
         vm.prank(defaultSender);
@@ -1258,6 +1260,15 @@ contract ProtocolTestnet is Test {
         path[1] = address(tUSDC);
         address to = address(op);
         uint deadline = block.timestamp + 1800;
+    //     /////////////////////////// SWAP DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+    //     uint amountIn = 1*10**17;
+    //     uint amountOutMin = 350*10**6;
+    //     address[] memory path = new address[](2);
+    //     path[0] = address(wEth);
+    //     path[1] = address(tUSDC);
+    //     address to = address(op);
+    //     uint deadline = block.timestamp + 1800;
 
         IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
         swapData[0] = IDexSwap.SwapData({

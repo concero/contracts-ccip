@@ -222,7 +222,7 @@ contract Infra is Test {
         );
 
         // DexSwap Contract
-        dex = dexDeployBase.run(address(proxy), address(wEth));
+        dex = dexDeployBase.run(address(proxy));
 
         concero = conceroDeployBase.run(
             IStorage.FunctionsVariables ({
@@ -271,7 +271,7 @@ contract Infra is Test {
         proxyInterfaceMaster.upgradeToAndCall(address(pool), "");
 
         //====== Wrap the proxy as the implementation
-        wInfraSrc = Orchestrator(address(proxy));
+        wInfraSrc = Orchestrator(payable(proxy));
         wMaster = ConceroParentPool(payable(address(masterProxy)));
 
         //====== Update the MINTER on the LP Token
@@ -415,12 +415,12 @@ contract Infra is Test {
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(StorageSetters_CallableOnlyByOwner.selector, Tester, defaultSender));
         wInfraSrc.setDstJsHashSum(hashSum);
-        
+
         assertEq(wInfraSrc.s_dstJsHashSum(), previousHashSum);
     }
 
     // SetSrcJsHashSum
-    event SourceJsHashSumUpdated(bytes32, bytes32);    
+    event SourceJsHashSumUpdated(bytes32, bytes32);
     function test_setSrcJsHashSum() public {
         bytes32 previousHashSum = 0;
         bytes32 hashSum = 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124;
@@ -441,12 +441,12 @@ contract Infra is Test {
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(StorageSetters_CallableOnlyByOwner.selector, Tester, defaultSender));
         wInfraSrc.setSrcJsHashSum(hashSum);
-        
+
         assertEq(wInfraSrc.s_srcJsHashSum(), previousHashSum);
     }
 
     // SetEthersHashSum
-    event EthersHashSumUpdated(bytes32, bytes32);  
+    event EthersHashSumUpdated(bytes32, bytes32);
     function test_setEthersHashSum() public {
         bytes32 previousHashSum = 0;
         bytes32 hashSum = 0x46d3cb1bb1c87442ef5d35a58248785346864a681125ac50b38aae6001ceb124;
@@ -467,7 +467,7 @@ contract Infra is Test {
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(StorageSetters_CallableOnlyByOwner.selector, Tester, defaultSender));
         wInfraSrc.setEthersHashSum(hashSum);
-        
+
         assertEq(wInfraSrc.s_ethersHashSum(), previousHashSum);
     }
 
@@ -486,4 +486,4 @@ contract Infra is Test {
 
         assertEq(wInfraSrc.s_poolReceiver(arbChainSelector), address(0));
     }
-} 
+}

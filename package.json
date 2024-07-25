@@ -5,7 +5,9 @@
   "license": "UNLICENSED",
   "workspaces": {
     "packages": [
-      "packages/hardhat/tasks/CLFScripts"
+      "packages/hardhat",
+      "packages/hardhat/tasks/CLFScripts",
+      "packages/nextjs"
     ]
   },
   "scripts": {

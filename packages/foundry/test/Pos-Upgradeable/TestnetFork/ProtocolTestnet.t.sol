@@ -399,7 +399,7 @@ contract ProtocolTestnet is Test {
         wChild = ConceroChildPool(payable(address(childProxy)));
 
         //====== Wrap the proxy as the implementation
-        opDst = Orchestrator(address(proxyDst));
+        opDst = Orchestrator(payable(proxyDst));
 
         //=== Arbitrum Contracts
         vm.makePersistent(address(opDst));

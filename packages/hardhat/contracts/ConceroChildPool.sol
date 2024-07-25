@@ -10,7 +10,6 @@ import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interface
 import {ChildPoolStorage} from "contracts/Libraries/ChildPoolStorage.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
-import {IPool} from "contracts/Interfaces/IPool.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -336,7 +335,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
   function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
     address[] memory messengers = new address[](4); //Number of messengers. To define.
     messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
-    messengers[1] = 0x05CF0be5cAE993b4d7B70D691e063f1E0abeD267;
+    messengers[1] = address(0);
     messengers[2] = address(0);
     messengers[3] = address(0);
 

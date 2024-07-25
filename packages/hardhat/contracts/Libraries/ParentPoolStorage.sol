@@ -13,7 +13,7 @@ contract ParentPoolStorage {
   ///@notice variable to store the amount that will be temporary used by Chainlink Functions
   uint256 public s_loansInUse;
   ///@notice variable to store the amount requested in withdraws
-  uint256 public s_withdrawRequests;
+  uint256 public s_currentWithdrawRequestsAmount;
   ///@notice variable to store the Chainlink Function DON Slot ID
   uint8 internal s_donHostedSecretsSlotId;
   ///@notice variable to store the Chainlink Function DON Secret Version

@@ -700,7 +700,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
    * @dev This function must be called only by an allowed Messenger & must not revert
    * @dev _totalUSDCCrossChainBalance MUST have 10**6 decimals.
    */
-  function _updateUsdcAmountEarned(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _lpToBurn, uint256 _totalUSDCCrossChainBalance) private {
+  function _updateUsdcAmountEarned(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _lpToBurn, uint256 _totalUSDCCrossChainBalance, bytes32 withdrawalId) private {
     uint256 numberOfPools = s_poolChainSelectors.length;
     uint256 totalCrossChainBalance = _totalUSDCCrossChainBalance + i_USDC.balanceOf(address(this)) + s_loansInUse + s_depositsOnTheWay;
 

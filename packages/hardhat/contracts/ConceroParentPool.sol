@@ -137,6 +137,14 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
   event ConceroParentPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
   ///@notice event emitted in depositLiquidity when a deposit is successful executed
   event ConceroParentPool_DepositInitiated(address indexed liquidityProvider, uint256 _amount, IERC20 _token, uint256 deadline);
+  ///@notice event emitted when a deposit is completed
+  event ConceroParentPool_DepositComplete(
+    address lpAddress,
+    bytes32 requestId,
+    uint256 usdcAmount,
+    uint256 _lpTokensToMint,
+    uint256 totalCrossChainLiquiditySnapshot
+  );
   ///@notice event emitted when a request is updated with the total USDC to withdraw
   event ConceroParentPool_RequestUpdated(address liquidityProvider);
   ///@notice event emitted when the Functions request return error
@@ -231,6 +239,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
   function takeLoan(address _token, uint256 _amount, address _receiver) external payable onlyProxyContext {
     if (msg.sender != i_infraProxy) revert ConceroParentPool_NotInfraProxy(msg.sender);
     if (_receiver == address(0)) revert ConceroParentPool_InvalidAddress();
+    //    if (_amount == 0) revert ConceroParentPool_AmountBelowMinimum(1);
 
     IERC20(_token).safeTransfer(_receiver, _amount);
     s_loansInUse += _amount;
@@ -268,7 +277,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
       deadline: _deadline
     });
 
-    // TODO: deadline timestamp needed
     //	  depositStruct:
     //    {
     //		reqType: enum
@@ -295,8 +303,13 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     i_USDC.safeTransferFrom(msg.sender, address(this), usdcAmount);
 
     _distributeLiquidityToChildPools(usdcAmount);
+
     uint256 _lpTokensToMint = _calculateLPTokensToMint(i_lp.totalSupply(), usdcAmount, totalCrossChainLiquiditySnapshot);
     i_lp.mint(lpAddress, _lpTokensToMint);
+
+    emit ConceroParentPool_DepositComplete(lpAddress, _depositRequestId, usdcAmount, _lpTokensToMint, totalCrossChainLiquiditySnapshot);
+    delete s_depositRequests[_depositRequestId];
+    delete s_clfRequests[_depositRequestId];
   }
 
   /**
@@ -317,7 +330,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     s_withdrawRequests[clfRequestId] = WithdrawRequest({
       lpAddress: msg.sender,
       totalCrossChainLiquiditySnapshot: 0,
-      lpSupplySnapshot: i_lp.totalSupply(), // may be removed?
+      lpSupplySnapshot: i_lp.totalSupply(),
       lpAmountToBurn: _lpAmount
     });
 
@@ -644,9 +657,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
       uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) + s_loansInUse; //todo: add s_pendingDepositTransfers
       request.totalCrossChainLiquiditySnapshot = (parentPoolLiquidity + childPoolsLiquidity);
     } else if (requestType == RequestType.startWithdrawal_getChildPoolsLiquidity) {
-      //      WithdrawRequest storage request = s_pendingWithdrawRequests[request.liquidityProvider];
-      //      uint256 usdcReserve = request.totalCrossChainLiquiditySnapshot + crossChainBalance;
-      //      _updateUsdcAmountEarned(request.liquidityProvider, request.lpSupplySnapshot, request.amount, childPoolsLiquidity);
+      WithdrawRequest storage request = s_pendingWithdrawRequests[request.liquidityProvider];
+      _updateUsdcAmountEarned(request.liquidityProvider, request.lpSupplySnapshot, request.amount, childPoolsLiquidity);
     }
   }
 

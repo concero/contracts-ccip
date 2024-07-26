@@ -5,8 +5,6 @@ import {Script, console2} from "../lib/forge-std/src/Script.sol";
 import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 
 contract ParentPoolDeploy is Script {
-
-    
     function run(
         address _proxy,
         address _link,
@@ -14,8 +12,8 @@ contract ParentPoolDeploy is Script {
         uint64 _subscriptionId,
         address _functionsRouter,
         address _ccipRouter,
-        address _usdc, 
-        address _lpToken, 
+        address _usdc,
+        address _lpToken,
         address _automation,
         address _orchestrator,
         address _owner

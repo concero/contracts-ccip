@@ -20,7 +20,7 @@ contract ParentPoolTest is Test {
     //==== Instantiate Contracts
     ConceroParentPool public masterPool;
     LPToken public lp;
-    
+
     //==== Instantiate Proxies
     ParentPoolProxy masterProxy;
     ITransparentUpgradeableProxy proxyInterfaceMaster;
@@ -73,7 +73,7 @@ contract ParentPoolTest is Test {
         //======= Deploy proxies
         masterProxy = masterProxyDeploy.run(address(lpDeploy), proxyOwner, "");
 
-        //======= Wraps on the interface to update later 
+        //======= Wraps on the interface to update later
         proxyInterfaceMaster = ITransparentUpgradeableProxy(address(masterProxy));
 
         //======= Liquidity Provider
@@ -124,7 +124,7 @@ contract ParentPoolTest is Test {
     function test_revertSetParentPool() public {
         vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_NotContractOwner.selector));
         wMaster.setConceroContractSender(mockDestinationChainSelector, address(mockChildPoolAddress), 1);
-        
+
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InvalidAddress.selector));
         wMaster.setConceroContractSender(mockDestinationChainSelector, address(0), 1);
@@ -145,7 +145,7 @@ contract ParentPoolTest is Test {
     function test_revertSetPools() public {
         vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_NotContractOwner.selector));
         wMaster.setPools(mockDestinationChainSelector, address(mockChildPoolAddress), false);
-        
+
         vm.prank(Tester);
         vm.expectEmit();
         emit ConceroParentPool_PoolReceiverUpdated(mockDestinationChainSelector, address(mockChildPoolAddress));
@@ -155,7 +155,7 @@ contract ParentPoolTest is Test {
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InvalidAddress.selector));
         wMaster.setPools(mockDestinationChainSelector, address(mockChildPoolAddress), false);
-        
+
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InvalidAddress.selector));
         wMaster.setPools(mockDestinationChainSelector, address(0), false);
@@ -172,7 +172,7 @@ contract ParentPoolTest is Test {
     //     wMaster.distributeLiquidity(fakeChainSelector, 10*10**6, distributeLiquidityRequestId);
     // }
 
-    ///orchestratorLoan///
+    ///takeLoan///
     error ConceroParentPool_ItsNotOrchestrator(address);
     error ConceroParentPool_InsufficientBalance();
     event ConceroParentPool_SuccessfulDeposited(address, uint256, address);
@@ -180,31 +180,31 @@ contract ParentPoolTest is Test {
     function test_orchestratorLoanRevert() external {
 
         vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_ItsNotOrchestrator.selector, address(this)));
-        wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
+        wMaster.takeLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
 
         vm.startPrank(Orchestrator);
         vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InvalidAddress.selector));
-        wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
+        wMaster.takeLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
 
         vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_InsufficientBalance.selector));
-        wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
+        wMaster.takeLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
 
         vm.startPrank(Orchestrator);
         vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_CallerIsNotTheProxy.selector, address(masterPool)));
-        masterPool.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
+        masterPool.takeLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
         vm.stopPrank();
 
         vm.prank(Tester);
         usdc.transfer(address(wMaster), USDC_INITIAL_BALANCE);
         vm.prank(Orchestrator);
-        wMaster.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
+        wMaster.takeLoan(address(usdc), USDC_INITIAL_BALANCE, address(this));
 
     }
 
     //It will revert on ccip call
     function test_depositLiquidityWithZeroCap() public {
         uint256 allowedAmountToDeposit = 150*10**6;
-        
+
         //===== Add a Fake pool
         vm.prank(Tester);
         wMaster.setPools(mockDestinationChainSelector, mockChildPoolAddress, false);
@@ -231,7 +231,7 @@ contract ParentPoolTest is Test {
     event ConceroParentPool_MasterPoolCapUpdated(uint256);
     function test_depositLiquidityRevert() public {
         uint256 allowedAmountToDeposit = 150*10**6;
-        
+
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_ThereIsNoPoolToDistribute.selector));
         wMaster.depositLiquidity(allowedAmountToDeposit);

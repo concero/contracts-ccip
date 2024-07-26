@@ -36,7 +36,7 @@ contract FakePool is CCIPReceiver {
    * @dev only the Orchestrator contract should be able to call this function
    * @dev for ether transfer, the _receiver need to be known and trusted
    */
-  function orchestratorLoan(address _token, uint256 _amount, address _receiver) external {
+  function takeLoan(address _token, uint256 _amount, address _receiver) external {
     if (msg.sender != i_proxy) revert ConceroPool_ItsNotAnOrchestrator(msg.sender);
     if (_receiver == address(0)) revert ConceroPool_InvalidAddress();
     if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroPool_InsufficientBalance();

@@ -16,7 +16,7 @@ import {USDC} from "../../Mocks/USDC.sol";
 contract ConceroChildPoolTest is Test {
     //==== Instantiate Contracts
     ConceroChildPool public childPool;
-    
+
     //==== Instantiate Proxies
     ChildPoolProxy childProxy;
     ITransparentUpgradeableProxy proxyInterfaceChild;
@@ -65,7 +65,7 @@ contract ConceroChildPoolTest is Test {
         //======= Deploy proxies
         childProxy = childProxyDeploy.run(address(childDeploy), proxyOwner, "");
 
-        //======= Wraps on the interface to update later 
+        //======= Wraps on the interface to update later
         proxyInterfaceChild = ITransparentUpgradeableProxy(address(childProxy));
 
         //======= Deploy MasterPool
@@ -102,17 +102,17 @@ contract ConceroChildPoolTest is Test {
     error ConceroChildPool_NotContractOwner();
     error ConceroChildPool_InvalidAddress();
     function test_setConceroContractSenderRevert() public {
-        
+
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_NotContractOwner.selector));
         wChild.setConceroContractSender(mockDestinationChainSelector, mockMasterPoolAddress, 1);
 
-        
+
         vm.prank(Tester);
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InvalidAddress.selector));
         wChild.setConceroContractSender(mockDestinationChainSelector, address(0), 1);
     }
 
-    //orchestratorLoan
+    //takeLoan
     event ConceroChildPool_LoanTaken(address receiver, uint256 amount);
     function test_childOrchestratorLoan() public {
         vm.prank(Tester);
@@ -123,7 +123,7 @@ contract ConceroChildPoolTest is Test {
         vm.prank(Orchestrator);
         vm.expectEmit();
         emit ConceroChildPool_LoanTaken(address(Orchestrator), USDC_INITIAL_BALANCE);
-        wChild.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(Orchestrator));
+        wChild.takeLoan(address(usdc), USDC_INITIAL_BALANCE, address(Orchestrator));
 
         assertEq(usdc.balanceOf(Orchestrator), USDC_INITIAL_BALANCE);
     }
@@ -136,26 +136,26 @@ contract ConceroChildPoolTest is Test {
         usdc.transfer(address(wChild), USDC_INITIAL_BALANCE);
 
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_CallerIsNotTheProxy.selector, address(childPool)));
-        childPool.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(Orchestrator));
+        childPool.takeLoan(address(usdc), USDC_INITIAL_BALANCE, address(Orchestrator));
 
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_CallerIsNotConcero.selector, address(this)));
-        wChild.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(Orchestrator));
+        wChild.takeLoan(address(usdc), USDC_INITIAL_BALANCE, address(Orchestrator));
 
         vm.prank(Orchestrator);
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InsufficientBalance.selector));
-        wChild.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE + 1, address(Orchestrator));
-        
+        wChild.takeLoan(address(usdc), USDC_INITIAL_BALANCE + 1, address(Orchestrator));
+
         vm.prank(Orchestrator);
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InvalidAddress.selector));
-        wChild.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
+        wChild.takeLoan(address(usdc), USDC_INITIAL_BALANCE, address(0));
     }
 
     function test_notProxyRevert() public {
         vm.prank(Orchestrator);
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_CallerIsNotTheProxy.selector, address(childPool)));
-        childPool.orchestratorLoan(address(usdc), USDC_INITIAL_BALANCE, address(Orchestrator));
+        childPool.takeLoan(address(usdc), USDC_INITIAL_BALANCE, address(Orchestrator));
     }
-    
+
     error ConceroChildPool_NotMessenger(address);
     function test_onlyMessengerCanCall() public {
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_NotMessenger.selector, address(this)));

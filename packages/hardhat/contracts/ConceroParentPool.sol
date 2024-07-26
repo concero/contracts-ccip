@@ -86,6 +86,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
   // TODO: Remove in production
   uint256 private constant WITHDRAW_DEADLINE_SECONDS = 60;
+  uint256 private constant DEPOSIT_DEADLINE_SECONDS = 60;
   //  uint256 private constant WITHDRAW_DEADLINE_SECONDS = 597_600;
   uint256 private constant CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS = 2108;
   uint256 private constant ARRAY_MANIPULATION = 10_000;
@@ -135,11 +136,11 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
   ///@notice event emitted when a Cross-chain message is sent.
   event ConceroParentPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
   ///@notice event emitted in depositLiquidity when a deposit is successful executed
-  event ConceroParentPool_DepositInitiated(address indexed liquidityProvider, uint256 _amount, IERC20 _token);
+  event ConceroParentPool_DepositInitiated(address indexed liquidityProvider, uint256 _amount, IERC20 _token, uint256 deadline);
   ///@notice event emitted when a request is updated with the total USDC to withdraw
   event ConceroParentPool_RequestUpdated(address liquidityProvider);
   ///@notice event emitted when the Functions request return error
-  event FunctionsRequestError(bytes32 requestId, RequestType requestType);
+  event ConceroParentPool_CLFRequestError(bytes32 requestId, RequestType requestType, bytes error);
   ///@notice event emitted when a Concero pool is added
   event ConceroParentPool_PoolReceiverUpdated(uint64 chainSelector, address pool);
   ///@notice event emitted when a allowed Cross-chain contract is updated
@@ -256,14 +257,15 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     args[1] = abi.encodePacked(s_ethersHashSum);
     args[2] = abi.encodePacked(FunctionsRequestType.getTotalPoolsBalance);
 
-    bytes32 requestId = _sendRequest(args, JS_CODE);
+    bytes32 clfRequestId = _sendRequest(args, JS_CODE);
+    s_clfRequests[clfRequestId] = RequestType.startDeposit_getChildPoolsLiquidity;
 
-    s_requests[requestId] = CLFRequest({
-      requestType: RequestType.startDeposit_getChildPoolsLiquidity,
-      liquidityProvider: msg.sender,
+    uint256 _deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
+    s_depositRequests[clfRequestId] = DepositRequest({
+      lpAddress: msg.sender,
       totalCrossChainLiquiditySnapshot: 0,
-      lpSupplySnapshot: i_lp.totalSupply(),
-      amount: _usdcAmount
+      usdcAmountToDeposit: _usdcAmount,
+      deadline: _deadline
     });
 
     // TODO: deadline timestamp needed
@@ -278,24 +280,23 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     //      isPending: bool - if functions request pending
     //    }
 
-    emit ConceroParentPool_DepositInitiated(msg.sender, _usdcAmount, i_USDC);
+    emit ConceroParentPool_DepositInitiated(msg.sender, _usdcAmount, i_USDC, _deadline);
   }
 
-  function completeDeposit(bytes32 _depositRequest) external {
-    CLFRequest storage request = s_requests[_depositRequest];
-    if (msg.sender != request.liquidityProvider) revert ConceroParentPool_NotAllowedToComplete();
-    // TODO: add check if request pending
+  function completeDeposit(bytes32 _depositRequestId) external {
+    DepositRequest storage request = s_depositRequests[_depositRequestId];
+    address lpAddress = request.lpAddress;
+    uint256 usdcAmount = request.usdcAmountToDeposit;
+    uint256 totalCrossChainLiquiditySnapshot = request.totalCrossChainLiquiditySnapshot;
 
-    uint256 numberOfPools = s_poolChainSelectors.length;
-    uint256 amountToDistribute = ((request.amount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
+    if (msg.sender != lpAddress) revert ConceroParentPool_NotAllowedToComplete();
+    if (totalCrossChainLiquiditySnapshot == 0) revert ConceroParentPool_ActiveRequestNotFulfilledYet();
 
-    request.totalCrossChainLiquiditySnapshot += s_moneyOnTheWay;
-    request.lpSupplySnapshot = i_lp.totalSupply();
+    i_USDC.safeTransferFrom(msg.sender, address(this), usdcAmount);
 
-    i_USDC.safeTransferFrom(msg.sender, address(this), request.amount);
-
-    _distributeLiquidity(amountToDistribute);
-    _updateDepositInfoAndMintLPTokens(request.liquidityProvider, request.lpSupplySnapshot, request.amount, request.totalCrossChainLiquiditySnapshot);
+    _distributeLiquidityToChildPools(usdcAmount);
+    uint256 _lpTokensToMint = _calculateLPTokensToMint(i_lp.totalSupply(), usdcAmount, totalCrossChainLiquiditySnapshot);
+    i_lp.mint(lpAddress, _lpTokensToMint);
   }
 
   /**
@@ -310,14 +311,14 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
 
-    bytes32 requestId = _sendRequest(args, JS_CODE);
+    bytes32 clfRequestId = _sendRequest(args, JS_CODE);
+    s_clfRequests[clfRequestId] = RequestType.startWithdrawal_getChildPoolsLiquidity;
 
-    s_requests[requestId] = CLFRequest({
-      requestType: RequestType.startWithdrawal_getChildPoolsLiquidity,
-      liquidityProvider: msg.sender,
+    s_withdrawRequests[clfRequestId] = WithdrawRequest({
+      lpAddress: msg.sender,
       totalCrossChainLiquiditySnapshot: 0,
-      lpSupplySnapshot: i_lp.totalSupply(),
-      amount: _lpAmount
+      lpSupplySnapshot: i_lp.totalSupply(), // may be removed?
+      lpAmountToBurn: _lpAmount
     });
 
     emit ConceroParentPool_WithdrawRequestInitiated(msg.sender, i_USDC, block.timestamp + WITHDRAW_DEADLINE_SECONDS);
@@ -373,7 +374,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
     for (uint256 i; i < numberOfPendingTX; ) {
       if (s_ccipDeposits[i].transactionId == _ccipMessageId) {
-        s_moneyOnTheWay = s_moneyOnTheWay - s_ccipDeposits[i].amount;
+        s_depositsOnTheWay = s_depositsOnTheWay - s_ccipDeposits[i].amount;
         s_ccipDeposits[i] = s_ccipDeposits[numberOfPendingTX - 1];
         s_ccipDeposits.pop();
         delete s_ccipDepositsMapping[_ccipMessageId];
@@ -549,12 +550,14 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
   /**
    * @notice helper function to distribute liquidity after LP deposits.
-   * @param _amountToDistribute amount of USDC should be distributed to the pools.
+   * @param _usdcAmountToDeposit amount of USDC should be distributed to the pools.
    */
-  function _distributeLiquidity(uint256 _amountToDistribute) internal {
-    uint256 numberOfPools = s_poolChainSelectors.length;
-    for (uint256 i; i < numberOfPools; ) {
-      _ccipSend(s_poolChainSelectors[i], _amountToDistribute);
+  function _distributeLiquidityToChildPools(uint256 _usdcAmountToDeposit) internal {
+    uint256 childPoolsCount = s_poolChainSelectors.length;
+    uint256 amountToDistribute = ((_usdcAmountToDeposit * PRECISION_HANDLER) / (childPoolsCount + 1)) / PRECISION_HANDLER;
+
+    for (uint256 i; i < childPoolsCount; ) {
+      _ccipSend(s_poolChainSelectors[i], amountToDistribute);
 
       unchecked {
         ++i;
@@ -579,7 +582,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
 
     CCIPPendingDeposits memory pending = CCIPPendingDeposits({transactionId: messageId, destinationChainSelector: _chainSelector, amount: _amountToDistribute});
-    s_moneyOnTheWay += _amountToDistribute;
+    s_depositsOnTheWay += _amountToDistribute;
     s_ccipDepositsMapping[messageId] = pending;
     s_ccipDeposits.push(pending);
 
@@ -622,21 +625,28 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
    * @dev response & err will never be empty or populated at same time.
    */
   function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
-    CLFRequest storage request = s_requests[requestId];
+    RequestType requestType = s_clfRequests[requestId];
 
     // TODO: mb handle deposit function error here
     if (err.length > 0) {
-      emit FunctionsRequestError(requestId, request.requestType);
+      if (requestType == RequestType.startDeposit_getChildPoolsLiquidity) {
+        delete s_depositRequests[requestId];
+      }
+
+      emit ConceroParentPool_CLFRequestError(requestId, requestType, err);
       return;
     }
 
     uint256 childPoolsLiquidity = abi.decode(response, (uint256));
 
-    if (request.requestType == RequestType.startDeposit_getChildPoolsLiquidity) {
-      request.totalCrossChainLiquiditySnapshot = (i_USDC.balanceOf(address(this)) + s_loansInUse + childPoolsLiquidity);
-    } else if (request.requestType == RequestType.startWithdrawal_getChildPoolsLiquidity) {
+    if (requestType == RequestType.startDeposit_getChildPoolsLiquidity) {
+      DepositRequest storage request = s_depositRequests[requestId];
+      uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) + s_loansInUse; //todo: add s_pendingDepositTransfers
+      request.totalCrossChainLiquiditySnapshot = (parentPoolLiquidity + childPoolsLiquidity);
+    } else if (requestType == RequestType.startWithdrawal_getChildPoolsLiquidity) {
+      //      WithdrawRequest storage request = s_pendingWithdrawRequests[request.liquidityProvider];
       //      uint256 usdcReserve = request.totalCrossChainLiquiditySnapshot + crossChainBalance;
-      _updateUsdcAmountEarned(request.liquidityProvider, request.lpSupplySnapshot, request.amount, childPoolsLiquidity);
+      //      _updateUsdcAmountEarned(request.liquidityProvider, request.lpSupplySnapshot, request.amount, childPoolsLiquidity);
     }
   }
 
@@ -645,31 +655,27 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
   ///////////////
   /**
    * @notice Function called by Chainlink Functions fulfillRequest to update deposit information
-   * @param _liquidityProvider The Address of the user that initiate the withdraw process
-   * @param _lpSupplyBeforeRequest the LP totalSupply() before request
+   * @param _totalLPSupply the LP totalSupply() before request
    * @param _usdcDeposited the amount of USDC deposited
-   * @param _totalUSDCCrossChain The total cross chain balance
+   * @param _totalUSDCCrossChainBalance The total cross chain balance
    * @dev This function must be called only by an allowed Messenger & must not revert
-   * @dev _totalUSDCCrossChain MUST have 10**6 decimals.
+   * @dev _totalUSDCCrossChainBalance MUST have 10**6 decimals.
    */
-  function _updateDepositInfoAndMintLPTokens(
-    address _liquidityProvider,
-    uint256 _lpSupplyBeforeRequest,
-    uint256 _usdcDeposited,
-    uint256 _totalUSDCCrossChain
-  ) private {
-    //_totalUSDCCrossChain == the sum of all chains balance + commits
+  function _calculateLPTokensToMint(uint256 _totalLPSupply, uint256 _usdcDeposited, uint256 _totalUSDCCrossChainBalance) private pure returns (uint256) {
+    //_totalUSDCCrossChainBalance == the sum of all chains balance + commits
 
-    uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(_totalUSDCCrossChain);
+    uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(_totalUSDCCrossChainBalance);
     uint256 amountDepositedConverted = _convertToLPTokenDecimals(_usdcDeposited);
 
     //N° lpTokens = (((Total USDC Liq + user deposit) * Total sToken) / Total USDC Liq) - Total sToken
-    //If less than ALLOWED, means it's zero.
-    uint256 lpTokensToMint = _lpSupplyBeforeRequest > ALLOWED
-      ? (((crossChainBalanceConverted + amountDepositedConverted) * _lpSupplyBeforeRequest) / crossChainBalanceConverted) - _lpSupplyBeforeRequest
-      : amountDepositedConverted;
+    uint256 lpTokensToMint;
 
-    i_lp.mint(_liquidityProvider, lpTokensToMint);
+    if (_totalLPSupply != 0) {
+      lpTokensToMint = (((crossChainBalanceConverted + amountDepositedConverted) * _totalLPSupply) / crossChainBalanceConverted) - _totalLPSupply;
+    } else {
+      lpTokensToMint = amountDepositedConverted;
+    }
+    return lpTokensToMint;
   }
 
   /**
@@ -680,11 +686,11 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
    * @param _lpToBurn the LP Amount a Liquidity Provider wants to burn
    * @param _totalUSDCCrossChainBalance The total cross chain balance
    * @dev This function must be called only by an allowed Messenger & must not revert
-   * @dev _totalUSDCCrossChain MUST have 10**6 decimals.
+   * @dev _totalUSDCCrossChainBalance MUST have 10**6 decimals.
    */
   function _updateUsdcAmountEarned(address _liquidityProvider, uint256 _lpSupplyBeforeRequest, uint256 _lpToBurn, uint256 _totalUSDCCrossChainBalance) private {
     uint256 numberOfPools = s_poolChainSelectors.length;
-    uint256 totalCrossChainBalance = _totalUSDCCrossChainBalance + i_USDC.balanceOf(address(this)) + s_loansInUse + s_moneyOnTheWay;
+    uint256 totalCrossChainBalance = _totalUSDCCrossChainBalance + i_USDC.balanceOf(address(this)) + s_loansInUse + s_depositsOnTheWay;
 
     //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
     uint256 amountToWithdraw = (((_convertToLPTokenDecimals(totalCrossChainBalance) * _lpToBurn) * PRECISION_HANDLER) / _lpSupplyBeforeRequest) /

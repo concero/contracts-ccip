@@ -36,6 +36,7 @@ interface IParentPool is IPool {
     startWithdrawal_getChildPoolsLiquidity //Start Withdrawals
   }
 
+  // todo: delete
   struct CLFRequest {
     RequestType requestType;
     address liquidityProvider; //address to check and pool the index from the array
@@ -44,6 +45,19 @@ interface IParentPool is IPool {
     uint256 amount; //USDC or LP according to the request
   }
 
+  struct WithdrawRequest {
+    address lpAddress;
+    uint256 totalCrossChainLiquiditySnapshot;
+    uint256 lpSupplySnapshot; // may be removed?
+    uint256 lpAmountToBurn; // no
+  }
+
+  struct DepositRequest {
+    address lpAddress;
+    uint256 totalCrossChainLiquiditySnapshot;
+    uint256 usdcAmountToDeposit;
+    uint256 deadline;
+  }
   ////////////////////////////////////////////////////////
   //////////////////////// EVENTS ////////////////////////
   ////////////////////////////////////////////////////////

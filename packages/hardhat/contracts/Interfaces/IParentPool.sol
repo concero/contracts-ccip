@@ -48,8 +48,8 @@ interface IParentPool is IPool {
   struct WithdrawRequest {
     address lpAddress;
     uint256 totalCrossChainLiquiditySnapshot;
-    uint256 lpSupplySnapshot; // may be removed?
-    uint256 lpAmountToBurn; // no
+    uint256 lpSupplySnapshot;
+    uint256 lpAmountToBurn;
   }
 
   struct DepositRequest {

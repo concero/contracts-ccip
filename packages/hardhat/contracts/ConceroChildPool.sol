@@ -20,7 +20,7 @@ error ConceroChildPool_InsufficientBalance();
 error ConceroChildPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
 ///@notice error emitted when the caller is not the Orchestrator
 error ConceroChildPool_CallerIsNotTheProxy(address delegatedCaller);
-///@notice error emitted when a not-concero address call orchestratorLoan
+///@notice error emitted when a not-concero address call takeLoan
 error ConceroChildPool_CallerIsNotConcero(address caller);
 ///@notice error emitted when the receiver is the address(0)
 error ConceroChildPool_InvalidAddress();
@@ -67,7 +67,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
   event ConceroChildPool_CCIPReceived(bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, address token, uint256 amount);
   ///@notice event emitted when a Cross-chain message is sent.
   event ConceroChildPool_MessageSent(bytes32 messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees);
-  ///@notice event emitted in OrchestratorLoan when a loan is taken
+  ///@notice event emitted in takeLoan when a loan is taken
   event ConceroChildPool_LoanTaken(address receiver, uint256 amount);
   ///@notice event emitted when a allowed Cross-chain contract is updated
   event ConceroChildPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
@@ -185,7 +185,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
    * @dev only the Orchestrator contract should be able to call this function
    * @dev for ether transfer, the _receiver need to be known and trusted
    */
-  function orchestratorLoan(address _token, uint256 _amount, address _receiver) external isProxy {
+  function takeLoan(address _token, uint256 _amount, address _receiver) external isProxy {
     if (msg.sender != i_infraProxy) revert ConceroChildPool_CallerIsNotConcero(msg.sender);
     if (_amount > IERC20(_token).balanceOf(address(this))) revert ConceroChildPool_InsufficientBalance();
     if (_receiver == address(0)) revert ConceroChildPool_InvalidAddress();

@@ -22,7 +22,7 @@ interface IPool {
   }
 
   ///@notice Struct to hold ccip sent transactions
-  struct CCIPPendingDeposits{
+  struct CCIPPendingDeposits {
     bytes32 transactionId;
     uint64 destinationChainSelector;
     uint256 amount;
@@ -30,14 +30,14 @@ interface IPool {
 
   ///@notice Struct to track Functions Requests Type
   enum RequestType {
-    GetTotalUSDC, //Deposits
-    PerformWithdrawal //Start Withdrawals
+    startDeposit_getChildPoolsLiquidity, //Deposits
+    startWithdrawal_getChildPoolsLiquidity //Start Withdrawals
   }
 
   struct CLFRequest {
     RequestType requestType;
     address liquidityProvider; //address to check and pool the index from the array
-    uint256 usdcAmountForThisRequest;
+    uint256 totalCrossChainLiquiditySnapshot;
     uint256 lpSupplyForThisRequest;
     uint256 amount; //USDC or LP according to the request
   }
@@ -53,7 +53,7 @@ interface IPool {
   /////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////FUNCTIONS//////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  function orchestratorLoan(address _token, uint256 _amount, address _receiver) external;
+  function takeLoan(address _token, uint256 _amount, address _receiver) external;
 
   function getPendingWithdrawRequest(address _liquidityProvider) external view returns (WithdrawRequests memory);
 }

@@ -960,7 +960,7 @@ contract ProtocolTestnet is Test {
     function test_orchestratorLoanRevertBecauseOfAmount() public setters {
         vm.prank(address(proxyDst));
         vm.expectRevert(abi.encodeWithSelector(ConceroChildPool_InsufficientBalance.selector));
-        wChild.orchestratorLoan(address(aUSDC), 10 * 10**18, Tester);
+        wChild.takeLoan(address(aUSDC), 10 * 10**18, Tester);
     }
 
     // Callback isn't performed on forked environment
@@ -1100,7 +1100,7 @@ contract ProtocolTestnet is Test {
 
         vm.prank(Tester);
         vm.expectEmit();
-        emit FunctionsRequestError(request, IPool.RequestType.GetTotalUSDC);
+        emit FunctionsRequestError(request, IPool.RequestType.startDeposit_getChildPoolsLiquidity);
         wMaster.helperFulfillCLFRequest(request, "", abi.encode("failed"));
 
         assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance);
@@ -1138,7 +1138,7 @@ contract ProtocolTestnet is Test {
         IPool.CLFRequest memory requestCLF = wMaster.getCLFRequest(request);
 
         //First Deposit
-        assertEq(requestCLF.usdcAmountForThisRequest, depositEnoughAmount);
+        assertEq(requestCLF.totalCrossChainLiquiditySnapshot, depositEnoughAmount);
         assertEq(requestCLF.liquidityProvider, LP);
         assertEq(wMaster.s_moneyOnTheWay(), 0);
 

@@ -227,8 +227,6 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
   }
 
-
-
   function _handleDstFunctionsResponse(Request storage request) internal {
     Transaction storage transaction = s_transactions[request.ccipMessageId];
 
@@ -241,14 +239,14 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
       IDexSwap.SwapData[] memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData[]));
       swapData[0].fromAmount = amount;
 
-      IPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, address(this));
+      IPool(i_poolProxy).takeLoan(tokenReceived, amount, address(this));
 
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
         abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, transaction.recipient)
       );
       if (swapSuccess == false) revert TXReleasedFailed(swapError);
     } else {
-      IPool(i_poolProxy).orchestratorLoan(tokenReceived, amount, transaction.recipient);
+      IPool(i_poolProxy).takeLoan(tokenReceived, amount, transaction.recipient);
     }
 
     emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
@@ -274,13 +272,13 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
   /////////////////////////////
   /// VIEW & PURE FUNCTIONS ///
   /////////////////////////////
-	function _swapDataToBytes(IDexSwap.SwapData[] memory _swapData) private pure returns (bytes memory _encodedData) {
-		if (_swapData.length == 0) {
-			_encodedData = new bytes(1);
-		} else {
-			_encodedData = abi.encode(_swapData);
-		}
-	}
+  function _swapDataToBytes(IDexSwap.SwapData[] memory _swapData) private pure returns (bytes memory _encodedData) {
+    if (_swapData.length == 0) {
+      _encodedData = new bytes(1);
+    } else {
+      _encodedData = abi.encode(_swapData);
+    }
+  }
 
   function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
     return amount / 1000;

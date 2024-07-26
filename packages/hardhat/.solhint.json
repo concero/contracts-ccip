@@ -1,7 +1,6 @@
 {
   "extends": "solhint:recommended",
   "plugins": [
-    "prettier",
     "chainlink-solidity"
   ],
   "rules": {

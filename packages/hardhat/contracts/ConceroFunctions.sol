@@ -130,6 +130,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     args[9] = abi.encodePacked(uint8(token));
     args[10] = abi.encodePacked(amount);
     args[11] = abi.encodePacked(CHAIN_SELECTOR);
+    //todo: generate dstSwapDataHashSum, add to args, send to CLF to compare sums
 
     bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT);
 
@@ -232,7 +233,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
 
     _confirmTX(request.ccipMessageId, transaction);
 
-    address tokenReceived = getToken(transaction.token, i_chainIndex);
+    address tokenReceived = getUSDCAddressByChainIndex(transaction.token, i_chainIndex);
     uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
     if (transaction.dstSwapData.length > 1) {
@@ -242,9 +243,9 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
       IPool(i_poolProxy).takeLoan(tokenReceived, amount, address(this));
 
       (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-        abi.encodeWithSelector(IDexSwap.conceroEntry.selector, swapData, transaction.recipient)
+        abi.encodeWithSelector(IDexSwap.entrypoint.selector, swapData, transaction.recipient)
       );
-      if (swapSuccess == false) revert TXReleasedFailed(swapError);
+      if (!swapSuccess) revert TXReleasedFailed(swapError);
     } else {
       IPool(i_poolProxy).takeLoan(tokenReceived, amount, transaction.recipient);
     }

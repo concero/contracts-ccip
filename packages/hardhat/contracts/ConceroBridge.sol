@@ -71,7 +71,7 @@ contract ConceroBridge is ConceroCCIP {
    */
   function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] memory dstSwapData) external payable {
     if (address(this) != i_proxy) revert Concero_ItsNotProxy(address(this));
-    address fromToken = getToken(bridgeData.tokenType, i_chainIndex);
+    address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
     uint256 totalSrcFee = _convertToUSDCDecimals(_getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount));
 
     if (bridgeData.amount < totalSrcFee) {
@@ -127,7 +127,7 @@ contract ConceroBridge is ConceroCCIP {
    */
   function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector, uint256 _amount) public view returns (uint256) {
     Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
-      getToken(tokenType, i_chainIndex),
+      getUSDCAddressByChainIndex(tokenType, i_chainIndex),
       _amount,
       address(this),
       (_amount / 1000),

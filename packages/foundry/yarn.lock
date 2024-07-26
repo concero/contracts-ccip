@@ -388,10 +388,20 @@
     proper-lockfile "^4.1.1"
     solidity-ast "^0.4.51"
 
+"@prettier/sync@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@prettier/sync/-/sync-0.3.0.tgz#91f2cfc23490a21586d1cf89c6f72157c000ca1e"
+  integrity sha512-3dcmCyAxIcxy036h1I7MQU/uEEBq8oLwf1CE3xeze+MPlgkdlb/+w6rGR/1dhp6Hqi17fRS6nvwnOzkESxEkOw==
+
 "@scroll-tech/contracts@0.1.0":
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/@scroll-tech/contracts/-/contracts-0.1.0.tgz#ccea8db1b3df7d740e4b7843ac01b5bd25b4438b"
   integrity sha512-aBbDOc3WB/WveZdpJYcrfvMYMz7ZTEiW8M9XMJLba8p9FAR5KGYB/cV+8+EUsq3MKt7C1BfR+WnXoTVdvwIY6w==
+
+"@solidity-parser/parser@^0.17.0":
+  version "0.17.0"
+  resolved "https://registry.yarnpkg.com/@solidity-parser/parser/-/parser-0.17.0.tgz#52a2fcc97ff609f72011014e4c5b485ec52243ef"
+  integrity sha512-Nko8R0/kUo391jsEHHxrGM07QFdnPGvlmox4rmH0kNiNAashItAilhy4Mv4pK5gQmW5f4sXAF58fwJbmlkGcVw==
 
 "@types/bn.js@^5.1.0":
   version "5.1.5"
@@ -940,6 +950,11 @@ evp_bytestokey@^1.0.3:
     md5.js "^1.3.4"
     safe-buffer "^5.1.1"
 
+fast-diff@^1.1.2:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/fast-diff/-/fast-diff-1.3.0.tgz#ece407fa550a64d638536cd727e129c61616e0f0"
+  integrity sha512-VxPP4NqbUjj6MaAOafWeUn2cXWLcCtljklUtZf0Ind4XQ+QPtmA0b18zZy0jIQx+ExRVCR/ZQpBmik5lXshNsw==
+
 fill-range@^7.1.1:
   version "7.1.1"
   resolved "https://registry.yarnpkg.com/fill-range/-/fill-range-7.1.1.tgz#44265d3cac07e3ea7dc247516380643754a05292"
@@ -1470,6 +1485,27 @@ possible-typed-array-names@^1.0.0:
   resolved "https://registry.yarnpkg.com/possible-typed-array-names/-/possible-typed-array-names-1.0.0.tgz#89bb63c6fada2c3e90adc4a647beeeb39cc7bf8f"
   integrity sha512-d7Uw+eZoloe0EHDIYoe+bQ5WXnGMOpmiZFTuMWCwpjzzkL2nTjcKiAk4hh8TjnGye2TwWOk3UXucZ+3rbmBa8Q==
 
+prettier-linter-helpers@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/prettier-linter-helpers/-/prettier-linter-helpers-1.0.0.tgz#d23d41fe1375646de2d0104d3454a3008802cf7b"
+  integrity sha512-GbK2cP9nraSSUF9N2XwUwqfzlAFlMNYYl+ShE/V+H8a9uNl/oUqB1w2EL54Jh0OlyRSd8RfWYJ3coVS4TROP2w==
+  dependencies:
+    fast-diff "^1.1.2"
+
+prettier-plugin-solidity@^1.3.1:
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/prettier-plugin-solidity/-/prettier-plugin-solidity-1.3.1.tgz#59944d3155b249f7f234dee29f433524b9a4abcf"
+  integrity sha512-MN4OP5I2gHAzHZG1wcuJl0FsLS3c4Cc5494bbg+6oQWBPuEamjwDvmGfFMZ6NFzsh3Efd9UUxeT7ImgjNH4ozA==
+  dependencies:
+    "@solidity-parser/parser" "^0.17.0"
+    semver "^7.5.4"
+    solidity-comments-extractor "^0.0.8"
+
+prettier@^3.3.3:
+  version "3.3.3"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.3.3.tgz#30c54fe0be0d8d12e6ae61dbb10109ea00d53105"
+  integrity sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==
+
 proper-lockfile@^4.1.1:
   version "4.1.2"
   resolved "https://registry.yarnpkg.com/proper-lockfile/-/proper-lockfile-4.1.2.tgz#c8b9de2af6b2f1601067f98e01ac66baa223141f"
@@ -1575,6 +1611,11 @@ semver@^5.5.0, semver@^5.6.0:
   resolved "https://registry.yarnpkg.com/semver/-/semver-5.7.2.tgz#48d55db737c3287cd4835e17fa13feace1c41ef8"
   integrity sha512-cBznnQ9KjJqU67B52RMC65CMarK2600WFnbkcaiwWq3xy/5haFJlshgnpjovMVJ+Hff49d8GEn0b87C5pDQ10g==
 
+semver@^7.5.4:
+  version "7.6.3"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.3.tgz#980f7b5550bc175fb4dc09403085627f9eb33143"
+  integrity sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A==
+
 set-function-length@^1.2.1:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/set-function-length/-/set-function-length-1.2.2.tgz#aac72314198eaed975cf77b2c3b6b880695e5449"
@@ -1642,12 +1683,25 @@ slash@^2.0.0:
   resolved "https://registry.yarnpkg.com/slash/-/slash-2.0.0.tgz#de552851a1759df3a8f206535442f5ec4ddeab44"
   integrity sha512-ZYKh3Wh2z1PpEXWr0MpSBZ0V6mZHAQfYevttO11c51CaWjGTaadiKZ+wVt1PbMlDV5qhMFslpZCemhwOK7C89A==
 
+solhint-plugin-prettier@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/solhint-plugin-prettier/-/solhint-plugin-prettier-0.1.0.tgz#2f46999e26d6c6bc80281c22a7a21e381175bef7"
+  integrity sha512-SDOTSM6tZxZ6hamrzl3GUgzF77FM6jZplgL2plFBclj/OjKP8Z3eIPojKU73gRr0MvOS8ACZILn8a5g0VTz/Gw==
+  dependencies:
+    "@prettier/sync" "^0.3.0"
+    prettier-linter-helpers "^1.0.0"
+
 solidity-ast@^0.4.51:
   version "0.4.56"
   resolved "https://registry.yarnpkg.com/solidity-ast/-/solidity-ast-0.4.56.tgz#94fe296f12e8de1a3bed319bc06db8d05a113d7a"
   integrity sha512-HgmsA/Gfklm/M8GFbCX/J1qkVH0spXHgALCNZ8fA8x5X+MFdn/8CP2gr5OVyXjXw6RZTPC/Sxl2RUDQOXyNMeA==
   dependencies:
     array.prototype.findlast "^1.2.2"
+
+solidity-comments-extractor@^0.0.8:
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/solidity-comments-extractor/-/solidity-comments-extractor-0.0.8.tgz#f6e148ab0c49f30c1abcbecb8b8df01ed8e879f8"
+  integrity sha512-htM7Vn6LhHreR+EglVMd2s+sZhcXAirB1Zlyrv5zBuTxieCvjfnRpd7iZk75m/u6NOlEyQ94C6TWbBn2cY7w8g==
 
 string.prototype.trim@^1.2.9:
   version "1.2.9"

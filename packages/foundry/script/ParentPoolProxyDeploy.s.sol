@@ -5,7 +5,6 @@ import {Script, console} from "forge-std/Script.sol";
 import {ParentPoolProxy} from "contracts/Proxy/ParentPoolProxy.sol";
 
 contract ParentPoolProxyDeploy is Script {
-
     function run(
         address _logic,
         address _admin,

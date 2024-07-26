@@ -232,7 +232,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     if (_receiver == address(0)) revert ConceroParentPool_InvalidAddress();
 
     IERC20(_token).safeTransfer(_receiver, _amount);
-    s_loansInUse = s_loansInUse + _amount;
+    s_loansInUse += _amount;
   }
 
   /**
@@ -289,7 +289,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
     uint256 numberOfPools = s_poolChainSelectors.length;
     uint256 amountToDistribute = ((request.amount * PRECISION_HANDLER) / (numberOfPools + 1)) / PRECISION_HANDLER;
 
-    request.totalCrossChainLiquiditySnapshot = request.totalCrossChainLiquiditySnapshot + s_moneyOnTheWay;
+    request.totalCrossChainLiquiditySnapshot += s_moneyOnTheWay;
     request.lpSupplyForThisRequest = i_lp.totalSupply();
 
     i_USDC.safeTransferFrom(msg.sender, address(this), request.amount);
@@ -525,7 +525,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
         //We don't subtract it here because the loan was not performed. And the value is not summed into the `s_loanInUse` variable.
       } else {
         //subtract the amount from the committed total amount
-        s_loansInUse = s_loansInUse - amountMinusFees;
+        s_loansInUse -= amountMinusFees;
       }
     } else if (_liquidityProvider != address(0)) {
       IPool.WithdrawRequests storage request = s_pendingWithdrawRequests[_liquidityProvider];
@@ -535,7 +535,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
         ? request.amountToReceive - any2EvmMessage.destTokenAmounts[0].amount
         : 0;
 
-      s_currentWithdrawRequestsAmount = s_currentWithdrawRequestsAmount + any2EvmMessage.destTokenAmounts[0].amount;
+      s_currentWithdrawRequestsAmount += any2EvmMessage.destTokenAmounts[0].amount;
     }
 
     emit ConceroParentPool_CCIPReceived(
@@ -583,7 +583,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
       destinationChainSelector: _chainSelector,
       amount: _amountToDistribute
     });
-    s_moneyOnTheWay = s_moneyOnTheWay + _amountToDistribute;
+    s_moneyOnTheWay += _amountToDistribute;
     s_ccipDepositsMapping[messageId] = pending;
     s_ccipDeposits.push(pending);
 
@@ -682,7 +682,7 @@ contract ConceroParentPool is CCIPReceiver, FunctionsClient, ParentPoolStorage {
    * @param _liquidityProvider Liquidity Provider address to update info.
    * @param _lpSupplyBeforeRequest the LP totalSupply() before request
    * @param _lpToBurn the LP Amount a Liquidity Provider wants to burn
-   * @param _totalUSDCCrossChain The total cross chain balance
+   * @param _totalUSDCCrossChainBalance The total cross chain balance
    * @dev This function must be called only by an allowed Messenger & must not revert
    * @dev _totalUSDCCrossChain MUST have 10**6 decimals.
    */

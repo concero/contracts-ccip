@@ -418,7 +418,7 @@ contract InfraIntegration is Test {
         wEth.mint(User, 10 * 10**18);
     }
 
-    /// IN ORDER TO RUN THESE TESTS, THE USDC ON `getToken` FUNCTION NEED TO BE UPDATED TO THE LOCAL VERSION
+    /// IN ORDER TO RUN THESE TESTS, THE USDC ON `getUSDCAddressByChainIndex` FUNCTION NEED TO BE UPDATED TO THE LOCAL VERSION
     // ADDRESS: 0x2e234DAe75C793f67A35089C9d99245E1C58470b
     // And comment out the line 79 of Concero.sol. Functions doesn't work in this environment.
     // function test_bridgeWithoutFunctions() public {

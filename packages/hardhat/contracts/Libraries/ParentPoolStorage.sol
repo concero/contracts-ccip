@@ -23,7 +23,7 @@ contract ParentPoolStorage {
   ///@notice variable to store Ethers Hashsum
   bytes32 internal s_ethersHashSum;
   ///@notice variable to store not processed amounts deposited by LPs
-  uint256 public s_moneyOnTheWay;
+  uint256 public s_depositsOnTheWay;
   ///@notice gap to reserve storage in the contract for future variable additions
   uint256[49] __gap;
 
@@ -40,6 +40,7 @@ contract ParentPoolStorage {
   ///@notice Mapping to keep track of Liquidity Providers withdraw requests
   mapping(address _liquidityProvider => IParentPool.WithdrawRequests) public s_pendingWithdrawRequests;
   ///@notice Mapping to keep track of Chainlink Functions requests
+  // todo : delete this mapping below at redeploy
   mapping(bytes32 requestId => IParentPool.CLFRequest) public s_requests;
 
   ////////////////////////
@@ -49,4 +50,8 @@ contract ParentPoolStorage {
   mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;
   mapping(bytes32 messageId => IParentPool.CCIPPendingDeposits) internal s_ccipDepositsMapping;
   IParentPool.CCIPPendingDeposits[] s_ccipDeposits;
+
+  mapping(bytes32 clfReqId => IParentPool.RequestType) public s_clfRequests;
+  mapping(bytes32 clfReqId => IParentPool.WithdrawRequest) public s_withdrawRequests;
+  mapping(bytes32 clfReqId => IParentPool.DepositRequest) public s_depositRequests;
 }

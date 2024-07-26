@@ -11,6 +11,7 @@ import {IParentPool} from "./Interfaces/IParentPool.sol";
 error ConceroAutomation_CallerNotAllowed(address caller);
 error ConceroAutomation_WithdrawAlreadyTriggered(address liquidityProvider);
 error ConceroAutomation_CLFFallbackError(bytes32 requestId);
+error ConceroAutomation__WithdrawRequestPerformed();
 
 contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ownable {
   ///////////////////////
@@ -21,6 +22,8 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   struct PerformWithdrawRequest {
     address liquidityProvider;
     uint256 amount;
+    bytes32 withdrawId;
+    bool failed;
   }
 
   ///////////////////////////////////////////////////////////
@@ -31,8 +34,6 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   ///////////////
   ///@notice Chainlink Functions Gas Limit
   uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
-  ///@notice Chainlink Function Gas Overhead
-  uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000; //@audit do we need this? It's not being used.
   ///@notice JS Code for Chainlink Functions
   string internal constant JS_CODE =
     "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'feat/pool-rebalancing' + '/packages/hardhat/tasks/CLFScripts/dist/pool/collectLiquidity.min.js'; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
@@ -92,6 +93,8 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
   event ConceroAutomation_HashSumUpdated(bytes32 hashSum);
   ///@notice event emitted when the Ethers HashSum is updated
   event ConceroAutomation_EthersHashSumUpdated(bytes32 hashSum);
+  ///@notice event emitted when a LP retries a withdrawal request
+  event ConceroAutomation_RetryPerformed(bytes32 reqId);
 
   /////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////FUNCTIONS//////////////////////////////////
@@ -179,7 +182,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    * @return _performData the payload we need to send through performUpkeep to Chainlink functions.
    * @dev this function must be called only by the Chainlink Forwarder unique address
    */
-  function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool _upkeepNeeded, bytes memory _performData) {
+  function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool, bytes memory) {
     uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
 
     for (uint256 i; i < requestsNumber; ++i) {
@@ -187,24 +190,11 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
       IParentPool.WithdrawRequests memory pendingRequest = IParentPool(i_masterPoolProxy).getPendingWithdrawRequest(liquidityProvider);
 
       if (s_withdrawTriggered[liquidityProvider] == false && block.timestamp > pendingRequest.deadline) {
-        _performData = abi.encode(liquidityProvider, pendingRequest.amountToRequest);
-        _upkeepNeeded = true;
+        bytes memory _performData = abi.encode(liquidityProvider, pendingRequest.amountToRequest, pendingRequest.withdrawId);
+        bool _upkeepNeeded = true;
+        return (_upkeepNeeded, _performData);
       }
     }
-  }
-
-  // TODO: REMOVE IN PRODUCTION!!!!!!!!
-  function deleteRequest(address _liquidityProvider) external onlyOwner {
-    uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
-
-    for (uint256 i; i < requestsNumber; ++i) {
-      if (s_pendingWithdrawRequestsCLA[i] == _liquidityProvider) {
-        s_pendingWithdrawRequestsCLA[i] = s_pendingWithdrawRequestsCLA[s_pendingWithdrawRequestsCLA.length - 1];
-        s_pendingWithdrawRequestsCLA.pop();
-      }
-    }
-
-    s_withdrawTriggered[_liquidityProvider] = false;
   }
 
   /**
@@ -214,7 +204,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
    */
   function performUpkeep(bytes calldata _performData) external override {
     if (msg.sender != s_forwarderAddress) revert ConceroAutomation_CallerNotAllowed(msg.sender);
-    (address liquidityProvider, uint256 amountToRequest) = abi.decode(_performData, (address, uint256));
+    (address liquidityProvider, uint256 amountToRequest, bytes32 withdrawId) = abi.decode(_performData, (address, uint256, bytes32));
 
     if (s_withdrawTriggered[liquidityProvider] == true) {
       revert ConceroAutomation_WithdrawAlreadyTriggered(liquidityProvider);
@@ -222,17 +212,40 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
       s_withdrawTriggered[liquidityProvider] = true;
     }
 
-    bytes[] memory args = new bytes[](4);
+    bytes[] memory args = new bytes[](5);
     args[0] = abi.encodePacked(s_hashSum);
     args[1] = abi.encodePacked(s_ethersHashSum);
     args[2] = abi.encodePacked(liquidityProvider);
     args[3] = abi.encodePacked(amountToRequest);
+    args[4] = abi.encodePacked(withdrawId);
 
     bytes32 reqId = _sendRequest(args, JS_CODE);
 
-    s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest});
+    s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProvider, amount: amountToRequest, withdrawId: withdrawId, failed: false});
 
     emit ConceroAutomation_UpkeepPerformed(reqId);
+  }
+
+  function retryPerformWithdrawalRequest(bytes32 _requestId) external {
+    PerformWithdrawRequest memory functionRequest = s_functionsRequests[_requestId];
+
+    address liquidityProviderAddress = functionRequest.liquidityProvider;
+    
+    if (msg.sender != liquidityProviderAddress || s_withdrawTriggered[liquidityProviderAddress] != true || functionRequest.failed == false || functionRequest.withdrawId == 0)
+      revert ConceroAutomation__WithdrawRequestPerformed();
+
+    bytes[] memory args = new bytes[](5);
+    args[0] = abi.encodePacked(s_hashSum);
+    args[1] = abi.encodePacked(s_ethersHashSum);
+    args[2] = abi.encodePacked(liquidityProviderAddress);
+    args[3] = abi.encodePacked(functionRequest.amount);
+    args[4] = abi.encodePacked(functionRequest.withdrawId);
+
+    bytes32 reqId = _sendRequest(args, JS_CODE);
+
+    s_functionsRequests[reqId] = PerformWithdrawRequest({liquidityProvider: liquidityProviderAddress, amount: functionRequest.amount, withdrawId: functionRequest.withdrawId, failed: false});
+
+    emit ConceroAutomation_RetryPerformed(reqId);
   }
 
   //////////////
@@ -264,7 +277,8 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
     if (err.length > 0) {
       emit FunctionsRequestError(requestId);
-      revert ConceroAutomation_CLFFallbackError(requestId);
+      functionRequest.failed = true;
+      return;
       // todo: there is no fallback mechanism if CLF fails to trigger liquidity pull from child pools.
       // todo: if CLF fails, the LP will not be able to retry the withdrawal request.
     }
@@ -290,5 +304,10 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
   function getPendingWithdrawRequestsLength() public view returns (uint256) {
     return s_pendingWithdrawRequestsCLA.length;
+  }
+
+  //TODO: Remove after testing
+  function helperFulfillCLFRequest(bytes32 requestId, bytes memory response, bytes memory err) external onlyOwner {
+    fulfillRequest(requestId, response, err);
   }
 }

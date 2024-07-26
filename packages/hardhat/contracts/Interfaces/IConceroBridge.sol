@@ -4,12 +4,12 @@ pragma solidity ^0.8.20;
 import {IDexSwap} from "./IDexSwap.sol";
 import {IStorage} from "./IStorage.sol";
 
-interface IConcero is IStorage {
+interface IConceroBridge is IStorage {
   function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] memory dstSwapData) external;
 
   function fulfillRequestWrapper(bytes32 requestId, bytes memory response, bytes memory err) external;
 
-  function getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) external view returns (uint256);
+  function getSrcTotalFeeInUSDC(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) external view returns (uint256);
 
   function addUnconfirmedTX(
     bytes32 ccipMessageId,

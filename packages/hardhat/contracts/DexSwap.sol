@@ -43,43 +43,37 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
   ///////////////
   ///CONSTANTS///
   ///////////////
-  ///@notice removing magic-numbers
-  uint256 private constant BASE_CHAIN_ID = 8453; //Testnet
-  uint256 private constant AVAX_CHAIN_ID = 43114; //Testnet
+  uint256 private constant BASE_CHAIN_ID = 8453;
+  uint256 private constant AVAX_CHAIN_ID = 43114;
 
   ///////////////
   ///IMMUTABLE///
   ///////////////
-  ///@notice immutable variable to infra-proxy address.
   address private immutable i_proxy;
-  ///@notice immutable variable to hold wEth address
 
-  /////////////////////////////////////////////////////////////////
-  ////////////////////////////FUNCTIONS////////////////////////////
-  /////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////
+  //////////////////////// EVENTS ////////////////////////
+  ////////////////////////////////////////////////////////
+  ///@notice event emitted when the orchestrator address is updated
+  event DexSwap_OrchestratorContractUpdated(address previousAddress, address orchestrator);
+  ///@notice event emitted when value locked in the contract is removed
+  event DexSwap_RemovingDust(address receiver, uint256 amount);
+
   constructor(address _proxy) {
     i_proxy = _proxy;
   }
 
-  /**
-   * @notice Entry point function for the Orchestrator to take loans
-   * @param _swapData a struct array that contains dex information.
-   * @dev only the Orchestrator contract should be able to call this function
-   */
-
-  // TODO: rename to entrypoint
-  function conceroEntry(IDexSwap.SwapData[] memory _swapData, address _recipient) external payable {
+  function entrypoint(IDexSwap.SwapData[] memory _swapData, address _recipient) external payable {
     if (address(this) != i_proxy) revert DexSwap_ItsNotOrchestrator(address(this));
+
     uint256 swapDataLength = _swapData.length;
+    address destinationAddress = address(this);
 
     for (uint256 i; i < swapDataLength; ) {
       uint256 previousBalance = LibConcero.getBalance(_swapData[i].toToken, address(this));
-      address destinationAddress;
 
-      if (i == swapDataLength - 1 && _recipient != address(this)) {
+      if (i == swapDataLength - 1) {
         destinationAddress = _recipient;
-      } else {
-        destinationAddress = address(this);
       }
 
       _performSwap(_swapData[i], destinationAddress);
@@ -93,7 +87,6 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
       if (i + 1 <= swapDataLength - 1) {
         uint256 postBalance = LibConcero.getBalance(_swapData[i].toToken, address(this));
         uint256 newBalance = postBalance - previousBalance;
-        //Remove the second if because it will always be >= than the amountOutMin.
         _swapData[i + 1].fromAmount = newBalance;
       }
 
@@ -117,6 +110,7 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
     }
   }
 
+  // STOPPED REVIEWING HERE (24/07/24)
   function _wrapNative(IDexSwap.SwapData memory _swapData) private {
     address wrappedNative = getWrappedNative();
     IWETH(wrappedNative).deposit{value: _swapData.fromAmount}();
@@ -128,7 +122,7 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
     IWETH(_swapData.fromToken).withdraw(_swapData.fromAmount);
 
     (bool sent, ) = _recipient.call{value: _swapData.fromAmount}("");
-    if (sent == false) {
+    if (!sent) {
       revert DexSwap_UnwrapWNativeFailed();
     }
   }

@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {IPool} from "contracts/Interfaces/IPool.sol";
+import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 
 contract ParentPoolStorage {
   /////////////////////
@@ -38,15 +38,15 @@ contract ParentPoolStorage {
   ///@notice Mapping to keep track of allowed pool senders
   mapping(uint64 chainSelector => mapping(address poolAddress => uint256)) public s_contractsToReceiveFrom;
   ///@notice Mapping to keep track of Liquidity Providers withdraw requests
-  mapping(address _liquidityProvider => IPool.WithdrawRequests) public s_pendingWithdrawRequests;
+  mapping(address _liquidityProvider => IParentPool.WithdrawRequests) public s_pendingWithdrawRequests;
   ///@notice Mapping to keep track of Chainlink Functions requests
-  mapping(bytes32 requestId => IPool.CLFRequest) public s_requests;
+  mapping(bytes32 requestId => IParentPool.CLFRequest) public s_requests;
 
   ////////////////////////
   ////NEW STORAGE VARS////
   ////////////////////////
 
   mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;
-  mapping(bytes32 messageId => IPool.CCIPPendingDeposits) internal s_ccipDepositsMapping;
-  IPool.CCIPPendingDeposits[] s_ccipDeposits;
+  mapping(bytes32 messageId => IParentPool.CCIPPendingDeposits) internal s_ccipDepositsMapping;
+  IParentPool.CCIPPendingDeposits[] s_ccipDeposits;
 }

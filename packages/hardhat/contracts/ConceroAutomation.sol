@@ -2,12 +2,10 @@
 pragma solidity 0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-
-import {IPool} from "./Interfaces/IPool.sol";
+import {IParentPool} from "./Interfaces/IParentPool.sol";
 
 ///@notice error emitted when the caller is not the owner.
 error ConceroAutomation_CallerNotAllowed(address caller);
@@ -186,7 +184,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
     for (uint256 i; i < requestsNumber; ++i) {
       address liquidityProvider = s_pendingWithdrawRequestsCLA[i];
-      IPool.WithdrawRequests memory pendingRequest = IPool(i_masterPoolProxy).getPendingWithdrawRequest(liquidityProvider);
+      IParentPool.WithdrawRequests memory pendingRequest = IParentPool(i_masterPoolProxy).getPendingWithdrawRequest(liquidityProvider);
 
       if (s_withdrawTriggered[liquidityProvider] == false && block.timestamp > pendingRequest.deadline) {
         _performData = abi.encode(liquidityProvider, pendingRequest.amountToRequest);

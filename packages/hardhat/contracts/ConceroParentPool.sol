@@ -416,10 +416,11 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         if (amountToWithdraw == 0) revert ConceroParentPool_ActiveRequestNotFulfilledYet();
 
-        if (withdrawRequest.remainingLiquidityFromChildPools > 0)
+        if (withdrawRequest.remainingLiquidityFromChildPools > 0) {
             revert ConceroParentPool_WithdrawalAmountNotReady(
                 withdrawRequest.remainingLiquidityFromChildPools
             );
+        }
 
         s_currentWithdrawRequestsAmount = s_currentWithdrawRequestsAmount > amountToWithdraw
             ? s_currentWithdrawRequestsAmount - amountToWithdraw
@@ -800,7 +801,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ) internal override {
         RequestType requestType = s_clfRequestTypes[requestId];
 
-        // TODO: mb handle deposit function error here
         if (err.length > 0) {
             if (requestType == RequestType.startDeposit_getChildPoolsLiquidity) {
                 delete s_depositRequests[requestId];
@@ -810,7 +810,10 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             return;
         }
 
-        uint256 childPoolsLiquidity = abi.decode(response, (uint256));
+        (uint256 childPoolsLiquidity, uint8[] memory depositsOnTheWayStatuses) = abi.decode(
+            response,
+            (uint256, uint8[])
+        );
 
         if (requestType == RequestType.startDeposit_getChildPoolsLiquidity) {
             DepositRequest storage request = s_depositRequests[requestId];
@@ -818,6 +821,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
                 s_loansInUse +
                 s_depositsOnTheWay;
             request.totalCrossChainLiquiditySnapshot = (parentPoolLiquidity + childPoolsLiquidity);
+            _updateDepositsOnTheWay(depositsOnTheWayStatuses);
         } else if (requestType == RequestType.startWithdrawal_getChildPoolsLiquidity) {
             bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
@@ -826,8 +830,42 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     }
 
     ///////////////
-    /// PRIVATE ///
+    ////INTERNAL///
     ///////////////
+
+    function _updateDepositsOnTheWay(uint8[] memory depositsOnTheWayStatuses) internal {
+        if (depositsOnTheWayStatuses.length == 0) return;
+
+        uint256 depositsOnTheWayArrayLength = s_depositsOnTheWayArray.length;
+        uint256 depositsOnTheWayStatusesLength = depositsOnTheWayStatuses.length;
+        uint64 maxIterationsCount = MAX_DEPOSIT_REQUESTS_COUNT / 2;
+
+        for (uint256 i; i < depositsOnTheWayArrayLength; ) {
+            for (uint256 k; k < depositsOnTheWayStatusesLength; ) {
+                if (s_depositsOnTheWayArray[i].id == depositsOnTheWayStatuses[k]) {
+                    s_depositsOnTheWay -= s_depositsOnTheWayArray[i].amount;
+                    s_depositsOnTheWayArray[i] = s_depositsOnTheWayArray[
+                        --depositsOnTheWayArrayLength
+                    ];
+                    s_depositsOnTheWayArray.pop();
+                    break;
+                }
+
+                unchecked {
+                    ++k;
+                }
+
+                if (i + k >= maxIterationsCount) {
+                    return;
+                }
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
     /**
      * @notice Function called by Chainlink Functions fulfillRequest to update deposit information
      * @param _totalLPSupply the LP totalSupply() before request

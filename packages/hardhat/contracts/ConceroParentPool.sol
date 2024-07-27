@@ -674,7 +674,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         uint256 childPoolsCount = s_poolChainSelectors.length;
         uint256 amountToDistribute = ((_usdcAmountToDeposit * PRECISION_HANDLER) /
             (childPoolsCount + 1)) / PRECISION_HANDLER;
-
         bytes32[] ccipMessageIds;
 
         for (uint256 i; i < childPoolsCount; ) {

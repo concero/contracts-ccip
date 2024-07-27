@@ -1472,10 +1472,10 @@ contract ProtocolTestnet is Test {
 
         assertEq(positiveResponse, true); //Because the request don't exist, but the address is on the array
 
-        (address LiquidityProvider, uint256 amountToRequest) = abi.decode(performData,(address, uint256));
+        (address LiquidityProvider, uint256 liquidityRequestedFromEachPool) = abi.decode(performData,(address, uint256));
 
         assertEq(LiquidityProvider, User);
-        assertEq(amountToRequest, 0);
+        assertEq(liquidityRequestedFromEachPool, 0);
     }
 
     event ConceroAutomation_UpkeepPerformed(bytes32);
@@ -1639,12 +1639,12 @@ contract ProtocolTestnet is Test {
         console.log(entries.length); //Always 4
 
         performReqId = abi.decode(entries[3].data, (bytes32)); //decode the last index that is the new CLF requestId
-        
+
         console.logBytes32(performReqId);
 
         vm.prank(Tester);
         automation.helperFulfillCLFRequest(performReqId, new bytes(0), new bytes(0));
-        
+
         ///====== Retry a successful TX
         vm.prank(LP);
         vm.expectRevert(abi.encodeWithSelector(ConceroAutomation__WithdrawRequestPerformed.selector));

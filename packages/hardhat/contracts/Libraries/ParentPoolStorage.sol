@@ -68,6 +68,7 @@ contract ParentPoolStorage {
         bytes8 id;
         uint64 chainSelector;
         bytes32 ccipMessageId;
+        uint256 amount;
     }
     DepositOnTheWay[] public s_depositsOnTheWayArray;
 }

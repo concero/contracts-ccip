@@ -44,8 +44,8 @@ contract ParentPoolStorage {
     //    mapping(address _liquidityProvider => IParentPool.WithdrawRequest)
     //        public s_pendingWithdrawRequests;
     ///@notice Mapping to keep track of Chainlink Functions requests
-    // todo : delete this mapping below at redeploy
-    mapping(bytes32 requestId => IParentPool.CLFRequest) public s_requests;
+    // todo : delete
+    //    mapping(bytes32 requestId => IParentPool.CLFRequest) public s_requests;
 
     ////////////////////////
     ////NEW STORAGE VARS////

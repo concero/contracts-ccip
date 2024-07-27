@@ -23,6 +23,7 @@ contract ParentPoolStorage {
     ///@notice variable to store Ethers Hashsum
     bytes32 internal s_ethersHashSum;
     ///@notice variable to store not processed amounts deposited by LPs
+    // TODO: mb remove this variable
     uint256 public s_depositsOnTheWay;
     ///@notice gap to reserve storage in the contract for future variable additions
     uint256[49] __gap;
@@ -59,18 +60,6 @@ contract ParentPoolStorage {
     mapping(bytes32 clfReqId => IParentPool.WithdrawRequest) public s_withdrawRequests;
     mapping(bytes32 clfReqId => IParentPool.DepositRequest) public s_depositRequests;
 
-    //  struct DepositOnTheWay {
-    //    bytes32 ccipMessageId;
-    //    uint64 chainSelector;
-    //  }
-    //  mapping(bytes8 => DepositOnTheWay) public s_depositsOnTheWayMap;
-    //  bytes8[] public s_depositsOnTheWayReservedIds;
-
-    struct DepositOnTheWay {
-        bytes8 id;
-        uint64 chainSelector;
-        bytes32 ccipMessageId;
-        uint256 amount;
-    }
-    DepositOnTheWay[] public s_depositsOnTheWayArray;
+    IParentPool.DepositOnTheWay[] internal s_depositsOnTheWayArray;
+    uint8 internal s_latestDepositOnTheWayId;
 }

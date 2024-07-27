@@ -8,14 +8,14 @@ interface IParentPool is IPool {
     ///TYPE DECLARATIONS///
     ///////////////////////
     ///@notice ConceroPool Request
-    struct WithdrawRequests {
-        uint256 amountEarned;
-        uint256 amountToBurn;
-        uint256 amountToRequest;
-        uint256 amountToReceive;
-        address token;
-        uint256 deadline;
-    }
+    //    struct WithdrawRequests {
+    //        uint256 amountToWithdraw;
+    //        uint256 lpAmountToBurn;
+    //        uint256 liquidityRequestedFromEachPool;
+    //        uint256 remainingLiquidityFromChildPools;
+    //        address token;
+    //        uint256 deadline;
+    //    }
 
     ///@notice `ccipSend` to distribute liquidity
     struct Pools {
@@ -50,7 +50,11 @@ interface IParentPool is IPool {
         uint256 totalCrossChainLiquiditySnapshot;
         uint256 lpSupplySnapshot;
         uint256 lpAmountToBurn;
-        uint256 triggerTimestamp;
+        //
+        uint256 amountToWithdraw;
+        uint256 liquidityRequestedFromEachPool;
+        uint256 remainingLiquidityFromChildPools;
+        uint256 triggeredAtTimestamp;
     }
 
     struct DepositRequest {
@@ -60,12 +64,13 @@ interface IParentPool is IPool {
         uint256 deadline;
     }
 
-    struct DepositOnTheWay {
-        uint8 id;
-        uint64 chainSelector;
-        bytes32 ccipMessageId;
-        uint256 amount;
-    }
+	struct DepositOnTheWay {
+		uint8 id;
+		uint64 chainSelector;
+		bytes32 ccipMessageId;
+		uint256 amount;
+	}
+
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
@@ -82,5 +87,9 @@ interface IParentPool is IPool {
     /////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////FUNCTIONS//////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////
-    function getPendingWithdrawRequest(bytes32 _id) external view returns (WithdrawRequest memory);
+    function getWithdrawalRequestById(
+        bytes32 _withdrawalId
+    ) external view returns (WithdrawRequest memory);
+
+    function getWithdrawalIdByLPAddress(address lpAddress) external view returns (bytes32);
 }

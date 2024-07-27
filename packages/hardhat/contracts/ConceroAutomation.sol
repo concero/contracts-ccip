@@ -66,7 +66,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     ///STORAGE///
     /////////////
     ///@notice array to store the withdraw requests of users
-    address[] public s_pendingWithdrawRequestsCLA;
+    address[] public s_withdrawingLPAddresses;
 
     ///@notice Mapping to keep track of Chainlink Functions requests
     mapping(bytes32 requestId => PerformWithdrawRequest) public s_functionsRequests;
@@ -163,16 +163,16 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     }
 
     /**
-     * @notice Function to add new withdraw requests to CLA monitoring system
-     * @param _liquidityProvider the WithdrawRequests populated address
+     * @notice Function to add new withdraw request to CLA monitoring system
+     * @param _lpAddress the liquidity provider address
      * @dev this function should only be called by the ConceroPool.sol
      */
-    function addPendingWithdrawal(address _liquidityProvider) external {
-        if (i_masterPoolProxy != msg.sender) revert ConceroAutomation_CallerNotAllowed(msg.sender);
+    function addPendingWithdrawal(address _lpAddress) external {
+        if (msg.sender != i_masterPoolProxy) revert ConceroAutomation_CallerNotAllowed(msg.sender);
 
-        s_pendingWithdrawRequestsCLA.push(_liquidityProvider);
+        s_withdrawingLPAddresses.push(_lpAddress);
 
-        emit ConceroAutomation_RequestAdded(_liquidityProvider);
+        emit ConceroAutomation_RequestAdded(_lpAddress);
     }
 
     /**
@@ -185,21 +185,25 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     function checkUpkeep(
         bytes calldata /* checkData */
     ) external view override returns (bool, bytes memory) {
-        uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
+        uint256 withdrawalRequestsCount = s_withdrawingLPAddresses.length;
 
-        for (uint256 i; i < requestsNumber; ++i) {
-            address liquidityProvider = s_pendingWithdrawRequestsCLA[i];
-            IParentPool.WithdrawRequest memory pendingRequest = IParentPool(i_masterPoolProxy)
-                .getPendingWithdrawRequest(liquidityProvider);
+        for (uint256 i; i < withdrawalRequestsCount; ++i) {
+            address lpAddress = s_withdrawingLPAddresses[i];
+            bytes32 withdrawalId = IParentPool(i_masterPoolProxy).getWithdrawalIdByLPAddress(
+                lpAddress
+            );
+
+            IParentPool.WithdrawRequest memory withdrawalRequest = IParentPool(i_masterPoolProxy)
+                .getWithdrawalRequestById(withdrawalId);
 
             if (
-                s_withdrawTriggered[liquidityProvider] == false &&
-                block.timestamp > pendingRequest.triggerTimestamp
+                s_withdrawTriggered[lpAddress] == false &&
+                block.timestamp > withdrawalRequest.triggeredAtTimestamp
             ) {
                 bytes memory _performData = abi.encode(
-                    liquidityProvider,
-                    pendingRequest.amountToRequest,
-                    pendingRequest.withdrawId
+                    lpAddress,
+                    withdrawalRequest.liquidityRequestedFromEachPool,
+                    withdrawalId
                 );
                 bool _upkeepNeeded = true;
                 return (_upkeepNeeded, _performData);
@@ -215,10 +219,11 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
      */
     function performUpkeep(bytes calldata _performData) external override {
         if (msg.sender != s_forwarderAddress) revert ConceroAutomation_CallerNotAllowed(msg.sender);
-        (address liquidityProvider, uint256 amountToRequest, bytes32 withdrawId) = abi.decode(
-            _performData,
-            (address, uint256, bytes32)
-        );
+        (
+            address liquidityProvider,
+            uint256 liquidityRequestedFromEachPool,
+            bytes32 withdrawId
+        ) = abi.decode(_performData, (address, uint256, bytes32));
 
         if (s_withdrawTriggered[liquidityProvider] == true) {
             revert ConceroAutomation_WithdrawAlreadyTriggered(liquidityProvider);
@@ -230,14 +235,14 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
         args[0] = abi.encodePacked(s_hashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(liquidityProvider);
-        args[3] = abi.encodePacked(amountToRequest);
+        args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
         args[4] = abi.encodePacked(withdrawId);
 
         bytes32 reqId = _sendRequest(args, JS_CODE);
 
         s_functionsRequests[reqId] = PerformWithdrawRequest({
             liquidityProvider: liquidityProvider,
-            amount: amountToRequest,
+            amount: liquidityRequestedFromEachPool,
             withdrawId: withdrawId,
             failed: false
         });
@@ -323,14 +328,14 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
         s_withdrawTriggered[liquidityProvider] = false;
 
-        uint256 requestsNumber = s_pendingWithdrawRequestsCLA.length;
+        uint256 requestsNumber = s_withdrawingLPAddresses.length;
 
         for (uint256 i; i < requestsNumber; ++i) {
-            if (s_pendingWithdrawRequestsCLA[i] == liquidityProvider) {
-                s_pendingWithdrawRequestsCLA[i] = s_pendingWithdrawRequestsCLA[
-                    s_pendingWithdrawRequestsCLA.length - 1
+            if (s_withdrawingLPAddresses[i] == liquidityProvider) {
+                s_withdrawingLPAddresses[i] = s_withdrawingLPAddresses[
+                    s_withdrawingLPAddresses.length - 1
                 ];
-                s_pendingWithdrawRequestsCLA.pop();
+                s_withdrawingLPAddresses.pop();
             }
         }
     }
@@ -339,11 +344,11 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     ///PURE & VIEW FUNCTIONS///
     ///////////////////////////
     function getPendingRequests() external view returns (address[] memory _requests) {
-        _requests = s_pendingWithdrawRequestsCLA;
+        _requests = s_withdrawingLPAddresses;
     }
 
     function getPendingWithdrawRequestsLength() public view returns (uint256) {
-        return s_pendingWithdrawRequestsCLA.length;
+        return s_withdrawingLPAddresses.length;
     }
 
     //TODO: Remove after testing

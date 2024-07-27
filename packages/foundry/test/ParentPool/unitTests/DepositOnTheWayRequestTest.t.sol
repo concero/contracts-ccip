@@ -6,7 +6,7 @@ import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
 import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {ForkType, CreateAndSwitchToForkTest} from "../../utils/CreateAndSwitchToFork.t.sol";
 
-contract AddDepositOnTheWayRequestTest is ConceroParentPool, CreateAndSwitchToForkTest {
+contract DepositOnTheWayRequestTest is ConceroParentPool, CreateAndSwitchToForkTest {
     constructor()
         ConceroParentPool(
             address(0),
@@ -23,9 +23,9 @@ contract AddDepositOnTheWayRequestTest is ConceroParentPool, CreateAndSwitchToFo
         )
     {}
 
-    function test() public {
-        _fillDepositsRequestArray();
-
+    function test_AddDepositOnTheWay() public {
+        _fillDepositsRequestArray(MAX_DEPOSIT_REQUESTS_COUNT);
+        console.log(s_depositsOnTheWayArray.length);
         _deleteDepositOnTheWayRequestByIndex(4);
         _addDepositOnTheWayRequest(bytes32(0), 0, 100);
 
@@ -37,8 +37,33 @@ contract AddDepositOnTheWayRequestTest is ConceroParentPool, CreateAndSwitchToFo
         assert(lastDepositOnTheWay.id == expectedLastDepositId);
     }
 
-    function _fillDepositsRequestArray() private {
-        for (uint256 i = 0; i <= MAX_DEPOSIT_REQUESTS_COUNT; i++) {
+    function test_UpdateDepositsOnTheWay() public {
+        uint8[] memory depositsOnTheWayStatuses = new uint8[](3);
+
+        uint256 maxDepositsRequestsCount = MAX_DEPOSIT_REQUESTS_COUNT / 2 - 15;
+
+        _fillDepositsRequestArray(maxDepositsRequestsCount);
+
+        depositsOnTheWayStatuses[0] = 1;
+        depositsOnTheWayStatuses[1] = 5;
+        depositsOnTheWayStatuses[2] = 3;
+
+        uint256 gasBefore = gasleft();
+        _updateDepositsOnTheWay(depositsOnTheWayStatuses);
+        uint256 gasAfter = gasleft();
+
+        uint256 gasUsed = gasBefore - gasAfter;
+        console.log("gasUsed: ", gasUsed);
+
+        assert(gasUsed < 200_000);
+    }
+
+    ////////////////////////
+    /// Helper functions///
+    ///////////////////////
+
+    function _fillDepositsRequestArray(uint256 count) private {
+        for (uint256 i = 0; i <= count; i++) {
             _addDepositOnTheWayRequest(bytes32(0), 0, 100);
         }
     }
@@ -48,5 +73,11 @@ contract AddDepositOnTheWayRequestTest is ConceroParentPool, CreateAndSwitchToFo
             s_depositsOnTheWayArray.length - 1
         ];
         s_depositsOnTheWayArray.pop();
+    }
+
+    function _clearDepositsOnTheWay() private {
+        for (uint256 i = 0; i < s_depositsOnTheWayArray.length; i++) {
+            s_depositsOnTheWayArray.pop();
+        }
     }
 }

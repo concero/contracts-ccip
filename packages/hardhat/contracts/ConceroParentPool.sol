@@ -911,8 +911,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         uint256 _amount
     ) internal {
         uint8 id = s_latestDepositOnTheWayId < MAX_DEPOSIT_REQUESTS_COUNT
-            ? s_latestDepositOnTheWayId++
-            : _findSmallestUnusedId();
+            ? ++s_latestDepositOnTheWayId
+            : _findLowestUnusedId();
 
         s_depositsOnTheWayArray.push(
             DepositOnTheWay({
@@ -924,7 +924,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         );
     }
 
-    function _findSmallestUnusedId() private view returns (uint8) {
+    function _findLowestUnusedId() private view returns (uint8) {
         DepositOnTheWay[] memory depositsOnTheWayArray = s_depositsOnTheWayArray;
         uint256 depositsOnTheWayArrayLength = depositsOnTheWayArray.length;
 

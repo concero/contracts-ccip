@@ -7,8 +7,6 @@ import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {ForkType, CreateAndSwitchToForkTest} from "../../utils/CreateAndSwitchToFork.t.sol";
 
 contract AddDepositOnTheWayRequestTest is ConceroParentPool, CreateAndSwitchToForkTest {
-    uint256 private baseFork;
-
     constructor()
         ConceroParentPool(
             address(0),
@@ -24,10 +22,6 @@ contract AddDepositOnTheWayRequestTest is ConceroParentPool, CreateAndSwitchToFo
             address(msg.sender)
         )
     {}
-
-    function setUp() public {
-        switchToFork(ForkType.BASE);
-    }
 
     function test() public {
         _fillDepositsRequestArray();

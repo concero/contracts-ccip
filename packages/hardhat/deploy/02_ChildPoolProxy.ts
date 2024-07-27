@@ -22,11 +22,7 @@ const deployChildProxy: DeployFunction = async function (hre: HardhatRuntimeEnvi
 
   if (name !== "hardhat" && name !== "localhost") {
     log(`ChildPoolProxy deployed to ${name} to: ${deployChildProxy.address}`, "deployChildPoolProxy");
-    updateEnvVariable(
-      `CHILD_POOL_PROXY_${networkEnvKeys[name]}`,
-      deployChildProxy.address,
-      "../../../.env.deployments",
-    );
+    updateEnvVariable(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`, deployChildProxy.address, "../../../.env.deployments");
   }
 };
 

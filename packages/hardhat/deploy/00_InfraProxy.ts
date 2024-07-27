@@ -28,11 +28,7 @@ const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEn
 
   if (name !== "hardhat" && name !== "localhost") {
     log(`InfraProxy deployed to ${name} to: ${conceroProxyDeployment.address}`, "deployInfraProxy");
-    updateEnvVariable(
-      `CONCERO_PROXY_${networkEnvKeys[name]}`,
-      conceroProxyDeployment.address,
-      "../../../.env.deployments",
-    );
+    updateEnvVariable(`CONCERO_PROXY_${networkEnvKeys[name]}`, conceroProxyDeployment.address, "../../../.env.deployments");
   }
 };
 

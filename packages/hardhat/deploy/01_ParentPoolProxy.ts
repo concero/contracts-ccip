@@ -23,11 +23,7 @@ const deployParentProxy: DeployFunction = async function (hre: HardhatRuntimeEnv
 
   if (name !== "hardhat" && name !== "localhost") {
     log(`ParentProxy deployed to ${name} to: ${deployParentProxy.address}`, "deployParentProxy");
-    updateEnvVariable(
-      `PARENT_POOL_PROXY_${networkEnvKeys[name]}`,
-      deployParentProxy.address,
-      "../../../.env.deployments",
-    );
+    updateEnvVariable(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`, deployParentProxy.address, "../../../.env.deployments");
   }
 };
 

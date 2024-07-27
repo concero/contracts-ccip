@@ -37,13 +37,13 @@ interface IParentPool is IPool {
     }
 
     // todo: delete
-    struct CLFRequest {
-        RequestType requestType;
-        address liquidityProvider; //address to check and pool the index from the array
-        uint256 totalCrossChainLiquiditySnapshot;
-        uint256 lpSupplySnapshot;
-        uint256 amount; //USDC or LP according to the request
-    }
+    //    struct CLFRequest {
+    //        RequestType requestType;
+    //        address liquidityProvider; //address to check and pool the index from the array
+    //        uint256 totalCrossChainLiquiditySnapshot;
+    //        uint256 lpSupplySnapshot;
+    //        uint256 amount; //USDC or LP according to the request
+    //    }
 
     struct WithdrawRequest {
         address lpAddress;
@@ -61,15 +61,16 @@ interface IParentPool is IPool {
         address lpAddress;
         uint256 totalCrossChainLiquiditySnapshot;
         uint256 usdcAmountToDeposit;
+        uint256 pendingDepositTransfersSnapshot;
         uint256 deadline;
     }
 
-	struct DepositOnTheWay {
-		uint8 id;
-		uint64 chainSelector;
-		bytes32 ccipMessageId;
-		uint256 amount;
-	}
+    struct DepositOnTheWay {
+        uint8 id;
+        uint64 chainSelector;
+        bytes32 ccipMessageId;
+        uint256 amount;
+    }
 
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////

@@ -13,34 +13,21 @@ const deployConceroOrchestrator: DeployFunction = async function (hre: HardhatRu
   const conceroDexSwapAddress = getEnvVar(`CONCERO_DEX_SWAP_${networkEnvKeys[name]}`);
   const conceroAddress = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`);
   const conceroPoolAddress =
-    name === "base" || name === "baseSepolia"
-      ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`)
-      : getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`);
+    name === "base" || name === "baseSepolia" ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`) : getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`);
   const conceroProxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`);
 
   console.log("Deploying ConceroOrchestrator...");
 
   const conceroProxyDeployment = (await deploy("Orchestrator", {
     from: deployer,
-    args: [
-      functionsRouter,
-      conceroDexSwapAddress,
-      conceroAddress,
-      conceroPoolAddress,
-      conceroProxyAddress,
-      conceroChainIndex,
-    ],
+    args: [functionsRouter, conceroDexSwapAddress, conceroAddress, conceroPoolAddress, conceroProxyAddress, conceroChainIndex],
     log: true,
     autoMine: true,
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {
     log(`ConceroOrchestrator deployed to ${name} to: ${conceroProxyDeployment.address}`, "deployConceroOrchestrator");
-    updateEnvVariable(
-      `CONCERO_ORCHESTRATOR_${networkEnvKeys[name]}`,
-      conceroProxyDeployment.address,
-      "../../../.env.deployments",
-    );
+    updateEnvVariable(`CONCERO_ORCHESTRATOR_${networkEnvKeys[name]}`, conceroProxyDeployment.address, "../../../.env.deployments");
   }
 };
 

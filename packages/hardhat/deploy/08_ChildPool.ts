@@ -17,11 +17,7 @@ interface ConstructorArgs {
   owner?: string;
 }
 
-const deployChildPool: DeployFunction = async function (
-  hre: HardhatRuntimeEnvironment,
-  constructorArgs: ConstructorArgs = {},
-  isMainnet = false,
-) {
+const deployChildPool: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}, isMainnet = false) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
@@ -29,9 +25,7 @@ const deployChildPool: DeployFunction = async function (
   const { linkToken, ccipRouter, chainSelector } = chains[name];
 
   const baseChainSelector = isMainnet ? CNetworks.base.chainSelector : CNetworks.baseSepolia.chainSelector;
-  const baseParentPoolProxy = isMainnet
-    ? getEnvVar(`PARENT_POOL_PROXY_BASE`)
-    : getEnvVar(`PARENT_POOL_PROXY_BASE_SEPOLIA`);
+  const baseParentPoolProxy = isMainnet ? getEnvVar(`PARENT_POOL_PROXY_BASE`) : getEnvVar(`PARENT_POOL_PROXY_BASE_SEPOLIA`);
 
   const defaultArgs = {
     conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),

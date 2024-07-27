@@ -59,4 +59,19 @@ contract ParentPoolStorage {
     mapping(bytes32 clfReqId => IParentPool.RequestType) public s_clfRequestTypes;
     mapping(bytes32 clfReqId => IParentPool.WithdrawRequest) public s_withdrawRequests;
     mapping(bytes32 clfReqId => IParentPool.DepositRequest) public s_depositRequests;
+
+    //  struct DepositOnTheWay {
+    //    bytes32 ccipMessageId;
+    //    uint64 chainSelector;
+    //  }
+    //  mapping(bytes8 => DepositOnTheWay) public s_depositsOnTheWayMap;
+    //  bytes8[] public s_depositsOnTheWayReservedIds;
+
+    struct DepositOnTheWay {
+        bytes8 id;
+        uint64 chainSelector;
+        bytes32 ccipMessageId;
+        uint256 amount;
+    }
+    DepositOnTheWay[] public s_depositsOnTheWayArray;
 }

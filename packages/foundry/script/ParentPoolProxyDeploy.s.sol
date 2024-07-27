@@ -9,14 +9,10 @@ contract ParentPoolProxyDeploy is Script {
         address _logic,
         address _admin,
         bytes memory _data
-    ) public returns(ParentPoolProxy proxy){
-
+    ) public returns (ParentPoolProxy proxy) {
         vm.startBroadcast();
-        proxy = new ParentPoolProxy(
-            _logic,
-            _admin,
-            _data
-        );
+        proxy = new ParentPoolProxy(_logic, _admin, _data);
+
         vm.stopBroadcast();
     }
 }

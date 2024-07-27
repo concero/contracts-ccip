@@ -53,7 +53,9 @@ contract ParentPoolStorage {
     mapping(bytes32 messageId => IParentPool.CCIPPendingDeposits) internal s_ccipDepositsMapping;
     IParentPool.CCIPPendingDeposits[] s_ccipDeposits;
 
-    mapping(bytes32 clfReqId => IParentPool.RequestType) public s_clfRequests;
+    mapping(bytes32 clfReqId => bytes32 withdrawalId) public s_withdrawalIdByCLFRequestId;
+
+    mapping(bytes32 clfReqId => IParentPool.RequestType) public s_clfRequestTypes;
     mapping(bytes32 clfReqId => IParentPool.WithdrawRequest) public s_withdrawRequests;
     mapping(bytes32 clfReqId => IParentPool.DepositRequest) public s_depositRequests;
 

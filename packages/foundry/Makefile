@@ -17,6 +17,6 @@ args =
 all: test
 
 test:
-	forge test -vvvvv $(args)
+	forge test $(args)
 
 .PHONY: all test

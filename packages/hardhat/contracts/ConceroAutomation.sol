@@ -189,12 +189,12 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
 
         for (uint256 i; i < requestsNumber; ++i) {
             address liquidityProvider = s_pendingWithdrawRequestsCLA[i];
-            IParentPool.WithdrawRequests memory pendingRequest = IParentPool(i_masterPoolProxy)
+            IParentPool.WithdrawRequest memory pendingRequest = IParentPool(i_masterPoolProxy)
                 .getPendingWithdrawRequest(liquidityProvider);
 
             if (
                 s_withdrawTriggered[liquidityProvider] == false &&
-                block.timestamp > pendingRequest.deadline
+                block.timestamp > pendingRequest.triggerTimestamp
             ) {
                 bytes memory _performData = abi.encode(
                     liquidityProvider,
@@ -205,6 +205,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
                 return (_upkeepNeeded, _performData);
             }
         }
+        return (false, "");
     }
 
     /**

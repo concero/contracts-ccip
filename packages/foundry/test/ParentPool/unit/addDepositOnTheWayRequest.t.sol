@@ -4,8 +4,11 @@ pragma solidity 0.8.20;
 import {Test, console} from "forge-std/Test.sol";
 import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
 import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
+import {ForkType, CreateAndSwitchToForkTest} from "../../utils/CreateAndSwitchToFork.t.sol";
 
-contract AddDepositOnTheWayRequestTest is ConceroParentPool, Test {
+contract AddDepositOnTheWayRequestTest is ConceroParentPool, CreateAndSwitchToForkTest {
+    uint256 private baseFork;
+
     constructor()
         ConceroParentPool(
             address(0),
@@ -22,18 +25,28 @@ contract AddDepositOnTheWayRequestTest is ConceroParentPool, Test {
         )
     {}
 
-    function testDepositOnTheWayIdsOverflow() public {
-        for (uint256 i = 0; i < MAX_DEPOSIT_REQUESTS_COUNT + 2; i++) {
-            _addDepositOnTheWayRequest(bytes32(0), 0, 100);
-        }
+    function setUp() public {
+        switchToFork(ForkType.BASE);
+    }
+
+    function test() public {
+        _fillDepositsRequestArray();
 
         _deleteDepositOnTheWayRequestByIndex(4);
+        _addDepositOnTheWayRequest(bytes32(0), 0, 100);
 
         DepositOnTheWay memory lastDepositOnTheWay = s_depositsOnTheWayArray[
             s_depositsOnTheWayArray.length - 1
         ];
 
-        console.log("lastDepositOnTheWay: %s", lastDepositOnTheWay.id);
+        uint8 expectedLastDepositId = 5;
+        assert(lastDepositOnTheWay.id == expectedLastDepositId);
+    }
+
+    function _fillDepositsRequestArray() private {
+        for (uint256 i = 0; i <= MAX_DEPOSIT_REQUESTS_COUNT; i++) {
+            _addDepositOnTheWayRequest(bytes32(0), 0, 100);
+        }
     }
 
     function _deleteDepositOnTheWayRequestByIndex(uint256 index) private {

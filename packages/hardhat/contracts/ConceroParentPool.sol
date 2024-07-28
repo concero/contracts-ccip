@@ -320,7 +320,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         uint256 _deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
         s_depositRequests[clfRequestId] = DepositRequest({
             lpAddress: msg.sender,
-            totalChildPoolsLiquiditySnapshot: 0, //todo partial initialisation to save gas
+            childPoolsLiquiditySnapshot: 0, //todo partial initialisation to save gas
             usdcAmountToDeposit: _usdcAmount,
             deadline: _deadline
         });
@@ -332,10 +332,10 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         DepositRequest storage request = s_depositRequests[_depositRequestId];
         address lpAddress = request.lpAddress;
         uint256 usdcAmount = request.usdcAmountToDeposit;
-        uint256 totalChildPoolsLiquiditySnapshot = request.totalChildPoolsLiquiditySnapshot;
+        uint256 childPoolsLiquiditySnapshot = request.childPoolsLiquiditySnapshot;
 
         if (msg.sender != lpAddress) revert ConceroParentPool_NotAllowedToComplete();
-        if (totalChildPoolsLiquiditySnapshot == 0)
+        if (childPoolsLiquiditySnapshot == 0)
             revert ConceroParentPool_ActiveRequestNotFulfilledYet();
 
         i_USDC.safeTransferFrom(msg.sender, address(this), usdcAmount);
@@ -344,7 +344,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             s_loansInUse +
             s_depositsOnTheWayAmount;
 
-        uint256 totalCrossChainLiquidity = totalChildPoolsLiquiditySnapshot + parentPoolLiquidity;
+        uint256 totalCrossChainLiquidity = childPoolsLiquiditySnapshot + parentPoolLiquidity;
 
         _distributeLiquidityToChildPools(usdcAmount);
 
@@ -832,14 +832,14 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         DepositRequest storage request = s_depositRequests[requestId];
         uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) +
             s_loansInUse +
-            s_depositsOnTheWay;
+            s_depositsOnTheWayAmount;
 
         (uint256 childPoolsLiquidity, uint8[] memory depositsOnTheWayIdsToDelete) = abi.decode(
             response,
             (uint256, uint8[])
         );
 
-        request.totalCrossChainLiquiditySnapshot = (childPoolsLiquidity);
+        request.childPoolsLiquiditySnapshot = childPoolsLiquidity;
 
         _deleteDepositsOnTheWayByIds(depositsOnTheWayIdsToDelete);
     }

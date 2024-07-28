@@ -1149,7 +1149,7 @@
 //        bytes32 request = wMaster.depositLiquidity(depositEnoughAmount);
 //        vm.stopPrank();
 //
-//        assertEq(wMaster.s_depositsOnTheWay(), 0);
+//        assertEq(wMaster.s_depositsOnTheWayAmount(), 0);
 //
 //        vm.prank(Tester);
 //        wMaster.helperFulfillCLFRequest(request, abi.encode(depositEnoughAmount), new bytes(0));
@@ -1159,7 +1159,7 @@
 //        //First Deposit
 //        assertEq(requestCLF.totalCrossChainLiquiditySnapshot, depositEnoughAmount);
 //        assertEq(requestCLF.liquidityProvider, LP);
-//        assertEq(wMaster.s_depositsOnTheWay(), 0);
+//        assertEq(wMaster.s_depositsOnTheWayAmount(), 0);
 //
 //        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_NotAllowedToComplete.selector));
 //        wMaster.completeDeposit(request);
@@ -1169,7 +1169,7 @@
 //        wMaster.completeDeposit(request);
 //        vm.stopPrank();
 //
-//        assertEq(wMaster.s_depositsOnTheWay(), depositEnoughAmount / 2);
+//        assertEq(wMaster.s_depositsOnTheWayAmount(), depositEnoughAmount / 2);
 //        assertEq(IERC20(ccipBnM).balanceOf(LP), lpBalance - depositEnoughAmount);
 //
 //        IPool.CCIPPendingDeposits[] memory requests = new IPool.CCIPPendingDeposits[](4);
@@ -1183,7 +1183,7 @@
 //
 //        requests = wMaster.getCCIPPendingDeposits();
 //        assertEq(requests.length, 0);
-//        assertEq(wMaster.s_depositsOnTheWay(), 0);
+//        assertEq(wMaster.s_depositsOnTheWayAmount(), 0);
 //
 //        vm.prank(Messenger);
 //        vm.expectRevert(abi.encodeWithSelector(ConceroParentPool_TxAlreadyRemoved.selector, deletedTX));

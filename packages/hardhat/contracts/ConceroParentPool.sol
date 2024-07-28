@@ -14,7 +14,7 @@ import {IParentPool} from "./Interfaces/IParentPool.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
 import {ParentPoolStorage} from "contracts/Libraries/ParentPoolStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
-import {LibConcero} from "./Libraries/LibConcero.sol"; // todo: Only used by withdraw. Remove in production
+//import {LibConcero} from "./Libraries/LibConcero.sol"; // LibConcero is only used by withdraw. Remove in production
 import {IConceroAutomation} from "./Interfaces/IConceroAutomation.sol";
 
 ////////////////////////////////////////////////////////
@@ -230,7 +230,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
      * @notice modifier to check if the caller is the an approved messenger
      */
     modifier onlyMessenger() {
-        if (!isMessenger(msg.sender)) revert ConceroParentPool_NotMessenger(msg.sender);
+        if (!_isMessenger(msg.sender)) revert ConceroParentPool_NotMessenger(msg.sender);
         _;
     }
 
@@ -249,8 +249,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         address _link,
         bytes32 _donId,
         uint64 _subscriptionId,
-        address _functionsRouter,
-        address _ccipRouter,
+        address _functionsRouter, //todo: unused variable
+        address _ccipRouter, //todo: unused variable
         address _usdc,
         address _lpToken,
         address _automation,
@@ -830,9 +830,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     function _handleStartDepositCLFFulfill(bytes32 requestId, bytes memory response) internal {
         //todo: parent pool variables have to be calculated only in completeDeposit()
         DepositRequest storage request = s_depositRequests[requestId];
-        uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) +
-            s_loansInUse +
-            s_depositsOnTheWayAmount;
 
         (uint256 childPoolsLiquidity, uint8[] memory depositsOnTheWayIdsToDelete) = abi.decode(
             response,
@@ -931,7 +928,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ) private {
         uint256 lpToBurn = _withdrawalRequest.lpAmountToBurn;
         uint256 lpSupplySnapshot = _withdrawalRequest.lpSupplySnapshot;
-        address lpAddress = _withdrawalRequest.lpAddress;
         uint256 childPoolsCount = s_poolChainSelectors.length;
 
         uint256 totalCrossChainBalance = _childPoolsLiquidity +
@@ -1125,7 +1121,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
      * @notice Function to check if a caller address is an allowed messenger
      * @param _messenger the address of the caller
      */
-    function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
+    function _isMessenger(address _messenger) internal pure returns (bool) {
         address[] memory messengers = new address[](4);
         messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
         messengers[1] = address(0);

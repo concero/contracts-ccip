@@ -416,11 +416,10 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         if (amountToWithdraw == 0) revert ConceroParentPool_ActiveRequestNotFulfilledYet();
 
-        if (withdrawRequest.remainingLiquidityFromChildPools > 0) {
+        if (withdrawRequest.remainingLiquidityFromChildPools > 0)
             revert ConceroParentPool_WithdrawalAmountNotReady(
                 withdrawRequest.remainingLiquidityFromChildPools
             );
-        }
 
         s_currentWithdrawRequestsAmount = s_currentWithdrawRequestsAmount > amountToWithdraw
             ? s_currentWithdrawRequestsAmount - amountToWithdraw
@@ -460,21 +459,21 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         _ccipSend(_chainSelector, _amountToSend);
     }
 
-    function removeCCIPTX(bytes32 _ccipMessageId) external onlyProxyContext onlyMessenger {
-        if (s_ccipDepositsMapping[_ccipMessageId].transactionId != _ccipMessageId)
-            revert ConceroParentPool_TxAlreadyRemoved(_ccipMessageId);
-        uint256 numberOfPendingTX = s_ccipDeposits.length;
-
-        for (uint256 i; i < numberOfPendingTX; ) {
-            if (s_ccipDeposits[i].transactionId == _ccipMessageId) {
-                s_depositsOnTheWay = s_depositsOnTheWay - s_ccipDeposits[i].amount;
-                s_ccipDeposits[i] = s_ccipDeposits[numberOfPendingTX - 1];
-                s_ccipDeposits.pop();
-                delete s_ccipDepositsMapping[_ccipMessageId];
-                return;
-            }
-        }
-    }
+    //    function removeCCIPTX(bytes32 _ccipMessageId) external onlyProxyContext onlyMessenger {
+    //        if (s_ccipDepositsMapping[_ccipMessageId].transactionId != _ccipMessageId)
+    //            revert ConceroParentPool_TxAlreadyRemoved(_ccipMessageId);
+    //        uint256 numberOfPendingTX = s_ccipDeposits.length;
+    //
+    //        for (uint256 i; i < numberOfPendingTX; ) {
+    //            if (s_ccipDeposits[i].transactionId == _ccipMessageId) {
+    //                s_depositsOnTheWay = s_depositsOnTheWay - s_ccipDeposits[i].amount;
+    //                s_ccipDeposits[i] = s_ccipDeposits[numberOfPendingTX - 1];
+    //                s_ccipDeposits.pop();
+    //                delete s_ccipDepositsMapping[_ccipMessageId];
+    //                return;
+    //            }
+    //        }
+    //    }
 
     ///////////////////////
     ///SETTERS FUNCTIONS///
@@ -736,9 +735,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             destinationChainSelector: _chainSelector,
             amount: _amountToDistribute
         });
-        s_depositsOnTheWay += _amountToDistribute;
-        s_ccipDepositsMapping[messageId] = pending;
-        s_ccipDeposits.push(pending);
+
+        //        s_ccipDepositsMapping[messageId] = pending;
+        //        s_ccipDeposits.push(pending);
 
         emit ConceroParentPool_MessageSent(
             messageId,
@@ -810,10 +809,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             return;
         }
 
-        (uint256 childPoolsLiquidity, uint8[] memory depositsOnTheWayStatuses) = abi.decode(
-            response,
-            (uint256, uint8[])
-        );
+        uint256 childPoolsLiquidity = abi.decode(response, (uint256));
 
         if (requestType == RequestType.startDeposit_getChildPoolsLiquidity) {
             DepositRequest storage request = s_depositRequests[requestId];
@@ -821,7 +817,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
                 s_loansInUse +
                 s_depositsOnTheWay;
             request.totalCrossChainLiquiditySnapshot = (parentPoolLiquidity + childPoolsLiquidity);
-            _updateDepositsOnTheWay(depositsOnTheWayStatuses);
         } else if (requestType == RequestType.startWithdrawal_getChildPoolsLiquidity) {
             bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
@@ -830,7 +825,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     }
 
     ///////////////
-    ////INTERNAL///
+    /// PRIVATE ///
     ///////////////
 
     function _updateDepositsOnTheWay(uint8[] memory depositsOnTheWayStatuses) internal {
@@ -934,13 +929,13 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         _withdrawalRequest.remainingLiquidityFromChildPools =
             (amountToWithdrawWithUsdcDecimals * childPoolsCount) /
-            (childPoolsCount + 1); //The portion of the money that is not on MasterPool
+            (childPoolsCount + 1); //The portion of the money that is not on ParentPool
 
         _withdrawalRequest.triggeredAtTimestamp = block.timestamp + WITHDRAW_DEADLINE_SECONDS;
 
         //        s_currentWithdrawRequestsAmount += amountToWithdrawWithUsdcDecimals / (childPoolsCount + 1);
         //        s_withdrawalIdByLPAddress[lpAddress] = request;
-        i_automation.addPendingWithdrawal(lpAddress);
+        i_automation.addPendingWithdrawalToAddress(lpAddress);
 
         emit ConceroParentPool_RequestUpdated(lpAddress);
     }
@@ -1099,7 +1094,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
      * @param _messenger the address of the caller
      */
     function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
-        address[] memory messengers = new address[](4); //Number of messengers. To define.
+        address[] memory messengers = new address[](4);
         messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
         messengers[1] = address(0);
         messengers[2] = address(0);
@@ -1116,23 +1111,23 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         return false;
     }
 
-    // TODO: REMOVE IN PRODUCTION
-    function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
-        uint256 balance = LibConcero.getBalance(token, address(this));
-        if (balance < amount) revert ConceroParentPool_InsufficientBalance();
+    //    REMOVE IN PRODUCTION
+    //    function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
+    //        uint256 balance = LibConcero.getBalance(token, address(this));
+    //        if (balance < amount) revert ConceroParentPool_InsufficientBalance();
+    //
+    //        if (token != address(0)) {
+    //            LibConcero.transferERC20(token, amount, recipient);
+    //        } else {
+    //            payable(recipient).transfer(amount);
+    //        }
+    //    }
 
-        if (token != address(0)) {
-            LibConcero.transferERC20(token, amount, recipient);
-        } else {
-            payable(recipient).transfer(amount);
-        }
-    }
-
-    function getCCIPPendingDeposits()
-        external
-        view
-        returns (CCIPPendingDeposits[] memory requests)
-    {
-        requests = s_ccipDeposits;
-    }
+    //    function getCCIPPendingDeposits()
+    //        external
+    //        view
+    //        returns (CCIPPendingDeposits[] memory requests)
+    //    {
+    //        requests = s_ccipDeposits;
+    //    }
 }

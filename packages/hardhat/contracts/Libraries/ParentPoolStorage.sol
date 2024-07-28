@@ -52,8 +52,8 @@ contract ParentPoolStorage {
     ////////////////////////
 
     mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;
-    mapping(bytes32 messageId => IParentPool.CCIPPendingDeposits) internal s_ccipDepositsMapping;
-    IParentPool.CCIPPendingDeposits[] s_ccipDeposits;
+    //    mapping(bytes32 messageId => IParentPool.CCIPPendingDeposits) internal s_ccipDepositsMapping;
+    //    IParentPool.CCIPPendingDeposits[] s_ccipDeposits;
 
     mapping(address lpAddress => bytes32 withdrawalId) public s_withdrawalIdByLPAddress;
     mapping(bytes32 clfReqId => bytes32 withdrawalId) public s_withdrawalIdByCLFRequestId;

@@ -24,11 +24,12 @@ interface IParentPool is IPool {
     }
 
     ///@notice Struct to hold ccip sent transactions
-    struct CCIPPendingDeposits {
-        bytes32 transactionId;
-        uint64 destinationChainSelector;
-        uint256 amount;
-    }
+    // deleted
+    //    struct CCIPPendingDeposits {
+    //        bytes32 transactionId;
+    //        uint64 destinationChainSelector;
+    //        uint256 amount;
+    //    }
 
     ///@notice Struct to track Functions Requests Type
     enum RequestType {
@@ -52,16 +53,15 @@ interface IParentPool is IPool {
         uint256 lpAmountToBurn;
         //
         uint256 amountToWithdraw;
-        uint256 liquidityRequestedFromEachPool;
+        uint256 liquidityRequestedFromEachPool; // this may be calculated by CLF later
         uint256 remainingLiquidityFromChildPools;
         uint256 triggeredAtTimestamp;
     }
 
     struct DepositRequest {
         address lpAddress;
-        uint256 totalCrossChainLiquiditySnapshot;
+        uint256 totalChildPoolsLiquiditySnapshot;
         uint256 usdcAmountToDeposit;
-        uint256 pendingDepositTransfersSnapshot;
         uint256 deadline;
     }
 
@@ -93,4 +93,5 @@ interface IParentPool is IPool {
     ) external view returns (WithdrawRequest memory);
 
     function getWithdrawalIdByLPAddress(address lpAddress) external view returns (bytes32);
+    function addWithdrawalOnTheWayAmountById(bytes32 _withdrawalId) external;
 }

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -6,14 +6,21 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/autom
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {IParentPool} from "./Interfaces/IParentPool.sol";
+import {IConceroAutomation} from "./Interfaces/IConceroAutomation.sol";
 
 ///@notice error emitted when the caller is not the owner.
 error ConceroAutomation_CallerNotAllowed(address caller);
-error ConceroAutomation_WithdrawAlreadyTriggered(address liquidityProvider);
+error ConceroAutomation_WithdrawAlreadyTriggered(bytes32 withdrawalId);
 error ConceroAutomation_CLFFallbackError(bytes32 requestId);
 error ConceroAutomation__WithdrawRequestPerformed();
-
-contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ownable {
+error ConceroAutomation__WithdrawRequestDoesntExist(bytes32 withdrawalId);
+error ConceroAutomation__WithdrawRequestNotReady(bytes32 withdrawalId);
+contract ConceroAutomation is
+    IConceroAutomation,
+    AutomationCompatibleInterface,
+    FunctionsClient,
+    Ownable
+{
     ///////////////////////
     ///TYPE DECLARATIONS///
     ///////////////////////
@@ -66,12 +73,11 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     ///STORAGE///
     /////////////
     ///@notice array to store the withdraw requests of users
-    address[] public s_withdrawingLPAddresses;
+    bytes32[] public s_withdrawalRequestIds;
 
     ///@notice Mapping to keep track of Chainlink Functions requests
-    mapping(bytes32 requestId => PerformWithdrawRequest) public s_functionsRequests;
-    mapping(address liquidityProvider => bool isTriggered) public s_withdrawTriggered;
-
+    mapping(bytes32 withdrawalId => bool isTriggered) public s_withdrawTriggered;
+    mapping(bytes32 clfReqId => bytes32 withdrawalId) public s_withdrawalIdByCLFRequestId;
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
@@ -167,10 +173,10 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
      * @param _lpAddress the liquidity provider address
      * @dev this function should only be called by the ConceroPool.sol
      */
-    function addPendingWithdrawalToAddress(address _lpAddress) external {
+    function addPendingWithdrawalId(bytes32 _withdrawalId) external {
         if (msg.sender != i_masterPoolProxy) revert ConceroAutomation_CallerNotAllowed(msg.sender);
-        s_withdrawingLPAddresses.push(_lpAddress);
-        emit ConceroAutomation_RequestAdded(_lpAddress);
+        s_withdrawalRequestIds.push(_withdrawalId);
+        emit ConceroAutomation_RequestAdded(_withdrawalId);
     }
 
     /**
@@ -183,25 +189,30 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     function checkUpkeep(
         bytes calldata /* checkData */
     ) external view override returns (bool, bytes memory) {
-        uint256 withdrawalRequestsCount = s_withdrawingLPAddresses.length;
+        uint256 withdrawalRequestsCount = s_withdrawalRequestIds.length;
 
         for (uint256 i; i < withdrawalRequestsCount; ++i) {
-            address lpAddress = s_withdrawingLPAddresses[i];
-            bytes32 withdrawalId = IParentPool(i_masterPoolProxy).getWithdrawalIdByLPAddress(
-                lpAddress
-            );
+            address withdrawalId = s_withdrawalRequestIds[i];
 
             IParentPool.WithdrawRequest memory withdrawalRequest = IParentPool(i_masterPoolProxy)
                 .getWithdrawalRequestById(withdrawalId);
 
+            address lpAddress = withdrawalRequest.lpAddress;
+            uint256 amountToWithdraw = withdrawalRequest.amountToWithdraw;
+            uint256 liquidityRequestedFromEachPool = withdrawalRequest
+                .liquidityRequestedFromEachPool;
+
+            if (amountToWithdraw == 0) {
+                continue;
+            }
             // s_withdrawTriggered is used to prevent multiple CLA triggers of the same withdrawal request
             if (
-                s_withdrawTriggered[lpAddress] == false &&
+                s_withdrawTriggered[withdrawalId] == false &&
                 block.timestamp > withdrawalRequest.triggeredAtTimestamp
             ) {
                 bytes memory _performData = abi.encode(
                     lpAddress,
-                    withdrawalRequest.liquidityRequestedFromEachPool,
+                    liquidityRequestedFromEachPool,
                     withdrawalId
                 );
                 bool _upkeepNeeded = true;
@@ -221,10 +232,10 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
         (address lpAddress, uint256 liquidityRequestedFromEachPool, bytes32 withdrawalId) = abi
             .decode(_performData, (address, uint256, bytes32));
 
-        if (s_withdrawTriggered[lpAddress] == true) {
-            revert ConceroAutomation_WithdrawAlreadyTriggered(lpAddress);
+        if (s_withdrawTriggered[withdrawalId] == true) {
+            revert ConceroAutomation_WithdrawAlreadyTriggered(withdrawalId);
         } else {
-            s_withdrawTriggered[lpAddress] = true;
+            s_withdrawTriggered[withdrawalId] = true;
         }
 
         bytes[] memory args = new bytes[](5);
@@ -235,44 +246,40 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
         args[4] = abi.encodePacked(withdrawalId);
 
         bytes32 reqId = _sendRequest(args, JS_CODE);
+        s_withdrawalIdByCLFRequestId[reqId] = withdrawalId;
 
-        s_functionsRequests[reqId] = PerformWithdrawRequest({
-            liquidityProvider: lpAddress,
-            amount: liquidityRequestedFromEachPool,
-            withdrawId: withdrawalId,
-            failed: false
-        });
-
+        IParentPool(i_masterPoolProxy).addWithdrawalOnTheWayAmountById(withdrawalId);
         emit ConceroAutomation_UpkeepPerformed(reqId);
     }
 
-    function retryPerformWithdrawalRequest(bytes32 _requestId) external {
-        PerformWithdrawRequest memory functionRequest = s_functionsRequests[_requestId];
+    function retryPerformWithdrawalRequest(bytes32 _withdrawalId) external {
+        IParentPool.WithdrawRequest memory withdrawalRequest = IParentPool(i_masterPoolProxy)
+            .getWithdrawalRequestById(_withdrawalId);
 
-        address liquidityProviderAddress = functionRequest.liquidityProvider;
+        uint256 amountToWithdraw = withdrawalRequest.amountToWithdraw;
+        address lpAddress = withdrawalRequest.lpAddress;
+        uint256 liquidityRequestedFromEachPool = withdrawalRequest.liquidityRequestedFromEachPool;
+        uint256 triggeredAtTimestamp = withdrawalRequest.triggeredAtTimestamp;
 
-        if (
-            msg.sender != liquidityProviderAddress ||
-            s_withdrawTriggered[liquidityProviderAddress] != true ||
-            functionRequest.failed == false ||
-            functionRequest.withdrawId == 0
-        ) revert ConceroAutomation__WithdrawRequestPerformed();
+        if (msg.sender != lpAddress) revert ConceroAutomation_CallerNotAllowed(msg.sender);
+
+        if (amountToWithdraw == 0) {
+            revert ConceroAutomation__WithdrawRequestDoesntExist(_withdrawalId);
+        }
+
+        if (block.timestamp < triggeredAtTimestamp + 30 minutes) {
+            revert ConceroAutomation__WithdrawRequestNotReady(_withdrawalId);
+        }
 
         bytes[] memory args = new bytes[](5);
         args[0] = abi.encodePacked(s_hashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(liquidityProviderAddress);
-        args[3] = abi.encodePacked(functionRequest.amount);
-        args[4] = abi.encodePacked(functionRequest.withdrawId);
+        args[2] = abi.encodePacked(lpAddress);
+        args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
+        args[4] = abi.encodePacked(_withdrawalId);
 
         bytes32 reqId = _sendRequest(args, JS_CODE);
-
-        s_functionsRequests[reqId] = PerformWithdrawRequest({
-            liquidityProvider: liquidityProviderAddress,
-            amount: functionRequest.amount,
-            withdrawId: functionRequest.withdrawId,
-            failed: false
-        });
+        s_withdrawalIdByCLFRequestId[reqId] = _withdrawalId;
 
         emit ConceroAutomation_RetryPerformed(reqId);
     }
@@ -311,27 +318,23 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
         bytes memory response,
         bytes memory err
     ) internal override {
-        PerformWithdrawRequest storage functionRequest = s_functionsRequests[requestId];
-        address liquidityProvider = functionRequest.liquidityProvider;
+        address withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
 
         if (err.length > 0) {
             emit FunctionsRequestError(requestId);
-            functionRequest.failed = true;
             return;
             // todo: there is no fallback mechanism if CLF fails to trigger liquidity pull from child pools.
             // todo: if CLF fails, the LP will not be able to retry the withdrawal request.
         }
 
-        s_withdrawTriggered[liquidityProvider] = false;
+        uint256 withdrawalRequestsCount = s_withdrawalRequestIds.length;
 
-        uint256 requestsNumber = s_withdrawingLPAddresses.length;
-
-        for (uint256 i; i < requestsNumber; ++i) {
-            if (s_withdrawingLPAddresses[i] == liquidityProvider) {
-                s_withdrawingLPAddresses[i] = s_withdrawingLPAddresses[
-                    s_withdrawingLPAddresses.length - 1
+        for (uint256 i; i < withdrawalRequestsCount; ++i) {
+            if (s_withdrawalRequestIds[i] == withdrawalId) {
+                s_withdrawalRequestIds[i] = s_withdrawalRequestIds[
+                    s_withdrawalRequestIds.length - 1
                 ];
-                s_withdrawingLPAddresses.pop();
+                s_withdrawalRequestIds.pop();
             }
         }
     }
@@ -340,19 +343,10 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
     ///PURE & VIEW FUNCTIONS///
     ///////////////////////////
     function getPendingRequests() external view returns (address[] memory _requests) {
-        _requests = s_withdrawingLPAddresses;
+        _requests = s_withdrawalRequestIds;
     }
 
     function getPendingWithdrawRequestsLength() public view returns (uint256) {
-        return s_withdrawingLPAddresses.length;
-    }
-
-    //TODO: Remove after testing
-    function helperFulfillCLFRequest(
-        bytes32 requestId,
-        bytes memory response,
-        bytes memory err
-    ) external onlyOwner {
-        fulfillRequest(requestId, response, err);
+        return s_withdrawalRequestIds.length;
     }
 }

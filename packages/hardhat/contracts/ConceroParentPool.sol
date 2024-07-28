@@ -809,18 +809,10 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             return;
         }
 
-        uint256 childPoolsLiquidity = abi.decode(response, (uint256));
-
         if (requestType == RequestType.startDeposit_getChildPoolsLiquidity) {
-            DepositRequest storage request = s_depositRequests[requestId];
-            uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) +
-                s_loansInUse +
-                s_depositsOnTheWay;
-            request.totalCrossChainLiquiditySnapshot = (parentPoolLiquidity + childPoolsLiquidity);
+            _handleStartDepositCLFFulfill(requestId, response);
         } else if (requestType == RequestType.startWithdrawal_getChildPoolsLiquidity) {
-            bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
-            WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
-            _updateWithdrawalRequest(request, childPoolsLiquidity);
+            _handleStartWithdrawalCLFFulfill(requestId, response);
         }
     }
 
@@ -828,7 +820,30 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     /// PRIVATE ///
     ///////////////
 
-    function _updateDepositsOnTheWay(uint8[] memory depositsOnTheWayStatuses) internal {
+    function _handleStartDepositCLFFulfill(bytes32 requestId, bytes memory response) internal {
+        DepositRequest storage request = s_depositRequests[requestId];
+        uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) +
+            s_loansInUse +
+            s_depositsOnTheWay;
+
+        (uint256 childPoolsLiquidity, uint8[] memory depositsOnTheWayIdsToDelete) = abi.decode(
+            response,
+            (uint256, uint8[])
+        );
+
+        request.totalCrossChainLiquiditySnapshot = (parentPoolLiquidity + childPoolsLiquidity);
+
+        _deleteDepositsOnTheWayByIds(depositsOnTheWayIdsToDelete);
+    }
+
+    function _handleStartWithdrawalCLFFulfill(bytes32 requestId, bytes memory response) internal {
+        uint256 childPoolsLiquidity = abi.decode(response, (uint256));
+        bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
+        WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
+        _updateWithdrawalRequest(request, childPoolsLiquidity);
+    }
+
+    function _deleteDepositsOnTheWayByIds(uint8[] memory depositsOnTheWayStatuses) internal {
         if (depositsOnTheWayStatuses.length == 0) return;
 
         uint256 depositsOnTheWayArrayLength = s_depositsOnTheWayArray.length;
@@ -969,9 +984,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         for (uint256 i; i < depositsOnTheWayArrayLength; ) {
             if (depositsOnTheWayArray[i].id == nextId) {
-                unchecked {
-                    ++nextId;
-                }
+                ++nextId;
 
                 i = 0;
             } else {
@@ -1087,6 +1100,10 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
     function getUsdcInUse() external view returns (uint256) {
         return s_loansInUse;
+    }
+
+    function getDepositsOnTheWay() external view returns (DepositOnTheWay[] memory) {
+        return s_depositsOnTheWayArray;
     }
 
     /**

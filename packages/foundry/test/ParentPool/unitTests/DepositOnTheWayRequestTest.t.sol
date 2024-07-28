@@ -49,7 +49,7 @@ contract DepositOnTheWayRequestTest is ConceroParentPool, CreateAndSwitchToForkT
         depositsOnTheWayStatuses[2] = 3;
 
         uint256 gasBefore = gasleft();
-        _updateDepositsOnTheWay(depositsOnTheWayStatuses);
+        _deleteDepositsOnTheWayByIds(depositsOnTheWayStatuses);
         uint256 gasAfter = gasleft();
 
         uint256 gasUsed = gasBefore - gasAfter;

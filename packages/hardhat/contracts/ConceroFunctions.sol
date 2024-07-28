@@ -57,7 +57,8 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     ///@notice Chainlink Functions Protocol Subscription ID
     uint64 private immutable i_subscriptionId;
     //@notice CCIP chainSelector
-    uint64 immutable CHAIN_SELECTOR;
+    uint64 immutable CHAIN_SELECTOR; // todo: prefix with i
+    //todo: Explicitly mark visibility of ALL state variables
     ///@notice variable to store the DexSwap address
     address immutable i_dexSwap;
     ///@notice variable to store the ConceroPool address
@@ -256,6 +257,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
         );
     }
 
+    //todo: Internal function sendUnconfirmedTX is not prefixed with underscore
     function sendUnconfirmedTX(
         bytes32 ccipMessageId,
         address sender,

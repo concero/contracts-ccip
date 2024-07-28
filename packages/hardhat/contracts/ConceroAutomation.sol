@@ -167,11 +167,9 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
      * @param _lpAddress the liquidity provider address
      * @dev this function should only be called by the ConceroPool.sol
      */
-    function addPendingWithdrawal(address _lpAddress) external {
+    function addPendingWithdrawalToAddress(address _lpAddress) external {
         if (msg.sender != i_masterPoolProxy) revert ConceroAutomation_CallerNotAllowed(msg.sender);
-
         s_withdrawingLPAddresses.push(_lpAddress);
-
         emit ConceroAutomation_RequestAdded(_lpAddress);
     }
 
@@ -196,6 +194,7 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
             IParentPool.WithdrawRequest memory withdrawalRequest = IParentPool(i_masterPoolProxy)
                 .getWithdrawalRequestById(withdrawalId);
 
+            // s_withdrawTriggered is used to prevent multiple CLA triggers of the same withdrawal request
             if (
                 s_withdrawTriggered[lpAddress] == false &&
                 block.timestamp > withdrawalRequest.triggeredAtTimestamp
@@ -219,31 +218,28 @@ contract ConceroAutomation is AutomationCompatibleInterface, FunctionsClient, Ow
      */
     function performUpkeep(bytes calldata _performData) external override {
         if (msg.sender != s_forwarderAddress) revert ConceroAutomation_CallerNotAllowed(msg.sender);
-        (
-            address liquidityProvider,
-            uint256 liquidityRequestedFromEachPool,
-            bytes32 withdrawId
-        ) = abi.decode(_performData, (address, uint256, bytes32));
+        (address lpAddress, uint256 liquidityRequestedFromEachPool, bytes32 withdrawalId) = abi
+            .decode(_performData, (address, uint256, bytes32));
 
-        if (s_withdrawTriggered[liquidityProvider] == true) {
-            revert ConceroAutomation_WithdrawAlreadyTriggered(liquidityProvider);
+        if (s_withdrawTriggered[lpAddress] == true) {
+            revert ConceroAutomation_WithdrawAlreadyTriggered(lpAddress);
         } else {
-            s_withdrawTriggered[liquidityProvider] = true;
+            s_withdrawTriggered[lpAddress] = true;
         }
 
         bytes[] memory args = new bytes[](5);
         args[0] = abi.encodePacked(s_hashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(liquidityProvider);
+        args[2] = abi.encodePacked(lpAddress);
         args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
-        args[4] = abi.encodePacked(withdrawId);
+        args[4] = abi.encodePacked(withdrawalId);
 
         bytes32 reqId = _sendRequest(args, JS_CODE);
 
         s_functionsRequests[reqId] = PerformWithdrawRequest({
-            liquidityProvider: liquidityProvider,
+            liquidityProvider: lpAddress,
             amount: liquidityRequestedFromEachPool,
-            withdrawId: withdrawId,
+            withdrawId: withdrawalId,
             failed: false
         });
 

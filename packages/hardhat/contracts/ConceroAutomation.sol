@@ -82,7 +82,7 @@ contract ConceroAutomation is
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
     ///@notice event emitted when a new request is added
-    event ConceroAutomation_RequestAdded(address);
+    event ConceroAutomation_RequestAdded(bytes32 requestId);
     ///@notice event emitted when the Pool Address is updated
     event ConceroAutomation_PoolAddressUpdated(address pool);
     ///@notice event emitted when the Keeper Address is updated
@@ -170,7 +170,7 @@ contract ConceroAutomation is
 
     /**
      * @notice Function to add new withdraw request to CLA monitoring system
-     * @param _lpAddress the liquidity provider address
+     * @param _withdrawalId the ID of the withdrawal request
      * @dev this function should only be called by the ConceroPool.sol
      */
     function addPendingWithdrawalId(bytes32 _withdrawalId) external {
@@ -192,7 +192,7 @@ contract ConceroAutomation is
         uint256 withdrawalRequestsCount = s_withdrawalRequestIds.length;
 
         for (uint256 i; i < withdrawalRequestsCount; ++i) {
-            address withdrawalId = s_withdrawalRequestIds[i];
+            bytes32 withdrawalId = s_withdrawalRequestIds[i];
 
             IParentPool.WithdrawRequest memory withdrawalRequest = IParentPool(i_masterPoolProxy)
                 .getWithdrawalRequestById(withdrawalId);
@@ -318,7 +318,7 @@ contract ConceroAutomation is
         bytes memory response,
         bytes memory err
     ) internal override {
-        address withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
+        bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
 
         if (err.length > 0) {
             emit FunctionsRequestError(requestId);
@@ -342,7 +342,7 @@ contract ConceroAutomation is
     ///////////////////////////
     ///PURE & VIEW FUNCTIONS///
     ///////////////////////////
-    function getPendingRequests() external view returns (address[] memory _requests) {
+    function getPendingRequests() external view returns (bytes32[] memory _requests) {
         _requests = s_withdrawalRequestIds;
     }
 

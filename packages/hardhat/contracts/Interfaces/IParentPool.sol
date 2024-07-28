@@ -60,7 +60,7 @@ interface IParentPool is IPool {
 
     struct DepositRequest {
         address lpAddress;
-        uint256 totalChildPoolsLiquiditySnapshot;
+        uint256 childPoolsLiquiditySnapshot;
         uint256 usdcAmountToDeposit;
         uint256 deadline;
     }

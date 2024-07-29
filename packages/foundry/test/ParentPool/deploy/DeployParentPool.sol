@@ -26,10 +26,8 @@ contract DeployParentPool is Test {
         uint256 forkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
         vm.selectFork(forkId);
 
-        console.log(forkId);
-
         _deployParentPool();
-        // _deployCcipLocalSimulation();
+        _deployCcipLocalSimulation();
         _deployAutomation();
         _deployLpToken();
     }
@@ -69,7 +67,6 @@ contract DeployParentPool is Test {
 
     function _deployAutomation() private {
         vm.startBroadcast(deployerPrivateKey);
-
         conceroCLA = new ConceroAutomation(
             vm.envBytes32("CLF_DONID_BASE"),
             uint64(vm.envUint("CLF_SUBID_BASE_SEPOLIA")),
@@ -88,18 +85,10 @@ contract DeployParentPool is Test {
     }
 
     function _deployCcipLocalSimulation() private {
-        //        ccipLocalSimulator = new CCIPLocalSimulator();
-        //
-        //        (
-        //            uint64 chainSelector,
-        //            IRouterClient sourceRouter,
-        //            IRouterClient destinationRouter,
-        //            WETH9 wrappedNative,
-        //            LinkToken linkToken,
-        //            BurnMintERC677Helper ccipBnM,
-        //            BurnMintERC677Helper ccipLnM
-        //        ) = ccipLocalSimulator.configuration();
-        //
-        //        ccipLocalSimulator.supportNewToken(Vm.envAddress("USDC_BASE"));
+        ccipLocalSimulator = new CCIPLocalSimulator();
+
+	    (_ ,IRouterClient ccipRouter) = ccipLocalSimulator.configuration();
+
+        ccipLocalSimulator.supportNewToken(vm.envAddress("USDC_BASE"));
     }
 }

@@ -11,7 +11,5 @@ contract Deposit is DeployParentPool {
         deployParentPool();
     }
 
-    function test_RunDeploy() public {
-        console.log(address(parentPoolImplementation));
-    }
+    function test_RunDeploy() public {}
 }

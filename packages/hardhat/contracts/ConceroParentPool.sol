@@ -79,6 +79,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ///////////////
     ///CONSTANTS///
     ///////////////
+    //todo: shall we remove this ALLOWED constant?
     uint256 private constant ALLOWED = 1;
     uint256 private constant USDC_DECIMALS = 10 ** 6;
     uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
@@ -647,19 +648,18 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             any2EvmMessage.data,
             (bytes32, address, uint256)
         );
-        uint256 amountAfterFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
 
         bool isUserTx = receivedFee > 0 && withdrawalId == bytes32(0) && user != address(0);
         bool isWithdrawalTx = withdrawalId != bytes32(0);
 
         if (isUserTx) {
+            uint256 amountAfterFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
             IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransaction(
                 any2EvmMessage.messageId
             );
-            if (
-                (transaction.ccipMessageId == any2EvmMessage.messageId &&
-                    transaction.isConfirmed == false) || transaction.ccipMessageId == 0
-            ) {
+            bool isExecutionLayerFailed = ((transaction.ccipMessageId == any2EvmMessage.messageId &&
+                transaction.isConfirmed == false) || transaction.ccipMessageId == 0);
+            if (isExecutionLayerFailed) {
                 i_USDC.safeTransfer(user, amountAfterFees);
                 //We don't subtract it here because the loan was not performed. And the value is not summed into the `s_loanInUse` variable.
             } else {
@@ -669,13 +669,17 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         } else if (isWithdrawalTx) {
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
 
+            //todo: can we do request.remainingLiquidityFromChildPools -= amountAfterFees ?
             //update the corresponding withdraw request
             request.remainingLiquidityFromChildPools = request.remainingLiquidityFromChildPools >=
                 any2EvmMessage.destTokenAmounts[0].amount
                 ? request.remainingLiquidityFromChildPools -
                     any2EvmMessage.destTokenAmounts[0].amount
                 : 0;
-            //decrementing s_withdrawalsOnTheWayAmount
+
+            //todo @nikita is this correct?
+            s_withdrawalsOnTheWayAmount -= any2EvmMessage.destTokenAmounts[0].amount;
+            //todo: this can be removed
             if (request.remainingLiquidityFromChildPools == 0) {
                 // removing withdrawId from withdrawalsOnTheWayIds
             }

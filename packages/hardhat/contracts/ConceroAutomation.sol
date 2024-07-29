@@ -323,8 +323,6 @@ contract ConceroAutomation is
         if (err.length > 0) {
             emit FunctionsRequestError(requestId);
             return;
-            // todo: there is no fallback mechanism if CLF fails to trigger liquidity pull from child pools.
-            // todo: if CLF fails, the LP will not be able to retry the withdrawal request.
         }
 
         uint256 withdrawalRequestsCount = s_withdrawalRequestIds.length;

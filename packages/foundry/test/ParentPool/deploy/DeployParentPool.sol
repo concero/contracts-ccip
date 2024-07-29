@@ -8,6 +8,7 @@ import {ParentPoolProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/Par
 import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {LPToken} from "contracts/LPToken.sol";
+import {CCIPLocalSimulator} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulator.sol";
 
 contract DeployParentPool is Test {
     ConceroParentPool public parentPoolImplementation;
@@ -16,15 +17,26 @@ contract DeployParentPool is Test {
     ConceroAutomation public conceroCLA;
     address user1 = makeAddr("user1");
     address user2 = makeAddr("user2");
+    CCIPLocalSimulator public ccipLocalSimulator;
 
-    function deployParentPool() internal {
-        uint256 deployerPrivateKey = vm.envUint("FORGE_DEPLOYER_PRIVATE_KEY");
-        uint256 proxyDeployerPrivateKey = vm.envUint("FORGE_PROXY_DEPLOYER_PRIVATE_KEY");
+    uint256 internal deployerPrivateKey = vm.envUint("FORGE_DEPLOYER_PRIVATE_KEY");
+    uint256 internal proxyDeployerPrivateKey = vm.envUint("FORGE_PROXY_DEPLOYER_PRIVATE_KEY");
+    address internal deployer = vm.envAddress("FORGE_DEPLOYER_ADDRESS");
+    address internal proxyDeployer = vm.envAddress("FORGE_PROXY_DEPLOYER_ADDRESS");
+
+    function deployPoolsInfra() public {
         uint256 forkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
-        address deployer = vm.envAddress("FORGE_DEPLOYER_ADDRESS");
-        address proxyDeployer = vm.envAddress("FORGE_PROXY_DEPLOYER");
-
         vm.selectFork(forkId);
+
+        console.log(forkId);
+
+        _deployParentPool();
+        // _deployCcipLocalSimulation();
+        _deployAutomation();
+        _deployLpToken();
+    }
+
+    function _deployParentPool() private {
         vm.startBroadcast(proxyDeployerPrivateKey);
 
         // Deploy ParentPoolProxy
@@ -36,6 +48,7 @@ contract DeployParentPool is Test {
         vm.stopBroadcast();
 
         // Deploy LPToken and ConceroAutomation
+
         vm.startBroadcast(deployerPrivateKey);
         lpToken = new LPToken(deployer, address(parentPoolProxy));
 
@@ -75,5 +88,41 @@ contract DeployParentPool is Test {
         // Mint LP Tokens
         //        lpToken.mint(user1, 100 * 10 ** lpToken.decimals());
         vm.stopBroadcast();
+    }
+
+    function _deployAutomation() private {
+        vm.startBroadcast(deployerPrivateKey);
+
+        conceroCLA = new ConceroAutomation(
+            vm.envBytes32("CLF_DONID_BASE"),
+            uint64(vm.envUint("CLF_SUBID_BASE_SEPOLIA")),
+            0,
+            vm.envAddress("CLF_ROUTER_BASE"),
+            address(parentPoolProxy),
+            address(deployer)
+        );
+        vm.stopBroadcast();
+    }
+
+    function _deployLpToken() private {
+        vm.startBroadcast(deployerPrivateKey);
+        lpToken = new LPToken(deployer, address(parentPoolProxy));
+        vm.stopBroadcast();
+    }
+
+    function _deployCcipLocalSimulation() private {
+        //        ccipLocalSimulator = new CCIPLocalSimulator();
+        //
+        //        (
+        //            uint64 chainSelector,
+        //            IRouterClient sourceRouter,
+        //            IRouterClient destinationRouter,
+        //            WETH9 wrappedNative,
+        //            LinkToken linkToken,
+        //            BurnMintERC677Helper ccipBnM,
+        //            BurnMintERC677Helper ccipLnM
+        //        ) = ccipLocalSimulator.configuration();
+        //
+        //        ccipLocalSimulator.supportNewToken(Vm.envAddress("USDC_BASE"));
     }
 }

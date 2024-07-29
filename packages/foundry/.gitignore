@@ -8,8 +8,8 @@ out/
 /broadcast/**/dry-run/
 
 # Docs
-docs/
-lib/
+docs/*
+lib/*
 
 # Dotenv file
 .env

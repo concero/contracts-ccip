@@ -1,4 +1,6 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+
+return (async () => {
 	const chainSelectors = {
 		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 		// 	urls: [
@@ -65,13 +67,15 @@
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
 			urls: [
-				`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-				'https://base.blockpi.network/v1/rpc/public',
-				'https://base-rpc.publicnode.com',
+				// `https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
+				// 'https://base.blockpi.network/v1/rpc/public',
+				// 'https://base-rpc.publicnode.com',
+				'http://127.0.0.1:8545',
 			],
 			chainId: '0x2105',
 			usdcAddress: '${USDC_BASE}',
-			poolAddress: '${PARENT_POOL_PROXY_BASE}',
+			// poolAddress: '${PARENT_POOL_PROXY_BASE}',
+			poolAddress: '0x9d185A9aFb6ED0a0196EBCDfc22d1516ad02596A',
 		},
 	};
 
@@ -108,8 +112,8 @@
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
 
 	const getBaseDepositsOneTheWay = () => {
-		const pool = new ethers.Contract('${PARENT_POOL_PROXY_BASE}', poolAbi, baseProvider);
-		return pool.s_depositsOnTheWayArray();
+		const pool = new ethers.Contract('0x9d185A9aFb6ED0a0196EBCDfc22d1516ad02596A', poolAbi, baseProvider);
+		return pool.getDepositsOnTheWay();
 	};
 
 	const getChildPoolsCcipLogs = async ccipLines => {
@@ -127,6 +131,8 @@
 
 		const logs = await Promise.all(promises);
 
+		console.log(logs);
+
 		// logs.forEach((log, index) => {
 		// 	if (log.length) {}
 		// });
@@ -135,20 +141,24 @@
 	let promises = [];
 	let totalBalance = 0n;
 
-	for (const chain in chainSelectors) {
-		if (chain === baseChainSelector) continue;
-
-		const provider = getProviderByChainSelector(chain);
-		const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
-		const pool = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, provider);
-		promises.push(erc20.balanceOf(chainSelectors[chain].poolAddress));
-		promises.push(pool.s_loansInUse());
-	}
+	// for (const chain in chainSelectors) {
+	// 	if (chain === baseChainSelector) continue;
+	//
+	// 	const provider = getProviderByChainSelector(chain);
+	// 	const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
+	// 	const pool = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, provider);
+	// 	promises.push(erc20.balanceOf(chainSelectors[chain].poolAddress));
+	// 	promises.push(pool.s_loansInUse());
+	// }
 
 	promises.push(getBaseDepositsOneTheWay());
-	promises.push(baseProvider.getBlockNumber());
+	// promises.push(baseProvider.getBlockNumber());
 
-	const results = await Promise.all(promises);
+	try {
+		const results = await Promise.all(promises);
+	} catch (error) {
+		console.log(error);
+	}
 
 	for (let i = 0; i < results.length - 2; i += 2) {
 		totalBalance += BigInt(results[i]) + BigInt(results[i + 1]);

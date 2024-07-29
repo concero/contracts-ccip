@@ -19,11 +19,17 @@ all: test
 install:
 	grep -E '^\s*url' ../../.gitmodules | awk '{print $3}' | xargs -I {} forge install {}
 
+run_fork:
+	anvil --fork-url ${BASE_RPC_URL}
+
+
 test:
 	forge test $(args)
 
-run_local_base_fork:
-	anvil --fork-url ${BASE_RPC_URL} --fork-block-number 17729705
+#test-fork: run_fork
+#	forge test $(args)
+#	$(MAKE) stop_local_base_fork
 
+.PHONY: get_latest_block run_fork stop_local_fork test test-fork
 .PHONY: all test
 

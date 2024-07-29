@@ -4,12 +4,7 @@ import secrets from "../../constants/CLFSecrets";
 import CLFSimulationConfig from "../../constants/CLFSimulationConfig";
 import { execSync } from "child_process";
 import getHashSum from "../../utils/getHashSum";
-import {
-  automationsJsCodeUrl,
-  ethersV6CodeUrl,
-  infraSrcJsCodeUrl,
-  parentPoolDistributeLiqJsCodeUrl,
-} from "../../constants/functionsJsCodeUrls";
+import { automationsJsCodeUrl, ethersV6CodeUrl, infraSrcJsCodeUrl, parentPoolDistributeLiqJsCodeUrl } from "../../constants/functionsJsCodeUrls";
 
 const { simulateScript } = require("@chainlink/functions-toolkit");
 
@@ -94,7 +89,7 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
         "0x" + 5224473277236331295n.toString(16), // dstChainSelector
       ]);
     } else if (taskArgs.function === "pool_get_total_balance") {
-      await simulate(path.join(__dirname, "../", "./CLFScripts/dist/pool/parentPoolEval.min.js"), [
+      await simulate(path.join(__dirname, "../", "./CLFScripts/dist/pool/getTotalBalance.min.js"), [
         "0xef64cf53063700bbbd8e42b0282d3d8579aac289ea03f826cf16f9bd96c7703a", // srcJsHashSum
         "0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4", // ethers hash sum
       ]);

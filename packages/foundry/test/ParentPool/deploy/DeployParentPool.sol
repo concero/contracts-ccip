@@ -24,11 +24,9 @@ contract DeployParentPool is Test {
     LPToken public lpToken;
     ConceroAutomation public conceroCLA;
     FunctionsSubscriptions public functionsSubscriptions;
-    CCIPLocalSimulator public ccipLocalSimulator;
-    CCIPLocalSimulatorFork public ccipLocalSimulator;
 
-    uint256 public arbitrumForkId;
-    uint256 public baseForkId;
+    uint256 public arbitrumForkId = vm.createFork(vm.envString("LOCAL_ARBITRUM_FORK_RPC_URL"));
+    uint256 public baseForkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
 
     address user1 = makeAddr("user1");
     address user2 = makeAddr("user2");
@@ -39,21 +37,18 @@ contract DeployParentPool is Test {
     address internal proxyDeployer = vm.envAddress("FORGE_PROXY_DEPLOYER_ADDRESS");
 
     function deployPoolsInfra() public {
-        baseForkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
-        vm.selectFork(baseForkId);
-
         _deployParentPool();
         _setParentPoolVars();
-        _deployCcipLocalSimulation();
         _deployAutomation();
         _deployLpToken();
-        _addFunctionsConsumer();
+        //        _addFunctionsConsumer();
         _fundLinkParentProxy(100000000000000000000);
 
         _deployChildPools();
     }
 
     function _deployParentPool() private {
+        vm.selectFork(baseForkId);
         vm.startBroadcast(proxyDeployerPrivateKey);
 
         parentPoolProxy = new ParentPoolProxy(
@@ -90,6 +85,7 @@ contract DeployParentPool is Test {
     }
 
     function _setParentPoolVars() private {
+        vm.selectFork(baseForkId);
         vm.startBroadcast(deployerPrivateKey);
         IParentPool(address(parentPoolProxy)).setPools(
             uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
@@ -99,13 +95,14 @@ contract DeployParentPool is Test {
 
         IParentPool(address(parentPoolProxy)).setConceroContractSender(
             uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
-            address(0x1),
+            address(user1),
             1
         );
         vm.stopBroadcast();
     }
 
     function _deployAutomation() private {
+        vm.selectFork(baseForkId);
         vm.startBroadcast(deployerPrivateKey);
         conceroCLA = new ConceroAutomation(
             vm.envBytes32("CLF_DONID_BASE"),
@@ -119,11 +116,14 @@ contract DeployParentPool is Test {
     }
 
     function _deployLpToken() private {
+        vm.selectFork(baseForkId);
         vm.startBroadcast(deployerPrivateKey);
         lpToken = new LPToken(deployer, address(parentPoolProxy));
         vm.stopBroadcast();
     }
+
     function _addFunctionsConsumer() private {
+        vm.selectFork(baseForkId);
         vm.startPrank(vm.envAddress("DEPLOYER_ADDRESS"));
         functionsSubscriptions = FunctionsSubscriptions(
             address(0xf9B8fc078197181C841c296C876945aaa425B278)
@@ -135,27 +135,12 @@ contract DeployParentPool is Test {
         vm.stopPrank();
     }
 
-    function _deployCcipLocalSimulation() private {
-        ccipLocalSimulator = new CCIPLocalSimulatorFork();
-        ccipLocalSimulator.setNetworkDetails(
-            vm.envUint("BASE_CHAIN_ID"),
-            Register.NetworkDetails({
-                chainSelector: uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_BASE")),
-                routerAddress: vm.envAddress("CL_CCIP_ROUTER_BASE"),
-                linkAddress: vm.envAddress("LINK_BASE"),
-                wrappedNativeAddress: address(0),
-                ccipBnMAddress: vm.envAddress("USDC_BASE"),
-                ccipLnMAddress: address(0)
-            })
-        );
-    }
-
     function _fundLinkParentProxy(uint256 amount) internal {
+        vm.selectFork(baseForkId);
         deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), amount);
     }
 
     function _deployChildPools() private {
-        arbitrumForkId = vm.createFork(vm.envString("LOCAL_ARBITRUM_FORK_RPC_URL"));
         vm.selectFork(arbitrumForkId);
         vm.startBroadcast(deployerPrivateKey);
         childPoolProxy_ARBUTRUM = new ChildPoolProxy(

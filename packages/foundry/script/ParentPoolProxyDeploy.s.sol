@@ -10,7 +10,7 @@ contract ParentPoolProxyDeploy is Script {
         address _admin,
         bytes memory _data
     ) public returns (ParentPoolProxy proxy) {
-        vm.startBroadcast();
+        vm.startBroadcast(vm.envUint("FORGE_DEPLOYER_PRIVATE_KEY"));
         proxy = new ParentPoolProxy(_logic, _admin, _data);
 
         vm.stopBroadcast();

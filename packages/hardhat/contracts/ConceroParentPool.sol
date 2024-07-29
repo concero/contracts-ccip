@@ -126,7 +126,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ///@notice Chainlink Functions Protocol Subscription ID
     uint64 private immutable i_subscriptionId;
     ///@notice Contract Owner
-    address private immutable i_owner;
+    address internal immutable i_owner;
 
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////

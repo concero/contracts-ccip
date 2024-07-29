@@ -38,12 +38,9 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     ///////////////////////////////////////////////////////////
     //////////////////////// VARIABLES ////////////////////////
     ///////////////////////////////////////////////////////////
-    ///@notice
     uint32 public constant CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT = 150_000;
     uint32 public constant CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT = 300_000;
-    ///@notice
     uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
-    ///@notice
     uint8 private constant CL_SRC_RESPONSE_LENGTH = 192;
     ///@notice JS Code for Chainlink Functions
     string private constant CL_JS_CODE =

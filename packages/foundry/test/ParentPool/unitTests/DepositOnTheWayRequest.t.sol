@@ -6,7 +6,7 @@ import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
 import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {ForkType, CreateAndSwitchToForkTest} from "../../utils/CreateAndSwitchToFork.t.sol";
 
-contract DepositOnTheWayRequestTest is ConceroParentPool, CreateAndSwitchToForkTest {
+contract DepositOnTheWayRequest is ConceroParentPool, CreateAndSwitchToForkTest {
     constructor()
         ConceroParentPool(
             address(0),
@@ -23,9 +23,7 @@ contract DepositOnTheWayRequestTest is ConceroParentPool, CreateAndSwitchToForkT
         )
     {}
 
-    function setUp() public {
-        switchToFork(ForkType.LocalBase);
-    }
+    function setUp() public {}
 
     function test_AddDepositOnTheWay() public {
         _fillDepositsRequestArray(MAX_DEPOSIT_REQUESTS_COUNT);

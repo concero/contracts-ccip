@@ -109,9 +109,9 @@ contract ConceroAutomation is
         bytes32 _donId,
         uint64 _subscriptionId,
         uint8 _slotId,
-        address _functionsRouter, //todo: unused variable
+        address _functionsRouter,
         address _masterPool,
-        address _owner //todo: unused variable
+        address _owner
     ) FunctionsClient(_functionsRouter) Ownable(_owner) {
         i_donId = _donId;
         i_subscriptionId = _subscriptionId;

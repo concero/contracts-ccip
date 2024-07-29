@@ -79,7 +79,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ///////////////
     ///CONSTANTS///
     ///////////////
-    //todo: shall we remove this ALLOWED constant?
     uint256 private constant ALLOWED = 1;
     uint256 private constant USDC_DECIMALS = 10 ** 6;
     uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
@@ -88,8 +87,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     //  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
     uint256 private constant MIN_DEPOSIT = 1 * 10 ** 6;
     uint256 private constant PRECISION_HANDLER = 10 ** 10;
-
-    // TODO: Remove in production
     uint256 private constant WITHDRAW_DEADLINE_SECONDS = 60;
     uint256 private constant DEPOSIT_DEADLINE_SECONDS = 60;
     //  uint256 private constant WITHDRAW_DEADLINE_SECONDS = 597_600;
@@ -250,8 +247,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         address _link,
         bytes32 _donId,
         uint64 _subscriptionId,
-        address _functionsRouter, //todo: unused variable
-        address _ccipRouter, //todo: unused variable
+        address _functionsRouter,
+        address _ccipRouter,
         address _usdc,
         address _lpToken,
         address _automation,
@@ -321,7 +318,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         uint256 _deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
         s_depositRequests[clfRequestId] = DepositRequest({
             lpAddress: msg.sender,
-            childPoolsLiquiditySnapshot: 0, //todo partial initialisation to save gas
+            childPoolsLiquiditySnapshot: 0, // todo partial initialisation to save gas
             usdcAmountToDeposit: _usdcAmount,
             deadline: _deadline
         });
@@ -419,13 +416,12 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         uint256 amountToWithdraw = withdrawRequest.amountToWithdraw;
         uint256 lpAmountToBurn = withdrawRequest.lpAmountToBurn;
+        uint256 remainingLiquidityFromChildPools = withdrawRequest.remainingLiquidityFromChildPools;
 
         if (amountToWithdraw == 0) revert ConceroParentPool_ActiveRequestNotFulfilledYet();
 
-        if (withdrawRequest.remainingLiquidityFromChildPools > 0)
-            revert ConceroParentPool_WithdrawalAmountNotReady(
-                withdrawRequest.remainingLiquidityFromChildPools
-            );
+        if (remainingLiquidityFromChildPools > 0)
+            revert ConceroParentPool_WithdrawalAmountNotReady(remainingLiquidityFromChildPools);
 
         s_totalWithdrawRequestsAmount = s_totalWithdrawRequestsAmount > amountToWithdraw
             ? s_totalWithdrawRequestsAmount - amountToWithdraw
@@ -668,22 +664,16 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             }
         } else if (isWithdrawalTx) {
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
+            request.remainingLiquidityFromChildPools -= any2EvmMessage.destTokenAmounts[0].amount;
 
-            //todo: can we do request.remainingLiquidityFromChildPools -= amountAfterFees ?
-            //update the corresponding withdraw request
-            request.remainingLiquidityFromChildPools = request.remainingLiquidityFromChildPools >=
-                any2EvmMessage.destTokenAmounts[0].amount
-                ? request.remainingLiquidityFromChildPools -
-                    any2EvmMessage.destTokenAmounts[0].amount
-                : 0;
+            //todo: This may be redundant, let's test it
+            //            request.remainingLiquidityFromChildPools = request.remainingLiquidityFromChildPools >=
+            //                any2EvmMessage.destTokenAmounts[0].amount
+            //                ? request.remainingLiquidityFromChildPools -
+            //                    any2EvmMessage.destTokenAmounts[0].amount
+            //                : 0;
 
-            //todo @nikita is this correct?
             s_withdrawalsOnTheWayAmount -= any2EvmMessage.destTokenAmounts[0].amount;
-            //todo: this can be removed
-            if (request.remainingLiquidityFromChildPools == 0) {
-                // removing withdrawId from withdrawalsOnTheWayIds
-            }
-            //            s_totalWithdrawRequestsAmount += any2EvmMessage.destTokenAmounts[0].amount;
         }
 
         emit ConceroParentPool_CCIPReceived(
@@ -832,7 +822,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ///////////////
 
     function _handleStartDepositCLFFulfill(bytes32 requestId, bytes memory response) internal {
-        //todo: parent pool variables have to be calculated only in completeDeposit()
         DepositRequest storage request = s_depositRequests[requestId];
 
         (uint256 childPoolsLiquidity, uint8[] memory depositsOnTheWayIdsToDelete) = abi.decode(
@@ -959,7 +948,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         //        s_totalWithdrawRequestsAmount += amountToWithdrawWithUsdcDecimals / (childPoolsCount + 1);
         //        s_withdrawalIdByLPAddress[lpAddress] = request;
-        i_automation.addPendingWithdrawalId(_withdrawalId); // todo: withdrawalId
+        i_automation.addPendingWithdrawalId(_withdrawalId);
         emit ConceroParentPool_RequestUpdated(_withdrawalId);
     }
 

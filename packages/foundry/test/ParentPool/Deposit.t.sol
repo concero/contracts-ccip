@@ -8,7 +8,7 @@ import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 
 contract Deposit is DeployParentPool {
     function setUp() public {
-        deployParentPool();
+        deployPoolsInfra();
     }
 
     function test_RunDeploy() public {}

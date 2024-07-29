@@ -160,10 +160,10 @@
 
 			const logs = await Promise.all(promises);
 
-			for (const log of logs) {
+			logs.forEach((log, index) => {
 				if (log.length) {
 				}
-			}
+			});
 		}
 	}
 

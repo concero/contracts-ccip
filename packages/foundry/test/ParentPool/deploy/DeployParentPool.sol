@@ -9,15 +9,18 @@ import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {LPToken} from "contracts/LPToken.sol";
 import {CCIPLocalSimulator} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulator.sol";
+import {FunctionsSubscriptions} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsSubscriptions.sol";
 
 contract DeployParentPool is Test {
     ConceroParentPool public parentPoolImplementation;
     ParentPoolProxy public parentPoolProxy;
     LPToken public lpToken;
     ConceroAutomation public conceroCLA;
+    FunctionsSubscriptions public functionsSubscriptions;
+    CCIPLocalSimulator public ccipLocalSimulator;
+
     address user1 = makeAddr("user1");
     address user2 = makeAddr("user2");
-    CCIPLocalSimulator public ccipLocalSimulator;
 
     uint256 internal deployerPrivateKey = vm.envUint("FORGE_DEPLOYER_PRIVATE_KEY");
     uint256 internal proxyDeployerPrivateKey = vm.envUint("FORGE_PROXY_DEPLOYER_PRIVATE_KEY");
@@ -32,6 +35,7 @@ contract DeployParentPool is Test {
         _deployCcipLocalSimulation();
         _deployAutomation();
         _deployLpToken();
+        _addFunctionsConsumer();
     }
 
     function _deployParentPool() private {
@@ -50,7 +54,7 @@ contract DeployParentPool is Test {
             address(parentPoolProxy),
             vm.envAddress("LINK_BASE"),
             vm.envBytes32("CLF_DONID_BASE"),
-            uint64(vm.envUint("CLF_SUBID_BASE_SEPOLIA")),
+            uint64(vm.envUint("CLF_SUBID_BASE")),
             address(vm.envAddress("CLF_ROUTER_BASE")),
             address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
             address(vm.envAddress("USDC_BASE")),
@@ -88,6 +92,17 @@ contract DeployParentPool is Test {
         vm.startBroadcast(deployerPrivateKey);
         lpToken = new LPToken(deployer, address(parentPoolProxy));
         vm.stopBroadcast();
+    }
+    function _addFunctionsConsumer() private {
+        vm.startPrank(vm.envAddress("DEPLOYER_ADDRESS"));
+        functionsSubscriptions = FunctionsSubscriptions(
+            address(0xf9B8fc078197181C841c296C876945aaa425B278)
+        );
+        functionsSubscriptions.addConsumer(
+            uint64(vm.envUint("CLF_SUBID_BASE")),
+            address(parentPoolProxy)
+        );
+        vm.stopPrank();
     }
 
     function _deployCcipLocalSimulation() private {

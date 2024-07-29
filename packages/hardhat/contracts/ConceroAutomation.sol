@@ -2,12 +2,11 @@
 pragma solidity 0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {IParentPool} from "./Interfaces/IParentPool.sol";
 import {IConceroAutomation} from "./Interfaces/IConceroAutomation.sol";
-
+import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 ///@notice error emitted when the caller is not the owner.
 error ConceroAutomation_CallerNotAllowed(address caller);
 error ConceroAutomation_WithdrawAlreadyTriggered(bytes32 withdrawalId);
@@ -15,12 +14,7 @@ error ConceroAutomation_CLFFallbackError(bytes32 requestId);
 error ConceroAutomation__WithdrawRequestPerformed();
 error ConceroAutomation__WithdrawRequestDoesntExist(bytes32 withdrawalId);
 error ConceroAutomation__WithdrawRequestNotReady(bytes32 withdrawalId);
-contract ConceroAutomation is
-    IConceroAutomation,
-    AutomationCompatibleInterface,
-    FunctionsClient,
-    Ownable
-{
+contract ConceroAutomation is IConceroAutomation, AutomationCompatible, FunctionsClient, Ownable {
     ///////////////////////
     ///TYPE DECLARATIONS///
     ///////////////////////
@@ -188,7 +182,7 @@ contract ConceroAutomation is
      */
     function checkUpkeep(
         bytes calldata /* checkData */
-    ) external view override returns (bool, bytes memory) {
+    ) external view override cannotExecute returns (bool, bytes memory) {
         uint256 withdrawalRequestsCount = s_withdrawalRequestIds.length;
 
         for (uint256 i; i < withdrawalRequestsCount; ++i) {

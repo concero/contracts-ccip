@@ -48,10 +48,10 @@ interface IParentPool is IPool {
 
     struct WithdrawRequest {
         address lpAddress;
-        uint256 totalCrossChainLiquiditySnapshot;
         uint256 lpSupplySnapshot;
         uint256 lpAmountToBurn;
         //
+        uint256 totalCrossChainLiquiditySnapshot;
         uint256 amountToWithdraw;
         uint256 liquidityRequestedFromEachPool; // this may be calculated by CLF later
         uint256 remainingLiquidityFromChildPools;

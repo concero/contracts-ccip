@@ -94,4 +94,5 @@ interface IParentPool is IPool {
 
     function getWithdrawalIdByLPAddress(address lpAddress) external view returns (bytes32);
     function addWithdrawalOnTheWayAmountById(bytes32 _withdrawalId) external;
+    function startDeposit(uint256 _usdcAmount) external;
 }

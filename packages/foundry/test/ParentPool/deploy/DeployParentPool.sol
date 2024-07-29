@@ -14,6 +14,8 @@ contract DeployParentPool is Test {
     ParentPoolProxy public parentPoolProxy;
     LPToken public lpToken;
     ConceroAutomation public conceroCLA;
+    address user1 = makeAddr("user1");
+    address user2 = makeAddr("user2");
 
     function deployParentPool() internal {
         uint256 deployerPrivateKey = vm.envUint("FORGE_DEPLOYER_PRIVATE_KEY");
@@ -25,17 +27,19 @@ contract DeployParentPool is Test {
         vm.selectFork(forkId);
         vm.startBroadcast(proxyDeployerPrivateKey);
 
+        // Deploy ParentPoolProxy
         parentPoolProxy = new ParentPoolProxy(
             address(vm.envAddress("CONCERO_PAUSE_BASE")),
             proxyDeployer,
             bytes("")
         );
-
         vm.stopBroadcast();
-        vm.startBroadcast(deployerPrivateKey);
 
+        // Deploy LPToken and ConceroAutomation
+        vm.startBroadcast(deployerPrivateKey);
         lpToken = new LPToken(deployer, address(parentPoolProxy));
 
+        // Deploy ConceroAutomation
         conceroCLA = new ConceroAutomation(
             vm.envBytes32("CLF_DONID_BASE"),
             uint64(vm.envUint("CLF_SUBID_BASE_SEPOLIA")),
@@ -45,6 +49,7 @@ contract DeployParentPool is Test {
             address(deployer)
         );
 
+        // Deploy ConceroParentPool
         parentPoolImplementation = new ConceroParentPool(
             address(parentPoolProxy),
             vm.envAddress("LINK_BASE"),
@@ -60,11 +65,15 @@ contract DeployParentPool is Test {
         );
         vm.stopBroadcast();
 
+        // Upgrade Proxy to new Implementation
         vm.startBroadcast(proxyDeployerPrivateKey);
         ITransparentUpgradeableProxy(address(parentPoolProxy)).upgradeToAndCall(
             address(parentPoolImplementation),
             bytes("")
         );
+
+        // Mint LP Tokens
+        //        lpToken.mint(user1, 100 * 10 ** lpToken.decimals());
         vm.stopBroadcast();
     }
 }

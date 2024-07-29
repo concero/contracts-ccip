@@ -23,6 +23,10 @@ contract DepositOnTheWayRequestTest is ConceroParentPool, CreateAndSwitchToForkT
         )
     {}
 
+    function setUp() public {
+        switchToFork(ForkType.LocalBase);
+    }
+
     function test_AddDepositOnTheWay() public {
         _fillDepositsRequestArray(MAX_DEPOSIT_REQUESTS_COUNT);
         console.log(s_depositsOnTheWayArray.length);

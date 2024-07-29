@@ -74,6 +74,8 @@
 			poolAddress: '${PARENT_POOL_PROXY_BASE}',
 		},
 	};
+
+	const baseChainSelector = `0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`;
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 	const poolAbi = [
 		'function s_loansInUse() external view returns (uint256)',
@@ -103,18 +105,38 @@
 		return new FunctionsJsonRpcProvider(url);
 	};
 
-	const baseProvider = getProviderByChainSelector(`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`);
+	const baseProvider = getProviderByChainSelector(baseChainSelector);
 
 	const getBaseDepositsOneTheWay = () => {
 		const pool = new ethers.Contract('${PARENT_POOL_PROXY_BASE}', poolAbi, baseProvider);
 		return pool.s_depositsOnTheWayArray();
 	};
 
+	const getChildPoolsCcipLogs = async ccipLines => {
+		const ethersId = ethers.id('ConceroParentPool_CCIPReceived(bytes32, uint64, address, address, uint256)');
+		const promises = [];
+
+		for (const line of ccipLines) {
+			baseProvider.getLogs({
+				address: '${PARENT_POOL_PROXY_BASE}',
+				topics: [ethersId, line.ccipMessageId],
+				fromBlock: latestBlockNumber - 1000n,
+				toBlock: 'latest',
+			});
+		}
+
+		const logs = await Promise.all(promises);
+
+		// logs.forEach((log, index) => {
+		// 	if (log.length) {}
+		// });
+	};
+
 	let promises = [];
 	let totalBalance = 0n;
 
 	for (const chain in chainSelectors) {
-		if (chain === `0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`) continue;
+		if (chain === baseChainSelector) continue;
 
 		const provider = getProviderByChainSelector(chain);
 		const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
@@ -144,26 +166,7 @@
 		});
 
 		if (ccipLines.length) {
-			promises = [];
-			for (const line of ccipLines) {
-				const ethersId = ethers.id('ConceroParentPool_CCIPReceived(bytes32, uint64, address, address, uint256)');
-
-				promises.push(
-					baseProvider.getLogs({
-						address: '${PARENT_POOL_PROXY_BASE}',
-						topics: [ethersId, line.ccipMessageId],
-						fromBlock: latestBlockNumber - 1000n,
-						toBlock: 'latest',
-					}),
-				);
-			}
-
-			const logs = await Promise.all(promises);
-
-			logs.forEach((log, index) => {
-				if (log.length) {
-				}
-			});
+			const logs = await getChildPoolsCcipLogs(ccipLines);
 		}
 	}
 

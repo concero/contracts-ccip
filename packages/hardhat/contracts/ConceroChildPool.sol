@@ -370,7 +370,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
 
     /**
      * @notice Function to Distribute Liquidity across Concero Pools and process withdrawals
-     * @param _lpAddressAddress The liquidity provider that requested Withdraw. If it's a rebalance, it will be address(0)
+     * @param _lpAddress The liquidity provider that requested Withdraw. If it's a rebalance, it will be address(0)
      * @param _amount amount of the token to be sent
      * @dev This function will sent the address of the user as data. This address will be used to update the mapping on ParentPool.
      * @dev when processing withdrawals, the _chainSelector will always be the index 0 of s_poolChainSelectors

@@ -19,4 +19,7 @@ all: test
 test:
 	forge test $(args)
 
+run_local_base_fork:
+	anvil --fork-url ${BASE_RPC_URL} --fork-block-number 17729705
+
 .PHONY: all test

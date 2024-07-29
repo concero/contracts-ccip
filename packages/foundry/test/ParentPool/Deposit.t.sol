@@ -9,7 +9,7 @@ import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 
 contract Deposit is DeployParentPool {
     function setUp() public {
-        super.deployParentPool();
+        deployPoolsInfra();
     }
 
     function test_startDeposit_Success() public {

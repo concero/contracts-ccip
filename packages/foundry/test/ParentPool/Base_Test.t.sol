@@ -40,7 +40,7 @@ contract Base_Test is Test {
             address(parentPoolProxy),
             vm.envAddress("LINK_BASE"),
             vm.envBytes32("CLF_DONID_BASE"),
-            uint64(vm.envUint("CLF_SUBID_BASE_SEPOLIA")),
+            uint64(vm.envUint("CLF_SUBID_BASE")),
             address(vm.envAddress("CLF_ROUTER_BASE")),
             address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
             address(vm.envAddress("USDC_BASE")),
@@ -67,9 +67,8 @@ contract Base_Test is Test {
                                 INTERNAL
     //////////////////////////////////////////////////////////////*/
     function _addFunctionsConsumer() private {
-        vm.startPrank(vm.envAddress("DEPLOYER_ADDRESS"));
+        vm.prank(vm.envAddress("DEPLOYER_ADDRESS"));
         functionsSubscriptions = FunctionsSubscriptions(address(0xf9B8fc078197181C841c296C876945aaa425B278));
         functionsSubscriptions.addConsumer(uint64(vm.envUint("CLF_SUBID_BASE")), address(parentPoolProxy));
-        vm.stopPrank();
     }
 }

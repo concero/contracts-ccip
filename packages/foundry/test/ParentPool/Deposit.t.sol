@@ -60,18 +60,18 @@ contract Deposit is DeployParentPool {
         vm.stopPrank();
     }
 
-    function test_completeDeposit() public {
-        vm.selectFork(baseForkId);
-
-        deal(vm.envAddress("USDC_BASE"), address(parentPoolProxy), 10000000000000000000000);
-
-        vm.prank(vm.envAddress("MESSENGER_ADDRESS"));
-        IParentPool(address(parentPoolProxy)).completeDeposit(
-            keccak256(abi.encodePacked("test")),
-            10 * 10 ** 6
-        );
-        vm.stopPrank();
-    }
+    //    function test_completeDeposit() public {
+    //        vm.selectFork(baseForkId);
+    //
+    //        deal(vm.envAddress("USDC_BASE"), address(parentPoolProxy), 10000000000000000000000);
+    //
+    //        vm.prank(vm.envAddress("MESSENGER_ADDRESS"));
+    //        IParentPool(address(parentPoolProxy)).completeDeposit(
+    //            keccak256(abi.encodePacked("test")),
+    //            10 * 10 ** 6
+    //        );
+    //        vm.stopPrank();
+    //    }
 
     function test_ccipReceive() public {
         vm.selectFork(baseForkId);

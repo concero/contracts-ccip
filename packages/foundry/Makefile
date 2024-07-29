@@ -17,7 +17,7 @@ args =
 all: test
 
 install:
-	grep -E '^\s*url' ../../.gitmodules | awk '{print $3}' | xargs -I {} forge install {}
+	grep -E '^\s*url' ../../.gitmodules | awk '{print $$3}' | xargs -I {} sh -c 'forge install {}'
 
 run_fork:
 	anvil --fork-url ${BASE_RPC_URL}

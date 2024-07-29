@@ -45,7 +45,6 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     ///CONSTANTS///
     ///////////////
     ///@notice Magic Number Removal
-    //todo: remove
     uint256 private constant ALLOWED = 1;
 
     ////////////////
@@ -60,7 +59,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     ///@notice immutable variable to store the USDC address.
     IERC20 private immutable i_USDC;
     ///@notice Contract Owner
-    address immutable i_owner; //todo: scope
+    address private immutable i_owner;
 
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
@@ -139,7 +138,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         address _orchestratorProxy,
         address _childProxy,
         address _link,
-        address _ccipRouter, // unused variable
+        address _ccipRouter,
         address _usdc,
         address _owner
     ) CCIPReceiver(_ccipRouter) {
@@ -183,13 +182,13 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     function distributeLiquidity(
         uint64 _chainSelector,
         uint256 _amountToSend,
-        bytes32 distributeLiquidityRequestId //todo: can I rename this?
+        bytes32 _requestId
     ) external onlyProxyContext onlyMessenger {
         if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroChildPool_InvalidAddress();
-        if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
-            revert ConceroChildPool_RequestAlreadyProceeded(distributeLiquidityRequestId);
+        if (s_distributeLiquidityRequestProcessed[_requestId] != false) {
+            revert ConceroChildPool_RequestAlreadyProceeded(_requestId);
         }
-        s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
+        s_distributeLiquidityRequestProcessed[_requestId] = true;
         _ccipSend(_chainSelector, address(0), _amountToSend);
     }
 
@@ -207,8 +206,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
 
         uint256 poolsCount = s_poolChainSelectors.length;
-        //todo: change this
-        if (poolsCount < ALLOWED) revert ConceroChildPool_ThereIsNoPoolToDistribute();
+        if (poolsCount == 0) revert ConceroChildPool_ThereIsNoPoolToDistribute();
 
         uint256 amountToSentToEachPool = (i_USDC.balanceOf(address(this)) / poolsCount) - 1;
 
@@ -235,10 +233,6 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         address _receiver
     ) external onlyProxyContext {
         if (msg.sender != i_infraProxy) revert ConceroChildPool_CallerIsNotConcero(msg.sender);
-
-        //todo: this check is redundant
-        if (_amount > IERC20(_token).balanceOf(address(this)))
-            revert ConceroChildPool_InsufficientBalance();
         if (_receiver == address(0)) revert ConceroChildPool_InvalidAddress();
 
         s_loansInUse = s_loansInUse + _amount;
@@ -281,13 +275,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     function setPools(
         uint64 _chainSelector,
         address _pool
-    )
-        external
-        payable
-        //todo: do we need both modifiers here?
-        onlyProxyContext
-        onlyOwner
-    {
+    ) external payable onlyProxyContext onlyOwner {
         if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0))
             revert ConceroChildPool_InvalidAddress();
 
@@ -370,7 +358,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
 
     /**
      * @notice Function to Distribute Liquidity across Concero Pools and process withdrawals
-     * @param _lpAddressAddress The liquidity provider that requested Withdraw. If it's a rebalance, it will be address(0)
+     * @param _lpAddress The liquidity provider that requested Withdraw. If it's a rebalance, it will be address(0)
      * @param _amount amount of the token to be sent
      * @dev This function will sent the address of the user as data. This address will be used to update the mapping on ParentPool.
      * @dev when processing withdrawals, the _chainSelector will always be the index 0 of s_poolChainSelectors
@@ -380,12 +368,6 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         address _lpAddress,
         uint256 _amount
     ) internal onlyMessenger onlyProxyContext returns (bytes32 messageId) {
-        //todo: should we have both of these modifiers?
-
-        //todo: this check below is redundant
-        if (_amount > i_USDC.balanceOf(address(this)))
-            revert ConceroChildPool_InsufficientBalance();
-
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
 
         Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({
@@ -404,13 +386,6 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         });
 
         uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
-
-        // todo: this check is also redundant
-        if (fees > i_linkToken.balanceOf(address(this)))
-            revert ConceroChildPool_NotEnoughLinkBalance(
-                i_linkToken.balanceOf(address(this)),
-                fees
-            );
 
         i_USDC.approve(i_ccipRouter, _amount);
         i_linkToken.approve(i_ccipRouter, fees);

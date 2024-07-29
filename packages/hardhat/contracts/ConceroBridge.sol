@@ -3,14 +3,9 @@ pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-//import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-//import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {ConceroCCIP} from "./ConceroCCIP.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
-//import {LibConcero} from "./Libraries/LibConcero.sol";
-//todo: all of these selectors below are unused
-import {CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON} from "./Constants.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -59,7 +54,7 @@ contract ConceroBridge is ConceroCCIP {
     constructor(
         FunctionsVariables memory _variables,
         uint64 _chainSelector,
-        uint _chainIndex, //todo: can we specify explicit uint here?
+        uint256 _chainIndex,
         address _link,
         address _ccipRouter,
         address _dexSwap,
@@ -116,7 +111,7 @@ contract ConceroBridge is ConceroCCIP {
             bridgeData.receiver,
             lpFee
         );
-        // TODO: add uniq id with all argument including dstSwapData
+        // TODO: for dstSwaps: add unique keccak id with all argument including dstSwapData
         //    bytes32 id = keccak256(abi.encodePacked(ccipMessageId, bridgeData, dstSwapData));
         emit CCIPSent(
             ccipMessageId,

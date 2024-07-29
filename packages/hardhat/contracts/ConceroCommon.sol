@@ -105,6 +105,7 @@ contract ConceroCommon {
         return false;
     }
 
+    // todo: Return statements must be written and must explicitly return something
     function getWrappedNative() internal view returns (address _wrappedAddress) {
         uint256 chainId = block.chainid;
 
@@ -132,6 +133,7 @@ contract ConceroCommon {
      * @param _amount the amount of USDC
      * @return _adjustedAmount the adjusted amount
      */
+    // todo: Return statements must be written and must explicitly return something
     function _convertToUSDCDecimals(
         uint256 _amount
     ) internal pure returns (uint256 _adjustedAmount) {

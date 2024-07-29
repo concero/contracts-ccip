@@ -109,9 +109,9 @@ contract ConceroAutomation is
         bytes32 _donId,
         uint64 _subscriptionId,
         uint8 _slotId,
-        address _functionsRouter,
+        address _functionsRouter, //todo: unused variable
         address _masterPool,
-        address _owner
+        address _owner //todo: unused variable
     ) FunctionsClient(_functionsRouter) Ownable(_owner) {
         i_donId = _donId;
         i_subscriptionId = _subscriptionId;
@@ -323,8 +323,6 @@ contract ConceroAutomation is
         if (err.length > 0) {
             emit FunctionsRequestError(requestId);
             return;
-            // todo: there is no fallback mechanism if CLF fails to trigger liquidity pull from child pools.
-            // todo: if CLF fails, the LP will not be able to retry the withdrawal request.
         }
 
         uint256 withdrawalRequestsCount = s_withdrawalRequestIds.length;

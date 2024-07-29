@@ -14,7 +14,7 @@ import {IParentPool} from "./Interfaces/IParentPool.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
 import {ParentPoolStorage} from "contracts/Libraries/ParentPoolStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
-import {LibConcero} from "./Libraries/LibConcero.sol"; // todo: Only used by withdraw. Remove in production
+//import {LibConcero} from "./Libraries/LibConcero.sol"; // LibConcero is only used by withdraw. Remove in production
 import {IConceroAutomation} from "./Interfaces/IConceroAutomation.sol";
 
 ////////////////////////////////////////////////////////
@@ -79,6 +79,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ///////////////
     ///CONSTANTS///
     ///////////////
+    //todo: shall we remove this ALLOWED constant?
     uint256 private constant ALLOWED = 1;
     uint256 private constant USDC_DECIMALS = 10 ** 6;
     uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
@@ -230,7 +231,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
      * @notice modifier to check if the caller is the an approved messenger
      */
     modifier onlyMessenger() {
-        if (!isMessenger(msg.sender)) revert ConceroParentPool_NotMessenger(msg.sender);
+        if (!_isMessenger(msg.sender)) revert ConceroParentPool_NotMessenger(msg.sender);
         _;
     }
 
@@ -249,8 +250,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         address _link,
         bytes32 _donId,
         uint64 _subscriptionId,
-        address _functionsRouter,
-        address _ccipRouter,
+        address _functionsRouter, //todo: unused variable
+        address _ccipRouter, //todo: unused variable
         address _usdc,
         address _lpToken,
         address _automation,
@@ -647,19 +648,18 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             any2EvmMessage.data,
             (bytes32, address, uint256)
         );
-        uint256 amountAfterFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
 
         bool isUserTx = receivedFee > 0 && withdrawalId == bytes32(0) && user != address(0);
         bool isWithdrawalTx = withdrawalId != bytes32(0);
 
         if (isUserTx) {
+            uint256 amountAfterFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
             IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransaction(
                 any2EvmMessage.messageId
             );
-            if (
-                (transaction.ccipMessageId == any2EvmMessage.messageId &&
-                    transaction.isConfirmed == false) || transaction.ccipMessageId == 0
-            ) {
+            bool isExecutionLayerFailed = ((transaction.ccipMessageId == any2EvmMessage.messageId &&
+                transaction.isConfirmed == false) || transaction.ccipMessageId == 0);
+            if (isExecutionLayerFailed) {
                 i_USDC.safeTransfer(user, amountAfterFees);
                 //We don't subtract it here because the loan was not performed. And the value is not summed into the `s_loanInUse` variable.
             } else {
@@ -669,13 +669,17 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         } else if (isWithdrawalTx) {
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
 
+            //todo: can we do request.remainingLiquidityFromChildPools -= amountAfterFees ?
             //update the corresponding withdraw request
             request.remainingLiquidityFromChildPools = request.remainingLiquidityFromChildPools >=
                 any2EvmMessage.destTokenAmounts[0].amount
                 ? request.remainingLiquidityFromChildPools -
                     any2EvmMessage.destTokenAmounts[0].amount
                 : 0;
-            //decrementing s_withdrawalsOnTheWayAmount
+
+            //todo @nikita is this correct?
+            s_withdrawalsOnTheWayAmount -= any2EvmMessage.destTokenAmounts[0].amount;
+            //todo: this can be removed
             if (request.remainingLiquidityFromChildPools == 0) {
                 // removing withdrawId from withdrawalsOnTheWayIds
             }
@@ -830,9 +834,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     function _handleStartDepositCLFFulfill(bytes32 requestId, bytes memory response) internal {
         //todo: parent pool variables have to be calculated only in completeDeposit()
         DepositRequest storage request = s_depositRequests[requestId];
-        uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) +
-            s_loansInUse +
-            s_depositsOnTheWayAmount;
 
         (uint256 childPoolsLiquidity, uint8[] memory depositsOnTheWayIdsToDelete) = abi.decode(
             response,
@@ -931,7 +932,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ) private {
         uint256 lpToBurn = _withdrawalRequest.lpAmountToBurn;
         uint256 lpSupplySnapshot = _withdrawalRequest.lpSupplySnapshot;
-        address lpAddress = _withdrawalRequest.lpAddress;
         uint256 childPoolsCount = s_poolChainSelectors.length;
 
         uint256 totalCrossChainBalance = _childPoolsLiquidity +
@@ -1125,7 +1125,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
      * @notice Function to check if a caller address is an allowed messenger
      * @param _messenger the address of the caller
      */
-    function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
+    function _isMessenger(address _messenger) internal pure returns (bool) {
         address[] memory messengers = new address[](4);
         messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
         messengers[1] = address(0);

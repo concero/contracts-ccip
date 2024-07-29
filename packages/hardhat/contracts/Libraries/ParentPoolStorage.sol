@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
@@ -26,13 +26,13 @@ contract ParentPoolStorage {
     ///@notice variable to store not processed amounts deposited by LPs
     uint256 public s_depositsOnTheWayAmount;
     ///@notice gap to reserve storage in the contract for future variable additions
-    uint256[49] __gap;
+    uint256[49] __gap; //todo: Explicitly mark visibility of state
 
     /////////////
     ///STORAGE///
     /////////////
     ///@notice array of Pools to receive Liquidity through `ccipSend` function
-    uint64[] s_poolChainSelectors;
+    uint64[] s_poolChainSelectors; //todo: Explicitly mark visibility of state
 
     ///@notice Mapping to keep track of valid pools to transfer in case of liquidation or rebalance
     mapping(uint64 chainSelector => address pool) public s_poolToSendTo;

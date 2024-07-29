@@ -9,14 +9,13 @@ import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {LPToken} from "contracts/LPToken.sol";
 import {CCIPLocalSimulator} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulator.sol";
+import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 
 contract DeployParentPool is Test {
     ConceroParentPool public parentPoolImplementation;
     ParentPoolProxy public parentPoolProxy;
     LPToken public lpToken;
     ConceroAutomation public conceroCLA;
-    address user1 = makeAddr("user1");
-    address user2 = makeAddr("user2");
     CCIPLocalSimulator public ccipLocalSimulator;
 
     uint256 internal deployerPrivateKey = vm.envUint("FORGE_DEPLOYER_PRIVATE_KEY");
@@ -29,9 +28,11 @@ contract DeployParentPool is Test {
         vm.selectFork(forkId);
 
         _deployParentPool();
+        _setParentPoolVars();
         _deployCcipLocalSimulation();
         _deployAutomation();
         _deployLpToken();
+        _fundLinkParentProxy(100000000000000000000);
     }
 
     function _deployParentPool() private {
@@ -45,7 +46,6 @@ contract DeployParentPool is Test {
         vm.stopBroadcast();
 
         vm.startBroadcast(deployerPrivateKey);
-
         parentPoolImplementation = new ConceroParentPool(
             address(parentPoolProxy),
             vm.envAddress("LINK_BASE"),
@@ -71,6 +71,16 @@ contract DeployParentPool is Test {
         vm.stopBroadcast();
     }
 
+    function _setParentPoolVars() private {
+        vm.startBroadcast(deployerPrivateKey);
+        IParentPool(address(parentPoolProxy)).setPools(
+            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
+            address(parentPoolImplementation),
+            false
+        );
+        vm.stopBroadcast();
+    }
+
     function _deployAutomation() private {
         vm.startBroadcast(deployerPrivateKey);
         conceroCLA = new ConceroAutomation(
@@ -92,9 +102,11 @@ contract DeployParentPool is Test {
 
     function _deployCcipLocalSimulation() private {
         ccipLocalSimulator = new CCIPLocalSimulator();
-
         ccipLocalSimulator.configuration();
-
         ccipLocalSimulator.supportNewToken(vm.envAddress("USDC_BASE"));
+    }
+
+    function _fundLinkParentProxy(uint256 amount) internal {
+        deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), amount);
     }
 }

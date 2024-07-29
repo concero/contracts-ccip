@@ -105,4 +105,10 @@ interface IParentPool is IPool {
         address _pool,
         bool isRebalancingNeeded
     ) external payable;
+
+    function setConceroContractSender(
+        uint64 _chainSelector,
+        address _contractAddress,
+        uint256 _isAllowed
+    ) external payable;
 }

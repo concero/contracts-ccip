@@ -17,8 +17,11 @@ contract ParentPoolDeploy is Script {
         address _automation,
         address _orchestrator,
         address _owner
-    ) public returns(ConceroParentPool pool){
-        vm.startBroadcast();
+    ) public returns (ConceroParentPool pool) {
+        uint256 forkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
+        vm.selectFork(forkId);
+
+        vm.startBroadcast(vm.envUint("FORGE_DEPLOYER_PRIVATE_KEY"));
         pool = new ConceroParentPool(
             _proxy,
             _link,

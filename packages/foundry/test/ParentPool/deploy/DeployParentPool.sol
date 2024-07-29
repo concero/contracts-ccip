@@ -8,33 +8,52 @@ import {ParentPoolProxy} from "contracts/Proxy/ParentPoolProxy.sol";
 import {Test, console} from "forge-std/Test.sol";
 
 contract DeployParentPool is Test {
-    ParentPoolDeploy private parentPoolDeploy = new ParentPoolDeploy();
-    ParentPoolProxyDeploy private parentPoolProxyDeploy = new ParentPoolProxyDeploy();
+    ConceroParentPool public parentPoolImplementation;
+    ParentPoolProxy public parentPool;
 
-    ConceroParentPool public parentPool;
-    ParentPoolProxy public parentPoolProxy;
+    function deployParentPool() internal {
+        uint256 deployerPrivateKey = vm.envUint("FORGE_DEPLOYER_PRIVATE_KEY");
+        uint256 forkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
+        address deployer = vm.envAddress("FORGE_DEPLOYER");
+        address proxyDeployer = vm.envAddress("FORGE_PROXY_DEPLOYER");
 
-    function deployParentPool() public {
-        console.log(address(msg.sender));
+        vm.selectFork(forkId);
+        vm.startBroadcast(deployerPrivateKey);
 
-        parentPoolProxy = parentPoolProxyDeploy.run(
-            address(parentPoolDeploy),
-            address(msg.sender),
-            bytes("")
-        );
-
-        parentPool = parentPoolDeploy.run(
-            address(parentPoolProxy),
-            address(vm.envAddress("LINK_BASE")),
-            bytes32(0),
-            uint64(0),
+        parentPoolImplementation = new ConceroParentPool(
+            address(parentPool),
+            vm.envAddress("LINK_BASE"),
+            vm.envBytes32("CLF_DONID_BASE"),
+            uint64(vm.envUint("CLF_SUBID_BASE_SEPOLIA")),
             address(vm.envAddress("CLF_ROUTER_BASE")),
             address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
             address(vm.envAddress("USDC_BASE")),
             address(vm.envAddress("LPTOKEN_BASE")),
             address(vm.envAddress("CONCERO_AUTOMATION_BASE")),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
-            address(msg.sender)
+            address(deployer)
         );
+
+        parentPool = new ParentPoolProxy(
+            address(parentPoolImplementation),
+            proxyDeployer,
+            bytes("")
+        );
+
+        parentPoolImplementation = new ConceroParentPool(
+            address(parentPool),
+            vm.envAddress("LINK_BASE"),
+            vm.envBytes32("CLF_DONID_BASE"),
+            uint64(vm.envUint("CLF_SUBID_BASE_SEPOLIA")),
+            address(vm.envAddress("CLF_ROUTER_BASE")),
+            address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
+            address(vm.envAddress("USDC_BASE")),
+            address(vm.envAddress("LPTOKEN_BASE")),
+            address(vm.envAddress("CONCERO_AUTOMATION_BASE")),
+            address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
+            address(deployer)
+        );
+
+        vm.stopBroadcast();
     }
 }

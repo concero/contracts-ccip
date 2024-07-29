@@ -82,13 +82,13 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     uint256 private constant ALLOWED = 1;
     uint256 private constant USDC_DECIMALS = 10 ** 6;
     uint256 private constant LP_TOKEN_DECIMALS = 10 ** 18;
+    uint256 private constant PRECISION_HANDLER = 10 ** 10;
 
     // TODO: Change MIN_DEPOSIT in production
     //  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
-    uint256 private constant MIN_DEPOSIT = 1 * 10 ** 6;
-    uint256 private constant PRECISION_HANDLER = 10 ** 10;
-    uint256 private constant WITHDRAW_DEADLINE_SECONDS = 60;
-    uint256 private constant DEPOSIT_DEADLINE_SECONDS = 60;
+    uint256 internal constant MIN_DEPOSIT = 1 * 10 ** 6;
+    uint256 internal constant WITHDRAW_DEADLINE_SECONDS = 60;
+    uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     //  uint256 private constant WITHDRAW_DEADLINE_SECONDS = 597_600;
     uint256 private constant CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS = 2108;
     uint256 private constant ARRAY_MANIPULATION = 10_000;

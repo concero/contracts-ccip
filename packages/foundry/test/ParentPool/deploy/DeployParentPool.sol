@@ -12,6 +12,7 @@ import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 import {Register, CCIPLocalSimulatorFork} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulatorFork.sol";
 import {ChildPoolProxy} from "contracts/Proxy/ChildPoolProxy.sol";
 import {ConceroChildPool} from "contracts/ConceroChildPool.sol";
+import {FunctionsSubscriptions} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsSubscriptions.sol";
 
 contract DeployParentPool is Test {
     ConceroParentPool public parentPoolImplementation;
@@ -22,10 +23,15 @@ contract DeployParentPool is Test {
 
     LPToken public lpToken;
     ConceroAutomation public conceroCLA;
+    FunctionsSubscriptions public functionsSubscriptions;
+    CCIPLocalSimulator public ccipLocalSimulator;
     CCIPLocalSimulatorFork public ccipLocalSimulator;
 
     uint256 public arbitrumForkId;
     uint256 public baseForkId;
+
+    address user1 = makeAddr("user1");
+    address user2 = makeAddr("user2");
 
     uint256 internal deployerPrivateKey = vm.envUint("FORGE_DEPLOYER_PRIVATE_KEY");
     uint256 internal proxyDeployerPrivateKey = vm.envUint("FORGE_PROXY_DEPLOYER_PRIVATE_KEY");
@@ -41,6 +47,7 @@ contract DeployParentPool is Test {
         _deployCcipLocalSimulation();
         _deployAutomation();
         _deployLpToken();
+        _addFunctionsConsumer();
         _fundLinkParentProxy(100000000000000000000);
 
         _deployChildPools();
@@ -61,7 +68,7 @@ contract DeployParentPool is Test {
             address(parentPoolProxy),
             vm.envAddress("LINK_BASE"),
             vm.envBytes32("CLF_DONID_BASE"),
-            uint64(vm.envUint("CLF_SUBID_BASE_SEPOLIA")),
+            uint64(vm.envUint("CLF_SUBID_BASE")),
             address(vm.envAddress("CLF_ROUTER_BASE")),
             address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
             address(vm.envAddress("USDC_BASE")),
@@ -115,6 +122,17 @@ contract DeployParentPool is Test {
         vm.startBroadcast(deployerPrivateKey);
         lpToken = new LPToken(deployer, address(parentPoolProxy));
         vm.stopBroadcast();
+    }
+    function _addFunctionsConsumer() private {
+        vm.startPrank(vm.envAddress("DEPLOYER_ADDRESS"));
+        functionsSubscriptions = FunctionsSubscriptions(
+            address(0xf9B8fc078197181C841c296C876945aaa425B278)
+        );
+        functionsSubscriptions.addConsumer(
+            uint64(vm.envUint("CLF_SUBID_BASE")),
+            address(parentPoolProxy)
+        );
+        vm.stopPrank();
     }
 
     function _deployCcipLocalSimulation() private {

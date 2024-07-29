@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
+import {Test, console} from "forge-std/Test.sol";
 import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
 import {ParentPoolProxyDeploy} from "../../../script/ParentPoolProxyDeploy.s.sol";
 import {MockConceroParentPool} from "../Mocks/MockConceroParentPool.sol";
 import {ParentPoolProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/ParentPoolProxy.sol";
-import {Test, console} from "forge-std/Test.sol";
+import {FunctionsSubscriptions} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsSubscriptions.sol";
 
 contract Base_Test is Test {
     /*//////////////////////////////////////////////////////////////
@@ -13,6 +14,7 @@ contract Base_Test is Test {
     //////////////////////////////////////////////////////////////*/
     MockConceroParentPool public parentPoolImplementation;
     ParentPoolProxy public parentPoolProxy;
+    FunctionsSubscriptions public functionsSubscriptions;
 
     uint256 forkId;
     address deployer = vm.envAddress("FORGE_DEPLOYER_ADDRESS");
@@ -52,10 +54,22 @@ contract Base_Test is Test {
         ITransparentUpgradeableProxy(address(parentPoolProxy)).upgradeToAndCall(
             address(parentPoolImplementation), bytes("")
         );
+
+        _addFunctionsConsumer();
     }
 
     /// @dev run this just to check setUp
     function test_baseTest_setUp() public {
         console.log("testing setUp...");
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                INTERNAL
+    //////////////////////////////////////////////////////////////*/
+    function _addFunctionsConsumer() private {
+        vm.startPrank(vm.envAddress("DEPLOYER_ADDRESS"));
+        functionsSubscriptions = FunctionsSubscriptions(address(0xf9B8fc078197181C841c296C876945aaa425B278));
+        functionsSubscriptions.addConsumer(uint64(vm.envUint("CLF_SUBID_BASE")), address(parentPoolProxy));
+        vm.stopPrank();
     }
 }

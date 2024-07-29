@@ -9,6 +9,7 @@ import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {LPToken} from "contracts/LPToken.sol";
 import {CCIPLocalSimulator} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulator.sol";
+import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 import {FunctionsSubscriptions} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsSubscriptions.sol";
 
 contract DeployParentPool is Test {
@@ -32,10 +33,12 @@ contract DeployParentPool is Test {
         vm.selectFork(forkId);
 
         _deployParentPool();
+        _setParentPoolVars();
         _deployCcipLocalSimulation();
         _deployAutomation();
         _deployLpToken();
         _addFunctionsConsumer();
+        _fundLinkParentProxy(100000000000000000000);
     }
 
     function _deployParentPool() private {
@@ -49,7 +52,6 @@ contract DeployParentPool is Test {
         vm.stopBroadcast();
 
         vm.startBroadcast(deployerPrivateKey);
-
         parentPoolImplementation = new ConceroParentPool(
             address(parentPoolProxy),
             vm.envAddress("LINK_BASE"),
@@ -72,6 +74,16 @@ contract DeployParentPool is Test {
             bytes("")
         );
 
+        vm.stopBroadcast();
+    }
+
+    function _setParentPoolVars() private {
+        vm.startBroadcast(deployerPrivateKey);
+        IParentPool(address(parentPoolProxy)).setPools(
+            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
+            address(parentPoolImplementation),
+            false
+        );
         vm.stopBroadcast();
     }
 
@@ -107,9 +119,11 @@ contract DeployParentPool is Test {
 
     function _deployCcipLocalSimulation() private {
         ccipLocalSimulator = new CCIPLocalSimulator();
-
         ccipLocalSimulator.configuration();
-
         ccipLocalSimulator.supportNewToken(vm.envAddress("USDC_BASE"));
+    }
+
+    function _fundLinkParentProxy(uint256 amount) internal {
+        deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), amount);
     }
 }

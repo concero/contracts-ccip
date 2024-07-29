@@ -54,16 +54,15 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     ///@notice Chainlink Functions Protocol Subscription ID
     uint64 private immutable i_subscriptionId;
     //@notice CCIP chainSelector
-    uint64 immutable CHAIN_SELECTOR; // todo: prefix with i
-    //todo: Explicitly mark visibility of ALL state variables
+    uint64 internal immutable CHAIN_SELECTOR; // todo: prefix with i
     ///@notice variable to store the DexSwap address
-    address immutable i_dexSwap;
+    address internal immutable i_dexSwap;
     ///@notice variable to store the ConceroPool address
-    address immutable i_poolProxy;
+    address internal immutable i_poolProxy;
     ///@notice Immutable variable to hold proxy address
-    address immutable i_proxy;
+    address internal immutable i_proxy;
     ///@notice ID of the deployed chain on getChain() function
-    Chain immutable i_chainIndex;
+    Chain internal immutable i_chainIndex;
 
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////

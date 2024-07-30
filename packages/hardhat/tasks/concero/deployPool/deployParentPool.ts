@@ -45,7 +45,7 @@ task("deploy-parent-pool", "Deploy the pool")
       await uploadDonSecrets(deployableChains, slotId, 4320);
     }
 
-    if (!taskArgs.skipsetvars && !taskArgs.deployproxy) {
+    if (!taskArgs.skipsetvars) {
       await setParentPoolVariables(deployableChains[0], taskArgs.uploadsecrets, slotId);
     }
   });

@@ -38,6 +38,7 @@ const deployParentPool: DeployFunction = async function (hre: HardhatRuntimeEnvi
     automation: getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[name]}`),
     conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
     owner: deployer,
+    messengers: [getEnvVar("MESSENGER_ADDRESS"), getEnvVar("MESSENGER_ADDRESS"), getEnvVar("MESSENGER_ADDRESS")],
   };
 
   // Merge defaultArgs with constructorArgs
@@ -58,6 +59,7 @@ const deployParentPool: DeployFunction = async function (hre: HardhatRuntimeEnvi
       args.automation,
       args.conceroProxyAddress,
       args.owner,
+      args.messengers,
     ],
     log: true,
     autoMine: true,

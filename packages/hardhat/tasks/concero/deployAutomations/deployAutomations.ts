@@ -7,8 +7,7 @@ import { getEnvVar } from "../../../utils/getEnvVar";
 import { execSync } from "child_process";
 import addCLFConsumer from "../../sub/add";
 
-//todo: rename task deploy-pool-clfcla, rename contract to clfcla?
-task("deploy-automations", "Deploy the automations")
+task("deploy-pool-clfcla", "Deploy the automations")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
   .addFlag("skipsetvars", "Skip setting the variables")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)

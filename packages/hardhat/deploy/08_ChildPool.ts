@@ -15,6 +15,7 @@ interface ConstructorArgs {
   chainSelector?: number;
   usdc?: string;
   owner?: string;
+  messengers?: string[];
 }
 
 const deployChildPool: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}, isMainnet = false) {
@@ -36,6 +37,7 @@ const deployChildPool: DeployFunction = async function (hre: HardhatRuntimeEnvir
     baseChainSelector,
     usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
     owner: deployer,
+    messengers: [getEnvVar("MESSENGER_0_ADDRESS"), getEnvVar("MESSENGER_1_ADDRESS"), getEnvVar("MESSENGER_2_ADDRESS")],
   };
 
   // Merge defaultArgs with constructorArgs

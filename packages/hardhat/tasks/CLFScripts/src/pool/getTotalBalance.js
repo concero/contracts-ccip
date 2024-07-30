@@ -165,6 +165,8 @@
 				const encodedConceroId = new Uint8Array([Number(_conceroIds[i])]);
 				result.set(encodedConceroId, 32 + i);
 			}
+		} else {
+			result.set(new Uint8Array([0]), 32);
 		}
 		return result;
 	};

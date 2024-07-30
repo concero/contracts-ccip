@@ -4,6 +4,7 @@ import { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
+import { messengers } from "../constants/deploymentVariables";
 
 const deployConceroDexSwap: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
@@ -12,7 +13,7 @@ const deployConceroDexSwap: DeployFunction = async function (hre: HardhatRuntime
   const conceroProxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`);
 
   ////////////////////////////
-  ////////REMOVE IN PROD!/////
+  ////////REMOVE IN PRODUCTION!/////
   ////////////////////////////
   const fakeAddressRemoveInProd = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
   const gasPrice = await hre.ethers.provider.getGasPrice();
@@ -22,6 +23,7 @@ const deployConceroDexSwap: DeployFunction = async function (hre: HardhatRuntime
     from: deployer,
     args: [
       conceroProxyAddress,
+      messengers,
       // fakeAddressRemoveInProd
     ],
     log: true,

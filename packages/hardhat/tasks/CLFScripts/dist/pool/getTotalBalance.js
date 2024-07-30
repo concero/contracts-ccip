@@ -91,7 +91,7 @@
 		return conceroIds;
 	};
 	const packResult = (_totalBalance, _conceroIds) => {
-		const result = new Uint8Array(32 + conceroIds.length);
+		const result = new Uint8Array(32 + conceroIds.length + 1);
 		const encodedTotalBalance = Functions.encodeUint256(_totalBalance);
 		result.set(encodedTotalBalance, 0);
 		if (_conceroIds.length) {
@@ -99,8 +99,6 @@
 				const encodedConceroId = new Uint8Array([Number(_conceroIds[i])]);
 				result.set(encodedConceroId, 32 + i);
 			}
-		} else {
-			result.set(new Uint8Array([0]), 32);
 		}
 		return result;
 	};

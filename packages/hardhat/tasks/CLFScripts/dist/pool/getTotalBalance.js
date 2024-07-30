@@ -1,4 +1,5 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+return (async () => {
 	const chainSelectors = {
 		[`0x${BigInt('3478487238524512106').toString(16)}`]: {
 			urls: [
@@ -27,7 +28,6 @@
 				'https://base-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x14a34',
-			nativeCurrency: 'eth',
 			usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
 			poolAddress: '0x973c3aA8879926022EA871cfa533d148e5eCea1c',
 		},
@@ -55,8 +55,8 @@
 		}
 	}
 	const getProviderByChainSelector = _chainSelector => {
-		const url =
-			chainSelectors[_chainSelector].urls[Math.floor(Math.random() * chainSelectors[_chainSelector].urls.length)];
+		const urls = chainSelectors[_chainSelector].urls;
+		const url = urls[Math.floor(Math.random() * urls.length)];
 		return new FunctionsJsonRpcProvider(url);
 	};
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
@@ -68,7 +68,8 @@
 		const ethersId = ethers.id('ConceroParentPool_CCIPReceived(bytes32, uint64, address, address, uint256)');
 		const promises = [];
 		for (const line of ccipLines) {
-			const provider = getProviderByChainSelector(line.chainSelector);
+			const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`;
+			const provider = getProviderByChainSelector(hexChainSelector);
 			promises.push(
 				provider.getLogs({
 					address: chainSelectors[line.chainSelector].poolAddress,
@@ -81,10 +82,11 @@
 		return await Promise.all(promises);
 	};
 	const getCompletedConceroIdsByLogs = (logs, ccipLines) => {
+		if (!logs.length) return [];
 		const conceroIds = [];
 		for (const log of logs) {
 			const ccipMessageId = log.topics[1];
-			const ccipLine = ccipLines.find(line => line.ccipMessageId === ccipMessageId);
+			const ccipLine = ccipLines.find(line => line.ccipMessageId.toLowerCase() === ccipMessageId.toLowerCase());
 			conceroIds.push(ccipLine.conceroId);
 		}
 		return conceroIds;
@@ -113,8 +115,7 @@
 	}
 	promises.push(getBaseDepositsOneTheWay());
 	promises.push(baseProvider.getBlockNumber());
-	let results = [];
-	results = await Promise.all(promises);
+	const results = await Promise.all(promises);
 	for (let i = 0; i < results.length - 2; i += 2) {
 		totalBalance += BigInt(results[i]) + BigInt(results[i + 1]);
 	}

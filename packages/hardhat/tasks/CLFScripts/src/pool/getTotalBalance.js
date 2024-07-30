@@ -1,4 +1,6 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+
+return (async () => {
 	const chainSelectors = {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -37,7 +39,6 @@
 				'https://base-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x14a34',
-			nativeCurrency: 'eth',
 			usdcAddress: '${USDC_BASE_SEPOLIA}',
 			poolAddress: '${PARENT_POOL_PROXY_BASE_SEPOLIA}',
 		},
@@ -111,8 +112,8 @@
 	}
 
 	const getProviderByChainSelector = _chainSelector => {
-		const url =
-			chainSelectors[_chainSelector].urls[Math.floor(Math.random() * chainSelectors[_chainSelector].urls.length)];
+		const urls = chainSelectors[_chainSelector].urls;
+		const url = urls[Math.floor(Math.random() * urls.length)];
 		return new FunctionsJsonRpcProvider(url);
 	};
 
@@ -129,7 +130,8 @@
 		const promises = [];
 
 		for (const line of ccipLines) {
-			const provider = getProviderByChainSelector(line.chainSelector);
+			const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`;
+			const provider = getProviderByChainSelector(hexChainSelector);
 			promises.push(
 				provider.getLogs({
 					address: chainSelectors[line.chainSelector].poolAddress,
@@ -144,11 +146,12 @@
 	};
 
 	const getCompletedConceroIdsByLogs = (logs, ccipLines) => {
+		if (!logs.length) return [];
 		const conceroIds = [];
 
 		for (const log of logs) {
 			const ccipMessageId = log.topics[1];
-			const ccipLine = ccipLines.find(line => line.ccipMessageId === ccipMessageId);
+			const ccipLine = ccipLines.find(line => line.ccipMessageId.toLowerCase() === ccipMessageId.toLowerCase());
 			conceroIds.push(ccipLine.conceroId);
 		}
 
@@ -184,9 +187,7 @@
 	promises.push(getBaseDepositsOneTheWay());
 	promises.push(baseProvider.getBlockNumber());
 
-	let results = [];
-
-	results = await Promise.all(promises);
+	const results = await Promise.all(promises);
 
 	for (let i = 0; i < results.length - 2; i += 2) {
 		totalBalance += BigInt(results[i]) + BigInt(results[i + 1]);

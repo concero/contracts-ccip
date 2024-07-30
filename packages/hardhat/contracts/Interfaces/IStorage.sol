@@ -9,6 +9,7 @@ interface IStorage {
     }
 
     ///@notice CCIP Compatible Tokens
+    //REMOVE IN PRODUCTION : bnm
     enum CCIPToken {
         bnm,
         usdc

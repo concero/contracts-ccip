@@ -333,7 +333,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         emit ConceroParentPool_DepositInitiated(clfRequestId, msg.sender, _usdcAmount, _deadline);
     }
 
-    function completeDeposit(bytes32 _depositRequestId) external {
+    function completeDeposit(bytes32 _depositRequestId) external onlyProxyContext {
         DepositRequest storage request = s_depositRequests[_depositRequestId];
         address lpAddress = request.lpAddress;
         uint256 usdcAmount = request.usdcAmountToDeposit;

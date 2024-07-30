@@ -59,8 +59,19 @@ contract ConceroCCIP is ConceroFunctions {
         address _ccipRouter,
         address _dexSwap,
         address _pool,
-        address _proxy
-    ) ConceroFunctions(_variables, _chainSelector, _chainIndex, _dexSwap, _pool, _proxy) {
+        address _proxy,
+        address[3] memory _messengers
+    )
+        ConceroFunctions(
+            _variables,
+            _chainSelector,
+            _chainIndex,
+            _dexSwap,
+            _pool,
+            _proxy,
+            _messengers
+        )
+    {
         i_linkToken = LinkTokenInterface(_link);
         i_ccipRouter = IRouterClient(_ccipRouter);
     }

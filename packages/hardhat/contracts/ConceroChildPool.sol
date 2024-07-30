@@ -60,7 +60,10 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     IERC20 private immutable i_USDC;
     ///@notice Contract Owner
     address private immutable i_owner;
-
+    //@@notice messenger addresses
+    address private immutable i_msgr0;
+    address private immutable i_msgr1;
+    address private immutable i_msgr2;
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
@@ -109,7 +112,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @notice modifier to check if the caller is the an approved messenger
      */
     modifier onlyMessenger() {
-        if (isMessenger(msg.sender) == false) revert ConceroChildPool_NotMessenger(msg.sender);
+        if (_isMessenger(msg.sender) == false) revert ConceroChildPool_NotMessenger(msg.sender);
         _;
     }
 
@@ -140,13 +143,17 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         address _link,
         address _ccipRouter,
         address _usdc,
-        address _owner
+        address _owner,
+        address[3] memory _messengers
     ) CCIPReceiver(_ccipRouter) {
         i_infraProxy = _orchestratorProxy;
         i_childProxy = _childProxy;
         i_linkToken = LinkTokenInterface(_link);
         i_USDC = IERC20(_usdc);
         i_owner = _owner;
+        i_msgr0 = _messengers[0];
+        i_msgr1 = _messengers[1];
+        i_msgr2 = _messengers[2];
     }
 
     ////////////////////////
@@ -409,23 +416,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @notice Function to check if a caller address is an allowed messenger
      * @param _messenger the address of the caller
      */
-    function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
-        address[] memory messengers = new address[](4);
-        // todo: can we move them to immutables and initialise them in consutructor?
-        // like messengers[0] = i_msgr1;
-        messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
-        messengers[1] = address(0);
-        messengers[2] = address(0);
-        messengers[3] = address(0);
-
-        for (uint256 i; i < messengers.length; ) {
-            if (_messenger == messengers[i]) {
-                return true;
-            }
-            unchecked {
-                ++i;
-            }
-        }
-        return false;
+    function _isMessenger(address _messenger) internal view returns (bool) {
+        return (_messenger == i_msgr0 || _messenger == i_msgr1 || _messenger == i_msgr2);
     }
 }

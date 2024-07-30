@@ -128,9 +128,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ///@notice Contract Owner
     address internal immutable i_owner;
     //@@notice messenger addresses
-    address public immutable i_msgr0;
-    address public immutable i_msgr1;
-    address public immutable i_msgr2;
+    address private immutable i_msgr0;
+    address private immutable i_msgr1;
+    address private immutable i_msgr2;
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
@@ -257,7 +257,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         address _automation,
         address _orchestrator,
         address _owner,
-        address[3] memory _msgrs
+        address[3] memory _messengers
     ) CCIPReceiver(_ccipRouter) FunctionsClient(_functionsRouter) {
         i_donId = _donId;
         i_subscriptionId = _subscriptionId;
@@ -268,9 +268,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         i_automation = IConceroAutomation(_automation);
         i_infraProxy = _orchestrator;
         i_owner = _owner;
-        i_msgr0 = _msgrs[0];
-        i_msgr1 = _msgrs[1];
-        i_msgr2 = _msgrs[2];
+        i_msgr0 = _messengers[0];
+        i_msgr1 = _messengers[1];
+        i_msgr2 = _messengers[2];
     }
 
     ////////////////////////

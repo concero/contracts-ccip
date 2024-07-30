@@ -73,8 +73,9 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         address _concero,
         address _pool,
         address _proxy,
-        uint8 _chainIndex
-    ) StorageSetters(msg.sender) {
+        uint8 _chainIndex,
+        address[3] memory _messengers
+    ) ConceroCommon(_messengers) StorageSetters(msg.sender) {
         i_functionsRouter = _functionsRouter;
         i_dexSwap = _dexSwap;
         i_concero = _concero;

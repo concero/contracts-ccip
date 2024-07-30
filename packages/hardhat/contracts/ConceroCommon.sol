@@ -20,6 +20,15 @@ contract ConceroCommon {
     uint256 internal constant USDC_DECIMALS = 10 ** 6;
     uint256 internal constant STANDARD_TOKEN_DECIMALS = 10 ** 18;
 
+    address private immutable i_msgr0;
+    address private immutable i_msgr1;
+    address private immutable i_msgr2;
+
+    constructor(address[3] memory _messengers) {
+        i_msgr0 = _messengers[0];
+        i_msgr1 = _messengers[1];
+        i_msgr2 = _messengers[2];
+    }
     ///////////////
     ///MODIFIERS///
     ///////////////
@@ -27,7 +36,7 @@ contract ConceroCommon {
      * @notice modifier to check if the caller is the an approved messenger
      */
     modifier onlyMessenger() {
-        if (!isMessenger(msg.sender)) revert ConceroCommon_NotMessenger(msg.sender);
+        if (!_isMessenger(msg.sender)) revert ConceroCommon_NotMessenger(msg.sender);
         _;
     }
 
@@ -87,23 +96,27 @@ contract ConceroCommon {
      * @notice Function to check if a caller address is an allowed messenger
      * @param _messenger the address of the caller
      */
-    function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
-        address[] memory messengers = new address[](4);
-        messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
-        messengers[1] = address(0);
-        messengers[2] = address(0);
-        messengers[3] = address(0);
-
-        for (uint256 i; i < messengers.length; ) {
-            if (_messenger == messengers[i]) {
-                return true;
-            }
-            unchecked {
-                ++i;
-            }
-        }
-        return false;
+    function _isMessenger(address _messenger) internal view returns (bool) {
+        return (_messenger == i_msgr0 || _messenger == i_msgr1 || _messenger == i_msgr2);
     }
+
+    //    function _isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
+    //        address[] memory messengers = new address[](4);
+    //        messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
+    //        messengers[1] = address(0);
+    //        messengers[2] = address(0);
+    //        messengers[3] = address(0);
+    //
+    //        for (uint256 i; i < messengers.length; ) {
+    //            if (_messenger == messengers[i]) {
+    //                return true;
+    //            }
+    //            unchecked {
+    //                ++i;
+    //            }
+    //        }
+    //        return false;
+    //    }
 
     function getWrappedNative() internal view returns (address _wrappedAddress) {
         uint256 chainId = block.chainid;

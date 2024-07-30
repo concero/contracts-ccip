@@ -33,8 +33,8 @@ contract DeployParentPool is Test {
         vm.selectFork(forkId);
         deployParentPoolProxy();
         _deployParentPool();
-        setProxyImplementation(address(parentPoolProxy), address(parentPoolImplementation));
-        setParentPoolVars(address(parentPoolProxy), address(parentPoolImplementation));
+        setProxyImplementation();
+        setParentPoolVars();
         _deployCcipLocalSimulation();
         deployAutomation();
         deployLpToken();
@@ -74,20 +74,20 @@ contract DeployParentPool is Test {
         );
         vm.stopBroadcast();
     }
-    function setProxyImplementation(address _proxy, address _implementation) public {
+    function setProxyImplementation() public {
         vm.startBroadcast(proxyDeployerPrivateKey);
-        ITransparentUpgradeableProxy(address(_proxy)).upgradeToAndCall(
-            address(_implementation),
+        ITransparentUpgradeableProxy(address(parentPoolProxy)).upgradeToAndCall(
+            address(parentPoolImplementation),
             bytes("")
         );
         vm.stopBroadcast();
     }
-    function setParentPoolVars(address _parentPoolProxy, address _parentPoolImplementation) public {
+    function setParentPoolVars() public {
         vm.startBroadcast(deployerPrivateKey);
 
-        IParentPool(address(_parentPoolProxy)).setPools(
+        IParentPool(address(parentPoolProxy)).setPools(
             uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
-            address(_parentPoolImplementation),
+            address(parentPoolImplementation),
             false
         );
         vm.stopBroadcast();

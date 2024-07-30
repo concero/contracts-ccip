@@ -24,7 +24,7 @@ error TxAlreadyConfirmed();
 ///@notice error emitted when function receive a call from a not allowed address
 error AddressNotSet();
 ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
-error ConceroFunctions_ItsNotOrchestrator(address caller);
+error ConceroFunctions_OnlyProxyContext(address caller);
 ///@notice error emitted when the delegatecall to DexSwap fails
 error TXReleasedFailed(bytes error); // todo: TXReleasE
 
@@ -201,7 +201,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
         bytes memory response,
         bytes memory err
     ) external {
-        if (address(this) != i_proxy) revert ConceroFunctions_ItsNotOrchestrator(address(this));
+        if (address(this) != i_proxy) revert ConceroFunctions_OnlyProxyContext(address(this));
 
         fulfillRequest(requestId, response, err);
     }

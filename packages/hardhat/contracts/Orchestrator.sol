@@ -25,12 +25,8 @@ error Orchestrator_OnlyRouterCanFulfill();
 error Orchestrator_InvalidBridgeData();
 ///@notice error emitted when an empty swapData is the input
 error Orchestrator_InvalidSwapData();
-///@notice error emitted when the ether swap data is corrupted
-error Orchestrator_InvalidSwapEtherData();
 ///@notice error emitted when the token to bridge is not USDC
 error Orchestrator_InvalidBridgeToken();
-///@notice error emitted when the token is not supported
-error Orchestrator_ChainNotSupported();
 
 contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, StorageSetters {
     using SafeERC20 for IERC20;

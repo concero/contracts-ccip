@@ -1,5 +1,4 @@
-const ethers = await import('npm:ethers@6.10.0');
-return (async () => {
+(async () => {
 	const chainSelectors = {
 		[`0x${BigInt('3478487238524512106').toString(16)}`]: {
 			urls: [

@@ -127,7 +127,10 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     uint64 private immutable i_subscriptionId;
     ///@notice Contract Owner
     address internal immutable i_owner;
-
+    //@@notice messenger addresses
+    address public immutable i_msgr0;
+    address public immutable i_msgr1;
+    address public immutable i_msgr2;
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
@@ -253,7 +256,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         address _lpToken,
         address _automation,
         address _orchestrator,
-        address _owner
+        address _owner,
+        address[3] memory _msgrs
     ) CCIPReceiver(_ccipRouter) FunctionsClient(_functionsRouter) {
         i_donId = _donId;
         i_subscriptionId = _subscriptionId;
@@ -264,6 +268,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         i_automation = IConceroAutomation(_automation);
         i_infraProxy = _orchestrator;
         i_owner = _owner;
+        i_msgr0 = _msgrs[0];
+        i_msgr1 = _msgrs[1];
+        i_msgr2 = _msgrs[2];
     }
 
     ////////////////////////
@@ -1114,23 +1121,25 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
      * @notice Function to check if a caller address is an allowed messenger
      * @param _messenger the address of the caller
      */
-    function _isMessenger(address _messenger) internal pure returns (bool) {
-        address[] memory messengers = new address[](4);
-        messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
-        messengers[1] = address(0);
-        messengers[2] = address(0);
-        messengers[3] = address(0);
-
-        for (uint256 i; i < messengers.length; ) {
-            if (_messenger == messengers[i]) {
-                return true;
-            }
-            unchecked {
-                ++i;
-            }
-        }
-        return false;
+    function _isMessenger(address _messenger) internal view returns (bool) {
+        return (_messenger == i_msgr0 || _messenger == i_msgr1 || _messenger == i_msgr2);
     }
+    //    function _isMessenger(address _messenger) internal view returns (bool) {
+    //        address[] memory messengers = new address[](3);
+    //        messengers[0] = i_msgr0;
+    //        messengers[1] = i_msgr1;
+    //        messengers[2] = i_msgr2;
+    //
+    //        for (uint256 i; i < messengers.length; ) {
+    //            if (_messenger == messengers[i]) {
+    //                return true;
+    //            }
+    //            unchecked {
+    //                ++i;
+    //            }
+    //        }
+    //        return false;
+    //    }
 
     //    REMOVE IN PRODUCTION
     //    function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {

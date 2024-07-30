@@ -8,9 +8,12 @@ interface IDepositParentPool is IParentPool {
     function getDepositRequest(
         bytes32 requestId
     ) external view returns (ConceroParentPool.DepositRequest memory);
+
     function getRequestType(
         bytes32 requestId
     ) external view returns (ConceroParentPool.RequestType);
+
+    function isMessenger(address _messenger) external view returns (bool);
 }
 
 contract ParentPool_DepositWrapper is ConceroParentPool {
@@ -25,7 +28,8 @@ contract ParentPool_DepositWrapper is ConceroParentPool {
         address _lpToken,
         address _automation,
         address _orchestrator,
-        address _owner
+        address _owner,
+        address[3] memory _msgrs
     )
         ConceroParentPool(
             _parentPoolProxy,
@@ -38,7 +42,8 @@ contract ParentPool_DepositWrapper is ConceroParentPool {
             _lpToken,
             _automation,
             _orchestrator,
-            _owner
+            _owner,
+            _msgrs
         )
     {}
 
@@ -52,5 +57,9 @@ contract ParentPool_DepositWrapper is ConceroParentPool {
         bytes32 requestId
     ) external view returns (ConceroParentPool.RequestType) {
         return s_clfRequestTypes[requestId];
+    }
+
+    function isMessenger(address _messenger) public view returns (bool) {
+        return _isMessenger(_messenger);
     }
 }

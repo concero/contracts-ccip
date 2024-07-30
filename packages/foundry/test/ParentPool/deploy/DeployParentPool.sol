@@ -70,7 +70,8 @@ contract DeployParentPool is Test {
             address(lpToken),
             address(conceroCLA),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
-            address(deployer)
+            address(deployer),
+            [vm.envAddress("MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
         vm.stopBroadcast();
     }

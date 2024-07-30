@@ -20,6 +20,7 @@ import deployLpToken from "./concero/deployLpToken/deployLpToken";
 import deployAutomations from "./concero/deployAutomations/deployAutomations";
 import deployChildPool from "./concero/deployPool/deployChildPool";
 import updateAllInfraImplementations from "./concero/updateAllInfraImplementations";
+import deployAllPools from "./concero/deployPool/deployAllPools";
 
 export default {
   billing,
@@ -44,4 +45,5 @@ export default {
   deployAutomations,
   deployChildPool,
   updateAllInfraImplementations,
+  deployAllPools,
 };

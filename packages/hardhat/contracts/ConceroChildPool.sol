@@ -14,10 +14,6 @@ import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
-///@notice error emitted when the balance is not sufficient
-error ConceroChildPool_InsufficientBalance();
-///@notice error emitted when the contract doesn't have enough link balance
-error ConceroChildPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
 ///@notice error emitted when the caller is not the Orchestrator
 error ConceroChildPool_CallerIsNotTheProxy(address delegatedCaller);
 ///@notice error emitted when a not-concero address call takeLoan
@@ -337,7 +333,6 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         //If receivedFee > 0, it means is user transaction. If receivedFee == 0, means it's a deposit from ParentPool
         bool isUserTx = _user != address(0) && receivedFee > 0;
         if (isUserTx) {
-            uint256 amountAfterFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
             IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransaction(
                 any2EvmMessage.messageId
             );
@@ -346,9 +341,10 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
                 transaction.isConfirmed == false) || transaction.ccipMessageId == 0);
 
             if (isExecutionLayerFailed) {
-                i_USDC.safeTransfer(_user, amountAfterFees);
                 //We don't subtract it here because the loan was not performed. And the value is not added into the `s_loanInUse` variable.
+                i_USDC.safeTransfer(_user, any2EvmMessage.destTokenAmounts[0].amount);
             } else {
+                uint256 amountAfterFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
                 //subtract the amount from the committed total amount
                 s_loansInUse -= amountAfterFees;
             }
@@ -392,17 +388,17 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
             feeToken: address(i_linkToken)
         });
 
-        uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
+        uint256 ccipFeeAmount = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
 
         i_USDC.approve(i_ccipRouter, _amount);
-        i_linkToken.approve(i_ccipRouter, fees);
+        i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
 
         emit _ConceroChildPool_CCIPSent(
             messageId,
             _chainSelector,
             s_poolToSendTo[_chainSelector],
             address(i_linkToken),
-            fees
+            ccipFeeAmount
         );
 
         messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);

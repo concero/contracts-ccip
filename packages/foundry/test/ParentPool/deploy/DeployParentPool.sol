@@ -83,6 +83,7 @@ contract DeployParentPool is Test {
         );
         vm.stopBroadcast();
     }
+
     function setParentPoolVars() public {
         vm.startBroadcast(deployerPrivateKey);
 
@@ -90,6 +91,12 @@ contract DeployParentPool is Test {
             uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
             address(parentPoolImplementation),
             false
+        );
+
+        IParentPool(address(parentPoolProxy)).setConceroContractSender(
+            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
+            address(user1),
+            1
         );
         vm.stopBroadcast();
     }

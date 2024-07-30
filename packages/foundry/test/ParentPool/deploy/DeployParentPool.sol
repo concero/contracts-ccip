@@ -8,25 +8,17 @@ import {ParentPoolProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/Par
 import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {LPToken} from "contracts/LPToken.sol";
+import {CCIPLocalSimulator} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulator.sol";
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
-import {Register, CCIPLocalSimulatorFork} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulatorFork.sol";
-import {ChildPoolProxy} from "contracts/Proxy/ChildPoolProxy.sol";
-import {ConceroChildPool} from "contracts/ConceroChildPool.sol";
 import {FunctionsSubscriptions} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsSubscriptions.sol";
 
 contract DeployParentPool is Test {
     ConceroParentPool public parentPoolImplementation;
     ParentPoolProxy public parentPoolProxy;
-
-    ChildPoolProxy public childPoolProxy_ARBUTRUM;
-    ConceroChildPool public childPool_ARBUTRUM;
-
     LPToken public lpToken;
     ConceroAutomation public conceroCLA;
     FunctionsSubscriptions public functionsSubscriptions;
-
-    uint256 public arbitrumForkId = vm.createFork(vm.envString("LOCAL_ARBITRUM_FORK_RPC_URL"));
-    uint256 public baseForkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
+    CCIPLocalSimulator public ccipLocalSimulator;
 
     address user1 = makeAddr("user1");
     address user2 = makeAddr("user2");
@@ -35,20 +27,24 @@ contract DeployParentPool is Test {
     uint256 internal proxyDeployerPrivateKey = vm.envUint("FORGE_PROXY_DEPLOYER_PRIVATE_KEY");
     address internal deployer = vm.envAddress("FORGE_DEPLOYER_ADDRESS");
     address internal proxyDeployer = vm.envAddress("FORGE_PROXY_DEPLOYER_ADDRESS");
+    uint256 internal forkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
 
     function deployPoolsInfra() public {
+        vm.selectFork(forkId);
+        deployParentPoolProxy();
         _deployParentPool();
-        _setParentPoolVars();
-        _deployAutomation();
-        _deployLpToken();
-        //        _addFunctionsConsumer();
+        setProxyImplementation();
+        setParentPoolVars();
+        _deployCcipLocalSimulation();
+        deployAutomation();
+        deployLpToken();
+        addFunctionsConsumer();
         _fundLinkParentProxy(100000000000000000000);
-
-        _deployChildPools();
     }
 
-    function _deployParentPool() private {
-        vm.selectFork(baseForkId);
+    address public customParentPoolAddress;
+
+    function deployParentPoolProxy() public {
         vm.startBroadcast(proxyDeployerPrivateKey);
 
         parentPoolProxy = new ParentPoolProxy(
@@ -56,8 +52,12 @@ contract DeployParentPool is Test {
             proxyDeployer,
             bytes("")
         );
-        vm.stopBroadcast();
 
+        vm.stopBroadcast();
+    }
+
+    function _deployParentPool() private {
+        // Deploy the default ConceroParentPool if no custom address is provided
         vm.startBroadcast(deployerPrivateKey);
         parentPoolImplementation = new ConceroParentPool(
             address(parentPoolProxy),
@@ -70,39 +70,31 @@ contract DeployParentPool is Test {
             address(lpToken),
             address(conceroCLA),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
-            address(deployer)
+            address(deployer),
+            [vm.envAddress("MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
         vm.stopBroadcast();
-
-        // Upgrade Proxy to new Implementation
+    }
+    function setProxyImplementation() public {
         vm.startBroadcast(proxyDeployerPrivateKey);
         ITransparentUpgradeableProxy(address(parentPoolProxy)).upgradeToAndCall(
             address(parentPoolImplementation),
             bytes("")
         );
-
         vm.stopBroadcast();
     }
-
-    function _setParentPoolVars() private {
-        vm.selectFork(baseForkId);
+    function setParentPoolVars() public {
         vm.startBroadcast(deployerPrivateKey);
+
         IParentPool(address(parentPoolProxy)).setPools(
             uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
             address(parentPoolImplementation),
             false
         );
-
-        IParentPool(address(parentPoolProxy)).setConceroContractSender(
-            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
-            address(user1),
-            1
-        );
         vm.stopBroadcast();
     }
 
-    function _deployAutomation() private {
-        vm.selectFork(baseForkId);
+    function deployAutomation() public {
         vm.startBroadcast(deployerPrivateKey);
         conceroCLA = new ConceroAutomation(
             vm.envBytes32("CLF_DONID_BASE"),
@@ -115,15 +107,12 @@ contract DeployParentPool is Test {
         vm.stopBroadcast();
     }
 
-    function _deployLpToken() private {
-        vm.selectFork(baseForkId);
+    function deployLpToken() public {
         vm.startBroadcast(deployerPrivateKey);
         lpToken = new LPToken(deployer, address(parentPoolProxy));
         vm.stopBroadcast();
     }
-
-    function _addFunctionsConsumer() private {
-        vm.selectFork(baseForkId);
+    function addFunctionsConsumer() public {
         vm.startPrank(vm.envAddress("DEPLOYER_ADDRESS"));
         functionsSubscriptions = FunctionsSubscriptions(
             address(0xf9B8fc078197181C841c296C876945aaa425B278)
@@ -135,41 +124,13 @@ contract DeployParentPool is Test {
         vm.stopPrank();
     }
 
-    function _fundLinkParentProxy(uint256 amount) internal {
-        vm.selectFork(baseForkId);
-        deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), amount);
+    function _deployCcipLocalSimulation() private {
+        ccipLocalSimulator = new CCIPLocalSimulator();
+        ccipLocalSimulator.configuration();
+        ccipLocalSimulator.supportNewToken(vm.envAddress("USDC_BASE"));
     }
 
-    function _deployChildPools() private {
-        vm.selectFork(arbitrumForkId);
-        vm.startBroadcast(deployerPrivateKey);
-        childPoolProxy_ARBUTRUM = new ChildPoolProxy(
-            address(vm.envAddress("CONCERO_PAUSE_ARBITRUM")),
-            proxyDeployer,
-            bytes("")
-        );
-        vm.stopBroadcast();
-
-        vm.startBroadcast(deployerPrivateKey);
-
-        childPool_ARBUTRUM = new ConceroChildPool(
-            address(this),
-            address(childPoolProxy_ARBUTRUM),
-            vm.envAddress("LINK_BASE"),
-            vm.envAddress("CL_CCIP_ROUTER_ARBITRUM"),
-            vm.envAddress("USDC_BASE"),
-            address(deployer)
-        );
-
-        vm.stopBroadcast();
-
-        vm.startBroadcast(proxyDeployerPrivateKey);
-
-        ITransparentUpgradeableProxy(address(childPoolProxy_ARBUTRUM)).upgradeToAndCall(
-            address(childPool_ARBUTRUM),
-            bytes("")
-        );
-
-        vm.stopBroadcast();
+    function _fundLinkParentProxy(uint256 amount) internal {
+        deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), amount);
     }
 }

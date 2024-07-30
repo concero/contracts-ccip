@@ -2,15 +2,14 @@
 pragma solidity ^0.8.0;
 
 import {DeployParentPool} from "./deploy/DeployParentPool.sol";
-import {ParentPool_DepositWrapper, IDepositParentPool} from "./integrationTests/ParentPool_DepositWrapper.sol";
+import {ParentPool_DepositWrapper, IDepositParentPool} from "./wrappers/ParentPool_DepositWrapper.sol";
 import {Test, console, Vm} from "forge-std/Test.sol";
 
 contract Deposit is DeployParentPool {
     function setUp() public {
         vm.selectFork(forkId);
         deployParentPoolProxy();
-
-        ParentPool_DepositWrapper parentPool = new ParentPool_DepositWrapper(
+        parentPoolImplementation = new ParentPool_DepositWrapper(
             address(parentPoolProxy),
             vm.envAddress("LINK_BASE"),
             vm.envBytes32("CLF_DONID_BASE"),
@@ -23,9 +22,8 @@ contract Deposit is DeployParentPool {
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
             address(deployer)
         );
-
-        setProxyImplementation(address(parentPoolProxy), address(parentPool));
-        setParentPoolVars(address(parentPoolProxy), address(parentPool));
+        setProxyImplementation();
+        setParentPoolVars();
         deployAutomation();
         deployLpToken();
         addFunctionsConsumer();
@@ -45,12 +43,27 @@ contract Deposit is DeployParentPool {
         assertEq(entries.length, 4);
         bytes32 requestId = entries[0].topics[1];
 
-        //        // Verify storage changes using the emitted requestId
+        // Verify storage changes using the emitted requestId
         ParentPool_DepositWrapper.DepositRequest memory depositRequest = IDepositParentPool(
             address(parentPoolProxy)
         ).getDepositRequest(requestId);
 
         assertEq(depositRequest.lpAddress, address(user1));
         assertEq(depositRequest.usdcAmountToDeposit, usdcAmount);
+    }
+
+    function test_startDeposit_RevertOnMinDeposit() public {
+        uint256 usdcAmount = 1;
+
+        vm.prank(user1);
+        vm.expectRevert();
+        IDepositParentPool(address(parentPoolProxy)).startDeposit(usdcAmount);
+    }
+
+    function test_startDeposit_RevertNonProxyCall() public {
+        uint256 usdcAmount = 100 * 10 ** 6;
+        vm.prank(user1);
+        vm.expectRevert();
+        parentPoolImplementation.startDeposit(usdcAmount);
     }
 }

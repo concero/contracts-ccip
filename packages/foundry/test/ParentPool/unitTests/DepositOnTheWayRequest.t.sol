@@ -61,6 +61,45 @@ contract DepositOnTheWayRequest is ConceroParentPool, CreateAndSwitchToForkTest 
         assert(gasUsed < 200_000);
     }
 
+    function test_bytesToUint8Array() public {
+        bytes1 b1 = bytes1(uint8(5));
+        bytes1 b2 = bytes1(uint8(0));
+        bytes memory b = new bytes(2);
+        b[0] = b1;
+        b[1] = b2;
+
+        bytes memory clfResponse = abi.encode(uint256(100), b);
+
+        (uint256 childPoolsLiquidity, bytes memory depositsOnTheWayIdsToDeleteInBytes) = abi.decode(
+            clfResponse,
+            (uint256, bytes)
+        );
+
+        uint256 gasBefore = gasleft();
+        uint8[] memory depositsOnTheWayIdsToDelete = _bytesToUint8Array(
+            depositsOnTheWayIdsToDeleteInBytes
+        );
+        uint256 gasAfter = gasleft();
+
+        uint256 gasUsed = gasBefore - gasAfter;
+        console.log("gasUsed: ", gasUsed);
+
+        assert(depositsOnTheWayIdsToDelete.length == 2);
+        assert(depositsOnTheWayIdsToDelete[0] == 5);
+        assert(depositsOnTheWayIdsToDelete[1] == 0);
+    }
+
+    function test_bytesToUint8Array_1() public {
+        bytes memory response = abi.encodePacked(uint256(300), uint8(8), uint8(2));
+
+        (uint256 totalBalance, uint8[] memory depositsOnTheWayIdsToDelete) = _decodeCLFResponse(
+            response
+        );
+
+        console.log("totalBalance: ", totalBalance);
+        console.log("depositsOnTheWayIdsToDelete: ", depositsOnTheWayIdsToDelete[1]);
+    }
+
     ////////////////////////
     /// Helper functions///
     ///////////////////////

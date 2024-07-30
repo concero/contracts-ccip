@@ -1,10 +1,12 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+
+return (async () => {
 	const chainSelectors = {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 			urls: [
 				`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
-				'https://arbitrum-sepolia-rpc.publicnode.com',
+				// 'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
+				// 'https://arbitrum-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x66eee',
 			usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
@@ -23,8 +25,8 @@
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 			urls: [
 				`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://avalanche-fuji-c-chain-rpc.publicnode.com',
-				'https://avalanche-fuji.blockpi.network/v1/rpc/public',
+				// 'https://avalanche-fuji-c-chain-rpc.publicnode.com',
+				// 'https://avalanche-fuji.blockpi.network/v1/rpc/public',
 			],
 			chainId: '0xa869',
 			usdcAddress: '${USDC_FUJI}',
@@ -33,8 +35,8 @@
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`]: {
 			urls: [
 				`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-				'https://base-sepolia.blockpi.network/v1/rpc/public',
-				'https://base-sepolia-rpc.publicnode.com',
+				// 'https://base-sepolia.blockpi.network/v1/rpc/public',
+				// 'https://base-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x14a34',
 			usdcAddress: '${USDC_BASE_SEPOLIA}',
@@ -52,6 +54,7 @@
 		// 	usdcAddress: '${USDC_ARBITRUM}',
 		// 	poolAddress: '${CHILD_POOL_PROXY_ARBITRUM}',
 		// },
+
 		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
 		// 	urls: [
 		// 		`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
@@ -123,19 +126,21 @@
 		return pool.getDepositsOnTheWay();
 	};
 
-	const getChildPoolsCcipLogs = async (ccipLines, _latestBlockNumber) => {
-		const ethersId = ethers.id('ConceroParentPool_CCIPReceived(bytes32, uint64, address, address, uint256)');
+	const getChildPoolsCcipLogs = async ccipLines => {
+		const ethersId = ethers.id('ConceroChildPool_CCIPReceived(bytes32,uint64,address,address,uint256)');
 		const promises = [];
 
 		for (const line of ccipLines) {
-			const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`;
+			const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`.toLowerCase();
+			if (!chainSelectors[hexChainSelector]) continue;
 			const provider = getProviderByChainSelector(hexChainSelector);
+
 			promises.push(
 				provider.getLogs({
-					address: chainSelectors[line.chainSelector].poolAddress,
+					address: chainSelectors[hexChainSelector].poolAddress,
 					topics: [ethersId, line.ccipMessageId],
-					fromBlock: _latestBlockNumber - 1000n,
-					toBlock: _latestBlockNumber,
+					fromBlock: 0,
+					toBlock: 'latest',
 				}),
 			);
 		}
@@ -144,11 +149,11 @@
 	};
 
 	const getCompletedConceroIdsByLogs = (logs, ccipLines) => {
-		if (!logs.length) return [];
+		if (!logs?.length) return [];
 		const conceroIds = [];
 
 		for (const log of logs) {
-			const ccipMessageId = log.topics[1];
+			const ccipMessageId = log[0].topics[1];
 			const ccipLine = ccipLines.find(line => line.ccipMessageId.toLowerCase() === ccipMessageId.toLowerCase());
 			conceroIds.push(ccipLine.conceroId);
 		}
@@ -185,7 +190,6 @@
 	}
 
 	promises.push(getBaseDepositsOneTheWay());
-	promises.push(baseProvider.getBlockNumber());
 
 	const results = await Promise.all(promises);
 
@@ -193,8 +197,7 @@
 		totalBalance += BigInt(results[i]) + BigInt(results[i + 1]);
 	}
 
-	const latestBlockNumber = BigInt(results[results.length - 1]);
-	const depositsOnTheWay = results[results.length - 2];
+	const depositsOnTheWay = results[results.length - 1];
 	let conceroIds = [];
 
 	if (depositsOnTheWay.length) {
@@ -205,7 +208,7 @@
 
 		if (ccipLines.length) {
 			try {
-				const logs = await getChildPoolsCcipLogs(ccipLines, latestBlockNumber);
+				const logs = await getChildPoolsCcipLogs(ccipLines);
 				conceroIds = getCompletedConceroIdsByLogs(logs, ccipLines);
 			} catch (e) {}
 		}

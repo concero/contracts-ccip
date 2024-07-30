@@ -831,14 +831,46 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     function _handleStartDepositCLFFulfill(bytes32 requestId, bytes memory response) internal {
         DepositRequest storage request = s_depositRequests[requestId];
 
-        (uint256 childPoolsLiquidity, uint8[] memory depositsOnTheWayIdsToDelete) = abi.decode(
-            response,
-            (uint256, uint8[])
-        );
+        //        (uint256 childPoolsLiquidity, bytes memory depositsOnTheWayIdsToDeleteInBytes) = abi.decode(
+        //            response,
+        //            (uint256, bytes)
+        //        );
+        //        uint8[] memory depositsOnTheWayIdsToDelete = _bytesToUint8Array(
+        //            depositsOnTheWayIdsToDeleteInBytes
+        //        );
+
+        (
+            uint256 childPoolsLiquidity,
+            uint8[] memory depositsOnTheWayIdsToDelete
+        ) = _decodeCLFResponse(response);
 
         request.childPoolsLiquiditySnapshot = childPoolsLiquidity;
 
         _deleteDepositsOnTheWayByIds(depositsOnTheWayIdsToDelete);
+    }
+
+    function _decodeCLFResponse(
+        bytes memory response
+    ) internal pure returns (uint256, uint8[] memory) {
+        uint256 totalBalance;
+        assembly {
+            totalBalance := mload(add(response, 32))
+        }
+
+        uint8[] memory depositsOnTheWayIdsToDelete = new uint8[](response.length - 32);
+        for (uint256 i = 32; i < response.length; i++) {
+            depositsOnTheWayIdsToDelete[i - 32] = uint8(response[i]);
+        }
+        return (totalBalance, depositsOnTheWayIdsToDelete);
+    }
+
+    function _bytesToUint8Array(bytes memory _data) internal pure returns (uint8[] memory) {
+        uint256 dataLength = _data.length;
+        uint8[] memory array = new uint8[](dataLength);
+        for (uint256 i; i < dataLength; i++) {
+            array[i] = uint8(_data[i]);
+        }
+        return array;
     }
 
     function _handleStartWithdrawalCLFFulfill(bytes32 requestId, bytes memory response) internal {

@@ -40,6 +40,7 @@ async function setConceroProxySender(hre) {
         account,
         viemChain,
         gasPrice,
+        gas: 1_000_000n,
       });
 
       const { cumulativeGasUsed: setSenderGasUsed } = await publicClient.waitForTransactionReceipt({
@@ -59,6 +60,7 @@ async function setConceroProxySender(hre) {
         account,
         viemChain,
         gasPrice,
+        gas: 1_000_000n,
       });
 
       const { cumulativeGasUsed: setPoolGasUsed } = await publicClient.waitForTransactionReceipt({
@@ -70,10 +72,7 @@ async function setConceroProxySender(hre) {
         "setConceroContractSender",
       );
     } catch (error) {
-      log(
-        `Error setting ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${dstConceroAddress}]`,
-        "setConceroContractSender",
-      );
+      log(`Error setting ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${dstConceroAddress}]`, "setConceroContractSender");
       console.error(error);
     }
   }
@@ -88,6 +87,8 @@ async function addPoolsToAllChains(hre) {
   if (!chainName) throw new Error("Chain name not found");
 
   for (const dstChain of liveChains) {
+    if (dstChain.chainId === chain.chainId) continue;
+
     const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
     const poolAddressToAdd =
       dstChain.chainId === CNetworks.base.chainId || dstChain.chainId === CNetworks.baseSepolia.chainId
@@ -107,18 +108,16 @@ async function addPoolsToAllChains(hre) {
         abi,
         account,
         viemChain,
+        gas: 1_000_000n,
       });
       const setPoolHash = await walletClient.writeContract(setPoolReq);
       const { cumulativeGasUsed: setPoolGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setPoolHash,
       });
 
-      log(
-        `Added pool ${poolAddressToAdd} for chain ${dstChain.name}. Gas used: ${setPoolGasUsed.toString()}`,
-        "addPoolsToAllChains",
-      );
+      log(`Added pool ${poolAddressToAdd} for chain ${dstChain.name}. Gas used: ${setPoolGasUsed.toString()}`, "addPoolsToAllChains");
     } catch (error) {
-      log(`Error adding pool for chain ${dstChain.name}. Pool address: ${poolAddressToAdd}`, "addPoolsToAllChains");
+      console.error(error);
     }
   }
 }

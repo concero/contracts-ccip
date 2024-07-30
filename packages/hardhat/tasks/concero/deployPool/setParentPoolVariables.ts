@@ -258,30 +258,30 @@ async function getPendingRequest(chain: CNetwork, abi: any) {
   console.log(pendingRequest);
 }
 
-async function removePools(chain: CNetwork, abi, chainSelectors: string[]) {
+async function removePool(chain: CNetwork, abi: any, networkName: string) {
   const { name: chainName, viemChain, url } = chain;
   const clients = getClients(viemChain, url);
   const { publicClient, account, walletClient } = clients;
   if (!chainName) throw new Error("Chain name not found");
 
-  const parentPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
+  const parentPoolAddress = getEnvVar(`PARENT_POOL_PROXY_BASE_SEPOLIA` as keyof env);
+  const chainSelectorToRemove = getEnvVar(`CL_CCIP_CHAIN_SELECTOR_${networkEnvKeys[networkName]}` as keyof env);
 
-  for (const chainSelector of chainSelectors) {
-    const deletePoolHash = await walletClient.writeContract({
-      address: parentPoolAddress,
-      abi,
-      functionName: "removePools",
-      args: [chainSelector],
-      account,
-      viemChain,
-      gas: 1_000_000n,
-    });
+  const deletePoolHash = await walletClient.writeContract({
+    address: parentPoolAddress,
+    abi,
+    functionName: "removePools",
+    args: [chainSelectorToRemove],
+    account,
+    viemChain,
+    gas: 1_000_000n,
+  });
 
-    const { cumulativeGasUsed: deletePoolGasUsed } = await publicClient.waitForTransactionReceipt({
-      hash: deletePoolHash,
-    });
-    log(`Remove ${chainName}:${chainSelector} from list of senders. Gas used: ${deletePoolGasUsed.toString()}`, "removePools");
-  }
+  const { cumulativeGasUsed: deletePoolGasUsed } = await publicClient.waitForTransactionReceipt({
+    hash: deletePoolHash,
+  });
+
+  log(`Remove pool ${networkName}. Gas used: ${deletePoolGasUsed.toString()}`, "removePool");
 }
 
 export async function setParentPoolVariables(chain: CNetwork, isSetSecretsNeeded: boolean, slotId: number) {

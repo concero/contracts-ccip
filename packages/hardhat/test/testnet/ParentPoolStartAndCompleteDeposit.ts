@@ -9,6 +9,7 @@ import { Address, createPublicClient, createWalletClient, PrivateKeyAccount } fr
 import { PublicClient } from "viem/clients/createPublicClient";
 import { abi as ParentPoolAbi } from "../../artifacts/contracts/ConceroParentPool.sol/ConceroParentPool.json";
 import { chainsMap } from "../utils/chainsMap";
+import { approve } from "../utils/approve";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
 const usdcAmount = "1000000";
@@ -29,27 +30,48 @@ describe("start deposit usdc to parent pool\n", () => {
   });
 
   it("should deposit usdc to pool", async () => {
-    try {
-      const transactionHash = await walletClient.writeContract({
-        abi: ParentPoolAbi,
-        functionName: "startDeposit",
-        address: poolAddress as Address,
-        args: [BigInt(usdcAmount)],
-        gas: 3_000_000n,
-      });
+    const startDepositHash = await walletClient.writeContract({
+      abi: ParentPoolAbi,
+      functionName: "startDeposit",
+      address: poolAddress as Address,
+      args: [BigInt(usdcAmount)],
+      gas: 3_000_000n,
+    });
 
-      const { status } = await srcPublicClient.waitForTransactionReceipt({ hash: transactionHash });
+    const { status, logs } = await srcPublicClient.waitForTransactionReceipt({ hash: startDepositHash });
 
-      console.log("transactionHash: ", transactionHash);
+    console.log("transactionHash: ", startDepositHash);
 
-      if (status === "reverted") {
-        const { reason } = await srcPublicClient.getTransactionReceipt({ hash: transactionHash });
-        throw new Error(`Transaction reverted: ${reason}`);
-      } else {
-        console.log("Transaction successful");
-      }
-    } catch (error) {
-      console.error("Error: ", error);
+    if (status === "reverted") {
+      throw new Error(`Transaction reverted`);
+    } else {
+      console.log("Transaction successful");
+    }
+
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+    await sleep(40000);
+
+    await approve(usdcTokenAddress, poolAddress, BigInt(usdcAmount), walletClient, srcPublicClient);
+
+    const completeDepositHash = await walletClient.writeContract({
+      abi: ParentPoolAbi,
+      functionName: "completeDeposit",
+      address: poolAddress as Address,
+      args: [logs[0].topics[1]],
+      gas: 3_000_000n,
+    });
+
+    console.log("completeDepositHash: ", completeDepositHash);
+
+    const { status: completeDepositStatus } = await srcPublicClient.waitForTransactionReceipt({ hash: completeDepositHash });
+
+    console.log("completeDepositHash: ", completeDepositHash);
+
+    if (completeDepositStatus === "reverted") {
+      throw new Error(`Transaction reverted`);
+    } else {
+      console.log("Transaction successful");
     }
   }).timeout(0);
 });

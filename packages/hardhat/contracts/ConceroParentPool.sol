@@ -533,11 +533,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         s_ethersHashSum = _ethersHashSum;
     }
 
-    // TODO: REMOVE IN PRODUCTION
-    function pushDepositsOnTheWayArray(DepositOnTheWay memory deposit) external payable onlyOwner {
-        s_depositsOnTheWayArray.push(deposit);
-    }
-
     /**
      * @notice function to manage the Cross-chain ConceroPool contracts
      * @param _chainSelector chain identifications

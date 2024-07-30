@@ -16,10 +16,10 @@ task("deploy-all-pools", "Deploy all pool")
     executeCommand(`yarn hardhat clean`);
 
     executeCommand(
-      `yarn hardhat deploy-parent-pool --network ${parentPoolNetwork} --slotid ${slotId} --deployproxy --skipdeploy --skipsetvars`,
+      `yarn hardhat deploy-parent-pool --network ${parentPoolNetwork} --slotid ${slotId} --deployproxy --uploadsecrets --skipdeploy --skipsetvars`,
     );
 
-    executeCommand(`yarn hardhat deploy-automations --network ${parentPoolNetwork} --slotid ${slotId}`);
+    executeCommand(`yarn hardhat deploy-pool-clfcla --network ${parentPoolNetwork} --slotid ${slotId}`);
 
     for (const chain of liveChains) {
       if (chain.name === "base" || chain.name === "baseSepolia") continue;

@@ -8,7 +8,7 @@
 			],
 			chainId: '0x66eee',
 			usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-			poolAddress: '0xbe43f1eAb754144b31B90Ee2D6E036b9AB3cC5B4',
+			poolAddress: '0xb27c9076f5459AFfc3D17b7e830638a885349114',
 		},
 		[`0x${BigInt('14767482510784806043').toString(16)}`]: {
 			urls: [
@@ -18,7 +18,7 @@
 			],
 			chainId: '0xa869',
 			usdcAddress: '0x5425890298aed601595a70ab815c96711a31bc65',
-			poolAddress: '',
+			poolAddress: '0x931Ac651D313f7784B2598834cebF594120b9DB3',
 		},
 		[`0x${BigInt('10344971235874465080').toString(16)}`]: {
 			urls: [
@@ -27,7 +27,6 @@
 				'https://base-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x14a34',
-			nativeCurrency: 'eth',
 			usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
 			poolAddress: '0x973c3aA8879926022EA871cfa533d148e5eCea1c',
 		},
@@ -55,8 +54,8 @@
 		}
 	}
 	const getProviderByChainSelector = _chainSelector => {
-		const url =
-			chainSelectors[_chainSelector].urls[Math.floor(Math.random() * chainSelectors[_chainSelector].urls.length)];
+		const urls = chainSelectors[_chainSelector].urls;
+		const url = urls[Math.floor(Math.random() * urls.length)];
 		return new FunctionsJsonRpcProvider(url);
 	};
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
@@ -68,7 +67,8 @@
 		const ethersId = ethers.id('ConceroParentPool_CCIPReceived(bytes32, uint64, address, address, uint256)');
 		const promises = [];
 		for (const line of ccipLines) {
-			const provider = getProviderByChainSelector(line.chainSelector);
+			const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`;
+			const provider = getProviderByChainSelector(hexChainSelector);
 			promises.push(
 				provider.getLogs({
 					address: chainSelectors[line.chainSelector].poolAddress,
@@ -81,16 +81,17 @@
 		return await Promise.all(promises);
 	};
 	const getCompletedConceroIdsByLogs = (logs, ccipLines) => {
+		if (!logs.length) return [];
 		const conceroIds = [];
 		for (const log of logs) {
 			const ccipMessageId = log.topics[1];
-			const ccipLine = ccipLines.find(line => line.ccipMessageId === ccipMessageId);
+			const ccipLine = ccipLines.find(line => line.ccipMessageId.toLowerCase() === ccipMessageId.toLowerCase());
 			conceroIds.push(ccipLine.conceroId);
 		}
 		return conceroIds;
 	};
 	const packResult = (_totalBalance, _conceroIds) => {
-		const result = new Uint8Array(32 + conceroIds.length);
+		const result = new Uint8Array(32 + conceroIds.length + 1);
 		const encodedTotalBalance = Functions.encodeUint256(_totalBalance);
 		result.set(encodedTotalBalance, 0);
 		if (_conceroIds.length) {
@@ -98,6 +99,8 @@
 				const encodedConceroId = new Uint8Array([Number(_conceroIds[i])]);
 				result.set(encodedConceroId, 32 + i);
 			}
+		} else {
+			result.set(new Uint8Array([0]), 32);
 		}
 		return result;
 	};
@@ -113,8 +116,7 @@
 	}
 	promises.push(getBaseDepositsOneTheWay());
 	promises.push(baseProvider.getBlockNumber());
-	let results = [];
-	results = await Promise.all(promises);
+	const results = await Promise.all(promises);
 	for (let i = 0; i < results.length - 2; i += 2) {
 		totalBalance += BigInt(results[i]) + BigInt(results[i + 1]);
 	}
@@ -127,8 +129,10 @@
 			return {conceroId, chainSelector, ccipMessageId};
 		});
 		if (ccipLines.length) {
-			const logs = await getChildPoolsCcipLogs(ccipLines, latestBlockNumber);
-			conceroIds = getCompletedConceroIdsByLogs(logs, ccipLines);
+			try {
+				const logs = await getChildPoolsCcipLogs(ccipLines, latestBlockNumber);
+				conceroIds = getCompletedConceroIdsByLogs(logs, ccipLines);
+			} catch (e) {}
 		}
 	}
 	return packResult(totalBalance, conceroIds);

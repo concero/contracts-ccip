@@ -10,8 +10,6 @@ import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/Aut
 ///@notice error emitted when the caller is not the owner.
 error ConceroAutomation_CallerNotAllowed(address caller);
 error ConceroAutomation_WithdrawAlreadyTriggered(bytes32 withdrawalId);
-error ConceroAutomation_CLFFallbackError(bytes32 requestId);
-error ConceroAutomation__WithdrawRequestPerformed();
 error ConceroAutomation__WithdrawRequestDoesntExist(bytes32 withdrawalId);
 error ConceroAutomation__WithdrawRequestNotReady(bytes32 withdrawalId);
 contract ConceroAutomation is IConceroAutomation, AutomationCompatible, FunctionsClient, Ownable {

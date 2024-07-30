@@ -21,7 +21,7 @@ import {IWETH} from "./Interfaces/IWETH.sol";
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
 ///@notice error emitted when the caller is not allowed
-error DexSwap_ItsNotOrchestrator(address caller);
+error DexSwap_OnlyProxyContext(address caller);
 ///@notice error emitted when the swap data is empty
 error DexSwap_EmptyDexData();
 ///@notice error emitted when the router is not allowed
@@ -30,8 +30,6 @@ error DexSwap_RouterNotAllowed();
 error DexSwap_InvalidPath();
 ///@notice error emitted if a swapData has invalid tokens
 error DexSwap_SwapDataNotChained(address toToken, address fromToken);
-///@notice error emitted if a not-owner-address call the function
-error DexSwap_CallableOnlyByOwner(address caller, address owner);
 ///@notice error emitted when the DexData is not valid
 error DexSwap_InvalidDexData();
 error DexSwap_UnwrapWNativeFailed();
@@ -59,12 +57,12 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
     ///@notice event emitted when value locked in the contract is removed
     event DexSwap_RemovingDust(address receiver, uint256 amount);
 
-    constructor(address _proxy) {
+    constructor(address _proxy, address[3] memory _messengers) ConceroCommon(_messengers) {
         i_proxy = _proxy;
     }
 
     function entrypoint(IDexSwap.SwapData[] memory _swapData, address _recipient) external payable {
-        if (address(this) != i_proxy) revert DexSwap_ItsNotOrchestrator(address(this));
+        if (address(this) != i_proxy) revert DexSwap_OnlyProxyContext(address(this));
 
         uint256 swapDataLength = _swapData.length;
         address destinationAddress = address(this);

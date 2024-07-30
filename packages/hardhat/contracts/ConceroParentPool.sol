@@ -20,8 +20,6 @@ import {IConceroAutomation} from "./Interfaces/IConceroAutomation.sol";
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
-///@notice error emitted when the balance is not sufficient
-error ConceroParentPool_InsufficientBalance();
 ///@notice error emitted when the receiver is the address(0)
 error ConceroParentPool_InvalidAddress();
 ///@notice error emitted when the caller is not a valid Messenger
@@ -30,10 +28,6 @@ error ConceroParentPool_NotMessenger(address caller);
 error ConceroParentPool_SenderNotAllowed(address _sender);
 ///@notice error emitted when an attempt to create a new request is made while other is still active.
 error ConceroParentPool_ActiveRequestNotFulfilledYet();
-///@notice error emitted when the contract doesn't have enough link balance
-error ConceroParentPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
-///@notice error emitted when a LP try to deposit liquidity on the contract without pools
-error ConceroParentPool_NoPoolsToDistribute();
 ///@notice emitted in depositLiquidity when the input amount is not enough
 error ConceroParentPool_AmountBelowMinimum(uint256 minAmount);
 ///@notice emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
@@ -45,12 +39,10 @@ error ConceroParentPool_MaxCapReached(uint256 maxCap);
 ///@notice error emitted when it's not the proxy calling the function
 error ConceroParentPool_NotParentPoolProxy(address caller);
 ///@notice error emitted when the input TX was already removed
-error ConceroParentPool_TxAlreadyRemoved(bytes32 ccipMessageId);
 error ConceroParentPool_NotContractOwner();
 error ConceroParentPool_RequestAlreadyProceeded(bytes32 requestId);
 ///@notice error emitted when te caller is not the LP who opened the request
 error ConceroParentPool_NotAllowedToComplete();
-error ConceroParentPool_MaxDepositRequestsReached(bytes8);
 ///@notice error emitted when the request doesn't exist
 error ConceroParentPool_RequestDoesntExist();
 error ConceroParentPool_NotConceroCLA(address caller);
@@ -128,9 +120,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ///@notice Contract Owner
     address internal immutable i_owner;
     //@@notice messenger addresses
-    address public immutable i_msgr0;
-    address public immutable i_msgr1;
-    address public immutable i_msgr2;
+    address private immutable i_msgr0;
+    address private immutable i_msgr1;
+    address private immutable i_msgr2;
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
@@ -257,7 +249,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         address _automation,
         address _orchestrator,
         address _owner,
-        address[3] memory _msgrs
+        address[3] memory _messengers
     ) CCIPReceiver(_ccipRouter) FunctionsClient(_functionsRouter) {
         i_donId = _donId;
         i_subscriptionId = _subscriptionId;
@@ -268,9 +260,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         i_automation = IConceroAutomation(_automation);
         i_infraProxy = _orchestrator;
         i_owner = _owner;
-        i_msgr0 = _msgrs[0];
-        i_msgr1 = _msgrs[1];
-        i_msgr2 = _msgrs[2];
+        i_msgr0 = _messengers[0];
+        i_msgr1 = _messengers[1];
+        i_msgr2 = _messengers[2];
     }
 
     ////////////////////////
@@ -333,7 +325,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         emit ConceroParentPool_DepositInitiated(clfRequestId, msg.sender, _usdcAmount, _deadline);
     }
 
-    function completeDeposit(bytes32 _depositRequestId) external {
+    function completeDeposit(bytes32 _depositRequestId) external onlyProxyContext {
         DepositRequest storage request = s_depositRequests[_depositRequestId];
         address lpAddress = request.lpAddress;
         uint256 usdcAmount = request.usdcAmountToDeposit;
@@ -643,9 +635,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             abi.decode(any2EvmMessage.sender, (address))
         )
     {
-        //2 scenarios in which we will receive data
-        //1. Fee of cross-chains transactions
-        //2. Transfers of amounts to be withdraw
         // todo: this should be changed to a struct
         (bytes32 withdrawalId, address user, uint256 receivedFee) = abi.decode(
             any2EvmMessage.data,
@@ -656,23 +645,22 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         bool isWithdrawalTx = withdrawalId != bytes32(0);
 
         if (isUserTx) {
-            uint256 amountAfterFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
             IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransaction(
                 any2EvmMessage.messageId
             );
             bool isExecutionLayerFailed = ((transaction.ccipMessageId == any2EvmMessage.messageId &&
                 transaction.isConfirmed == false) || transaction.ccipMessageId == 0);
             if (isExecutionLayerFailed) {
-                i_USDC.safeTransfer(user, amountAfterFees);
-                //We don't subtract it here because the loan was not performed. And the value is not summed into the `s_loanInUse` variable.
+                //We don't subtract fee here because the loan was not performed. And the value is not summed into the `s_loanInUse` variable.
+                i_USDC.safeTransfer(user, any2EvmMessage.destTokenAmounts[0].amount);
             } else {
                 //subtract the amount from the committed total amount
+                uint256 amountAfterFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
                 s_loansInUse -= amountAfterFees;
             }
         } else if (isWithdrawalTx) {
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
             request.remainingLiquidityFromChildPools -= any2EvmMessage.destTokenAmounts[0].amount;
-
             //todo: This may be redundant, let's test it
             //            request.remainingLiquidityFromChildPools = request.remainingLiquidityFromChildPools >=
             //                any2EvmMessage.destTokenAmounts[0].amount
@@ -729,10 +717,10 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             _amountToDistribute
         );
 
-        uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
+        uint256 ccipFeeAmount = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
 
         i_USDC.approve(i_ccipRouter, _amountToDistribute);
-        i_linkToken.approve(i_ccipRouter, fees);
+        i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
 
         messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
 
@@ -741,7 +729,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             _chainSelector,
             s_poolToSendTo[_chainSelector],
             address(i_linkToken),
-            fees
+            ccipFeeAmount
         );
     }
 
@@ -1033,7 +1021,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         return nextId;
     }
 
-    function addWithdrawalOnTheWayAmountById(bytes32 _withdrawalId) external onlyConceroCLA {
+    function addWithdrawalOnTheWayAmountById(
+        bytes32 _withdrawalId
+    ) external onlyProxyContext onlyConceroCLA {
         uint256 amountToWithdraw = s_withdrawRequests[_withdrawalId].amountToWithdraw;
         if (amountToWithdraw == 0) revert ConceroParentPool_RequestDoesntExist();
 
@@ -1129,7 +1119,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
     function getWithdrawalRequestById(
         bytes32 _withdrawalId
-    ) external view onlyConceroCLA returns (WithdrawRequest memory) {
+    ) external view onlyProxyContext onlyConceroCLA returns (WithdrawRequest memory) {
         return s_withdrawRequests[_withdrawalId];
     }
 

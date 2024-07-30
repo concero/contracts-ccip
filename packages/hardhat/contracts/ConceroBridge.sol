@@ -10,22 +10,10 @@ import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
-///@notice error emitted when the Messenger receive an address(0)
-error InvalidAddress();
-///@notice error emitted when the Messenger were set already
-error AddressAlreadyAllowlisted();
-///@notice error emitted when the Concero Messenger have been removed already
-error NotAllowlistedOrAlreadyRemoved();
-///@notice error emitted when the token to be swapped has fee on transfers
-error Concero_FoTNotAllowedYet();
 ///@notice error emitted when the input amount is less than the fees
-error InsufficientFundsForFees(uint256 amount, uint256 fee);
-///@notice error emitted when there is no ERC20 value to withdraw
-error NothingToWithdraw();
-///@notice error emitted when there is no native value to withdraw
-error FailedToWithdrawEth(address owner, address target, uint256 value);
+error ConceroBridge_InsufficientFees(uint256 amount, uint256 fee);
 ///@notice error emitted when a non orchestrator address call startBridge
-error Concero_ItsNotProxy(address caller);
+error ConceroBridge_OnlyProxyContext(address caller);
 
 contract ConceroBridge is ConceroCCIP {
     using SafeERC20 for IERC20;
@@ -59,7 +47,8 @@ contract ConceroBridge is ConceroCCIP {
         address _ccipRouter,
         address _dexSwap,
         address _pool,
-        address _proxy
+        address _proxy,
+        address[3] memory _messengers
     )
         ConceroCCIP(
             _variables,
@@ -69,7 +58,8 @@ contract ConceroBridge is ConceroCCIP {
             _ccipRouter,
             _dexSwap,
             _pool,
-            _proxy
+            _proxy,
+            _messengers
         )
     {}
 
@@ -87,7 +77,7 @@ contract ConceroBridge is ConceroCCIP {
         BridgeData memory bridgeData,
         IDexSwap.SwapData[] memory dstSwapData
     ) external payable {
-        if (address(this) != i_proxy) revert Concero_ItsNotProxy(address(this));
+        if (address(this) != i_proxy) revert ConceroBridge_OnlyProxyContext(address(this));
         address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
         uint256 totalSrcFee = _convertToUSDCDecimals(
             _getSrcTotalFeeInUsdc(
@@ -98,16 +88,16 @@ contract ConceroBridge is ConceroCCIP {
         );
 
         if (bridgeData.amount < totalSrcFee) {
-            revert InsufficientFundsForFees(bridgeData.amount, totalSrcFee);
+            revert ConceroBridge_InsufficientFees(bridgeData.amount, totalSrcFee);
         }
 
-        uint256 amount = bridgeData.amount - totalSrcFee;
-        uint256 lpFee = getDstTotalFeeInUsdc(amount);
+        uint256 amountToSend = bridgeData.amount - totalSrcFee;
+        uint256 lpFee = getDstTotalFeeInUsdc(amountToSend);
 
         bytes32 ccipMessageId = _sendTokenPayLink(
             bridgeData.dstChainSelector,
             fromToken,
-            amount,
+            amountToSend,
             bridgeData.receiver,
             lpFee
         );
@@ -118,14 +108,14 @@ contract ConceroBridge is ConceroCCIP {
             msg.sender,
             bridgeData.receiver,
             bridgeData.tokenType,
-            amount,
+            amountToSend,
             bridgeData.dstChainSelector
         );
         sendUnconfirmedTX(
             ccipMessageId,
             msg.sender,
             bridgeData.receiver,
-            amount,
+            amountToSend,
             bridgeData.dstChainSelector,
             bridgeData.tokenType,
             dstSwapData

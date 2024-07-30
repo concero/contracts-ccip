@@ -14,10 +14,6 @@ import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
-///@notice error emitted when the balance is not sufficient
-error ConceroChildPool_InsufficientBalance();
-///@notice error emitted when the contract doesn't have enough link balance
-error ConceroChildPool_NotEnoughLinkBalance(uint256 linkBalance, uint256 fees);
 ///@notice error emitted when the caller is not the Orchestrator
 error ConceroChildPool_CallerIsNotTheProxy(address delegatedCaller);
 ///@notice error emitted when a not-concero address call takeLoan
@@ -60,7 +56,10 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     IERC20 private immutable i_USDC;
     ///@notice Contract Owner
     address private immutable i_owner;
-
+    //@@notice messenger addresses
+    address private immutable i_msgr0;
+    address private immutable i_msgr1;
+    address private immutable i_msgr2;
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
@@ -109,7 +108,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @notice modifier to check if the caller is the an approved messenger
      */
     modifier onlyMessenger() {
-        if (isMessenger(msg.sender) == false) revert ConceroChildPool_NotMessenger(msg.sender);
+        if (_isMessenger(msg.sender) == false) revert ConceroChildPool_NotMessenger(msg.sender);
         _;
     }
 
@@ -140,13 +139,17 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         address _link,
         address _ccipRouter,
         address _usdc,
-        address _owner
+        address _owner,
+        address[3] memory _messengers
     ) CCIPReceiver(_ccipRouter) {
         i_infraProxy = _orchestratorProxy;
         i_childProxy = _childProxy;
         i_linkToken = LinkTokenInterface(_link);
         i_USDC = IERC20(_usdc);
         i_owner = _owner;
+        i_msgr0 = _messengers[0];
+        i_msgr1 = _messengers[1];
+        i_msgr2 = _messengers[2];
     }
 
     ////////////////////////
@@ -330,7 +333,6 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         //If receivedFee > 0, it means is user transaction. If receivedFee == 0, means it's a deposit from ParentPool
         bool isUserTx = _user != address(0) && receivedFee > 0;
         if (isUserTx) {
-            uint256 amountAfterFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
             IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransaction(
                 any2EvmMessage.messageId
             );
@@ -339,9 +341,10 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
                 transaction.isConfirmed == false) || transaction.ccipMessageId == 0);
 
             if (isExecutionLayerFailed) {
-                i_USDC.safeTransfer(_user, amountAfterFees);
                 //We don't subtract it here because the loan was not performed. And the value is not added into the `s_loanInUse` variable.
+                i_USDC.safeTransfer(_user, any2EvmMessage.destTokenAmounts[0].amount);
             } else {
+                uint256 amountAfterFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
                 //subtract the amount from the committed total amount
                 s_loansInUse -= amountAfterFees;
             }
@@ -385,17 +388,17 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
             feeToken: address(i_linkToken)
         });
 
-        uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
+        uint256 ccipFeeAmount = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
 
         i_USDC.approve(i_ccipRouter, _amount);
-        i_linkToken.approve(i_ccipRouter, fees);
+        i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
 
         emit _ConceroChildPool_CCIPSent(
             messageId,
             _chainSelector,
             s_poolToSendTo[_chainSelector],
             address(i_linkToken),
-            fees
+            ccipFeeAmount
         );
 
         messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
@@ -409,23 +412,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @notice Function to check if a caller address is an allowed messenger
      * @param _messenger the address of the caller
      */
-    function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
-        address[] memory messengers = new address[](4);
-        // todo: can we move them to immutables and initialise them in consutructor?
-        // like messengers[0] = i_msgr1;
-        messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
-        messengers[1] = address(0);
-        messengers[2] = address(0);
-        messengers[3] = address(0);
-
-        for (uint256 i; i < messengers.length; ) {
-            if (_messenger == messengers[i]) {
-                return true;
-            }
-            unchecked {
-                ++i;
-            }
-        }
-        return false;
+    function _isMessenger(address _messenger) internal view returns (bool) {
+        return (_messenger == i_msgr0 || _messenger == i_msgr1 || _messenger == i_msgr2);
     }
 }

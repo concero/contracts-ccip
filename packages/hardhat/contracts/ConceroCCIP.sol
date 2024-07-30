@@ -11,16 +11,6 @@ import {ConceroFunctions} from "./ConceroFunctions.sol";
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
-///@notice error emitted when the destination chain is not allowed
-error ChainNotAllowed(uint64 ChainSelector);
-///@notice error emitted when the source chain is not allowed
-error SourceChainNotAllowed(uint64 sourceChainSelector);
-///@notice error emitted when the sender of the message is not allowed
-error SenderNotAllowed(address sender);
-///@notice error emitted when the receiver address is invalid
-error InvalidReceiverAddress();
-///@notice error emitted when the link balance is not enough to send the message
-error NotEnoughLinkBalance(uint256 fees, uint256 feeToken);
 error ConceroCCIP_ChainNotAllowed(uint64 chainSelector);
 
 contract ConceroCCIP is ConceroFunctions {
@@ -59,8 +49,19 @@ contract ConceroCCIP is ConceroFunctions {
         address _ccipRouter,
         address _dexSwap,
         address _pool,
-        address _proxy
-    ) ConceroFunctions(_variables, _chainSelector, _chainIndex, _dexSwap, _pool, _proxy) {
+        address _proxy,
+        address[3] memory _messengers
+    )
+        ConceroFunctions(
+            _variables,
+            _chainSelector,
+            _chainIndex,
+            _dexSwap,
+            _pool,
+            _proxy,
+            _messengers
+        )
+    {
         i_linkToken = LinkTokenInterface(_link);
         i_ccipRouter = IRouterClient(_ccipRouter);
     }
@@ -85,9 +86,6 @@ contract ConceroCCIP is ConceroFunctions {
         );
 
         uint256 fees = i_ccipRouter.getFee(_destinationChainSelector, evm2AnyMessage);
-
-        if (fees > i_linkToken.balanceOf(address(this)))
-            revert NotEnoughLinkBalance(i_linkToken.balanceOf(address(this)), fees);
 
         i_linkToken.approve(address(i_ccipRouter), fees);
         IERC20(_token).approve(address(i_ccipRouter), _amount);

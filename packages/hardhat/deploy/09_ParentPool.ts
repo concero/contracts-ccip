@@ -17,6 +17,7 @@ interface ConstructorArgs {
   automation?: string;
   conceroProxyAddress?: string;
   owner?: string;
+  messengers?: string[];
 }
 
 const deployParentPool: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
@@ -38,7 +39,7 @@ const deployParentPool: DeployFunction = async function (hre: HardhatRuntimeEnvi
     automation: getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[name]}`),
     conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
     owner: deployer,
-    messengers: [getEnvVar("MESSENGER_ADDRESS"), getEnvVar("MESSENGER_ADDRESS"), getEnvVar("MESSENGER_ADDRESS")],
+    messengers: [getEnvVar("MESSENGER_0_ADDRESS"), getEnvVar("MESSENGER_1_ADDRESS"), getEnvVar("MESSENGER_2_ADDRESS")],
   };
 
   // Merge defaultArgs with constructorArgs

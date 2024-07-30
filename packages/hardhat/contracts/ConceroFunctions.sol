@@ -115,8 +115,9 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
         uint _chainIndex,
         address _dexSwap,
         address _pool,
-        address _proxy
-    ) FunctionsClient(_variables.functionsRouter) {
+        address _proxy,
+        address[3] memory _messengers
+    ) FunctionsClient(_variables.functionsRouter) ConceroCommon(_messengers) {
         i_donId = _variables.donId;
         i_subscriptionId = _variables.subscriptionId;
         CHAIN_SELECTOR = _chainSelector;

@@ -59,7 +59,8 @@ contract ConceroBridge is ConceroCCIP {
         address _ccipRouter,
         address _dexSwap,
         address _pool,
-        address _proxy
+        address _proxy,
+        address[3] memory _messengers
     )
         ConceroCCIP(
             _variables,
@@ -69,7 +70,8 @@ contract ConceroBridge is ConceroCCIP {
             _ccipRouter,
             _dexSwap,
             _pool,
-            _proxy
+            _proxy,
+            _messengers
         )
     {}
 

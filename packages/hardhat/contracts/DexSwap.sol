@@ -59,7 +59,7 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
     ///@notice event emitted when value locked in the contract is removed
     event DexSwap_RemovingDust(address receiver, uint256 amount);
 
-    constructor(address _proxy) {
+    constructor(address _proxy, address[3] memory _messengers) ConceroCommon(_messengers) {
         i_proxy = _proxy;
     }
 

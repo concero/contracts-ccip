@@ -34,10 +34,7 @@ async function setParentPoolJsHashes(deployableChain: CNetwork, abi: any) {
         hash: setHashHash,
       });
 
-      log(
-        `Set ${srcChainName}:${parentPoolProxyAddress} jshash[${hash}]. Gas used: ${setHashGasUsed.toString()}`,
-        functionName,
-      );
+      log(`Set ${srcChainName}:${parentPoolProxyAddress} jshash[${hash}]. Gas used: ${setHashGasUsed.toString()}`, functionName);
     };
 
     await setHash(getHashSum(parentPoolJsCode), "setHashSum");
@@ -179,10 +176,7 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
       const { cumulativeGasUsed: setSenderGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setSenderHash,
       });
-      log(
-        `Set ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${sender}]. Gas used: ${setSenderGasUsed.toString()}`,
-        "setSenders",
-      );
+      log(`Set ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${sender}]. Gas used: ${setSenderGasUsed.toString()}`, "setSenders");
     };
 
     await setSender(dstConceroContract);
@@ -217,10 +211,7 @@ async function setPools(chain: CNetwork, abi: any) {
       const { cumulativeGasUsed: setReceiverGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setReceiverHash,
       });
-      log(
-        `Set ${chainName}:${conceroPoolAddress} receiver[${dstChainName}:${dstPoolAddress}]. Gas used: ${setReceiverGasUsed.toString()}`,
-        "setPools",
-      );
+      log(`Set ${chainName}:${conceroPoolAddress} receiver[${dstChainName}:${dstPoolAddress}]. Gas used: ${setReceiverGasUsed.toString()}`, "setPools");
     } catch (error) {
       log(`Error ${error?.message}`, "setPools");
     }
@@ -289,10 +280,7 @@ async function removePools(chain: CNetwork, abi, chainSelectors: string[]) {
     const { cumulativeGasUsed: deletePoolGasUsed } = await publicClient.waitForTransactionReceipt({
       hash: deletePoolHash,
     });
-    log(
-      `Remove ${chainName}:${chainSelector} from list of senders. Gas used: ${deletePoolGasUsed.toString()}`,
-      "removePools",
-    );
+    log(`Remove ${chainName}:${chainSelector} from list of senders. Gas used: ${deletePoolGasUsed.toString()}`, "removePools");
   }
 }
 
@@ -302,10 +290,10 @@ export async function setParentPoolVariables(chain: CNetwork, isSetSecretsNeeded
   await setParentPoolJsHashes(chain, ParentPoolAbi);
   await setParentPoolCap(chain, ParentPoolAbi);
 
-  // if (isSetSecretsNeeded) {
-  await setParentPoolSecretsVersion(chain, ParentPoolAbi, slotId);
-  await setParentPoolSecretsSlotId(chain, ParentPoolAbi, slotId);
-  // }
+  if (isSetSecretsNeeded) {
+    await setParentPoolSecretsVersion(chain, ParentPoolAbi, slotId);
+    await setParentPoolSecretsSlotId(chain, ParentPoolAbi, slotId);
+  }
 
   await setPools(chain, ParentPoolAbi);
   await setConceroContractSenders(chain, ParentPoolAbi);

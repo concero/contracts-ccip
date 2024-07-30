@@ -45,7 +45,7 @@ contract ConceroCommon {
     ) internal view returns (address) {
         address[5][2] memory tokens;
 
-        // Initialize BNM addresses
+        // REMOVE IN PRODUCTION Initialize BNM addresses
         tokens[uint(IStorage.CCIPToken.bnm)][
             uint(IStorage.Chain.arb)
         ] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
@@ -88,7 +88,7 @@ contract ConceroCommon {
      * @param _messenger the address of the caller
      */
     function isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
-        address[] memory messengers = new address[](4); //Number of messengers. To define.
+        address[] memory messengers = new address[](4);
         messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
         messengers[1] = address(0);
         messengers[2] = address(0);

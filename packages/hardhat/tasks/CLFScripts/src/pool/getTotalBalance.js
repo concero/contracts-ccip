@@ -204,8 +204,10 @@ return (async () => {
 		});
 
 		if (ccipLines.length) {
-			const logs = await getChildPoolsCcipLogs(ccipLines, latestBlockNumber);
-			conceroIds = getCompletedConceroIdsByLogs(logs, ccipLines);
+			try {
+				const logs = await getChildPoolsCcipLogs(ccipLines, latestBlockNumber);
+				conceroIds = getCompletedConceroIdsByLogs(logs, ccipLines);
+			} catch (e) {}
 		}
 	}
 

@@ -20,12 +20,8 @@ library LibConcero {
         }
     }
 
-    function isNativeToken(address _token) internal pure returns (bool) {
-        return _token == address(0);
-    }
-
     function transferERC20(address token, uint256 amount, address recipient) internal {
-        if (isNativeToken(token)) {
+        if (token == address(0)) {
             revert NativeTokenIsNotERC20();
         }
 
@@ -33,16 +29,11 @@ library LibConcero {
             revert TransferToNullAddress();
         }
 
-        uint256 balance = getBalance(token, address(this));
-        if (balance < amount) {
-            revert InsufficientBalance(balance, amount);
-        }
-
         IERC20(token).safeTransfer(recipient, amount);
     }
 
     function transferFromERC20(address token, address from, address to, uint256 amount) internal {
-        if (isNativeToken(token)) {
+        if (token == address(0)) {
             revert NativeTokenIsNotERC20();
         }
 
@@ -50,6 +41,7 @@ library LibConcero {
             revert TransferToNullAddress();
         }
 
+        //todo: this MAY be redundant, but need to check
         uint256 balanceBefore = getBalance(token, to);
         IERC20(token).safeTransferFrom(from, to, amount);
         uint256 balanceAfter = getBalance(token, to);

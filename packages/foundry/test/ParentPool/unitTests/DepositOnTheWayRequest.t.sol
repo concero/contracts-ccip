@@ -5,6 +5,7 @@ import {Test, console} from "forge-std/Test.sol";
 import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
 import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {ForkType, CreateAndSwitchToForkTest} from "../../utils/CreateAndSwitchToFork.t.sol";
+import "../../../lib/chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 
 contract DepositOnTheWayRequest is ConceroParentPool, CreateAndSwitchToForkTest {
     constructor()
@@ -60,6 +61,24 @@ contract DepositOnTheWayRequest is ConceroParentPool, CreateAndSwitchToForkTest 
         console.log("gasUsed: ", gasUsed);
 
         assert(gasUsed < 200_000);
+    }
+
+    function test_checkUpkeep() public {
+        uint256 forkId = vm.createFork(vm.envString("BASE_TESTNET_RPC_URL"));
+        vm.selectFork(forkId);
+        vm.startPrank(address(0), address(0));
+
+        (bool isChecked, bytes memory byt) = AutomationCompatibleInterface(
+            vm.envAddress("CONCERO_AUTOMATION_BASE_SEPOLIA")
+        ).checkUpkeep(bytes(""));
+
+        console.log("isChecked: ", isChecked);
+        console.logBytes(byt);
+
+        //  1722449036 - now
+        //  1722438612 - triggeredAt
+
+        console.log(block.timestamp);
     }
 
     function test_decodeCLFResponse_1() public {

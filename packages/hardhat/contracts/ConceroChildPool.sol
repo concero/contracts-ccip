@@ -73,7 +73,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         uint256 amount
     );
     ///@notice event emitted when a Cross-chain message is sent.
-    event _ConceroChildPool_CCIPSent(
+    event ConceroChildPool_CCIPSent(
         bytes32 indexed messageId,
         uint64 destinationChainSelector,
         address receiver,
@@ -394,7 +394,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         i_USDC.approve(i_ccipRouter, _amount);
         i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
 
-        emit _ConceroChildPool_CCIPSent(
+        emit ConceroChildPool_CCIPSent(
             messageId,
             _chainSelector,
             s_poolToSendTo[_chainSelector],

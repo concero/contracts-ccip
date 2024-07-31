@@ -90,14 +90,23 @@ contract DepositOnTheWayRequest is ConceroParentPool, CreateAndSwitchToForkTest 
     }
 
     function test_bytesToUint8Array_1() public {
-        bytes memory response = abi.encode(uint256(300), uint8(8), uint8(2));
+        bytes
+            memory response = hex"0000000000000000000000000000000000000000000000000000000000186a0001020304050600";
 
-        (uint256 totalBalance, uint8[] memory depositsOnTheWayIdsToDelete) = _decodeCLFResponse(
-            response
-        );
+        int256 totalBalance;
+        assembly {
+            totalBalance := mload(add(response, 32))
+        }
+
+        bytes1[] memory depositsOnTheWayIdsToDelete = new bytes1[](response.length - 32);
+        for (uint256 i = 32; i < response.length; i++) {
+            depositsOnTheWayIdsToDelete[i - 32] = bytes1(response[i]);
+        }
 
         console.log("totalBalance: ", totalBalance);
-        console.log("depositsOnTheWayIdsToDelete: ", depositsOnTheWayIdsToDelete[1]);
+        console.log("depositsOnTheWayIdsToDelete: ");
+        console.log(uint8(depositsOnTheWayIdsToDelete[depositsOnTheWayIdsToDelete.length - 1]));
+        console.log("length: ", depositsOnTheWayIdsToDelete.length);
     }
 
     ////////////////////////

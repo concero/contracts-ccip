@@ -66,7 +66,7 @@ interface IParentPool is IPool {
     }
 
     struct DepositOnTheWay {
-        uint8 id;
+        bytes1 id;
         uint64 chainSelector;
         bytes32 ccipMessageId;
         uint256 amount;

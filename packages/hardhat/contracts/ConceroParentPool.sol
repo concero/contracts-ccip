@@ -821,7 +821,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         (
             uint256 childPoolsLiquidity,
-            uint8[] memory depositsOnTheWayIdsToDelete
+            bytes1[] memory depositsOnTheWayIdsToDelete
         ) = _decodeCLFResponse(response);
 
         request.childPoolsLiquiditySnapshot = childPoolsLiquidity;
@@ -831,16 +831,17 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
     function _decodeCLFResponse(
         bytes memory response
-    ) internal pure returns (uint256, uint8[] memory) {
+    ) internal pure returns (uint256, bytes1[] memory) {
         uint256 totalBalance;
         assembly {
             totalBalance := mload(add(response, 32))
         }
 
-        uint8[] memory depositsOnTheWayIdsToDelete = new uint8[](response.length - 32);
+        bytes1[] memory depositsOnTheWayIdsToDelete = new bytes1[](response.length - 32);
         for (uint256 i = 32; i < response.length; i++) {
-            depositsOnTheWayIdsToDelete[i - 32] = uint8(response[i]);
+            depositsOnTheWayIdsToDelete[i - 32] = response[i];
         }
+
         return (totalBalance, depositsOnTheWayIdsToDelete);
     }
 
@@ -860,7 +861,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         _updateWithdrawalRequest(request, withdrawalId, childPoolsLiquidity);
     }
 
-    function _deleteDepositsOnTheWayByIds(uint8[] memory depositsOnTheWayStatuses) internal {
+    function _deleteDepositsOnTheWayByIds(bytes1[] memory depositsOnTheWayStatuses) internal {
         if (depositsOnTheWayStatuses.length == 0) return;
 
         uint256 depositsOnTheWayArrayLength = s_depositsOnTheWayArray.length;
@@ -976,8 +977,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         uint64 _chainSelector,
         uint256 _amount
     ) internal {
-        uint8 id = s_latestDepositOnTheWayId < MAX_DEPOSIT_REQUESTS_COUNT
-            ? ++s_latestDepositOnTheWayId
+        bytes1 id = s_latestDepositOnTheWayId < MAX_DEPOSIT_REQUESTS_COUNT
+            ? bytes1(++s_latestDepositOnTheWayId)
             : _findLowestDepositOnTheWayUnusedId();
 
         s_depositsOnTheWayArray.push(
@@ -992,14 +993,14 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         s_depositsOnTheWayAmount += _amount;
     }
 
-    function _findLowestDepositOnTheWayUnusedId() private view returns (uint8) {
+    function _findLowestDepositOnTheWayUnusedId() private view returns (bytes1) {
         DepositOnTheWay[] memory depositsOnTheWayArray = s_depositsOnTheWayArray;
         uint256 depositsOnTheWayArrayLength = depositsOnTheWayArray.length;
 
         uint8 nextId = 0;
 
         for (uint256 i; i < depositsOnTheWayArrayLength; ) {
-            if (depositsOnTheWayArray[i].id == nextId) {
+            if (depositsOnTheWayArray[i].id == bytes1(nextId)) {
                 ++nextId;
 
                 i = 0;
@@ -1010,7 +1011,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             }
         }
 
-        return nextId;
+        return bytes1(nextId);
     }
 
     function addWithdrawalOnTheWayAmountById(

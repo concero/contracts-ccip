@@ -36,20 +36,20 @@ contract DepositOnTheWayRequest is ConceroParentPool, CreateAndSwitchToForkTest 
             s_depositsOnTheWayArray.length - 1
         ];
 
-        uint8 expectedLastDepositId = 5;
+        bytes1 expectedLastDepositId = bytes1(uint8(5));
         assert(lastDepositOnTheWay.id == expectedLastDepositId);
     }
 
     function test_UpdateDepositsOnTheWay() public {
-        uint8[] memory depositsOnTheWayStatuses = new uint8[](3);
+        bytes1[] memory depositsOnTheWayStatuses = new bytes1[](3);
 
         uint256 maxDepositsRequestsCount = MAX_DEPOSIT_REQUESTS_COUNT / 2 - 15;
 
         _fillDepositsRequestArray(maxDepositsRequestsCount);
 
-        depositsOnTheWayStatuses[0] = 1;
-        depositsOnTheWayStatuses[1] = 5;
-        depositsOnTheWayStatuses[2] = 3;
+        depositsOnTheWayStatuses[0] = bytes1(uint8(1));
+        depositsOnTheWayStatuses[1] = bytes1(uint8(5));
+        depositsOnTheWayStatuses[2] = bytes1(uint8(3));
 
         uint256 gasBefore = gasleft();
         _deleteDepositsOnTheWayByIds(depositsOnTheWayStatuses);
@@ -91,22 +91,20 @@ contract DepositOnTheWayRequest is ConceroParentPool, CreateAndSwitchToForkTest 
 
     function test_bytesToUint8Array_1() public {
         bytes
-            memory response = hex"0000000000000000000000000000000000000000000000000000000000186a0001020304050600";
+            memory response = hex"0000000000000000000000000000000000000000000000000000000000186a00010203040506";
 
-        int256 totalBalance;
-        assembly {
-            totalBalance := mload(add(response, 32))
-        }
+        (uint256 totalBalance, bytes1[] memory depositsOnTheWayIdsToDelete) = _decodeCLFResponse(
+            response
+        );
 
-        bytes1[] memory depositsOnTheWayIdsToDelete = new bytes1[](response.length - 32);
-        for (uint256 i = 32; i < response.length; i++) {
-            depositsOnTheWayIdsToDelete[i - 32] = bytes1(response[i]);
-        }
-
-        console.log("totalBalance: ", totalBalance);
-        console.log("depositsOnTheWayIdsToDelete: ");
-        console.log(uint8(depositsOnTheWayIdsToDelete[depositsOnTheWayIdsToDelete.length - 1]));
-        console.log("length: ", depositsOnTheWayIdsToDelete.length);
+        assert(totalBalance == 1600000);
+        assert(depositsOnTheWayIdsToDelete.length == 6);
+        assert(depositsOnTheWayIdsToDelete[0] == bytes1(uint8((1))));
+        assert(depositsOnTheWayIdsToDelete[1] == bytes1(uint8(2)));
+        assert(depositsOnTheWayIdsToDelete[2] == bytes1(uint8(3)));
+        assert(depositsOnTheWayIdsToDelete[3] == bytes1(uint8(4)));
+        assert(depositsOnTheWayIdsToDelete[4] == bytes1(uint8(5)));
+        assert(depositsOnTheWayIdsToDelete[5] == bytes1(uint8(6)));
     }
 
     ////////////////////////

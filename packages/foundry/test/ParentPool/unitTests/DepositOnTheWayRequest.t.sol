@@ -90,7 +90,7 @@ contract DepositOnTheWayRequest is ConceroParentPool, CreateAndSwitchToForkTest 
     }
 
     function test_bytesToUint8Array_1() public {
-        bytes memory response = abi.encodePacked(uint256(300), uint8(8), uint8(2));
+        bytes memory response = abi.encode(uint256(300), uint8(8), uint8(2));
 
         (uint256 totalBalance, uint8[] memory depositsOnTheWayIdsToDelete) = _decodeCLFResponse(
             response

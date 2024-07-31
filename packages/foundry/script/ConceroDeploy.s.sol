@@ -6,18 +6,17 @@ import {ConceroBridge} from "contracts/ConceroBridge.sol";
 import {Storage} from "contracts/Libraries/Storage.sol";
 
 contract ConceroDeploy is Script {
-
     function run(
-            Storage.FunctionsVariables memory _variables,
-            uint64 _chainSelector,
-            uint _chainIndex,
-            address _link,
-            address _ccipRouter,
-            address _dexSwap,
-            address _pool,
-            address _proxy
-        ) public returns(ConceroBridge concero){
-
+        Storage.FunctionsVariables memory _variables,
+        uint64 _chainSelector,
+        uint _chainIndex,
+        address _link,
+        address _ccipRouter,
+        address _dexSwap,
+        address _pool,
+        address _proxy,
+        address[3] memory _messengers
+    ) public returns (ConceroBridge concero) {
         vm.startBroadcast();
         concero = new ConceroBridge(
             _variables,
@@ -27,7 +26,8 @@ contract ConceroDeploy is Script {
             _ccipRouter,
             _dexSwap,
             _pool,
-            _proxy
+            _proxy,
+            _messengers
         );
         vm.stopBroadcast();
     }

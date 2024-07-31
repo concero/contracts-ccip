@@ -1,6 +1,4 @@
-const ethers = await import('npm:ethers@6.10.0');
-
-return (async () => {
+(async () => {
 	const chainSelectors = {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -165,24 +163,6 @@ return (async () => {
 				);
 			}
 		}
-
-		// for (const line of ccipLines) {
-		// 	const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`.toLowerCase();
-		//
-		// 	if (hexChainSelector === baseChainSelector) continue;
-		// 	if (!chainSelectors[hexChainSelector]) continue;
-		//
-		// 	const provider = getProviderByChainSelector(hexChainSelector);
-		//
-		// 	promises.push(
-		// 		provider.getLogs({
-		// 			address: chainSelectors[hexChainSelector].poolAddress,
-		// 			topics: [ethersId, line.ccipMessageId],
-		// 			fromBlock: 0,
-		// 			toBlock: 'latest',
-		// 		}),
-		// 	);
-		// }
 
 		return await Promise.all(promises);
 	};

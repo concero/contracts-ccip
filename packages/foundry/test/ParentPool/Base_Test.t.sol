@@ -33,7 +33,11 @@ contract Base_Test is Test {
 
         /// @dev We can use vm.prank(<PUBLIC_ADDRESS>) instead of vm.broadcast(<PRIVATE_KEY>)
         vm.prank(proxyDeployer);
-        parentPoolProxy = new ParentPoolProxy(address(vm.envAddress("CONCERO_PAUSE_BASE")), proxyDeployer, bytes(""));
+        parentPoolProxy = new ParentPoolProxy(
+            address(vm.envAddress("CONCERO_PAUSE_BASE")),
+            proxyDeployer,
+            bytes("")
+        );
 
         vm.prank(deployer);
         parentPoolImplementation = new MockConceroParentPool(
@@ -47,12 +51,14 @@ contract Base_Test is Test {
             address(vm.envAddress("LPTOKEN_BASE")),
             address(vm.envAddress("CONCERO_AUTOMATION_BASE")),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
-            address(deployer)
+            address(deployer),
+            [vm.envAddress("MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
 
         vm.prank(proxyDeployer);
         ITransparentUpgradeableProxy(address(parentPoolProxy)).upgradeToAndCall(
-            address(parentPoolImplementation), bytes("")
+            address(parentPoolImplementation),
+            bytes("")
         );
 
         _addFunctionsConsumer();
@@ -68,7 +74,12 @@ contract Base_Test is Test {
     //////////////////////////////////////////////////////////////*/
     function _addFunctionsConsumer() private {
         vm.prank(vm.envAddress("DEPLOYER_ADDRESS"));
-        functionsSubscriptions = FunctionsSubscriptions(address(0xf9B8fc078197181C841c296C876945aaa425B278));
-        functionsSubscriptions.addConsumer(uint64(vm.envUint("CLF_SUBID_BASE")), address(parentPoolProxy));
+        functionsSubscriptions = FunctionsSubscriptions(
+            address(0xf9B8fc078197181C841c296C876945aaa425B278)
+        );
+        functionsSubscriptions.addConsumer(
+            uint64(vm.envUint("CLF_SUBID_BASE")),
+            address(parentPoolProxy)
+        );
     }
 }

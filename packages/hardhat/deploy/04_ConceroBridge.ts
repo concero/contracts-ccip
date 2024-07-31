@@ -6,6 +6,7 @@ import log from "../utils/log";
 import path from "path";
 import fs from "fs";
 import { getEnvVar } from "../utils/getEnvVar";
+import { messengers } from "../constants/deploymentVariables";
 
 interface ConstructorArgs {
   slotId?: number;
@@ -63,6 +64,7 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
         ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`)
         : getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`),
     conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
+    messengers,
   };
 
   // Merge defaultArgs with constructorArgs

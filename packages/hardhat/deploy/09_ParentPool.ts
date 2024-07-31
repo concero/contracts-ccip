@@ -4,6 +4,7 @@ import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
+import { messengers } from "../constants/deploymentVariables";
 
 interface ConstructorArgs {
   parentProxyAddress?: string;
@@ -39,7 +40,7 @@ const deployParentPool: DeployFunction = async function (hre: HardhatRuntimeEnvi
     automation: getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[name]}`),
     conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
     owner: deployer,
-    messengers: [getEnvVar("MESSENGER_0_ADDRESS"), getEnvVar("MESSENGER_1_ADDRESS"), getEnvVar("MESSENGER_2_ADDRESS")],
+    messengers,
   };
 
   // Merge defaultArgs with constructorArgs

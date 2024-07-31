@@ -4,6 +4,7 @@ import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
+import { messengers } from "../constants/deploymentVariables";
 
 const deployConceroOrchestrator: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
@@ -20,7 +21,7 @@ const deployConceroOrchestrator: DeployFunction = async function (hre: HardhatRu
 
   const conceroProxyDeployment = (await deploy("Orchestrator", {
     from: deployer,
-    args: [functionsRouter, conceroDexSwapAddress, conceroAddress, conceroPoolAddress, conceroProxyAddress, conceroChainIndex],
+    args: [functionsRouter, conceroDexSwapAddress, conceroAddress, conceroPoolAddress, conceroProxyAddress, conceroChainIndex, messengers],
     log: true,
     autoMine: true,
   })) as Deployment;

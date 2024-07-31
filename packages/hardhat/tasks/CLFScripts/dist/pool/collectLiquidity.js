@@ -1,6 +1,6 @@
-async function f() {
+(async () => {
 	try {
-		const [_, __, liquidityProvider, tokenAmount] = bytesArgs;
+		const [_, __, liquidityProvider, liquidityRequestedFromEachPool, withdrawalId] = bytesArgs;
 		const chainSelectors = {
 			[`0x${BigInt('3478487238524512106').toString(16)}`]: {
 				urls: [
@@ -11,16 +11,6 @@ async function f() {
 				chainId: '0x66eee',
 				usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
 				poolAddress: '0xb27c9076f5459AFfc3D17b7e830638a885349114',
-			},
-			[`0x${BigInt('5224473277236331295').toString(16)}`]: {
-				urls: [
-					`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://optimism-sepolia.blockpi.network/v1/rpc/public',
-					'https://optimism-sepolia-rpc.publicnode.com',
-				],
-				chainId: '0xaa37dc',
-				usdcAddress: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
-				poolAddress: '0xE7fB2fE07e73f7407b44040340d95d18aF8C28C9',
 			},
 			[`0x${BigInt('14767482510784806043').toString(16)}`]: {
 				urls: [
@@ -33,6 +23,13 @@ async function f() {
 				poolAddress: '0x931Ac651D313f7784B2598834cebF594120b9DB3',
 			},
 		};
+		const getChainIdByUrl = url => {
+			for (const chain in chainSelectors) {
+				if (chainSelectors[chain].urls.includes(url)) return chainSelectors[chain].chainId;
+			}
+			return null;
+		};
+		const baseChainSelector = `0x${BigInt('10344971235874465080').toString(16)}`;
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 			constructor(url) {
 				super(url);
@@ -41,6 +38,10 @@ async function f() {
 			async _send(payload) {
 				if (payload.method === 'eth_estimateGas') {
 					return [{jsonrpc: '2.0', id: payload.id, result: '0x1e8480'}];
+				}
+				if (payload.method === 'eth_chainId') {
+					const _chainId = getChainIdByUrl(this.url);
+					return [{jsonrpc: '2.0', id: payload.id, result: _chainId}];
 				}
 				let resp = await fetch(this.url, {
 					method: 'POST',
@@ -52,7 +53,7 @@ async function f() {
 				return res;
 			}
 		}
-		const poolAbi = ['function ccipSendToPool(address, uint256) external returns (bytes32 messageId)'];
+		const poolAbi = ['function ccipSendToPool(uint64, address, uint256, bytes32) external'];
 		const promises = [];
 		for (const chainSelector in chainSelectors) {
 			const url =
@@ -61,7 +62,9 @@ async function f() {
 			const wallet = new ethers.Wallet('0x' + secrets.WALLET_PRIVATE_KEY, provider);
 			const signer = wallet.connect(provider);
 			const poolContract = new ethers.Contract(chainSelectors[chainSelector].poolAddress, poolAbi, signer);
-			promises.push(poolContract.ccipSendToPool(liquidityProvider, tokenAmount));
+			promises.push(
+				poolContract.ccipSendToPool(baseChainSelector, liquidityProvider, liquidityRequestedFromEachPool, withdrawalId),
+			);
 		}
 		await Promise.all(promises);
 		return Functions.encodeUint256(1n);
@@ -72,5 +75,4 @@ async function f() {
 		}
 		throw e;
 	}
-}
-f();
+})();

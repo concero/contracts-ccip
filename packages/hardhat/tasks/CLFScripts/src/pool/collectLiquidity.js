@@ -1,6 +1,6 @@
-async function f() {
+(async () => {
 	try {
-		const [_, __, liquidityProvider, tokenAmount] = bytesArgs;
+		const [_, __, liquidityProvider, liquidityRequestedFromEachPool, withdrawalId] = bytesArgs;
 
 		const chainSelectors = {
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
@@ -13,16 +13,18 @@ async function f() {
 				usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
 				poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
 			},
-			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
-				urls: [
-					`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://optimism-sepolia.blockpi.network/v1/rpc/public',
-					'https://optimism-sepolia-rpc.publicnode.com',
-				],
-				chainId: '0xaa37dc',
-				usdcAddress: '${USDC_OPTIMISM_SEPOLIA}',
-				poolAddress: '${CHILD_POOL_PROXY_OPTIMISM_SEPOLIA}',
-			},
+
+			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
+			// 	urls: [
+			// 		`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+			// 		'https://optimism-sepolia.blockpi.network/v1/rpc/public',
+			// 		'https://optimism-sepolia-rpc.publicnode.com',
+			// 	],
+			// 	chainId: '0xaa37dc',
+			// 	usdcAddress: '${USDC_OPTIMISM_SEPOLIA}',
+			// 	poolAddress: '${CHILD_POOL_PROXY_OPTIMISM_SEPOLIA}',
+			// },
+
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 				urls: [
 					`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
@@ -68,6 +70,16 @@ async function f() {
 			// },
 		};
 
+		const getChainIdByUrl = url => {
+			for (const chain in chainSelectors) {
+				if (chainSelectors[chain].urls.includes(url)) return chainSelectors[chain].chainId;
+			}
+			return null;
+		};
+
+		// const baseChainSelector = `0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`;
+		const baseChainSelector = `0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`;
+
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 			constructor(url) {
 				super(url);
@@ -77,6 +89,11 @@ async function f() {
 				if (payload.method === 'eth_estimateGas') {
 					return [{jsonrpc: '2.0', id: payload.id, result: '0x1e8480'}];
 				}
+				if (payload.method === 'eth_chainId') {
+					const _chainId = getChainIdByUrl(this.url);
+					return [{jsonrpc: '2.0', id: payload.id, result: _chainId}];
+				}
+
 				let resp = await fetch(this.url, {
 					method: 'POST',
 					headers: {'Content-Type': 'application/json'},
@@ -88,7 +105,8 @@ async function f() {
 			}
 		}
 
-		const poolAbi = ['function ccipSendToPool(address, uint256) external returns (bytes32 messageId)'];
+		const poolAbi = ['function ccipSendToPool(uint64, address, uint256, bytes32) external'];
+
 		const promises = [];
 
 		for (const chainSelector in chainSelectors) {
@@ -98,7 +116,9 @@ async function f() {
 			const wallet = new ethers.Wallet('0x' + secrets.WALLET_PRIVATE_KEY, provider);
 			const signer = wallet.connect(provider);
 			const poolContract = new ethers.Contract(chainSelectors[chainSelector].poolAddress, poolAbi, signer);
-			promises.push(poolContract.ccipSendToPool(liquidityProvider, tokenAmount));
+			promises.push(
+				poolContract.ccipSendToPool(baseChainSelector, liquidityProvider, liquidityRequestedFromEachPool, withdrawalId),
+			);
 		}
 
 		await Promise.all(promises);
@@ -111,5 +131,4 @@ async function f() {
 		}
 		throw e;
 	}
-}
-f();
+})();

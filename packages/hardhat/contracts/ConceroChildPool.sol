@@ -135,16 +135,16 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     receive() external payable {}
 
     constructor(
-        address _orchestratorProxy,
-        address _childProxy,
+        address _infraProxy,
+        address _proxy,
         address _link,
         address _ccipRouter,
         address _usdc,
         address _owner,
         address[3] memory _messengers
     ) CCIPReceiver(_ccipRouter) {
-        i_infraProxy = _orchestratorProxy;
-        i_childProxy = _childProxy;
+        i_infraProxy = _infraProxy;
+        i_childProxy = _proxy;
         i_linkToken = LinkTokenInterface(_link);
         i_USDC = IERC20(_usdc);
         i_owner = _owner;

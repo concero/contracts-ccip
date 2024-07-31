@@ -1,7 +1,6 @@
 import { DeployFunction, Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import chains from "../constants/CNetworks";
-import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
+import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
@@ -26,16 +25,11 @@ const deployChildPool: DeployFunction = async function (hre: HardhatRuntimeEnvir
 
   const { linkToken, ccipRouter, chainSelector } = chains[name];
 
-  const baseChainSelector = isMainnet ? CNetworks.base.chainSelector : CNetworks.baseSepolia.chainSelector;
-  const baseParentPoolProxy = isMainnet ? getEnvVar(`PARENT_POOL_PROXY_BASE`) : getEnvVar(`PARENT_POOL_PROXY_BASE_SEPOLIA`);
-
   const defaultArgs = {
     conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
-    parentProxyAddress: baseParentPoolProxy,
     childProxyAddress: getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`),
     linkToken: linkToken,
     ccipRouter: ccipRouter,
-    baseChainSelector,
     usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
     owner: deployer,
     messengers,
@@ -44,12 +38,10 @@ const deployChildPool: DeployFunction = async function (hre: HardhatRuntimeEnvir
   // Merge defaultArgs with constructorArgs
   const args = { ...defaultArgs, ...constructorArgs };
 
-  const gasPrice = await hre.ethers.provider.getGasPrice();
-
   console.log("Deploying ChildPool...");
   const deployChildPool = (await deploy("ConceroChildPool", {
     from: deployer,
-    args: [args.conceroProxyAddress, args.childProxyAddress, args.linkToken, args.ccipRouter, args.usdc, args.owner],
+    args: [args.conceroProxyAddress, args.childProxyAddress, args.linkToken, args.ccipRouter, args.usdc, args.owner, args.messengers],
     log: true,
     autoMine: true,
   })) as Deployment;

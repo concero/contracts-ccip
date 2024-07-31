@@ -40,19 +40,20 @@ contract DepositOnTheWayRequest is ConceroParentPool, CreateAndSwitchToForkTest 
         assert(lastDepositOnTheWay.id == expectedLastDepositId);
     }
 
-    function test_UpdateDepositsOnTheWay() public {
-        bytes1[] memory depositsOnTheWayStatuses = new bytes1[](3);
+    function test_DeleteDepositsOnTheWay() public {
+        bytes
+            memory clfResponse = hex"00000000000000000000000000000000000000000000000000000000003abf100104070a0d02030506080900";
 
-        uint256 maxDepositsRequestsCount = MAX_DEPOSIT_REQUESTS_COUNT / 2 - 15;
+        (uint256 totalBalance, bytes1[] memory depositsOnTheWayIdsToDelete) = _decodeCLFResponse(
+            clfResponse
+        );
 
-        _fillDepositsRequestArray(maxDepositsRequestsCount);
+        _fillDepositsRequestArray(127);
 
-        depositsOnTheWayStatuses[0] = bytes1(uint8(1));
-        depositsOnTheWayStatuses[1] = bytes1(uint8(5));
-        depositsOnTheWayStatuses[2] = bytes1(uint8(3));
+        console.log("length:", depositsOnTheWayIdsToDelete.length);
 
         uint256 gasBefore = gasleft();
-        _deleteDepositsOnTheWayByIds(depositsOnTheWayStatuses);
+        _deleteDepositsOnTheWayByIds(depositsOnTheWayIdsToDelete);
         uint256 gasAfter = gasleft();
 
         uint256 gasUsed = gasBefore - gasAfter;
@@ -61,35 +62,7 @@ contract DepositOnTheWayRequest is ConceroParentPool, CreateAndSwitchToForkTest 
         assert(gasUsed < 200_000);
     }
 
-    function test_bytesToUint8Array() public {
-        bytes1 b1 = bytes1(uint8(5));
-        bytes1 b2 = bytes1(uint8(0));
-        bytes memory b = new bytes(2);
-        b[0] = b1;
-        b[1] = b2;
-
-        bytes memory clfResponse = abi.encode(uint256(100), b);
-
-        (uint256 childPoolsLiquidity, bytes memory depositsOnTheWayIdsToDeleteInBytes) = abi.decode(
-            clfResponse,
-            (uint256, bytes)
-        );
-
-        uint256 gasBefore = gasleft();
-        uint8[] memory depositsOnTheWayIdsToDelete = _bytesToUint8Array(
-            depositsOnTheWayIdsToDeleteInBytes
-        );
-        uint256 gasAfter = gasleft();
-
-        uint256 gasUsed = gasBefore - gasAfter;
-        console.log("gasUsed: ", gasUsed);
-
-        assert(depositsOnTheWayIdsToDelete.length == 2);
-        assert(depositsOnTheWayIdsToDelete[0] == 5);
-        assert(depositsOnTheWayIdsToDelete[1] == 0);
-    }
-
-    function test_bytesToUint8Array_1() public {
+    function test_decodeCLFResponse_1() public {
         bytes
             memory response = hex"0000000000000000000000000000000000000000000000000000000000186a00010203040506";
 

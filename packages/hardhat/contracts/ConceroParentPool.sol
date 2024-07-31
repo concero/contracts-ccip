@@ -80,8 +80,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     //  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
     uint256 internal constant MIN_DEPOSIT = 1 * 10 ** 6;
     uint256 internal constant WITHDRAW_DEADLINE_SECONDS = 60;
-    uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
+    //	TODO: change WITHDRAW_DEADLINE_SECONDS in production
     //  uint256 private constant WITHDRAW_DEADLINE_SECONDS = 597_600;
+    uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint256 private constant CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS = 2108;
     uint256 private constant ARRAY_MANIPULATION = 10_000;
     uint256 private constant AUTOMATION_OVERHEARD = 80_000;
@@ -319,12 +320,10 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         s_clfRequestTypes[clfRequestId] = RequestType.startDeposit_getChildPoolsLiquidity;
 
         uint256 _deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
-        s_depositRequests[clfRequestId] = DepositRequest({
-            lpAddress: msg.sender,
-            childPoolsLiquiditySnapshot: 0, // todo partial initialisation to save gas
-            usdcAmountToDeposit: _usdcAmount,
-            deadline: _deadline
-        });
+
+        s_depositRequests[clfRequestId].lpAddress = msg.sender;
+        s_depositRequests[clfRequestId].usdcAmountToDeposit = _usdcAmount;
+        s_depositRequests[clfRequestId].deadline = _deadline;
 
         emit ConceroParentPool_DepositInitiated(clfRequestId, msg.sender, _usdcAmount, _deadline);
     }
@@ -834,10 +833,16 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     }
 
     function _handleStartWithdrawalCLFFulfill(bytes32 requestId, bytes memory response) internal {
-        uint256 childPoolsLiquidity = abi.decode(response, (uint256));
+        (
+            uint256 childPoolsLiquidity,
+            bytes1[] memory depositsOnTheWayIdsToDelete
+        ) = _decodeCLFResponse(response);
+
         bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
         WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
+
         _updateWithdrawalRequest(request, withdrawalId, childPoolsLiquidity);
+        _deleteDepositsOnTheWayByIds(depositsOnTheWayIdsToDelete);
     }
 
     function _deleteDepositsOnTheWayByIds(bytes1[] memory depositsOnTheWayStatuses) internal {
@@ -935,16 +940,21 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         uint256 lpSupplySnapshot = _withdrawalRequest.lpSupplySnapshot;
         uint256 childPoolsCount = s_poolChainSelectors.length;
 
+        // TODO: add s_depositsOnTheWayAmount to this formula when it's more stable
         uint256 totalCrossChainBalance = _childPoolsLiquidity +
             i_USDC.balanceOf(address(this)) +
             s_loansInUse +
-            s_depositsOnTheWayAmount;
+            s_withdrawalsOnTheWayAmount;
 
         //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
-        uint256 amountToWithdraw = (((_convertToLPTokenDecimals(totalCrossChainBalance) *
+        uint256 amountUsdcToWithdraw = (((_convertToLPTokenDecimals(totalCrossChainBalance) *
             lpToBurn) * PRECISION_HANDLER) / lpSupplySnapshot) / PRECISION_HANDLER;
 
-        uint256 amountToWithdrawWithUsdcDecimals = _convertToUSDCTokenDecimals(amountToWithdraw);
+        uint256 amountToWithdrawWithUsdcDecimals = _convertToUSDCTokenDecimals(
+            amountUsdcToWithdraw
+        );
+
+        s_totalWithdrawRequestsAmount += amountToWithdrawWithUsdcDecimals;
 
         _withdrawalRequest.amountToWithdraw = amountToWithdrawWithUsdcDecimals;
 
@@ -1131,22 +1141,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     function _isMessenger(address _messenger) internal view returns (bool) {
         return (_messenger == i_msgr0 || _messenger == i_msgr1 || _messenger == i_msgr2);
     }
-    //    function _isMessenger(address _messenger) internal view returns (bool) {
-    //        address[] memory messengers = new address[](3);
-    //        messengers[0] = i_msgr0;
-    //        messengers[1] = i_msgr1;
-    //        messengers[2] = i_msgr2;
-    //
-    //        for (uint256 i; i < messengers.length; ) {
-    //            if (_messenger == messengers[i]) {
-    //                return true;
-    //            }
-    //            unchecked {
-    //                ++i;
-    //            }
-    //        }
-    //        return false;
-    //    }
 
     //    REMOVE IN PRODUCTION
     //    function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {

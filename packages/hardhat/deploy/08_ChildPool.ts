@@ -5,6 +5,7 @@ import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
+import { messengers } from "../constants/deploymentVariables";
 
 interface ConstructorArgs {
   conceroProxyAddress?: string;
@@ -37,7 +38,7 @@ const deployChildPool: DeployFunction = async function (hre: HardhatRuntimeEnvir
     baseChainSelector,
     usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
     owner: deployer,
-    messengers: [getEnvVar("MESSENGER_0_ADDRESS"), getEnvVar("MESSENGER_1_ADDRESS"), getEnvVar("MESSENGER_2_ADDRESS")],
+    messengers,
   };
 
   // Merge defaultArgs with constructorArgs

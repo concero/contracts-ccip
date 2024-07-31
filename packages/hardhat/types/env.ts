@@ -1,5 +1,7 @@
 export interface env {
   //.env
+  PROXY_DEPLOYER_ADDRESS: string;
+  PROXY_DEPLOYER_PRIVATE_KEY: string;
   DEPLOYER_ADDRESS: string;
   DEPLOYER_PRIVATE_KEY: string;
   MESSENGER_PRIVATE_KEY: string;
@@ -14,6 +16,12 @@ export interface env {
   CONCERO_BRIDGE_BASE_SEPOLIA: string;
   CONCERO_BRIDGE_FUJI: string;
   CONCERO_BRIDGE_OPTIMISM_SEPOLIA: string;
+  MESSENGER_0_ADDRESS: string;
+  MESSENGER_1_ADDRESS: string;
+  MESSENGER_2_ADDRESS: string;
+  MESSENGER_0_PRIVATE_KEY: string;
+  MESSENGER_1_PRIVATE_KEY: string;
+  MESSENGER_2_PRIVATE_KEY: string;
   // .env.clf
   CLF_SUBID_SEPOLIA: string;
   CLF_SUBID_ARBITRUM_SEPOLIA: string;

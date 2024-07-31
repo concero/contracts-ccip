@@ -21,6 +21,7 @@ import deployAutomations from "./concero/deployAutomations/deployAutomations";
 import deployChildPool from "./concero/deployPool/deployChildPool";
 import updateAllInfraImplementations from "./concero/updateAllInfraImplementations";
 import deployAllPools from "./concero/deployPool/deployAllPools";
+import testScript from "./test";
 
 export default {
   billing,
@@ -46,4 +47,5 @@ export default {
   deployChildPool,
   updateAllInfraImplementations,
   deployAllPools,
+  testScript,
 };

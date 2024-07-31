@@ -1,4 +1,6 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+
+return (async () => {
 	const chainSelectors = {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -90,8 +92,15 @@
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 	const poolAbi = [
 		'function s_loansInUse() external view returns (uint256)',
-		'function getDepositsOnTheWay() external view returns (tuple(uint8, uint64, bytes32, uint256)[] memory)',
+		'function getDepositsOnTheWay() external view returns (tuple(bytes1, uint64, bytes32, uint256)[] memory)',
 	];
+
+	const findChainIdByUrl = url => {
+		for (const chain in chainSelectors) {
+			if (chainSelectors[chain].urls.includes(url)) return chainSelectors[chain].chainId;
+		}
+		return null;
+	};
 
 	class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 		constructor(url) {
@@ -99,6 +108,11 @@
 			this.url = url;
 		}
 		async _send(payload) {
+			if (payload.method === 'eth_chainId') {
+				const _chainId = findChainIdByUrl(this.url);
+				return [{jsonrpc: '2.0', id: payload.id, result: _chainId}];
+			}
+
 			let resp = await fetch(this.url, {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
@@ -128,20 +142,47 @@
 		const ethersId = ethers.id('ConceroChildPool_CCIPReceived(bytes32,uint64,address,address,uint256)');
 		const promises = [];
 
-		for (const line of ccipLines) {
-			const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`.toLowerCase();
-			if (!chainSelectors[hexChainSelector]) continue;
-			const provider = getProviderByChainSelector(hexChainSelector);
+		for (const chain in chainSelectors) {
+			const reqFromLines = ccipLines.filter(line => {
+				const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`.toLowerCase();
+				return hexChainSelector === chain;
+			});
 
-			promises.push(
-				provider.getLogs({
-					address: chainSelectors[hexChainSelector].poolAddress,
-					topics: [ethersId, line.ccipMessageId],
-					fromBlock: 0,
-					toBlock: 'latest',
-				}),
-			);
+			if (!reqFromLines.length) continue;
+
+			const provider = getProviderByChainSelector(chain);
+
+			let i = 0;
+			for (const line of reqFromLines) {
+				if (i++ > 5) break;
+				promises.push(
+					provider.getLogs({
+						address: chainSelectors[chain].poolAddress,
+						topics: [ethersId, line.ccipMessageId],
+						fromBlock: 0,
+						toBlock: 'latest',
+					}),
+				);
+			}
 		}
+
+		// for (const line of ccipLines) {
+		// 	const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`.toLowerCase();
+		//
+		// 	if (hexChainSelector === baseChainSelector) continue;
+		// 	if (!chainSelectors[hexChainSelector]) continue;
+		//
+		// 	const provider = getProviderByChainSelector(hexChainSelector);
+		//
+		// 	promises.push(
+		// 		provider.getLogs({
+		// 			address: chainSelectors[hexChainSelector].poolAddress,
+		// 			topics: [ethersId, line.ccipMessageId],
+		// 			fromBlock: 0,
+		// 			toBlock: 'latest',
+		// 		}),
+		// 	);
+		// }
 
 		return await Promise.all(promises);
 	};
@@ -178,7 +219,7 @@
 	let totalBalance = 0n;
 
 	for (const chain in chainSelectors) {
-		if (chain === baseChainSelector) continue;
+		if (chain.toLowerCase() === baseChainSelector.toLowerCase()) continue;
 
 		const provider = getProviderByChainSelector(chain);
 		const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
@@ -208,7 +249,9 @@
 			try {
 				const logs = await getChildPoolsCcipLogs(ccipLines);
 				conceroIds = getCompletedConceroIdsByLogs(logs, ccipLines);
-			} catch (e) {}
+			} catch (e) {
+				console.error(e);
+			}
 		}
 	}
 

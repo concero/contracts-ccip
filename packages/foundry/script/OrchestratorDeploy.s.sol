@@ -6,16 +6,15 @@ import {Orchestrator} from "contracts/Orchestrator.sol";
 import {IStorage} from "contracts/Interfaces/IStorage.sol";
 
 contract OrchestratorDeploy is Script {
-
     function run(
-            address _router,
-            address _dexSwap,
-            address _concero,
-            address _pool,
-            address _proxy,
-            uint8 _chainIndex
-    ) public returns(Orchestrator orch){
-
+        address _router,
+        address _dexSwap,
+        address _concero,
+        address _pool,
+        address _proxy,
+        uint8 _chainIndex,
+        address[3] memory _messengers
+    ) public returns (Orchestrator orch) {
         vm.startBroadcast();
         orch = new Orchestrator(
             _router,
@@ -23,7 +22,8 @@ contract OrchestratorDeploy is Script {
             _concero,
             _pool,
             _proxy,
-            _chainIndex
+            _chainIndex,
+            _messengers
         );
         vm.stopBroadcast();
     }

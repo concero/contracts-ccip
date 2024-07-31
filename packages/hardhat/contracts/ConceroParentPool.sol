@@ -819,14 +819,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     function _handleStartDepositCLFFulfill(bytes32 requestId, bytes memory response) internal {
         DepositRequest storage request = s_depositRequests[requestId];
 
-        //        (uint256 childPoolsLiquidity, bytes memory depositsOnTheWayIdsToDeleteInBytes) = abi.decode(
-        //            response,
-        //            (uint256, bytes)
-        //        );
-        //        uint8[] memory depositsOnTheWayIdsToDelete = _bytesToUint8Array(
-        //            depositsOnTheWayIdsToDeleteInBytes
-        //        );
-
         (
             uint256 childPoolsLiquidity,
             uint8[] memory depositsOnTheWayIdsToDelete

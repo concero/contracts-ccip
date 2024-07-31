@@ -29,6 +29,7 @@
 			}
 			return null;
 		};
+		const baseChainSelector = `0x${BigInt('10344971235874465080').toString(16)}`;
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 			constructor(url) {
 				super(url);
@@ -62,7 +63,7 @@
 			const signer = wallet.connect(provider);
 			const poolContract = new ethers.Contract(chainSelectors[chainSelector].poolAddress, poolAbi, signer);
 			promises.push(
-				poolContract.ccipSendToPool(chainSelector, liquidityProvider, liquidityRequestedFromEachPool, withdrawalId),
+				poolContract.ccipSendToPool(baseChainSelector, liquidityProvider, liquidityRequestedFromEachPool, withdrawalId),
 			);
 		}
 		await Promise.all(promises);

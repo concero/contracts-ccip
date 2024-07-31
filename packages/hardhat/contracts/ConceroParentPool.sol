@@ -949,23 +949,14 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
         uint256 amountUsdcToWithdraw = (((_convertToLPTokenDecimals(totalCrossChainBalance) *
             lpToBurn) * PRECISION_HANDLER) / lpSupplySnapshot) / PRECISION_HANDLER;
-
-        uint256 amountToWithdrawWithUsdcDecimals = _convertToUSDCTokenDecimals(
-            amountUsdcToWithdraw
-        );
-
-        s_totalWithdrawRequestsAmount += amountToWithdrawWithUsdcDecimals;
+        uint256 amountToWithdrawWithUsdcDecimals = _convertToUSDCTokenDecimals(amountToWithdraw);
+        uint256 withdrawalPortionPerPool = amountToWithdrawWithUsdcDecimals / (childPoolsCount + 1);
 
         _withdrawalRequest.amountToWithdraw = amountToWithdrawWithUsdcDecimals;
-
-        _withdrawalRequest.liquidityRequestedFromEachPool =
-            amountToWithdrawWithUsdcDecimals /
-            (childPoolsCount + 1); //Cross-chain Pools + MasterPool
-
+        _withdrawalRequest.liquidityRequestedFromEachPool = withdrawalPortionPerPool;
         _withdrawalRequest.remainingLiquidityFromChildPools =
-            (amountToWithdrawWithUsdcDecimals * childPoolsCount) /
-            (childPoolsCount + 1); //The portion of the money that is not on ParentPool
-
+            amountToWithdrawWithUsdcDecimals -
+            withdrawalPortionPerPool;
         _withdrawalRequest.triggeredAtTimestamp = block.timestamp + WITHDRAW_DEADLINE_SECONDS;
 
         //        s_totalWithdrawRequestsAmount += amountToWithdrawWithUsdcDecimals / (childPoolsCount + 1);

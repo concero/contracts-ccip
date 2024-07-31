@@ -338,22 +338,23 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         if (childPoolsLiquiditySnapshot == 0)
             revert ConceroParentPool_ActiveRequestNotFulfilledYet();
 
-        i_USDC.safeTransferFrom(msg.sender, address(this), usdcAmount);
-
         uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) +
             s_loansInUse +
             s_depositsOnTheWayAmount;
 
         uint256 totalCrossChainLiquidity = childPoolsLiquiditySnapshot + parentPoolLiquidity;
 
-        _distributeLiquidityToChildPools(usdcAmount);
-
         uint256 lpTokensToMint = _calculateLPTokensToMint(
             i_lp.totalSupply(),
             usdcAmount,
             totalCrossChainLiquidity
         );
+
+        i_USDC.safeTransferFrom(msg.sender, address(this), usdcAmount);
+
         i_lp.mint(msg.sender, lpTokensToMint);
+
+        _distributeLiquidityToChildPools(usdcAmount);
 
         emit ConceroParentPool_DepositCompleted(
             _depositRequestId,

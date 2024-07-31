@@ -294,6 +294,10 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
      */
     function startDeposit(uint256 _usdcAmount) external onlyProxyContext {
         if (_usdcAmount < MIN_DEPOSIT) revert ConceroParentPool_AmountBelowMinimum(MIN_DEPOSIT);
+        if (s_depositsOnTheWayArray.length >= MAX_DEPOSIT_REQUESTS_COUNT - 5) {
+            revert ConceroParentPool_MaxCapReached(MAX_DEPOSIT_REQUESTS_COUNT);
+        }
+
         uint256 maxDeposit = s_maxDeposit;
 
         if (
@@ -458,22 +462,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         _ccipSend(_chainSelector, _amountToSend);
     }
 
-    //    function removeCCIPTX(bytes32 _ccipMessageId) external onlyProxyContext onlyMessenger {
-    //        if (s_ccipDepositsMapping[_ccipMessageId].transactionId != _ccipMessageId)
-    //            revert ConceroParentPool_TxAlreadyRemoved(_ccipMessageId);
-    //        uint256 numberOfPendingTX = s_ccipDeposits.length;
-    //
-    //        for (uint256 i; i < numberOfPendingTX; ) {
-    //            if (s_ccipDeposits[i].transactionId == _ccipMessageId) {
-    //                s_depositsOnTheWayAmount = s_depositsOnTheWayAmount - s_ccipDeposits[i].amount;
-    //                s_ccipDeposits[i] = s_ccipDeposits[numberOfPendingTX - 1];
-    //                s_ccipDeposits.pop();
-    //                delete s_ccipDepositsMapping[_ccipMessageId];
-    //                return;
-    //            }
-    //        }
-    //    }
-
     ///////////////////////
     ///SETTERS FUNCTIONS///
     ///////////////////////
@@ -495,6 +483,10 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
 
         emit ConceroParentPool_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
+    }
+
+    function deleteDepositsOnTheWayByIds(bytes1[] calldata _ids) external onlyOwner {
+        _deleteDepositsOnTheWayByIds(_ids);
     }
 
     /**
@@ -691,11 +683,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         for (uint256 i; i < childPoolsCount; ) {
             bytes32 ccipMessageId = _ccipSend(s_poolChainSelectors[i], amountToDistribute);
-            _addDepositOnTheWayRequest(
-                ccipMessageId,
-                s_poolChainSelectors[i],
-                _usdcAmountToDeposit
-            );
+            _addDepositOnTheWayRequest(ccipMessageId, s_poolChainSelectors[i], amountToDistribute);
 
             unchecked {
                 ++i;
@@ -861,7 +849,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         if (depositsOnTheWayArrayLength == 0) return;
         if (depositsOnTheWayStatusesLength == 0) return;
 
-        uint64 maxIterationsCount = 10;
+        uint64 maxIterationsCount = 15;
 
         for (uint256 i; i < depositsOnTheWayArrayLength; ) {
             for (uint256 k; k < depositsOnTheWayStatusesLength; ) {

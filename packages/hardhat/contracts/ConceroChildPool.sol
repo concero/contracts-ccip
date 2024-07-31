@@ -42,6 +42,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     ///////////////
     ///@notice Magic Number Removal
     uint256 private constant ALLOWED = 1;
+    uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
 
     ////////////////
     ///IMMUTABLES///

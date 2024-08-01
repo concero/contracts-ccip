@@ -34,6 +34,8 @@ task("deploy-all-pools", "Deploy all pool")
     executeCommand(`yarn hardhat deploy-lp-token --network ${parentPoolNetwork}`);
 
     executeCommand(`yarn hardhat deploy-parent-pool --network ${parentPoolNetwork} --slotid ${slotId}`);
+
+    // rebuild functions js code and push to github
   });
 
 export default {};

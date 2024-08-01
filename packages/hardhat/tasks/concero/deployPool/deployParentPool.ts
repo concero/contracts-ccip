@@ -46,7 +46,7 @@ task("deploy-parent-pool", "Deploy the pool")
     }
 
     if (!taskArgs.skipsetvars) {
-      await setParentPoolVariables(deployableChains[0], taskArgs.uploadsecrets, slotId);
+      await setParentPoolVariables(deployableChains[0], slotId);
     }
   });
 

@@ -12,20 +12,10 @@ const deployConceroDexSwap: DeployFunction = async function (hre: HardhatRuntime
   const { name } = hre.network;
   const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`);
 
-  ////////////////////////////
-  ////////REMOVE IN PRODUCTION!/////
-  ////////////////////////////
-  const fakeAddressRemoveInProd = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
-  const gasPrice = await hre.ethers.provider.getGasPrice();
-
   console.log("Deploying ConceroDexSwap...");
   const deployResult = (await deploy("DexSwap", {
     from: deployer,
-    args: [
-      conceroProxyAddress,
-      messengers,
-      // fakeAddressRemoveInProd
-    ],
+    args: [conceroProxyAddress, messengers],
     log: true,
     autoMine: true,
   })) as Deployment;

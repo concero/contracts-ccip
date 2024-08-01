@@ -10,16 +10,6 @@
 			usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
 			poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
 		},
-		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
-		// 	urls: [
-		// 		`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-		// 		'https://optimism-sepolia.blockpi.network/v1/rpc/public',
-		// 		'https://optimism-sepolia-rpc.publicnode.com',
-		// 	],
-		// 	chainId: '0xaa37dc',
-		// 	usdcAddress: '${USDC_OPTIMISM_SEPOLIA}',
-		// 	poolAddress: '${CHILD_POOL_PROXY_OPTIMISM_SEPOLIA}',
-		// },
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 			urls: [
 				`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,

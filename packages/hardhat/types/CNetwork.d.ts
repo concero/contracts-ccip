@@ -7,6 +7,7 @@ export type envString = string | undefined;
 export type CNetworkNames = "localhost" | "mainnet" | "arbitrum" | "optimism" | "polygon" | "polygonZkEvm" | "avalanche" | "base" | "sepolia" | "optimismSepolia" | "arbitrumSepolia" | "avalancheFuji" | "baseSepolia" | "polygonAmoy";
 // Chainlink Functions Network specific configuration
 export type CLFNetwork = {
+  saveDeployments: boolean;
   functionsRouter: envString;
   functionsDonId: envString;
   functionsDonIdAlias: envString;

@@ -10,7 +10,7 @@
 				],
 				chainId: '0x66eee',
 				usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-				poolAddress: '0xDCE9472A92d2A9aDC47a4910cB3926a3F8657be6',
+				poolAddress: '0x0715716836CE8907fd2E7B8ec5db935884f38fe9',
 			},
 			[`0x${BigInt('5224473277236331295').toString(16)}`]: {
 				urls: [
@@ -30,7 +30,7 @@
 				],
 				chainId: '0xa869',
 				usdcAddress: '0x5425890298aed601595a70ab815c96711a31bc65',
-				poolAddress: '0x938d5c15d83D850d94D95E60dc5d605d1e4D221B',
+				poolAddress: '0xB42eeBEC27e1b0E263D63117EaB9d5bee0750500',
 			},
 		};
 		const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];

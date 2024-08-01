@@ -38,7 +38,7 @@ const deployParentPool: DeployFunction = async function (hre: HardhatRuntimeEnvi
     usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
     lpToken: getEnvVar(`LPTOKEN_${networkEnvKeys[name]}`),
     automation: getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[name]}`),
-    conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
+    conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
     owner: deployer,
     messengers,
   };

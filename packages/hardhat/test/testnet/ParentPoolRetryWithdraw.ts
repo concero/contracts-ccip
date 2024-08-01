@@ -31,7 +31,7 @@ describe("start deposit usdc to parent pool\n", () => {
       abi: AutomationAbi,
       functionName: "retryPerformWithdrawalRequest",
       address: automationAddress,
-      args: ["0x3e63da41d93846072a115187efd804333da52256b8ec17e9c05163d6903d561d"],
+      args: ["0xa320ad2b39c66c57e6ce1f7a206998f733f62efcdec5b4f82c44634f6b71b9e6"],
       gas: 3_000_000n,
     });
 

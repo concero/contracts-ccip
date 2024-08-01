@@ -94,6 +94,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ///@notice Chainlink Functions Gas Limit
     uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 2_000_000;
     uint32 internal constant MAX_DEPOSIT_REQUESTS_COUNT = 255;
+    uint256 internal constant DEPOSIT_FEE_USDC = 3 * 10 ** 6;
 
     ///@notice JS Code for Chainlink Functions
     string internal constant JS_CODE =
@@ -303,7 +304,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         if (
             maxDeposit != 0 &&
-            _usdcAmount + i_USDC.balanceOf(address(this)) + s_loansInUse > maxDeposit
+            _usdcAmount + i_USDC.balanceOf(address(this)) - s_depositFeeAmount + s_loansInUse >
+            maxDeposit
         ) {
             revert ConceroParentPool_MaxCapReached(maxDeposit);
         }
@@ -332,6 +334,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         DepositRequest storage request = s_depositRequests[_depositRequestId];
         address lpAddress = request.lpAddress;
         uint256 usdcAmount = request.usdcAmountToDeposit;
+        uint256 usdcAmountAfterFee = usdcAmount - DEPOSIT_FEE_USDC;
         uint256 childPoolsLiquiditySnapshot = request.childPoolsLiquiditySnapshot;
 
         if (msg.sender != lpAddress) revert ConceroParentPool_NotAllowedToComplete();
@@ -340,13 +343,14 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) +
             s_loansInUse +
-            s_depositsOnTheWayAmount;
+            s_depositsOnTheWayAmount -
+            s_depositFeeAmount;
 
         uint256 totalCrossChainLiquidity = childPoolsLiquiditySnapshot + parentPoolLiquidity;
 
         uint256 lpTokensToMint = _calculateLPTokensToMint(
             i_lp.totalSupply(),
-            usdcAmount,
+            usdcAmountAfterFee,
             totalCrossChainLiquidity
         );
 
@@ -354,7 +358,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         i_lp.mint(msg.sender, lpTokensToMint);
 
-        _distributeLiquidityToChildPools(usdcAmount);
+        _distributeLiquidityToChildPools(usdcAmountAfterFee);
+
+        s_depositFeeAmount += DEPOSIT_FEE_USDC;
 
         emit ConceroParentPool_DepositCompleted(
             _depositRequestId,
@@ -443,6 +449,11 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         i_USDC.safeTransfer(msg.sender, amountToWithdraw);
 
         emit ConceroParentPool_Withdrawn(msg.sender, address(i_USDC), amountToWithdraw);
+    }
+
+    function withdrawDepositFees() external payable onlyOwner {
+        i_USDC.safeTransfer(i_owner, s_depositFeeAmount);
+        s_depositFeeAmount = 0;
     }
 
     /**
@@ -950,7 +961,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         uint256 totalCrossChainBalance = _childPoolsLiquidity +
             i_USDC.balanceOf(address(this)) +
             s_loansInUse +
-            s_withdrawalsOnTheWayAmount;
+            s_withdrawalsOnTheWayAmount -
+            s_depositFeeAmount;
 
         //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
         uint256 amountUsdcToWithdraw = (((_convertToLPTokenDecimals(totalCrossChainBalance) *

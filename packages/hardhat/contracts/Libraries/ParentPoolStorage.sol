@@ -67,4 +67,6 @@ contract ParentPoolStorage {
     mapping(bytes32 clfReqId => IParentPool.DepositRequest) public s_depositRequests;
     IParentPool.DepositOnTheWay[] internal s_depositsOnTheWayArray;
     uint8 internal s_latestDepositOnTheWayId;
+
+    uint256 internal s_depositFeeAmount;
 }

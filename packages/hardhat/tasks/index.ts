@@ -22,6 +22,7 @@ import deployChildPool from "./concero/deployPool/deployChildPool";
 import updateAllInfraImplementations from "./concero/updateAllInfraImplementations";
 import deployAllPools from "./concero/deployPool/deployAllPools";
 import testScript from "./test";
+import upgradeProxyImplementation from "./concero/upgradeProxyImplementation";
 
 export default {
   billing,
@@ -48,4 +49,5 @@ export default {
   updateAllInfraImplementations,
   deployAllPools,
   testScript,
+  upgradeProxyImplementation,
 };

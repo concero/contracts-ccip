@@ -5,7 +5,6 @@ export interface env {
   DEPLOYER_ADDRESS: string;
   DEPLOYER_PRIVATE_KEY: string;
   MESSENGER_PRIVATE_KEY: string;
-  MESSENGER_ADDRESS: string;
   MAINNET_FORKING_ENABLED: string;
   INFURA_API_KEY: string;
   ALCHEMY_API_KEY: string;

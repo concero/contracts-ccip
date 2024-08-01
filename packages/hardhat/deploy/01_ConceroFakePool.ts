@@ -10,10 +10,7 @@ interface ConstructorArgs {
   ccipRouter?: string;
 }
 
-const deployConceroPool: DeployFunction = async function (
-  hre: HardhatRuntimeEnvironment,
-  constructorArgs: ConstructorArgs = {},
-) {
+const deployConceroPool: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
@@ -23,7 +20,7 @@ const deployConceroPool: DeployFunction = async function (
   const defaultArgs = {
     linkToken: linkToken,
     ccipRouter: ccipRouter,
-    conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
+    conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
   };
 
   // Merge defaultArgs with constructorArgs

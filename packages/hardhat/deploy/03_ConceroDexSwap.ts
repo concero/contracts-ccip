@@ -4,26 +4,18 @@ import { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
+import { messengers } from "../constants/deploymentVariables";
 
 const deployConceroDexSwap: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
-  const conceroProxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`);
-
-  ////////////////////////////
-  ////////REMOVE IN PROD!/////
-  ////////////////////////////
-  const fakeAddressRemoveInProd = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
-  const gasPrice = await hre.ethers.provider.getGasPrice();
+  const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`);
 
   console.log("Deploying ConceroDexSwap...");
   const deployResult = (await deploy("DexSwap", {
     from: deployer,
-    args: [
-      conceroProxyAddress,
-      // fakeAddressRemoveInProd
-    ],
+    args: [conceroProxyAddress, messengers],
     log: true,
     autoMine: true,
   })) as Deployment;

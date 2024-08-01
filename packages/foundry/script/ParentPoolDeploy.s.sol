@@ -2,11 +2,9 @@
 pragma solidity 0.8.20;
 
 import {Script, console2} from "../lib/forge-std/src/Script.sol";
-import {ParentPool} from "contracts/ParentPool.sol";
+import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 
 contract ParentPoolDeploy is Script {
-
-    
     function run(
         address _proxy,
         address _link,
@@ -14,14 +12,18 @@ contract ParentPoolDeploy is Script {
         uint64 _subscriptionId,
         address _functionsRouter,
         address _ccipRouter,
-        address _usdc, 
-        address _lpToken, 
+        address _usdc,
+        address _lpToken,
         address _automation,
         address _orchestrator,
-        address _owner
-    ) public returns(ParentPool pool){
-        vm.startBroadcast();
-        pool = new ParentPool(
+        address _owner,
+        address[3] memory _msgrs
+    ) public returns (ConceroParentPool pool) {
+        uint256 forkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
+        vm.selectFork(forkId);
+
+        vm.startBroadcast(vm.envUint("FORGE_DEPLOYER_PRIVATE_KEY"));
+        pool = new ConceroParentPool(
             _proxy,
             _link,
             _donId,
@@ -32,7 +34,8 @@ contract ParentPoolDeploy is Script {
             _lpToken,
             _automation,
             _orchestrator,
-            _owner
+            _owner,
+            _msgrs
         );
         vm.stopBroadcast();
     }

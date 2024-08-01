@@ -28,8 +28,6 @@ node_modules
 !.env.clccip
 
 packages/hardhat/deployments
-packages/hardhat/test/forge/lib/
-packages/foundry/lib
 
 # ignoring all js files in /hardhat/
 packages/hardhat/**/*.js

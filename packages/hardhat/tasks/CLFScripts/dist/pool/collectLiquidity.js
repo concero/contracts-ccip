@@ -1,10 +1,10 @@
-async function f() {
+(async () => {
 	try {
-		const [_, __, liquidityProvider, tokenAmount] = bytesArgs;
+		const [_, __, liquidityProvider, liquidityRequestedFromEachPool, withdrawalId] = bytesArgs;
 		const chainSelectors = {
 			[`0x${BigInt('4949039107694359620').toString(16)}`]: {
 				urls: [
-					`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 					'https://arbitrum.blockpi.network/v1/rpc/public',
 					'https://arbitrum-rpc.publicnode.com',
 				],
@@ -33,6 +33,13 @@ async function f() {
 				poolAddress: '0x1bb4233765838Ee69076845D10fa231c8cd500a3',
 			},
 		};
+		const getChainIdByUrl = url => {
+			for (const chain in chainSelectors) {
+				if (chainSelectors[chain].urls.includes(url)) return chainSelectors[chain].chainId;
+			}
+			return null;
+		};
+		const baseChainSelector = `0x${BigInt('15971525489660198786').toString(16)}`;
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 			constructor(url) {
 				super(url);
@@ -41,6 +48,10 @@ async function f() {
 			async _send(payload) {
 				if (payload.method === 'eth_estimateGas') {
 					return [{jsonrpc: '2.0', id: payload.id, result: '0x1e8480'}];
+				}
+				if (payload.method === 'eth_chainId') {
+					const _chainId = getChainIdByUrl(this.url);
+					return [{jsonrpc: '2.0', id: payload.id, result: _chainId}];
 				}
 				let resp = await fetch(this.url, {
 					method: 'POST',
@@ -52,16 +63,18 @@ async function f() {
 				return res;
 			}
 		}
-		const poolAbi = ['function ccipSendToPool(address, uint256) external returns (bytes32 messageId)'];
+		const poolAbi = ['function ccipSendToPool(uint64, address, uint256, bytes32) external'];
 		const promises = [];
 		for (const chainSelector in chainSelectors) {
 			const url =
 				chainSelectors[chainSelector].urls[Math.floor(Math.random() * chainSelectors[chainSelector].urls.length)];
 			const provider = new FunctionsJsonRpcProvider(url);
-			const wallet = new ethers.Wallet('0x' + secrets.WALLET_PRIVATE_KEY, provider);
+			const wallet = new ethers.Wallet('0x' + secrets.POOL_MESSENGER_0_PRIVATE_KEY, provider);
 			const signer = wallet.connect(provider);
 			const poolContract = new ethers.Contract(chainSelectors[chainSelector].poolAddress, poolAbi, signer);
-			promises.push(poolContract.ccipSendToPool(liquidityProvider, tokenAmount));
+			promises.push(
+				poolContract.ccipSendToPool(baseChainSelector, liquidityProvider, liquidityRequestedFromEachPool, withdrawalId),
+			);
 		}
 		await Promise.all(promises);
 		return Functions.encodeUint256(1n);
@@ -72,5 +85,4 @@ async function f() {
 		}
 		throw e;
 	}
-}
-f();
+})();

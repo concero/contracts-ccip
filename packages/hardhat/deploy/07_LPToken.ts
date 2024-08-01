@@ -10,24 +10,21 @@ interface ConstructorArgs {
   owner?: string;
 }
 
-const deployLPToken: DeployFunction = async function (
-  hre: HardhatRuntimeEnvironment,
-  constructorArgs: ConstructorArgs = {},
-) {
-  const { deployer } = await hre.getNamedAccounts();
+const deployLPToken: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
+  const { proxyDeployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
 
   const defaultArgs = {
     parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`),
-    owner: deployer,
+    owner: proxyDeployer,
   };
 
   const args = { ...defaultArgs, ...constructorArgs };
 
   console.log("Deploying LpToken...");
   const deployLPToken = (await deploy("LPToken", {
-    from: deployer,
+    from: proxyDeployer,
     args: [args.owner, args.parentProxyAddress],
     log: true,
     autoMine: true,

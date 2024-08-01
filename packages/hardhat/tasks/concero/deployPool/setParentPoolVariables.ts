@@ -21,23 +21,20 @@ async function setParentPoolJsHashes(deployableChain: CNetwork, abi: any) {
     const ethersCode = await (await fetch(ethersV6CodeUrl)).text();
 
     const setHash = async (hash: string, functionName: string) => {
-      const { request: setHashReq } = await publicClient.simulateContract({
+      const setHashHash = await walletClient.writeContract({
         address: parentPoolProxyAddress as Address,
         abi,
         functionName,
         account,
         args: [hash],
         chain: dcViemChain,
+        gas: 1_000_000n,
       });
-      const setHashHash = await walletClient.writeContract(setHashReq);
       const { cumulativeGasUsed: setHashGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setHashHash,
       });
 
-      log(
-        `Set ${srcChainName}:${parentPoolProxyAddress} jshash[${hash}]. Gas used: ${setHashGasUsed.toString()}`,
-        functionName,
-      );
+      log(`Set ${srcChainName}:${parentPoolProxyAddress} jshash[${hash}]. Gas used: ${setHashGasUsed.toString()}`, functionName);
     };
 
     await setHash(getHashSum(parentPoolJsCode), "setHashSum");
@@ -162,7 +159,7 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
     const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
     if (!dstChainName) throw new Error("Destination chain name not found");
     if (!dstChainSelector) throw new Error("Destination chain selector not found");
-    const dstConceroContract = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
+    const dstConceroContract = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
     const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env) as Address;
     const childPool = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
 
@@ -179,10 +176,7 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
       const { cumulativeGasUsed: setSenderGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setSenderHash,
       });
-      log(
-        `Set ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${sender}]. Gas used: ${setSenderGasUsed.toString()}`,
-        "setSenders",
-      );
+      log(`Set ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${sender}]. Gas used: ${setSenderGasUsed.toString()}`, "setSenders");
     };
 
     await setSender(dstConceroContract);
@@ -190,7 +184,7 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
   }
 }
 
-async function setPoolsToSend(chain: CNetwork, abi: any) {
+async function setPools(chain: CNetwork, abi: any) {
   const { name: chainName, viemChain, url } = chain;
   const clients = getClients(viemChain, url);
   const { publicClient, account, walletClient } = clients;
@@ -207,8 +201,8 @@ async function setPoolsToSend(chain: CNetwork, abi: any) {
 
       const { request: setReceiverReq } = await publicClient.simulateContract({
         address: conceroPoolAddress,
-        functionName: "setPoolsToSend",
-        args: [dstChainSelector, dstPoolAddress],
+        functionName: "setPools",
+        args: [dstChainSelector, dstPoolAddress, false],
         abi,
         account,
         viemChain,
@@ -217,12 +211,9 @@ async function setPoolsToSend(chain: CNetwork, abi: any) {
       const { cumulativeGasUsed: setReceiverGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setReceiverHash,
       });
-      log(
-        `Set ${chainName}:${conceroPoolAddress} receiver[${dstChainName}:${dstPoolAddress}]. Gas used: ${setReceiverGasUsed.toString()}`,
-        "setPoolsToSend",
-      );
+      log(`Set ${chainName}:${conceroPoolAddress} receiver[${dstChainName}:${dstPoolAddress}]. Gas used: ${setReceiverGasUsed.toString()}`, "setPools");
     } catch (error) {
-      log(`Error ${error?.message}`, "setPoolsToSend");
+      log(`Error ${error?.message}`, "setPools");
     }
   }
 }
@@ -267,59 +258,41 @@ async function getPendingRequest(chain: CNetwork, abi: any) {
   console.log(pendingRequest);
 }
 
-async function removePoolsFromListOfSenders(chain: CNetwork, abi, chainSelectors: string[]) {
+async function removePool(chain: CNetwork, abi: any, networkName: string) {
   const { name: chainName, viemChain, url } = chain;
   const clients = getClients(viemChain, url);
   const { publicClient, account, walletClient } = clients;
   if (!chainName) throw new Error("Chain name not found");
 
-  const parentPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
+  const parentPoolAddress = getEnvVar(`PARENT_POOL_PROXY_BASE_SEPOLIA` as keyof env);
+  const chainSelectorToRemove = getEnvVar(`CL_CCIP_CHAIN_SELECTOR_${networkEnvKeys[networkName]}` as keyof env);
 
-  for (const chainSelector of chainSelectors) {
-    // const { request: deletePoolReq } = await publicClient.simulateContract({
-    //   address: parentPoolAddress,
-    //   abi,
-    //   functionName: "removePoolsFromListOfSenders",
-    //   args: [chainSelector],
-    //   account,
-    //   viemChain,
-    // });
+  const deletePoolHash = await walletClient.writeContract({
+    address: parentPoolAddress,
+    abi,
+    functionName: "removePools",
+    args: [chainSelectorToRemove],
+    account,
+    viemChain,
+    gas: 1_000_000n,
+  });
 
-    const deletePoolHash = await walletClient.writeContract({
-      address: parentPoolAddress,
-      abi,
-      functionName: "removePoolsFromListOfSenders",
-      args: [chainSelector],
-      account,
-      viemChain,
-      gas: 1_000_000n,
-    });
+  const { cumulativeGasUsed: deletePoolGasUsed } = await publicClient.waitForTransactionReceipt({
+    hash: deletePoolHash,
+  });
 
-    const { cumulativeGasUsed: deletePoolGasUsed } = await publicClient.waitForTransactionReceipt({
-      hash: deletePoolHash,
-    });
-    log(
-      `Remove ${chainName}:${chainSelector} from list of senders. Gas used: ${deletePoolGasUsed.toString()}`,
-      "removePoolFromListOfSenders",
-    );
-  }
+  log(`Remove pool ${networkName}. Gas used: ${deletePoolGasUsed.toString()}`, "removePool");
 }
 
-export async function setParentPoolVariables(chain: CNetwork, isSetSecretsNeeded: boolean, slotId: number) {
-  const { abi: ParentPoolAbi } = await load("../artifacts/contracts/ParentPool.sol/ParentPool.json");
+export async function setParentPoolVariables(chain: CNetwork, slotId: number) {
+  const { abi: ParentPoolAbi } = await load("../artifacts/contracts/ConceroParentPool.sol/ConceroParentPool.json");
 
   await setParentPoolJsHashes(chain, ParentPoolAbi);
-  await setParentPoolCap(chain, ParentPoolAbi);
 
-  // if (isSetSecretsNeeded) {
   await setParentPoolSecretsVersion(chain, ParentPoolAbi, slotId);
   await setParentPoolSecretsSlotId(chain, ParentPoolAbi, slotId);
-  // }
 
-  await setPoolsToSend(chain, ParentPoolAbi);
+  await setParentPoolCap(chain, ParentPoolAbi); // once
+  await setPools(chain, ParentPoolAbi);
   await setConceroContractSenders(chain, ParentPoolAbi);
-
-  // await removePoolsFromListOfSenders(chain, ParentPoolAbi, ["3478487238524512106", "5224473277236331295"]);
-  // await deletePendingRequest(chain, ParentPoolAbi, "0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0");
-  // await deletePendingRequest(chain, ParentPoolAbi, "0x1637A2cafe89Ea6d8eCb7cC7378C023f25c892b6");
 }

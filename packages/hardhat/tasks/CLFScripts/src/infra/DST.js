@@ -1,6 +1,7 @@
 (async () => {
 	try {
 		const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+		// todo: add dstSwapDataHashSum argument, compare with event from source
 		const [_, __, ___, srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = bytesArgs;
 		const messageId = eventArgs[0];
 		const chainMap = {

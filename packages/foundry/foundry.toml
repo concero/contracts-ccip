@@ -15,9 +15,8 @@ remappings = [
     "@starterKit/=lib/foundry-starter-kit",
     "contracts/=../hardhat/contracts/",
     "solidity-bytes-utils/=lib/solidity-bytes-utils/",
-    "sushiswap-v3-periphery/contracts/=node_modules/sushiswap-v3-periphery/contracts/"
+    "sushiswap-v3-periphery/contracts/=node_modules/sushiswap-v3-periphery/contracts/",
+    "forge-std/=lib/forge-std/src/",
 ]
 
-
-
-# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+allow_paths = ["../hardhat/contracts/"]

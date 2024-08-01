@@ -7,15 +7,6 @@ interface IParentPool is IPool {
     ///////////////////////
     ///TYPE DECLARATIONS///
     ///////////////////////
-    ///@notice ConceroPool Request
-    //    struct WithdrawRequests {
-    //        uint256 amountToWithdraw;
-    //        uint256 lpAmountToBurn;
-    //        uint256 liquidityRequestedFromEachPool;
-    //        uint256 remainingLiquidityFromChildPools;
-    //        address token;
-    //        uint256 deadline;
-    //    }
 
     ///@notice `ccipSend` to distribute liquidity
     struct Pools {
@@ -23,28 +14,11 @@ interface IParentPool is IPool {
         address poolAddress;
     }
 
-    ///@notice Struct to hold ccip sent transactions
-    // deleted
-    //    struct CCIPPendingDeposits {
-    //        bytes32 transactionId;
-    //        uint64 destinationChainSelector;
-    //        uint256 amount;
-    //    }
-
     ///@notice Struct to track Functions Requests Type
     enum RequestType {
         startDeposit_getChildPoolsLiquidity, //Deposits
         startWithdrawal_getChildPoolsLiquidity //Start Withdrawals
     }
-
-    // todo: delete
-    //    struct CLFRequest {
-    //        RequestType requestType;
-    //        address liquidityProvider; //address to check and pool the index from the array
-    //        uint256 totalCrossChainLiquiditySnapshot;
-    //        uint256 lpSupplySnapshot;
-    //        uint256 amount; //USDC or LP according to the request
-    //    }
 
     struct WithdrawRequest {
         address lpAddress;

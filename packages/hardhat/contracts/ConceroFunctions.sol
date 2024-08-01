@@ -14,19 +14,19 @@ import {ConceroCommon} from "./ConceroCommon.sol";
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
 ///@notice error emitted when a TX was already added
-error TXAlreadyExists(bytes32 txHash, bool isConfirmed);
+error ConceroFunctions_TxAlreadyExists(bytes32 txHash, bool isConfirmed);
 ///@notice error emitted when a unexpected ID is added
-error UnexpectedRequestID(bytes32 requestId);
+error ConceroFunctions_UnexpectedRequestId(bytes32 requestId);
 ///@notice error emitted when a transaction does not exist
-error TxDoesNotExist();
+error ConceroFunctions_TxDoesntExist();
 ///@notice error emitted when a transaction was already confirmed
-error TxAlreadyConfirmed();
+error ConceroFunctions_TxAlreadyConfirmed();
 ///@notice error emitted when function receive a call from a not allowed address
-error AddressNotSet();
+error ConceroFunctions_DstContractAddressNotSet();
 ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
 error ConceroFunctions_OnlyProxyContext(address caller);
 ///@notice error emitted when the delegatecall to DexSwap fails
-error TXReleasedFailed(bytes error); // todo: TXReleasE
+error ConceroFunctions_FailedToReleaseTx(bytes error);
 
 contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     ///////////////////////
@@ -142,7 +142,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     ) external onlyMessenger {
         Transaction memory transaction = s_transactions[ccipMessageId];
         if (transaction.sender != address(0))
-            revert TXAlreadyExists(ccipMessageId, transaction.isConfirmed);
+            revert ConceroFunctions_TxAlreadyExists(ccipMessageId, transaction.isConfirmed);
 
         s_transactions[ccipMessageId] = Transaction(
             ccipMessageId,
@@ -217,8 +217,9 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     ) internal override {
         Request storage request = s_requests[requestId];
 
+        //todo: look into this
         if (!request.isPending) {
-            revert UnexpectedRequestID(requestId);
+            revert ConceroFunctions_UnexpectedRequestId(requestId);
         }
 
         request.isPending = false;
@@ -240,8 +241,8 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
     }
 
     function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
-        if (transaction.sender == address(0)) revert TxDoesNotExist();
-        if (transaction.isConfirmed == true) revert TxAlreadyConfirmed();
+        if (transaction.sender == address(0)) revert ConceroFunctions_TxDoesntExist();
+        if (transaction.isConfirmed == true) revert ConceroFunctions_TxAlreadyConfirmed();
 
         transaction.isConfirmed = true;
 
@@ -264,7 +265,8 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
         CCIPToken token,
         IDexSwap.SwapData[] memory dstSwapData
     ) internal {
-        if (s_conceroContracts[dstChainSelector] == address(0)) revert AddressNotSet();
+        if (s_conceroContracts[dstChainSelector] == address(0))
+            revert ConceroFunctions_DstContractAddressNotSet();
 
         bytes[] memory args = new bytes[](13);
         args[0] = abi.encodePacked(s_srcJsHashSum);
@@ -313,7 +315,7 @@ contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
                     transaction.recipient
                 )
             );
-            if (!swapSuccess) revert TXReleasedFailed(swapError);
+            if (!swapSuccess) revert ConceroFunctions_FailedToReleaseTx(swapError);
         } else {
             IPool(i_poolProxy).takeLoan(tokenReceived, amount, transaction.recipient);
         }

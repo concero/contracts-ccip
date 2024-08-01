@@ -19,10 +19,11 @@ interface ConstructorArgs {
   linkToken?: string;
   ccipRouter?: string;
   dexSwapModule?: string;
+  messengers?: string[];
 }
 
 /* run with: yarn deploy --network avalancheFuji --tags Concero */
-const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
+const deployConceroBridge: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
@@ -63,7 +64,7 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
       name === "base" || name === "baseSepolia"
         ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`)
         : getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`),
-    conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
+    conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
     messengers,
   };
 
@@ -85,15 +86,16 @@ const deployConcero: DeployFunction = async function (hre: HardhatRuntimeEnviron
       args.dexSwapModule,
       args.conceroPoolAddress,
       args.conceroProxyAddress,
+      args.messengers,
     ],
     autoMine: true,
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {
-    log(`Contract Concero deployed to ${name} at ${deployment.address}`, "deployConcero");
+    log(`Contract Concero deployed to ${name} at ${deployment.address}`, "deployConceroBridge");
     updateEnvVariable(`CONCERO_BRIDGE_${networkEnvKeys[name]}`, deployment.address, "../../../.env.deployments");
   }
 };
 
-export default deployConcero;
-deployConcero.tags = ["ConceroBridge"];
+export default deployConceroBridge;
+deployConceroBridge.tags = ["ConceroBridge"];

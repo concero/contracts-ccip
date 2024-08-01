@@ -12,8 +12,9 @@ import deployConceroDexSwap from "../../../deploy/03_ConceroDexSwap";
 import deployConceroOrchestrator from "../../../deploy/05_ConceroOrchestrator";
 import addCLFConsumer from "../../sub/add";
 import { getEnvVar } from "../../../utils/getEnvVar";
-import deployInfraProxy from "../../../deploy/00_InfraProxy";
-import { setProxyImplementation } from "./setProxyImplementation";
+import deployProxyAdmin from "../../../deploy/10_ProxyAdmin";
+import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
+import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 
 let deployableChains: CNetwork[] = liveChains;
 
@@ -35,8 +36,10 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     }
 
     if (taskArgs.deployproxy) {
-      await deployInfraProxy(hre);
-      const proxyAddress = getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`);
+      await deployProxyAdmin(hre, ProxyType.infra);
+      await deployTransparentProxy(hre, ProxyType.infra);
+      // await deployInfraProxy(hre); // old
+      const proxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`);
       const { functionsSubIds } = chains[name];
       await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
     }
@@ -49,7 +52,8 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
       await deployConceroDexSwap(hre);
       await deployConcero(hre, { slotId });
       await deployConceroOrchestrator(hre);
-      await setProxyImplementation(hre, liveChains);
+      await upgradeProxyImplementation(hre, ProxyType.infra, false);
+      // await setProxyImplementation(hre, liveChains);
     }
 
     if (!taskArgs.skipsetvars) {

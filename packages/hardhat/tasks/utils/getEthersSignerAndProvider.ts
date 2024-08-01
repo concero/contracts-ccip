@@ -12,13 +12,13 @@ export function getEthersSignerAndProvider(chain_url: string) {
   return { signer, provider };
 }
 
-export function getEthersV5FallbackSignerAndProvider(chain_urls: string[]) {
-  const providers = chain_urls.map(url => new ethers.providers.JsonRpcProvider(url));
-  const fallbackProvider = new ethers.providers.FallbackProvider(providers);
-  const signer = new ethers.Wallet(`0x${process.env.DEPLOYER_PRIVATE_KEY}`, fallbackProvider);
-
-  return { signer, fallbackProvider };
-}
+// export function getEthersV5FallbackSignerAndProvider(chain_urls: string[]) {
+//   const providers = chain_urls.map(url => new ethers.providers.JsonRpcProvider(url));
+//   const fallbackProvider = new ethers.providers.FallbackProvider(providers);
+//   const signer = new ethers.Wallet(`0x${process.env.DEPLOYER_PRIVATE_KEY}`, fallbackProvider);
+//
+//   return { signer, fallbackProvider };
+// }
 
 export function getEthersV6SignerAndProvider(chain_url: string) {
   const provider = new ethersv6.JsonRpcProvider(chain_url);

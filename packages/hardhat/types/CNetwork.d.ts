@@ -20,9 +20,10 @@ export type CLFNetwork = {
   donHostedSecretsVersion: envString;
   linkToken: envString;
   linkPriceFeed: envString;
+  //concero fields
   viemChain: Chain;
   name: CNetworkNames;
-  urls
+  urls: string[];
 };
 
 interface PriceFeed {

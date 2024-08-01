@@ -15,7 +15,7 @@ const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE;
 const usdcAmount = "4000000";
 const usdcTokenAddress = process.env.USDC_BASE as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE as Address;
-//todo refactor
+//todo refactor to use testnet/mainnet as arg
 describe("start deposit usdc to parent pool\n", () => {
   let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
     chain: chainsMap[srcChainSelector].viemChain,

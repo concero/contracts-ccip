@@ -22,6 +22,7 @@ export type CLFNetwork = {
   linkPriceFeed: envString;
   viemChain: Chain;
   name: CNetworkNames;
+  urls
 };
 
 interface PriceFeed {

@@ -23,6 +23,7 @@ import updateAllInfraImplementations from "./concero/updateAllInfraImplementatio
 import deployAllPools from "./concero/deployPool/deployAllPools";
 import testScript from "./test";
 import upgradeProxyImplementation from "./concero/upgradeProxyImplementation";
+import changeOwnership from "./concero/changeOwnership";
 
 export default {
   billing,
@@ -50,4 +51,5 @@ export default {
   deployAllPools,
   testScript,
   upgradeProxyImplementation,
+  changeOwnership,
 };

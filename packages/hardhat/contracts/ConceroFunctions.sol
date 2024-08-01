@@ -9,6 +9,7 @@ import {Storage} from "./Libraries/Storage.sol";
 import {IPool} from "./Interfaces/IPool.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
+import {IConceroFunctions} from "./Interfaces/IConceroFunctions.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -28,7 +29,7 @@ error ConceroFunctions_OnlyProxyContext(address caller);
 ///@notice error emitted when the delegatecall to DexSwap fails
 error ConceroFunctions_FailedToReleaseTx(bytes error);
 
-contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
+contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, Storage {
     ///////////////////////
     ///TYPE DECLARATIONS///
     ///////////////////////

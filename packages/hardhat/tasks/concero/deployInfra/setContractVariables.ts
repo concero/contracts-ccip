@@ -29,9 +29,13 @@ const resetLastGasPrices = async (deployableChain: CNetwork, chains: CNetwork[],
 
     const { cumulativeGasUsed: resetGasPricesGasUsed } = await publicClient.waitForTransactionReceipt({
       hash: resetGasPricesHash,
+      timeout: 0,
     });
 
-    log(`Reset last gas prices for ${deployableChain.name}:${conceroProxyAddress}. Gas used: ${resetGasPricesGasUsed.toString()}`, "resetLastGasPrices");
+    log(
+      `Reset last gas prices for ${deployableChain.name}:${conceroProxyAddress}. Gas used: ${resetGasPricesGasUsed.toString()}`,
+      "resetLastGasPrices",
+    );
   }
 };
 
@@ -127,6 +131,7 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
 
     const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({
       hash: setDstConceroContractHash,
+      timeout: 0,
     });
 
     log(
@@ -159,9 +164,13 @@ async function setJsHashes(deployableChain: CNetwork, abi: any) {
       const setHashHash = await walletClient.writeContract(setHashReq);
       const { cumulativeGasUsed: setHashGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setHashHash,
+        timeout: 0,
       });
 
-      log(`Set ${srcChainName}:${conceroProxyAddress} jshash[${hash}]. Gas used: ${setHashGasUsed.toString()}`, functionName);
+      log(
+        `Set ${srcChainName}:${conceroProxyAddress} jshash[${hash}]. Gas used: ${setHashGasUsed.toString()}`,
+        functionName,
+      );
     };
 
     await setHash(getHashSum(conceroDstCode), "setDstJsHashSum");
@@ -223,8 +232,12 @@ export async function setDonSecretsSlotId(deployableChain: CNetwork, slotId: num
     const setDonSecretsSlotIdHash = await walletClient.writeContract(setDonSecretsSlotIdReq);
     const { cumulativeGasUsed: setDonSecretsSlotIdGasUsed } = await publicClient.waitForTransactionReceipt({
       hash: setDonSecretsSlotIdHash,
+      timeout: 0,
     });
-    log(`Set ${dcName}:${conceroProxy} donSecretsSlotId[${slotId}]. Gas used: ${setDonSecretsSlotIdGasUsed.toString()}`, "setDonHostedSecretsSlotID");
+    log(
+      `Set ${dcName}:${conceroProxy} donSecretsSlotId[${slotId}]. Gas used: ${setDonSecretsSlotIdGasUsed.toString()}`,
+      "setDonHostedSecretsSlotID",
+    );
   } catch (error) {
     log(`Error for ${dcName}: ${error.message}`, "setDonHostedSecretsSlotID");
   }
@@ -260,8 +273,12 @@ export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: a
     const setDexRouterHash = await walletClient.writeContract(setDexRouterReq);
     const { cumulativeGasUsed: setDexRouterGasUsed } = await publicClient.waitForTransactionReceipt({
       hash: setDexRouterHash,
+      timeout: 0,
     });
-    log(`Set ${dcName}:${conceroProxy} dexRouterAddress[${allowedRouter}]. Gas used: ${setDexRouterGasUsed.toString()}`, "setDexRouterAddress");
+    log(
+      `Set ${dcName}:${conceroProxy} dexRouterAddress[${allowedRouter}]. Gas used: ${setDexRouterGasUsed.toString()}`,
+      "setDexRouterAddress",
+    );
   } catch (error) {
     log(`Error for ${dcName}: ${error.message}`, "setDexRouterAddress");
   }
@@ -293,6 +310,7 @@ export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: an
       const setFunctionsPremiumFeesHash = await walletClient.writeContract(setFunctionsPremiumFeesReq);
       const { cumulativeGasUsed: setFunctionsPremiumFeesGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setFunctionsPremiumFeesHash,
+        timeout: 0,
       });
 
       log(
@@ -305,7 +323,12 @@ export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: an
   }
 }
 
-export async function setContractVariables(liveChains: CNetwork[], deployableChains: CNetwork[], slotId: number, uploadsecrets: boolean) {
+export async function setContractVariables(
+  liveChains: CNetwork[],
+  deployableChains: CNetwork[],
+  slotId: number,
+  uploadsecrets: boolean,
+) {
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
   for (const deployableChain of deployableChains) {

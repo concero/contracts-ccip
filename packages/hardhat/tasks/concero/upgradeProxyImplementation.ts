@@ -31,7 +31,9 @@ export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shou
       throw new Error("Invalid ProxyType");
   }
 
-  const { abi: proxyAdminAbi } = await import("../../artifacts/contracts/transparentProxy/ProxyAdmin.sol/ProxyAdmin.json");
+  const { abi: proxyAdminAbi } = await import(
+    "../../artifacts/contracts/transparentProxy/ProxyAdmin.sol/ProxyAdmin.json"
+  );
 
   if (!viemChain) {
     log(`Chain ${chainId} not found in live chains`, "upgradeProxyImplementation");
@@ -57,7 +59,7 @@ export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shou
     chain: viemChain,
   });
 
-  const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 0 });
 
   log(`Upgrade Proxy Implementation: gasUsed: ${cumulativeGasUsed}, hash: ${txHash}`, "setProxyImplementation");
 }

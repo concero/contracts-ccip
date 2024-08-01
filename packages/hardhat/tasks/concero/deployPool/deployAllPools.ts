@@ -35,6 +35,7 @@ task("deploy-all-pools", "Deploy all pool")
 
     executeCommand(`yarn hardhat deploy-parent-pool --network ${parentPoolNetwork} --slotid ${slotId}`);
 
+    //todo: TESTNET ONLY should send 0.1 LINK to parentPool
     // rebuild functions js code and push to github!!!
   });
 

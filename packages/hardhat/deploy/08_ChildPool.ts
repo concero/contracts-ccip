@@ -26,7 +26,7 @@ const deployChildPool: DeployFunction = async function (hre: HardhatRuntimeEnvir
   const { linkToken, ccipRouter, chainSelector } = chains[name];
 
   const defaultArgs = {
-    conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
+    conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
     childProxyAddress: getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`),
     linkToken: linkToken,
     ccipRouter: ccipRouter,

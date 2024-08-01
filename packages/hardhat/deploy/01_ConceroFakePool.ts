@@ -20,7 +20,7 @@ const deployConceroPool: DeployFunction = async function (hre: HardhatRuntimeEnv
   const defaultArgs = {
     linkToken: linkToken,
     ccipRouter: ccipRouter,
-    conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
+    conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
   };
 
   // Merge defaultArgs with constructorArgs

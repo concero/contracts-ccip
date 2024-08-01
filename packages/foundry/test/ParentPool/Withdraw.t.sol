@@ -6,6 +6,10 @@ import {Base_Test, console, MockConceroParentPool, Vm} from "./Base_Test.t.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {FunctionsRouter, IFunctionsRouter} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsRouter.sol";
 import {FunctionsResponse} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/libraries/FunctionsResponse.sol";
+import {
+    FunctionsCoordinator,
+    FunctionsBillingConfig
+} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsCoordinator.sol";
 import {ConceroParentPool_AmountBelowMinimum} from "contracts/ConceroParentPool.sol";
 
 contract WithdrawTest is Base_Test {
@@ -175,6 +179,9 @@ contract WithdrawTest is Base_Test {
         /// @dev get adminFee from the config
         FunctionsRouter.Config memory config = functionsRouter.getConfig();
         uint72 adminFee = config.adminFee;
+        /// @dev get timeoutTimestamp from billing config
+        FunctionsBillingConfig memory billingConfig = FunctionsCoordinator(coordinator).getConfig();
+        uint32 timeoutTimestamp = uint32(block.timestamp + billingConfig.requestTimeoutSeconds);
 
         /// @notice some of these values have been hardcoded, directly from the logs
         /// @dev create the commitment params
@@ -185,11 +192,11 @@ contract WithdrawTest is Base_Test {
             address(parentPoolProxy), // client
             uint64(vm.envUint("CLF_SUBID_BASE")), // subscriptionId
             _callbackGasLimit,
-            0, // adminFee
+            adminFee, // adminFee
             0, // donFee
             163500, // gasOverheadBeforeCallback
             57000, // gasOverheadAfterCallback
-            1722503125 // timeoutTimestamp
+            timeoutTimestamp // timeoutTimestamp
         );
 
         /// @dev prank the coordinator to call fulfill on functionsRouter

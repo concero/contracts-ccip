@@ -26,6 +26,7 @@ export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shou
     default:
       throw new Error("Invalid ProxyType");
   }
+
   const { abi: proxyAdminAbi } = await import("../../artifacts/contracts/transparentProxy/ProxyAdmin.sol/ProxyAdmin.json");
 
   if (!viemChain) {
@@ -61,9 +62,10 @@ export default {};
 
 task("upgrade-proxy-implementation", "Upgrades the proxy implementation")
   .addFlag("pause", "Pause the proxy before upgrading", false)
+  .addParam("proxytype", "The type of the proxy to upgrade")
   .setAction(async taskArgs => {
     const { name } = hre.network;
     if (name !== "localhost" && name !== "hardhat") {
-      await upgradeProxyImplementation(hre, taskArgs.pause);
+      await upgradeProxyImplementation(hre, parseInt(taskArgs.proxytype), taskArgs.pause);
     }
   });

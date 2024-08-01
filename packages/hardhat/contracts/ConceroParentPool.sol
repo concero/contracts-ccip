@@ -423,8 +423,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         if (amountToWithdraw == 0) revert ConceroParentPool_ActiveRequestNotFulfilledYet();
 
-        if (remainingLiquidityFromChildPools > 0)
+        if (remainingLiquidityFromChildPools > 10) {
             revert ConceroParentPool_WithdrawalAmountNotReady(remainingLiquidityFromChildPools);
+        }
 
         s_totalWithdrawRequestsAmount = s_totalWithdrawRequestsAmount > amountToWithdraw
             ? s_totalWithdrawRequestsAmount - amountToWithdraw
@@ -628,13 +629,13 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         )
     {
         // todo: this should be changed to a struct
-        (bytes32 withdrawalId, address user, uint256 receivedFee) = abi.decode(
+        (address lpAddress, address user, uint256 receivedFee) = abi.decode(
             any2EvmMessage.data,
-            (bytes32, address, uint256)
+            (address, address, uint256)
         );
 
-        bool isUserTx = receivedFee > 0 && withdrawalId == bytes32(0) && user != address(0);
-        bool isWithdrawalTx = withdrawalId != bytes32(0);
+        bool isUserTx = receivedFee > 0 && user != address(0);
+        bool isWithdrawalTx = lpAddress != address(0);
 
         if (isUserTx) {
             IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransaction(
@@ -651,16 +652,20 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
                 s_loansInUse -= amountAfterFees;
             }
         } else if (isWithdrawalTx) {
+            bytes32 withdrawalId = s_withdrawalIdByLPAddress[lpAddress];
+            if (withdrawalId == bytes32(0)) revert ConceroParentPool_RequestDoesntExist();
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
-            request.remainingLiquidityFromChildPools -= any2EvmMessage.destTokenAmounts[0].amount;
-            //todo: This may be redundant, let's test it
-            //            request.remainingLiquidityFromChildPools = request.remainingLiquidityFromChildPools >=
-            //                any2EvmMessage.destTokenAmounts[0].amount
-            //                ? request.remainingLiquidityFromChildPools -
-            //                    any2EvmMessage.destTokenAmounts[0].amount
-            //                : 0;
 
-            s_withdrawalsOnTheWayAmount -= any2EvmMessage.destTokenAmounts[0].amount;
+            request.remainingLiquidityFromChildPools = request.remainingLiquidityFromChildPools >=
+                any2EvmMessage.destTokenAmounts[0].amount
+                ? request.remainingLiquidityFromChildPools -
+                    any2EvmMessage.destTokenAmounts[0].amount
+                : 0;
+
+            s_withdrawalsOnTheWayAmount = s_withdrawalsOnTheWayAmount >=
+                any2EvmMessage.destTokenAmounts[0].amount
+                ? s_withdrawalsOnTheWayAmount - any2EvmMessage.destTokenAmounts[0].amount
+                : 0;
         }
 
         emit ConceroParentPool_CCIPReceived(
@@ -1013,10 +1018,12 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     function addWithdrawalOnTheWayAmountById(
         bytes32 _withdrawalId
     ) external onlyProxyContext onlyConceroCLA {
-        uint256 amountToWithdraw = s_withdrawRequests[_withdrawalId].amountToWithdraw;
+        uint256 amountToWithdraw = s_withdrawRequests[_withdrawalId].amountToWithdraw -
+            s_withdrawRequests[_withdrawalId].liquidityRequestedFromEachPool;
+
         if (amountToWithdraw == 0) revert ConceroParentPool_RequestDoesntExist();
 
-        s_totalWithdrawRequestsAmount += amountToWithdraw;
+        s_withdrawalsOnTheWayAmount += amountToWithdraw;
     }
 
     // function _calculateDepositTransactionFee(uint256 _amountToDistribute) internal view returns(uint256 _totalUSDCCost){

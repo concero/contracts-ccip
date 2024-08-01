@@ -3,8 +3,12 @@
 pragma solidity 0.8.20;
 
 import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockConceroParentPool is ConceroParentPool {
+    /*//////////////////////////////////////////////////////////////
+                              CONSTRUCTOR
+    //////////////////////////////////////////////////////////////*/
     constructor(
         address _parentPoolProxy,
         address _link,
@@ -33,15 +37,19 @@ contract MockConceroParentPool is ConceroParentPool {
         )
     {}
 
+    /*//////////////////////////////////////////////////////////////
+                                 GETTER
+    //////////////////////////////////////////////////////////////*/
     /// @dev getter for returning withdraw request params
     function getWithdrawRequestParams(bytes32 _withdrawalRequestId)
         external
         view
-        returns (address lpAddress, uint256 lpSupplySnapshot, uint256 lpAmountToBurn)
+        returns (address lpAddress, uint256 lpSupplySnapshot, uint256 lpAmountToBurn, uint256 amountToWithdraw)
     {
         WithdrawRequest memory request = s_withdrawRequests[_withdrawalRequestId];
         lpAddress = request.lpAddress;
         lpSupplySnapshot = request.lpSupplySnapshot;
         lpAmountToBurn = request.lpAmountToBurn;
+        amountToWithdraw = request.amountToWithdraw;
     }
 }

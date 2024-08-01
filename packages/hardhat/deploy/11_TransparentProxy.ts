@@ -44,7 +44,7 @@ const deployTransparentProxy: DeployFunction = async function (hre: HardhatRunti
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {
-    log(`TransparentProxyInfra deployed to ${name} to: ${conceroProxyDeployment.address}`, "deployTransparentProxyInfra");
+    log(`TransparentProxy ${envKey} deployed to ${name} to: ${conceroProxyDeployment.address}`, "deployTransparentProxy");
     updateEnvVariable(`${envKey}_${networkEnvKeys[name]}`, conceroProxyDeployment.address, "../../../.env.deployments");
   }
 };

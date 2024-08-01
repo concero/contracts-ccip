@@ -1,7 +1,18 @@
 // Purpose: To have a single source of truth for networks across the project
 import { type CNetwork, CNetworkNames } from "../types/CNetwork";
 import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
-import { arbitrum, arbitrumSepolia, avalanche, avalancheFuji, base, baseSepolia, optimismSepolia, polygon, polygonAmoy, sepolia } from "viem/chains";
+import {
+  arbitrum,
+  arbitrumSepolia,
+  avalanche,
+  avalancheFuji,
+  base,
+  baseSepolia,
+  optimismSepolia,
+  polygon,
+  polygonAmoy,
+  sepolia,
+} from "viem/chains";
 
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
 const deployerPK = process.env.DEPLOYER_PRIVATE_KEY;
@@ -297,8 +308,8 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   polygon: {
     saveDeployments,
     chainId: 137,
-    url: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
-    // url: "https://polygon-rpc.com",
+    // url: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+    url: "https://polygon-bor-rpc.publicnode.com",
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_POLYGON,
     functionsDonIdAlias: process.env.CLF_DONID_POLYGON_ALIAS,
@@ -325,8 +336,8 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   avalanche: {
     saveDeployments,
     chainId: 43114,
-    url: `https://avax.meowrpc.com\t`,
-    // url: `https://avalanche-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    // url: `https://avax.meowrpc.com`,
+    url: `https://avalanche-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_AVALANCHE,
     functionsDonIdAlias: process.env.CLF_DONID_AVALANCHE_ALIAS,

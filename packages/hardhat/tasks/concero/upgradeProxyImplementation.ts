@@ -12,16 +12,20 @@ export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shou
   const { viemChain, url } = CNetworks[chainName];
 
   let envKey: string;
+  let implementationKey: string;
 
   switch (proxyType) {
     case ProxyType.infra:
       envKey = `CONCERO_INFRA_PROXY`;
+      implementationKey = `CONCERO_ORCHESTRATOR`;
       break;
     case ProxyType.parentPool:
       envKey = `PARENT_POOL_PROXY`;
+      implementationKey = `PARENT_POOL`;
       break;
     case ProxyType.childPool:
       envKey = `CHILD_POOL_PROXY`;
+      implementationKey = `CHILD_POOL`;
       break;
     default:
       throw new Error("Invalid ProxyType");
@@ -39,7 +43,7 @@ export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shou
 
   const conceroProxy = getEnvVar(`${envKey}_${networkEnvKeys[chainName]}`);
   const proxyAdminContract = getEnvVar(`${envKey}_ADMIN_CONTRACT_${networkEnvKeys[chainName]}`);
-  const newImplementationAddress = getEnvVar(`CONCERO_ORCHESTRATOR_${networkEnvKeys[chainName]}`);
+  const newImplementationAddress = getEnvVar(`${implementationKey}_${networkEnvKeys[chainName]}`);
   const pauseDummy = getEnvVar(`CONCERO_PAUSE_${networkEnvKeys[chainName]}`);
 
   const implementation = shouldPause ? pauseDummy : newImplementationAddress;
@@ -51,7 +55,6 @@ export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shou
     account: viemAccount,
     args: [conceroProxy, implementation, "0x"],
     chain: viemChain,
-    gas: 500_000n,
   });
 
   const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ hash: txHash });

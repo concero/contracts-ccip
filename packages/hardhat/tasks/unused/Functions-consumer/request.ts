@@ -50,7 +50,7 @@
 //   )
 //   .setAction(async taskArgs => {
 //     const hre: HardhatRuntimeEnvironment = require("hardhat");
-//     const { name } = hre.network;
+//     const { name, live } = hre.network;
 //     // Get the required parameters
 //     const contractAddr = taskArgs.contract;
 //     const subscriptionId = parseInt(taskArgs.subid);

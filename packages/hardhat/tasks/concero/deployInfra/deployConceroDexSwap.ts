@@ -11,7 +11,7 @@ task("deploy-dex-swap", "Deploy the concero dex swap contract")
   .setAction(async taskArgs => {
     try {
       const hre: HardhatRuntimeEnvironment = require("hardhat");
-      const { name } = hre.network;
+      const { name, live } = hre.network;
       let deployableChains: CNetwork[] = liveChains;
 
       if (name !== "localhost" && name !== "hardhat") {

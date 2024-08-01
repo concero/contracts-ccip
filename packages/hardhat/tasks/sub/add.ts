@@ -13,7 +13,7 @@ task("clf-sub-consumer-add", "Adds a consumer contract to the Functions billing 
   .addParam("contract", "Address(es) of the Functions consumer contract to authorize for billing")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     if (!chains[name]) throw new Error(`Chain ${name} not supported`);
     const consumerAddress = taskArgs.contract;
     let subscriptionId;

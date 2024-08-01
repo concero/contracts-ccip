@@ -69,7 +69,7 @@ task("upgrade-proxy-implementation", "Upgrades the proxy implementation")
   .addFlag("pause", "Pause the proxy before upgrading", false)
   .addParam("proxytype", "The type of the proxy to upgrade")
   .setAction(async taskArgs => {
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     if (name !== "localhost" && name !== "hardhat") {
       await upgradeProxyImplementation(hre, parseInt(taskArgs.proxytype), taskArgs.pause);
     }

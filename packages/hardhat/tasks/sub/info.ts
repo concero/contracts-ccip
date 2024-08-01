@@ -13,7 +13,7 @@ task(
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
 
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     const subscriptionId = parseInt(taskArgs.subid);
 
     const signer = await hre.ethers.getSigner();

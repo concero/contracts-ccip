@@ -25,7 +25,7 @@ task("deploy-parent-pool", "Deploy the pool")
 
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     const deployableChains: CNetwork[] = [CNetworks[hre.network.name]];
 
     if (taskArgs.deployproxy) {

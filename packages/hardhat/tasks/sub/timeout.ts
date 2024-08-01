@@ -11,7 +11,7 @@ task("clf-sub-timeout", "Times out expired Functions requests which have not bee
   .addOptionalParam("pastblockstosearch", "Number of past blocks to search", 1000, types.int)
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     if (!chains[name]) throw new Error(`Chain ${name} not supported`);
 
     const requestIdsToTimeout = taskArgs.requestids.split(",");

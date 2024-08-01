@@ -18,7 +18,7 @@ task("deploy-child-pool", "Deploy the pool")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     const deployableChains: CNetwork[] = liveChains.filter(
       (chain: CNetwork) => chain.chainId !== chains.baseSepolia.chainId && chain.chainId !== chains.base.chainId,
     );

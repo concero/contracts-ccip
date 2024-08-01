@@ -25,7 +25,7 @@ const deployChildPool: DeployFunction = async function (
 ) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const { name } = hre.network;
+  const { name, live } = hre.network;
 
   const { linkToken, ccipRouter, chainSelector } = chains[name];
 
@@ -58,7 +58,7 @@ const deployChildPool: DeployFunction = async function (
     autoMine: true,
   })) as Deployment;
 
-  if (name !== "hardhat" && name !== "localhost") {
+  if (live) {
     log(`ConceroChildPool deployed to ${name} to: ${deployChildPool.address}`, "deployConceroChildPool");
     updateEnvVariable(`CHILD_POOL_${networkEnvKeys[name]}`, deployChildPool.address, "../../../.env.deployments");
   }

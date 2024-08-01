@@ -29,7 +29,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
-    const { name } = hre.network;
+    const { name, live } = hre.network;
 
     if (name !== "localhost" && name !== "hardhat") {
       deployableChains = [chains[name]];

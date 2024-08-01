@@ -9,7 +9,8 @@ import { messengers } from "../constants/deploymentVariables";
 const deployConceroDexSwap: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const { name } = hre.network;
+  const { name, live } = hre.network;
+
   const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`);
 
   console.log("Deploying ConceroDexSwap...");
@@ -20,7 +21,7 @@ const deployConceroDexSwap: DeployFunction = async function (hre: HardhatRuntime
     autoMine: true,
   })) as Deployment;
 
-  if (name !== "hardhat" && name !== "localhost") {
+  if (live) {
     log(`ConceroDexSwap deployed to ${name} to: ${deployResult.address}`, "ConceroDexSwap");
     updateEnvVariable(`CONCERO_DEX_SWAP_${networkEnvKeys[name]}`, deployResult.address, "../../../.env.deployments");
   }

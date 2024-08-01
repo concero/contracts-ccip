@@ -9,7 +9,7 @@ import { ProxyType } from "./11_TransparentProxy";
 const deployProxyAdmin: DeployFunction = async function (hre: HardhatRuntimeEnvironment, proxyType: ProxyType) {
   const { proxyDeployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const { name } = hre.network;
+  const { name, live } = hre.network;
 
   const initialOwner = getEnvVar(`PROXY_DEPLOYER_ADDRESS`);
 
@@ -37,9 +37,13 @@ const deployProxyAdmin: DeployFunction = async function (hre: HardhatRuntimeEnvi
     autoMine: true,
   })) as Deployment;
 
-  if (name !== "hardhat" && name !== "localhost") {
+  if (live) {
     log(`ProxyAdmin deployed to ${name} to: ${deployProxyAdmin.address}`, "deployProxyAdmin");
-    updateEnvVariable(`${envKey}_ADMIN_CONTRACT_${networkEnvKeys[name]}`, deployProxyAdmin.address, "../../../.env.deployments");
+    updateEnvVariable(
+      `${envKey}_ADMIN_CONTRACT_${networkEnvKeys[name]}`,
+      deployProxyAdmin.address,
+      "../../../.env.deployments",
+    );
   }
 };
 

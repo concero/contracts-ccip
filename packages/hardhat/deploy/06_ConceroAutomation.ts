@@ -21,10 +21,13 @@ interface ConstructorArgs {
   owner?: string;
 }
 
-const deployConceroAutomation: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
+const deployConceroAutomation: DeployFunction = async function (
+  hre: HardhatRuntimeEnvironment,
+  constructorArgs: ConstructorArgs = {},
+) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const { name } = hre.network;
+  const { name, live } = hre.network;
 
   const { functionsRouter, functionsDonId, functionsSubIds, donHostedSecretsVersion } = chains[name];
 
@@ -52,14 +55,25 @@ const deployConceroAutomation: DeployFunction = async function (hre: HardhatRunt
   console.log("Deploying ConceroAutomation...");
   const deployConceroAutomation = (await deploy("ConceroAutomation", {
     from: deployer,
-    args: [args.functionsDonId, args.functionsSubIds[0], args.functionsSlotId, args.functionsRouter, args.parentProxyAddress, args.owner],
+    args: [
+      args.functionsDonId,
+      args.functionsSubIds[0],
+      args.functionsSlotId,
+      args.functionsRouter,
+      args.parentProxyAddress,
+      args.owner,
+    ],
     log: true,
     autoMine: true,
   })) as Deployment;
 
-  if (name !== "hardhat" && name !== "localhost") {
+  if (live) {
     log(`ConceroAutomation deployed to ${name} to: ${deployConceroAutomation.address}`, "deployConceroAutomation");
-    updateEnvVariable(`CONCERO_AUTOMATION_${networkEnvKeys[name]}`, deployConceroAutomation.address, "../../../.env.deployments");
+    updateEnvVariable(
+      `CONCERO_AUTOMATION_${networkEnvKeys[name]}`,
+      deployConceroAutomation.address,
+      "../../../.env.deployments",
+    );
   }
 };
 

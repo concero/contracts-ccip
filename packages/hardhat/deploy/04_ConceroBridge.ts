@@ -23,15 +23,27 @@ interface ConstructorArgs {
 }
 
 /* run with: yarn deploy --network avalancheFuji --tags Concero */
-const deployConceroBridge: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
+const deployConceroBridge: DeployFunction = async function (
+  hre: HardhatRuntimeEnvironment,
+  constructorArgs: ConstructorArgs = {},
+) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const { name } = hre.network;
+  const { name, live } = hre.network;
 
   if (!chains[name]) throw new Error(`Chain ${name} not supported`);
 
-  const { functionsRouter, donHostedSecretsVersion, functionsDonId, functionsSubIds, chainSelector, conceroChainIndex, linkToken, ccipRouter, priceFeed } =
-    chains[name];
+  const {
+    functionsRouter,
+    donHostedSecretsVersion,
+    functionsDonId,
+    functionsSubIds,
+    chainSelector,
+    conceroChainIndex,
+    linkToken,
+    ccipRouter,
+    priceFeed,
+  } = chains[name];
 
   const jsPath = "./tasks/CLFScripts";
 
@@ -91,7 +103,7 @@ const deployConceroBridge: DeployFunction = async function (hre: HardhatRuntimeE
     autoMine: true,
   })) as Deployment;
 
-  if (name !== "hardhat" && name !== "localhost") {
+  if (live) {
     log(`Contract Concero deployed to ${name} at ${deployment.address}`, "deployConceroBridge");
     updateEnvVariable(`CONCERO_BRIDGE_${networkEnvKeys[name]}`, deployment.address, "../../../.env.deployments");
   }

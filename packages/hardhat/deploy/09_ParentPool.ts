@@ -27,7 +27,7 @@ const deployParentPool: DeployFunction = async function (
 ) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const { name } = hre.network;
+  const { name, live } = hre.network;
 
   const { linkToken, ccipRouter, functionsRouter, functionsDonId, functionsSubIds } = chains[name];
 
@@ -70,7 +70,7 @@ const deployParentPool: DeployFunction = async function (
     autoMine: true,
   })) as Deployment;
 
-  if (name !== "hardhat" && name !== "localhost") {
+  if (live) {
     log(`ParentPool deployed to ${name} to: ${deployParentPool.address}`, "deployParentPool");
     updateEnvVariable(`PARENT_POOL_${networkEnvKeys[name]}`, deployParentPool.address, "../../../.env.deployments");
   }

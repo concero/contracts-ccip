@@ -38,7 +38,7 @@ export async function dripBnm(chains: CNetwork[], amount: number = 20) {
 task("drip-bnm", "Drips CCIPBNM tokens to the deployer")
   .addOptionalParam("amount", "Amount of CCIPBNM to drip", "5")
   .setAction(async taskArgs => {
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     const amount = parseInt(taskArgs.amount, 10);
     if (name !== "localhost" && name !== "hardhat") {
       await dripBnm([chains[name]], amount);

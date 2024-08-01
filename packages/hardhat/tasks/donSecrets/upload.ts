@@ -50,10 +50,7 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
       minutesUntilExpiration,
     });
 
-    log(
-      `DONSecrets uploaded to ${name}. slot_id: ${slotId}, version: ${version}, ttl: ${minutesUntilExpiration}`,
-      "donSecrets/upload",
-    );
+    log(`DONSecrets uploaded to ${name}. slot_id: ${slotId}, version: ${version}, ttl: ${minutesUntilExpiration}`, "donSecrets/upload");
 
     await listSecrets(chain);
 
@@ -65,12 +62,9 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
 }
 
 // run with: yarn hardhat clf-donsecrets-upload --slotid 0 --ttl 4320 --network avalancheFuji
-// todo: add to deployedSecrets file with expiration time, and check if it's expired before using itV
+// todo: add to deployedSecrets file with expiration time, and check if it's expired before using it
 task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")
-  .addParam(
-    "slotid",
-    "Storage slot number 0 or higher - if the slotid is already in use, the existing secrets for that slotid will be overwritten",
-  )
+  .addParam("slotid", "Storage slot number 0 or higher - if the slotid is already in use, the existing secrets for that slotid will be overwritten")
   .addOptionalParam("ttl", "Time to live - minutes until the secrets hosted on the DON expire", 4320, types.int)
   .addFlag("all", "Upload secrets to all networks")
   .addFlag("updatecontracts", "Update the contracts with the new secrets")

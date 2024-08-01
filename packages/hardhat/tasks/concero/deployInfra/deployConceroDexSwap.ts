@@ -24,8 +24,6 @@ task("deploy-dex-swap", "Deploy the concero dex swap contract")
         execSync("yarn compile", { stdio: "inherit" });
         await deployConceroDexSwap(hre);
       }
-
-      // TODO: set dex swap allowed routers
     } catch (e) {
       console.error(e);
     }

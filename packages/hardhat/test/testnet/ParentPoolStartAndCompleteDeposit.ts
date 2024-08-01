@@ -12,7 +12,7 @@ import { chainsMap } from "../utils/chainsMap";
 import { approve } from "../utils/approve";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE;
-const usdcAmount = "4000000";
+const usdcAmount = "100000000";
 const usdcTokenAddress = process.env.USDC_BASE as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE as Address;
 //todo refactor

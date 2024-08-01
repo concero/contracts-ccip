@@ -11,6 +11,7 @@ import {LibConcero} from "./Libraries/LibConcero.sol";
 import {IOrchestrator, IOrchestratorViewDelegate} from "./Interfaces/IOrchestrator.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_AVALANCHE, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE} from "./Constants.sol";
+import {IConceroFunctions} from "./Interfaces/IConceroFunctions.sol";
 
 ///////////////////////////////
 /////////////ERROR/////////////
@@ -256,7 +257,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     ) external onlyMessenger {
         (bool success, bytes memory error) = i_concero.delegatecall(
             abi.encodeWithSelector(
-                IConceroBridge.addUnconfirmedTX.selector,
+                IConceroFunctions.addUnconfirmedTX.selector,
                 ccipMessageId,
                 sender,
                 recipient,
@@ -282,7 +283,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
 
         (bool success, bytes memory error) = i_concero.delegatecall(
             abi.encodeWithSelector(
-                IConceroBridge.fulfillRequestWrapper.selector,
+                IConceroFunctions.fulfillRequestWrapper.selector,
                 requestId,
                 response,
                 err

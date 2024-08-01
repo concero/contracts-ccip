@@ -6,7 +6,7 @@
 			],
 			chainId: '0x66eee',
 			usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-			poolAddress: '0x1bb02cbBb533D25934E2772c6a4273ea7EeA8614',
+			poolAddress: '0x1bb4233765838Ee69076845D10fa231c8cd500a3',
 		},
 		[`0x${BigInt('14767482510784806043').toString(16)}`]: {
 			urls: [
@@ -14,7 +14,7 @@
 			],
 			chainId: '0xa869',
 			usdcAddress: '0x5425890298aed601595a70ab815c96711a31bc65',
-			poolAddress: '0x366421a8df70F629807E74adb98d04C7211A191f',
+			poolAddress: '0xED007301D6AfacD5FA30Fb2fD4B45951A064f798',
 		},
 		[`0x${BigInt('10344971235874465080').toString(16)}`]: {
 			urls: [
@@ -22,7 +22,7 @@
 			],
 			chainId: '0x14a34',
 			usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-			poolAddress: '0x5f5CC5eFB67B5F5B4F472af0B2915624729A0ACa',
+			poolAddress: '0xC80ff076966e86B62C5c9134FbC3D1439C09f6B6',
 		},
 	};
 	const baseChainSelector = `0x${BigInt('10344971235874465080').toString(16)}`;
@@ -64,7 +64,7 @@
 	};
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
 	const getBaseDepositsOneTheWay = () => {
-		const pool = new ethers.Contract('0x5f5CC5eFB67B5F5B4F472af0B2915624729A0ACa', poolAbi, baseProvider);
+		const pool = new ethers.Contract('0xC80ff076966e86B62C5c9134FbC3D1439C09f6B6', poolAbi, baseProvider);
 		return pool.getDepositsOnTheWay();
 	};
 	const getChildPoolsCcipLogs = async ccipLines => {

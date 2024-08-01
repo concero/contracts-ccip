@@ -35,7 +35,6 @@ task("deploy-child-pool", "Deploy the pool")
 
       await deployChildPool(hre);
       await upgradeProxyImplementation(hre, ProxyType.childPool, false);
-      // await setChildPoolProxyImplementation(hre, deployableChains);
     }
 
     if (!taskArgs.skipsetvars) {

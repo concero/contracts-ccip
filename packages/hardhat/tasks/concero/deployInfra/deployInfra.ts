@@ -38,7 +38,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     if (taskArgs.deployproxy) {
       await deployProxyAdmin(hre, ProxyType.infra);
       await deployTransparentProxy(hre, ProxyType.infra);
-      // await deployInfraProxy(hre); // old
+
       const proxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`);
       const { functionsSubIds } = chains[name];
       await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
@@ -53,7 +53,6 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
       await deployConcero(hre, { slotId });
       await deployConceroOrchestrator(hre);
       await upgradeProxyImplementation(hre, ProxyType.infra, false);
-      // await setProxyImplementation(hre, liveChains);
     }
 
     if (!taskArgs.skipsetvars) {

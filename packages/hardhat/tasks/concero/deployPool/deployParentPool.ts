@@ -42,7 +42,6 @@ task("deploy-parent-pool", "Deploy the pool")
     } else {
       await deployParentPool(hre);
       await upgradeProxyImplementation(hre, ProxyType.parentPool, false);
-      // await setParentPoolProxyImplementation(hre, deployableChains);
     }
 
     if (taskArgs.uploadsecrets) {

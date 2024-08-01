@@ -12,7 +12,7 @@ import { chainsMap } from "../utils/chainsMap";
 import { approve } from "../utils/approve";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
-const lpAmount = "100000000000000000";
+const lpAmount = "980198019801980198";
 const lpTokenAddress = process.env.LPTOKEN_BASE_SEPOLIA as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 

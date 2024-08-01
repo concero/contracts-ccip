@@ -22,10 +22,8 @@ contract ChildPoolStorage {
     ///@notice Mapping to keep track of valid pools to transfer in case of liquidation or rebalance
     mapping(uint64 chainSelector => address pools) public s_poolToSendTo;
 
-    ////////////////////////
-    ////NEW STORAGE VARS////
-    ////////////////////////
-
     mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;
+
+    //@notice Prevents CLF from triggerring the same withdrawal request more than once
     mapping(bytes32 => bool) public s_withdrawRequests;
 }

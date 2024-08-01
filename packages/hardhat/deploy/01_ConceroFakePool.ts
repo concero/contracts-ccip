@@ -10,10 +10,13 @@ interface ConstructorArgs {
   ccipRouter?: string;
 }
 
-const deployConceroPool: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
+const deployConceroPool: DeployFunction = async function (
+  hre: HardhatRuntimeEnvironment,
+  constructorArgs: ConstructorArgs = {},
+) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const { name } = hre.network;
+  const { name, live } = hre.network;
 
   const { linkToken, ccipRouter } = chains[name];
 
@@ -36,7 +39,7 @@ const deployConceroPool: DeployFunction = async function (hre: HardhatRuntimeEnv
     autoMine: true,
   })) as Deployment;
 
-  if (name !== "hardhat" && name !== "localhost") {
+  if (live) {
     log(`ConceroPool deployed to ${name} to: ${deployConceroPool.address}`, "deployConceroPool");
     updateEnvVariable(`CONCEROPOOL_${networkEnvKeys[name]}`, deployConceroPool.address, "../../../.env.deployments");
   }

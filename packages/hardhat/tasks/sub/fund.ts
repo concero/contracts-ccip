@@ -11,7 +11,7 @@ task("clf-sub-fund", "Funds a billing subscription for Functions consumer contra
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
 
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     const subId = parseInt(taskArgs.subid, 10);
     if (!chains[name]) throw new Error(`Network ${name} not supported`);
 

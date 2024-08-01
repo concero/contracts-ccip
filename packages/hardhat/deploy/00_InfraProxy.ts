@@ -10,7 +10,7 @@
 // const deployConceroProxy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 //   const { deployer, proxyDeployer } = await hre.getNamedAccounts();
 //   const { deploy } = hre.deployments;
-//   const { name } = hre.network;
+//   const { name, live } = hre.network;
 //
 //   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = CNetworks[name];
 //   const { publicClient } = getClients(dcViemChain, dcUrl);
@@ -26,7 +26,7 @@
 //     // gasLimit: "1000000",
 //   })) as Deployment;
 //
-//   if (name !== "hardhat" && name !== "localhost") {
+//    if (live) {
 //     log(`InfraProxy deployed to ${name} to: ${conceroProxyDeployment.address}`, "deployInfraProxy");
 //     updateEnvVariable(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`, conceroProxyDeployment.address, "../../../.env.deployments");
 //   }

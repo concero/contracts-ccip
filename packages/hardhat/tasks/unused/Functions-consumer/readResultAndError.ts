@@ -11,7 +11,7 @@ task(
   .addParam("contract", "Address of the consumer contract to read")
   // .addOptionalParam("configpath", "Path to Functions request config file", `${__dirname}/../../Functions-request-config.js`, types.string)
   .setAction(async taskArgs => {
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     console.log(`Reading data from Functions consumer contract ${taskArgs.contract} on network ${name}`);
     const consumerContractFactory = await hre.ethers.getContractFactory("CFunctions");
     const consumerContract = await consumerContractFactory.attach(taskArgs.contract);

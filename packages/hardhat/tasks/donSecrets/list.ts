@@ -51,7 +51,7 @@ task("clf-list-secrets", "Displays encrypted secrets hosted on the DON")
         await listSecrets(chain);
       }
     } else {
-      const { name } = hre.network;
+      const { name, live } = hre.network;
       await listSecrets(chains[name]);
     }
   });

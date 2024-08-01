@@ -4,10 +4,13 @@ import { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 
-const deployPauseDummy: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
+const deployPauseDummy: DeployFunction = async function (
+  hre: HardhatRuntimeEnvironment,
+  constructorArgs: ConstructorArgs = {},
+) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const { name } = hre.network;
+  const { name, live } = hre.network;
 
   console.log("Deploying PauseDummy...");
   const deployPauseDummy = (await deploy("PauseDummy", {
@@ -17,7 +20,7 @@ const deployPauseDummy: DeployFunction = async function (hre: HardhatRuntimeEnvi
     autoMine: true,
   })) as Deployment;
 
-  if (name !== "hardhat" && name !== "localhost") {
+  if (live) {
     log(`PauseDummy deployed to ${name} to: ${deployPauseDummy.address}`, "deployPauseDummy");
     updateEnvVariable(`CONCERO_PAUSE_${networkEnvKeys[name]}`, deployPauseDummy.address, "../../../.env.deployments");
   }

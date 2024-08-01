@@ -11,7 +11,7 @@
 //   const { deployer, proxyDeployer } = await hre.getNamedAccounts();
 //
 //   const { deploy } = hre.deployments;
-//   const { name } = hre.network;
+//   const { name, live } = hre.network;
 //
 //   const implementationAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`);
 //
@@ -24,7 +24,7 @@
 //     gasLimit: 2_000_000,
 //   })) as Deployment;
 //
-//   if (name !== "hardhat" && name !== "localhost") {
+//    if (live) {
 //     log(`ParentProxy deployed to ${name} to: ${deployParentProxy.address}`, "deployParentProxy");
 //     updateEnvVariable(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`, deployParentProxy.address, "../../../.env.deployments");
 //   }

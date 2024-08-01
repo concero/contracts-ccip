@@ -55,7 +55,7 @@ export async function fundContract(chains: CNetwork[], amount: number = 1) {
 task("fund-contracts", "Funds the contract with CCIPBNM tokens")
   .addOptionalParam("amount", "Amount of CCIPBNM to send", "5")
   .setAction(async taskArgs => {
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     const amount = parseInt(taskArgs.amount, 10);
     if (name !== "localhost" && name !== "hardhat") {
       await fundContract([chains[name]], amount);

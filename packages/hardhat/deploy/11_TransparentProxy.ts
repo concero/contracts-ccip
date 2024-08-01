@@ -13,7 +13,7 @@ export enum ProxyType {
 const deployTransparentProxy: DeployFunction = async function (hre: HardhatRuntimeEnvironment, proxyType: ProxyType) {
   const { proxyDeployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const { name } = hre.network;
+  const { name, live } = hre.network;
 
   let envKey: string;
 
@@ -43,8 +43,11 @@ const deployTransparentProxy: DeployFunction = async function (hre: HardhatRunti
     autoMine: true,
   })) as Deployment;
 
-  if (name !== "hardhat" && name !== "localhost") {
-    log(`TransparentProxy ${envKey} deployed to ${name} to: ${conceroProxyDeployment.address}`, "deployTransparentProxy");
+  if (live) {
+    log(
+      `TransparentProxy ${envKey} deployed to ${name} to: ${conceroProxyDeployment.address}`,
+      "deployTransparentProxy",
+    );
     updateEnvVariable(`${envKey}_${networkEnvKeys[name]}`, conceroProxyDeployment.address, "../../../.env.deployments");
   }
 };

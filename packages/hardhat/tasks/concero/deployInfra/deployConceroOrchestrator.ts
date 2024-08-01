@@ -9,7 +9,7 @@ import deployConceroOrchestrator from "../../../deploy/05_ConceroOrchestrator";
 task("deploy-orchestrator", "Deploy the concero orchestrator").setAction(async taskArgs => {
   try {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     let deployableChains: CNetwork[] = liveChains;
 
     if (name !== "localhost" && name !== "hardhat") {

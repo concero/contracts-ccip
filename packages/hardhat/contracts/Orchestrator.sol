@@ -124,20 +124,17 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     ) {
         uint256 swapDataLength = _swapData.length;
 
-        if (swapDataLength == 0) {
-            return;
-        }
-
         if (
-            _swapData[0].fromToken !=
-            _getUSDCAddressByChainSelector(_bridgeData.dstChainSelector) ||
-            swapDataLength > 5 ||
-            _swapData[0].fromAmount == 0 ||
-            // todo: _swapData[0].toAmountMin == 0 may not be needed. We're only checking the first item
-            _swapData[0].toAmountMin == 0
+            swapDataLength != 0 &&
+            _swapData[0].fromToken != _getUSDCAddressByChainSelector(_bridgeData.dstChainSelector)
         ) {
             revert Orchestrator_InvalidSwapData();
         }
+
+        if (swapDataLength != 0 && swapDataLength > 5 && _swapData[0].fromAmount == 0) {
+            revert Orchestrator_InvalidSwapData();
+        }
+
         _;
     }
 

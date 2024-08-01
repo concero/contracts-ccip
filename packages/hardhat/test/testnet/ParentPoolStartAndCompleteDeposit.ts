@@ -12,7 +12,7 @@ import { chainsMap } from "../utils/chainsMap";
 import { approve } from "../utils/approve";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
-const usdcAmount = "1000000";
+const usdcAmount = "16849375";
 const usdcTokenAddress = process.env.USDC_BASE_SEPOLIA as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 

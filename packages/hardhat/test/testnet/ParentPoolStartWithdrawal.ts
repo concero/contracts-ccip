@@ -12,11 +12,11 @@ import { chainsMap } from "../utils/chainsMap";
 import { approve } from "../utils/approve";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
-const lpAmount = "980198019801980198";
+const lpAmount = "16000000000000000000";
 const lpTokenAddress = process.env.LPTOKEN_BASE_SEPOLIA as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 
-describe("start deposit usdc to parent pool\n", () => {
+describe("start withdrawal usdc from parent pool\n", () => {
   let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
     chain: chainsMap[srcChainSelector].viemChain,
     transport: chainsMap[srcChainSelector].viemTransport,

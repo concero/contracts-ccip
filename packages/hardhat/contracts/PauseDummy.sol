@@ -4,10 +4,10 @@
 pragma solidity ^0.8.20;
 
 contract PauseDummy {
-  fallback() external {
-    revert("paused");
-  }
-  receive() external payable {
-    revert("paused");
-  }
+    fallback() external {
+        revert("paused");
+    }
+    receive() external payable {
+        revert("paused");
+    }
 }

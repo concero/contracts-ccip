@@ -152,66 +152,15 @@ const setEthersHashSum = async (hre, abi: any) => {
   }
 };
 
-const checkUpkeep = async (hre, abi: any) => {
-  try {
-    const chain = CNetworks[hre.network.name];
-    const { viemChain } = chain;
-    const { walletClient, publicClient, account } = getClients(viemChain, chain.url);
-    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
-
-    const res = await publicClient.readContract({
-      address: automationsContract,
-      abi,
-      functionName: "checkUpkeep",
-      args: ["0x"],
-      account,
-      chain: viemChain,
-    });
-
-    console.log(res);
-  } catch (error) {
-    log(`Error for ${hre.network.name}: ${error.message}`, "checkUpkeep");
-  }
-};
-
-const deleteRequest = async (hre, abi: any, reqId: string) => {
-  try {
-    const chain = CNetworks[hre.network.name];
-    const { viemChain } = chain;
-    const { walletClient, publicClient, account } = getClients(viemChain, chain.url);
-    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
-
-    const { request: deleteRequestReq } = await publicClient.simulateContract({
-      address: automationsContract,
-      abi,
-      functionName: "deleteRequest",
-      account,
-      args: [reqId],
-      chain: viemChain,
-    });
-
-    const deleteRequestHash = await walletClient.writeContract(deleteRequestReq);
-
-    const { cumulativeGasUsed: setDexRouterGasUsed, status } = await publicClient.waitForTransactionReceipt({
-      hash: deleteRequestHash,
-    });
-
-    log(`deleteRequest tx: ${deleteRequestHash} | status: ${status}`, "deleteRequest");
-  } catch (error) {
-    log(`Error for ${hre.network.name}: ${error.message}`, "deleteRequest");
-  }
-};
-
-export async function setAutomationsVariables(hre, slotId: number, forwarderAddress: string) {
+export async function setAutomationsVariables(hre, slotId: number, forwarderAddress: string | undefined) {
   const { abi } = await load("../artifacts/contracts/ConceroAutomation.sol/ConceroAutomation.json");
 
   await setDonHostedSecretsVersion(hre, slotId, abi);
   await setDonHostedSecretsSlotId(hre, slotId, abi);
   await setHashSum(hre, abi);
   await setEthersHashSum(hre, abi);
-  await setForwarderAddress(hre, forwarderAddress, abi);
 
-  // await deleteRequest(hre, abi, "0x");
-
-  await checkUpkeep(hre, abi);
+  if (forwarderAddress) {
+    await setForwarderAddress(hre, forwarderAddress, abi);
+  }
 }

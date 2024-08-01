@@ -1,5 +1,8 @@
 import { task } from "hardhat/config";
-import secrets from "../constants/CLFSecrets";
+
+import deployTransparentProxy, { ProxyType } from "../deploy/11_TransparentProxy";
+import deployProxyAdmin from "../deploy/10_ProxyAdmin";
+import { upgradeProxyImplementation } from "./concero/upgradeProxyImplementation";
 
 function getHashSum(sourceCode: string) {
   const hash = require("crypto").createHash("sha256");
@@ -8,8 +11,9 @@ function getHashSum(sourceCode: string) {
 }
 
 task("test-script", "A test script").setAction(async taskArgs => {
-  const hashsum = getHashSum(secrets.SRC_JS);
-  console.log(hashsum);
+  await deployProxyAdmin(hre, ProxyType.parentPool);
+  await deployTransparentProxy(hre, ProxyType.parentPool);
+  await upgradeProxyImplementation(hre, ProxyType.parentPool, false);
 });
 
 export default {};

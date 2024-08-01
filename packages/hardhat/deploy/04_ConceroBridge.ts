@@ -6,6 +6,7 @@ import log from "../utils/log";
 import path from "path";
 import fs from "fs";
 import { getEnvVar } from "../utils/getEnvVar";
+import { messengers } from "../constants/deploymentVariables";
 
 interface ConstructorArgs {
   slotId?: number;
@@ -18,30 +19,19 @@ interface ConstructorArgs {
   linkToken?: string;
   ccipRouter?: string;
   dexSwapModule?: string;
+  messengers?: string[];
 }
 
 /* run with: yarn deploy --network avalancheFuji --tags Concero */
-const deployConcero: DeployFunction = async function (
-  hre: HardhatRuntimeEnvironment,
-  constructorArgs: ConstructorArgs = {},
-) {
+const deployConceroBridge: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
 
   if (!chains[name]) throw new Error(`Chain ${name} not supported`);
 
-  const {
-    functionsRouter,
-    donHostedSecretsVersion,
-    functionsDonId,
-    functionsSubIds,
-    chainSelector,
-    conceroChainIndex,
-    linkToken,
-    ccipRouter,
-    priceFeed,
-  } = chains[name];
+  const { functionsRouter, donHostedSecretsVersion, functionsDonId, functionsSubIds, chainSelector, conceroChainIndex, linkToken, ccipRouter, priceFeed } =
+    chains[name];
 
   const jsPath = "./tasks/CLFScripts";
 
@@ -74,7 +64,8 @@ const deployConcero: DeployFunction = async function (
       name === "base" || name === "baseSepolia"
         ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`)
         : getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`),
-    conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
+    conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
+    messengers,
   };
 
   // Merge defaultArgs with constructorArgs
@@ -95,15 +86,16 @@ const deployConcero: DeployFunction = async function (
       args.dexSwapModule,
       args.conceroPoolAddress,
       args.conceroProxyAddress,
+      args.messengers,
     ],
     autoMine: true,
   })) as Deployment;
 
   if (name !== "hardhat" && name !== "localhost") {
-    log(`Contract Concero deployed to ${name} at ${deployment.address}`, "deployConcero");
+    log(`Contract Concero deployed to ${name} at ${deployment.address}`, "deployConceroBridge");
     updateEnvVariable(`CONCERO_BRIDGE_${networkEnvKeys[name]}`, deployment.address, "../../../.env.deployments");
   }
 };
 
-export default deployConcero;
-deployConcero.tags = ["ConceroBridge"];
+export default deployConceroBridge;
+deployConceroBridge.tags = ["ConceroBridge"];

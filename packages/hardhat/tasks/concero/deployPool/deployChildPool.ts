@@ -6,9 +6,10 @@ import { execSync } from "child_process";
 import { CNetwork } from "../../../types/CNetwork";
 import { liveChains } from "../liveChains";
 import deployChildPool from "../../../deploy/08_ChildPool";
-import deployChildProxy from "../../../deploy/02_ChildPoolProxy";
-import { setChildPoolProxyImplementation } from "./setChildPoolProxyImplementation";
 import { setChildProxyVariables } from "./setChildProxyVariables";
+import deployProxyAdmin from "../../../deploy/10_ProxyAdmin";
+import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
+import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 
 task("deploy-child-pool", "Deploy the pool")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
@@ -23,7 +24,8 @@ task("deploy-child-pool", "Deploy the pool")
     );
 
     if (taskArgs.deployproxy) {
-      await deployChildProxy(hre);
+      await deployProxyAdmin(hre, ProxyType.childPool);
+      await deployTransparentProxy(hre, ProxyType.childPool);
     }
 
     if (taskArgs.skipdeploy) {
@@ -32,7 +34,7 @@ task("deploy-child-pool", "Deploy the pool")
       execSync("yarn compile", { stdio: "inherit" });
 
       await deployChildPool(hre);
-      await setChildPoolProxyImplementation(hre, deployableChains);
+      await upgradeProxyImplementation(hre, ProxyType.childPool, false);
     }
 
     if (!taskArgs.skipsetvars) {

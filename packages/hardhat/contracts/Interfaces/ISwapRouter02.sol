@@ -9,4 +9,10 @@ import {IMulticallExtended} from "@uniswap/swap-router-contracts/contracts/inter
 import "./solc_0.7.6/IApproveAndCall.sol";
 
 /// @title Router token swapping functionality
-interface ISwapRouter02 is IV2SwapRouter, IV3SwapRouter, IApproveAndCall, IMulticallExtended, ISelfPermit {}
+interface ISwapRouter02 is
+    IV2SwapRouter,
+    IV3SwapRouter,
+    IApproveAndCall,
+    IMulticallExtended,
+    ISelfPermit
+{}

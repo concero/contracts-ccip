@@ -4,6 +4,7 @@ import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
+import { poolMessengers } from "../constants/deploymentVariables";
 
 interface ConstructorArgs {
   parentProxyAddress?: string;
@@ -17,12 +18,10 @@ interface ConstructorArgs {
   automation?: string;
   conceroProxyAddress?: string;
   owner?: string;
+  messengers?: string[];
 }
 
-const deployParentPool: DeployFunction = async function (
-  hre: HardhatRuntimeEnvironment,
-  constructorArgs: ConstructorArgs = {},
-) {
+const deployParentPool: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
@@ -39,15 +38,16 @@ const deployParentPool: DeployFunction = async function (
     usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
     lpToken: getEnvVar(`LPTOKEN_${networkEnvKeys[name]}`),
     automation: getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[name]}`),
-    conceroProxyAddress: getEnvVar(`CONCERO_PROXY_${networkEnvKeys[name]}`),
+    conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
     owner: deployer,
+    poolMessengers,
   };
 
   // Merge defaultArgs with constructorArgs
   const args = { ...defaultArgs, ...constructorArgs };
 
   console.log("Deploying ParentPool...");
-  const deployParentPool = (await deploy("ParentPool", {
+  const deployParentPool = (await deploy("ConceroParentPool", {
     from: deployer,
     args: [
       args.parentProxyAddress,
@@ -61,6 +61,7 @@ const deployParentPool: DeployFunction = async function (
       args.automation,
       args.conceroProxyAddress,
       args.owner,
+      args.messengers,
     ],
     log: true,
     autoMine: true,

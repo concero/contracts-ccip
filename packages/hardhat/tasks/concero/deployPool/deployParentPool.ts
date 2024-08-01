@@ -8,10 +8,11 @@ import log from "../../../utils/log";
 import { execSync } from "child_process";
 import uploadDonSecrets from "../../donSecrets/upload";
 import { CNetwork } from "../../../types/CNetwork";
-import deployParentPoolProxy from "../../../deploy/01_ParentPoolProxy";
 import { setParentPoolVariables } from "./setParentPoolVariables";
-import { setParentPoolProxyImplementation } from "./setParentPoolProxyImplementation";
 import deployParentPool from "../../../deploy/09_ParentPool";
+import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
+import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
+import deployProxyAdmin from "../../../deploy/10_ProxyAdmin";
 
 task("deploy-parent-pool", "Deploy the pool")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
@@ -28,7 +29,9 @@ task("deploy-parent-pool", "Deploy the pool")
     const deployableChains: CNetwork[] = [CNetworks[hre.network.name]];
 
     if (taskArgs.deployproxy) {
-      await deployParentPoolProxy(hre);
+      await deployProxyAdmin(hre, ProxyType.parentPool);
+      await deployTransparentProxy(hre, ProxyType.parentPool);
+      // await deployParentPoolProxy(hre);
       const proxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`);
       const { functionsSubIds } = chains[name];
       await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
@@ -38,7 +41,8 @@ task("deploy-parent-pool", "Deploy the pool")
       log("Skipping deployment", "deploy-parent-pool");
     } else {
       await deployParentPool(hre);
-      await setParentPoolProxyImplementation(hre, deployableChains);
+      await upgradeProxyImplementation(hre, ProxyType.parentPool, false);
+      // await setParentPoolProxyImplementation(hre, deployableChains);
     }
 
     if (taskArgs.uploadsecrets) {

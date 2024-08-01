@@ -21,15 +21,15 @@ async function setParentPoolJsHashes(deployableChain: CNetwork, abi: any) {
     const ethersCode = await (await fetch(ethersV6CodeUrl)).text();
 
     const setHash = async (hash: string, functionName: string) => {
-      const { request: setHashReq } = await publicClient.simulateContract({
+      const setHashHash = await walletClient.writeContract({
         address: parentPoolProxyAddress as Address,
         abi,
         functionName,
         account,
         args: [hash],
         chain: dcViemChain,
+        gas: 1_000_000n,
       });
-      const setHashHash = await walletClient.writeContract(setHashReq);
       const { cumulativeGasUsed: setHashGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setHashHash,
       });

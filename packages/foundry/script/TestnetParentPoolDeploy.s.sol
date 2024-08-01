@@ -16,7 +16,7 @@ contract TestnetParentPoolDeploy is Script {
     address _automation = address(0);
     address _orchestrator = address(0);
     address _owner = 0xd2Cb8786C0Ec3680C55C9256371F3577fE1C6A9e;
-    address[3] _msgrs = [vm.envAddress("MESSENGER_0_ADDRESS"), address(0), address(0)];
+    address[3] _msgrs = [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)];
 
     function run() public returns (ConceroParentPool pool) {
         vm.startBroadcast();

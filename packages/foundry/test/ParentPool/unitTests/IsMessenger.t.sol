@@ -6,7 +6,7 @@ import {ParentPool_DepositWrapper, IDepositParentPool} from "../wrappers/ParentP
 import {Test, console, Vm} from "forge-std/Test.sol";
 
 contract IsMessengerTest is Test, DeployParentPool {
-    address messenger1 = vm.envAddress("MESSENGER_0_ADDRESS");
+    address messenger1 = vm.envAddress("POOL_MESSENGER_0_ADDRESS");
     address messenger2 = vm.envAddress("MESSENGER_1_ADDRESS");
     address messenger3 = vm.envAddress("MESSENGER_2_ADDRESS");
     address notMessenger = user1;

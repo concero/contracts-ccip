@@ -21,7 +21,7 @@ contract DepositOnTheWayRequest is ConceroParentPool, CreateAndSwitchToForkTest 
             address(vm.envAddress("CONCERO_AUTOMATION_BASE")),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
             address(msg.sender),
-            [vm.envAddress("MESSENGER_0_ADDRESS"), address(0), address(0)]
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         )
     {}
 

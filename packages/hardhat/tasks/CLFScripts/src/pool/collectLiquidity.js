@@ -99,7 +99,7 @@
 			const url =
 				chainSelectors[chainSelector].urls[Math.floor(Math.random() * chainSelectors[chainSelector].urls.length)];
 			const provider = new FunctionsJsonRpcProvider(url);
-			const wallet = new ethers.Wallet(secrets.MESSENGER_0_PRIVATE_KEY, provider);
+			const wallet = new ethers.Wallet('0x' + secrets.POOL_MESSENGER_0_PRIVATE_KEY, provider);
 			const signer = wallet.connect(provider);
 			const poolContract = new ethers.Contract(chainSelectors[chainSelector].poolAddress, poolAbi, signer);
 			promises.push(

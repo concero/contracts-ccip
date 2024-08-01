@@ -23,7 +23,7 @@ contract Deposit is DeployParentPool {
             address(conceroCLA),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
             address(deployer),
-            [vm.envAddress("MESSENGER_0_ADDRESS"), address(0), address(0)]
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
 
         setProxyImplementation();

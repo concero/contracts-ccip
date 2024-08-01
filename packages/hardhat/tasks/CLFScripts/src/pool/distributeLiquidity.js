@@ -103,7 +103,7 @@
 
 		const getSignerByChainSelector = _chainSelector => {
 			const provider = getProviderByChainSelector(_chainSelector);
-			const wallet = new ethers.Wallet(secrets.MESSENGER_0_PRIVATE_KEY, provider);
+			const wallet = new ethers.Wallet('0x' + secrets.POOL_MESSENGER_0_PRIVATE_KEY, provider);
 			return wallet.connect(provider);
 		};
 

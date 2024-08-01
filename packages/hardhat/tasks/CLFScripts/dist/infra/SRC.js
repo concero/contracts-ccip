@@ -340,7 +340,7 @@
 		const dstUrl =
 			chainSelectors[dstChainSelector].urls[Math.floor(Math.random() * chainSelectors[dstChainSelector].urls.length)];
 		const provider = new FunctionsJsonRpcProvider(dstUrl);
-		const wallet = new ethers.Wallet(secrets.MESSENGER_0_PRIVATE_KEY, provider);
+		const wallet = new ethers.Wallet('0x' + secrets.MESSENGER_0_PRIVATE_KEY, provider);
 		const signer = wallet.connect(provider);
 		const abi = [
 			'function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256, bytes) external',

@@ -13,10 +13,11 @@ contract TestnetParentPoolDeploy is Script {
     address _ccipRouter = 0xD3b06cEbF099CE7DA4AcCf578aaebFDBd6e88a93;
     address _usdc = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
     address _lpToken = address(0);
-    address _automation = address(0);
+    // address _automation = address(0);
     address _orchestrator = address(0);
     address _owner = 0xd2Cb8786C0Ec3680C55C9256371F3577fE1C6A9e;
     address[3] _msgrs = [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)];
+    uint8 _slotId = 0;
 
     function run() public returns (ConceroParentPool pool) {
         vm.startBroadcast();
@@ -29,10 +30,10 @@ contract TestnetParentPoolDeploy is Script {
             _ccipRouter,
             _usdc,
             _lpToken,
-            _automation,
             _orchestrator,
             _owner,
-            _msgrs
+            _msgrs,
+            _slotId
         );
         vm.stopBroadcast();
     }

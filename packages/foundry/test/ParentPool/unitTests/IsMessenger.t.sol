@@ -10,6 +10,7 @@ contract IsMessengerTest is Test, DeployParentPool {
     address messenger2 = vm.envAddress("MESSENGER_1_ADDRESS");
     address messenger3 = vm.envAddress("MESSENGER_2_ADDRESS");
     address notMessenger = user1;
+    uint8 slotId = 0;
 
     function setUp() public {
         vm.selectFork(forkId);
@@ -23,15 +24,15 @@ contract IsMessengerTest is Test, DeployParentPool {
             address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
             address(vm.envAddress("USDC_BASE")),
             address(lpToken),
-            address(conceroCLA),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
             address(deployer),
-            [messenger1, address(0), address(0)]
+            [messenger1, address(0), address(0)],
+            slotId
         );
 
         setProxyImplementation();
         setParentPoolVars();
-        deployAutomation();
+        // deployAutomation();
         deployLpToken();
         addFunctionsConsumer();
     }

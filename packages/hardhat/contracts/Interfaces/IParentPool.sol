@@ -17,7 +17,8 @@ interface IParentPool is IPool {
     ///@notice Struct to track Functions Requests Type
     enum RequestType {
         startDeposit_getChildPoolsLiquidity, //Deposits
-        startWithdrawal_getChildPoolsLiquidity //Start Withdrawals
+        startWithdrawal_getChildPoolsLiquidity, //Start Withdrawals
+        performUpkeep_requestLiquidityTransfer
     }
 
     struct WithdrawRequest {
@@ -50,39 +51,20 @@ interface IParentPool is IPool {
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
     ///@notice event emitted when a new withdraw request is made
-    event ConceroPool_WithdrawRequest(
-        address caller,
-        address token,
-        uint256 condition,
-        uint256 amount
-    );
+    event ConceroPool_WithdrawRequest(address caller, address token, uint256 condition, uint256 amount);
     ///@notice event emitted when value is deposited into the contract
     event ConceroPool_Deposited(address indexed token, address indexed from, uint256 amount);
 
     /////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////FUNCTIONS//////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////
-    function getWithdrawalRequestById(
-        bytes32 _withdrawalId
-    ) external view returns (WithdrawRequest memory);
-
     function getWithdrawalIdByLPAddress(address lpAddress) external view returns (bytes32);
-    function addWithdrawalOnTheWayAmountById(bytes32 _withdrawalId) external;
     function startDeposit(uint256 _usdcAmount) external;
-    function distributeLiquidity(
-        uint64 _chainSelector,
-        uint256 _amountToSend,
-        bytes32 distributeLiquidityRequestId
-    ) external;
-    function setPools(
-        uint64 _chainSelector,
-        address _pool,
-        bool isRebalancingNeeded
-    ) external payable;
+    function distributeLiquidity(uint64 _chainSelector, uint256 _amountToSend, bytes32 distributeLiquidityRequestId)
+        external;
+    function setPools(uint64 _chainSelector, address _pool, bool isRebalancingNeeded) external payable;
 
-    function setConceroContractSender(
-        uint64 _chainSelector,
-        address _contractAddress,
-        uint256 _isAllowed
-    ) external payable;
+    function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed)
+        external
+        payable;
 }

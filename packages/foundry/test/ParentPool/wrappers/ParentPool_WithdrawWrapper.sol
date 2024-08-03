@@ -4,7 +4,7 @@ pragma solidity 0.8.20;
 
 import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 
-contract MockConceroParentPool is ConceroParentPool {
+contract ParentPool_WithdrawWrapper is ConceroParentPool {
     constructor(
         address _parentPoolProxy,
         address _link,

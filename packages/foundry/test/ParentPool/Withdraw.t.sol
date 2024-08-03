@@ -2,16 +2,18 @@
 
 pragma solidity 0.8.20;
 
-import {Base_Test, console, MockConceroParentPool, Vm} from "./Base_Test.t.sol";
+import {BaseTest, console, Vm} from "./BaseTest.t.sol";
+import {ParentPool_WithdrawWrapper} from "./wrappers/ParentPool_WithdrawWrapper.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ConceroParentPool_AmountBelowMinimum} from "contracts/ConceroParentPool.sol";
 
-contract WithdrawTest is Base_Test {
+contract WithdrawTest is BaseTest {
     /*//////////////////////////////////////////////////////////////
                                VARIABLES
     //////////////////////////////////////////////////////////////*/
     address liquidityProvider = makeAddr("liquidityProvider");
     IERC20 usdc = IERC20(address(vm.envAddress("USDC_BASE")));
+    ParentPool_WithdrawWrapper parentPoolImplementation__withdrawWrapper;
 
     uint256 constant LP_BALANCE = 10_000_000_000; // 10k usdc
 
@@ -19,12 +21,41 @@ contract WithdrawTest is Base_Test {
                                  SETUP
     //////////////////////////////////////////////////////////////*/
     function setUp() public virtual override {
-        /// @dev run the Base Test setUp
-        Base_Test.setUp();
+        /// @dev select chain
+        vm.selectFork(forkId);
+
+        /// @dev deploy lp token
+        deployLpToken();
+
+        /// @dev deploy parentpool proxy
+        deployParentPoolProxy();
+
+        /// @dev deploy parentPool with withdrawWrapper
+        vm.prank(deployer);
+        parentPoolImplementation__withdrawWrapper = new ParentPool_WithdrawWrapper(
+            address(parentPoolProxy),
+            vm.envAddress("LINK_BASE"),
+            vm.envBytes32("CLF_DONID_BASE"),
+            uint64(vm.envUint("CLF_SUBID_BASE")),
+            vm.envAddress("CLF_ROUTER_BASE"),
+            vm.envAddress("CL_CCIP_ROUTER_BASE"),
+            vm.envAddress("USDC_BASE"),
+            address(lpToken),
+            vm.envAddress("CONCERO_ORCHESTRATOR_BASE"),
+            address(deployer),
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)],
+            0 // slotId
+        );
+
+        /// @dev upgrade proxy
+        setProxyImplementation(address(parentPoolImplementation__withdrawWrapper));
+
+        /// @dev add functions consumer
+        addFunctionsConsumer();
 
         /// @dev fund liquidityProvider with lp tokens
-        deal(address(parentPoolImplementation.i_lp()), liquidityProvider, LP_BALANCE);
-        assertEq(IERC20(parentPoolImplementation.i_lp()).balanceOf(liquidityProvider), LP_BALANCE);
+        deal(address(parentPoolImplementation__withdrawWrapper.i_lp()), liquidityProvider, LP_BALANCE);
+        assertEq(IERC20(parentPoolImplementation__withdrawWrapper.i_lp()).balanceOf(liquidityProvider), LP_BALANCE);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -33,7 +64,7 @@ contract WithdrawTest is Base_Test {
     function test_startWithdrawal_works() public {
         /// @dev approve the pool to spend LP tokens
         vm.startPrank(liquidityProvider);
-        IERC20(parentPoolImplementation.i_lp()).approve(address(parentPoolProxy), LP_BALANCE);
+        IERC20(parentPoolImplementation__withdrawWrapper.i_lp()).approve(address(parentPoolProxy), LP_BALANCE);
 
         /// @dev call startWithdrawal via proxy
         (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("startWithdrawal(uint256)", LP_BALANCE));
@@ -41,7 +72,7 @@ contract WithdrawTest is Base_Test {
         vm.stopPrank();
 
         /// @dev assert liquidityProvider no longer holds tokens
-        assertEq(IERC20(parentPoolImplementation.i_lp()).balanceOf(liquidityProvider), 0);
+        assertEq(IERC20(parentPoolImplementation__withdrawWrapper.i_lp()).balanceOf(liquidityProvider), 0);
 
         /// @dev get withdrawalId
         (, bytes memory returnData) = address(parentPoolProxy).call(
@@ -61,7 +92,7 @@ contract WithdrawTest is Base_Test {
         console.log("lpAmountToBurn:", lpAmountToBurn);
 
         assertEq(lpAddress, liquidityProvider);
-        assertEq(lpSupplySnapshot, IERC20(parentPoolImplementation.i_lp()).totalSupply());
+        assertEq(lpSupplySnapshot, IERC20(parentPoolImplementation__withdrawWrapper.i_lp()).totalSupply());
         assertEq(lpAmountToBurn, LP_BALANCE);
     }
 
@@ -75,7 +106,7 @@ contract WithdrawTest is Base_Test {
     function test_startWithdrawal_reverts_if_request_already_active() public {
         /// @dev approve the pool to spend LP tokens
         vm.startPrank(liquidityProvider);
-        IERC20(parentPoolImplementation.i_lp()).approve(address(parentPoolProxy), LP_BALANCE);
+        IERC20(parentPoolImplementation__withdrawWrapper.i_lp()).approve(address(parentPoolProxy), LP_BALANCE);
 
         /// @dev call startWithdrawal via proxy
         (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("startWithdrawal(uint256)", LP_BALANCE));
@@ -89,14 +120,13 @@ contract WithdrawTest is Base_Test {
     }
 
     function test_startWithdrawal_reverts_if_not_proxy_caller(address _caller) public {
-        /// @dev make sure caller isn't the parentPoolProxy
-        vm.assume(_caller != address(parentPoolProxy));
-
         /// @dev expect revert when calling startWithdrawal directly
         vm.prank(_caller);
         vm.expectRevert(
-            abi.encodeWithSignature("ConceroParentPool_NotParentPoolProxy(address)", address(parentPoolImplementation))
+            abi.encodeWithSignature(
+                "ConceroParentPool_NotParentPoolProxy(address)", address(parentPoolImplementation__withdrawWrapper)
+            )
         );
-        parentPoolImplementation.startWithdrawal(LP_BALANCE);
+        parentPoolImplementation__withdrawWrapper.startWithdrawal(LP_BALANCE);
     }
 }

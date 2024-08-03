@@ -25,7 +25,7 @@ interface IParentPool is IPool {
         uint256 lpSupplySnapshot;
         uint256 lpAmountToBurn;
         //
-        uint256 totalCrossChainLiquiditySnapshot;
+        uint256 totalCrossChainLiquiditySnapshot; //todo: we don't update this _updateWithdrawalRequest
         uint256 amountToWithdraw;
         uint256 liquidityRequestedFromEachPool; // this may be calculated by CLF later
         uint256 remainingLiquidityFromChildPools;

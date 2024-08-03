@@ -98,8 +98,9 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     }
 
     modifier validateBridgeData(BridgeData memory _bridgeData) {
-        if (_bridgeData.amount == 0 || _bridgeData.receiver == address(0))
+        if (_bridgeData.amount == 0 || _bridgeData.receiver == address(0)) {
             revert Orchestrator_InvalidBridgeData();
+        }
         _;
     }
 
@@ -220,6 +221,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         IDexSwap.SwapData[] memory dstSwapData
     )
         external
+        payable
         validateBridgeData(bridgeData)
         validateDstSwapData(dstSwapData, bridgeData)
         nonReentrant

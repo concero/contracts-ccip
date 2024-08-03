@@ -933,7 +933,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             s_loansInUse +
             s_depositsOnTheWayAmount -
             s_depositFeeAmount;
-        //todo: every formula must add withdrawalsOnTheWay and depositsOnTheWay
+        //todo: we must add withdrawalsOnTheWay and depositsOnTheWay
 
         uint256 totalCrossChainLiquidity = _childPoolBalance + parentPoolLiquidity;
         uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(totalCrossChainLiquidity);
@@ -968,6 +968,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         uint256 _childPoolsLiquidity
     ) private {
         uint256 lpToBurn = _withdrawalRequest.lpAmountToBurn;
+        //todo: lpSupplySnapshot should be calculated here instead of startWithdrawal()
         uint256 lpSupplySnapshot = _withdrawalRequest.lpSupplySnapshot;
         uint256 childPoolsCount = s_poolChainSelectors.length;
 

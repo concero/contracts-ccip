@@ -344,6 +344,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             s_loansInUse +
             s_depositsOnTheWayAmount -
             s_depositFeeAmount;
+        //todo: every formula must add withdrawalsOnTheWay and depositsOnTheWay
 
         uint256 totalCrossChainLiquidity = childPoolsLiquiditySnapshot + parentPoolLiquidity;
 
@@ -811,7 +812,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             _handleStartDepositCLFFulfill(requestId, response);
         } else if (requestType == RequestType.startWithdrawal_getChildPoolsLiquidity) {
             _handleStartWithdrawalCLFFulfill(requestId, response);
-        }
+        } // RequestType.CLAWithdrawalTriggered
         delete s_clfRequestTypes[requestId];
     }
 
@@ -832,6 +833,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         _deleteDepositsOnTheWayByIds(depositsOnTheWayIdsToDelete);
     }
 
+    //todo: rename
     function _decodeCLFResponse(
         bytes memory response
     ) internal pure returns (uint256, bytes1[] memory) {

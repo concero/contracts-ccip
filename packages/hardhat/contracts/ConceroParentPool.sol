@@ -129,7 +129,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ////////////////////////////////////////////////////////
     ///@notice event emitted when a new withdraw request is made
     event ConceroParentPool_WithdrawRequestInitiated(
-        address caller,
+        address indexed caller,
         IERC20 token,
         uint256 deadline
     );
@@ -933,9 +933,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             s_loansInUse +
             s_depositsOnTheWayAmount -
             s_depositFeeAmount;
-	    //todo: every formula must add withdrawalsOnTheWay and depositsOnTheWay
+        //todo: every formula must add withdrawalsOnTheWay and depositsOnTheWay
 
-    uint256 totalCrossChainLiquidity = _childPoolBalance + parentPoolLiquidity;
+        uint256 totalCrossChainLiquidity = _childPoolBalance + parentPoolLiquidity;
         uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(totalCrossChainLiquidity);
         uint256 amountDepositedConverted = _convertToLPTokenDecimals(_amountToDeposit);
         uint256 _totalLPSupply = i_lp.totalSupply();

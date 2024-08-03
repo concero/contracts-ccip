@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {DeployParentPool} from "./deploy/DeployParentPool.sol";
+import {BaseTest} from "./BaseTest.t.sol";
 import {ParentPool_DepositWrapper, IDepositParentPool} from "./wrappers/ParentPool_DepositWrapper.sol";
 import {Test, console, Vm} from "forge-std/Test.sol";
 import {Client} from "../../lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {IAny2EVMMessageReceiver} from
     "../../lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol";
 
-contract Deposit is DeployParentPool {
-    function setUp() public {
+contract Deposit is BaseTest {
+    function setUp() public override {
         vm.selectFork(forkId);
         deployParentPoolProxy();
         parentPoolImplementation = new ParentPool_DepositWrapper(
@@ -21,16 +21,14 @@ contract Deposit is DeployParentPool {
             address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
             address(vm.envAddress("USDC_BASE")),
             address(lpToken),
-            // address(conceroCLA),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
             address(deployer),
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)],
             0
         );
 
-        setProxyImplementation();
+        setProxyImplementation(address(parentPoolImplementation));
         setParentPoolVars();
-        // deployAutomation();
         deployLpToken();
         addFunctionsConsumer();
     }

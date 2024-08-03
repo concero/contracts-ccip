@@ -5,18 +5,18 @@ import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
 import {ParentPoolProxyDeploy} from "../../../script/ParentPoolProxyDeploy.s.sol";
 import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {ParentPoolProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/ParentPoolProxy.sol";
-import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {LPToken} from "contracts/LPToken.sol";
 import {CCIPLocalSimulator} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulator.sol";
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 import {FunctionsSubscriptions} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsSubscriptions.sol";
+// import {ConceroAutomation} from "contracts/ConceroAutomation.sol";
 
 contract DeployParentPool is Test {
     ConceroParentPool public parentPoolImplementation;
     ParentPoolProxy public parentPoolProxy;
     LPToken public lpToken;
-    ConceroAutomation public conceroCLA;
+    // ConceroAutomation public conceroCLA;
     FunctionsSubscriptions public functionsSubscriptions;
     CCIPLocalSimulator public ccipLocalSimulator;
 
@@ -36,7 +36,7 @@ contract DeployParentPool is Test {
         setProxyImplementation();
         setParentPoolVars();
         _deployCcipLocalSimulation();
-        deployAutomation();
+        // deployAutomation();
         deployLpToken();
         addFunctionsConsumer();
         _fundLinkParentProxy(100000000000000000000);
@@ -47,11 +47,7 @@ contract DeployParentPool is Test {
     function deployParentPoolProxy() public {
         vm.startBroadcast(proxyDeployerPrivateKey);
 
-        parentPoolProxy = new ParentPoolProxy(
-            address(vm.envAddress("CONCERO_PAUSE_BASE")),
-            proxyDeployer,
-            bytes("")
-        );
+        parentPoolProxy = new ParentPoolProxy(address(vm.envAddress("CONCERO_PAUSE_BASE")), proxyDeployer, bytes(""));
 
         vm.stopBroadcast();
     }
@@ -68,18 +64,19 @@ contract DeployParentPool is Test {
             address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
             address(vm.envAddress("USDC_BASE")),
             address(lpToken),
-            address(conceroCLA),
+            // address(conceroCLA),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
             address(deployer),
-            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)],
+            0
         );
         vm.stopBroadcast();
     }
+
     function setProxyImplementation() public {
         vm.startBroadcast(proxyDeployerPrivateKey);
         ITransparentUpgradeableProxy(address(parentPoolProxy)).upgradeToAndCall(
-            address(parentPoolImplementation),
-            bytes("")
+            address(parentPoolImplementation), bytes("")
         );
         vm.stopBroadcast();
     }
@@ -88,46 +85,38 @@ contract DeployParentPool is Test {
         vm.startBroadcast(deployerPrivateKey);
 
         IParentPool(address(parentPoolProxy)).setPools(
-            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
-            address(parentPoolImplementation),
-            false
+            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), address(parentPoolImplementation), false
         );
 
         IParentPool(address(parentPoolProxy)).setConceroContractSender(
-            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
-            address(user1),
-            1
+            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), address(user1), 1
         );
         vm.stopBroadcast();
     }
 
-    function deployAutomation() public {
-        vm.startBroadcast(deployerPrivateKey);
-        conceroCLA = new ConceroAutomation(
-            vm.envBytes32("CLF_DONID_BASE"),
-            uint64(vm.envUint("CLF_SUBID_BASE_SEPOLIA")),
-            0,
-            vm.envAddress("CLF_ROUTER_BASE"),
-            address(parentPoolProxy),
-            address(deployer)
-        );
-        vm.stopBroadcast();
-    }
+    // function deployAutomation() public {
+    //     vm.startBroadcast(deployerPrivateKey);
+    //     conceroCLA = new ConceroAutomation(
+    //         vm.envBytes32("CLF_DONID_BASE"),
+    //         uint64(vm.envUint("CLF_SUBID_BASE_SEPOLIA")),
+    //         0,
+    //         vm.envAddress("CLF_ROUTER_BASE"),
+    //         address(parentPoolProxy),
+    //         address(deployer)
+    //     );
+    //     vm.stopBroadcast();
+    // }
 
     function deployLpToken() public {
         vm.startBroadcast(deployerPrivateKey);
         lpToken = new LPToken(deployer, address(parentPoolProxy));
         vm.stopBroadcast();
     }
+
     function addFunctionsConsumer() public {
         vm.startPrank(vm.envAddress("DEPLOYER_ADDRESS"));
-        functionsSubscriptions = FunctionsSubscriptions(
-            address(0xf9B8fc078197181C841c296C876945aaa425B278)
-        );
-        functionsSubscriptions.addConsumer(
-            uint64(vm.envUint("CLF_SUBID_BASE")),
-            address(parentPoolProxy)
-        );
+        functionsSubscriptions = FunctionsSubscriptions(address(0xf9B8fc078197181C841c296C876945aaa425B278));
+        functionsSubscriptions.addConsumer(uint64(vm.envUint("CLF_SUBID_BASE")), address(parentPoolProxy));
         vm.stopPrank();
     }
 

@@ -5,7 +5,8 @@ import {DeployParentPool} from "./deploy/DeployParentPool.sol";
 import {ParentPool_DepositWrapper, IDepositParentPool} from "./wrappers/ParentPool_DepositWrapper.sol";
 import {Test, console, Vm} from "forge-std/Test.sol";
 import {Client} from "../../lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/libraries/Client.sol";
-import {IAny2EVMMessageReceiver} from "../../lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol";
+import {IAny2EVMMessageReceiver} from
+    "../../lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol";
 
 contract Deposit is DeployParentPool {
     function setUp() public {
@@ -20,15 +21,16 @@ contract Deposit is DeployParentPool {
             address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
             address(vm.envAddress("USDC_BASE")),
             address(lpToken),
-            address(conceroCLA),
+            // address(conceroCLA),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
             address(deployer),
-            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)],
+            0
         );
 
         setProxyImplementation();
         setParentPoolVars();
-        deployAutomation();
+        // deployAutomation();
         deployLpToken();
         addFunctionsConsumer();
     }
@@ -48,9 +50,8 @@ contract Deposit is DeployParentPool {
         bytes32 requestId = entries[0].topics[1];
 
         // Verify storage changes using the emitted requestId
-        ParentPool_DepositWrapper.DepositRequest memory depositRequest = IDepositParentPool(
-            address(parentPoolProxy)
-        ).getDepositRequest(requestId);
+        ParentPool_DepositWrapper.DepositRequest memory depositRequest =
+            IDepositParentPool(address(parentPoolProxy)).getDepositRequest(requestId);
 
         assertEq(depositRequest.lpAddress, address(user1));
         assertEq(depositRequest.usdcAmountToDeposit, usdcAmount);
@@ -75,10 +76,7 @@ contract Deposit is DeployParentPool {
         vm.prank(vm.envAddress("CL_CCIP_ROUTER_BASE"));
 
         Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](1);
-        destTokenAmounts[0] = Client.EVMTokenAmount({
-            token: vm.envAddress("USDC_BASE"),
-            amount: 100000000
-        });
+        destTokenAmounts[0] = Client.EVMTokenAmount({token: vm.envAddress("USDC_BASE"), amount: 100000000});
 
         Client.Any2EVMMessage memory message = Client.Any2EVMMessage({
             messageId: keccak256(abi.encodePacked("test")),

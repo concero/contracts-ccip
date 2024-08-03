@@ -14,10 +14,10 @@ contract MockConceroParentPool is ConceroParentPool {
         address _ccipRouter,
         address _usdc,
         address _lpToken,
-        address _automation,
         address _orchestrator,
         address _owner,
-        address[3] memory _messengers
+        address[3] memory _messengers,
+        uint8 _slotId
     )
         ConceroParentPool(
             _parentPoolProxy,
@@ -28,17 +28,19 @@ contract MockConceroParentPool is ConceroParentPool {
             _ccipRouter,
             _usdc,
             _lpToken,
-            _automation,
             _orchestrator,
             _owner,
-            _messengers
+            _messengers,
+            _slotId
         )
     {}
 
     /// @dev getter for returning withdraw request params
-    function getWithdrawRequestParams(
-        bytes32 _withdrawalRequestId
-    ) external view returns (address lpAddress, uint256 lpSupplySnapshot, uint256 lpAmountToBurn) {
+    function getWithdrawRequestParams(bytes32 _withdrawalRequestId)
+        external
+        view
+        returns (address lpAddress, uint256 lpSupplySnapshot, uint256 lpAmountToBurn)
+    {
         WithdrawRequest memory request = s_withdrawRequests[_withdrawalRequestId];
         lpAddress = request.lpAddress;
         lpSupplySnapshot = request.lpSupplySnapshot;

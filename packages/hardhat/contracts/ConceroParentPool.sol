@@ -893,37 +893,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         return _sendRequest(req.encodeCBOR(), i_subscriptionId, CL_FUNCTIONS_CALLBACK_GAS_LIMIT, i_donId);
     }
 
-    /*//////////////////////////////////////////////////////////////
-                       AUTOMATION FULFILLREQUEST
-    //////////////////////////////////////////////////////////////*/
-    //     /**
-    //      * @notice Chainlink Functions fallback function
-    //      * @param requestId the ID of the request sent
-    //      * @param response the response of the request sent
-    //      * @param err the error of the request sent
-    //      * @dev response & err will never be empty or populated at same time.
-    //      */
-    //     function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
-    //         bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
-
-    //         if (err.length > 0) {
-    //             emit FunctionsRequestError(requestId);
-    //             return;
-    //         }
-
-    //         uint256 withdrawalRequestsCount = s_withdrawalRequestIds.length;
-
-    //         for (uint256 i; i < withdrawalRequestsCount; ++i) {
-    //             if (s_withdrawalRequestIds[i] == withdrawalId) {
-    //                 s_withdrawalRequestIds[i] = s_withdrawalRequestIds[s_withdrawalRequestIds.length - 1];
-    //                 s_withdrawalRequestIds.pop();
-    //             }
-    //         }
-    //     }
-
-    /*//////////////////////////////////////////////////////////////
-                       PARENT POOL FULFILLREQUEST
-    //////////////////////////////////////////////////////////////*/
     /**
      * @notice Chainlink Functions fallback function
      * @param requestId the ID of the request sent

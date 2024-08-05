@@ -24,6 +24,7 @@ import deployAllPools from "./concero/deployPool/deployAllPools";
 import testScript from "./test";
 import upgradeProxyImplementation from "./concero/upgradeProxyImplementation";
 import changeOwnership from "./concero/changeOwnership";
+import withdrawParentPoolDepositFee from "./concero/withdraw/withdrawParentPoolDepositFee";
 
 export default {
   billing,
@@ -52,4 +53,5 @@ export default {
   testScript,
   upgradeProxyImplementation,
   changeOwnership,
+  withdrawParentPoolDepositFee,
 };

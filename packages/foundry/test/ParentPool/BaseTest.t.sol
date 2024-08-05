@@ -27,6 +27,7 @@ contract BaseTest is Test {
     address internal deployer = vm.envAddress("FORGE_DEPLOYER_ADDRESS");
     address internal proxyDeployer = vm.envAddress("FORGE_PROXY_DEPLOYER_ADDRESS");
     uint256 internal forkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
+    address internal usdc = vm.envAddress("USDC_BASE");
 
     /*//////////////////////////////////////////////////////////////
                                  SETUP

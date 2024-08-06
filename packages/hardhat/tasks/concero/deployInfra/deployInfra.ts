@@ -31,7 +31,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     const slotId = parseInt(taskArgs.slotid);
     const { name, live } = hre.network;
 
-    if (name !== "localhost" && name !== "hardhat") {
+    if (live) {
       deployableChains = [chains[name]];
     }
 

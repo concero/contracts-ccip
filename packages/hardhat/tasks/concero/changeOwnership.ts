@@ -39,7 +39,7 @@ task("change-ownership", "Changes the ownership of the contract")
   .addParam("targetcontract", "The address of the target contract")
   .setAction(async taskArgs => {
     const { name, live } = hre.network;
-    if (name !== "localhost" && name !== "hardhat") {
+    if (live) {
       await changeOwnership(hre, taskArgs.targetcontract, taskArgs.newowner);
     }
   });

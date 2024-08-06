@@ -35,9 +35,9 @@ const withdrawToken = async (chain: CNetwork) => {
 
 // todo: can be withdraw with --infra-proxy flag to be applied to multiple contracts
 task("withdraw-parent-pool-fee", "Withdraws the token from the proxy contract").setAction(async taskArgs => {
-  const { name } = hre.network;
+  const { name, live } = hre.network;
 
-  if (name !== "localhost" && name !== "hardhat") {
+  if (live) {
     await withdrawToken(chains[name]);
   }
 });

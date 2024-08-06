@@ -30,12 +30,12 @@ export const urls: Record<string, string[]> = {
   ],
   avalanche: [
     `https://ava-mainnet.blastapi.io/${BLAST_API_KEY}`,
-    `https://avalanche-fuji.core.chainstack.com/ext/bc/C/rpc/${CHAINSTACK_API_KEY}`,
     "https://rpc.ankr.com/avalanche",
     `https://avalanche-mainnet.infura.io/v3/${INFURA_API_KEY}`,
   ],
   avalancheFuji: [
     `https://avalanche-fuji.infura.io/v3/${INFURA_API_KEY}`,
+    `https://avalanche-fuji.core.chainstack.com/ext/bc/C/rpc/${CHAINSTACK_API_KEY}`,
     `https://ava-testnet.blastapi.io/${BLAST_API_KEY}`,
     "https://rpc.ankr.com/avalanche_fuji",
   ],

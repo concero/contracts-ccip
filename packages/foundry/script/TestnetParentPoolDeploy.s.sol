@@ -32,8 +32,8 @@ contract TestnetParentPoolDeploy is Script {
             _lpToken,
             _orchestrator,
             _owner,
-            _msgrs,
-            _slotId
+            _slotId,
+            _msgrs
         );
         vm.stopBroadcast();
     }

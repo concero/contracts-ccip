@@ -14,7 +14,7 @@ task("deploy-dex-swap", "Deploy the concero dex swap contract")
       const { name, live } = hre.network;
       let deployableChains: CNetwork[] = liveChains;
 
-      if (name !== "localhost" && name !== "hardhat") {
+      if (live) {
         deployableChains = [CNetworks[name]];
       }
 

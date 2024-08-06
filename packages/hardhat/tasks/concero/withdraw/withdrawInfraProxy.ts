@@ -112,7 +112,7 @@ task("deposit-infra-proxy", "Deposits the token to the proxy contract")
   .setAction(async taskArgs => {
     const { name, live } = hre.network;
     const { contracttype, tokenaddress, amount } = taskArgs;
-    if (name !== "localhost" && name !== "hardhat") {
+    if (live) {
       await depositToken(chains[name], tokenaddress, contracttype, amount);
     }
   });
@@ -125,7 +125,7 @@ task("withdraw-infra-proxy", "Withdraws the token from the proxy contract")
   .setAction(async taskArgs => {
     const { name, live } = hre.network;
     const { contracttype, tokenaddress, amount } = taskArgs;
-    if (name !== "localhost" && name !== "hardhat") {
+    if (live) {
       await withdrawToken(chains[name], tokenaddress, contracttype, amount);
     }
   });

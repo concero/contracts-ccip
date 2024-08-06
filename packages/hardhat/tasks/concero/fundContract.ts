@@ -60,7 +60,7 @@ task("fund-contracts", "Funds the contract with CCIPBNM tokens")
   .setAction(async taskArgs => {
     const { name, live } = hre.network;
     const amount = parseInt(taskArgs.amount, 10);
-    if (name !== "localhost" && name !== "hardhat") {
+    if (live) {
       await fundContract([chains[name]], amount);
     } else {
       for (const chain of liveChains) {

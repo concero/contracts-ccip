@@ -12,7 +12,7 @@ task("deploy-orchestrator", "Deploy the concero orchestrator").setAction(async t
     const { name, live } = hre.network;
     let deployableChains: CNetwork[] = liveChains;
 
-    if (name !== "localhost" && name !== "hardhat") {
+    if (live) {
       deployableChains = [CNetworks[name]];
     }
 

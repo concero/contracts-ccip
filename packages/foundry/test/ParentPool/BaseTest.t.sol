@@ -10,6 +10,7 @@ import {LPToken} from "contracts/LPToken.sol";
 import {CCIPLocalSimulator} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulator.sol";
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 import {FunctionsSubscriptions} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsSubscriptions.sol";
+import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 
 contract BaseTest is Test {
     /*//////////////////////////////////////////////////////////////
@@ -70,8 +71,8 @@ contract BaseTest is Test {
             address(lpToken),
             vm.envAddress("CONCERO_ORCHESTRATOR_BASE"),
             address(deployer),
-            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)],
-            0 // slotId
+            0, // slotId
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
     }
 
@@ -102,6 +103,7 @@ contract BaseTest is Test {
         );
 
         vm.prank(deployer);
+        // should probably update this from user1
         IParentPool(address(parentPoolProxy)).setConceroContractSender(
             uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), address(user1), 1
         );
@@ -118,5 +120,20 @@ contract BaseTest is Test {
 
     function _fundLinkParentProxy(uint256 amount) internal {
         deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), amount);
+    }
+
+    function _fundFunctionsSubscription() internal {
+        address linkAddress = vm.envAddress("LINK_BASE");
+        LinkTokenInterface link = LinkTokenInterface(vm.envAddress("LINK_BASE"));
+        address router = vm.envAddress("CLF_ROUTER_BASE");
+        bytes memory data = abi.encode(uint64(vm.envUint("CLF_SUBID_BASE")));
+
+        uint256 funds = 100 * 1e18; // 100 LINK
+
+        address subFunder = makeAddr("subFunder");
+        deal(linkAddress, subFunder, funds);
+
+        vm.prank(subFunder);
+        link.transferAndCall(router, funds, data);
     }
 }

@@ -4,12 +4,27 @@ pragma solidity 0.8.20;
 
 import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
+import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 
 interface IParentPoolWrapper is IParentPool {
     function getDepositRequest(bytes32 requestId) external view returns (ConceroParentPool.DepositRequest memory);
     function getRequestType(bytes32 requestId) external view returns (ConceroParentPool.RequestType);
     function isMessenger(address _messenger) external view returns (bool);
     function getDepositsOnTheWayAmount() external view returns (uint256);
+    function ccipReceive(Client.Any2EVMMessage calldata message) external;
+    function getWithdrawRequestParams(bytes32 _withdrawalRequestId)
+        external
+        view
+        returns (
+            address lpAddress,
+            uint256 lpSupplySnapshot,
+            uint256 lpAmountToBurn,
+            uint256 totalCrossChainLiquiditySnapshot,
+            uint256 amountToWithdraw,
+            uint256 liquidityRequestedFromEachPool,
+            uint256 remainingLiquidityFromChildPools,
+            uint256 triggeredAtTimestamp
+        );
 }
 
 contract ParentPool_Wrapper is ConceroParentPool {
@@ -41,8 +56,8 @@ contract ParentPool_Wrapper is ConceroParentPool {
             _lpToken,
             _orchestrator,
             _owner,
-            _messengers,
-            _slotId
+            _slotId,
+            _messengers
         )
     {}
 
@@ -72,12 +87,29 @@ contract ParentPool_Wrapper is ConceroParentPool {
     function getWithdrawRequestParams(bytes32 _withdrawalRequestId)
         external
         view
-        returns (address lpAddress, uint256 lpSupplySnapshot, uint256 lpAmountToBurn, uint256 amountToWithdraw)
+        returns (
+            address lpAddress,
+            uint256 lpSupplySnapshot,
+            uint256 lpAmountToBurn,
+            uint256 totalCrossChainLiquiditySnapshot,
+            uint256 amountToWithdraw,
+            uint256 liquidityRequestedFromEachPool,
+            uint256 remainingLiquidityFromChildPools,
+            uint256 triggeredAtTimestamp
+        )
     {
         WithdrawRequest memory request = s_withdrawRequests[_withdrawalRequestId];
         lpAddress = request.lpAddress;
         lpSupplySnapshot = request.lpSupplySnapshot;
         lpAmountToBurn = request.lpAmountToBurn;
+        totalCrossChainLiquiditySnapshot = request.totalCrossChainLiquiditySnapshot;
         amountToWithdraw = request.amountToWithdraw;
+        liquidityRequestedFromEachPool = request.liquidityRequestedFromEachPool;
+        remainingLiquidityFromChildPools = request.remainingLiquidityFromChildPools;
+        triggeredAtTimestamp = request.triggeredAtTimestamp;
+    }
+
+    function getWithdrawalIdByClfRequestId(bytes32 _clfRequestId) external view returns (bytes32) {
+        return s_withdrawalIdByCLFRequestId[_clfRequestId];
     }
 }

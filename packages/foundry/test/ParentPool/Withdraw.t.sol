@@ -1,284 +1,349 @@
-// // SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 
-// pragma solidity 0.8.20;
+pragma solidity 0.8.20;
 
-// import {BaseTest, console, Vm} from "./BaseTest.t.sol";
-// import {ParentPool_Wrapper} from "./wrappers/ParentPool_Wrapper.sol";
-// import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-// import {ConceroParentPool_AmountBelowMinimum} from "contracts/ConceroParentPool.sol";
-// import {FunctionsRouter, IFunctionsRouter} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsRouter.sol";
-// import {FunctionsResponse} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/libraries/FunctionsResponse.sol";
-// import {
-//     FunctionsCoordinator,
-//     FunctionsBillingConfig
-// } from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsCoordinator.sol";
+import {BaseTest, console, Vm} from "./BaseTest.t.sol";
+import {DepositTest} from "./Deposit.t.sol";
+import {ParentPool_Wrapper, IParentPoolWrapper} from "./wrappers/ParentPool_Wrapper.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ConceroParentPool_AmountBelowMinimum} from "contracts/ConceroParentPool.sol";
+import {FunctionsRouter, IFunctionsRouter} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsRouter.sol";
+import {FunctionsResponse} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/libraries/FunctionsResponse.sol";
+import {
+    FunctionsCoordinator,
+    FunctionsBillingConfig
+} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsCoordinator.sol";
+import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 
-// interface ILPToken {
-//     function mint(address to, uint256 amount) external;
-// }
+contract WithdrawTest is DepositTest {
+    /*//////////////////////////////////////////////////////////////
+                               VARIABLES
+    //////////////////////////////////////////////////////////////*/
+    uint256 internal constant WITHDRAW_AMOUNT_LP =
+        ((DEPOSIT_AMOUNT_USDC - DEPOSIT_FEE_USDC) * WAD_PRECISION) / USDC_PRECISION;
+    uint256 internal constant PRECISION_HANDLER = 10_000_000_000;
 
-// contract WithdrawTest is BaseTest {
-//     /*//////////////////////////////////////////////////////////////
-//                                VARIABLES
-//     //////////////////////////////////////////////////////////////*/
-//     address liquidityProvider = makeAddr("liquidityProvider");
-//     IERC20 usdc = IERC20(address(vm.envAddress("USDC_BASE")));
-//     ParentPool_Wrapper parentPoolImplementation__withdrawWrapper;
-//     FunctionsRouter functionsRouter = FunctionsRouter(vm.envAddress("CLF_ROUTER_BASE"));
+    address forwarder = makeAddr("forwarder");
 
-//     uint256 constant LP_BALANCE = 10_000_000_000; // 10k USDC
-//     uint256 constant CHILD_POOLS_LIQUIDITY = 300_000_000_000; // 300k USDC
-//     uint256 constant PARENT_POOL_USDC_BALANCE = 100_000_000_000; // 100k USDC
+    /*//////////////////////////////////////////////////////////////
+                                 SETUP
+    //////////////////////////////////////////////////////////////*/
+    function setUp() public virtual override {
+        DepositTest.setUp();
 
-//     /// @dev transmitter address retrieved from coordinator logs
-//     // https://basescan.org/address/0xd93d77789129c584a02B9Fd3BfBA560B2511Ff8A#events
-//     address constant BASE_FUNCTIONS_TRANSMITTER = 0xAdE50D64476177aAe4505DFEA094B1a0ffa49332;
+        /// @dev set CLA forwarder address
+        vm.prank(deployer);
+        (bool success,) =
+            address(parentPoolProxy).call(abi.encodeWithSignature("setForwarderAddress(address)", forwarder));
+        require(success, "setForwarderAddress call failed");
 
-//     /*//////////////////////////////////////////////////////////////
-//                                  SETUP
-//     //////////////////////////////////////////////////////////////*/
-//     function setUp() public virtual override {
-//         /// @dev select chain
-//         vm.selectFork(forkId);
+        /// @dev fund functions subscription
+        _fundFunctionsSubscription();
+    }
 
-//         /// @dev deploy parentpool proxy
-//         deployParentPoolProxy();
+    /*//////////////////////////////////////////////////////////////
+                            START WITHDRAWAL
+    //////////////////////////////////////////////////////////////*/
+    function test_startWithdrawal_success() public fundParentPoolWithLinkForCCIPFees {
+        /// @dev deposit
+        _startAndCompleteDeposit(user1, DEPOSIT_AMOUNT_USDC, MIN_DEPOSIT);
 
-//         /// @dev deploy lp token
-//         deployLpToken();
+        /// @dev startWithdrawal
+        _startWithdrawalAndMonitorLogs(user1, WITHDRAW_AMOUNT_LP);
 
-//         /// @dev deploy parentPool with withdrawWrapper
-//         vm.prank(deployer);
-//         parentPoolImplementation__withdrawWrapper = new ParentPool_WithdrawWrapper(
-//             address(parentPoolProxy),
-//             vm.envAddress("LINK_BASE"),
-//             vm.envBytes32("CLF_DONID_BASE"),
-//             uint64(vm.envUint("CLF_SUBID_BASE")),
-//             vm.envAddress("CLF_ROUTER_BASE"),
-//             vm.envAddress("CL_CCIP_ROUTER_BASE"),
-//             vm.envAddress("USDC_BASE"),
-//             address(lpToken),
-//             vm.envAddress("CONCERO_ORCHESTRATOR_BASE"),
-//             address(deployer),
-//             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)],
-//             0 // slotId
-//         );
+        /// @dev get withdrawalId
+        bytes32 withdrawalId = _getWithdrawalId(user1);
 
-//         /// @dev upgrade proxy
-//         setProxyImplementation(address(parentPoolImplementation__withdrawWrapper));
+        /// @dev use withdrawalId to get request params
+        (, bytes memory returnParams) =
+            address(parentPoolProxy).call(abi.encodeWithSignature("getWithdrawRequestParams(bytes32)", withdrawalId));
+        (address lpAddress, uint256 lpSupplySnapshot, uint256 lpAmountToBurn,,,,,) =
+            abi.decode(returnParams, (address, uint256, uint256, uint256, uint256, uint256, uint256, uint256));
 
-//         /// @dev add functions consumer
-//         addFunctionsConsumer();
+        assertEq(lpAddress, user1);
+        assertEq(lpSupplySnapshot, IERC20(parentPoolImplementation.i_lp()).totalSupply());
+        assertEq(lpAmountToBurn, WITHDRAW_AMOUNT_LP);
+    }
 
-//         /// @dev fund liquidityProvider with lp tokens
-//         /// fix this
-//         // vm.prank(address(parentPoolProxy));
-//         // ILPToken(address(parentPoolImplementation__withdrawWrapper.i_lp())).mint(liquidityProvider, LP_BALANCE);
-//         // // deal(address(parentPoolImplementation__withdrawWrapper.i_lp()), liquidityProvider, LP_BALANCE);
-//         // assertEq(IERC20(parentPoolImplementation__withdrawWrapper.i_lp()).balanceOf(liquidityProvider), LP_BALANCE);
-//         // assertEq(IERC20(parentPoolImplementation__withdrawWrapper.i_lp()).totalSupply(), LP_BALANCE);
-//     }
+    function _startWithdrawalAndMonitorLogs(address _caller, uint256 _amount)
+        internal
+        returns (bytes32 requestId, uint32 callbackGasLimit, uint96 estimatedTotalCostJuels)
+    {
+        /// @dev record the logs so we can find the CLF request ID
+        vm.recordLogs();
 
-//     function test_withdraw_setup() public {
-//         console.log("frwfwf");
-//     }
+        /// @dev approve the pool to spend LP tokens
+        vm.startPrank(_caller);
+        IERC20(parentPoolImplementation.i_lp()).approve(address(parentPoolProxy), _amount);
 
-//     /*//////////////////////////////////////////////////////////////
-//                             START WITHDRAWAL
-//     //////////////////////////////////////////////////////////////*/
-//     function test_startWithdrawal_works() public {
-//         /// @dev approve the pool to spend LP tokens
-//         vm.startPrank(liquidityProvider);
-//         IERC20(parentPoolImplementation__withdrawWrapper.i_lp()).approve(address(parentPoolProxy), LP_BALANCE);
+        /// @dev call startWithdrawal via proxy
+        (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("startWithdrawal(uint256)", _amount));
+        require(success, "startWithdrawal call failed");
+        vm.stopPrank();
 
-//         /// @dev call startWithdrawal via proxy
-//         (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("startWithdrawal(uint256)", LP_BALANCE));
-//         require(success, "Function call failed");
-//         vm.stopPrank();
+        /// @dev get and verify logs
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length, 6);
+        /// @dev find the RequestStart log and params we need for commitment
+        for (uint256 i = 0; i < entries.length; ++i) {
+            if (
+                entries[i].topics[0]
+                    == keccak256("RequestStart(bytes32,bytes32,uint64,address,address,address,bytes,uint16,uint32,uint96)")
+            ) {
+                /// @dev get the values we need
+                requestId = entries[i].topics[1];
+                (,,,,, callbackGasLimit, estimatedTotalCostJuels) =
+                    abi.decode(entries[i].data, (address, address, address, bytes, uint16, uint32, uint96));
+                break;
+            }
+        }
 
-//         /// @dev assert liquidityProvider no longer holds tokens
-//         assertEq(IERC20(parentPoolImplementation__withdrawWrapper.i_lp()).balanceOf(liquidityProvider), 0);
+        return (requestId, callbackGasLimit, estimatedTotalCostJuels);
+    }
 
-//         /// @dev get withdrawalId
-//         (, bytes memory returnData) = address(parentPoolProxy).call(
-//             abi.encodeWithSignature("getWithdrawalIdByLPAddress(address)", liquidityProvider)
-//         );
-//         bytes32 withdrawalId = abi.decode(returnData, (bytes32));
-//         assert(withdrawalId != 0);
+    function test_startWithdrawal_reverts_if_zero_lpAmount() public {
+        /// @dev expect startWithdrawal to revert with 0 lpAmount
+        vm.prank(user1);
+        vm.expectRevert(abi.encodeWithSignature("ConceroParentPool_AmountBelowMinimum(uint256)", 1));
+        (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("startWithdrawal(uint256)", 0));
+    }
 
-//         /// @dev use withdrawalId to get request params
-//         (, bytes memory returnParams) =
-//             address(parentPoolProxy).call(abi.encodeWithSignature("getWithdrawRequestParams(bytes32)", withdrawalId));
-//         (address lpAddress, uint256 lpSupplySnapshot, uint256 lpAmountToBurn,) =
-//             abi.decode(returnParams, (address, uint256, uint256, uint256));
+    function test_startWithdrawal_reverts_if_request_already_active() public fundParentPoolWithLinkForCCIPFees {
+        /// @dev startDeposit
+        (bytes32 depositRequestId, uint32 depositCallbackGasLimit, uint96 depositEstimatedTotalCostJuels) =
+            _startDepositAndMonitorLogs(user1, DEPOSIT_AMOUNT_USDC);
 
-//         console.log("lpAddress:", lpAddress);
-//         console.log("lpSupplySnapshot:", lpSupplySnapshot);
-//         console.log("lpAmountToBurn:", lpAmountToBurn);
+        /// @dev fulfill active request
+        bytes memory response = abi.encode(MIN_DEPOSIT); // 1 usdc
+        _fulfillRequest(response, depositRequestId, depositCallbackGasLimit, depositEstimatedTotalCostJuels);
 
-//         assertEq(lpAddress, liquidityProvider);
-//         assertEq(lpSupplySnapshot, IERC20(parentPoolImplementation__withdrawWrapper.i_lp()).totalSupply());
-//         assertEq(lpAmountToBurn, LP_BALANCE);
-//     }
+        /// @dev completeDeposit
+        _completeDeposit(user1, depositRequestId);
 
-//     function test_startWithdrawal_reverts_if_zero_lpAmount() public {
-//         /// @dev expect startWithdrawal to revert with 0 lpAmount
-//         vm.prank(liquidityProvider);
-//         vm.expectRevert(abi.encodeWithSignature("ConceroParentPool_AmountBelowMinimum(uint256)", 1));
-//         (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("startWithdrawal(uint256)", 0));
-//     }
+        /// @dev approve the pool to spend LP tokens
+        vm.startPrank(user1);
+        IERC20(parentPoolImplementation.i_lp()).approve(address(parentPoolProxy), WITHDRAW_AMOUNT_LP);
 
-//     function test_startWithdrawal_reverts_if_request_already_active() public {
-//         /// @dev approve the pool to spend LP tokens
-//         vm.startPrank(liquidityProvider);
-//         IERC20(parentPoolImplementation__withdrawWrapper.i_lp()).approve(address(parentPoolProxy), LP_BALANCE);
+        /// @dev call startWithdrawal via proxy
+        (bool success,) =
+            address(parentPoolProxy).call(abi.encodeWithSignature("startWithdrawal(uint256)", WITHDRAW_AMOUNT_LP));
+        require(success, "Function call failed");
 
-//         /// @dev call startWithdrawal via proxy
-//         (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("startWithdrawal(uint256)", LP_BALANCE));
-//         require(success, "Function call failed");
+        /// @dev call again, expecting revert
+        vm.expectRevert(abi.encodeWithSignature("ConceroParentPool_ActiveRequestNotFulfilledYet()"));
+        (bool success2,) =
+            address(parentPoolProxy).call(abi.encodeWithSignature("startWithdrawal(uint256)", WITHDRAW_AMOUNT_LP));
+        vm.stopPrank();
+    }
 
-//         /// @dev call again, expecting revert
-//         vm.expectRevert(abi.encodeWithSignature("ConceroParentPool_ActiveRequestNotFulfilledYet()"));
-//         (bool success2,) =
-//             address(parentPoolProxy).call(abi.encodeWithSignature("startWithdrawal(uint256)", LP_BALANCE));
-//         vm.stopPrank();
-//     }
+    function test_startWithdrawal_reverts_if_not_proxy_caller(address _caller) public {
+        /// @dev expect revert when calling startWithdrawal directly
+        vm.prank(_caller);
+        vm.expectRevert(
+            abi.encodeWithSignature("ConceroParentPool_NotParentPoolProxy(address)", address(parentPoolImplementation))
+        );
+        parentPoolImplementation.startWithdrawal(WITHDRAW_AMOUNT_LP);
+    }
 
-//     function test_startWithdrawal_reverts_if_not_proxy_caller(address _caller) public {
-//         /// @dev expect revert when calling startWithdrawal directly
-//         vm.prank(_caller);
-//         vm.expectRevert(
-//             abi.encodeWithSignature(
-//                 "ConceroParentPool_NotParentPoolProxy(address)", address(parentPoolImplementation__withdrawWrapper)
-//             )
-//         );
-//         parentPoolImplementation__withdrawWrapper.startWithdrawal(LP_BALANCE);
-//     }
+    /*//////////////////////////////////////////////////////////////
+                          COMPLETE WITHDRAWAL
+    //////////////////////////////////////////////////////////////*/
+    function test_completeWithdrawal_success() public fundParentPoolWithLinkForCCIPFees {
+        /// @dev deposit
+        _startAndCompleteDeposit(user1, DEPOSIT_AMOUNT_USDC, MIN_DEPOSIT);
 
-//     /*//////////////////////////////////////////////////////////////
-//                           COMPLETE WITHDRAWAL
-//     //////////////////////////////////////////////////////////////*/
-//     function test_completeWithdrawal_works() public {
-//         (bytes32 requestId, uint32 callbackGasLimit, uint96 estimatedTotalCostJuels) = _startWithdrawalAndMonitorLogs();
-//         _fulfillRequest(requestId, callbackGasLimit, estimatedTotalCostJuels);
-//         _completeWithdrawal();
-//     }
+        /// @dev startWithdrawal
+        (bytes32 withdrawalRequestId, uint32 withdrawalCallbackGasLimit, uint96 withdrawalEstimatedTotalCostJuels) =
+            _startWithdrawalAndMonitorLogs(user1, WITHDRAW_AMOUNT_LP / 2);
 
-//     function _startWithdrawalAndMonitorLogs()
-//         internal
-//         returns (bytes32 requestId, uint32 callbackGasLimit, uint96 estimatedTotalCostJuels)
-//     {
-//         /// @dev record the logs so we can find the CLF request ID
-//         vm.recordLogs();
+        /// @dev fulfill active withdrawal request
+        bytes memory withdrawResponse = abi.encode(MIN_DEPOSIT + (DEPOSIT_AMOUNT_USDC / 2)); // 1 usdc + (first deposit / parent+child)
+        _fulfillRequest(
+            withdrawResponse, withdrawalRequestId, withdrawalCallbackGasLimit, withdrawalEstimatedTotalCostJuels
+        );
 
-//         /// @dev approve the pool to spend LP tokens
-//         vm.startPrank(liquidityProvider);
-//         IERC20(parentPoolImplementation__withdrawWrapper.i_lp()).approve(address(parentPoolProxy), LP_BALANCE);
+        /// @dev get the withdrawalId before completing withdrawal
+        bytes32 withdrawalIdBeforeComplete = _getWithdrawalId(user1);
+        /// @dev get balances before completing withdrawal
+        uint256 usdcBalanceBefore = IERC20(usdc).balanceOf(user1);
+        uint256 lpTotalSupplyBefore = IERC20(address(lpToken)).totalSupply();
+        /// @dev get the amount we expect to withdraw
+        (,, uint256 expectedLpAmountToBurn,, uint256 expectedAmountToWithdraw,,,) =
+            IParentPoolWrapper(address(parentPoolProxy)).getWithdrawRequestParams(withdrawalIdBeforeComplete);
 
-//         /// @dev call startWithdrawal via proxy
-//         (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("startWithdrawal(uint256)", LP_BALANCE));
-//         require(success, "Function call failed");
-//         vm.stopPrank();
+        /// @dev completeWithdrawal
+        _completeWithdrawal(user1, WITHDRAW_AMOUNT_LP / 2);
 
-//         /// @dev get and verify logs
-//         Vm.Log[] memory entries = vm.getRecordedLogs();
-//         assertEq(entries.length, 6);
-//         /// @dev find the RequestStart log and params we need for commitment
-//         for (uint256 i = 0; i < entries.length; ++i) {
-//             if (
-//                 entries[i].topics[0]
-//                     == keccak256("RequestStart(bytes32,bytes32,uint64,address,address,address,bytes,uint16,uint32,uint96)")
-//             ) {
-//                 /// @dev get the values we need
-//                 requestId = entries[i].topics[1];
-//                 (,,,,, callbackGasLimit, estimatedTotalCostJuels) =
-//                     abi.decode(entries[i].data, (address, address, address, bytes, uint16, uint32, uint96));
-//                 break;
-//             }
-//         }
+        /// @dev assert LP tokens burned
+        uint256 lpTotalSupplyAfter = IERC20(address(lpToken)).totalSupply();
+        assertEq(expectedLpAmountToBurn, lpTotalSupplyBefore - lpTotalSupplyAfter);
 
-//         return (requestId, callbackGasLimit, estimatedTotalCostJuels);
-//     }
+        /// @dev assert we got the right amount of usdc
+        uint256 usdcBalanceAfter = IERC20(usdc).balanceOf(user1);
+        assertEq(expectedAmountToWithdraw, usdcBalanceAfter - usdcBalanceBefore);
 
-//     function _fulfillRequest(bytes32 _requestId, uint32 _callbackGasLimit, uint96 _estimatedTotalCostJuels) internal {
-//         /// @dev get coordinator to call functions router
-//         // https://basescan.org/address/0xd93d77789129c584a02B9Fd3BfBA560B2511Ff8A#code
-//         address coordinator = functionsRouter.getContractById(vm.envBytes32("CLF_DONID_BASE"));
+        /// @dev assert storage updated
+        (
+            address lpAddress,
+            uint256 lpSupplySnapshot,
+            uint256 lpAmountToBurn,
+            uint256 totalCrossChainLiquiditySnapshot,
+            uint256 amountToWithdraw,
+            uint256 liquidityRequestedFromEachPool,
+            ,
+        ) = IParentPoolWrapper(address(parentPoolProxy)).getWithdrawRequestParams(withdrawalIdBeforeComplete);
+        assertEq(lpAddress, address(0));
+        assertEq(lpSupplySnapshot, 0);
+        assertEq(lpAmountToBurn, 0);
+        assertEq(totalCrossChainLiquiditySnapshot, 0);
+        assertEq(amountToWithdraw, 0);
+        assertEq(liquidityRequestedFromEachPool, 0);
 
-//         /// @dev create fulfill params
-//         bytes memory response = abi.encode(CHILD_POOLS_LIQUIDITY);
-//         bytes memory err = "";
-//         uint96 juelsPerGas = 1_000_000_000; // current rate of juels/gas
-//         uint96 costWithoutFulfillment = 0; // The cost of processing the request (in Juels of LINK ), without fulfillment
-//         address transmitter = BASE_FUNCTIONS_TRANSMITTER;
+        bytes32 withdrawalIdAfterComplete = _getWithdrawalId(user1);
+        assertEq(withdrawalIdAfterComplete, 0);
 
-//         /// @dev get adminFee from the config
-//         FunctionsRouter.Config memory config = functionsRouter.getConfig();
-//         uint72 adminFee = config.adminFee;
+        /// @notice the user is able to create a new withdrawalRequest successfully afterwards
 
-//         /// @dev get timeoutTimestamp from billing config
-//         FunctionsBillingConfig memory billingConfig = FunctionsCoordinator(coordinator).getConfig();
-//         uint32 timeoutTimestamp = uint32(block.timestamp + billingConfig.requestTimeoutSeconds);
+        /// @dev startWithdrawal
+        _startWithdrawalAndMonitorLogs(user1, WITHDRAW_AMOUNT_LP / 2);
 
-//         /// @notice some of these values have been hardcoded, directly from the logs
-//         /// @dev create the commitment params
-//         FunctionsResponse.Commitment memory commitment = FunctionsResponse.Commitment(
-//             _requestId,
-//             coordinator,
-//             _estimatedTotalCostJuels,
-//             address(parentPoolProxy), // client
-//             uint64(vm.envUint("CLF_SUBID_BASE")), // subscriptionId
-//             _callbackGasLimit,
-//             adminFee, // adminFee
-//             0, // donFee
-//             163500, // gasOverheadBeforeCallback
-//             57000, // gasOverheadAfterCallback
-//             timeoutTimestamp // timeoutTimestamp
-//         );
+        /// @dev get withdrawalId
+        bytes32 withdrawalIdRequest2 = _getWithdrawalId(user1);
 
-//         /// @dev log commitment parameters for debugging
-//         console.log("Coordinator:", coordinator);
-//         console.log("Estimated Total Cost (Juels):", _estimatedTotalCostJuels);
-//         console.log("Callback Gas Limit:", _callbackGasLimit);
-//         console.log("Admin Fee:", adminFee);
-//         console.log("Timeout Timestamp:", timeoutTimestamp);
+        /// @dev use withdrawalId to get request params
+        (, bytes memory returnParams) = address(parentPoolProxy).call(
+            abi.encodeWithSignature("getWithdrawRequestParams(bytes32)", withdrawalIdRequest2)
+        );
+        (address lpAddressRequest2, uint256 lpSupplySnapshotRequest2, uint256 lpAmountToBurnRequest2,,,,,) =
+            abi.decode(returnParams, (address, uint256, uint256, uint256, uint256, uint256, uint256, uint256));
 
-//         uint256 lpTotalSupply = IERC20(address(parentPoolImplementation__withdrawWrapper.i_lp())).totalSupply();
+        assertEq(lpAddressRequest2, user1);
+        assertEq(lpSupplySnapshotRequest2, IERC20(parentPoolImplementation.i_lp()).totalSupply());
+        assertEq(lpAmountToBurnRequest2, WITHDRAW_AMOUNT_LP / 2);
+    }
 
-//         console.log("lpTotalSupply:", lpTotalSupply);
+    function _completeWithdrawal(address _caller, uint256 _amount) internal {
+        /// @dev get withdrawalId
+        bytes32 withdrawalId = _getWithdrawalId(_caller);
 
-//         /// @dev prank the coordinator to call fulfill on functionsRouter
-//         vm.prank(coordinator);
-//         (FunctionsResponse.FulfillResult resultCode, uint96 callbackGasCostJuels) =
-//             functionsRouter.fulfill(response, err, juelsPerGas, costWithoutFulfillment, transmitter, commitment);
+        /// @dev use withdrawalId to get request params
+        (, bytes memory withdrawRequestParams) =
+            address(parentPoolProxy).call(abi.encodeWithSignature("getWithdrawRequestParams(bytes32)", withdrawalId));
+        (address lpAddress,,,, uint256 amountToWithdraw, uint256 liquidityRequestedFromEachPool,,) =
+            abi.decode(withdrawRequestParams, (address, uint256, uint256, uint256, uint256, uint256, uint256, uint256));
+        assertGt(amountToWithdraw, 0);
 
-//         console.log("Result Code:", uint8(resultCode));
-//         console.log("Callback Gas Cost Juels:", callbackGasCostJuels);
-//     }
+        /// @dev skip time to after the withdrawal cool-off period
+        vm.warp(block.timestamp + 7 days + 1);
 
-//     function _completeWithdrawal() internal {
-//         // /// @dev get withdrawalId
-//         // (, bytes memory returnData) = address(parentPoolProxy).call(
-//         //     abi.encodeWithSignature("getWithdrawalIdByLPAddress(address)", liquidityProvider)
-//         // );
-//         // bytes32 withdrawalId = abi.decode(returnData, (bytes32));
-//         // assert(withdrawalId != 0);
+        /// @dev we need logs for second user's completeDeposit to get the totalCrossChainLiquiditySnapshot
+        vm.recordLogs();
+        /// @dev mock chainlink automation by calling performUpkeep as forwarder
+        bytes memory performData = abi.encode(lpAddress, liquidityRequestedFromEachPool, withdrawalId);
+        vm.prank(forwarder);
+        (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("performUpkeep(bytes)", performData));
+        require(success, "performUpkeep call failed");
 
-//         // /// @dev skip time to after the withdrawal cool-off period
-//         // vm.warp(block.timestamp + 8 days + 1);
+        /// @dev create the ccip message
+        Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
+        Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({token: address(usdc), amount: _amount / 2});
+        tokenAmounts[0] = tokenAmount;
 
-//         // // checkUpkeep should evaluate to true for
+        Client.Any2EVMMessage memory message = Client.Any2EVMMessage(
+            keccak256("dummy messageId"), // messageId
+            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), // sourceChainSelector
+            abi.encode(user1), // sender
+            abi.encode(lpAddress, address(0), 0), // data
+            tokenAmounts
+        );
 
-//         // /// @dev use withdrawalId to get request params
-//         // (, bytes memory returnParams) =
-//         //     address(parentPoolProxy).call(abi.encodeWithSignature("getWithdrawRequestParams(bytes32)", withdrawalId));
-//         // (,,, uint256 amountToWithdraw) = abi.decode(returnParams, (address, uint256, uint256, uint256));
-//         // console.log("amountToWithdraw:", amountToWithdraw);
-//         // assertGt(amountToWithdraw, 0);
+        /// @dev prank the router to call ccipReceive on parentPool
+        vm.prank(vm.envAddress("CL_CCIP_ROUTER_BASE"));
+        IParentPoolWrapper(address(parentPoolProxy)).ccipReceive(message);
+        /// @dev deal the usdc we should have received through ccip
+        deal(usdc, address(parentPoolProxy), _amount / 2);
 
-//         // /// @dev call the completeWithdrawal
-//         // vm.prank(liquidityProvider);
-//         // (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("completeWithdrawal()"));
-//         // require(success, "Function call failed");
-//     }
-// }
+        /// @dev call the completeWithdrawal
+        vm.prank(_caller);
+        (bool completeWithdrawalSuccess,) =
+            address(parentPoolProxy).call(abi.encodeWithSignature("completeWithdrawal()"));
+        require(completeWithdrawalSuccess, "completeWithdrawal call failed");
+    }
+
+    /// @dev expect revert when calling completeWithdrawal directly
+    function test_completeWithdrawal_reverts_if_not_proxy_caller(address _caller) public {
+        vm.prank(_caller);
+        vm.expectRevert(
+            abi.encodeWithSignature("ConceroParentPool_NotParentPoolProxy(address)", address(parentPoolImplementation))
+        );
+        parentPoolImplementation.completeWithdrawal();
+    }
+
+    /// @dev expect revert when withdrawalId doesn't exist
+    function test_completeWithdrawal_reverts_if_withdrawalId_doesnt_exist(address _caller) public {
+        vm.prank(_caller);
+        vm.expectRevert(abi.encodeWithSignature("ConceroParentPool_RequestDoesntExist()"));
+        address(parentPoolProxy).call(abi.encodeWithSignature("completeWithdrawal()"));
+    }
+
+    function test_completeWithdrawal_reverts_if_withdrawal_amount_not_ready()
+        public
+        fundParentPoolWithLinkForCCIPFees
+    {
+        /// @dev deposit
+        _startAndCompleteDeposit(user1, DEPOSIT_AMOUNT_USDC, MIN_DEPOSIT);
+
+        /// @dev startWithdrawal
+        (bytes32 withdrawalRequestId, uint32 withdrawalCallbackGasLimit, uint96 withdrawalEstimatedTotalCostJuels) =
+            _startWithdrawalAndMonitorLogs(user1, WITHDRAW_AMOUNT_LP / 2);
+
+        /// @dev fulfill active withdrawal request
+        bytes memory withdrawResponse = abi.encode(MIN_DEPOSIT + (DEPOSIT_AMOUNT_USDC / 2)); // 1 usdc + (first deposit / parent+child)
+        _fulfillRequest(
+            withdrawResponse, withdrawalRequestId, withdrawalCallbackGasLimit, withdrawalEstimatedTotalCostJuels
+        );
+
+        /// @dev get withdrawalId
+        bytes32 withdrawalId = _getWithdrawalId(user1);
+
+        /// @dev use withdrawalId to get request params
+        (, bytes memory withdrawRequestParams) =
+            address(parentPoolProxy).call(abi.encodeWithSignature("getWithdrawRequestParams(bytes32)", withdrawalId));
+        (,,,,,, uint256 remainingLiquidityFromChildPools,) =
+            abi.decode(withdrawRequestParams, (address, uint256, uint256, uint256, uint256, uint256, uint256, uint256));
+
+        /// @dev expect revert when withdrawal amount not ready
+        vm.prank(user1);
+        vm.expectRevert(
+            abi.encodeWithSignature(
+                "ConceroParentPool_WithdrawalAmountNotReady(uint256)", remainingLiquidityFromChildPools
+            )
+        );
+        address(parentPoolProxy).call(abi.encodeWithSignature("completeWithdrawal()"));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                UTILITY
+    //////////////////////////////////////////////////////////////*/
+    function _getWithdrawalId(address _lpAddress) internal returns (bytes32) {
+        (, bytes memory returnData) =
+            address(parentPoolProxy).call(abi.encodeWithSignature("getWithdrawalIdByLPAddress(address)", _lpAddress));
+        bytes32 withdrawalId = abi.decode(returnData, (bytes32));
+        return withdrawalId;
+    }
+
+    function _startAndCompleteDeposit(address _caller, uint256 _depositAmount, uint256 _depositRequestResponse)
+        internal
+    {
+        /// @dev startDeposit
+        (bytes32 depositRequestId, uint32 depositCallbackGasLimit, uint96 depositEstimatedTotalCostJuels) =
+            _startDepositAndMonitorLogs(_caller, _depositAmount);
+
+        /// @dev fulfill active request
+        bytes memory response = abi.encode(_depositRequestResponse);
+        _fulfillRequest(response, depositRequestId, depositCallbackGasLimit, depositEstimatedTotalCostJuels);
+
+        /// @dev completeDeposit
+        _completeDeposit(_caller, depositRequestId);
+    }
+}

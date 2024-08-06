@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {BaseTest} from "../BaseTest.t.sol";
-import {ParentPool_DepositWrapper, IDepositParentPool} from "../wrappers/ParentPool_DepositWrapper.sol";
+import {ParentPool_Wrapper, IParentPoolWrapper} from "../wrappers/ParentPool_Wrapper.sol";
 import {Test, console, Vm} from "forge-std/Test.sol";
 
 contract IsMessengerTest is BaseTest {
@@ -15,7 +15,7 @@ contract IsMessengerTest is BaseTest {
     function setUp() public override {
         vm.selectFork(forkId);
         deployParentPoolProxy();
-        parentPoolImplementation = new ParentPool_DepositWrapper(
+        parentPoolImplementation = new ParentPool_Wrapper(
             address(parentPoolProxy),
             vm.envAddress("LINK_BASE"),
             vm.envBytes32("CLF_DONID_BASE"),
@@ -37,7 +37,7 @@ contract IsMessengerTest is BaseTest {
     }
 
     function test_isMessenger_Success() public {
-        assertTrue(IDepositParentPool(address(parentPoolProxy)).isMessenger(messenger1));
+        assertTrue(IParentPoolWrapper(address(parentPoolProxy)).isMessenger(messenger1));
     }
 
     //    function test_isMessenger_Fail() public {

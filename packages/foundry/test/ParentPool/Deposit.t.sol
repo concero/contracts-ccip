@@ -14,14 +14,15 @@ import {
     FunctionsBillingConfig
 } from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsCoordinator.sol";
 
-contract Deposit is BaseTest {
+contract DepositTest is BaseTest {
     /*//////////////////////////////////////////////////////////////
                                VARIABLES
     //////////////////////////////////////////////////////////////*/
+    /// @dev transmitter address retrieved from coordinator logs
+    // https://basescan.org/address/0xd93d77789129c584a02B9Fd3BfBA560B2511Ff8A#events
+    address internal constant BASE_FUNCTIONS_TRANSMITTER = 0xAdE50D64476177aAe4505DFEA094B1a0ffa49332;
     uint256 internal constant DEPOSIT_AMOUNT_USDC = 100 * 10 ** 6;
     uint256 internal constant MIN_DEPOSIT = 1 * 1_000_000;
-    /// @dev transmitter address retrieved from coordinator logs
-    address internal constant BASE_FUNCTIONS_TRANSMITTER = 0xAdE50D64476177aAe4505DFEA094B1a0ffa49332;
     uint256 internal constant CCIP_FEES = 10 * 1e18;
     uint256 internal constant USDC_PRECISION = 1e6;
     uint256 internal constant WAD_PRECISION = 1e18;
@@ -34,10 +35,16 @@ contract Deposit is BaseTest {
                                  SETUP
     //////////////////////////////////////////////////////////////*/
     function setUp() public virtual override {
+        /// @dev select chain
         vm.selectFork(forkId);
+
+        /// @dev deploy parentpool proxy
         deployParentPoolProxy();
+
+        /// @dev deploy lp token
         deployLpToken();
 
+        /// @dev deploy parentPool with wrapper
         parentPoolImplementation = new ParentPool_Wrapper(
             address(parentPoolProxy),
             vm.envAddress("LINK_BASE"),
@@ -53,9 +60,20 @@ contract Deposit is BaseTest {
             0
         );
 
+        /// @dev upgrade proxy
         setProxyImplementation(address(parentPoolImplementation));
+
+        /// @dev set initial child pool
         setParentPoolVars();
+
+        /// @dev add functions consumer
         addFunctionsConsumer();
+    }
+
+    modifier fundParentPoolWithLinkForCCIPFees() {
+        /// @dev fund the parentPoolProxy with LINK to pay for CCIP
+        deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), CCIP_FEES);
+        _;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -76,8 +94,15 @@ contract Deposit is BaseTest {
         internal
         returns (bytes32 requestId, uint32 callbackGasLimit, uint96 estimatedTotalCostJuels)
     {
+        /// @dev fund user with USDC and approve parentPoolProxy to spend
+        deal(usdc, _caller, _amount);
+        vm.prank(_caller);
+        IERC20(usdc).approve(address(parentPoolProxy), _amount);
+
+        /// @dev record logs
         vm.recordLogs();
 
+        /// @dev startDeposit
         vm.prank(_caller);
         IParentPoolWrapper(address(parentPoolProxy)).startDeposit(_amount);
 
@@ -120,15 +145,7 @@ contract Deposit is BaseTest {
     /*//////////////////////////////////////////////////////////////
                             COMPLETE DEPOSIT
     //////////////////////////////////////////////////////////////*/
-    function test_completeWithdrawal_success() public {
-        /// @dev fund user with USDC and approve parentPoolProxy to spend
-        deal(usdc, user1, DEPOSIT_AMOUNT_USDC);
-        vm.prank(user1);
-        IERC20(usdc).approve(address(parentPoolProxy), DEPOSIT_AMOUNT_USDC);
-
-        /// @dev fund the parentPoolProxy with LINK to pay for CCIP
-        deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), CCIP_FEES);
-
+    function test_completeDeposit_success() public fundParentPoolWithLinkForCCIPFees {
         /// @dev startDeposit
         (bytes32 depositRequestId, uint32 callbackGasLimit, uint96 estimatedTotalCostJuels) =
             _startDepositAndMonitorLogs(user1, DEPOSIT_AMOUNT_USDC);
@@ -205,21 +222,13 @@ contract Deposit is BaseTest {
     /*//////////////////////////////////////////////////////////////
                            LP TOKEN ISSUANCE
     //////////////////////////////////////////////////////////////*/
-    function test_lpToken_integrity_multiple_depositors(uint256 _amount1, uint256 _amount2) public {
+    function test_lpToken_integrity_multiple_depositors(uint256 _amount1, uint256 _amount2)
+        public
+        fundParentPoolWithLinkForCCIPFees
+    {
         /// @dev restrict fuzzed deposit amounts
         vm.assume((_amount1 > MIN_DEPOSIT + DEPOSIT_FEE_USDC) && (_amount1 < MAX_INDIVIDUAL_DEPOSIT));
         vm.assume((_amount2 > MIN_DEPOSIT + DEPOSIT_FEE_USDC) && (_amount2 < MAX_INDIVIDUAL_DEPOSIT));
-
-        /// @dev fund users with USDC and approve parentPoolProxy to spend
-        deal(usdc, user1, _amount1);
-        vm.prank(user1);
-        IERC20(usdc).approve(address(parentPoolProxy), _amount1);
-        deal(usdc, user2, _amount2);
-        vm.prank(user2);
-        IERC20(usdc).approve(address(parentPoolProxy), _amount2);
-
-        /// @dev fund the parentPoolProxy with LINK to pay for CCIP
-        deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), CCIP_FEES);
 
         /// @dev startDeposit and fulfillRequest for first user
         (bytes32 depositRequestId1, uint32 callbackGasLimit1, uint96 estimatedTotalCostJuels1) =

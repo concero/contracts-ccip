@@ -18,10 +18,13 @@ interface ConstructorArgs {
   automation?: string;
   conceroProxyAddress?: string;
   owner?: string;
-  messengers?: string[];
+  poolMessengers?: string[];
 }
 
-const deployParentPool: DeployFunction = async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
+const deployParentPool: DeployFunction = async function (
+  hre: HardhatRuntimeEnvironment,
+  constructorArgs: ConstructorArgs = {},
+) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name } = hre.network;
@@ -61,7 +64,7 @@ const deployParentPool: DeployFunction = async function (hre: HardhatRuntimeEnvi
       args.automation,
       args.conceroProxyAddress,
       args.owner,
-      args.messengers,
+      args.poolMessengers,
     ],
     log: true,
     autoMine: true,

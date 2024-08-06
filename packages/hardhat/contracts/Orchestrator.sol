@@ -11,6 +11,7 @@ import {LibConcero} from "./Libraries/LibConcero.sol";
 import {IOrchestrator, IOrchestratorViewDelegate} from "./Interfaces/IOrchestrator.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_AVALANCHE, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE} from "./Constants.sol";
+import {IConceroFunctions} from "./Interfaces/IConceroFunctions.sol";
 
 ///////////////////////////////
 /////////////ERROR/////////////
@@ -97,8 +98,9 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     }
 
     modifier validateBridgeData(BridgeData memory _bridgeData) {
-        if (_bridgeData.amount == 0 || _bridgeData.receiver == address(0))
+        if (_bridgeData.amount == 0 || _bridgeData.receiver == address(0)) {
             revert Orchestrator_InvalidBridgeData();
+        }
         _;
     }
 
@@ -123,20 +125,17 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     ) {
         uint256 swapDataLength = _swapData.length;
 
-        if (swapDataLength == 0) {
-            return;
-        }
-
         if (
-            _swapData[0].fromToken !=
-            _getUSDCAddressByChainSelector(_bridgeData.dstChainSelector) ||
-            swapDataLength > 5 ||
-            _swapData[0].fromAmount == 0 ||
-            // todo: _swapData[0].toAmountMin == 0 may not be needed. We're only checking the first item
-            _swapData[0].toAmountMin == 0
+            swapDataLength != 0 &&
+            _swapData[0].fromToken != _getUSDCAddressByChainSelector(_bridgeData.dstChainSelector)
         ) {
             revert Orchestrator_InvalidSwapData();
         }
+
+        if (swapDataLength > 5 || (swapDataLength != 0 && _swapData[0].fromAmount == 0)) {
+            revert Orchestrator_InvalidSwapData();
+        }
+
         _;
     }
 
@@ -222,6 +221,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         IDexSwap.SwapData[] memory dstSwapData
     )
         external
+        payable
         validateBridgeData(bridgeData)
         validateDstSwapData(dstSwapData, bridgeData)
         nonReentrant
@@ -256,7 +256,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     ) external onlyMessenger {
         (bool success, bytes memory error) = i_concero.delegatecall(
             abi.encodeWithSelector(
-                IConceroBridge.addUnconfirmedTX.selector,
+                IConceroFunctions.addUnconfirmedTX.selector,
                 ccipMessageId,
                 sender,
                 recipient,
@@ -282,7 +282,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
 
         (bool success, bytes memory error) = i_concero.delegatecall(
             abi.encodeWithSelector(
-                IConceroBridge.fulfillRequestWrapper.selector,
+                IConceroFunctions.fulfillRequestWrapper.selector,
                 requestId,
                 response,
                 err

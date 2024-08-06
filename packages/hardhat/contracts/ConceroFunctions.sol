@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
+/**
+ * @title Security Reporting
+ * @notice If you discover any security vulnerabilities, please report them responsibly.
+ * @contact email: security@concero.io
+ */
 pragma solidity ^0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -9,6 +14,7 @@ import {Storage} from "./Libraries/Storage.sol";
 import {IPool} from "./Interfaces/IPool.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
+import {IConceroFunctions} from "./Interfaces/IConceroFunctions.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -28,7 +34,7 @@ error ConceroFunctions_OnlyProxyContext(address caller);
 ///@notice error emitted when the delegatecall to DexSwap fails
 error ConceroFunctions_FailedToReleaseTx(bytes error);
 
-contract ConceroFunctions is FunctionsClient, ConceroCommon, Storage {
+contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, Storage {
     ///////////////////////
     ///TYPE DECLARATIONS///
     ///////////////////////

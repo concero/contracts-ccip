@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
+/**
+ * @title Security Reporting
+ * @notice If you discover any security vulnerabilities, please report them responsibly.
+ * @contact email: security@concero.io
+ */
 pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -74,13 +79,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     uint256 private constant USDC_DECIMALS = 1_000_000; // 10 ** 6
     uint256 private constant LP_TOKEN_DECIMALS = 1 ether;
     uint256 private constant PRECISION_HANDLER = 10_000_000_000; // 10 ** 10
-
-    // TODO: Change MIN_DEPOSIT in production
-    //  uint256 private constant MIN_DEPOSIT = 100 * 10 ** 6;
-    uint256 internal constant MIN_DEPOSIT = 1 * 1_000_000;
-    uint256 internal constant WITHDRAW_DEADLINE_SECONDS = 60;
-    //	TODO: change WITHDRAW_DEADLINE_SECONDS in production
-    //  uint256 private constant WITHDRAW_DEADLINE_SECONDS = 597_600;
+    uint256 internal constant MIN_DEPOSIT = 100_000_000;
+    uint256 private constant WITHDRAW_DEADLINE_SECONDS = 597_600;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint256 private constant CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS = 2108;
     uint256 private constant ARRAY_MANIPULATION = 10_000;
@@ -129,7 +129,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ////////////////////////////////////////////////////////
     ///@notice event emitted when a new withdraw request is made
     event ConceroParentPool_WithdrawRequestInitiated(
-        address caller,
+        address indexed caller,
         IERC20 token,
         uint256 deadline
     );
@@ -434,7 +434,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         // uint256 withdrawAmountMinusFees = withdraw.amountToWithdraw - _convertToUSDCTokenDecimals(withdrawFees);
 
         delete s_withdrawalIdByLPAddress[msg.sender];
-        delete s_withdrawalIdByCLFRequestId[withdrawalId];
         delete s_withdrawRequests[withdrawalId];
 
         i_lp.burn(lpAmountToBurn);
@@ -807,6 +806,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             _handleStartDepositCLFFulfill(requestId, response);
         } else if (requestType == RequestType.startWithdrawal_getChildPoolsLiquidity) {
             _handleStartWithdrawalCLFFulfill(requestId, response);
+            delete s_withdrawalIdByCLFRequestId[requestId];
         } // RequestType.CLAWithdrawalTriggered
         delete s_clfRequestTypes[requestId];
     }
@@ -933,9 +933,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             s_loansInUse +
             s_depositsOnTheWayAmount -
             s_depositFeeAmount;
-	    //todo: every formula must add withdrawalsOnTheWay and depositsOnTheWay
+        //todo: we must add withdrawalsOnTheWay and depositsOnTheWay
 
-    uint256 totalCrossChainLiquidity = _childPoolBalance + parentPoolLiquidity;
+        uint256 totalCrossChainLiquidity = _childPoolBalance + parentPoolLiquidity;
         uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(totalCrossChainLiquidity);
         uint256 amountDepositedConverted = _convertToLPTokenDecimals(_amountToDeposit);
         uint256 _totalLPSupply = i_lp.totalSupply();
@@ -968,6 +968,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         uint256 _childPoolsLiquidity
     ) private {
         uint256 lpToBurn = _withdrawalRequest.lpAmountToBurn;
+        //todo: lpSupplySnapshot should be calculated here instead of startWithdrawal()
         uint256 lpSupplySnapshot = _withdrawalRequest.lpSupplySnapshot;
         uint256 childPoolsCount = s_poolChainSelectors.length;
 

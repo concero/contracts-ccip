@@ -7,7 +7,7 @@ import { CNetwork } from "../../../types/CNetwork";
 import { liveChains } from "../liveChains";
 import deployChildPool from "../../../deploy/08_ChildPool";
 import { setChildProxyVariables } from "./setChildProxyVariables";
-import deployProxyAdmin from "../../../deploy/10_ProxyAdmin";
+import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 

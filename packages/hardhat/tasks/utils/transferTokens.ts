@@ -1,15 +1,15 @@
 import { ethers } from "ethers";
-import viem, { createPublicClient } from "viem";
-import { getEthersSignerAndProvider } from "./getEthersSignerAndProvider";
+import { createPublicClient } from "viem";
 import chains from "../../constants/CNetworks";
 import { BigNumber } from "ethers-v5";
 import { task } from "hardhat/config";
 import { multicall } from "viem/actions";
+import { getEthersV6FallbackSignerAndProvider } from "./getEthersSignerAndProvider";
 
 // Configuration
 
-const { url } = chains["optimismSepolia"];
-const { signer, provider } = getEthersSignerAndProvider(url);
+const { url, name } = chains["optimismSepolia"];
+const { signer, provider } = getEthersV6FallbackSignerAndProvider(name);
 const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
 const wallet = new ethers.Wallet(privateKey, provider);
 const targetAddress = "0x";

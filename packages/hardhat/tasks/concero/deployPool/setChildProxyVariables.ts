@@ -1,4 +1,3 @@
-import { getClients } from "../../utils/getViemClients";
 import load from "../../../utils/load";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import chains from "../../../constants/CNetworks";
@@ -7,11 +6,12 @@ import env from "../../../types/env";
 import { Address } from "viem";
 import log from "../../../utils/log";
 import { liveChains } from "../liveChains";
+import { viemReceiptConfig } from "../../../constants/deploymentVariables";
 
 async function setConceroProxySender(hre) {
   const chain = chains[hre.network.name];
   const { name: chainName, viemChain, url } = chain;
-  const clients = getClients(viemChain, url);
+  const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
   const { abi } = await load("../artifacts/contracts/ConceroChildPool.sol/ConceroChildPool.json");
   if (!chainName) throw new Error("Chain name not found");
@@ -40,8 +40,8 @@ async function setConceroProxySender(hre) {
       });
 
       const { cumulativeGasUsed: setSenderGasUsed } = await publicClient.waitForTransactionReceipt({
+        ...viemReceiptConfig,
         hash: setSenderHash,
-        timeout: 0,
       });
 
       log(
@@ -60,8 +60,8 @@ async function setConceroProxySender(hre) {
       });
 
       const { cumulativeGasUsed: setPoolGasUsed } = await publicClient.waitForTransactionReceipt({
+        ...viemReceiptConfig,
         hash: setPoolHash,
-        timeout: 0,
       });
 
       log(
@@ -81,7 +81,7 @@ async function setConceroProxySender(hre) {
 async function addPoolsToAllChains(hre) {
   const chain = chains[hre.network.name];
   const { name: chainName, viemChain, url } = chain;
-  const clients = getClients(viemChain, url);
+  const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
   const { abi } = await load("../artifacts/contracts/ConceroChildPool.sol/ConceroChildPool.json");
   if (!chainName) throw new Error("Chain name not found");
@@ -112,8 +112,8 @@ async function addPoolsToAllChains(hre) {
       });
       const setPoolHash = await walletClient.writeContract(setPoolReq);
       const { cumulativeGasUsed: setPoolGasUsed } = await publicClient.waitForTransactionReceipt({
+        ...viemReceiptConfig,
         hash: setPoolHash,
-        timeout: 0,
       });
 
       log(

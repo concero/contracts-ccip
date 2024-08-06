@@ -1,19 +1,20 @@
 import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
 import { CNetwork } from "../../../types/CNetwork";
-import { getClients } from "../../utils/getViemClients";
+import { getFallbackClients } from "../../utils/getViemClients";
 import load from "../../../utils/load";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import log from "../../../utils/log";
-import { getEthersSignerAndProvider } from "../../utils/getEthersSignerAndProvider";
+import { getEthersV5FallbackSignerAndProvider } from "../../utils/getEthersSignerAndProvider";
 import { SecretsManager } from "@chainlink/functions-toolkit";
 import { Address } from "viem";
 import getHashSum from "../../../utils/getHashSum";
 import { liveChains } from "../liveChains";
 import { ethersV6CodeUrl, infraDstJsCodeUrl, infraSrcJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
+import { viemReceiptConfig } from "../../../constants/deploymentVariables";
 
 const resetLastGasPrices = async (deployableChain: CNetwork, chains: CNetwork[], abi: any) => {
   const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[deployableChain.name]}`);
-  const { walletClient, publicClient, account } = getClients(deployableChain.viemChain, deployableChain.url);
+  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
 
   for (const chain of chains) {
     const { chainSelector } = chain;
@@ -28,8 +29,8 @@ const resetLastGasPrices = async (deployableChain: CNetwork, chains: CNetwork[],
     });
 
     const { cumulativeGasUsed: resetGasPricesGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
       hash: resetGasPricesHash,
-      timeout: 0,
     });
 
     log(
@@ -45,7 +46,7 @@ export async function setConceroProxyDstContracts(liveChains: CNetwork[]) {
   for (const chain of liveChains) {
     const { viemChain, url, name } = chain;
     const srcConceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`);
-    const { walletClient, publicClient, account } = getClients(viemChain, url);
+    const { walletClient, publicClient, account } = getFallbackClients(chain);
 
     for (const dstChain of liveChains) {
       try {
@@ -75,8 +76,8 @@ export async function setConceroProxyDstContracts(liveChains: CNetwork[]) {
           });
 
           const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({
+            ...viemReceiptConfig,
             hash: setDstConceroContractHash,
-            timeout: 0,
           });
           log(
             `Set ${name}:${srcConceroProxyAddress} dstConceroContract[${dstName}, ${dstProxyContract}]. Gas used: ${setDstConceroContractGasUsed.toString()}`,
@@ -101,9 +102,9 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
   } = deployableChain;
   try {
     const conceroProxy = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dcName]}`) as Address;
-    const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+    const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
 
-    const { signer: dcSigner } = getEthersSignerAndProvider(dcUrl);
+    const { signer: dcSigner } = getEthersV5FallbackSignerAndProvider(dcName);
 
     const secretsManager = new SecretsManager({
       signer: dcSigner,
@@ -130,8 +131,8 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
     const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
 
     const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
       hash: setDstConceroContractHash,
-      timeout: 0,
     });
 
     log(
@@ -146,7 +147,7 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
 async function setJsHashes(deployableChain: CNetwork, abi: any) {
   try {
     const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
-    const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+    const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
     const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[srcChainName]}`);
     const conceroSrcCode = await (await fetch(infraSrcJsCodeUrl)).text();
     const conceroDstCode = await (await fetch(infraDstJsCodeUrl)).text();
@@ -163,8 +164,8 @@ async function setJsHashes(deployableChain: CNetwork, abi: any) {
       });
       const setHashHash = await walletClient.writeContract(setHashReq);
       const { cumulativeGasUsed: setHashGasUsed } = await publicClient.waitForTransactionReceipt({
+        ...viemReceiptConfig,
         hash: setHashHash,
-        timeout: 0,
       });
 
       log(
@@ -183,7 +184,7 @@ async function setJsHashes(deployableChain: CNetwork, abi: any) {
 
 export async function setDstConceroPools(deployableChain: CNetwork, abi: any) {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
   const conceroProxy = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dcName]}`);
 
   try {
@@ -203,6 +204,7 @@ export async function setDstConceroPools(deployableChain: CNetwork, abi: any) {
       });
       const setDstConceroPoolHash = await walletClient.writeContract(setDstConceroPoolReq);
       const { cumulativeGasUsed: setDstConceroPoolGasUsed } = await publicClient.waitForTransactionReceipt({
+        ...viemReceiptConfig,
         hash: setDstConceroPoolHash,
       });
       log(
@@ -217,7 +219,7 @@ export async function setDstConceroPools(deployableChain: CNetwork, abi: any) {
 
 export async function setDonSecretsSlotId(deployableChain: CNetwork, slotId: number, abi: any) {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
   const conceroProxy = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dcName]}`);
 
   try {
@@ -231,8 +233,8 @@ export async function setDonSecretsSlotId(deployableChain: CNetwork, slotId: num
     });
     const setDonSecretsSlotIdHash = await walletClient.writeContract(setDonSecretsSlotIdReq);
     const { cumulativeGasUsed: setDonSecretsSlotIdGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
       hash: setDonSecretsSlotIdHash,
-      timeout: 0,
     });
     log(
       `Set ${dcName}:${conceroProxy} donSecretsSlotId[${slotId}]. Gas used: ${setDonSecretsSlotIdGasUsed.toString()}`,
@@ -259,7 +261,7 @@ export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: a
   }
 
   const allowedRouter = allowedRouters[deployableChain.chainId];
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
 
   try {
     const { request: setDexRouterReq } = await publicClient.simulateContract({
@@ -272,8 +274,8 @@ export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: a
     });
     const setDexRouterHash = await walletClient.writeContract(setDexRouterReq);
     const { cumulativeGasUsed: setDexRouterGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
       hash: setDexRouterHash,
-      timeout: 0,
     });
     log(
       `Set ${dcName}:${conceroProxy} dexRouterAddress[${allowedRouter}]. Gas used: ${setDexRouterGasUsed.toString()}`,
@@ -294,7 +296,7 @@ export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: an
 
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
   const conceroProxy = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dcName]}`);
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
 
   for (const chain of liveChains) {
     try {
@@ -309,8 +311,8 @@ export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: an
 
       const setFunctionsPremiumFeesHash = await walletClient.writeContract(setFunctionsPremiumFeesReq);
       const { cumulativeGasUsed: setFunctionsPremiumFeesGasUsed } = await publicClient.waitForTransactionReceipt({
+        ...viemReceiptConfig,
         hash: setFunctionsPremiumFeesHash,
-        timeout: 0,
       });
 
       log(

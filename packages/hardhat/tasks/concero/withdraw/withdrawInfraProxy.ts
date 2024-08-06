@@ -1,14 +1,15 @@
 import { task } from "hardhat/config";
 import chains, { networkEnvKeys } from "../../../constants/CNetworks";
 import { CNetwork } from "../../../types/CNetwork";
-import { getClients } from "../../utils/getViemClients";
+import { getFallbackClients } from "../../utils/getViemClients";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import { Address, erc20Abi } from "viem";
 import log from "../../../utils/log";
 import load from "../../../utils/load";
+import { viemReceiptConfig } from "../../../constants/deploymentVariables";
 
 const getBalance = async (tokenAddress: Address, account: Address, chain: CNetwork) => {
-  const { publicClient } = getClients(chain.viemChain, chain.url);
+  const { publicClient } = getFallbackClients(chain);
 
   return await publicClient.readContract({
     address: tokenAddress,
@@ -28,7 +29,7 @@ type ContractType = keyof typeof contractKeys;
 
 const withdrawToken = async (chain: CNetwork, tokenAddress: Address, contractType: ContractType, amount: string) => {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = chain;
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
   const conceroProxy = getEnvVar(`${contractKeys[contractType]}_${networkEnvKeys[dcName]}`);
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
   const amountToWithdraw = BigInt(amount);
@@ -52,7 +53,10 @@ const withdrawToken = async (chain: CNetwork, tokenAddress: Address, contractTyp
       chain: dcViemChain,
     });
     const hash = await walletClient.writeContract(withdrawReq);
-    const { cumulativeGasUsed: setDonSecretsSlotIdGasUsed } = await publicClient.waitForTransactionReceipt({ hash });
+    const { cumulativeGasUsed: setDonSecretsSlotIdGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
+      hash,
+    });
     log(
       `Withdrawn from ${dcName}:${conceroProxy}: ${amountToWithdraw}. Gas used: ${setDonSecretsSlotIdGasUsed.toString()}`,
       "withdrawToken",
@@ -64,7 +68,7 @@ const withdrawToken = async (chain: CNetwork, tokenAddress: Address, contractTyp
 
 const depositToken = async (chain: CNetwork, tokenAddress: Address, contractType: ContractType, amount: string) => {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = chain;
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
   const recipientAddress = getEnvVar(`${contractKeys[contractType]}_${networkEnvKeys[dcName]}`);
   const amountToDeposit = BigInt(amount);
 
@@ -88,7 +92,10 @@ const depositToken = async (chain: CNetwork, tokenAddress: Address, contractType
     });
 
     const hash = await walletClient.writeContract(depositReq);
-    const { cumulativeGasUsed: depositGasUsed } = await publicClient.waitForTransactionReceipt({ hash });
+    const { cumulativeGasUsed: depositGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
+      hash,
+    });
     log(
       `Deposited to ${dcName}:${recipientAddress}: ${amountToDeposit}. Gas used: ${depositGasUsed.toString()}`,
       "depositToken",

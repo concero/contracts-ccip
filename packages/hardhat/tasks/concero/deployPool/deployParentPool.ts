@@ -12,7 +12,7 @@ import { setParentPoolVariables } from "./setParentPoolVariables";
 import deployParentPool from "../../../deploy/09_ParentPool";
 import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
-import deployProxyAdmin from "../../../deploy/10_ProxyAdmin";
+import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 
 task("deploy-parent-pool", "Deploy the pool")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")

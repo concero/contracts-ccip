@@ -60,5 +60,5 @@ contract ParentPoolStorage {
 
     mapping(bytes32 clfReqId => bytes32 withdrawalId) public s_withdrawalIdByCLFRequestId;
 
-    mapping(bytes32 clfReqId => IParentPool.WithdrawRequest) public s_withdrawRequests;
+    mapping(bytes32 withdrawalId => IParentPool.WithdrawRequest) public s_withdrawRequests;
 }

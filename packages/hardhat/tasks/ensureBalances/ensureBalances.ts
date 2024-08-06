@@ -8,11 +8,12 @@ import log from "../../utils/log";
 import { type BalanceInfo } from "./types";
 import { getEnvVar } from "../../utils/getEnvVar";
 import readline from "readline";
+import { viemReceiptConfig } from "../../constants/deploymentVariables";
 
 const targetBalances: Record<string, bigint> = {
   mainnet: parseEther("0.01"),
-  arbitrum: parseEther("0.0157"),
-  polygon: parseEther("0.01"),
+  arbitrum: parseEther("0.01"),
+  polygon: parseEther("12.5"),
   avalanche: parseEther("0.01"),
   base: parseEther("0.01"),
 };
@@ -37,9 +38,13 @@ async function checkWalletBalance(wallet: string, publicClient: any, chain: CNet
 
 async function topUpWallet(wallet: string, publicClient: any, walletClient: any, amount: bigint): Promise<void> {
   try {
-    const { hash } = await walletClient.sendTransaction({ to: wallet, value: amount });
+    const hash = await walletClient.sendTransaction({ to: wallet, value: amount });
+    const { cumulativeGasUsed: setDexRouterGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
+      hash,
+    });
     log(
-      `Topped up ${wallet} on ${publicClient.chain.name} with ${formatEther(amount)} ETH. Tx: ${hash}`,
+      `Topped up ${wallet} on ${publicClient.chain.name} with ${formatEther(amount)} ETH. Tx: ${hash}. Gas used: ${setDexRouterGasUsed}`,
       "topUpWallet",
     );
   } catch (error) {

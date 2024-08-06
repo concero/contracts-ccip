@@ -18,6 +18,7 @@ interface ConstructorArgs {
   automation?: string;
   conceroProxyAddress?: string;
   owner?: string;
+  slotId?: number;
   poolMessengers?: string[];
 }
 
@@ -43,6 +44,7 @@ const deployParentPool: DeployFunction = async function (
     automation: getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[name]}`),
     conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
     owner: deployer,
+    slotid: 0,
     poolMessengers,
   };
 
@@ -64,6 +66,7 @@ const deployParentPool: DeployFunction = async function (
       args.automation,
       args.conceroProxyAddress,
       args.owner,
+      args.slotId,
       args.poolMessengers,
     ],
     log: true,

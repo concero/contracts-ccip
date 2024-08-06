@@ -25,7 +25,7 @@ task("deploy-parent-pool", "Deploy the pool")
 
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
-    const { name, live } = hre.network;
+    const { name } = hre.network;
     const deployableChains: CNetwork[] = [CNetworks[hre.network.name]];
 
     if (taskArgs.deployproxy) {
@@ -40,7 +40,7 @@ task("deploy-parent-pool", "Deploy the pool")
     if (taskArgs.skipdeploy) {
       log("Skipping deployment", "deploy-parent-pool");
     } else {
-      await deployParentPool(hre);
+      await deployParentPool(hre); //todo: not passing slotId to deployParentPool functions' constructor args
       await upgradeProxyImplementation(hre, ProxyType.parentPool, false);
     }
 

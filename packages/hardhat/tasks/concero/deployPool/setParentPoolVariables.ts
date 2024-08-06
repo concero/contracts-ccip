@@ -304,12 +304,12 @@ async function removePool(chain: CNetwork, abi: any, networkName: string) {
 export async function setParentPoolVariables(chain: CNetwork, slotId: number) {
   const { abi: ParentPoolAbi } = await load("../artifacts/contracts/ConceroParentPool.sol/ConceroParentPool.json");
 
-  await setParentPoolJsHashes(chain, ParentPoolAbi);
-
   await setParentPoolSecretsVersion(chain, ParentPoolAbi, slotId);
   await setParentPoolSecretsSlotId(chain, ParentPoolAbi, slotId);
 
+  await setParentPoolJsHashes(chain, ParentPoolAbi);
+
   await setParentPoolCap(chain, ParentPoolAbi); // once
-  await setPools(chain, ParentPoolAbi);
-  await setConceroContractSenders(chain, ParentPoolAbi);
+  await setPools(chain, ParentPoolAbi); // once
+  await setConceroContractSenders(chain, ParentPoolAbi); // once
 }

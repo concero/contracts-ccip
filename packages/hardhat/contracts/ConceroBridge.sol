@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
+/**
+ * @title Security Reporting
+ * @notice If you discover any security vulnerabilities, please report them responsibly.
+ * @contact email: security@concero.io
+ */
 pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -6,6 +11,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {ConceroCCIP} from "./ConceroCCIP.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
+import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -15,7 +21,7 @@ error ConceroBridge_InsufficientFees(uint256 amount, uint256 fee);
 ///@notice error emitted when a non orchestrator address call startBridge
 error ConceroBridge_OnlyProxyContext(address caller);
 
-contract ConceroBridge is ConceroCCIP {
+contract ConceroBridge is IConceroBridge, ConceroCCIP {
     using SafeERC20 for IERC20;
 
     ///////////////
@@ -220,7 +226,7 @@ contract ConceroBridge is ConceroCCIP {
         return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + messengerGasFeeInUsdc);
     }
 
-    function getSrcTotalFeeInUsdc(
+    function getSrcTotalFeeInUSDC(
         CCIPToken tokenType,
         uint64 dstChainSelector,
         uint256 amount

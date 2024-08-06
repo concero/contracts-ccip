@@ -17,6 +17,7 @@ const deployConceroOrchestrator: DeployFunction = async function (hre: HardhatRu
     name === "base" || name === "baseSepolia"
       ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`)
       : getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[name]}`);
+
   const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`);
 
   console.log("Deploying ConceroOrchestrator...");

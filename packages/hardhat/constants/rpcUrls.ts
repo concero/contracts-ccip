@@ -1,4 +1,4 @@
-const { INFURA_API_KEY, ALCHEMY_API_KEY, BLAST_API_KEY, CHAINSTACK_API_KEY } = process.env;
+const { INFURA_API_KEY, ALCHEMY_API_KEY, BLAST_API_KEY, CHAINSTACK_API_KEY, TENDERLY_API_KEY } = process.env;
 
 const rpc: Record<string, string> = {
   arbitrum: `https://arbitrum-mainnet.infura.io/v3/${INFURA_API_KEY}`,
@@ -16,6 +16,7 @@ const rpc: Record<string, string> = {
 };
 
 // Warning: ANKR endpoints are limited to 30 requests/sec and not suitable for production use
+
 export const urls: Record<string, string[]> = {
   mainnet: [
     `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
@@ -59,6 +60,7 @@ export const urls: Record<string, string[]> = {
     "https://rpc.ankr.com/optimism_sepolia",
   ],
   polygon: [
+    `https://polygon.gateway.tenderly.co/${TENDERLY_API_KEY}`,
     `https://polygon-mainnet.blastapi.io/${BLAST_API_KEY}`,
     "https://rpc.ankr.com/polygon",
     "https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}",

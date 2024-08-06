@@ -30,7 +30,7 @@ const deployProxyAdmin: DeployFunction = async function (hre: HardhatRuntimeEnvi
   }
 
   console.log("Deploying ProxyAdmin...");
-  const deployProxyAdmin = (await deploy("ProxyAdmin", {
+  const deployProxyAdmin = (await deploy("ConceroProxyAdmin", {
     from: proxyDeployer,
     args: [initialOwner],
     log: true,
@@ -48,4 +48,4 @@ const deployProxyAdmin: DeployFunction = async function (hre: HardhatRuntimeEnvi
 };
 
 export default deployProxyAdmin;
-deployProxyAdmin.tags = ["ProxyAdmin"];
+deployProxyAdmin.tags = ["ConceroProxyAdmin"];

@@ -4,11 +4,11 @@ import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { liveChains } from "../concero/deployInfra/deployInfra";
 import { CNetwork } from "../../types/CNetwork";
-import { getEthersSignerAndProvider } from "../utils/getEthersSignerAndProvider";
+import { getEthersV5FallbackSignerAndProvider } from "../utils/getEthersSignerAndProvider";
 import log from "../../utils/log";
 
 async function listSecrets(chain: CNetwork): Promise<{ [slotId: number]: { version: number; expiration: number } }> {
-  const { provider, signer } = getEthersSignerAndProvider(chain.url);
+  const { provider, signer } = getEthersV5FallbackSignerAndProvider(chain.name);
   const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls } = chain;
   if (!functionsGatewayUrls || functionsGatewayUrls.length === 0)
     throw Error(`No gatewayUrls found for ${chain.name}.`);

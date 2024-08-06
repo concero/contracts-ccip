@@ -1,10 +1,11 @@
 import { getEnvVar } from "../../utils/getEnvVar";
 import CNetworks, { networkEnvKeys } from "../../constants/CNetworks";
-import { getClients } from "../utils/getViemClients";
 import { privateKeyToAccount } from "viem/accounts";
 import log from "../../utils/log";
 import { task } from "hardhat/config";
 import { ProxyType } from "../../deploy/11_TransparentProxy";
+import { getFallbackClients } from "../utils/getViemClients";
+import { viemReceiptConfig } from "../../constants/deploymentVariables";
 
 export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shouldPause: boolean) {
   const { name: chainName } = hre.network;
@@ -32,7 +33,7 @@ export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shou
   }
 
   const { abi: proxyAdminAbi } = await import(
-    "../../artifacts/contracts/transparentProxy/ProxyAdmin.sol/ProxyAdmin.json"
+    "../../artifacts/contracts/transparentProxy/ConceroProxyAdmin.sol/ConceroProxyAdmin.json"
   );
 
   if (!viemChain) {
@@ -41,7 +42,7 @@ export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shou
   }
 
   const viemAccount = privateKeyToAccount(`0x${process.env.PROXY_DEPLOYER_PRIVATE_KEY}`);
-  const { walletClient, publicClient } = getClients(viemChain, url, viemAccount);
+  const { walletClient, publicClient } = getFallbackClients(CNetworks[chainName], viemAccount);
 
   const conceroProxy = getEnvVar(`${envKey}_${networkEnvKeys[chainName]}`);
   const proxyAdminContract = getEnvVar(`${envKey}_ADMIN_CONTRACT_${networkEnvKeys[chainName]}`);
@@ -59,7 +60,7 @@ export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shou
     chain: viemChain,
   });
 
-  const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 0 });
+  const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ ...viemReceiptConfig, hash: txHash });
 
   log(`Upgrade Proxy Implementation: gasUsed: ${cumulativeGasUsed}, hash: ${txHash}`, "setProxyImplementation");
 }

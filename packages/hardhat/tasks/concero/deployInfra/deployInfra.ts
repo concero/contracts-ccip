@@ -12,7 +12,7 @@ import deployConceroDexSwap from "../../../deploy/03_ConceroDexSwap";
 import deployConceroOrchestrator from "../../../deploy/05_ConceroOrchestrator";
 import addCLFConsumer from "../../sub/add";
 import { getEnvVar } from "../../../utils/getEnvVar";
-import deployProxyAdmin from "../../../deploy/10_ProxyAdmin";
+import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 

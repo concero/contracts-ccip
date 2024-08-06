@@ -6,8 +6,12 @@ import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 
 interface IParentPoolWrapper is IParentPool {
-    function getDepositRequest(bytes32 requestId) external view returns (ConceroParentPool.DepositRequest memory);
-    function getRequestType(bytes32 requestId) external view returns (ConceroParentPool.RequestType);
+    function getDepositRequest(
+        bytes32 requestId
+    ) external view returns (ConceroParentPool.DepositRequest memory);
+    function getRequestType(
+        bytes32 requestId
+    ) external view returns (ConceroParentPool.RequestType);
     function isMessenger(address _messenger) external view returns (bool);
     function getDepositsOnTheWayAmount() external view returns (uint256);
 }
@@ -41,19 +45,23 @@ contract ParentPool_Wrapper is ConceroParentPool {
             _lpToken,
             _orchestrator,
             _owner,
-            _messengers,
-            _slotId
+            _slotId,
+            _messengers
         )
     {}
 
     /*//////////////////////////////////////////////////////////////
                                 DEPOSIT
     //////////////////////////////////////////////////////////////*/
-    function getDepositRequest(bytes32 requestId) external view returns (ConceroParentPool.DepositRequest memory) {
+    function getDepositRequest(
+        bytes32 requestId
+    ) external view returns (ConceroParentPool.DepositRequest memory) {
         return s_depositRequests[requestId];
     }
 
-    function getRequestType(bytes32 requestId) external view returns (ConceroParentPool.RequestType) {
+    function getRequestType(
+        bytes32 requestId
+    ) external view returns (ConceroParentPool.RequestType) {
         return s_clfRequestTypes[requestId];
     }
 
@@ -69,10 +77,17 @@ contract ParentPool_Wrapper is ConceroParentPool {
                                 WITHDRAW
     //////////////////////////////////////////////////////////////*/
     /// @dev getter for returning withdraw request params
-    function getWithdrawRequestParams(bytes32 _withdrawalRequestId)
+    function getWithdrawRequestParams(
+        bytes32 _withdrawalRequestId
+    )
         external
         view
-        returns (address lpAddress, uint256 lpSupplySnapshot, uint256 lpAmountToBurn, uint256 amountToWithdraw)
+        returns (
+            address lpAddress,
+            uint256 lpSupplySnapshot,
+            uint256 lpAmountToBurn,
+            uint256 amountToWithdraw
+        )
     {
         WithdrawRequest memory request = s_withdrawRequests[_withdrawalRequestId];
         lpAddress = request.lpAddress;

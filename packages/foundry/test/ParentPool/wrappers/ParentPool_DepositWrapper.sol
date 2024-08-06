@@ -5,9 +5,13 @@ import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 
 interface IDepositParentPool is IParentPool {
-    function getDepositRequest(bytes32 requestId) external view returns (ConceroParentPool.DepositRequest memory);
+    function getDepositRequest(
+        bytes32 requestId
+    ) external view returns (ConceroParentPool.DepositRequest memory);
 
-    function getRequestType(bytes32 requestId) external view returns (ConceroParentPool.RequestType);
+    function getRequestType(
+        bytes32 requestId
+    ) external view returns (ConceroParentPool.RequestType);
 
     function isMessenger(address _messenger) external view returns (bool);
 }
@@ -24,8 +28,8 @@ contract ParentPool_DepositWrapper is ConceroParentPool {
         address _lpToken,
         address _orchestrator,
         address _owner,
-        address[3] memory _msgrs,
-        uint8 _slotId
+        uint8 _slotId,
+        address[3] memory _msgrs
     )
         ConceroParentPool(
             _parentPoolProxy,
@@ -38,16 +42,20 @@ contract ParentPool_DepositWrapper is ConceroParentPool {
             _lpToken,
             _orchestrator,
             _owner,
-            _msgrs,
-            _slotId
+            _slotId,
+            _msgrs
         )
     {}
 
-    function getDepositRequest(bytes32 requestId) external view returns (ConceroParentPool.DepositRequest memory) {
+    function getDepositRequest(
+        bytes32 requestId
+    ) external view returns (ConceroParentPool.DepositRequest memory) {
         return s_depositRequests[requestId];
     }
 
-    function getRequestType(bytes32 requestId) external view returns (ConceroParentPool.RequestType) {
+    function getRequestType(
+        bytes32 requestId
+    ) external view returns (ConceroParentPool.RequestType) {
         return s_clfRequestTypes[requestId];
     }
 

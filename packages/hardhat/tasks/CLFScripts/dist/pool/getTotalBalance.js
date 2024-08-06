@@ -6,7 +6,7 @@
 			],
 			chainId: '0xa4b1',
 			usdcAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
-			poolAddress: '0xb26f41a682601c70872B67667b30037f910E6c83',
+			poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
 		},
 		[`0x${BigInt('4051577828743386545').toString(16)}`]: {
 			urls: [
@@ -14,7 +14,7 @@
 			],
 			chainId: '0x89',
 			usdcAddress: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
-			poolAddress: '0x1bb4233765838Ee69076845D10fa231c8cd500a3',
+			poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
 		},
 		[`0x${BigInt('6433500567565415381').toString(16)}`]: {
 			urls: [
@@ -22,7 +22,7 @@
 			],
 			chainId: '0xa86a',
 			usdcAddress: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
-			poolAddress: '0x1bb4233765838Ee69076845D10fa231c8cd500a3',
+			poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
 		},
 		[`0x${BigInt('15971525489660198786').toString(16)}`]: {
 			urls: [
@@ -30,7 +30,7 @@
 			],
 			chainId: '0x2105',
 			usdcAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-			poolAddress: '',
+			poolAddress: '0x0AE1B2730066AD46481ab0a5fd2B5893f8aBa323',
 		},
 	};
 	const baseChainSelector = `0x${BigInt('15971525489660198786').toString(16)}`;
@@ -72,7 +72,7 @@
 	};
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
 	const getBaseDepositsOneTheWay = () => {
-		const pool = new ethers.Contract('', poolAbi, baseProvider);
+		const pool = new ethers.Contract('0x0AE1B2730066AD46481ab0a5fd2B5893f8aBa323', poolAbi, baseProvider);
 		return pool.getDepositsOnTheWay();
 	};
 	const getChildPoolsCcipLogs = async ccipLines => {

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {console} from "forge-std/Test.sol";
-
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
@@ -1008,11 +1006,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         /// @notice this will revert if (lpSupplySnapshot == 0);
 
         //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
-
-        console.log("totalCrossChainBalance:", totalCrossChainBalance);
-        console.log("lpToBurn:", lpToBurn);
-        console.log("lpSupplySnapshot:", lpSupplySnapshot);
-
         uint256 amountUsdcToWithdraw = (
             ((_convertToLPTokenDecimals(totalCrossChainBalance) * lpToBurn) * PRECISION_HANDLER) / lpSupplySnapshot
         ) / PRECISION_HANDLER;

@@ -34,7 +34,10 @@ async function setParentPoolJsHashes(deployableChain: CNetwork, abi: any) {
         hash: setHashHash,
       });
 
-      log(`Set ${srcChainName}:${parentPoolProxyAddress} jshash[${hash}]. Gas used: ${setHashGasUsed.toString()}`, functionName);
+      log(
+        `Set ${srcChainName}:${parentPoolProxyAddress} jshash[${hash}]. Gas used: ${setHashGasUsed.toString()}`,
+        functionName,
+      );
     };
 
     await setHash(getHashSum(parentPoolJsCode), "setHashSum");
@@ -176,7 +179,10 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
       const { cumulativeGasUsed: setSenderGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setSenderHash,
       });
-      log(`Set ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${sender}]. Gas used: ${setSenderGasUsed.toString()}`, "setSenders");
+      log(
+        `Set ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${sender}]. Gas used: ${setSenderGasUsed.toString()}`,
+        "setSenders",
+      );
     };
 
     await setSender(dstConceroContract);
@@ -211,7 +217,10 @@ async function setPools(chain: CNetwork, abi: any) {
       const { cumulativeGasUsed: setReceiverGasUsed } = await publicClient.waitForTransactionReceipt({
         hash: setReceiverHash,
       });
-      log(`Set ${chainName}:${conceroPoolAddress} receiver[${dstChainName}:${dstPoolAddress}]. Gas used: ${setReceiverGasUsed.toString()}`, "setPools");
+      log(
+        `Set ${chainName}:${conceroPoolAddress} receiver[${dstChainName}:${dstPoolAddress}]. Gas used: ${setReceiverGasUsed.toString()}`,
+        "setPools",
+      );
     } catch (error) {
       log(`Error ${error?.message}`, "setPools");
     }
@@ -287,12 +296,12 @@ async function removePool(chain: CNetwork, abi: any, networkName: string) {
 export async function setParentPoolVariables(chain: CNetwork, slotId: number) {
   const { abi: ParentPoolAbi } = await load("../artifacts/contracts/ConceroParentPool.sol/ConceroParentPool.json");
 
-  await setParentPoolJsHashes(chain, ParentPoolAbi);
-
   await setParentPoolSecretsVersion(chain, ParentPoolAbi, slotId);
   await setParentPoolSecretsSlotId(chain, ParentPoolAbi, slotId);
 
+  await setParentPoolJsHashes(chain, ParentPoolAbi);
+
   await setParentPoolCap(chain, ParentPoolAbi); // once
-  await setPools(chain, ParentPoolAbi);
-  await setConceroContractSenders(chain, ParentPoolAbi);
+  await setPools(chain, ParentPoolAbi); // once
+  await setConceroContractSenders(chain, ParentPoolAbi); // once
 }

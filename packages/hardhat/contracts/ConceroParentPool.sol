@@ -434,7 +434,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         // uint256 withdrawAmountMinusFees = withdraw.amountToWithdraw - _convertToUSDCTokenDecimals(withdrawFees);
 
         delete s_withdrawalIdByLPAddress[msg.sender];
-        delete s_withdrawalIdByCLFRequestId[withdrawalId];
         delete s_withdrawRequests[withdrawalId];
 
         i_lp.burn(lpAmountToBurn);
@@ -807,6 +806,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             _handleStartDepositCLFFulfill(requestId, response);
         } else if (requestType == RequestType.startWithdrawal_getChildPoolsLiquidity) {
             _handleStartWithdrawalCLFFulfill(requestId, response);
+            delete s_withdrawalIdByCLFRequestId[requestId];
         } // RequestType.CLAWithdrawalTriggered
         delete s_clfRequestTypes[requestId];
     }

@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 // Compatible with OpenZeppelin Contracts ^5.0.0
+/**
+ * @title Security Reporting
+ * @notice If you discover any security vulnerabilities, please report them responsibly.
+ * @contact email: security@concero.io
+ */
 pragma solidity 0.8.20;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";

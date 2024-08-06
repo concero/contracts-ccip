@@ -20,7 +20,7 @@ const getBalance = async (tokenAddress: Address, account: Address, chain: CNetwo
 };
 
 const contractKeys = {
-  conceroproxy: "CONCERO_PROXY",
+  conceroproxy: "CONCERO_INFRA_PROXY",
   parentpoolproxy: "PARENT_POOL_PROXY",
   childpoolproxy: "CHILD_POOL_PROXY",
 };

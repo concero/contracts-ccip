@@ -25,9 +25,6 @@
 [submodule "packages/foundry/lib/chainlink-local"]
 	path = packages/foundry/lib/chainlink-local
 	url = https://github.com/smartcontractkit/chainlink-local
-[submodule "packages/foundry/lib/chainlink"]
-	path = packages/foundry/lib/chainlink
-	url = https://github.com/smartcontract/chainlink
 [submodule "packages/foundry/lib/chainlink-brownie-contracts"]
 	path = packages/foundry/lib/chainlink-brownie-contracts
 	url = https://github.com/smartcontractkit/chainlink-brownie-contracts
@@ -43,3 +40,6 @@
 [submodule "lib/chainlink-local"]
 	path = lib/chainlink-local
 	url = https://github.com/smartcontractkit/chainlink-local
+[submodule "packages/foundry/lib/chainlink"]
+	path = packages/foundry/lib/chainlink
+	url = https://github.com/smartcontractkit/chainlink

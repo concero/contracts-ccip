@@ -12,7 +12,7 @@
     "flatten": "hardhat flatten",
     "lint": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore ./*.ts ./deploy/**/*.ts ./scripts/**/*.ts ./test/**/*.ts",
     "lint-staged": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore",
-    "format:ts": "prettier --write ./*.ts ./deploy/**/*.ts ./scripts/**/*.ts ./test/**/*.ts",
+    "format:ts": "prettier --write ./**/*.ts",
     "format:sol": "prettier --write ./*.sol ./contracts/**/*.sol ./contracts/*.sol",
     "test": "REPORT_GAS=true hardhat test --network hardhat",
     "forge-test": "cd ./test/forge/ && forge test -vvvvv",

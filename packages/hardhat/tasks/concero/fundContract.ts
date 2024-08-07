@@ -5,7 +5,7 @@ import { dripBnm } from "./dripBnm";
 import { task } from "hardhat/config";
 import { liveChains } from "./deployInfra/deployInfra";
 import { getEnvVar } from "../../utils/getEnvVar";
-import log from "../../utils/log";
+import log, { err } from "../../utils/log";
 import { viemReceiptConfig } from "../../constants/deploymentVariables";
 
 export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
@@ -30,9 +30,9 @@ export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
   }
 }
 export async function fundContract(chains: CNetwork[], amount: number = 1) {
-  try {
-    for (const chain of chains) {
-      const { name, viemChain, ccipBnmToken, url } = chain;
+  for (const chain of chains) {
+    const { name, viemChain, ccipBnmToken, url } = chain;
+    try {
       const contract = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`);
       const { walletClient, publicClient, account } = getFallbackClients(chain);
       await ensureDeployerBnMBalance(chains);
@@ -49,9 +49,9 @@ export async function fundContract(chains: CNetwork[], amount: number = 1) {
         hash: sendHash,
       });
       log(`Sent ${amount} CCIPBNM to ${name}:${contract}. Gas used: ${sendGasUsed.toString()}`, "fundContract");
+    } catch (error) {
+      err(`${error.message}`, "fundContract", name);
     }
-  } catch (error) {
-    log(`Error for ${name}: ${error.message}`, "fundContract");
   }
 }
 

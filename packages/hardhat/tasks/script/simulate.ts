@@ -4,7 +4,12 @@ import secrets from "../../constants/CLFSecrets";
 import CLFSimulationConfig from "../../constants/CLFSimulationConfig";
 import { execSync } from "child_process";
 import getHashSum from "../../utils/getHashSum";
-import { automationsJsCodeUrl, ethersV6CodeUrl, infraSrcJsCodeUrl, parentPoolDistributeLiqJsCodeUrl } from "../../constants/functionsJsCodeUrls";
+import {
+  automationsJsCodeUrl,
+  ethersV6CodeUrl,
+  infraSrcJsCodeUrl,
+  parentPoolDistributeLiqJsCodeUrl,
+} from "../../constants/functionsJsCodeUrls";
 
 const { simulateScript } = require("@chainlink/functions-toolkit");
 

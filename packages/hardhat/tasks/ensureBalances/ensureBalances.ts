@@ -10,19 +10,56 @@ import { getEnvVar } from "../../utils/getEnvVar";
 import readline from "readline";
 import { viemReceiptConfig } from "../../constants/deploymentVariables";
 
-const targetBalances: Record<string, bigint> = {
+const messengerTargetBalances: Record<string, bigint> = {
   mainnet: parseEther("0.01"),
   arbitrum: parseEther("0.01"),
-  polygon: parseEther("12.5"),
+  polygon: parseEther("0.1"),
   avalanche: parseEther("0.01"),
   base: parseEther("0.01"),
 };
 
+export const deployerTargetBalances: Record<string, bigint> = {
+  mainnet: parseEther("0.01"),
+  arbitrum: parseEther("0.01"),
+  polygon: parseEther("1"),
+  avalanche: parseEther("0.3"),
+  base: parseEther("0.01"),
+  //testnet
+  sepolia: parseEther("0.1"),
+  arbitrumSepolia: parseEther("0.01"),
+  polygonAmoy: parseEther("1"),
+  avalancheFuji: parseEther("0.3"),
+  baseSepolia: parseEther("0.01"),
+};
+
+const donorAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
 const wallets = [getEnvVar("MESSENGER_0_ADDRESS"), getEnvVar("POOL_MESSENGER_0_ADDRESS")];
 const prompt = (question: string): Promise<string> => new Promise(resolve => rl.question(question, resolve));
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-async function checkWalletBalance(wallet: string, publicClient: any, chain: CNetwork): Promise<BalanceInfo> {
+export async function ensureWalletBalance(wallet: string, targetBalances: Record<string, bigint>, chain: CNetwork) {
+  const balance = await checkWalletBalance(wallet, targetBalances, chain);
+  const displayedWalletBalances = {
+    chain: balance.chain.name,
+    address: balance.address,
+    balance: balance.balance,
+    target: balance.target,
+    deficit: balance.deficit,
+  };
+  if (balance.deficit > BigInt(0)) {
+    throw new Error(`Insufficient balance for ${balance.deficit} on ${balance.chain.name}`);
+  }
+  console.table([displayedWalletBalances]);
+  return balance;
+}
+
+export async function checkWalletBalance(
+  wallet: string,
+  targetBalances: Record<string, bigint>,
+  chain: CNetwork,
+): Promise<BalanceInfo> {
+  const { publicClient } = getFallbackClients(chain);
+
   const balance = await publicClient.getBalance({ address: wallet });
   const targetBalance = targetBalances[chain.name] || BigInt(0);
   const deficit = balance < targetBalance ? targetBalance - balance : BigInt(0);
@@ -52,26 +89,14 @@ async function topUpWallet(wallet: string, publicClient: any, walletClient: any,
   }
 }
 
-async function collectChainInfo(chain: CNetwork, donorAccount: any): Promise<[BalanceInfo, BalanceInfo[]]> {
-  const { publicClient } = getFallbackClients(chain, donorAccount);
-
-  const donorBalance = await publicClient.getBalance({ address: donorAccount.address });
-
-  const donorInfo: BalanceInfo = {
-    chain,
-    address: donorAccount.address,
-    balance: formatEther(donorBalance),
-    target: "N/A",
-    deficit: "N/A",
-  };
-
+async function getBalanceInfo(targetAddresses: [], chain: CNetwork): Promise<BalanceInfo[]> {
   const walletInfos: BalanceInfo[] = [];
-  for (const wallet of wallets) {
-    const walletInfo = await checkWalletBalance(wallet, publicClient, chain);
+  for (const wallet of targetAddresses) {
+    const walletInfo = await checkWalletBalance(wallet, messengerTargetBalances, chain);
     walletInfos.push(walletInfo);
   }
 
-  return [donorInfo, walletInfos];
+  return walletInfos;
 }
 
 async function performTopUps(walletBalances: BalanceInfo[], donorAccount: any): Promise<void> {
@@ -86,14 +111,15 @@ async function performTopUps(walletBalances: BalanceInfo[], donorAccount: any): 
 }
 
 async function ensureBalances() {
-  const donorAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
   const donorBalances: BalanceInfo[] = [];
   const walletBalances: BalanceInfo[] = [];
 
   try {
     for (const chain of liveChains) {
-      const [donorInfo, walletInfos] = await collectChainInfo(chain, donorAccount);
-      donorBalances.push(donorInfo);
+      const walletInfos = await getBalanceInfo(wallets, chain);
+      const donorInfo = await getBalanceInfo([donorAccount.address], chain);
+
+      donorBalances.push(...donorInfo);
       walletBalances.push(...walletInfos);
     }
 

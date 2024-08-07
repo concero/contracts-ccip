@@ -5,7 +5,6 @@ import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import addCLFConsumer from "../../sub/add";
 import log from "../../../utils/log";
-import { execSync } from "child_process";
 import uploadDonSecrets from "../../donSecrets/upload";
 import { CNetwork } from "../../../types/CNetwork";
 import { setParentPoolVariables } from "./setParentPoolVariables";
@@ -13,6 +12,7 @@ import deployParentPool from "../../../deploy/09_ParentPool";
 import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
+import { compileContracts } from "../../../utils/compileContracts";
 
 task("deploy-parent-pool", "Deploy the pool")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
@@ -21,7 +21,7 @@ task("deploy-parent-pool", "Deploy the pool")
   .addFlag("skipsetvars", "Set the contract variables")
   .addFlag("uploadsecrets", "Set the contract variables")
   .setAction(async taskArgs => {
-    execSync("yarn compile", { stdio: "inherit" });
+    compileContracts({ quiet: true });
 
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);

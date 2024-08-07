@@ -3,7 +3,7 @@ import load from "../../../utils/load";
 import { getFallbackClients } from "../../utils/getViemClients";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
-import log from "../../../utils/log";
+import log, { err } from "../../../utils/log";
 import { Address } from "viem";
 import getHashSum from "../../../utils/getHashSum";
 import { automationsJsCodeUrl, ethersV6CodeUrl } from "../../../constants/functionsJsCodeUrls";
@@ -35,7 +35,7 @@ const setDonHostedSecretsVersion = async (hre, slotId: number, abi) => {
 
     log(`setDonHostedSecretsVersion tx: ${setDstConceroContractHash}`, "setDonHostedSecretsVersion");
   } catch (error) {
-    log(`Error for ${hre.network.name}: ${error.message}`, "setDonHostedSecretsVersion");
+    err(`${error.message}`, "setDonHostedSecretsVersion", hre.network.name);
   }
 };
 
@@ -64,7 +64,7 @@ const setDonHostedSecretsSlotId = async (hre, slotId: number, abi: any) => {
 
     log(`setDonHostedSecretsSlotId tx: ${setDstConceroContractHash}`, "setDonHostedSecretsSlotId");
   } catch (error) {
-    log(`Error for ${hre.network.name}: ${error.message}`, "setDonHostedSecretsSlotId");
+    err(`${error.message}`, "setDonHostedSecretsSlotId", hre.network.name);
   }
 };
 
@@ -94,7 +94,7 @@ const setForwarderAddress = async (hre, forwarderAddress: string, abi: any) => {
 
     log(`setForwarderAddress tx: ${setForwarderAddressHash}`, "setForwarderAddress");
   } catch (error) {
-    log(`Error for ${name}: ${error.message}`, "setForwarderAddress");
+    err(`${error.message}`, "setForwarderAddress", name);
   }
 };
 
@@ -124,7 +124,7 @@ const setHashSum = async (hre, abi: any) => {
 
     log(`setHashSum tx: ${setHashSumHash}`, "setJsHashSum");
   } catch (error) {
-    log(`Error for ${hre.network.name}: ${error.message}`, "setJsHashSum");
+    err(`${error.message}`, "setJsHashSum", hre.network.name);
   }
 };
 
@@ -154,7 +154,7 @@ const setEthersHashSum = async (hre, abi: any) => {
 
     log(`setEthersHashSum tx: ${setEthersHashSumHash}`, "setEthersHashSum");
   } catch (error) {
-    log(`Error for ${hre.network.name}: ${error.message}`, "setEthersHashSum");
+    err(`${error.message}`, "setEthersHashSum", hre.network.name);
   }
 };
 

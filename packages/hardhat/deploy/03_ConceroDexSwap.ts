@@ -22,7 +22,7 @@ const deployConceroDexSwap: DeployFunction = async function (hre: HardhatRuntime
   })) as Deployment;
 
   if (live) {
-    log(`ConceroDexSwap deployed to ${name} to: ${deployResult.address}`, "ConceroDexSwap");
+    log(`Deployed at: ${deployResult.address}`, "DexSwap", name);
     updateEnvVariable(`CONCERO_DEX_SWAP_${networkEnvKeys[name]}`, deployResult.address, "../../../.env.deployments");
   }
 };

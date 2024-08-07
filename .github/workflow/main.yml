@@ -1,9 +1,9 @@
 name: Hardhat compile
 on:
   push:
-    branches: [master, release]
+    branches: [master, release, feat/hardhat-improvements]
   pull_request:
-    branches: [master, release]
+    branches: [master, release, feat/hardhat-improvements]
 
 jobs:
   tests:

@@ -7,7 +7,7 @@ import { NetworkType } from "../constants/CNetworks";
 export type envString = string | undefined;
 export type CNetworkNames = "localhost" |
   "mainnet" | "arbitrum" | "optimism" | "polygon" | "polygonZkEvm" | "avalanche" | "base" | "sepolia" | "optimismSepolia" | "arbitrumSepolia" | "avalancheFuji" | "baseSepolia" | "polygonAmoy";
-// Chainlink Functions Network specific configuration
+
 export type CLFNetwork = {
   saveDeployments: boolean;
   functionsRouter: envString;
@@ -26,7 +26,7 @@ export type CLFNetwork = {
   viemChain: Chain;
   name: CNetworkNames;
   urls: string[];
-  tags: NetworkType[];
+  type: NetworkType;
 };
 
 interface PriceFeed {

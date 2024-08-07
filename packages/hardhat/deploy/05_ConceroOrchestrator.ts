@@ -10,9 +10,12 @@ const deployConceroOrchestrator: DeployFunction = async function (hre: HardhatRu
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
-  const { linkToken, ccipRouter, functionsRouter, conceroChainIndex } = chains[name];
+  const { functionsRouter, conceroChainIndex, type } = chains[name];
+
   const conceroDexSwapAddress = getEnvVar(`CONCERO_DEX_SWAP_${networkEnvKeys[name]}`);
   const conceroAddress = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`);
+
+  //todo: fix this
   const conceroPoolAddress =
     name === "base" || name === "baseSepolia"
       ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`)
@@ -42,7 +45,7 @@ const deployConceroOrchestrator: DeployFunction = async function (hre: HardhatRu
     updateEnvVariable(
       `CONCERO_ORCHESTRATOR_${networkEnvKeys[name]}`,
       conceroProxyDeployment.address,
-      "../../../.env.deployments",
+      `deployments.${type}`,
     );
   }
 };

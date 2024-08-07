@@ -1,6 +1,7 @@
 import { DeployFunction, Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import chains, { networkEnvKeys } from "../constants/CNetworks";
+import chains from "../constants/CNetworks";
+import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
@@ -17,6 +18,7 @@ const deployConceroPool: DeployFunction = async function (
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
+  const networkType = CNetworks[name].type;
 
   const { linkToken, ccipRouter } = chains[name];
 
@@ -41,7 +43,7 @@ const deployConceroPool: DeployFunction = async function (
 
   if (live) {
     log(`ConceroPool deployed to ${name} to: ${deployConceroPool.address}`, "deployConceroPool");
-    updateEnvVariable(`CONCEROPOOL_${networkEnvKeys[name]}`, deployConceroPool.address, "../../../.env.deployments");
+    updateEnvVariable(`CONCEROPOOL_${networkEnvKeys[name]}`, deployConceroPool.address, `deployments.${networkType}`);
   }
 };
 

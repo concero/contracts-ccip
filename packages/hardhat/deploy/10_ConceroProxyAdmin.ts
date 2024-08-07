@@ -1,6 +1,6 @@
 import { DeployFunction, Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { networkEnvKeys } from "../constants/CNetworks";
+import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
@@ -10,11 +10,11 @@ const deployProxyAdmin: DeployFunction = async function (hre: HardhatRuntimeEnvi
   const { proxyDeployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
+  const networkType = CNetworks[name].type;
 
   const initialOwner = getEnvVar(`PROXY_DEPLOYER_ADDRESS`);
 
   let envKey: string;
-
   switch (proxyType) {
     case ProxyType.infra:
       envKey = `CONCERO_INFRA_PROXY`;
@@ -42,7 +42,7 @@ const deployProxyAdmin: DeployFunction = async function (hre: HardhatRuntimeEnvi
     updateEnvVariable(
       `${envKey}_ADMIN_CONTRACT_${networkEnvKeys[name]}`,
       deployProxyAdmin.address,
-      "../../../.env.deployments",
+      `deployments.${networkType}`,
     );
   }
 };

@@ -30,6 +30,7 @@ const deployConceroBridge: DeployFunction = async function (
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
+  const networkType = chains[name].type;
 
   if (!chains[name]) throw new Error(`Chain ${name} not supported`);
 
@@ -102,7 +103,7 @@ const deployConceroBridge: DeployFunction = async function (
 
   if (live) {
     log(`Deployed at: ${deployment.address}`, "conceroBridge", name);
-    updateEnvVariable(`CONCERO_BRIDGE_${networkEnvKeys[name]}`, deployment.address, "../../../.env.deployments");
+    updateEnvVariable(`CONCERO_BRIDGE_${networkEnvKeys[name]}`, deployment.address, `deployments.${networkType}`);
   }
 };
 

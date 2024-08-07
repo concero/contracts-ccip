@@ -27,7 +27,7 @@ const deployChildPool: DeployFunction = async function (
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
 
-  const { linkToken, ccipRouter, chainSelector } = chains[name];
+  const { linkToken, ccipRouter, type } = chains[name];
 
   const defaultArgs = {
     conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
@@ -60,7 +60,7 @@ const deployChildPool: DeployFunction = async function (
 
   if (live) {
     log(`ConceroChildPool deployed to ${name} to: ${deployChildPool.address}`, "deployConceroChildPool");
-    updateEnvVariable(`CHILD_POOL_${networkEnvKeys[name]}`, deployChildPool.address, "../../../.env.deployments");
+    updateEnvVariable(`CHILD_POOL_${networkEnvKeys[name]}`, deployChildPool.address, `deployments.${type}`);
   }
 };
 

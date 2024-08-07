@@ -16,7 +16,10 @@ jobs:
           node-version: '18.x'
       - name: Install dependencies
         run: |
+          cd packages/hardhat
           npm install -g bun
           bun install
       - name: Compile Hardhat project
-        run: bun hardhat compile
+        run: |
+          cd packages/hardhat
+          bun hardhat compile

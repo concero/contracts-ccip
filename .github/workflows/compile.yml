@@ -17,9 +17,8 @@ jobs:
       - name: Install dependencies
         run: |
           cd packages/hardhat
-          npm install -g bun
-          bun install
+          yarn install
       - name: Compile Hardhat project
         run: |
           cd packages/hardhat
-          bun hardhat compile
+          yarn hardhat compile

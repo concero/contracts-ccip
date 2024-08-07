@@ -27,6 +27,8 @@ interface IParentPoolWrapper is IParentPool {
         );
     function getDepositFeeAmount() external view returns (uint256);
     function getLoansInUse() external view returns (uint256);
+    function getWithdrawalsOnTheWayAmount() external view returns (uint256);
+    function getWithdrawRequest(bytes32 requestId) external view returns (ConceroParentPool.WithdrawRequest memory);
 }
 
 contract ParentPool_Wrapper is ConceroParentPool {
@@ -93,6 +95,10 @@ contract ParentPool_Wrapper is ConceroParentPool {
     /*//////////////////////////////////////////////////////////////
                                 WITHDRAW
     //////////////////////////////////////////////////////////////*/
+    function getWithdrawRequest(bytes32 requestId) external view returns (ConceroParentPool.WithdrawRequest memory) {
+        return s_withdrawRequests[requestId];
+    }
+
     /// @dev getter for returning withdraw request params
     function getWithdrawRequestParams(bytes32 _withdrawalRequestId)
         external
@@ -121,5 +127,9 @@ contract ParentPool_Wrapper is ConceroParentPool {
 
     function getWithdrawalIdByClfRequestId(bytes32 _clfRequestId) external view returns (bytes32) {
         return s_withdrawalIdByCLFRequestId[_clfRequestId];
+    }
+
+    function getWithdrawalsOnTheWayAmount() external view returns (uint256) {
+        return s_withdrawalsOnTheWayAmount;
     }
 }

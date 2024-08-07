@@ -23,7 +23,6 @@ contract DepositTest is BaseTest {
     address internal constant BASE_FUNCTIONS_TRANSMITTER = 0xAdE50D64476177aAe4505DFEA094B1a0ffa49332;
     uint256 internal constant DEPOSIT_AMOUNT_USDC = 100 * 10 ** 6;
     uint256 internal constant MIN_DEPOSIT = 100_000_000;
-    uint256 internal constant CCIP_FEES = 10 * 1e18;
     uint256 internal constant USDC_PRECISION = 1e6;
     uint256 internal constant WAD_PRECISION = 1e18;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * 10 ** 6;
@@ -69,12 +68,9 @@ contract DepositTest is BaseTest {
 
         /// @dev add functions consumer
         addFunctionsConsumer();
-    }
 
-    modifier fundParentPoolWithLinkForCCIPFees() {
-        /// @dev fund the parentPoolProxy with LINK to pay for CCIP
-        deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), CCIP_FEES);
-        _;
+        /// @dev fund parent pool with LINK for CCIP fees
+        _fundLinkParentProxy(CCIP_FEES);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -146,7 +142,7 @@ contract DepositTest is BaseTest {
     /*//////////////////////////////////////////////////////////////
                             COMPLETE DEPOSIT
     //////////////////////////////////////////////////////////////*/
-    function test_completeDeposit_success() public fundParentPoolWithLinkForCCIPFees {
+    function test_completeDeposit_success() public {
         /// @dev startDeposit
         (bytes32 depositRequestId, uint32 callbackGasLimit, uint96 estimatedTotalCostJuels) =
             _startDepositAndMonitorLogs(user1, DEPOSIT_AMOUNT_USDC);
@@ -223,10 +219,7 @@ contract DepositTest is BaseTest {
     /*//////////////////////////////////////////////////////////////
                            LP TOKEN ISSUANCE
     //////////////////////////////////////////////////////////////*/
-    function test_lpToken_integrity_multiple_depositors(uint256 _amount1, uint256 _amount2)
-        public
-        fundParentPoolWithLinkForCCIPFees
-    {
+    function test_lpToken_integrity_multiple_depositors(uint256 _amount1, uint256 _amount2) public {
         /// @dev restrict fuzzed deposit amounts
         _amount1 = bound(_amount1, MIN_DEPOSIT + DEPOSIT_FEE_USDC, MAX_INDIVIDUAL_DEPOSIT);
         _amount2 = bound(_amount2, MIN_DEPOSIT + DEPOSIT_FEE_USDC, MAX_INDIVIDUAL_DEPOSIT);
@@ -257,24 +250,15 @@ contract DepositTest is BaseTest {
             IParentPoolWrapper(address(parentPoolProxy)).getDepositRequest(depositRequestId2);
 
         /// @dev calculate totalCrossChainLiquidity
-        uint256 totalCrossChainLiquidity = (
-            IERC20(usdc).balanceOf(address(parentPoolProxy))
-                + IParentPoolWrapper(address(parentPoolProxy)).getLoansInUse()
-                + IParentPoolWrapper(address(parentPoolProxy)).getDepositsOnTheWayAmount()
-                - IParentPoolWrapper(address(parentPoolProxy)).getDepositFeeAmount()
-        ) + depositRequest.childPoolsLiquiditySnapshot;
+        uint256 totalCrossChainLiquidity =
+            _calculateTotalCrossChainLiquidity(depositRequest.childPoolsLiquiditySnapshot);
 
         /// @dev completeDeposit for second user
         _completeDeposit(user2, depositRequestId2);
 
         /// @dev assert user2 lp tokens minted as expected
-        uint256 amountDepositedConverted = ((_amount2 - DEPOSIT_FEE_USDC) * WAD_PRECISION) / USDC_PRECISION;
-        uint256 crossChainBalanceConverted = (totalCrossChainLiquidity * WAD_PRECISION) / USDC_PRECISION;
-
-        uint256 expectedLpTokensMintedUser2 = (
-            ((crossChainBalanceConverted + amountDepositedConverted) * lpTotalSupplyBeforeSecondDeposit)
-                / crossChainBalanceConverted
-        ) - lpTotalSupplyBeforeSecondDeposit;
+        uint256 expectedLpTokensMintedUser2 =
+            _calculateExpectedLpTokensMinted(_amount2, totalCrossChainLiquidity, lpTotalSupplyBeforeSecondDeposit);
 
         uint256 actualLptokensMintedUser2 = IERC20(parentPoolImplementation.i_lp()).balanceOf(user2);
         assertEq(expectedLpTokensMintedUser2, actualLptokensMintedUser2);
@@ -298,5 +282,34 @@ contract DepositTest is BaseTest {
         });
 
         IAny2EVMMessageReceiver(address(parentPoolProxy)).ccipReceive(message);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                UTILITY
+    //////////////////////////////////////////////////////////////*/
+    function _calculateTotalCrossChainLiquidity(uint256 _childPoolsLiquiditySnapshot) internal returns (uint256) {
+        uint256 totalCrossChainLiquidity = (
+            IERC20(usdc).balanceOf(address(parentPoolProxy))
+                + IParentPoolWrapper(address(parentPoolProxy)).getLoansInUse()
+                + IParentPoolWrapper(address(parentPoolProxy)).getDepositsOnTheWayAmount()
+                - IParentPoolWrapper(address(parentPoolProxy)).getDepositFeeAmount()
+        ) + _childPoolsLiquiditySnapshot;
+
+        return totalCrossChainLiquidity;
+    }
+
+    function _calculateExpectedLpTokensMinted(
+        uint256 _depositAmount,
+        uint256 _totalCrossChainLiquidity,
+        uint256 _lpTotalSupply
+    ) internal returns (uint256) {
+        uint256 amountDepositedConverted = ((_depositAmount - DEPOSIT_FEE_USDC) * WAD_PRECISION) / USDC_PRECISION;
+        uint256 crossChainBalanceConverted = (_totalCrossChainLiquidity * WAD_PRECISION) / USDC_PRECISION;
+
+        uint256 expectedLpTokensMinted = (
+            ((crossChainBalanceConverted + amountDepositedConverted) * _lpTotalSupply) / crossChainBalanceConverted
+        ) - _lpTotalSupply;
+
+        return expectedLpTokensMinted;
     }
 }

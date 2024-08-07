@@ -16,6 +16,8 @@ contract BaseTest is Test {
     /*//////////////////////////////////////////////////////////////
                                VARIABLES
     //////////////////////////////////////////////////////////////*/
+    uint256 internal constant CCIP_FEES = 100 * 1e18;
+
     ConceroParentPool public parentPoolImplementation;
     ParentPoolProxy public parentPoolProxy;
     LPToken public lpToken;
@@ -46,7 +48,7 @@ contract BaseTest is Test {
         _deployCcipLocalSimulation();
         deployLpToken();
         addFunctionsConsumer();
-        _fundLinkParentProxy(100000000000000000000);
+        _fundLinkParentProxy(CCIP_FEES);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -54,11 +56,7 @@ contract BaseTest is Test {
     //////////////////////////////////////////////////////////////*/
     function deployParentPoolProxy() public {
         vm.prank(proxyDeployer);
-        parentPoolProxy = new ParentPoolProxy(
-            vm.envAddress("CONCERO_PAUSE_BASE"),
-            proxyDeployer,
-            bytes("")
-        );
+        parentPoolProxy = new ParentPoolProxy(vm.envAddress("CONCERO_PAUSE_BASE"), proxyDeployer, bytes(""));
     }
 
     function _deployParentPool() private {
@@ -96,27 +94,20 @@ contract BaseTest is Test {
     //////////////////////////////////////////////////////////////*/
     function setProxyImplementation(address _parentPoolImplementation) public {
         vm.prank(proxyDeployer);
-        ITransparentUpgradeableProxy(address(parentPoolProxy)).upgradeToAndCall(
-            _parentPoolImplementation,
-            bytes("")
-        );
+        ITransparentUpgradeableProxy(address(parentPoolProxy)).upgradeToAndCall(_parentPoolImplementation, bytes(""));
     }
 
     /// @notice might need to update this to pass _parentPoolImplementation like above
     function setParentPoolVars() public {
         vm.prank(deployer);
         IParentPool(address(parentPoolProxy)).setPools(
-            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
-            address(parentPoolImplementation),
-            false
+            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), address(parentPoolImplementation), false
         );
 
         vm.prank(deployer);
         // should probably update this from user1
         IParentPool(address(parentPoolProxy)).setConceroContractSender(
-            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
-            address(user1),
-            1
+            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), address(user1), 1
         );
     }
 
@@ -125,13 +116,8 @@ contract BaseTest is Test {
     //////////////////////////////////////////////////////////////*/
     function addFunctionsConsumer() public {
         vm.prank(vm.envAddress("DEPLOYER_ADDRESS"));
-        functionsSubscriptions = FunctionsSubscriptions(
-            address(0xf9B8fc078197181C841c296C876945aaa425B278)
-        );
-        functionsSubscriptions.addConsumer(
-            uint64(vm.envUint("CLF_SUBID_BASE")),
-            address(parentPoolProxy)
-        );
+        functionsSubscriptions = FunctionsSubscriptions(address(0xf9B8fc078197181C841c296C876945aaa425B278));
+        functionsSubscriptions.addConsumer(uint64(vm.envUint("CLF_SUBID_BASE")), address(parentPoolProxy));
     }
 
     function _fundLinkParentProxy(uint256 amount) internal {

@@ -22,6 +22,8 @@ contract WithdrawTest is DepositTest {
     uint256 internal constant WITHDRAW_AMOUNT_LP =
         ((DEPOSIT_AMOUNT_USDC - DEPOSIT_FEE_USDC) * WAD_PRECISION) / USDC_PRECISION;
     uint256 internal constant PRECISION_HANDLER = 10_000_000_000;
+    uint256 internal constant WITHDRAW_DEADLINE_SECONDS = 597_600;
+    uint256 internal constant MIN_WITHDRAW = 1e18;
 
     address forwarder = makeAddr("forwarder");
 
@@ -44,7 +46,7 @@ contract WithdrawTest is DepositTest {
     /*//////////////////////////////////////////////////////////////
                             START WITHDRAWAL
     //////////////////////////////////////////////////////////////*/
-    function test_startWithdrawal_success() public fundParentPoolWithLinkForCCIPFees {
+    function test_startWithdrawal_success() public {
         /// @dev deposit
         _startAndCompleteDeposit(user1, DEPOSIT_AMOUNT_USDC, INITIAL_DIRECT_DEPOSIT);
 
@@ -108,7 +110,7 @@ contract WithdrawTest is DepositTest {
         (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("startWithdrawal(uint256)", 0));
     }
 
-    function test_startWithdrawal_reverts_if_request_already_active() public fundParentPoolWithLinkForCCIPFees {
+    function test_startWithdrawal_reverts_if_request_already_active() public {
         /// @dev startDeposit
         (bytes32 depositRequestId, uint32 depositCallbackGasLimit, uint96 depositEstimatedTotalCostJuels) =
             _startDepositAndMonitorLogs(user1, DEPOSIT_AMOUNT_USDC);
@@ -148,7 +150,7 @@ contract WithdrawTest is DepositTest {
     /*//////////////////////////////////////////////////////////////
                           COMPLETE WITHDRAWAL
     //////////////////////////////////////////////////////////////*/
-    function test_completeWithdrawal_success() public fundParentPoolWithLinkForCCIPFees {
+    function test_completeWithdrawal_success() public {
         /// @dev deposit
         _startAndCompleteDeposit(user1, DEPOSIT_AMOUNT_USDC, INITIAL_DIRECT_DEPOSIT);
 
@@ -236,8 +238,6 @@ contract WithdrawTest is DepositTest {
         /// @dev skip time to after the withdrawal cool-off period
         vm.warp(block.timestamp + 7 days + 1);
 
-        /// @dev we need logs for second user's completeDeposit to get the totalCrossChainLiquiditySnapshot
-        vm.recordLogs();
         /// @dev mock chainlink automation by calling performUpkeep as forwarder
         bytes memory performData = abi.encode(lpAddress, liquidityRequestedFromEachPool, withdrawalId);
         vm.prank(forwarder);
@@ -286,10 +286,7 @@ contract WithdrawTest is DepositTest {
         address(parentPoolProxy).call(abi.encodeWithSignature("completeWithdrawal()"));
     }
 
-    function test_completeWithdrawal_reverts_if_withdrawal_amount_not_ready()
-        public
-        fundParentPoolWithLinkForCCIPFees
-    {
+    function test_completeWithdrawal_reverts_if_withdrawal_amount_not_ready() public {
         /// @dev deposit
         _startAndCompleteDeposit(user1, DEPOSIT_AMOUNT_USDC, INITIAL_DIRECT_DEPOSIT);
 
@@ -323,8 +320,163 @@ contract WithdrawTest is DepositTest {
     }
 
     /*//////////////////////////////////////////////////////////////
+                           LP TOKEN ISSUANCE
+    //////////////////////////////////////////////////////////////*/
+    function test_lpToken_integrity_deposits_and_withdrawals_on_the_way(uint256 _amount1, uint256 _amount2) public {
+        /// @dev restrict fuzzed deposit amounts
+        _amount1 = bound(_amount1, MIN_DEPOSIT + DEPOSIT_FEE_USDC, MAX_INDIVIDUAL_DEPOSIT);
+        _amount2 = bound(_amount2, MIN_DEPOSIT + DEPOSIT_FEE_USDC, MAX_INDIVIDUAL_DEPOSIT);
+
+        /// @dev start and complete deposit for user1
+        _startAndCompleteDeposit(user1, _amount1, INITIAL_DIRECT_DEPOSIT);
+
+        /// @dev startWithdrawal and fulfillRequest for user1
+        _startWithdrawalAndFulfillRequest(
+            user1, WITHDRAW_AMOUNT_LP / 2, INITIAL_DIRECT_DEPOSIT + (DEPOSIT_AMOUNT_USDC / 2)
+        ); // 1 usdc + (first deposit / parent+child)
+
+        /// @dev use withdrawalId to get request params
+        (, bytes memory withdrawRequestParams) = address(parentPoolProxy).call(
+            abi.encodeWithSignature("getWithdrawRequestParams(bytes32)", _getWithdrawalId(user1))
+        );
+        (address lpAddress,,,,, uint256 liquidityRequestedFromEachPool,,) =
+            abi.decode(withdrawRequestParams, (address, uint256, uint256, uint256, uint256, uint256, uint256, uint256));
+
+        /// @dev mock chainlink automation by calling performUpkeep as forwarder
+        bytes memory performData = abi.encode(lpAddress, liquidityRequestedFromEachPool, _getWithdrawalId(user1));
+        vm.prank(forwarder);
+        (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("performUpkeep(bytes)", performData));
+        require(success, "performUpkeep call failed");
+
+        /// @dev assert s_depositsOnTheWayAmount is more than 0
+        assertGt(IParentPoolWrapper(address(parentPoolProxy)).getDepositsOnTheWayAmount(), 0);
+        /// @dev assert s_withdrawalsOnTheWayAmount is more than 0
+        assertGt(IParentPoolWrapper(address(parentPoolProxy)).getWithdrawalsOnTheWayAmount(), 0);
+
+        /// @dev we need the totalSupply to calculate user2's owed lp tokens
+        uint256 lpTotalSupplyBeforeSecondDeposit = IERC20(parentPoolImplementation.i_lp()).totalSupply();
+
+        /// @dev startDeposit and fulfillRequest for second user
+        bytes32 depositRequestId2 =
+            _startDepositAndFulfillRequest(user2, _amount2, INITIAL_DIRECT_DEPOSIT + (_amount1 / 2));
+
+        /// @dev get the depositRequest for user2 to get childPoolsLiquiditySnapshot
+        ParentPool_Wrapper.DepositRequest memory depositRequest =
+            IParentPoolWrapper(address(parentPoolProxy)).getDepositRequest(depositRequestId2);
+
+        /// @dev calculate totalCrossChainLiquidity
+        uint256 totalCrossChainLiquidity =
+            _calculateTotalCrossChainLiquidity(depositRequest.childPoolsLiquiditySnapshot);
+
+        /// @dev completeDeposit for second user
+        _completeDeposit(user2, depositRequestId2);
+
+        /// @dev assert user2 lp tokens minted as expected
+        uint256 expectedLpTokensMintedUser2 =
+            _calculateExpectedLpTokensMinted(_amount2, totalCrossChainLiquidity, lpTotalSupplyBeforeSecondDeposit);
+        assertEq(expectedLpTokensMintedUser2, IERC20(parentPoolImplementation.i_lp()).balanceOf(user2));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           WITHDRAWAL REQUEST
+    //////////////////////////////////////////////////////////////*/
+    /// todo: replace magic 2 number with number of child pools
+    function test_withdrawalRequest_integrity(
+        uint256 _depositAmount1,
+        uint256 _depositAmount2,
+        uint256 _withdrawAmount1,
+        uint256 _withdrawAmount2
+    ) public {
+        /// @dev restrict fuzzed deposit amounts
+        _depositAmount1 = bound(_depositAmount1, MIN_DEPOSIT + DEPOSIT_FEE_USDC, MAX_INDIVIDUAL_DEPOSIT);
+        _depositAmount2 = bound(_depositAmount2, MIN_DEPOSIT + DEPOSIT_FEE_USDC, MAX_INDIVIDUAL_DEPOSIT);
+
+        /// @dev start and complete deposits for multiple users
+        _startAndCompleteDeposit(user1, _depositAmount1, INITIAL_DIRECT_DEPOSIT);
+        _startAndCompleteDeposit(user2, _depositAmount2, INITIAL_DIRECT_DEPOSIT + (_depositAmount1 / 2)); // 1 child + 1 parent
+
+        /// @dev restrict fuzzed withdraw amounts
+        _withdrawAmount1 = bound(_withdrawAmount1, MIN_WITHDRAW, IERC20(address(lpToken)).balanceOf(user1));
+        _withdrawAmount2 = bound(_withdrawAmount2, MIN_WITHDRAW, IERC20(address(lpToken)).balanceOf(user2));
+
+        uint256 lpSupplyBeforeWithdrawRequest = IERC20(address(lpToken)).totalSupply();
+
+        /// @dev startWithdrawalAndFulfill, for user1, passing caller, amount and crosschain liquidity amount
+        uint256 withdrawRequestResponse1 = (
+            IERC20(usdc).balanceOf(address(parentPoolProxy))
+                - IParentPoolWrapper(address(parentPoolProxy)).getDepositFeeAmount()
+        );
+        _startWithdrawalAndFulfillRequest(user1, _withdrawAmount1, withdrawRequestResponse1);
+
+        /// @dev get the withdrawRequest for user1
+        ParentPool_Wrapper.WithdrawRequest memory withdrawRequest1 =
+            IParentPoolWrapper(address(parentPoolProxy)).getWithdrawRequest(_getWithdrawalId(user1));
+
+        /// @dev calculate expected values
+        uint256 expectedAmountToWithdrawUser1 = (
+            (_calculateTotalCrossChainLiquidity(withdrawRequestResponse1) * _withdrawAmount1)
+                / lpSupplyBeforeWithdrawRequest
+        );
+        uint256 expectedRemainingLiquidityFromChildPools =
+            (expectedAmountToWithdrawUser1 / 2) + (expectedAmountToWithdrawUser1 % 2);
+
+        assertEq(withdrawRequest1.lpAddress, user1);
+        assertEq(withdrawRequest1.lpSupplySnapshot, lpSupplyBeforeWithdrawRequest);
+        assertEq(withdrawRequest1.lpAmountToBurn, _withdrawAmount1);
+        assertEq(withdrawRequest1.totalCrossChainLiquiditySnapshot, 0); // not updated anywhere
+        assertEq(withdrawRequest1.amountToWithdraw, expectedAmountToWithdrawUser1);
+        assertEq(withdrawRequest1.liquidityRequestedFromEachPool, expectedAmountToWithdrawUser1 / 2);
+        assertEq(withdrawRequest1.remainingLiquidityFromChildPools, expectedRemainingLiquidityFromChildPools);
+        assertEq(withdrawRequest1.triggeredAtTimestamp, block.timestamp + WITHDRAW_DEADLINE_SECONDS);
+
+        _performUpkeep(user1, withdrawRequestResponse1);
+
+        /// @dev assert s_depositsOnTheWayAmount is more than 0
+        assertGt(IParentPoolWrapper(address(parentPoolProxy)).getDepositsOnTheWayAmount(), 0);
+        /// @dev assert s_withdrawalsOnTheWayAmount is more than 0
+        assertGt(IParentPoolWrapper(address(parentPoolProxy)).getWithdrawalsOnTheWayAmount(), 0);
+
+        uint256 lpSupplyBeforeSecondRequest = IERC20(address(lpToken)).totalSupply();
+        /// @dev startWithdrawalAndFulfill for user2, passing caller, amount and crosschain liquidity amount
+        uint256 withdrawRequestResponse2 = (
+            IERC20(usdc).balanceOf(address(parentPoolProxy))
+                - IParentPoolWrapper(address(parentPoolProxy)).getDepositFeeAmount()
+        );
+        _startWithdrawalAndFulfillRequest(user2, _withdrawAmount2, withdrawRequestResponse2);
+
+        /// @dev get the withdrawRequest for user1
+        ParentPool_Wrapper.WithdrawRequest memory withdrawRequest2 =
+            IParentPoolWrapper(address(parentPoolProxy)).getWithdrawRequest(_getWithdrawalId(user2));
+
+        /// @dev calculate expected values
+        uint256 expectedAmountToWithdrawUser2 = (
+            (_calculateTotalCrossChainLiquidity(withdrawRequestResponse2) * _withdrawAmount2)
+                / lpSupplyBeforeSecondRequest
+        );
+        uint256 expectedRemainingLiquidityFromChildPools2 =
+            (expectedAmountToWithdrawUser2 / 2) + (expectedAmountToWithdrawUser2 % 2);
+
+        assertEq(withdrawRequest2.lpAddress, user2);
+        assertEq(withdrawRequest2.lpSupplySnapshot, lpSupplyBeforeSecondRequest);
+        assertEq(withdrawRequest2.lpAmountToBurn, _withdrawAmount2);
+        assertEq(withdrawRequest2.totalCrossChainLiquiditySnapshot, 0); // not updated anywhere
+        assertEq(withdrawRequest2.amountToWithdraw, expectedAmountToWithdrawUser2);
+        assertEq(withdrawRequest2.liquidityRequestedFromEachPool, expectedAmountToWithdrawUser2 / 2);
+        assertEq(withdrawRequest2.remainingLiquidityFromChildPools, expectedRemainingLiquidityFromChildPools2);
+        assertEq(withdrawRequest2.triggeredAtTimestamp, block.timestamp + WITHDRAW_DEADLINE_SECONDS);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                 UTILITY
     //////////////////////////////////////////////////////////////*/
+    function _performUpkeep(address _lpAddress, uint256 _liquidityRequestedFromEachPool) internal {
+        /// @dev mock chainlink automation by calling performUpkeep as forwarder
+        bytes memory performData = abi.encode(_lpAddress, _liquidityRequestedFromEachPool, _getWithdrawalId(_lpAddress));
+        vm.prank(forwarder);
+        (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("performUpkeep(bytes)", performData));
+        require(success, "performUpkeep call failed");
+    }
+
     function _getWithdrawalId(address _lpAddress) internal returns (bytes32) {
         (, bytes memory returnData) =
             address(parentPoolProxy).call(abi.encodeWithSignature("getWithdrawalIdByLPAddress(address)", _lpAddress));
@@ -345,5 +497,38 @@ contract WithdrawTest is DepositTest {
 
         /// @dev completeDeposit
         _completeDeposit(_caller, depositRequestId);
+    }
+
+    function _startDepositAndFulfillRequest(address _caller, uint256 _depositAmount, uint256 _depositRequestResponse)
+        internal
+        returns (bytes32)
+    {
+        /// @dev startDeposit
+        (bytes32 depositRequestId, uint32 depositCallbackGasLimit, uint96 depositEstimatedTotalCostJuels) =
+            _startDepositAndMonitorLogs(_caller, _depositAmount);
+
+        /// @dev fulfill active request
+        bytes memory response = abi.encode(_depositRequestResponse);
+        _fulfillRequest(response, depositRequestId, depositCallbackGasLimit, depositEstimatedTotalCostJuels);
+
+        return depositRequestId;
+    }
+
+    function _startWithdrawalAndFulfillRequest(
+        address _caller,
+        uint256 _withdrawalAmount,
+        uint256 _withdrawalRequestResponse
+    ) internal returns (bytes32) {
+        /// @dev startWithdrawal
+        (bytes32 withdrawalRequestId, uint32 withdrawalCallbackGasLimit, uint96 withdrawalEstimatedTotalCostJuels) =
+            _startWithdrawalAndMonitorLogs(_caller, _withdrawalAmount);
+
+        /// @dev fulfill active withdrawal request
+        bytes memory withdrawResponse = abi.encode(_withdrawalRequestResponse);
+        _fulfillRequest(
+            withdrawResponse, withdrawalRequestId, withdrawalCallbackGasLimit, withdrawalEstimatedTotalCostJuels
+        );
+
+        return withdrawalRequestId;
     }
 }

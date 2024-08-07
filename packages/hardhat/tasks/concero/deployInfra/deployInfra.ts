@@ -1,7 +1,7 @@
 import { task, types } from "hardhat/config";
 import chains from "../../../constants/CNetworks";
 import CNetworks, { networkEnvKeys, NetworkType } from "../../../constants/CNetworks";
-import { setConceroProxyDstContracts } from "./setContractVariables";
+import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
 import { CNetwork } from "../../../types/CNetwork";
 import uploadDonSecrets from "../../donSecrets/upload";
 import deployConcero from "../../../deploy/04_ConceroBridge";
@@ -14,8 +14,9 @@ import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import { compileContracts } from "../../../utils/compileContracts";
-import { deployerTargetBalances, ensureWalletBalance } from "../../ensureBalances/ensureBalances";
+import { ensureWalletBalance } from "../../ensureBalances/ensureBalances";
 import { DeployInfraParams } from "./types";
+import { deployerTargetBalances } from "../../../constants/targetBalances";
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("deployproxy", "Deploy the proxy")
@@ -59,10 +60,11 @@ async function deployInfra(params: DeployInfraParams) {
   const { hre, deployableChains, networkType, deployProxy, deployImplementation, setVars, uploadSecrets, slotId } =
     params;
   const { name } = hre.network;
-  const { deployer } = await hre.getNamedAccounts();
-  await ensureWalletBalance(deployer, deployerTargetBalances, CNetworks[name]);
+  const { deployer, proxyDeployer } = await hre.getNamedAccounts();
 
   if (deployProxy) {
+    await ensureWalletBalance(proxyDeployer, deployerTargetBalances, CNetworks[name]);
+
     await deployProxyAdmin(hre, ProxyType.infra);
     await deployTransparentProxy(hre, ProxyType.infra);
 
@@ -70,6 +72,8 @@ async function deployInfra(params: DeployInfraParams) {
     const { functionsSubIds } = chains[name];
     await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
   }
+
+  await ensureWalletBalance(deployer, deployerTargetBalances, CNetworks[name]);
 
   if (deployImplementation) {
     await deployConceroDexSwap(hre);
@@ -82,7 +86,7 @@ async function deployInfra(params: DeployInfraParams) {
     if (uploadSecrets) {
       await uploadDonSecrets(deployableChains, slotId, 4320);
     }
-    // await setContractVariables(liveChains, deployableChains, slotId, uploadSecrets);
+    await setContractVariables(deployableChains, slotId, uploadSecrets);
     await setConceroProxyDstContracts(deployableChains);
   }
 }

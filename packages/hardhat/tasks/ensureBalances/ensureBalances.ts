@@ -4,33 +4,12 @@ import { privateKeyToAccount } from "viem/accounts";
 import { task } from "hardhat/config";
 import { formatEther, parseEther } from "viem";
 import { type CNetwork } from "../../types/CNetwork";
-import log from "../../utils/log";
+import log, { err } from "../../utils/log";
 import { type BalanceInfo } from "./types";
 import { getEnvVar } from "../../utils/getEnvVar";
 import readline from "readline";
 import { viemReceiptConfig } from "../../constants/deploymentVariables";
-
-const messengerTargetBalances: Record<string, bigint> = {
-  mainnet: parseEther("0.01"),
-  arbitrum: parseEther("0.01"),
-  polygon: parseEther("0.1"),
-  avalanche: parseEther("0.01"),
-  base: parseEther("0.01"),
-};
-
-export const deployerTargetBalances: Record<string, bigint> = {
-  mainnet: parseEther("0.01"),
-  arbitrum: parseEther("0.01"),
-  polygon: parseEther("1"),
-  avalanche: parseEther("0.3"),
-  base: parseEther("0.01"),
-  //testnet
-  sepolia: parseEther("0.1"),
-  arbitrumSepolia: parseEther("0.01"),
-  polygonAmoy: parseEther("1"),
-  avalancheFuji: parseEther("0.3"),
-  baseSepolia: parseEther("0.01"),
-};
+import { messengerTargetBalances } from "../../constants/targetBalances";
 
 const donorAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
 const wallets = [getEnvVar("MESSENGER_0_ADDRESS"), getEnvVar("POOL_MESSENGER_0_ADDRESS")];
@@ -46,8 +25,14 @@ export async function ensureWalletBalance(wallet: string, targetBalances: Record
     target: balance.target,
     deficit: balance.deficit,
   };
-  if (balance.deficit > BigInt(0)) {
-    throw new Error(`Insufficient balance for ${balance.deficit} on ${balance.chain.name}`);
+
+  if (parseFloat(balance.deficit) > 0) {
+    err(
+      `Insufficient balance for ${wallet}. Balance: ${balance.balance}. Deficit: ${balance.deficit}`,
+      "ensureWalletBalance",
+      chain.name,
+    );
+    throw new Error();
   }
   console.table([displayedWalletBalances]);
   return balance;

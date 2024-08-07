@@ -36,19 +36,21 @@ task("clf-sub-accept", "Accepts ownership of an Functions subscription after a t
     log(
       `Accepting ownership of subscription ${subscriptionId} from current owner ${currentOwner}...`,
       "clf-sub-accept",
+      name,
     );
     const acceptTx = await sm.acceptSubTransfer({ subscriptionId, txOptions });
 
     log(
       `Acceptance request completed in Tx: ${acceptTx.transactionHash}. \n${signer.address} is now the owner of subscription ${subscriptionId}.`,
       "clf-sub-accept",
+      name,
     );
 
     const subInfo = await sm.getSubscriptionInfo(subscriptionId);
     // parse balances into LINK for readability
     subInfo.balance = formatEther(subInfo.balance) + " LINK";
     subInfo.blockedBalance = formatEther(subInfo.blockedBalance) + " LINK";
-    log(`Updated Subscription Info: ${subInfo}`, "clf-sub-accept");
+    log(`Updated Subscription Info: ${subInfo}`, "clf-sub-accept", name);
   });
 
 export default {};

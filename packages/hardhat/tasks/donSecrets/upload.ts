@@ -5,7 +5,7 @@ import secrets from "../../constants/CLFSecrets";
 import updateEnvVariable from "../../utils/updateEnvVariable";
 import { CNetwork } from "../../types/CNetwork";
 import { getEthersV5FallbackSignerAndProvider } from "../utils/getEthersSignerAndProvider";
-import log from "../../utils/log";
+import log, { err } from "../../utils/log";
 import listSecrets from "./list";
 import { setDonHostedSecretsVersion } from "../concero/deployInfra/setContractVariables";
 import load from "../../utils/load";
@@ -33,11 +33,11 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
     // const requestConfig = await import(configPath);
 
     if (!secrets) {
-      console.error("No secrets to upload.");
+      err("No secrets to upload.", "donSecrets/upload", name);
       return;
     }
 
-    console.log("Uploading secrets to DON for network:", name);
+    log("Uploading secrets to DON", "donSecrets/upload", name);
     const encryptedSecretsObj = await secretsManager.encryptSecrets(secrets);
 
     const {
@@ -51,8 +51,9 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
     });
 
     log(
-      `DONSecrets uploaded to ${name}. slot_id: ${slotId}, version: ${version}, ttl: ${minutesUntilExpiration}`,
+      `DONSecrets uploaded. slot_id: ${slotId}, version: ${version}, ttl: ${minutesUntilExpiration}`,
       "donSecrets/upload",
+      name,
     );
 
     await listSecrets(chain);

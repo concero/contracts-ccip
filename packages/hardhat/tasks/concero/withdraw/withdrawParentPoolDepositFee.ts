@@ -3,7 +3,6 @@ import chains from "../../../constants/CNetworks";
 import { CNetwork } from "../../../types/CNetwork";
 import { getClients } from "../../utils/getViemClients";
 import { getEnvVar } from "../../../utils/getEnvVar";
-import { Address } from "viem";
 import log, { err } from "../../../utils/log";
 import load from "../../../utils/load";
 
@@ -15,7 +14,7 @@ const withdrawToken = async (chain: CNetwork) => {
 
   try {
     const { request: withdrawReq } = await publicClient.simulateContract({
-      address: conceroProxy as Address,
+      address: conceroProxy,
       abi,
       functionName: "withdrawDepositFees",
       account,

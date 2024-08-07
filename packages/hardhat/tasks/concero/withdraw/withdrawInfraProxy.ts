@@ -45,7 +45,7 @@ const withdrawToken = async (chain: CNetwork, tokenAddress: Address, contractTyp
     }
 
     const { request: withdrawReq } = await publicClient.simulateContract({
-      address: conceroProxy as Address,
+      address: conceroProxy,
       abi,
       functionName: "withdraw",
       account,
@@ -73,7 +73,7 @@ const depositToken = async (chain: CNetwork, tokenAddress: Address, contractType
   const amountToDeposit = BigInt(amount);
 
   try {
-    const accountBalance = await getBalance(tokenAddress, account.address as Address, chain);
+    const accountBalance = await getBalance(tokenAddress, account.address, chain);
     if (accountBalance < amountToDeposit) {
       log(
         `Not enough balance to deposit. Balance: ${accountBalance}, Amount to deposit: ${amountToDeposit}`,

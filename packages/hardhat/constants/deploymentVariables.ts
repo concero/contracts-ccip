@@ -18,3 +18,41 @@ export const viemReceiptConfig: WaitForTransactionReceiptParameters = {
   timeout: 0,
   confirmations: 2,
 };
+
+export type DeploymentPrefixes = {
+  infraProxy: string;
+  infraProxyAdmin: string;
+  bridge: string;
+  dexSwap: string;
+  orchestrator: string;
+  parentPoolProxy: string;
+  parentPoolProxyAdmin: string;
+  parentPool: string;
+  childPoolProxy: string;
+  childPoolProxyAdmin: string;
+  childPool: string;
+  automation: string;
+  lpToken: string;
+  create3Factory: string;
+  pause: string;
+  uniswapRouter: string;
+};
+
+export const deploymentPrefixes: DeploymentPrefixes = {
+  infraProxy: "CONCERO_INFRA_PROXY",
+  infraProxyAdmin: "CONCERO_INFRA_PROXY_ADMIN",
+  bridge: "CONCERO_BRIDGE",
+  dexSwap: "CONCERO_DEX_SWAP",
+  orchestrator: "CONCERO_ORCHESTRATOR",
+  parentPoolProxy: "PARENT_POOL_PROXY",
+  parentPoolProxyAdmin: "PARENT_POOL_PROXY_ADMIN",
+  parentPool: "PARENT_POOL",
+  childPoolProxy: "CHILD_POOL_PROXY",
+  childPoolProxyAdmin: "CHILD_POOL_PROXY_ADMIN",
+  childPool: "CHILD_POOL",
+  automation: "CONCERO_AUTOMATION",
+  lpToken: "LPTOKEN",
+  create3Factory: "CREATE3_FACTORY",
+  pause: "CONCERO_PAUSE",
+  uniswapRouter: "UNISWAP_ROUTER",
+};

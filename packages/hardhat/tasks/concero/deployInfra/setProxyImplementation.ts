@@ -21,7 +21,7 @@
 //   const conceroOrchestratorAddress = getEnvVar(`CONCERO_ORCHESTRATOR_${networkEnvKeys[chainName]}`)
 //
 //   // const { request } = await publicClient.simulateContract({
-//   //   address: conceroProxyAddress as Address,
+//   //   address: conceroProxyAddress ,
 //   //   abi: parseAbi(["function upgradeToAndCall(address newImplementation, bytes calldata data) external"]),
 //   //   functionName: "upgradeToAndCall",
 //   //   account: viemAccount,

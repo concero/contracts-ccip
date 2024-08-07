@@ -3,6 +3,7 @@ import { SubscriptionManager } from "@chainlink/functions-toolkit";
 import chains from "../../constants/CNetworks";
 import { formatEther } from "viem";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import log from "../../utils/log";
 
 // run with: bunx hardhat clf-sub-fund --amount 0.01 --subid 5810 --network avalancheFuji
 task("clf-sub-fund", "Funds a billing subscription for Functions consumer contracts")
@@ -36,10 +37,14 @@ task("clf-sub-fund", "Funds a billing subscription for Functions consumer contra
     // const utils = require('../path/to/utils');
     // await utils.prompt(`Please confirm that you wish to fund Subscription ${subscriptionId} with ${linkAmount} LINK from your wallet.`);
 
-    console.log(`Funding subscription ${subId} with ${linkAmount} LINK...`);
+    log(`Funding subscription ${subId} with ${linkAmount} LINK...`, `fundSubscription`, name);
     const fundTxReceipt = await sm.fundSubscription({ juelsAmount, subscriptionId: subId, txOptions });
 
-    console.log(`Subscription ${subId} funded with ${linkAmount} LINK in Tx: ${fundTxReceipt.transactionHash}`);
+    log(
+      `Subscription ${subId} funded with ${linkAmount} LINK in Tx: ${fundTxReceipt.transactionHash}`,
+      "fundSubscription",
+      name,
+    );
 
     // Fetch and log updated subscription information
     const subInfo = await sm.getSubscriptionInfo(subId);
@@ -47,7 +52,7 @@ task("clf-sub-fund", "Funds a billing subscription for Functions consumer contra
     subInfo.balance = formatEther(subInfo.balance) + " LINK";
     subInfo.blockedBalance = formatEther(subInfo.blockedBalance) + " LINK";
 
-    console.log("Updated subscription Info: ", subInfo);
+    log(`Updated subscription Info: ${subInfo}`, "fundSubscription", name);
   });
 
 export default {};

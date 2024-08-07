@@ -10,7 +10,6 @@ import load from "../../../utils/load";
 import { getEthersV5FallbackSignerAndProvider } from "../../utils/getEthersSignerAndProvider";
 import { SecretsManager } from "@chainlink/functions-toolkit";
 import { mainnetChains, testnetChains } from "../liveChains";
-import env from "../../../types/env";
 import { viemReceiptConfig } from "../../../constants/deploymentVariables";
 
 async function setParentPoolJsHashes(deployableChain: CNetwork, abi: any) {
@@ -23,7 +22,7 @@ async function setParentPoolJsHashes(deployableChain: CNetwork, abi: any) {
 
     const setHash = async (hash: string, functionName: string) => {
       const setHashHash = await walletClient.writeContract({
-        address: parentPoolProxyAddress as Address,
+        address: parentPoolProxyAddress,
         abi,
         functionName,
         account,
@@ -167,9 +166,9 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
     const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
     if (!dstChainName) throw new Error("Destination chain name not found");
     if (!dstChainSelector) throw new Error("Destination chain selector not found");
-    const dstConceroContract = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dstChainName]}` as keyof env);
-    const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
-    const childPool = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env);
+    const dstConceroContract = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dstChainName]}`);
+    const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}`);
+    const childPool = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}`);
 
     const setSender = async (sender: Address) => {
       const { request: setSenderReq } = await publicClient.simulateContract({
@@ -210,8 +209,8 @@ async function setPools(chain: CNetwork, abi: any) {
 
       const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
       if (!dstChainName) throw new Error("Destination chain name not found");
-      const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
-      const dstPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env);
+      const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}`);
+      const dstPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}`);
 
       const { request: setReceiverReq } = await publicClient.simulateContract({
         address: conceroPoolAddress,
@@ -243,7 +242,7 @@ async function deletePendingRequest(chain: CNetwork, abi, reqId: string) {
   const { publicClient, account, walletClient } = clients;
   if (!chainName) throw new Error("Chain name not found");
 
-  const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
+  const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}`);
   const { request: deletePendingReq } = await publicClient.simulateContract({
     address: conceroPoolAddress,
     functionName: "deletePendingWithdrawRequest",
@@ -265,7 +264,7 @@ async function getPendingRequest(chain: CNetwork, abi: any) {
   const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
   if (!chainName) throw new Error("Chain name not found");
-  const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
+  const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}`);
 
   const pendingRequest = await publicClient.readContract({
     address: conceroPoolAddress,
@@ -284,8 +283,8 @@ async function removePool(chain: CNetwork, abi: any, networkName: string) {
   const { publicClient, account, walletClient } = clients;
   if (!chainName) throw new Error("Chain name not found");
 
-  const parentPoolAddress = getEnvVar(`PARENT_POOL_PROXY_BASE_SEPOLIA` as keyof env);
-  const chainSelectorToRemove = getEnvVar(`CL_CCIP_CHAIN_SELECTOR_${networkEnvKeys[networkName]}` as keyof env);
+  const parentPoolAddress = getEnvVar(`PARENT_POOL_PROXY_BASE_SEPOLIA`);
+  const chainSelectorToRemove = getEnvVar(`CL_CCIP_CHAIN_SELECTOR_${networkEnvKeys[networkName]}`);
 
   const deletePoolHash = await walletClient.writeContract({
     address: parentPoolAddress,

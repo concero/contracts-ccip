@@ -37,7 +37,7 @@ export async function dripBnm(chains: CNetwork[], amount: number = 20) {
     }
   }
 }
-
+//test
 task("drip-bnm", "Drips CCIPBNM tokens to the deployer")
   .addOptionalParam("amount", "Amount of CCIPBNM to drip", "5")
   .setAction(async taskArgs => {

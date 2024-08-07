@@ -1,4 +1,4 @@
-import { liveChains } from "../concero/liveChains";
+import { mainnetChains, testnetChains } from "../concero/liveChains";
 import { getFallbackClients } from "../utils/getViemClients";
 import { privateKeyToAccount } from "viem/accounts";
 import { task } from "hardhat/config";
@@ -95,12 +95,13 @@ async function performTopUps(walletBalances: BalanceInfo[], donorAccount: any): 
   }
 }
 
-async function ensureBalances() {
+async function ensureBalances(isTestnet: boolean) {
   const donorBalances: BalanceInfo[] = [];
   const walletBalances: BalanceInfo[] = [];
+  const chains = isTestnet ? testnetChains : mainnetChains;
 
   try {
-    for (const chain of liveChains) {
+    for (const chain of chains) {
       const walletInfos = await getBalanceInfo(wallets, chain);
       const donorInfo = await getBalanceInfo([donorAccount.address], chain);
 
@@ -146,8 +147,10 @@ async function ensureBalances() {
   }
 }
 
-task("ensure-balances", "Ensure balances of wallets").setAction(async () => {
-  await ensureBalances();
-});
+task("ensure-balances", "Ensure balances of wallets")
+  .addFlag("testnet")
+  .setAction(async taskArgs => {
+    await ensureBalances(taskArgs.testnet);
+  });
 
 export default ensureBalances;

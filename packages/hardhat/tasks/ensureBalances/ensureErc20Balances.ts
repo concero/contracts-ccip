@@ -1,4 +1,4 @@
-import { conceroChains, liveChains } from "../concero/liveChains";
+import { conceroChains, mainnetChains, testnetChains } from "../concero/liveChains";
 import { getFallbackClients } from "../utils/getViemClients";
 import { privateKeyToAccount } from "viem/accounts";
 import { task } from "hardhat/config";
@@ -105,7 +105,7 @@ async function performTopUps(erc20WalletBalances: ERC20BalanceInfo[], donorAccou
   }
 }
 
-async function ensureERC20Balances() {
+async function ensureERC20Balances(isTestnet: boolean) {
   const generateContracts = (networks: CNetwork[]) => {
     return networks.reduce(
       (acc, chain) => {
@@ -141,7 +141,9 @@ async function ensureERC20Balances() {
   const erc20WalletBalances: ERC20BalanceInfo[] = [];
 
   try {
-    for (const chain of liveChains) {
+    const chains = isTestnet ? testnetChains : mainnetChains;
+
+    for (const chain of chains) {
       const [donorInfos, erc20WalletInfos] = await collectChainInfo(chain);
       donorBalances.push(...donorInfos);
       erc20WalletBalances.push(...erc20WalletInfos);
@@ -187,8 +189,10 @@ async function ensureERC20Balances() {
   }
 }
 
-task("ensure-erc20-balances", "Ensure balances of wallets").setAction(async () => {
-  await ensureERC20Balances();
-});
+task("ensure-erc20-balances", "Ensure balances of wallets")
+  .addFlag("testnet")
+  .setAction(async taskArgs => {
+    await ensureERC20Balances(taskArgs.testnet);
+  });
 
 export default ensureERC20Balances;

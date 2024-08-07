@@ -1,7 +1,7 @@
 import { CNetwork } from "../../../types/CNetwork";
 import { getFallbackClients } from "../../utils/getViemClients";
 import { getEnvVar } from "../../../utils/getEnvVar";
-import { networkEnvKeys } from "../../../constants/CNetworks";
+import { networkEnvKeys, networkTypes } from "../../../constants/CNetworks";
 import { ethersV6CodeUrl, parentPoolJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 import { Address } from "viem";
 import log, { err } from "../../../utils/log";
@@ -9,7 +9,7 @@ import getHashSum from "../../../utils/getHashSum";
 import load from "../../../utils/load";
 import { getEthersV5FallbackSignerAndProvider } from "../../utils/getEthersSignerAndProvider";
 import { SecretsManager } from "@chainlink/functions-toolkit";
-import { liveChains } from "../liveChains";
+import { mainnetChains, testnetChains } from "../liveChains";
 import env from "../../../types/env";
 import { viemReceiptConfig } from "../../../constants/deploymentVariables";
 
@@ -53,7 +53,7 @@ async function setParentPoolCap(chain: CNetwork, abi: any) {
   try {
     const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = chain;
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[srcChainName]}`) as Address;
+    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[srcChainName]}`);
     const poolCap = 100_000n * 10n ** 6n;
 
     const { request: setCapReq } = await publicClient.simulateContract({
@@ -86,7 +86,7 @@ async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slotId: nu
   } = chain;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dcName]}`) as Address;
+    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dcName]}`);
     const { signer: dcSigner } = getEthersV5FallbackSignerAndProvider(dcName);
 
     const secretsManager = new SecretsManager({
@@ -131,7 +131,7 @@ async function setParentPoolSecretsSlotId(chian: CNetwork, abi: any, slotId: num
   const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = chian;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[srcChainName]}`) as Address;
+    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[srcChainName]}`);
 
     const { request } = await publicClient.simulateContract({
       address: parentPoolProxyAddress,
@@ -155,20 +155,21 @@ async function setParentPoolSecretsSlotId(chian: CNetwork, abi: any, slotId: num
 }
 
 async function setConceroContractSenders(chain: CNetwork, abi: any) {
-  const { name: chainName, viemChain, url } = chain;
+  const { name: chainName, viemChain, type } = chain;
   const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
   if (!chainName) throw new Error("Chain name not found");
+  const chains = type === networkTypes.mainnet ? mainnetChains : testnetChains;
 
-  for (const dstChain of liveChains) {
+  for (const dstChain of chains) {
     if (dstChain.chainId === chain.chainId) continue;
 
     const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
     if (!dstChainName) throw new Error("Destination chain name not found");
     if (!dstChainSelector) throw new Error("Destination chain selector not found");
-    const dstConceroContract = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
-    const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env) as Address;
-    const childPool = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address;
+    const dstConceroContract = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dstChainName]}` as keyof env);
+    const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
+    const childPool = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env);
 
     const setSender = async (sender: Address) => {
       const { request: setSenderReq } = await publicClient.simulateContract({
@@ -196,12 +197,14 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
 }
 
 async function setPools(chain: CNetwork, abi: any) {
-  const { name: chainName, viemChain, url } = chain;
+  const { name: chainName, viemChain, url, type } = chain;
   const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
   if (!chainName) throw new Error("Chain name not found");
 
-  for (const dstChain of liveChains) {
+  const chains = type === networkTypes.mainnet ? mainnetChains : testnetChains;
+
+  for (const dstChain of chains) {
     try {
       if (dstChain.chainId === chain.chainId) continue;
 

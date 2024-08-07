@@ -19,11 +19,11 @@ const deployerPK = process.env.DEPLOYER_PRIVATE_KEY;
 const proxyDeployerPK = process.env.PROXY_DEPLOYER_PRIVATE_KEY;
 const saveDeployments = false;
 if (!deployerPK) {
-  throw new Error("DEPLOYER_PRIVATE_KEY is not set");
+  console.error("DEPLOYER_PRIVATE_KEY is not set");
 }
 
 if (!proxyDeployerPK) {
-  throw new Error("PROXY_DEPLOYER_PRIVATE_KEY is not set");
+  console.error("PROXY_DEPLOYER_PRIVATE_KEY is not set");
 }
 
 export const networkEnvKeys: Record<string, string> = {

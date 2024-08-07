@@ -83,9 +83,6 @@ const deployConceroBridge: DeployFunction = async function (
   // Merge defaultArgs with constructorArgs
   const args = { ...defaultArgs, ...constructorArgs };
 
-  const gasPrice = await hre.ethers.provider.getGasPrice();
-  const higherGasPrice = hre.ethers.BigNumber.from(gasPrice).mul(2).toString();
-
   const deployment = (await deploy("ConceroBridge", {
     from: deployer,
     log: true,
@@ -104,7 +101,7 @@ const deployConceroBridge: DeployFunction = async function (
   })) as Deployment;
 
   if (live) {
-    log(`Contract Concero deployed to ${name} at ${deployment.address}`, "deployConceroBridge");
+    log(`Contract ConceroBridge deployed to ${name} at ${deployment.address}`, "deployConceroBridge");
     updateEnvVariable(`CONCERO_BRIDGE_${networkEnvKeys[name]}`, deployment.address, "../../../.env.deployments");
   }
 };

@@ -28,7 +28,7 @@ contract ParentPoolStorage {
     uint256 internal s_depositFeeAmount;
 
     ///@notice variable to store the amount requested in withdraws, incremented at startWithdrawal, decremented at completewithdrawal
-    uint256 public s_totalWithdrawRequestsAmount;
+    uint256 public s_withdrawAmountLocked;
     //incremented when ccipSend is called on child pools by CLA, decremented with each ccipReceive
     uint256 internal s_withdrawalsOnTheWayAmount;
     ///@notice gap to reserve storage in the contract for future variable additions
@@ -59,7 +59,7 @@ contract ParentPoolStorage {
 
     mapping(bytes32 clfReqId => bytes32 withdrawalId) public s_withdrawalIdByCLFRequestId;
 
-    mapping(bytes32 clfReqId => IParentPool.WithdrawRequest) public s_withdrawRequests;
+    mapping(bytes32 withdrawalId => IParentPool.WithdrawRequest) public s_withdrawRequests;
 
     ///@notice variable to store the automation keeper address
     address public s_forwarderAddress;

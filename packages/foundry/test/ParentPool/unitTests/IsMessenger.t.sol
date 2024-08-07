@@ -26,8 +26,8 @@ contract IsMessengerTest is BaseTest {
             address(lpToken),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
             address(deployer),
-            [messenger1, address(0), address(0)],
-            slotId
+            slotId,
+            [messenger1, address(0), address(0)]
         );
 
         setProxyImplementation(address(parentPoolImplementation));

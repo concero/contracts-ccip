@@ -1,6 +1,5 @@
 import { task, types } from "hardhat/config";
-import chains from "../../../constants/CNetworks";
-import CNetworks, { networkEnvKeys, networkTypes } from "../../../constants/CNetworks";
+import CNetworks, { networkTypes } from "../../../constants/CNetworks";
 import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
 import { CNetwork } from "../../../types/CNetwork";
 import uploadDonSecrets from "../../donSecrets/upload";
@@ -9,7 +8,7 @@ import { conceroChains } from "../liveChains";
 import deployConceroDexSwap from "../../../deploy/03_ConceroDexSwap";
 import deployConceroOrchestrator from "../../../deploy/05_ConceroOrchestrator";
 import addCLFConsumer from "../../sub/add";
-import { getEnvVar } from "../../../utils/getEnvVar";
+import { getEnvAddress } from "../../../utils/getEnvVar";
 import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
@@ -28,17 +27,14 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     compileContracts({ quiet: true });
 
     const hre = require("hardhat");
-    const { live, tags, name } = hre.network;
+    const { live, name } = hre.network;
     const networkType = CNetworks[name].type;
     let deployableChains: CNetwork[] = [];
     if (live) deployableChains = [CNetworks[hre.network.name]];
 
     let liveChains: CNetwork[] = [];
-    if (networkType == networkTypes.mainnet) {
-      liveChains = conceroChains.mainnet.infra;
-    } else {
-      liveChains = conceroChains.testnet.infra;
-    }
+    if (networkType == networkTypes.mainnet) liveChains = conceroChains.mainnet.infra;
+    else liveChains = conceroChains.testnet.infra;
 
     await deployInfra({
       hre,
@@ -60,13 +56,12 @@ async function deployInfra(params: DeployInfraParams) {
 
   if (deployProxy) {
     await ensureWalletBalance(proxyDeployer, deployerTargetBalances, CNetworks[name]);
-
     await deployProxyAdmin(hre, ProxyType.infra);
     await deployTransparentProxy(hre, ProxyType.infra);
 
-    const proxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`);
-    const { functionsSubIds } = chains[name];
-    await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
+    const [proxyAddress, _] = getEnvAddress("infraProxy", name);
+    const { functionsSubIds } = CNetworks[name];
+    await addCLFConsumer(CNetworks[name], [proxyAddress], functionsSubIds[0]);
   }
 
   await ensureWalletBalance(deployer, deployerTargetBalances, CNetworks[name]);

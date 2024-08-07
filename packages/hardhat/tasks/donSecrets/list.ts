@@ -5,7 +5,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { liveChains } from "../concero/deployInfra/deployInfra";
 import { CNetwork } from "../../types/CNetwork";
 import { getEthersV5FallbackSignerAndProvider } from "../utils/getEthersSignerAndProvider";
-import log from "../../utils/log";
+import log, { err } from "../../utils/log";
 
 async function listSecrets(chain: CNetwork): Promise<{ [slotId: number]: { version: number; expiration: number } }> {
   const { provider, signer } = getEthersV5FallbackSignerAndProvider(chain.name);
@@ -27,7 +27,11 @@ async function listSecrets(chain: CNetwork): Promise<{ [slotId: number]: { versi
     if (nodeResponse.rows) {
       nodeResponse.rows.forEach(row => {
         if (allSecrets[row.slot_id] && allSecrets[row.slot_id].version !== row.version)
-          return log(`Node mismatch for slot_id. ${allSecrets[row.slot_id]} !== ${row.slot_id}!`, "listSecrets");
+          return err(
+            `Node mismatch for slot_id. ${allSecrets[row.slot_id]} !== ${row.slot_id}!`,
+            "listSecrets",
+            chain.name,
+          );
         allSecrets[row.slot_id] = { version: row.version, expiration: row.expiration };
       });
     }

@@ -4,7 +4,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { task } from "hardhat/config";
 import { parseUnits } from "viem";
 import { type CNetwork, CNetworkNames } from "../../types/CNetwork";
-import log from "../../utils/log";
+import log, { err } from "../../utils/log";
 import { type BalanceInfo, type ERC20BalanceInfo } from "./types";
 import { getEnvVar } from "../../utils/getEnvVar";
 import readline from "readline";
@@ -56,7 +56,11 @@ async function topUpERC20Wallet(
       "topUpERC20Wallet",
     );
   } catch (error) {
-    console.error(`Error topping up ${wallet} with token ${token} on ${publicClient.chain.name}:`, error);
+    err(
+      `Error topping up ${wallet} with token ${token} on ${publicClient.chain.name}: ${error}`,
+      "topUpERC20Wallet",
+      walletClient.chain.name,
+    );
   }
 }
 

@@ -66,11 +66,12 @@ async function topUpWallet(wallet: string, publicClient: any, walletClient: any,
       hash,
     });
     log(
-      `Topped up ${wallet} on ${publicClient.chain.name} with ${formatEther(amount)} ETH. Tx: ${hash}. Gas used: ${setDexRouterGasUsed}`,
+      `Topped up ${wallet} with ${formatEther(amount)} ETH. Tx: ${hash}. Gas used: ${setDexRouterGasUsed}`,
       "topUpWallet",
+      publicClient.chain.name,
     );
   } catch (error) {
-    console.error(`Error topping up ${wallet} on ${publicClient.chain.name}:`, error);
+    err(`Error topping up ${wallet} on ${publicClient.chain.name}: ${error} `, "topUpWallet");
   }
 }
 

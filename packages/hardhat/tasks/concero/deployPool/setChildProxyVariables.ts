@@ -1,9 +1,7 @@
 import load from "../../../utils/load";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import CNetworks, { networkEnvKeys, networkTypes } from "../../../constants/CNetworks";
-import env from "../../../types/env";
-import { Address } from "viem";
-import log from "../../../utils/log";
+import log, { err } from "../../../utils/log";
 import { mainnetChains, testnetChains } from "../liveChains";
 import { viemReceiptConfig } from "../../../constants/deploymentVariables";
 import { getFallbackClients } from "../../utils/getViemClients";
@@ -23,12 +21,12 @@ async function setConceroProxySender(hre) {
     const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
     if (!dstChainName) throw new Error("Destination chain name not found");
     if (!dstChainSelector) throw new Error("Destination chain selector not found");
-    const dstConceroAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dstChainName]}` as keyof env);
+    const dstConceroAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dstChainName]}`);
     const dstConceroPoolAddress =
       dstChain.chainId === CNetworks.base.chainId || dstChain.chainId === CNetworks.baseSepolia.chainId
-        ? (getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address)
-        : (getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}` as keyof env) as Address);
-    const conceroPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
+        ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dstChainName]}`)
+        : getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}`);
+    const conceroPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[chainName]}`);
 
     try {
       const setSenderHash = await walletClient.writeContract({
@@ -70,9 +68,10 @@ async function setConceroProxySender(hre) {
         "setConceroContractSender",
       );
     } catch (error) {
-      log(
-        `Error setting ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${dstConceroAddress}]`,
+      err(
+        `Error setting ${conceroPoolAddress} sender[${dstChainName}:${dstConceroAddress}]`,
         "setConceroContractSender",
+        chainName,
       );
       console.error(error);
     }
@@ -94,14 +93,14 @@ async function addPoolsToAllChains(hre) {
     const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
     const poolAddressToAdd =
       dstChain.chainId === CNetworks.base.chainId || dstChain.chainId === CNetworks.baseSepolia.chainId
-        ? (getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dstChain.name]}` as keyof env) as Address)
-        : (getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChain.name]}` as keyof env) as Address);
+        ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dstChain.name]}`)
+        : getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChain.name]}`);
 
     try {
       if (!dstChainName) throw new Error("Destination chain name not found");
       if (!dstChainSelector) throw new Error("Destination chain selector not found");
 
-      const conceroPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[chainName]}` as keyof env);
+      const conceroPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[chainName]}`);
 
       const { request: setPoolReq } = await publicClient.simulateContract({
         address: conceroPoolAddress,
@@ -118,10 +117,7 @@ async function addPoolsToAllChains(hre) {
         hash: setPoolHash,
       });
 
-      log(
-        `Added pool ${poolAddressToAdd} for chain ${dstChain.name}. Gas used: ${setPoolGasUsed.toString()}`,
-        "addPoolsToAllChains",
-      );
+      err(`Added pool ${poolAddressToAdd}. Gas used: ${setPoolGasUsed.toString()}`, "addPoolsToAllChains", chainName);
     } catch (error) {
       console.error(error);
     }

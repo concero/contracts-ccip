@@ -38,7 +38,7 @@ const deployConceroOrchestrator: DeployFunction = async function (hre: HardhatRu
   })) as Deployment;
 
   if (live) {
-    log(`ConceroOrchestrator deployed to ${name} to: ${conceroProxyDeployment.address}`, "deployConceroOrchestrator");
+    log(`Deployed at: ${conceroProxyDeployment.address}`, "ConceroOrchestrator", name);
     updateEnvVariable(
       `CONCERO_ORCHESTRATOR_${networkEnvKeys[name]}`,
       conceroProxyDeployment.address,

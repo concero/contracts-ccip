@@ -4,7 +4,7 @@ import { CNetwork } from "../../../types/CNetwork";
 import { getFallbackClients } from "../../utils/getViemClients";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import { Address, erc20Abi } from "viem";
-import log from "../../../utils/log";
+import log, { err } from "../../../utils/log";
 import load from "../../../utils/load";
 import { viemReceiptConfig } from "../../../constants/deploymentVariables";
 
@@ -62,7 +62,7 @@ const withdrawToken = async (chain: CNetwork, tokenAddress: Address, contractTyp
       "withdrawToken",
     );
   } catch (error) {
-    log(`Error for ${dcName}: ${error.message}`, "setDonHostedSecretsSlotID");
+    err(`${error.message}`, "setDonHostedSecretsSlotID", dcName);
   }
 };
 
@@ -102,7 +102,7 @@ const depositToken = async (chain: CNetwork, tokenAddress: Address, contractType
     );
   } catch (error) {
     console.error(error);
-    log(`Error for ${dcName}: ${error.message}`, "depositToken");
+    err(`${error.message}`, "depositToken", dcName);
   }
 };
 task("deposit-infra-proxy", "Deposits the token to the proxy contract")

@@ -4,7 +4,7 @@ import { CNetwork } from "../../../types/CNetwork";
 import { getClients } from "../../utils/getViemClients";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import { Address } from "viem";
-import log from "../../../utils/log";
+import log, { err } from "../../../utils/log";
 import load from "../../../utils/load";
 
 const withdrawToken = async (chain: CNetwork) => {
@@ -29,7 +29,7 @@ const withdrawToken = async (chain: CNetwork) => {
       "withdrawToken",
     );
   } catch (error) {
-    log(`Error for ${dcName}: ${error.message}`, "withdrawDepositFees");
+    err(`${error.message}`, "withdrawDepositFees", dcName);
   }
 };
 

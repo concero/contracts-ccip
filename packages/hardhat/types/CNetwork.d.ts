@@ -2,6 +2,7 @@
 import { NetworkUserConfig } from "hardhat/types";
 import { HttpNetworkUserConfig } from "hardhat/src/types/config";
 import { Chain } from "viem";
+import { NetworkType } from "../constants/CNetworks";
 
 export type envString = string | undefined;
 export type CNetworkNames = "localhost" |
@@ -25,6 +26,7 @@ export type CLFNetwork = {
   viemChain: Chain;
   name: CNetworkNames;
   urls: string[];
+  tags: NetworkType[];
 };
 
 interface PriceFeed {

@@ -62,7 +62,11 @@ export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shou
 
   const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ ...viemReceiptConfig, hash: txHash });
 
-  log(`Upgrade Proxy Implementation: gasUsed: ${cumulativeGasUsed}, hash: ${txHash}`, "setProxyImplementation");
+  log(
+    `Upgrade Proxy Implementation: gasUsed: ${cumulativeGasUsed}, hash: ${txHash}`,
+    "setProxyImplementation",
+    chainName,
+  );
 }
 export default {};
 

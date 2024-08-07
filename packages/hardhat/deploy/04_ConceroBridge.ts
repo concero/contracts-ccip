@@ -101,7 +101,7 @@ const deployConceroBridge: DeployFunction = async function (
   })) as Deployment;
 
   if (live) {
-    log(`Contract ConceroBridge deployed to ${name} at ${deployment.address}`, "deployConceroBridge");
+    log(`Deployed at: ${deployment.address}`, "conceroBridge", name);
     updateEnvVariable(`CONCERO_BRIDGE_${networkEnvKeys[name]}`, deployment.address, "../../../.env.deployments");
   }
 };

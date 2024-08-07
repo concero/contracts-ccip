@@ -26,6 +26,7 @@ import upgradeProxyImplementation from "./concero/upgradeProxyImplementation";
 import changeOwnership from "./concero/changeOwnership";
 import withdrawParentPoolDepositFee from "./concero/withdraw/withdrawParentPoolDepositFee";
 import ensureBalances from "./ensureBalances/ensureBalances";
+import ensureERC20Balances from "./ensureBalances/ensureErc20Balances";
 
 export default {
   billing,
@@ -56,4 +57,5 @@ export default {
   changeOwnership,
   withdrawParentPoolDepositFee,
   ensureBalances,
+  ensureERC20Balances,
 };

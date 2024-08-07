@@ -4,7 +4,7 @@ import { getEnvVar } from "../../../utils/getEnvVar";
 import { networkEnvKeys } from "../../../constants/CNetworks";
 import { ethersV6CodeUrl, parentPoolJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 import { Address } from "viem";
-import log from "../../../utils/log";
+import log, { err } from "../../../utils/log";
 import getHashSum from "../../../utils/getHashSum";
 import load from "../../../utils/load";
 import { getEthersV5FallbackSignerAndProvider } from "../../utils/getEthersSignerAndProvider";
@@ -45,7 +45,7 @@ async function setParentPoolJsHashes(deployableChain: CNetwork, abi: any) {
     await setHash(getHashSum(parentPoolJsCode), "setHashSum");
     await setHash(getHashSum(ethersCode), "setEthersHashSum");
   } catch (error) {
-    log(`Error ${error?.message}`, "setHashSum");
+    err(`${error?.message}`, "setHashSum", srcChainName);
   }
 }
 
@@ -71,20 +71,20 @@ async function setParentPoolCap(chain: CNetwork, abi: any) {
       hash: setCapHash,
     });
   } catch (error) {
-    log(`Error ${error?.message}`, "setPoolCap");
+    err(`${error?.message}`, "setPoolCap", srcChainName);
   }
 }
 
 async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slotId: number) {
+  const {
+    functionsRouter: dcFunctionsRouter,
+    functionsDonIdAlias: dcFunctionsDonIdAlias,
+    functionsGatewayUrls: dcFunctionsGatewayUrls,
+    url: dcUrl,
+    viemChain: dcViemChain,
+    name: dcName,
+  } = chain;
   try {
-    const {
-      functionsRouter: dcFunctionsRouter,
-      functionsDonIdAlias: dcFunctionsDonIdAlias,
-      functionsGatewayUrls: dcFunctionsGatewayUrls,
-      url: dcUrl,
-      viemChain: dcViemChain,
-      name: dcName,
-    } = chain;
     const { walletClient, publicClient, account } = getFallbackClients(chain);
     const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dcName]}`) as Address;
     const { signer: dcSigner } = getEthersV5FallbackSignerAndProvider(dcName);
@@ -123,13 +123,13 @@ async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slotId: nu
       "setDonHostedSecretsVersion",
     );
   } catch (error) {
-    log(`Error ${error?.message}`, "setDonHostedSecretsVersion");
+    err(`${error?.message}`, "setDonHostedSecretsVersion", dcName);
   }
 }
 
 async function setParentPoolSecretsSlotId(chian: CNetwork, abi: any, slotId: number) {
+  const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = chian;
   try {
-    const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = chian;
     const { walletClient, publicClient, account } = getFallbackClients(chain);
     const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[srcChainName]}`) as Address;
 
@@ -150,7 +150,7 @@ async function setParentPoolSecretsSlotId(chian: CNetwork, abi: any, slotId: num
       "setDonHostedSecretsSlotId",
     );
   } catch (error) {
-    log(`Error ${error?.message}`, "setDonHostedSecretsSlotId");
+    err(`Error ${error?.message}`, "setDonHostedSecretsSlotId", srcChainName);
   }
 }
 
@@ -224,11 +224,12 @@ async function setPools(chain: CNetwork, abi: any) {
         hash: setReceiverHash,
       });
       log(
-        `Set ${chainName}:${conceroPoolAddress} receiver[${dstChainName}:${dstPoolAddress}]. Gas used: ${setReceiverGasUsed.toString()}`,
+        `Set ${conceroPoolAddress} receiver[${dstChainName}:${dstPoolAddress}]. Gas used: ${setReceiverGasUsed.toString()}`,
         "setPools",
+        chainName,
       );
     } catch (error) {
-      log(`Error ${error?.message}`, "setPools");
+      err(`Error ${error?.message}`, "setPools", chainName);
     }
   }
 }

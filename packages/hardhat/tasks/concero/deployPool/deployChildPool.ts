@@ -1,10 +1,7 @@
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import chains from "../../../constants/CNetworks";
 import log from "../../../utils/log";
 import { execSync } from "child_process";
-import { CNetwork } from "../../../types/CNetwork";
-import { liveChains } from "../liveChains";
 import deployChildPool from "../../../deploy/08_ChildPool";
 import { setChildProxyVariables } from "./setChildProxyVariables";
 import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
@@ -18,10 +15,7 @@ task("deploy-child-pool", "Deploy the pool")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
-    const { name, live } = hre.network;
-    const deployableChains: CNetwork[] = liveChains.filter(
-      (chain: CNetwork) => chain.chainId !== chains.baseSepolia.chainId && chain.chainId !== chains.base.chainId,
-    );
+    const { live } = hre.network;
 
     if (taskArgs.deployproxy) {
       await deployProxyAdmin(hre, ProxyType.childPool);

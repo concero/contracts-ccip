@@ -1,5 +1,5 @@
 import CNetworks, { networkEnvKeys, networkTypes } from "../../../constants/CNetworks";
-import { CNetwork } from "../../../types/CNetwork";
+import { CNetwork, CNetworkNames } from "../../../types/CNetwork";
 import { getFallbackClients } from "../../utils/getViemClients";
 import load from "../../../utils/load";
 import { getEnvVar } from "../../../utils/getEnvVar";
@@ -8,7 +8,7 @@ import { getEthersV5FallbackSignerAndProvider } from "../../utils/getEthersSigne
 import { SecretsManager } from "@chainlink/functions-toolkit";
 import { Address } from "viem";
 import getHashSum from "../../../utils/getHashSum";
-import { conceroChains, liveChains } from "../liveChains";
+import { conceroChains, mainnetChains, testnetChains } from "../liveChains";
 import { ethersV6CodeUrl, infraDstJsCodeUrl, infraSrcJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 import { viemReceiptConfig } from "../../../constants/deploymentVariables";
 import { shorten } from "../../../utils/formatting";
@@ -106,7 +106,7 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
     name: dcName,
   } = deployableChain;
   try {
-    const conceroProxy = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dcName]}`) as Address;
+    const conceroProxy = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dcName]}`);
     const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
 
     const { signer: dcSigner } = getEthersV5FallbackSignerAndProvider(dcName);
@@ -193,9 +193,10 @@ export async function setDstConceroPools(deployableChain: CNetwork, abi: any) {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
   const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
   const conceroProxy = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dcName]}`);
+  const chainsToSet = deployableChain.type === networkTypes.mainnet ? mainnetChains : testnetChains;
 
   try {
-    for (const chain of liveChains) {
+    for (const chain of chainsToSet) {
       const { name: dstChainName, chainSelector: dstChainSelector } = chain;
       const dstConceroPool =
         chain === CNetworks.base || chain === CNetworks.baseSepolia
@@ -286,25 +287,31 @@ export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: a
 }
 
 export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: any) {
-  const fees: Record<string, bigint> = {
-    "137": 33131965864723535n,
-    "42161": 20000000000000000n,
-    "8453": 60000000000000000n,
-    "43114": 240000000000000000n,
+  const defaultFee = 20000000000000000n;
+  const fees: Record<CNetworkNames, bigint> = {
+    polygon: 33131965864723535n,
+    arbitrum: 20000000000000000n,
+    base: 60000000000000000n,
+    avalanche: 240000000000000000n,
   };
 
-  const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
-  const conceroProxy = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dcName]}`);
-  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
+  const { url: dcUrl, viemChain: dcViemChain, name: dcName, type } = deployableChain;
 
-  for (const chain of liveChains) {
+  const contractPrefix = "CONCERO_INFRA_PROXY";
+  const conceroProxy = getEnvVar(`${contractPrefix}_${networkEnvKeys[dcName]}`);
+
+  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
+  const chainsToSet = type === networkTypes.mainnet ? mainnetChains : testnetChains;
+
+  for (const chain of chainsToSet) {
     try {
+      const feeToSet = fees[dcName] ?? defaultFee;
       const { request: setFunctionsPremiumFeesReq } = await publicClient.simulateContract({
-        address: conceroProxy as Address,
+        address: conceroProxy,
         abi,
         functionName: "setClfPremiumFees",
         account,
-        args: [chain.chainSelector, fees[chain.chainId?.toString()]],
+        args: [chain.chainSelector, feeToSet],
         chain: dcViemChain,
       });
 
@@ -315,7 +322,7 @@ export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: an
       });
 
       log(
-        `Set ${dcName}:${conceroProxy} functionsPremiumFees[${fees[chain.chainId?.toString()]}. Gas used: ${setFunctionsPremiumFeesGasUsed.toString()}`,
+        `Set ${contractPrefix}:${shorten(conceroProxy)} functionsPremiumFees[${feeToSet}. Gas used: ${setFunctionsPremiumFeesGasUsed.toString()}`,
         "setClfPremiumFees",
         dcName,
       );

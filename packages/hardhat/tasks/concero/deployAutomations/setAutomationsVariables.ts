@@ -4,7 +4,6 @@ import { getFallbackClients } from "../../utils/getViemClients";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
 import log, { err } from "../../../utils/log";
-import { Address } from "viem";
 import getHashSum from "../../../utils/getHashSum";
 import { automationsJsCodeUrl, ethersV6CodeUrl } from "../../../constants/functionsJsCodeUrls";
 import { viemReceiptConfig } from "../../../constants/deploymentVariables";
@@ -16,7 +15,7 @@ const setDonHostedSecretsVersion = async (hre, slotId: number, abi) => {
     const secretsVersion = (await getSecretsBySlotId(hre.network.name, slotId)).version;
 
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
+    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);
 
     const { request: setDstConceroContractReq } = await publicClient.simulateContract({
       address: automationsContract,
@@ -44,7 +43,7 @@ const setDonHostedSecretsSlotId = async (hre, slotId: number, abi: any) => {
     const chain = CNetworks[hre.network.name];
     const { viemChain } = chain;
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
+    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);
 
     const { request: setDstConceroContractReq } = await publicClient.simulateContract({
       address: automationsContract,
@@ -74,7 +73,7 @@ const setForwarderAddress = async (hre, forwarderAddress: string, abi: any) => {
     const chain = CNetworks[name];
     const { viemChain } = chain;
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
+    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);
 
     const { request: setForwarderAddressReq } = await publicClient.simulateContract({
       address: automationsContract,
@@ -103,7 +102,7 @@ const setHashSum = async (hre, abi: any) => {
     const chain = CNetworks[hre.network.name];
     const { viemChain } = chain;
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
+    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);
     const jsCodeHashSum = getHashSum(await (await fetch(automationsJsCodeUrl)).text());
 
     const { request: setHashSumReq } = await publicClient.simulateContract({
@@ -133,7 +132,7 @@ const setEthersHashSum = async (hre, abi: any) => {
     const chain = CNetworks[hre.network.name];
     const { viemChain } = chain;
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`) as Address;
+    const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);
     const jsCodeHashSum = getHashSum(await (await fetch(ethersV6CodeUrl)).text());
 
     const { request: setEthersHashSumReq } = await publicClient.simulateContract({

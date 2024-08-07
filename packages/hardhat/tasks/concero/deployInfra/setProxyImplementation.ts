@@ -9,7 +9,7 @@
 // REPLACED BY upgradeProxyImplementation.ts
 // export async function setProxyImplementation(hre, liveChains: CNetwork[]) {
 //   const { name: chainName } = hre.network;
-//   const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[chainName]}`) as Address;
+//   const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[chainName]}`)
 //   const chainId = hre.network.config.chainId;
 //   const { viemChain } = liveChains.find(chain => chain.chainId === chainId);
 //   if (!viemChain) {
@@ -18,7 +18,7 @@
 //   }
 //   const viemAccount = privateKeyToAccount(`0x${process.env.PROXY_DEPLOYER_PRIVATE_KEY}`);
 //   const { walletClient, publicClient } = getClients(viemChain, undefined, viemAccount);
-//   const conceroOrchestratorAddress = getEnvVar(`CONCERO_ORCHESTRATOR_${networkEnvKeys[chainName]}`) as Address;
+//   const conceroOrchestratorAddress = getEnvVar(`CONCERO_ORCHESTRATOR_${networkEnvKeys[chainName]}`)
 //
 //   // const { request } = await publicClient.simulateContract({
 //   //   address: conceroProxyAddress as Address,

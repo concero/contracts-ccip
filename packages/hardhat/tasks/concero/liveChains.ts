@@ -36,3 +36,14 @@ export const conceroChains: ConceroChains = {
     infra: [chains.polygon, chains.arbitrum, chains.avalanche, chains.base],
   },
 };
+
+export const testnetChains: CNetwork[] = [
+  ...conceroChains.testnet.parentPool,
+  ...conceroChains.testnet.childPools,
+  ...conceroChains.testnet.infra,
+];
+export const mainnetChains: CNetwork[] = [
+  ...conceroChains.mainnet.parentPool,
+  ...conceroChains.mainnet.childPools,
+  ...conceroChains.mainnet.infra,
+];

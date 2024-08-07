@@ -31,7 +31,6 @@ task("deploy-parent-pool", "Deploy the pool")
     if (taskArgs.deployproxy) {
       await deployProxyAdmin(hre, ProxyType.parentPool);
       await deployTransparentProxy(hre, ProxyType.parentPool);
-      // await deployParentPoolProxy(hre);
       const proxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`);
       const { functionsSubIds } = chains[name];
       await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);

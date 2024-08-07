@@ -323,12 +323,7 @@ export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: an
   }
 }
 
-export async function setContractVariables(
-  liveChains: CNetwork[],
-  deployableChains: CNetwork[],
-  slotId: number,
-  uploadsecrets: boolean,
-) {
+export async function setContractVariables(deployableChains: CNetwork[], slotId: number, uploadsecrets: boolean) {
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
   for (const deployableChain of deployableChains) {

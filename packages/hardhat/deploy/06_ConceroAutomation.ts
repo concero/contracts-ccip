@@ -29,7 +29,7 @@ const deployConceroAutomation: DeployFunction = async function (
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
 
-  const { functionsRouter, functionsDonId, functionsSubIds, donHostedSecretsVersion } = chains[name];
+  const { functionsRouter, functionsDonId, functionsSubIds, donHostedSecretsVersion, type } = chains[name];
 
   const jsPath = "./tasks/CLFScripts";
 
@@ -72,7 +72,7 @@ const deployConceroAutomation: DeployFunction = async function (
     updateEnvVariable(
       `CONCERO_AUTOMATION_${networkEnvKeys[name]}`,
       deployConceroAutomation.address,
-      "../../../.env.deployments",
+      `deployments.${type}`,
     );
   }
 };

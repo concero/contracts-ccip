@@ -1,6 +1,6 @@
 import { task, types } from "hardhat/config";
 import chains from "../../../constants/CNetworks";
-import CNetworks, { networkEnvKeys, NetworkType } from "../../../constants/CNetworks";
+import CNetworks, { networkEnvKeys, networkTypes } from "../../../constants/CNetworks";
 import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
 import { CNetwork } from "../../../types/CNetwork";
 import uploadDonSecrets from "../../donSecrets/upload";
@@ -28,19 +28,16 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     compileContracts({ quiet: true });
 
     const hre = require("hardhat");
-    const { live, tags } = hre.network;
-
+    const { live, tags, name } = hre.network;
+    const networkType = CNetworks[name].type;
     let deployableChains: CNetwork[] = [];
-    let networkType: NetworkType;
     if (live) deployableChains = [CNetworks[hre.network.name]];
 
     let liveChains: CNetwork[] = [];
-    if (tags[NetworkType.mainnet]) {
+    if (networkType == networkTypes.mainnet) {
       liveChains = conceroChains.mainnet.infra;
-      networkType = NetworkType.mainnet;
     } else {
       liveChains = conceroChains.testnet.infra;
-      networkType = NetworkType.testnet;
     }
 
     await deployInfra({
@@ -57,8 +54,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
   });
 
 async function deployInfra(params: DeployInfraParams) {
-  const { hre, deployableChains, networkType, deployProxy, deployImplementation, setVars, uploadSecrets, slotId } =
-    params;
+  const { hre, deployableChains, deployProxy, deployImplementation, setVars, uploadSecrets, slotId } = params;
   const { name } = hre.network;
   const { deployer, proxyDeployer } = await hre.getNamedAccounts();
 

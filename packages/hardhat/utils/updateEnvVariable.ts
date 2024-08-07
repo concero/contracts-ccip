@@ -6,12 +6,15 @@ import log from "./log";
  * Update an environment variable in the .env file
  * @param key The key of the environment variable to update
  * @param newValue The new value of the environment variable
- * @param envPath The path to the .env file
+ * @param envFileName The name of the .env file to update
  * usage: // updateEnvVariable("CLF_DON_SECRETS_VERSION_SEPOLIA", "1712841283", "../../../.env.clf");
  */
-function updateEnvVariable(key: string, newValue: string, envPath: string = "../../../.env") {
-  const filePath = path.join(__dirname, envPath);
+type EnvFileName = "cla" | "clf" | "ccip" | "deployments.mainnet" | "deployments.testnet" | "apikeys" | "tokens";
+
+function updateEnvVariable(key: string, newValue: string, envFileName: EnvFileName) {
+  const filePath = path.join(__dirname, `../../../.env.${envFileName}`);
   if (!filePath) throw new Error(`File not found: ${filePath}`);
+
   const envContents = readFileSync(filePath, "utf8");
   let lines = envContents.split(/\r?\n/);
 
@@ -31,4 +34,5 @@ function updateEnvVariable(key: string, newValue: string, envPath: string = "../
   writeFileSync(filePath, newLines.join("\n"));
   process.env[key] = newValue;
 }
+
 export default updateEnvVariable;

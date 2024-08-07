@@ -20,10 +20,12 @@ const deployerPK = process.env.DEPLOYER_PRIVATE_KEY;
 const proxyDeployerPK = process.env.PROXY_DEPLOYER_PRIVATE_KEY;
 const saveDeployments = false;
 
-export enum NetworkType {
-  testnet,
-  mainnet,
-}
+export type NetworkType = "mainnet" | "testnet";
+
+export const networkTypes: Record<NetworkType, string> = {
+  mainnet: "mainnet",
+  testnet: "testnet",
+};
 
 if (!deployerPK) {
   throw new Error("DEPLOYER_PRIVATE_KEY is not set");
@@ -105,7 +107,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   } as HardhatNetworkUserConfig,
   // TESTNETS
   sepolia: {
-    tags: [NetworkType.testnet],
+    type: networkTypes.testnet,
     saveDeployments,
     chainId: 11155111,
     rpcs: urls.sepolia,
@@ -128,7 +130,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     name: "sepolia",
   },
   avalancheFuji: {
-    tags: [NetworkType.testnet],
+    type: networkTypes.testnet,
     saveDeployments,
     chainId: 43113,
     url: `https://avalanche-fuji.infura.io/v3/${process.env.INFURA_API_KEY}`,
@@ -151,7 +153,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     name: "avalancheFuji",
   },
   optimismSepolia: {
-    tags: [NetworkType.testnet],
+    type: networkTypes.testnet,
     saveDeployments,
     chainId: 11155420,
     url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
@@ -181,7 +183,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     },
   },
   arbitrumSepolia: {
-    tags: [NetworkType.testnet],
+    type: networkTypes.testnet,
     saveDeployments,
     chainId: 421614,
     url: `https://arbitrum-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
@@ -211,8 +213,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     },
   },
   baseSepolia: {
-    type: NetworkType.testnet,
-    tags: [NetworkType.testnet],
+    type: networkTypes.testnet,
     saveDeployments,
     chainId: 84532,
     url: `https://base-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
@@ -242,7 +243,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     },
   },
   polygonAmoy: {
-    tags: [NetworkType.testnet],
+    type: networkTypes.testnet,
     saveDeployments,
     chainId: 80002,
     url: `https://polygon-amoy.infura.io/v3/${process.env.INFURA_API_KEY}`,
@@ -272,7 +273,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   },
   // MAINNETS
   base: {
-    tags: [NetworkType.mainnet],
+    type: networkTypes.mainnet,
     saveDeployments,
     chainId: 8453,
     url: "https://base-rpc.publicnode.com",
@@ -301,7 +302,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     },
   },
   arbitrum: {
-    tags: [NetworkType.mainnet],
+    type: networkTypes.mainnet,
     saveDeployments,
     chainId: 42161,
     url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
@@ -330,7 +331,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     },
   },
   polygon: {
-    tags: [NetworkType.mainnet],
+    type: networkTypes.mainnet,
     saveDeployments,
     chainId: 137,
     // url: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
@@ -360,7 +361,7 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     },
   },
   avalanche: {
-    tags: [NetworkType.mainnet],
+    type: networkTypes.mainnet,
     saveDeployments,
     chainId: 43114,
     // url: `https://avax.meowrpc.com`,

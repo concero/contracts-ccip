@@ -18,7 +18,7 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
   const minutesUntilExpiration = ttl;
 
   for (const chain of chains) {
-    const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls, url, name } = chain;
+    const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls, name } = chain;
     const { signer } = await getEthersV5FallbackSignerAndProvider(name);
 
     const secretsManager = new SecretsManager({
@@ -60,7 +60,7 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
     // log(`Current DONSecrets for ${name}:`, "donSecrets/upload");
     // log(checkSecretsRes, "donSecrets/upload");
 
-    updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`, version, "../../../.env.clf");
+    updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`, version, `clf`);
   }
 }
 

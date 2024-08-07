@@ -29,7 +29,7 @@ const deployParentPool: DeployFunction = async function (
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
-
+  const networkType = chains[name].type;
   const { linkToken, ccipRouter, functionsRouter, functionsDonId, functionsSubIds } = chains[name];
 
   const defaultArgs = {
@@ -75,7 +75,7 @@ const deployParentPool: DeployFunction = async function (
 
   if (live) {
     log(`ParentPool deployed to ${name} to: ${deployParentPool.address}`, "deployParentPool");
-    updateEnvVariable(`PARENT_POOL_${networkEnvKeys[name]}`, deployParentPool.address, "../../../.env.deployments");
+    updateEnvVariable(`PARENT_POOL_${networkEnvKeys[name]}`, deployParentPool.address, `deployments.${networkType}`);
   }
 };
 

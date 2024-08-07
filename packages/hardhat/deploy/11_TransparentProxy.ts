@@ -1,6 +1,6 @@
 import { DeployFunction, Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { networkEnvKeys } from "../constants/CNetworks";
+import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
@@ -14,6 +14,7 @@ const deployTransparentProxy: DeployFunction = async function (hre: HardhatRunti
   const { proxyDeployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
+  const networkType = CNetworks[name].type;
 
   let envKey: string;
 
@@ -48,7 +49,11 @@ const deployTransparentProxy: DeployFunction = async function (hre: HardhatRunti
       `TransparentProxy ${envKey} deployed to ${name} to: ${conceroProxyDeployment.address}`,
       "deployTransparentProxy",
     );
-    updateEnvVariable(`${envKey}_${networkEnvKeys[name]}`, conceroProxyDeployment.address, "../../../.env.deployments");
+    updateEnvVariable(
+      `${envKey}_${networkEnvKeys[name]}`,
+      conceroProxyDeployment.address,
+      `deployments.${networkType}`,
+    );
   }
 };
 

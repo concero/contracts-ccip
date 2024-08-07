@@ -1,4 +1,4 @@
-import CNetworks, { networkEnvKeys, NetworkType } from "../../../constants/CNetworks";
+import CNetworks, { networkEnvKeys, networkTypes } from "../../../constants/CNetworks";
 import { CNetwork } from "../../../types/CNetwork";
 import { getFallbackClients } from "../../utils/getViemClients";
 import load from "../../../utils/load";
@@ -11,6 +11,7 @@ import getHashSum from "../../../utils/getHashSum";
 import { conceroChains, liveChains } from "../liveChains";
 import { ethersV6CodeUrl, infraDstJsCodeUrl, infraSrcJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 import { viemReceiptConfig } from "../../../constants/deploymentVariables";
+import { shorten } from "../../../utils/formatting";
 
 const resetLastGasPrices = async (deployableChain: CNetwork, chains: CNetwork[], abi: any) => {
   const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[deployableChain.name]}`);
@@ -42,18 +43,19 @@ const resetLastGasPrices = async (deployableChain: CNetwork, chains: CNetwork[],
 
 export async function setConceroProxyDstContracts(deployableChains: CNetwork[]) {
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
+  const contractEnvPrefix = "CONCERO_INFRA_PROXY";
   for (const chain of deployableChains) {
     const chainsToBeSet =
-      chain.type === NetworkType.mainnet ? conceroChains.mainnet.infra : conceroChains.testnet.infra;
+      chain.type === networkTypes.mainnet ? conceroChains.mainnet.infra : conceroChains.testnet.infra;
     const { viemChain, url, name } = chain;
-    const srcConceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`);
+    const srcConceroProxyAddress = getEnvVar(`${contractEnvPrefix}_${networkEnvKeys[name]}`);
     const { walletClient, publicClient, account } = getFallbackClients(chain);
 
     for (const dstChain of chainsToBeSet) {
       try {
         const { name: dstName, chainSelector: dstChainSelector } = dstChain;
         if (dstName !== name) {
-          const dstProxyContract = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dstName]}`);
+          const dstProxyContract = getEnvVar(`${contractEnvPrefix}_${networkEnvKeys[dstName]}`);
 
           // const gasPrice = await publicClient.getGasPrice();
 
@@ -82,7 +84,7 @@ export async function setConceroProxyDstContracts(deployableChains: CNetwork[]) 
           });
 
           log(
-            `Set ${name}:${srcConceroProxyAddress} dstConceroContract[${dstName}, ${dstProxyContract}]. Gas used: ${setDstConceroContractGasUsed.toString()}`,
+            `Set ${contractEnvPrefix}:${shorten(srcConceroProxyAddress)} dstConceroContract[${dstName}, ${dstProxyContract}]. Gas used: ${setDstConceroContractGasUsed.toString()}`,
             "setConceroProxyDstContracts",
             name,
           );
@@ -327,7 +329,7 @@ export async function setContractVariables(deployableChains: CNetwork[], slotId:
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
   for (const deployableChain of deployableChains) {
-    if (deployableChain.type === NetworkType.mainnet) await setDexSwapAllowedRouters(deployableChain, abi); // once
+    if (deployableChain.type === networkTypes.mainnet) await setDexSwapAllowedRouters(deployableChain, abi); // once
     await setDstConceroPools(deployableChain, abi); // once
 
     await setDonHostedSecretsVersion(deployableChain, slotId, abi);

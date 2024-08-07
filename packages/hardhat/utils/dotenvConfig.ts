@@ -8,7 +8,6 @@ const ENV_FILES = [
   ".env.tokens",
   ".env.deployments.mainnet",
   ".env.deployments.testnet",
-  ".env.deployments",
   ".env.wallets",
 ];
 

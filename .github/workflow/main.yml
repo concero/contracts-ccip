@@ -1,0 +1,20 @@
+name: Hardhat compile
+on:
+  push:
+    branches: [master, release]
+  pull_request:
+    branches: [master, release]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install packages
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      - run: bun install
+        shell: bash
+      - name: Create local node and deploy
+        run: bun hardhat compile

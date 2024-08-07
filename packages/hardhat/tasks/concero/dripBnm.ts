@@ -1,6 +1,6 @@
 import { CNetwork } from "../../types/CNetwork";
 import chains from "../../constants/CNetworks";
-import { liveChains } from "./deployInfra/deployInfra";
+import liveChains from "./deployInfra/deployInfra";
 import { task } from "hardhat/config";
 import { viemReceiptConfig } from "../../constants/deploymentVariables";
 

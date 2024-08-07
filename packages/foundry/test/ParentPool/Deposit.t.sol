@@ -22,12 +22,13 @@ contract DepositTest is BaseTest {
     // https://basescan.org/address/0xd93d77789129c584a02B9Fd3BfBA560B2511Ff8A#events
     address internal constant BASE_FUNCTIONS_TRANSMITTER = 0xAdE50D64476177aAe4505DFEA094B1a0ffa49332;
     uint256 internal constant DEPOSIT_AMOUNT_USDC = 100 * 10 ** 6;
-    uint256 internal constant MIN_DEPOSIT = 1 * 1_000_000;
+    uint256 internal constant MIN_DEPOSIT = 100_000_000;
     uint256 internal constant CCIP_FEES = 10 * 1e18;
     uint256 internal constant USDC_PRECISION = 1e6;
     uint256 internal constant WAD_PRECISION = 1e18;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * 10 ** 6;
     uint256 internal constant MAX_INDIVIDUAL_DEPOSIT = 100_000 * 1e6; // 100k usdc
+    uint256 internal constant INITIAL_DIRECT_DEPOSIT = 1e6; // 1 usdc
 
     FunctionsRouter functionsRouter = FunctionsRouter(vm.envAddress("CLF_ROUTER_BASE"));
 
@@ -56,8 +57,8 @@ contract DepositTest is BaseTest {
             address(lpToken),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
             address(deployer),
-            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)],
-            0
+            0,
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
 
         /// @dev upgrade proxy
@@ -151,7 +152,7 @@ contract DepositTest is BaseTest {
             _startDepositAndMonitorLogs(user1, DEPOSIT_AMOUNT_USDC);
 
         /// @dev fulfill active request
-        bytes memory response = abi.encode(MIN_DEPOSIT); // 1 usdc
+        bytes memory response = abi.encode(INITIAL_DIRECT_DEPOSIT); // 1 usdc
         _fulfillRequest(response, depositRequestId, callbackGasLimit, estimatedTotalCostJuels);
 
         /// @dev completeDeposit
@@ -227,13 +228,13 @@ contract DepositTest is BaseTest {
         fundParentPoolWithLinkForCCIPFees
     {
         /// @dev restrict fuzzed deposit amounts
-        vm.assume((_amount1 > MIN_DEPOSIT + DEPOSIT_FEE_USDC) && (_amount1 < MAX_INDIVIDUAL_DEPOSIT));
-        vm.assume((_amount2 > MIN_DEPOSIT + DEPOSIT_FEE_USDC) && (_amount2 < MAX_INDIVIDUAL_DEPOSIT));
+        _amount1 = bound(_amount1, MIN_DEPOSIT + DEPOSIT_FEE_USDC, MAX_INDIVIDUAL_DEPOSIT);
+        _amount2 = bound(_amount2, MIN_DEPOSIT + DEPOSIT_FEE_USDC, MAX_INDIVIDUAL_DEPOSIT);
 
         /// @dev startDeposit and fulfillRequest for first user
         (bytes32 depositRequestId1, uint32 callbackGasLimit1, uint96 estimatedTotalCostJuels1) =
             _startDepositAndMonitorLogs(user1, _amount1);
-        bytes memory response1 = abi.encode(MIN_DEPOSIT); // 1 usdc
+        bytes memory response1 = abi.encode(INITIAL_DIRECT_DEPOSIT); // 1 usdc
         _fulfillRequest(response1, depositRequestId1, callbackGasLimit1, estimatedTotalCostJuels1);
 
         /// @dev completeDeposit for first user
@@ -248,31 +249,27 @@ contract DepositTest is BaseTest {
         /// @dev startDeposit and fulfillRequest for second user
         (bytes32 depositRequestId2, uint32 callbackGasLimit2, uint96 estimatedTotalCostJuels2) =
             _startDepositAndMonitorLogs(user2, _amount2);
-        bytes memory response2 = abi.encode(MIN_DEPOSIT + (_amount1 / 2)); // 1 usdc + (first deposit / parent+child)
+        bytes memory response2 = abi.encode(INITIAL_DIRECT_DEPOSIT + (_amount1 / 2)); // 1 usdc + (first deposit / parent+child)
         _fulfillRequest(response2, depositRequestId2, callbackGasLimit2, estimatedTotalCostJuels2);
 
-        /// @dev we need logs for second user's completeDeposit to get the totalCrossChainLiquiditySnapshot
-        vm.recordLogs();
+        /// @dev get the depositRequest for user2 to get childPoolsLiquiditySnapshot
+        ParentPool_Wrapper.DepositRequest memory depositRequest =
+            IParentPoolWrapper(address(parentPoolProxy)).getDepositRequest(depositRequestId2);
+
+        /// @dev calculate totalCrossChainLiquidity
+        uint256 totalCrossChainLiquidity = (
+            IERC20(usdc).balanceOf(address(parentPoolProxy))
+                + IParentPoolWrapper(address(parentPoolProxy)).getLoansInUse()
+                + IParentPoolWrapper(address(parentPoolProxy)).getDepositsOnTheWayAmount()
+                - IParentPoolWrapper(address(parentPoolProxy)).getDepositFeeAmount()
+        ) + depositRequest.childPoolsLiquiditySnapshot;
+
         /// @dev completeDeposit for second user
         _completeDeposit(user2, depositRequestId2);
 
-        /// @dev get and verify logs
-        Vm.Log[] memory entries = vm.getRecordedLogs();
-        /// @dev find the log and param we need to calculate expected LP tokens
-        uint256 totalCrossChainLiquiditySnapshot;
-        for (uint256 i = 0; i < entries.length; ++i) {
-            if (
-                entries[i].topics[0]
-                    == keccak256("ConceroParentPool_DepositCompleted(bytes32,address,uint256,uint256,uint256)")
-            ) {
-                (,, totalCrossChainLiquiditySnapshot) = abi.decode(entries[i].data, (uint256, uint256, uint256));
-                break;
-            }
-        }
-
         /// @dev assert user2 lp tokens minted as expected
         uint256 amountDepositedConverted = ((_amount2 - DEPOSIT_FEE_USDC) * WAD_PRECISION) / USDC_PRECISION;
-        uint256 crossChainBalanceConverted = (totalCrossChainLiquiditySnapshot * WAD_PRECISION) / USDC_PRECISION;
+        uint256 crossChainBalanceConverted = (totalCrossChainLiquidity * WAD_PRECISION) / USDC_PRECISION;
 
         uint256 expectedLpTokensMintedUser2 = (
             ((crossChainBalanceConverted + amountDepositedConverted) * lpTotalSupplyBeforeSecondDeposit)

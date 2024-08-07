@@ -25,6 +25,8 @@ interface IParentPoolWrapper is IParentPool {
             uint256 remainingLiquidityFromChildPools,
             uint256 triggeredAtTimestamp
         );
+    function getDepositFeeAmount() external view returns (uint256);
+    function getLoansInUse() external view returns (uint256);
 }
 
 contract ParentPool_Wrapper is ConceroParentPool {
@@ -42,8 +44,8 @@ contract ParentPool_Wrapper is ConceroParentPool {
         address _lpToken,
         address _orchestrator,
         address _owner,
-        address[3] memory _messengers,
-        uint8 _slotId
+        uint8 _slotId,
+        address[3] memory _messengers
     )
         ConceroParentPool(
             _parentPoolProxy,
@@ -78,6 +80,14 @@ contract ParentPool_Wrapper is ConceroParentPool {
 
     function getDepositsOnTheWayAmount() external view returns (uint256) {
         return s_depositsOnTheWayAmount;
+    }
+
+    function getDepositFeeAmount() external view returns (uint256) {
+        return s_depositFeeAmount;
+    }
+
+    function getLoansInUse() external view returns (uint256) {
+        return s_loansInUse;
     }
 
     /*//////////////////////////////////////////////////////////////

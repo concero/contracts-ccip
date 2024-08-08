@@ -7,7 +7,7 @@ task(
 )
   .addParam("contract", "Address of the consumer contract to update")
   .setAction(async taskArgs => {
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     const donId = chains[name].functionsDonId;
     console.log(`Setting donId to ${donId} in Functions consumer contract ${taskArgs.contract} on ${name}`);
     const consumerContractFactory = await hre.ethers.getContractFactory("FunctionsConsumer");

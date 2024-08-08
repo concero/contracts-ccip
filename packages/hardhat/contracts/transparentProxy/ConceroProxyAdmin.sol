@@ -10,7 +10,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * @dev This is an auxiliary contract meant to be assigned as the admin of a {TransparentUpgradeableProxy}. For an
  * explanation of why you would want to use this see the documentation for {TransparentUpgradeableProxy}.
  */
-contract ProxyAdmin is Ownable {
+contract ConceroProxyAdmin is Ownable {
     /**
      * @dev The version of the upgrade interface of the contract. If this getter is missing, both `upgrade(address,address)`
      * and `upgradeAndCall(address,address,bytes)` are present, and `upgrade` must be used if no function should be called,

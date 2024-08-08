@@ -18,7 +18,7 @@
 //
 //
 //   const { viemChain, url, name } = CNetworks[hre.network.name];
-//   const { walletClient, publicClient } = getClients(viemChain, url);
+//   const { walletClient, publicClient } = getFallbackClients(chain);
 //
 //   let salt;
 //   let regex

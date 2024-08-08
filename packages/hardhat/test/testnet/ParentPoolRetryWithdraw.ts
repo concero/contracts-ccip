@@ -10,8 +10,8 @@ import { PublicClient } from "viem/clients/createPublicClient";
 import { abi as AutomationAbi } from "../../artifacts/contracts/ConceroAutomation.sol/ConceroAutomation.json";
 import { chainsMap } from "../utils/chainsMap";
 
-const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
-const automationAddress = process.env.CONCERO_AUTOMATION_BASE_SEPOLIA as Address;
+const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE;
+const automationAddress = process.env.CONCERO_AUTOMATION_BASE as Address;
 
 describe("start deposit usdc to parent pool\n", () => {
   let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
@@ -19,7 +19,9 @@ describe("start deposit usdc to parent pool\n", () => {
     transport: chainsMap[srcChainSelector].viemTransport,
   });
 
-  const viemAccount: PrivateKeyAccount = privateKeyToAccount(("0x" + process.env.DEPLOYER_PRIVATE_KEY) as `0x${string}`);
+  const viemAccount: PrivateKeyAccount = privateKeyToAccount(
+    ("0x" + process.env.DEPLOYER_PRIVATE_KEY) as `0x${string}`,
+  );
   const walletClient: WalletClient<HttpTransport, Chain, Account, RpcSchema> = createWalletClient({
     chain: chainsMap[srcChainSelector].viemChain,
     transport: chainsMap[srcChainSelector].viemTransport,
@@ -31,7 +33,7 @@ describe("start deposit usdc to parent pool\n", () => {
       abi: AutomationAbi,
       functionName: "retryPerformWithdrawalRequest",
       address: automationAddress,
-      args: ["0xa320ad2b39c66c57e6ce1f7a206998f733f62efcdec5b4f82c44634f6b71b9e6"],
+      args: ["0x98d77fae1faf2d4b17c951cb005514a381b1806806a23fe45bd855ce8fba7ef1"],
       gas: 3_000_000n,
     });
 

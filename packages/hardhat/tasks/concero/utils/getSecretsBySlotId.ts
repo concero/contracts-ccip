@@ -1,4 +1,4 @@
-import { getEthersSignerAndProvider } from "../../utils/getEthersSignerAndProvider";
+import { getEthersV5FallbackSignerAndProvider } from "../../utils/getEthersSignerAndProvider";
 import { SecretsManager } from "@chainlink/functions-toolkit";
 import log from "../../../utils/log";
 import CNetworks from "../../../constants/CNetworks";
@@ -12,7 +12,7 @@ export async function getSecretsBySlotId(chainName: string, slotId: number) {
     url: dcUrl,
     name: dcName,
   } = chain;
-  const { signer: dcSigner } = getEthersSignerAndProvider(dcUrl);
+  const { signer: dcSigner } = getEthersV5FallbackSignerAndProvider(dcName);
 
   const secretsManager = new SecretsManager({
     signer: dcSigner,

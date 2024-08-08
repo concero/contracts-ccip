@@ -22,7 +22,7 @@ node_modules
 # cli
 .env.*
 .env
-!.env.deployments
+!.env.deployments.*
 !.env.clf
 !.env.tokens
 !.env.clccip

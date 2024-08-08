@@ -19,7 +19,7 @@
 //     const { signer } = getEthersSignerAndProvider(url);
 //
 //     if (!functionsGatewayUrls || functionsGatewayUrls.length === 0) throw Error(`No gatewayUrls found for ${name}.`);
-//     const { walletClient, publicClient, account } = getClients(viemChain, url);
+//     const { walletClient, publicClient, account } = getFallbackClients(chain);
 //     const contract = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`); // grabbing up-to-date var
 //
 //     const secretsManager = new SecretsManager({

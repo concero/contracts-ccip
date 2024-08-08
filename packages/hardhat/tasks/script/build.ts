@@ -4,6 +4,7 @@ run with: yarn hardhat clf-build-script --path ./CLFScripts/DST.js
  */
 
 import { task, types } from "hardhat/config";
+import log, { err } from "../../utils/log";
 
 export const pathToScript = [__dirname, "../", "CLFScripts"];
 const fs = require("fs");
@@ -11,7 +12,7 @@ const path = require("path");
 
 function checkFileAccessibility(filePath) {
   if (!fs.existsSync(filePath)) {
-    console.error(`The file ${filePath} does not exist.`);
+    err(`The file ${filePath} does not exist.`, "checkFileAccessibility");
     process.exit(1);
   }
 }
@@ -23,14 +24,14 @@ function replaceEnvironmentVariables(content) {
     const value = process.env[variable];
 
     if (value === undefined) {
-      console.error(`Environment variable ${variable} is missing.`);
+      err(`Environment variable ${variable} is missing.`, "replaceEnvironmentVariables");
       process.exit(1);
     }
     return `'${value}'`;
   });
 
   if (missingVariable) {
-    console.error("One or more environment variables are missing.");
+    err("One or more environment variables are missing.", "replaceEnvironmentVariables");
     process.exit(1);
   }
   return updatedContent;
@@ -43,7 +44,7 @@ function saveProcessedFile(content, outputPath, scriptType: string) {
   }
   const outputFile = path.join(outputDir, path.basename(outputPath));
   fs.writeFileSync(outputFile, content, "utf8");
-  console.log(`Saved to ${outputFile}`);
+  log(`Saved to ${outputFile}`, "saveProcessedFile");
 }
 
 function cleanupFile(content) {
@@ -65,7 +66,7 @@ function minifyFile(content) {
 
 export function buildScript(fileToBuild: string) {
   if (!fileToBuild) {
-    console.error("Path to Functions script file is required.");
+    err("Path to Functions script file is required.", "buildScript");
     return;
   }
 
@@ -84,8 +85,8 @@ export function buildScript(fileToBuild: string) {
 
     saveProcessedFile(cleanedUpFile, fileToBuild, scriptType);
     saveProcessedFile(minifiedFile, fileToBuild.replace(".js", ".min.js"), scriptType);
-  } catch (err) {
-    console.error(`Error processing file ${fileToBuild}: ${err}`);
+  } catch (error) {
+    err(`Error processing file ${fileToBuild}: ${error}`, "buildScript");
     process.exit(1);
   }
 }

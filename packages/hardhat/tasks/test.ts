@@ -1,8 +1,5 @@
 import { task } from "hardhat/config";
-
-import deployTransparentProxy, { ProxyType } from "../deploy/11_TransparentProxy";
-import deployProxyAdmin from "../deploy/10_ProxyAdmin";
-import { upgradeProxyImplementation } from "./concero/upgradeProxyImplementation";
+import CNetworks from "../constants/CNetworks";
 
 function getHashSum(sourceCode: string) {
   const hash = require("crypto").createHash("sha256");
@@ -11,9 +8,16 @@ function getHashSum(sourceCode: string) {
 }
 
 task("test-script", "A test script").setAction(async taskArgs => {
-  await deployProxyAdmin(hre, ProxyType.parentPool);
-  await deployTransparentProxy(hre, ProxyType.parentPool);
-  await upgradeProxyImplementation(hre, ProxyType.parentPool, false);
+  console.log(hre.network.name);
+  const chain = CNetworks[hre.network.name];
+
+  console.log("Running test-script");
+  // const [conceroProxy, conceroProxyAlias] = getEnvAddress("infraProxy", chain.name);
+  // console.log(conceroProxy, conceroProxyAlias);
+
+  // await deployProxyAdmin(hre, ProxyType.parentPool);
+  // await deployTransparentProxy(hre, ProxyType.parentPool);
+  // await upgradeProxyImplementation(hre, ProxyType.parentPool, false);
 });
 
 export default {};

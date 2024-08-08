@@ -4,7 +4,13 @@ import secrets from "../../constants/CLFSecrets";
 import CLFSimulationConfig from "../../constants/CLFSimulationConfig";
 import { execSync } from "child_process";
 import getHashSum from "../../utils/getHashSum";
-import { automationsJsCodeUrl, ethersV6CodeUrl, infraSrcJsCodeUrl, parentPoolDistributeLiqJsCodeUrl } from "../../constants/functionsJsCodeUrls";
+import {
+  automationsJsCodeUrl,
+  ethersV6CodeUrl,
+  infraSrcJsCodeUrl,
+  parentPoolDistributeLiqJsCodeUrl,
+} from "../../constants/functionsJsCodeUrls";
+import log, { err } from "../../utils/log";
 
 const { simulateScript } = require("@chainlink/functions-toolkit");
 
@@ -13,7 +19,7 @@ const process = require("process");
 
 async function simulate(pathToFile, args) {
   if (!fs.existsSync(pathToFile)) return console.error(`File not found: ${pathToFile}`);
-  console.log("Simulating script:", pathToFile);
+  log(`Simulating script: ${pathToFile}`, "simulate");
 
   let promises = [];
   for (let i = 0; i < 1; i++) {
@@ -33,7 +39,7 @@ async function simulate(pathToFile, args) {
     const { errorString, capturedTerminalOutput, responseBytesHexstring } = result;
 
     if (errorString) {
-      console.log("CAPTURED ERROR:");
+      err("CAPTURED ERROR:", "simulate");
       console.log(errorString);
     }
 

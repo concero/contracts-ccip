@@ -1,9 +1,8 @@
 import "@nomicfoundation/hardhat-chai-matchers";
-import { privateKeyToAccount } from "viem/accounts";
 import { formatUnits } from "viem";
 import ERC20ABI from "../abi/ERC20.json";
 import { abi as ConceroOrchestratorAbi } from "../artifacts/contracts/Orchestrator.sol/Orchestrator.json";
-import { getClients } from "../tasks/utils/getViemClients";
+import { getFallbackClients } from "../tasks/utils/getViemClients";
 import chains from "../constants/CNetworks";
 import log from "../utils/log";
 import { PublicClient } from "viem/clients/createPublicClient";
@@ -58,11 +57,7 @@ async function approveToken(
 }
 
 describe("bridge", () => {
-  const { walletClient, publicClient, account } = getClients(
-    viemChain,
-    url,
-    privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`),
-  );
+  const { walletClient, publicClient, account } = getFallbackClients(chains.arbitrum);
 
   it("should bridge", async () => {
     try {

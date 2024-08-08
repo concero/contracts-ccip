@@ -11,7 +11,7 @@ task("clf-sub-transfer", "Request ownership of an Functions subscription be tran
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
 
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     if (!chains[name]) throw new Error(`Chain ${name} not supported`);
 
     const subscriptionId = parseInt(taskArgs.subid);

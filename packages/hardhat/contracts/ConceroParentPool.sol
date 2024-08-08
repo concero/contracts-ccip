@@ -1281,10 +1281,6 @@ contract ConceroParentPool is
         return s_depositsOnTheWayArray;
     }
 
-    /**
-     * @notice Getter function to get an array of pending requests
-     * @return an array of liquidity providers addresses
-     */
     function getPendingRequests() external view returns (bytes32[] memory _requests) {
         _requests = s_withdrawalRequestIds;
     }

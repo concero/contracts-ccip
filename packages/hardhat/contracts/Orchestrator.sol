@@ -351,7 +351,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
      * @notice Internal function to perform swaps. Delegate calls DexSwap.entrypoint
      * @param swapData the payload to be passed to swap functions
      * @param _nativeAmount the native amount entered on the external function
-     * @param isFeesNeeded flag to indicate when take fees
+     * @param isTakingConceroFee flag to indicate when take fees
      * @param _receiver the address of the receiver of the swap
      */
     function _swap(

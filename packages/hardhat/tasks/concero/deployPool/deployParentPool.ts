@@ -8,7 +8,7 @@ import uploadDonSecrets from "../../donSecrets/upload";
 import { CNetwork } from "../../../types/CNetwork";
 import { setParentPoolVariables } from "./setParentPoolVariables";
 import deployParentPool from "../../../deploy/09_ParentPool";
-import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
+import deployTransparentProxy from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 import { compileContracts } from "../../../utils/compileContracts";
@@ -28,8 +28,8 @@ task("deploy-parent-pool", "Deploy the pool")
     const deployableChains: CNetwork[] = [CNetworks[hre.network.name]];
 
     if (taskArgs.deployproxy) {
-      await deployProxyAdmin(hre, ProxyType.parentPool);
-      await deployTransparentProxy(hre, ProxyType.parentPool);
+      await deployProxyAdmin(hre, "parentPoolProxy");
+      await deployTransparentProxy(hre, "parentPoolProxy");
       const [proxyAddress, _] = getEnvAddress("parentPoolProxy", name);
       const { functionsSubIds } = chains[name];
       await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
@@ -37,7 +37,7 @@ task("deploy-parent-pool", "Deploy the pool")
 
     if (taskArgs.deployimplementation) {
       await deployParentPool(hre); //todo: not passing slotId to deployParentPool functions' constructor args
-      await upgradeProxyImplementation(hre, ProxyType.parentPool, false);
+      await upgradeProxyImplementation(hre, "parentPoolProxy", false);
     }
 
     if (taskArgs.uploadsecrets) {

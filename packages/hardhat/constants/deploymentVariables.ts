@@ -12,23 +12,25 @@ export const poolMessengers: string[] = [
   getEnvVar("POOL_MESSENGER_0_ADDRESS"),
 ];
 // The address is the same on 4 chains: ARB,POL,BASE,AVAX. Can be deployed to others later using Lifi's Create3 Factory.
-export const initialProxyImplementationAddress = getEnvVar("CONCERO_PAUSE_ARBITRUM");
 
 export const viemReceiptConfig: WaitForTransactionReceiptParameters = {
   timeout: 0,
   confirmations: 2,
 };
 
-export type DeploymentPrefixes = {
-  infraProxy: string;
+export type ProxyType = "infraProxy" | "parentPoolProxy" | "childPoolProxy";
+
+type ProxyDeploymentPrefixes = {
+  [key in ProxyType]: string;
+};
+
+export type DeploymentPrefixes = ProxyDeploymentPrefixes & {
   infraProxyAdmin: string;
   bridge: string;
   dexSwap: string;
   orchestrator: string;
-  parentPoolProxy: string;
   parentPoolProxyAdmin: string;
   parentPool: string;
-  childPoolProxy: string;
   childPoolProxyAdmin: string;
   childPool: string;
   automation: string;

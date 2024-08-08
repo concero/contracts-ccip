@@ -1,19 +1,18 @@
-import { DeployFunction, Deployment } from "hardhat-deploy/types";
+import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 
-const deployPauseDummy: DeployFunction = async function (
+const deployPauseDummy: (hre: HardhatRuntimeEnvironment) => Promise<void> = async function (
   hre: HardhatRuntimeEnvironment,
-  constructorArgs: ConstructorArgs = {},
 ) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
   const networkType = CNetworks[name].type;
 
-  console.log("Deploying PauseDummy...");
+  console.log("Deploying...", "deployPauseDummy", name);
 
   const deployPauseDummy = (await deploy("PauseDummy", {
     from: deployer,
@@ -23,7 +22,7 @@ const deployPauseDummy: DeployFunction = async function (
   })) as Deployment;
 
   if (live) {
-    log(`PauseDummy deployed to ${name} to: ${deployPauseDummy.address}`, "deployPauseDummy");
+    log(`Deployed at: ${deployPauseDummy.address}`, "deployPauseDummy", name);
     updateEnvVariable(`CONCERO_PAUSE_${networkEnvKeys[name]}`, deployPauseDummy.address, `deployments.${networkType}`);
   }
 };

@@ -1,6 +1,9 @@
 import { readFileSync, writeFileSync } from "fs";
 import path from "path";
 import log from "./log";
+import { deploymentPrefixes, DeploymentPrefixes } from "../constants/deploymentVariables";
+import { CNetworkNames } from "../types/CNetwork";
+import { networkEnvKeys } from "../constants/CNetworks";
 
 /**
  * Update an environment variable in the .env file
@@ -33,6 +36,19 @@ function updateEnvVariable(key: string, newValue: string, envFileName: EnvFileNa
 
   writeFileSync(filePath, newLines.join("\n"));
   process.env[key] = newValue;
+}
+
+export function updateEnvAddress(
+  prefix: keyof DeploymentPrefixes,
+  networkPostfix?: CNetworkNames | string,
+  newValue: string,
+  envFileName: EnvFileName,
+): void {
+  const searchKey = networkPostfix
+    ? `${deploymentPrefixes[prefix]}_${networkEnvKeys[networkPostfix]}`
+    : deploymentPrefixes[prefix];
+
+  updateEnvVariable(searchKey, newValue, envFileName);
 }
 
 export default updateEnvVariable;

@@ -1,58 +1,49 @@
-import { getEnvVar } from "../../utils/getEnvVar";
-import CNetworks, { networkEnvKeys } from "../../constants/CNetworks";
+import { getEnvAddress } from "../../utils/getEnvVar";
+import CNetworks from "../../constants/CNetworks";
 import { privateKeyToAccount } from "viem/accounts";
-import log from "../../utils/log";
+import log, { err } from "../../utils/log";
 import { task } from "hardhat/config";
-import { ProxyType } from "../../deploy/11_TransparentProxy";
 import { getFallbackClients } from "../utils/getViemClients";
-import { viemReceiptConfig } from "../../constants/deploymentVariables";
+import { DeploymentPrefixes, ProxyType, viemReceiptConfig } from "../../constants/deploymentVariables";
+import { formatGas } from "../../utils/formatting";
 
 export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shouldPause: boolean) {
   const { name: chainName } = hre.network;
   const chainId = hre.network.config.chainId;
-  const { viemChain, url } = CNetworks[chainName];
+  const { viemChain } = CNetworks[chainName];
 
-  let envKey: string;
-  let implementationKey: string;
+  let implementationKey: keyof DeploymentPrefixes;
 
-  switch (proxyType) {
-    case ProxyType.infra:
-      envKey = `CONCERO_INFRA_PROXY`;
-      implementationKey = `CONCERO_ORCHESTRATOR`;
-      break;
-    case ProxyType.parentPool:
-      envKey = `PARENT_POOL_PROXY`;
-      implementationKey = `PARENT_POOL`;
-      break;
-    case ProxyType.childPool:
-      envKey = `CHILD_POOL_PROXY`;
-      implementationKey = `CHILD_POOL`;
-      break;
-    default:
-      throw new Error("Invalid ProxyType");
+  if (shouldPause) {
+    implementationKey = "pause";
+  } else if (proxyType === "infraProxy") {
+    implementationKey = "orchestrator";
+  } else if (proxyType === "childPoolProxy") {
+    implementationKey = "childPool";
+  } else if (proxyType === "parentPoolProxy") {
+    implementationKey = "parentPool";
+  } else {
+    err(`Proxy type ${proxyType} not found`, "upgradeProxyImplementation", chainName);
+    return;
   }
 
   const { abi: proxyAdminAbi } = await import(
     "../../artifacts/contracts/transparentProxy/ConceroProxyAdmin.sol/ConceroProxyAdmin.json"
   );
 
-  if (!viemChain) {
-    log(`Chain ${chainId} not found in live chains`, "upgradeProxyImplementation");
-    return;
-  }
-
   const viemAccount = privateKeyToAccount(`0x${process.env.PROXY_DEPLOYER_PRIVATE_KEY}`);
   const { walletClient, publicClient } = getFallbackClients(CNetworks[chainName], viemAccount);
 
-  const conceroProxy = getEnvVar(`${envKey}_${networkEnvKeys[chainName]}`);
-  const proxyAdminContract = getEnvVar(`${envKey}_ADMIN_CONTRACT_${networkEnvKeys[chainName]}`);
-  const newImplementationAddress = getEnvVar(`${implementationKey}_${networkEnvKeys[chainName]}`);
-  const pauseDummy = getEnvVar(`CONCERO_PAUSE_${networkEnvKeys[chainName]}`);
+  const [conceroProxy, conceroProxyAlias] = getEnvAddress(proxyType, chainName);
+  const [proxyAdmin, proxyAdminAlias] = getEnvAddress(`${proxyType}Admin`, chainName);
+  const [newImplementation, newImplementationAlias] = getEnvAddress(implementationKey, chainName);
+  const [pauseDummy, pauseAlias] = getEnvAddress("pause", chainName);
 
-  const implementation = shouldPause ? pauseDummy : newImplementationAddress;
+  const implementation = shouldPause ? pauseDummy : newImplementation;
+  const implementationAlias = shouldPause ? pauseAlias : newImplementationAlias;
 
   const txHash = await walletClient.writeContract({
-    address: proxyAdminContract,
+    address: proxyAdmin,
     abi: proxyAdminAbi,
     functionName: "upgradeAndCall",
     account: viemAccount,
@@ -63,8 +54,8 @@ export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shou
   const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ ...viemReceiptConfig, hash: txHash });
 
   log(
-    `Upgrade Proxy Implementation: gasUsed: ${cumulativeGasUsed}, hash: ${txHash}`,
-    "setProxyImplementation",
+    `Upgraded via ${proxyAdminAlias}: ${conceroProxyAlias}.implementation -> ${implementationAlias}. Gas : ${formatGas(cumulativeGasUsed)}, hash: ${txHash}`,
+    `setProxyImplementation : ${proxyType}`,
     chainName,
   );
 }
@@ -72,10 +63,7 @@ export default {};
 
 task("upgrade-proxy-implementation", "Upgrades the proxy implementation")
   .addFlag("pause", "Pause the proxy before upgrading", false)
-  .addParam("proxytype", "The type of the proxy to upgrade")
+  .addParam("proxytype", "The type of the proxy to upgrade", undefined)
   .setAction(async taskArgs => {
-    const { name, live } = hre.network;
-    if (live) {
-      await upgradeProxyImplementation(hre, parseInt(taskArgs.proxytype), taskArgs.pause);
-    }
+    await upgradeProxyImplementation(hre, taskArgs.proxytype, taskArgs.pause);
   });

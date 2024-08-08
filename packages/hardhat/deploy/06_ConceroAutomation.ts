@@ -1,4 +1,4 @@
-import { DeployFunction, Deployment } from "hardhat-deploy/types";
+import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
@@ -21,61 +21,59 @@ interface ConstructorArgs {
   owner?: string;
 }
 
-const deployConceroAutomation: DeployFunction = async function (
-  hre: HardhatRuntimeEnvironment,
-  constructorArgs: ConstructorArgs = {},
-) {
-  const { deployer } = await hre.getNamedAccounts();
-  const { deploy } = hre.deployments;
-  const { name, live } = hre.network;
+const deployConceroAutomation: (hre: HardhatRuntimeEnvironment, constructorArgs?: ConstructorArgs) => Promise<void> =
+  async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
+    const { deployer } = await hre.getNamedAccounts();
+    const { deploy } = hre.deployments;
+    const { name, live } = hre.network;
 
-  const { functionsRouter, functionsDonId, functionsSubIds, donHostedSecretsVersion, type } = chains[name];
+    const { functionsRouter, functionsDonId, functionsSubIds, donHostedSecretsVersion, type } = chains[name];
 
-  const jsPath = "./tasks/CLFScripts";
+    const jsPath = "./tasks/CLFScripts";
 
-  function getJS(jsPath: string, type: string): string {
-    const dist = path.join(jsPath, "dist", `${type}.min.js`);
-    return fs.readFileSync(dist, "utf8");
-  }
+    function getJS(jsPath: string, type: string): string {
+      const dist = path.join(jsPath, "dist", `${type}.min.js`);
+      return fs.readFileSync(dist, "utf8");
+    }
 
-  const defaultArgs = {
-    functionsDonId: functionsDonId,
-    functionsSubIds: functionsSubIds,
-    functionsSlotId: constructorArgs.slotId || 0,
-    donHostedSecretsVersion: donHostedSecretsVersion,
-    hashSum: getHashSum(getJS(jsPath, "pool/getTotalBalance")),
-    etherHashSum: getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
-    functionsRouter: functionsRouter,
-    parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`),
-    owner: deployer,
+    const defaultArgs = {
+      functionsDonId: functionsDonId,
+      functionsSubIds: functionsSubIds,
+      functionsSlotId: constructorArgs.slotId || 0,
+      donHostedSecretsVersion: donHostedSecretsVersion,
+      hashSum: getHashSum(getJS(jsPath, "pool/getTotalBalance")),
+      etherHashSum: getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
+      functionsRouter: functionsRouter,
+      parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`),
+      owner: deployer,
+    };
+
+    const args = { ...defaultArgs, ...constructorArgs };
+
+    console.log("Deploying ConceroAutomation...");
+    const deployConceroAutomation = (await deploy("ConceroAutomation", {
+      from: deployer,
+      args: [
+        args.functionsDonId,
+        args.functionsSubIds[0],
+        args.functionsSlotId,
+        args.functionsRouter,
+        args.parentProxyAddress,
+        args.owner,
+      ],
+      log: true,
+      autoMine: true,
+    })) as Deployment;
+
+    if (live) {
+      log(`ConceroAutomation deployed to ${name} to: ${deployConceroAutomation.address}`, "deployConceroAutomation");
+      updateEnvVariable(
+        `CONCERO_AUTOMATION_${networkEnvKeys[name]}`,
+        deployConceroAutomation.address,
+        `deployments.${type}`,
+      );
+    }
   };
-
-  const args = { ...defaultArgs, ...constructorArgs };
-
-  console.log("Deploying ConceroAutomation...");
-  const deployConceroAutomation = (await deploy("ConceroAutomation", {
-    from: deployer,
-    args: [
-      args.functionsDonId,
-      args.functionsSubIds[0],
-      args.functionsSlotId,
-      args.functionsRouter,
-      args.parentProxyAddress,
-      args.owner,
-    ],
-    log: true,
-    autoMine: true,
-  })) as Deployment;
-
-  if (live) {
-    log(`ConceroAutomation deployed to ${name} to: ${deployConceroAutomation.address}`, "deployConceroAutomation");
-    updateEnvVariable(
-      `CONCERO_AUTOMATION_${networkEnvKeys[name]}`,
-      deployConceroAutomation.address,
-      `deployments.${type}`,
-    );
-  }
-};
 
 export default deployConceroAutomation;
 deployConceroAutomation.tags = ["ConceroAutomation"];

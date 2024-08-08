@@ -1,12 +1,15 @@
-import { DeployFunction, Deployment } from "hardhat-deploy/types";
+import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
-import updateEnvVariable from "../utils/updateEnvVariable";
+import CNetworks from "../constants/CNetworks";
+import { updateEnvAddress } from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
-import { ProxyType } from "./11_TransparentProxy";
+import { ProxyType } from "../constants/deploymentVariables";
 
-const deployProxyAdmin: DeployFunction = async function (hre: HardhatRuntimeEnvironment, proxyType: ProxyType) {
+const deployProxyAdmin: (hre: HardhatRuntimeEnvironment, proxyType: ProxyType) => Promise<void> = async function (
+  hre: HardhatRuntimeEnvironment,
+  proxyType: ProxyType,
+) {
   const { proxyDeployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
@@ -14,22 +17,7 @@ const deployProxyAdmin: DeployFunction = async function (hre: HardhatRuntimeEnvi
 
   const initialOwner = getEnvVar(`PROXY_DEPLOYER_ADDRESS`);
 
-  let envKey: string;
-  switch (proxyType) {
-    case ProxyType.infra:
-      envKey = `CONCERO_INFRA_PROXY`;
-      break;
-    case ProxyType.parentPool:
-      envKey = `PARENT_POOL_PROXY`;
-      break;
-    case ProxyType.childPool:
-      envKey = `CHILD_POOL_PROXY`;
-      break;
-    default:
-      throw new Error("Invalid ProxyType");
-  }
-
-  console.log("Deploying ProxyAdmin...");
+  log("Deploying...", `deployProxyAdmin: ${proxyType}`, name);
   const deployProxyAdmin = (await deploy("ConceroProxyAdmin", {
     from: proxyDeployer,
     args: [initialOwner],
@@ -38,12 +26,8 @@ const deployProxyAdmin: DeployFunction = async function (hre: HardhatRuntimeEnvi
   })) as Deployment;
 
   if (live) {
-    log(`ProxyAdmin deployed to ${name} to: ${deployProxyAdmin.address}`, "deployProxyAdmin");
-    updateEnvVariable(
-      `${envKey}_ADMIN_CONTRACT_${networkEnvKeys[name]}`,
-      deployProxyAdmin.address,
-      `deployments.${networkType}`,
-    );
+    log(`Deployed at: ${deployProxyAdmin.address}`, `deployProxyAdmin: ${proxyType}`, name);
+    updateEnvAddress(`${proxyType}Admin`, name, deployProxyAdmin.address, `deployments.${networkType}`);
   }
 };
 

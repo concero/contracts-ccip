@@ -13,7 +13,10 @@ export function getEnvVar(key: keyof env): string {
   return value;
 }
 
-export function getEnvAddress(prefix: keyof DeploymentPrefixes, networkName?: CNetworkNames): [Address, string] {
+export function getEnvAddress(
+  prefix: keyof DeploymentPrefixes,
+  networkName?: CNetworkNames | string,
+): [Address, string] {
   const searchKey = networkName
     ? `${deploymentPrefixes[prefix]}_${networkEnvKeys[networkName]}`
     : deploymentPrefixes[prefix];

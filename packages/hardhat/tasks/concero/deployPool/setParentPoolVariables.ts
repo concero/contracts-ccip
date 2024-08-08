@@ -1,6 +1,6 @@
 import { CNetwork } from "../../../types/CNetwork";
 import { getFallbackClients } from "../../utils/getViemClients";
-import { getEnvVar } from "../../../utils/getEnvVar";
+import { getEnvAddress, getEnvVar } from "../../../utils/getEnvVar";
 import { networkEnvKeys, networkTypes } from "../../../constants/CNetworks";
 import { ethersV6CodeUrl, parentPoolJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 import { Address } from "viem";
@@ -11,57 +11,54 @@ import { getEthersV5FallbackSignerAndProvider } from "../../utils/getEthersSigne
 import { SecretsManager } from "@chainlink/functions-toolkit";
 import { mainnetChains, testnetChains } from "../liveChains";
 import { viemReceiptConfig } from "../../../constants/deploymentVariables";
+import { formatGas, shorten } from "../../../utils/formatting";
 
-async function setParentPoolJsHashes(deployableChain: CNetwork, abi: any) {
+async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
+  const { viemChain, name } = chain;
   try {
-    const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
-    const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
-    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[srcChainName]}`);
+    const { walletClient, publicClient, account } = getFallbackClients(chain);
+    const [parentPoolProxy, parentPoolAlias] = getEnvAddress("parentPoolProxy", name);
     const parentPoolJsCode = await (await fetch(parentPoolJsCodeUrl)).text();
     const ethersCode = await (await fetch(ethersV6CodeUrl)).text();
 
     const setHash = async (hash: string, functionName: string) => {
-      const setHashHash = await walletClient.writeContract({
-        address: parentPoolProxyAddress,
+      const setJsHashTxHash = await walletClient.writeContract({
+        address: parentPoolProxy,
         abi,
         functionName,
         account,
         args: [hash],
-        chain: dcViemChain,
+        chain: viemChain,
         gas: 1_000_000n,
       });
       const { cumulativeGasUsed: setHashGasUsed } = await publicClient.waitForTransactionReceipt({
         ...viemReceiptConfig,
-        hash: setHashHash,
+        hash: setJsHashTxHash,
       });
 
-      log(
-        `Set ${srcChainName}:${parentPoolProxyAddress} jshash[${hash}]. Gas used: ${setHashGasUsed.toString()}`,
-        functionName,
-      );
+      log(`[Set] ${parentPoolAlias}.jsHash -> ${shorten(hash)}. Gas: ${formatGas(setHashGasUsed)}`, functionName, name);
     };
 
     await setHash(getHashSum(parentPoolJsCode), "setHashSum");
     await setHash(getHashSum(ethersCode), "setEthersHashSum");
   } catch (error) {
-    err(`${error?.message}`, "setHashSum", srcChainName);
+    err(`${error?.message}`, "setHashSum", name);
   }
 }
 
 async function setParentPoolCap(chain: CNetwork, abi: any) {
+  const { name } = chain;
   try {
-    const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = chain;
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[srcChainName]}`);
+    const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress("parentPoolProxy", name);
     const poolCap = 100_000n * 10n ** 6n;
 
     const { request: setCapReq } = await publicClient.simulateContract({
-      address: parentPoolProxyAddress,
+      address: parentPoolProxy,
       abi,
       functionName: "setPoolCap",
       account,
       args: [poolCap],
-      chain: dcViemChain,
     });
 
     const setCapHash = await walletClient.writeContract(setCapReq);
@@ -69,115 +66,115 @@ async function setParentPoolCap(chain: CNetwork, abi: any) {
       ...viemReceiptConfig,
       hash: setCapHash,
     });
+    log(
+      `[Set] ${parentPoolProxyAlias}.poolCap -> ${poolCap.toString()}. Gas: ${formatGas(setCapGasUsed)}`,
+      "setPoolCap",
+      name,
+    );
   } catch (error) {
-    err(`${error?.message}`, "setPoolCap", srcChainName);
+    err(`${error?.message}`, "setPoolCap", name);
   }
 }
 
 async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slotId: number) {
-  const {
-    functionsRouter: dcFunctionsRouter,
-    functionsDonIdAlias: dcFunctionsDonIdAlias,
-    functionsGatewayUrls: dcFunctionsGatewayUrls,
-    url: dcUrl,
-    viemChain: dcViemChain,
-    name: dcName,
-  } = chain;
+  const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls, name } = chain;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dcName]}`);
-    const { signer: dcSigner } = getEthersV5FallbackSignerAndProvider(dcName);
+    const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress("parentPoolProxy", name);
+    const { signer: dcSigner } = getEthersV5FallbackSignerAndProvider(name);
 
     const secretsManager = new SecretsManager({
       signer: dcSigner,
-      functionsRouterAddress: dcFunctionsRouter,
-      donId: dcFunctionsDonIdAlias,
+      functionsRouterAddress: functionsRouter,
+      donId: functionsDonIdAlias,
     });
     await secretsManager.initialize();
 
-    const { result } = await secretsManager.listDONHostedEncryptedSecrets(dcFunctionsGatewayUrls);
+    const { result } = await secretsManager.listDONHostedEncryptedSecrets(functionsGatewayUrls);
     const nodeResponse = result.nodeResponses[0];
-    if (!nodeResponse.rows) return log(`No secrets found for ${dcName}.`, "updateContract");
+    if (!nodeResponse.rows) return log(`No secrets found for ${name}.`, "updateContract");
 
     const rowBySlotId = nodeResponse.rows.find(row => row.slot_id === slotId);
-    if (!rowBySlotId) return log(`No secrets found for ${dcName} at slot ${slotId}.`, "updateContract");
+    if (!rowBySlotId) return log(`No secrets found for ${name} at slot ${slotId}.`, "updateContract");
 
     const { request: setDstConceroContractReq } = await publicClient.simulateContract({
-      address: parentPoolProxyAddress,
+      address: parentPoolProxy,
       abi,
       functionName: "setDonHostedSecretsVersion",
       account,
       args: [rowBySlotId.version],
-      chain: dcViemChain,
     });
     const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
 
-    const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({
+    const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({
       ...viemReceiptConfig,
       hash: setDstConceroContractHash,
     });
 
     log(
-      `Set ${dcName}:${parentPoolProxyAddress} donHostedSecretsVersion[${rowBySlotId.version}]. Gas used: ${setDstConceroContractGasUsed.toString()}`,
+      `[Set] ${parentPoolProxyAlias}.donHostedSecretsVersion -> ${rowBySlotId.version}. Gas: ${formatGas(cumulativeGasUsed)}`,
       "setDonHostedSecretsVersion",
     );
   } catch (error) {
-    err(`${error?.message}`, "setDonHostedSecretsVersion", dcName);
+    err(`${error?.message}`, "setDonHostedSecretsVersion", name);
   }
 }
 
-async function setParentPoolSecretsSlotId(chian: CNetwork, abi: any, slotId: number) {
-  const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = chian;
+async function setParentPoolSecretsSlotId(chain: CNetwork, abi: any, slotId: number) {
+  const { name } = chain;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const parentPoolProxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[srcChainName]}`);
+    const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress("parentPoolProxy", name);
 
     const { request } = await publicClient.simulateContract({
-      address: parentPoolProxyAddress,
+      address: parentPoolProxy,
       abi,
       functionName: "setDonHostedSecretsSlotId",
       account,
       args: [BigInt(slotId)],
-      chain: dcViemChain,
     });
 
     const hash = await walletClient.writeContract(request);
     const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ ...viemReceiptConfig, hash });
 
     log(
-      `Set ${srcChainName}:${parentPoolProxyAddress} donHostedSecretsSlotId[${slotId}]. Gas used: ${cumulativeGasUsed.toString()}`,
+      `[Set] ${parentPoolProxyAlias}.donHostedSecretsSlotId -> ${slotId}. Gas: ${formatGas(cumulativeGasUsed)}`,
       "setDonHostedSecretsSlotId",
+      name,
     );
   } catch (error) {
-    err(`Error ${error?.message}`, "setDonHostedSecretsSlotId", srcChainName);
+    err(`Error ${error?.message}`, "setDonHostedSecretsSlotId", name);
   }
 }
 
 async function setConceroContractSenders(chain: CNetwork, abi: any) {
-  const { name: chainName, viemChain, type } = chain;
+  const { name, type } = chain;
+  if (!name) throw new Error("Chain name not found");
+
   const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
-  if (!chainName) throw new Error("Chain name not found");
-  const chains = type === networkTypes.mainnet ? mainnetChains : testnetChains;
+  const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress("parentPoolProxy", name);
 
-  for (const dstChain of chains) {
+  const dstChains = type === networkTypes.mainnet ? mainnetChains : testnetChains;
+
+  for (const dstChain of dstChains) {
     if (dstChain.chainId === chain.chainId) continue;
 
     const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
+
     if (!dstChainName) throw new Error("Destination chain name not found");
     if (!dstChainSelector) throw new Error("Destination chain selector not found");
-    const dstConceroContract = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dstChainName]}`);
-    const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}`);
-    const childPool = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}`);
+
+    const [dstConceroProxy, _] = getEnvAddress("infraProxy", dstChainName);
+    const [childPoolProxy, __] = getEnvAddress("childPoolProxy", dstChainName);
 
     const setSender = async (sender: Address) => {
       const { request: setSenderReq } = await publicClient.simulateContract({
-        address: conceroPoolAddress,
+        address: parentPoolProxy,
         functionName: "setConceroContractSender",
         args: [dstChainSelector, sender, 1n],
         abi,
         account,
-        viemChain,
       });
       const setSenderHash = await walletClient.writeContract(setSenderReq);
       const { cumulativeGasUsed: setSenderGasUsed } = await publicClient.waitForTransactionReceipt({
@@ -185,40 +182,40 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
         hash: setSenderHash,
       });
       log(
-        `Set ${chainName}:${conceroPoolAddress} sender[${dstChainName}:${sender}]. Gas used: ${setSenderGasUsed.toString()}`,
+        `[Set] ${parentPoolProxyAlias}.sender[${dstChainName}] -> ${shorten(sender)}. Gas: ${formatGas(setSenderGasUsed)}`,
         "setSenders",
+        name,
       );
     };
 
-    await setSender(dstConceroContract);
-    await setSender(childPool);
+    await setSender(dstConceroProxy);
+    await setSender(childPoolProxy);
   }
 }
 
 async function setPools(chain: CNetwork, abi: any) {
-  const { name: chainName, viemChain, url, type } = chain;
+  const { name, type } = chain;
+  if (!name) throw new Error("Chain name not found");
+
   const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
-  if (!chainName) throw new Error("Chain name not found");
 
-  const chains = type === networkTypes.mainnet ? mainnetChains : testnetChains;
+  const dstChains = type === networkTypes.mainnet ? mainnetChains : testnetChains;
 
-  for (const dstChain of chains) {
+  for (const dstChain of dstChains) {
     try {
       if (dstChain.chainId === chain.chainId) continue;
-
       const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
-      if (!dstChainName) throw new Error("Destination chain name not found");
-      const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}`);
-      const dstPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}`);
+
+      const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress("parentPoolProxy", name);
+      const [childPoolProxy, childPoolProxyAlias] = getEnvAddress("childPoolProxy", dstChainName);
 
       const { request: setReceiverReq } = await publicClient.simulateContract({
-        address: conceroPoolAddress,
+        address: parentPoolProxy,
         functionName: "setPools",
-        args: [dstChainSelector, dstPoolAddress, false],
+        args: [dstChainSelector, childPoolProxy, false],
         abi,
         account,
-        viemChain,
       });
       const setReceiverHash = await walletClient.writeContract(setReceiverReq);
       const { cumulativeGasUsed: setReceiverGasUsed } = await publicClient.waitForTransactionReceipt({
@@ -226,12 +223,12 @@ async function setPools(chain: CNetwork, abi: any) {
         hash: setReceiverHash,
       });
       log(
-        `Set ${conceroPoolAddress} receiver[${dstChainName}:${dstPoolAddress}]. Gas used: ${setReceiverGasUsed.toString()}`,
+        `[Set] ${parentPoolProxyAlias}.pool[${dstChainName}] -> ${childPoolProxyAlias}. Gas: ${formatGas(setReceiverGasUsed)}`,
         "setPools",
-        chainName,
+        name,
       );
     } catch (error) {
-      err(`Error ${error?.message}`, "setPools", chainName);
+      err(`Error ${error?.message}`, "setPools", name);
     }
   }
 }

@@ -75,6 +75,14 @@ contract ConceroCCIP is ConceroFunctions {
     ///////////////////////////Functions///////////////////////////
     ///////////////////////////////////////////////////////////////
 
+    /**
+     * @notice Sends USDC to the destination chain using CCIP
+     * @param _destinationChainSelector The destination chain selector
+     * @param _token the token to be send
+     * @param _amount the amount of tokens to ben send
+     * @param _receiver the receiver address
+     * @param _lpFee the fee for Liquidity Providers
+     */
     function _sendTokenPayLink(
         uint64 _destinationChainSelector,
         address _token,
@@ -98,6 +106,14 @@ contract ConceroCCIP is ConceroFunctions {
         messageId = i_ccipRouter.ccipSend(_destinationChainSelector, evm2AnyMessage);
     }
 
+    /**
+     * @notice Chainlink CCIP helper function to build the EVM2AnyMessage
+     * @param _token the token to be send
+     * @param _amount the amount of tokens to ben send
+     * @param _receiver the receiver address
+     * @param _lpFee the fee for Liquidity Providers
+     * @param _destinationChainSelector The destination chain selector
+     */
     function _buildCCIPMessage(
         address _token,
         uint256 _amount,

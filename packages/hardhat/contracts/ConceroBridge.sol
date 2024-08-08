@@ -198,10 +198,10 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     }
 
     /**
-     * @notice Function to get the total amount of fees on the source
-     * @param tokenType the position of the CCIPToken enum
-     * @param dstChainSelector the destination blockchain chain selector
-     * @param amount the amount of value the fees will calculated over.
+     * @notice Function to get the total src fee for a specific bridge transaction
+     * @param tokenType The bridgeable token
+     * @param dstChainSelector the destination chain selector
+     * @param amount the amount to be send
      */
     function _getSrcTotalFeeInUsdc(
         CCIPToken tokenType,

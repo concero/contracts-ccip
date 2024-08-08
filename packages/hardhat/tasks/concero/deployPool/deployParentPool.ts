@@ -1,10 +1,9 @@
 import { task, types } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import chains from "../../../constants/CNetworks";
-import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
-import { getEnvVar } from "../../../utils/getEnvVar";
+import CNetworks from "../../../constants/CNetworks";
+import { getEnvAddress } from "../../../utils/getEnvVar";
 import addCLFConsumer from "../../sub/add";
-import log from "../../../utils/log";
 import uploadDonSecrets from "../../donSecrets/upload";
 import { CNetwork } from "../../../types/CNetwork";
 import { setParentPoolVariables } from "./setParentPoolVariables";
@@ -15,10 +14,10 @@ import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 import { compileContracts } from "../../../utils/compileContracts";
 
 task("deploy-parent-pool", "Deploy the pool")
-  .addFlag("skipdeploy", "Deploy the contract to a specific network")
-  .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .addFlag("deployproxy", "Deploy the proxy")
-  .addFlag("skipsetvars", "Set the contract variables")
+  .addFlag("deployimplementation", "Deploy the implementation")
+  .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
+  .addFlag("setvars", "Set the contract variables")
   .addFlag("uploadsecrets", "Set the contract variables")
   .setAction(async taskArgs => {
     compileContracts({ quiet: true });
@@ -31,14 +30,12 @@ task("deploy-parent-pool", "Deploy the pool")
     if (taskArgs.deployproxy) {
       await deployProxyAdmin(hre, ProxyType.parentPool);
       await deployTransparentProxy(hre, ProxyType.parentPool);
-      const proxyAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`);
+      const [proxyAddress, _] = getEnvAddress("parentPoolProxy", name);
       const { functionsSubIds } = chains[name];
       await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
     }
 
-    if (taskArgs.skipdeploy) {
-      log("Skipping deployment", "deploy-parent-pool");
-    } else {
+    if (taskArgs.deployimplementation) {
       await deployParentPool(hre); //todo: not passing slotId to deployParentPool functions' constructor args
       await upgradeProxyImplementation(hre, ProxyType.parentPool, false);
     }
@@ -47,7 +44,7 @@ task("deploy-parent-pool", "Deploy the pool")
       await uploadDonSecrets(deployableChains, slotId, 4320);
     }
 
-    if (!taskArgs.skipsetvars) {
+    if (taskArgs.setvars) {
       await setParentPoolVariables(deployableChains[0], slotId);
     }
   });

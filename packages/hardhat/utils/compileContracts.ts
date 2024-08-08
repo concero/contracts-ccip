@@ -9,11 +9,11 @@ hardhat compile
 import { execSync } from "child_process";
 
 interface HardhatCompileParams {
-  concurrency: number;
-  force: boolean;
-  noSizeContracts: boolean;
-  noTypechain: boolean;
-  quiet: boolean;
+  concurrency?: number;
+  force?: boolean;
+  noSizeContracts?: boolean;
+  noTypechain?: boolean;
+  quiet?: boolean;
 }
 
 export function compileContracts({ quiet = true, force = false }: HardhatCompileParams) {

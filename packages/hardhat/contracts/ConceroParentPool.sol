@@ -905,6 +905,7 @@ contract ConceroParentPool is
         } else if (requestType == RequestType.performUpkeep_requestLiquidityTransfer) {
             _handleAutomationCLFFulfill(requestId, response);
         }
+        //todo: in case of set/remove pools we're deleting a requestId that we haven't stored
         delete s_clfRequestTypes[requestId];
     }
 

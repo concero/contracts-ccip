@@ -6,6 +6,7 @@ import { CNetwork } from "../../types/CNetwork";
 
 import log, { err, warn } from "../../utils/log";
 import { Address } from "viem";
+import { shorten } from "../../utils/formatting";
 
 // run with: bunx hardhat clf-consumer-add --subid 5810 --contract 0x... --network avalancheFuji
 task("clf-sub-consumer-add", "Adds a consumer contract to the Functions billing subscription")
@@ -15,7 +16,6 @@ task("clf-sub-consumer-add", "Adds a consumer contract to the Functions billing 
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const { name, live } = hre.network;
     if (!chains[name]) throw new Error(`Chain ${name} not supported`);
-    const consumerAddress = taskArgs.contract;
     let subscriptionId;
     if (!taskArgs.subid) {
       warn(`No subscription ID provided, defaulting to ${chains[name].functionsSubIds[0]}`, "addCLFConsumer", name);
@@ -31,7 +31,7 @@ async function addCLFConsumer(chain: CNetwork, consumerAddresses: Address[], sub
   const signer = await hre.ethers.getSigner(process.env.DEPLOYER_ADDRESS);
   for (const consumerAddress of consumerAddresses) {
     const txOptions = { confirmations };
-    log(`Adding ${consumerAddress} to sub ${subscriptionId} on ${name}`, "addCLFConsumer");
+    log(`Adding ${shorten(consumerAddress)} to sub ${subscriptionId}`, "addCLFConsumer", name);
 
     const sm = new SubscriptionManager({
       signer,

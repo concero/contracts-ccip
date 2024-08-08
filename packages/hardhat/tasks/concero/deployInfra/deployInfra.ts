@@ -56,8 +56,8 @@ async function deployInfra(params: DeployInfraParams) {
 
   if (deployProxy) {
     await ensureWalletBalance(proxyDeployer, deployerTargetBalances, CNetworks[name]);
-    await deployProxyAdmin(hre, ProxyType.infra);
-    await deployTransparentProxy(hre, ProxyType.infra);
+    await deployProxyAdmin(hre, "infraProxy");
+    await deployTransparentProxy(hre, "infraProxy");
 
     const [proxyAddress, _] = getEnvAddress("infraProxy", name);
     const { functionsSubIds } = CNetworks[name];
@@ -70,7 +70,7 @@ async function deployInfra(params: DeployInfraParams) {
     await deployConceroDexSwap(hre);
     await deployConcero(hre, { slotId });
     await deployConceroOrchestrator(hre);
-    await upgradeProxyImplementation(hre, ProxyType.infra, false);
+    await upgradeProxyImplementation(hre, "infraProxy", false);
   }
 
   if (setVars) {

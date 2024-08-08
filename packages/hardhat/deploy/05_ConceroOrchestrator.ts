@@ -1,4 +1,4 @@
-import { DeployFunction, Deployment } from "hardhat-deploy/types";
+import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
@@ -6,7 +6,9 @@ import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
 import { messengers } from "../constants/deploymentVariables";
 
-const deployConceroOrchestrator: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const deployConceroOrchestrator: (hre: HardhatRuntimeEnvironment) => Promise<void> = async function (
+  hre: HardhatRuntimeEnvironment,
+) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
@@ -23,7 +25,7 @@ const deployConceroOrchestrator: DeployFunction = async function (hre: HardhatRu
 
   const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`);
 
-  console.log("Deploying ConceroOrchestrator...");
+  log("Deploying...", "ConceroOrchestrator", name);
 
   const conceroProxyDeployment = (await deploy("Orchestrator", {
     from: deployer,

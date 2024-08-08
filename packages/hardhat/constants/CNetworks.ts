@@ -28,11 +28,11 @@ export const networkTypes: Record<NetworkType, string> = {
 };
 
 if (!deployerPK) {
-  throw new Error("DEPLOYER_PRIVATE_KEY is not set");
+  console.error("DEPLOYER_PRIVATE_KEY is not set");
 }
 
 if (!proxyDeployerPK) {
-  throw new Error("PROXY_DEPLOYER_PRIVATE_KEY is not set");
+  console.error("PROXY_DEPLOYER_PRIVATE_KEY is not set");
 }
 
 export const networkEnvKeys: Record<string, string> = {

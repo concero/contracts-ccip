@@ -29,6 +29,7 @@ interface IParentPoolWrapper is IParentPool {
     function getLoansInUse() external view returns (uint256);
     function getWithdrawalsOnTheWayAmount() external view returns (uint256);
     function getWithdrawRequest(bytes32 requestId) external view returns (ConceroParentPool.WithdrawRequest memory);
+    function getNumberOfChildPools() external view returns (uint256);
 }
 
 contract ParentPool_Wrapper is ConceroParentPool {
@@ -131,5 +132,12 @@ contract ParentPool_Wrapper is ConceroParentPool {
 
     function getWithdrawalsOnTheWayAmount() external view returns (uint256) {
         return s_withdrawalsOnTheWayAmount;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                 POOLS
+    //////////////////////////////////////////////////////////////*/
+    function getNumberOfChildPools() external view returns (uint256) {
+        return s_poolChainSelectors.length;
     }
 }

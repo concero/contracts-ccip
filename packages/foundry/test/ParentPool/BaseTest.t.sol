@@ -6,6 +6,8 @@ import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
 import {ParentPoolProxyDeploy} from "../../../script/ParentPoolProxyDeploy.s.sol";
 import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {ParentPoolProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/ParentPoolProxy.sol";
+import {ChildPoolProxy} from "contracts/Proxy/ChildPoolProxy.sol";
+import {ConceroChildPool} from "contracts/ConceroChildPool.sol";
 import {LPToken} from "contracts/LPToken.sol";
 import {CCIPLocalSimulator} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulator.sol";
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
@@ -31,6 +33,10 @@ contract BaseTest is Test {
     address internal proxyDeployer = vm.envAddress("FORGE_PROXY_DEPLOYER_ADDRESS");
     uint256 internal forkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
     address internal usdc = vm.envAddress("USDC_BASE");
+    address internal link = vm.envAddress("LINK_BASE");
+
+    address arbitrumChildProxy;
+    address arbitrumChildImplementation;
 
     /*//////////////////////////////////////////////////////////////
                                  SETUP
@@ -44,7 +50,16 @@ contract BaseTest is Test {
         deployParentPoolProxy();
         _deployParentPool();
         setProxyImplementation(address(parentPoolImplementation));
-        setParentPoolVars();
+
+        /// @dev set initial child pool
+        (arbitrumChildProxy, arbitrumChildImplementation) = _deployChildPool(
+            vm.envAddress("CONCERO_PROXY_ARBITRUM"),
+            vm.envAddress("LINK_ARBITRUM"),
+            vm.envAddress("CL_CCIP_ROUTER_ARBITRUM"),
+            vm.envAddress("USDC_ARBITRUM")
+        );
+        setParentPoolVars(uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), arbitrumChildProxy);
+
         _deployCcipLocalSimulation();
         deployLpToken();
         addFunctionsConsumer();
@@ -98,11 +113,9 @@ contract BaseTest is Test {
     }
 
     /// @notice might need to update this to pass _parentPoolImplementation like above
-    function setParentPoolVars() public {
+    function setParentPoolVars(uint64 _chainSelector, address _childProxy) public {
         vm.prank(deployer);
-        IParentPool(address(parentPoolProxy)).setPools(
-            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), address(parentPoolImplementation), false
-        );
+        IParentPool(address(parentPoolProxy)).setPools(_chainSelector, _childProxy, false);
 
         vm.prank(deployer);
         // should probably update this from user1
@@ -137,5 +150,47 @@ contract BaseTest is Test {
 
         vm.prank(subFunder);
         link.transferAndCall(router, funds, data);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              CHILD POOLS
+    //////////////////////////////////////////////////////////////*/
+    function _deployChildPoolImplementation(
+        address _infraProxy,
+        address _proxy,
+        address _link,
+        address _ccipRouter,
+        address _usdc,
+        address _owner,
+        address[3] memory _messengers
+    ) internal returns (address) {
+        vm.prank(deployer);
+        ConceroChildPool childPool =
+            new ConceroChildPool(_infraProxy, _proxy, _link, _ccipRouter, _usdc, deployer, _messengers);
+
+        return address(childPool);
+    }
+
+    function _deployChildPoolProxy() internal returns (address) {
+        vm.prank(proxyDeployer);
+        ChildPoolProxy childPoolProxy =
+            new ChildPoolProxy(vm.envAddress("CONCERO_PAUSE_BASE"), proxyDeployer, bytes(""));
+        return address(childPoolProxy);
+    }
+
+    function _deployChildPool(address _infraProxy, address _link, address _ccipRouter, address _usdc)
+        internal
+        returns (address, address)
+    {
+        address childProxy = _deployChildPoolProxy();
+        address[3] memory messengers = [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)];
+
+        address childImplementation =
+            _deployChildPoolImplementation(_infraProxy, childProxy, _link, _ccipRouter, _usdc, deployer, messengers);
+
+        vm.prank(proxyDeployer);
+        ITransparentUpgradeableProxy(childProxy).upgradeToAndCall(childImplementation, bytes(""));
+
+        return (childProxy, childImplementation);
     }
 }

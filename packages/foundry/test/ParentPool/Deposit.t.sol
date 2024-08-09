@@ -64,7 +64,14 @@ contract DepositTest is BaseTest {
         setProxyImplementation(address(parentPoolImplementation));
 
         /// @dev set initial child pool
-        setParentPoolVars();
+        /// @notice using BASE args when not testing crosschain
+        (arbitrumChildProxy, arbitrumChildImplementation) = _deployChildPool(
+            vm.envAddress("CONCERO_PROXY_ARBITRUM"),
+            vm.envAddress("LINK_BASE"), // vm.envAddress("LINK_ARBITRUM")
+            vm.envAddress("CL_CCIP_ROUTER_BASE"), // vm.envAddress("CL_CCIP_ROUTER_ARBITRUM"),
+            vm.envAddress("USDC_BASE") // vm.envAddress("USDC_ARBITRUM")
+        );
+        setParentPoolVars(uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), arbitrumChildProxy);
 
         /// @dev add functions consumer
         addFunctionsConsumer();

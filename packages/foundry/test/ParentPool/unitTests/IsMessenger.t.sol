@@ -31,7 +31,16 @@ contract IsMessengerTest is BaseTest {
         );
 
         setProxyImplementation(address(parentPoolImplementation));
-        setParentPoolVars();
+
+        /// @dev set initial child pool
+        (address arbitrumChildProxy, address arbitrumChildImplementation) = _deployChildPool(
+            vm.envAddress("CONCERO_PROXY_ARBITRUM"),
+            vm.envAddress("LINK_ARBITRUM"),
+            vm.envAddress("CL_CCIP_ROUTER_ARBITRUM"),
+            vm.envAddress("USDC_ARBITRUM")
+        );
+        setParentPoolVars(uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), arbitrumChildProxy);
+
         deployLpToken();
         addFunctionsConsumer();
     }

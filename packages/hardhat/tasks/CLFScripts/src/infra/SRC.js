@@ -367,7 +367,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 					headers: {'Content-Type': 'application/json'},
 					body: JSON.stringify(payload),
 				});
-
+				console.log(payload);
 				const res = await resp.json();
 				if (res.length === undefined) {
 					return [res];

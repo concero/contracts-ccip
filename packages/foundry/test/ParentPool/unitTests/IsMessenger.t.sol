@@ -37,7 +37,9 @@ contract IsMessengerTest is BaseTest {
             vm.envAddress("CONCERO_PROXY_ARBITRUM"),
             vm.envAddress("LINK_ARBITRUM"),
             vm.envAddress("CL_CCIP_ROUTER_ARBITRUM"),
-            vm.envAddress("USDC_ARBITRUM")
+            vm.envAddress("USDC_ARBITRUM"),
+            baseChainSelector,
+            address(parentPoolProxy)
         );
         setParentPoolVars(uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), arbitrumChildProxy);
 

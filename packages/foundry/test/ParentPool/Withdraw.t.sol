@@ -467,6 +467,198 @@ contract WithdrawTest is DepositTest {
     }
 
     /*//////////////////////////////////////////////////////////////
+                           CCIP SEND TO POOL
+    //////////////////////////////////////////////////////////////*/
+    function test_ccipSendToPool_success() public {
+        /// @dev startAndCompleteDeposit
+        _startAndCompleteDeposit(user1, DEPOSIT_AMOUNT_USDC, INITIAL_DIRECT_DEPOSIT);
+
+        /// @dev requestResponse is total liquidity of all child pools
+        uint256 withdrawRequestResponse =
+            (DEPOSIT_AMOUNT_USDC - IParentPoolWrapper(address(parentPoolProxy)).getDepositFeeAmount()) / 2;
+        /// @dev need to get withdrawId from _startWithdrawalAndFulfillRequest
+        bytes32 withdrawId = _startWithdrawalAndFulfillRequest(user1, WITHDRAW_AMOUNT_LP, withdrawRequestResponse);
+        uint256 amountToSend = withdrawRequestResponse;
+
+        deal(usdc, arbitrumChildProxy, withdrawRequestResponse);
+        deal(link, arbitrumChildProxy, CCIP_FEES);
+
+        vm.recordLogs();
+
+        vm.prank(messenger);
+        address(arbitrumChildProxy).call(
+            abi.encodeWithSignature(
+                "ccipSendToPool(uint64,address,uint256,bytes32)",
+                optimismChainSelector, // change to base when crosschain testing
+                user1,
+                amountToSend,
+                withdrawId
+            )
+        );
+
+        /// @dev get logs and assert the parentPoolProxy's selector is being used
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 eventSignature = keccak256("ConceroChildPool_CCIPSent(bytes32,uint64,address,address,uint256)");
+        for (uint256 i = 0; i < entries.length; ++i) {
+            if (entries[i].topics[0] == eventSignature) {
+                (uint64 actualDestinationChainSelector,,,) =
+                    abi.decode(entries[i].data, (uint64, address, address, uint256));
+                assertEq(actualDestinationChainSelector, optimismChainSelector);
+                break;
+            }
+        }
+    }
+
+    function test_ccipSendToPool_reverts_if_reused_withdrawalId() public {
+        /// @dev startAndCompleteDeposit
+        _startAndCompleteDeposit(user1, DEPOSIT_AMOUNT_USDC, INITIAL_DIRECT_DEPOSIT);
+
+        /// @dev requestResponse is total liquidity of all child pools
+        uint256 withdrawRequestResponse =
+            (DEPOSIT_AMOUNT_USDC - IParentPoolWrapper(address(parentPoolProxy)).getDepositFeeAmount()) / 2;
+        /// @dev need to get withdrawId from _startWithdrawalAndFulfillRequest
+        bytes32 withdrawId = _startWithdrawalAndFulfillRequest(user1, WITHDRAW_AMOUNT_LP, withdrawRequestResponse);
+        uint256 amountToSend = withdrawRequestResponse;
+
+        deal(usdc, arbitrumChildProxy, withdrawRequestResponse);
+        deal(link, arbitrumChildProxy, CCIP_FEES);
+
+        vm.prank(messenger);
+        address(arbitrumChildProxy).call(
+            abi.encodeWithSignature(
+                "ccipSendToPool(uint64,address,uint256,bytes32)",
+                optimismChainSelector, // change to base when crosschain testing
+                user1,
+                amountToSend,
+                withdrawId
+            )
+        );
+
+        vm.prank(messenger);
+        vm.expectRevert(abi.encodeWithSignature("ConceroChildPool_WithdrawAlreadyPerformed()"));
+        address(arbitrumChildProxy).call(
+            abi.encodeWithSignature(
+                "ccipSendToPool(uint64,address,uint256,bytes32)",
+                optimismChainSelector, // change to base when crosschain testing
+                user1,
+                amountToSend,
+                withdrawId
+            )
+        );
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        FULFILL REQUEST FAILURE
+    //////////////////////////////////////////////////////////////*/
+    function test_fulfillRequest_failure_deposit() public {
+        /// @dev startDeposit
+        (bytes32 depositRequestId, uint32 depositCallbackGasLimit, uint96 depositEstimatedTotalCostJuels) =
+            _startDepositAndMonitorLogs(user1, DEPOSIT_AMOUNT_USDC);
+
+        /// @dev fulfillRequest fail
+        bytes memory response = "";
+        bytes memory err = abi.encode("error");
+        _fulfillRequestWithError(
+            response, depositRequestId, depositCallbackGasLimit, depositEstimatedTotalCostJuels, err
+        );
+
+        /// @dev assert storage concering the deposit request is cleared
+        ParentPool_Wrapper.DepositRequest memory depositRequest =
+            IParentPoolWrapper(address(parentPoolProxy)).getDepositRequest(depositRequestId);
+
+        assertEq(depositRequest.lpAddress, address(0));
+        assertEq(depositRequest.usdcAmountToDeposit, 0);
+
+        /// @dev startAndCompleteDeposit successfully afterwards
+        _startAndCompleteDeposit(user1, DEPOSIT_AMOUNT_USDC, INITIAL_DIRECT_DEPOSIT);
+    }
+
+    function test_fulfillRequest_failure_withdraw() public {
+        /// @dev startAndCompleteDeposit successfully afterwards
+        _startAndCompleteDeposit(user1, DEPOSIT_AMOUNT_USDC, INITIAL_DIRECT_DEPOSIT);
+
+        /// @dev startWithdrawal
+        (bytes32 withdrawalRequestId, uint32 withdrawalCallbackGasLimit, uint96 withdrawalEstimatedTotalCostJuels) =
+            _startWithdrawalAndMonitorLogs(user1, WITHDRAW_AMOUNT_LP);
+
+        /// @dev fulfillRequest fails
+        bytes memory response = "";
+        bytes memory err = abi.encode("error");
+        _fulfillRequestWithError(
+            response, withdrawalRequestId, withdrawalCallbackGasLimit, withdrawalEstimatedTotalCostJuels, err
+        );
+
+        /// @dev assert withdrawRequest values are deleted
+        ParentPool_Wrapper.WithdrawRequest memory withdrawRequest =
+            IParentPoolWrapper(address(parentPoolProxy)).getWithdrawRequest(withdrawalRequestId);
+
+        assertEq(withdrawRequest.lpAddress, address(0));
+        assertEq(withdrawRequest.lpSupplySnapshot, 0);
+        assertEq(withdrawRequest.lpAmountToBurn, 0);
+
+        /// @dev startAndCompleteWithdrawal
+        uint256 withdrawRequestResponse =
+            (DEPOSIT_AMOUNT_USDC - IParentPoolWrapper(address(parentPoolProxy)).getDepositFeeAmount()) / 2;
+        /// @dev need to get withdrawId from _startWithdrawalAndFulfillRequest
+        bytes32 withdrawId = _startWithdrawalAndFulfillRequest(user1, WITHDRAW_AMOUNT_LP, withdrawRequestResponse);
+        _completeWithdrawal(user1, WITHDRAW_AMOUNT_LP);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          RETRY PERFORM UPKEEP
+    //////////////////////////////////////////////////////////////*/
+    function test_retryPerformUpkeep_success() public {
+        /// @dev start and complete deposit
+        _startAndCompleteDeposit(user1, DEPOSIT_AMOUNT_USDC, INITIAL_DIRECT_DEPOSIT);
+
+        /// @dev startWithdrawalAndFulfill, for user1, passing caller, amount and crosschain liquidity amount
+        uint256 withdrawRequestResponse = (DEPOSIT_AMOUNT_USDC - DEPOSIT_FEE_USDC) / 2;
+        _startWithdrawalAndFulfillRequest(user1, WITHDRAW_AMOUNT_LP, withdrawRequestResponse);
+
+        /// @dev warp time so request is ready
+        vm.warp(block.timestamp + 7 days + 1);
+
+        /// @dev retryPerformUpkeep
+        vm.prank(user1);
+        (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("retryPerformWithdrawalRequest()"));
+        require(success, "retryPerformWithdrawalRequest call failed");
+    }
+
+    function test_retryPerformUpkeep_reverts_if_not_ready() public {
+        /// @dev start and complete deposit
+        _startAndCompleteDeposit(user1, DEPOSIT_AMOUNT_USDC, INITIAL_DIRECT_DEPOSIT);
+
+        /// @dev startWithdrawalAndFulfill
+        uint256 withdrawRequestResponse = (DEPOSIT_AMOUNT_USDC - DEPOSIT_FEE_USDC) / 2;
+        _startWithdrawalAndFulfillRequest(user1, WITHDRAW_AMOUNT_LP, withdrawRequestResponse);
+
+        /// @dev expect revert
+        vm.prank(user1);
+        vm.expectRevert(
+            abi.encodeWithSignature("ConceroParentPool__WithdrawRequestNotReady(bytes32)", _getWithdrawalId(user1))
+        );
+        address(parentPoolProxy).call(abi.encodeWithSignature("retryPerformWithdrawalRequest()"));
+    }
+
+    function test_retryPerformUpkeep_reverts_if_already_triggered() public {
+        /// @dev start and complete deposit
+        _startAndCompleteDeposit(user1, DEPOSIT_AMOUNT_USDC, INITIAL_DIRECT_DEPOSIT);
+
+        /// @dev startWithdrawalAndFulfill
+        uint256 withdrawRequestResponse = (DEPOSIT_AMOUNT_USDC - DEPOSIT_FEE_USDC) / 2;
+        _startWithdrawalAndFulfillRequest(user1, WITHDRAW_AMOUNT_LP, withdrawRequestResponse);
+
+        /// @dev warp time so request is ready and mock CLA performing upkeep as usual
+        vm.warp(block.timestamp + 7 days + 1);
+        _performUpkeep(user1, withdrawRequestResponse);
+
+        /// @dev expect revert
+        vm.prank(user1);
+        vm.expectRevert(abi.encodeWithSignature("ConceroParentPool_CallerNotAllowed(address)", user1));
+        address(parentPoolProxy).call(abi.encodeWithSignature("retryPerformWithdrawalRequest()"));
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                 UTILITY
     //////////////////////////////////////////////////////////////*/
     function _performUpkeep(address _lpAddress, uint256 _liquidityRequestedFromEachPool) internal {

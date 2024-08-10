@@ -69,7 +69,9 @@ contract DepositTest is BaseTest {
             vm.envAddress("CONCERO_PROXY_ARBITRUM"),
             vm.envAddress("LINK_BASE"), // vm.envAddress("LINK_ARBITRUM")
             vm.envAddress("CL_CCIP_ROUTER_BASE"), // vm.envAddress("CL_CCIP_ROUTER_ARBITRUM"),
-            vm.envAddress("USDC_BASE") // vm.envAddress("USDC_ARBITRUM")
+            vm.envAddress("USDC_BASE"), // vm.envAddress("USDC_ARBITRUM"),
+            baseChainSelector,
+            address(parentPoolProxy)
         );
         setParentPoolVars(uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), arbitrumChildProxy);
 
@@ -318,5 +320,45 @@ contract DepositTest is BaseTest {
         ) - _lpTotalSupply;
 
         return expectedLpTokensMinted;
+    }
+
+    function _fulfillRequestWithError(
+        bytes memory _response,
+        bytes32 _requestId,
+        uint32 _callbackGasLimit,
+        uint96 _estimatedTotalCostJuels,
+        bytes memory _err
+    ) internal {
+        /// @dev get coordinator to call functions router
+        address coordinator = functionsRouter.getContractById(vm.envBytes32("CLF_DONID_BASE"));
+
+        /// @dev create fulfill params
+        uint96 juelsPerGas = 1_000_000_000; // current rate of juels/gas
+        uint96 costWithoutFulfillment = 0; // The cost of processing the request (in Juels of LINK ), without fulfillment
+        address transmitter = BASE_FUNCTIONS_TRANSMITTER;
+
+        /// @dev get timeoutTimestamp from billing config
+        FunctionsBillingConfig memory billingConfig = FunctionsCoordinator(coordinator).getConfig();
+        uint32 timeoutTimestamp = uint32(block.timestamp + billingConfig.requestTimeoutSeconds);
+
+        /// @dev create the commitment params
+        FunctionsResponse.Commitment memory commitment = FunctionsResponse.Commitment(
+            _requestId,
+            coordinator,
+            _estimatedTotalCostJuels,
+            address(parentPoolProxy), // client
+            uint64(vm.envUint("CLF_SUBID_BASE")), // subscriptionId
+            _callbackGasLimit,
+            0, // adminFee
+            0, // donFee
+            163500, // gasOverheadBeforeCallback
+            57000, // gasOverheadAfterCallback
+            timeoutTimestamp // timeoutTimestamp
+        );
+
+        /// @dev prank the coordinator to call fulfill on functionsRouter
+        vm.prank(coordinator);
+        (FunctionsResponse.FulfillResult resultCode,) =
+            functionsRouter.fulfill(_response, _err, juelsPerGas, costWithoutFulfillment, transmitter, commitment);
     }
 }

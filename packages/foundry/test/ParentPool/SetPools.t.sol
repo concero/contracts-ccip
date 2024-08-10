@@ -6,22 +6,19 @@ import {BaseTest, console, Vm} from "./BaseTest.t.sol";
 import {WithdrawTest, IERC20} from "./Withdraw.t.sol";
 import {ParentPool_Wrapper, IParentPoolWrapper} from "./wrappers/ParentPool_Wrapper.sol";
 import {ConceroChildPool} from "contracts/ConceroChildPool.sol";
+import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
 import {ChildPoolProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/ChildPoolProxy.sol";
 
 contract SetPoolsTest is WithdrawTest {
     /*//////////////////////////////////////////////////////////////
                                VARIABLES
     //////////////////////////////////////////////////////////////*/
-    uint64 baseChainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_BASE"));
     uint64 arbitrumChainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM"));
     uint64 avalancheChainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_AVALANCHE"));
     uint64 polygonChainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_POLYGON"));
-    uint64 optimismChainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_OPTIMISM"));
 
     address avalancheChildImplementation;
     address avalancheChildProxy;
-
-    address messenger = vm.envAddress("POOL_MESSENGER_0_ADDRESS");
 
     /*//////////////////////////////////////////////////////////////
                                  SETUP
@@ -35,7 +32,9 @@ contract SetPoolsTest is WithdrawTest {
             vm.envAddress("CONCERO_PROXY_AVALANCHE"),
             link, // not doing crosschain right now otherwise it'd be vm.envAddress("LINK_AVALANCHE")
             vm.envAddress("CL_CCIP_ROUTER_BASE"), // vm.envAddress("CL_CCIP_ROUTER_AVALANCHE")
-            usdc // not doing crosschain right now otherwise it'd be vm.envAddress("USDC_AVALANCHE")
+            usdc, // not doing crosschain right now otherwise it'd be vm.envAddress("USDC_AVALANCHE")
+            optimismChainSelector, // should be base chainSelector if we are testing crosschain
+            address(parentPoolProxy)
         );
     }
 
@@ -144,14 +143,80 @@ contract SetPoolsTest is WithdrawTest {
     }
 
     function test_setPools_reverts_if_pool_added_for_existing_selector() public {
+        address newPoolAddress = makeAddr("newPoolAddress");
         address attemptedAddress = makeAddr("attemptedAddress");
+        vm.startPrank(deployer);
 
-        /// @dev expect revert because we are passing the same chainSelector that was used in the initial setUp
-        vm.prank(deployer);
+        /// @dev setPool in child and expect revert if passing same chainSelector
+        address(arbitrumChildProxy).call(
+            abi.encodeWithSignature("setPools(uint64,address)", arbitrumChainSelector, newPoolAddress)
+        );
+        vm.expectRevert(abi.encodeWithSignature("ConceroChildPool_InvalidAddress()"));
+        address(arbitrumChildProxy).call(
+            abi.encodeWithSignature("setPools(uint64,address)", arbitrumChainSelector, attemptedAddress)
+        );
+
+        /// @dev expect revert in ParentPool because we are passing the same chainSelector that was used in the initial setUp
         vm.expectRevert(abi.encodeWithSignature("ConceroParentPool_InvalidAddress()"));
         address(parentPoolProxy).call(
             abi.encodeWithSignature("setPools(uint64,address,bool)", arbitrumChainSelector, attemptedAddress, true)
         );
+
+        vm.stopPrank();
+    }
+
+    function test_setPools_reverts_if_not_proxy() public {
+        address attemptedAddress = makeAddr("attemptedAddress");
+
+        /// @dev expect revert in child
+        vm.expectRevert(
+            abi.encodeWithSignature("ConceroChildPool_CallerIsNotTheProxy(address)", arbitrumChildImplementation)
+        );
+        ConceroChildPool(payable(arbitrumChildImplementation)).setPools(arbitrumChainSelector, attemptedAddress);
+
+        /// @dev expect revert in parent
+        vm.expectRevert(
+            abi.encodeWithSignature("ConceroParentPool_NotParentPoolProxy(address)", parentPoolImplementation)
+        );
+        ConceroParentPool(parentPoolImplementation).setPools(arbitrumChainSelector, attemptedAddress, true);
+    }
+
+    function test_setPools_reverts_if_not_owner(address _caller) public {
+        address attemptedAddress = makeAddr("attemptedAddress");
+        vm.assume(_caller != deployer);
+        vm.startPrank(_caller);
+
+        /// @dev setPool in child and expect revert if passing same chainSelector
+        vm.expectRevert(abi.encodeWithSignature("ConceroChildPool_NotContractOwner()"));
+        address(arbitrumChildProxy).call(
+            abi.encodeWithSignature("setPools(uint64,address)", arbitrumChainSelector, attemptedAddress)
+        );
+
+        /// @dev expect revert in ParentPool because we are passing the same chainSelector that was used in the initial setUp
+        vm.expectRevert(abi.encodeWithSignature("ConceroParentPool_NotContractOwner()"));
+        address(parentPoolProxy).call(
+            abi.encodeWithSignature("setPools(uint64,address,bool)", arbitrumChainSelector, attemptedAddress, true)
+        );
+
+        vm.stopPrank();
+    }
+
+    function test_setPools_reverts_if_passed_zero_address() public {
+        vm.startPrank(deployer);
+
+        /// @dev setPool in child and expect revert if passing same chainSelector
+        vm.expectRevert(abi.encodeWithSignature("ConceroChildPool_InvalidAddress()"));
+        address(arbitrumChildProxy).call(
+            abi.encodeWithSignature("setPools(uint64,address)", arbitrumChainSelector, address(0))
+        );
+
+        /// @dev expect revert in ParentPool because we are passing the same chainSelector that was used in the initial setUp
+        vm.expectRevert(abi.encodeWithSignature("ConceroParentPool_InvalidAddress()"));
+        address(parentPoolProxy).call(
+            abi.encodeWithSignature("setPools(uint64,address,bool)", arbitrumChainSelector, address(0), true)
+        );
+
+        vm.stopPrank();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -312,5 +377,38 @@ contract SetPoolsTest is WithdrawTest {
 
         uint256 pools = IParentPoolWrapper(address(parentPoolProxy)).getNumberOfChildPools() + 1;
         assertEq(poolDistributions, pools);
+    }
+
+    function test_removePools_reverts_if_not_proxy() public {
+        vm.prank(deployer);
+
+        /// @dev expect revert in child
+        vm.expectRevert(
+            abi.encodeWithSignature("ConceroChildPool_CallerIsNotTheProxy(address)", arbitrumChildImplementation)
+        );
+        ConceroChildPool(payable(arbitrumChildImplementation)).removePools(arbitrumChainSelector);
+
+        /// @dev expect revert in parent
+        vm.expectRevert(
+            abi.encodeWithSignature("ConceroParentPool_NotParentPoolProxy(address)", parentPoolImplementation)
+        );
+        ConceroParentPool(parentPoolImplementation).removePools(arbitrumChainSelector);
+
+        vm.prank(deployer);
+    }
+
+    function test_removePools_reverts_if_not_owner(address _caller) public {
+        vm.assume(_caller != deployer);
+        vm.startPrank(_caller);
+
+        /// @dev setPool in child and expect revert if passing same chainSelector
+        vm.expectRevert(abi.encodeWithSignature("ConceroChildPool_NotContractOwner()"));
+        address(arbitrumChildProxy).call(abi.encodeWithSignature("removePools(uint64)", arbitrumChainSelector));
+
+        /// @dev expect revert in ParentPool because we are passing the same chainSelector that was used in the initial setUp
+        vm.expectRevert(abi.encodeWithSignature("ConceroParentPool_NotContractOwner()"));
+        address(parentPoolProxy).call(abi.encodeWithSignature("removePools(uint64)", arbitrumChainSelector));
+
+        vm.stopPrank();
     }
 }

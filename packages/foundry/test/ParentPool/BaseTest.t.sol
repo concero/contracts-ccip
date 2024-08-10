@@ -34,9 +34,13 @@ contract BaseTest is Test {
     uint256 internal forkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
     address internal usdc = vm.envAddress("USDC_BASE");
     address internal link = vm.envAddress("LINK_BASE");
+    uint64 internal baseChainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_BASE"));
+    uint64 internal optimismChainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_OPTIMISM"));
 
     address arbitrumChildProxy;
     address arbitrumChildImplementation;
+
+    address messenger = vm.envAddress("POOL_MESSENGER_0_ADDRESS");
 
     /*//////////////////////////////////////////////////////////////
                                  SETUP
@@ -56,7 +60,9 @@ contract BaseTest is Test {
             vm.envAddress("CONCERO_PROXY_ARBITRUM"),
             vm.envAddress("LINK_ARBITRUM"),
             vm.envAddress("CL_CCIP_ROUTER_ARBITRUM"),
-            vm.envAddress("USDC_ARBITRUM")
+            vm.envAddress("USDC_ARBITRUM"),
+            optimismChainSelector,
+            address(parentPoolProxy)
         );
         setParentPoolVars(uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), arbitrumChildProxy);
 
@@ -178,10 +184,14 @@ contract BaseTest is Test {
         return address(childPoolProxy);
     }
 
-    function _deployChildPool(address _infraProxy, address _link, address _ccipRouter, address _usdc)
-        internal
-        returns (address, address)
-    {
+    function _deployChildPool(
+        address _infraProxy,
+        address _link,
+        address _ccipRouter,
+        address _usdc,
+        uint64 _parentPoolChainSelector,
+        address _parentProxy
+    ) internal returns (address, address) {
         address childProxy = _deployChildPoolProxy();
         address[3] memory messengers = [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)];
 
@@ -190,6 +200,13 @@ contract BaseTest is Test {
 
         vm.prank(proxyDeployer);
         ITransparentUpgradeableProxy(childProxy).upgradeToAndCall(childImplementation, bytes(""));
+
+        /// set the parentPool in childProxy.setPools();
+        vm.prank(deployer);
+        (bool success,) = address(arbitrumChildProxy).call(
+            abi.encodeWithSignature("setPools(uint64,address)", _parentPoolChainSelector, _parentProxy)
+        );
+        require(success, "childProxy.setPools with parentPool failed");
 
         return (childProxy, childImplementation);
     }

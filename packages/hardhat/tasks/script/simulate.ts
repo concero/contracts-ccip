@@ -63,7 +63,7 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     execSync(`bunx hardhat clf-script-build --all`, { stdio: "inherit" });
 
     if (taskArgs.function === "infra_src") {
-      await simulate(path.join(__dirname, "../", "./CLFScripts/dist/infra/SRC.min.js"), [
+      await simulate(path.join(__dirname, "../", "./CLFScripts/dist/infra/eval.min.js"), [
         getHashSum(await (await fetch(infraSrcJsCodeUrl)).text()),
         getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
         "0x0",

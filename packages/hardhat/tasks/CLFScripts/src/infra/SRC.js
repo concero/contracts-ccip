@@ -390,7 +390,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
 			nonce,
-			maxPriorityFeePerGas: maxPriorityFeePerGas,
+			// maxPriorityFeePerGas: maxPriorityFeePerGas,
 			maxFeePerGas: gasPrice + getPercent(gasPrice, 10),
 		});
 

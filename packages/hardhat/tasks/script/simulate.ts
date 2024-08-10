@@ -4,7 +4,13 @@ import secrets from "../../constants/CLFSecrets";
 import CLFSimulationConfig from "../../constants/CLFSimulationConfig";
 import { execSync } from "child_process";
 import getHashSum from "../../utils/getHashSum";
-import { automationsJsCodeUrl, ethersV6CodeUrl, infraSrcJsCodeUrl, parentPoolDistributeLiqJsCodeUrl } from "../../constants/functionsJsCodeUrls";
+import {
+  automationsJsCodeUrl,
+  ethersV6CodeUrl,
+  infraSrcJsCodeUrl,
+  parentPoolDistributeLiqJsCodeUrl,
+} from "../../constants/functionsJsCodeUrls";
+import { getEnvVar } from "../../utils/getEnvVar";
 
 const { simulateScript } = require("@chainlink/functions-toolkit");
 
@@ -57,20 +63,20 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     execSync(`bunx hardhat clf-script-build --all`, { stdio: "inherit" });
 
     if (taskArgs.function === "infra_src") {
-      await simulate(path.join(__dirname, "../", "./CLFScripts/dist/infra/eval.min.js"), [
+      await simulate(path.join(__dirname, "../", "./CLFScripts/dist/infra/SRC.min.js"), [
         getHashSum(await (await fetch(infraSrcJsCodeUrl)).text()),
         getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
         "0x0",
-        process.env.CONCERO_PROXY_POLYGON, // contractAddress
+        getEnvVar("CONCERO_INFRA_PROXY_POLYGON"), // dst contractAddress
         "0xf721b413e0a040abe87f48aff9801c78f037cab36cb43c72bd115ccec7845d27", // ccipMessageId
         "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
         "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
         "0x" + 100000000000000000n.toString(16), // amount
-        "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON).toString(16), // srcChainSelector
-        "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_BASE).toString(16), // dstChainSelector
-        "0x" + 0n.toString(16), // token
+        "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM).toString(16), // srcChainSelector
+        "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON).toString(16), // dstChainSelector
+        "0x" + 1n.toString(16), // token
         "0xA65233", // blockNumber
-        "0xf721b413e0a040abe87f48aff9801c78f037cab36cb43c72bd115ccec7845d27",
+        "0x00", //dst swap data
       ]);
     } else if (taskArgs.function === "infra_dst") {
       await simulate(path.join(__dirname, "../", "./CLFScripts/dist/eval.min.js"), [

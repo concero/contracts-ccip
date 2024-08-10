@@ -4,7 +4,7 @@ try {
 		fetch(u),
 		fetch(
 			'https://raw.githubusercontent.com/concero/contracts-ccip/' +
-				'release' +
+				'fix/polygon-gas-error' +
 				`/packages/hardhat/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`,
 		),
 	]);

@@ -5,7 +5,9 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+
+return (async () => {
 	const [
 		_,
 		__,
@@ -135,7 +137,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
 			urls: [
-				`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 				'https://arbitrum.blockpi.network/v1/rpc/public',
 				'https://arbitrum-rpc.publicnode.com',
 			],
@@ -367,6 +369,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 					headers: {'Content-Type': 'application/json'},
 					body: JSON.stringify(payload),
 				});
+
 				const res = await resp.json();
 				if (res.length === undefined) {
 					return [res];
@@ -389,7 +392,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
 			nonce,
-			maxPriorityFeePerGas: maxPriorityFeePerGas + getPercent(maxPriorityFeePerGas, 10),
+			maxPriorityFeePerGas: maxPriorityFeePerGas,
 			maxFeePerGas: gasPrice + getPercent(gasPrice, 10),
 		});
 

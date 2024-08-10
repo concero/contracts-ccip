@@ -1,4 +1,5 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+return (async () => {
 	const [
 		_,
 		__,
@@ -125,7 +126,7 @@
 		},
 		[`0x${BigInt('4949039107694359620').toString(16)}`]: {
 			urls: [
-				`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 				'https://arbitrum.blockpi.network/v1/rpc/public',
 				'https://arbitrum-rpc.publicnode.com',
 			],
@@ -352,7 +353,7 @@
 		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
 			nonce,
-			maxPriorityFeePerGas: maxPriorityFeePerGas + getPercent(maxPriorityFeePerGas, 10),
+			maxPriorityFeePerGas: maxPriorityFeePerGas,
 			maxFeePerGas: gasPrice + getPercent(gasPrice, 10),
 		});
 		const srcUrl =

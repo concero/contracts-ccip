@@ -276,7 +276,6 @@
 	let nonce = 0;
 	let retries = 0;
 	let gasPrice;
-	let maxPriorityFeePerGas;
 	const sendTransaction = async (contract, signer, txOptions) => {
 		try {
 			if ((await contract.s_transactions(ccipMessageId))[1] !== '0x0000000000000000000000000000000000000000') return;
@@ -330,6 +329,7 @@
 					headers: {'Content-Type': 'application/json'},
 					body: JSON.stringify(payload),
 				});
+				console.log(payload);
 				const res = await resp.json();
 				if (res.length === undefined) {
 					return [res];
@@ -349,10 +349,8 @@
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
 		gasPrice = feeData.gasPrice;
-		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
 			nonce,
-			maxPriorityFeePerGas: maxPriorityFeePerGas,
 			maxFeePerGas: gasPrice + getPercent(gasPrice, 10),
 		});
 		const srcUrl =

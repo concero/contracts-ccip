@@ -87,11 +87,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         uint64 srcChainSelector
     );
     event TXReleased(
-        bytes32 indexed ccipMessageId,
-        address indexed sender,
-        address indexed recipient,
-        address token,
-        uint256 amount
+        bytes32 indexed ccipMessageId, address indexed sender, address indexed recipient, address token, uint256 amount
     );
     ///@notice emitted when on destination when a TX is validated.
     event TXConfirmed(
@@ -102,18 +98,14 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         CCIPToken token
     );
     ///@notice emitted when a Function Request returns an error
-    event FunctionsRequestError(
-        bytes32 indexed ccipMessageId,
-        bytes32 requestId,
-        uint8 requestType
-    );
+    event FunctionsRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
     ///@notice emitted when the concero pool address is updated
     event ConceroPoolAddressUpdated(address previousAddress, address pool);
 
     constructor(
         FunctionsVariables memory _variables,
         uint64 _chainSelector,
-        uint _chainIndex,
+        uint256 _chainIndex,
         address _dexSwap,
         address _pool,
         address _proxy,
@@ -132,7 +124,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     ///////////////////////////Functions///////////////////////////
     ///////////////////////////////////////////////////////////////
     function addUnconfirmedTX(
-        bytes32 ccipMessageId,
+        bytes32 messageId,
         address sender,
         address recipient,
         uint256 amount,
@@ -141,20 +133,13 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         uint256 blockNumber,
         bytes calldata dstSwapData
     ) external onlyMessenger {
-        Transaction memory transaction = s_transactions[ccipMessageId];
-        if (transaction.sender != address(0))
-            revert ConceroFunctions_TxAlreadyExists(ccipMessageId, transaction.isConfirmed);
+        Transaction memory transaction = s_transactions[messageId];
+        if (transaction.sender != address(0)) {
+            revert ConceroFunctions_TxAlreadyExists(messageId, transaction.isConfirmed);
+        }
 
-        s_transactions[ccipMessageId] = Transaction(
-            ccipMessageId,
-            sender,
-            recipient,
-            amount,
-            token,
-            srcChainSelector,
-            false,
-            dstSwapData
-        );
+        s_transactions[messageId] =
+            Transaction(messageId, sender, recipient, amount, token, srcChainSelector, false, dstSwapData);
 
         bytes[] memory args = new bytes[](12);
         args[0] = abi.encodePacked(s_dstJsHashSum);
@@ -163,7 +148,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         args[3] = abi.encodePacked(s_conceroContracts[srcChainSelector]);
         args[4] = abi.encodePacked(srcChainSelector);
         args[5] = abi.encodePacked(blockNumber);
-        args[6] = abi.encodePacked(ccipMessageId);
+        args[6] = abi.encodePacked(messageId);
         args[7] = abi.encodePacked(sender);
         args[8] = abi.encodePacked(recipient);
         args[9] = abi.encodePacked(uint8(token));
@@ -175,9 +160,9 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
 
         s_requests[reqId].requestType = RequestType.checkTxSrc;
         s_requests[reqId].isPending = true;
-        s_requests[reqId].ccipMessageId = ccipMessageId;
+        s_requests[reqId].ccipMessageId = messageId;
 
-        emit UnconfirmedTXAdded(ccipMessageId, sender, recipient, amount, token, srcChainSelector);
+        emit UnconfirmedTXAdded(messageId, sender, recipient, amount, token, srcChainSelector);
     }
 
     /**
@@ -185,11 +170,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
      * @param args the arguments for the request as bytes array
      * @param jsCode the JScode that will be executed.
      */
-    function sendRequest(
-        bytes[] memory args,
-        string memory jsCode,
-        uint32 gasLimit
-    ) internal returns (bytes32) {
+    function sendRequest(bytes[] memory args, string memory jsCode, uint32 gasLimit) internal returns (bytes32) {
         FunctionsRequest.Request memory req;
         req.initializeRequestForInlineJavaScript(jsCode);
         req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
@@ -197,11 +178,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         return _sendRequest(req.encodeCBOR(), i_subscriptionId, gasLimit, i_donId);
     }
 
-    function fulfillRequestWrapper(
-        bytes32 requestId,
-        bytes memory response,
-        bytes memory err
-    ) external {
+    function fulfillRequestWrapper(bytes32 requestId, bytes memory response, bytes memory err) external {
         if (address(this) != i_proxy) revert ConceroFunctions_OnlyProxyContext(address(this));
 
         fulfillRequest(requestId, response, err);
@@ -211,11 +188,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     ///INTERNAL FUNCTIONS///
     ////////////////////////
 
-    function fulfillRequest(
-        bytes32 requestId,
-        bytes memory response,
-        bytes memory err
-    ) internal override {
+    function fulfillRequest(bytes32 requestId, bytes memory response, bytes memory err) internal override {
         Request storage request = s_requests[requestId];
 
         //todo: look into this
@@ -226,11 +199,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         request.isPending = false;
 
         if (err.length > 0) {
-            emit FunctionsRequestError(
-                request.ccipMessageId,
-                requestId,
-                uint8(request.requestType)
-            );
+            emit FunctionsRequestError(request.ccipMessageId, requestId, uint8(request.requestType));
             return;
         }
 
@@ -248,17 +217,13 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         transaction.isConfirmed = true;
 
         emit TXConfirmed(
-            ccipMessageId,
-            transaction.sender,
-            transaction.recipient,
-            transaction.amount,
-            transaction.token
+            ccipMessageId, transaction.sender, transaction.recipient, transaction.amount, transaction.token
         );
     }
 
     //todo: Internal function sendUnconfirmedTX is not prefixed with underscore
     function sendUnconfirmedTX(
-        bytes32 ccipMessageId,
+        bytes32 messageId,
         address sender,
         address recipient,
         uint256 amount,
@@ -266,15 +231,16 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         CCIPToken token,
         IDexSwap.SwapData[] memory dstSwapData
     ) internal {
-        if (s_conceroContracts[dstChainSelector] == address(0))
+        if (s_conceroContracts[dstChainSelector] == address(0)) {
             revert ConceroFunctions_DstContractAddressNotSet();
+        }
 
         bytes[] memory args = new bytes[](13);
         args[0] = abi.encodePacked(s_srcJsHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(RequestType.addUnconfirmedTxDst);
         args[3] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
-        args[4] = abi.encodePacked(ccipMessageId);
+        args[4] = abi.encodePacked(messageId);
         args[5] = abi.encodePacked(sender);
         args[6] = abi.encodePacked(recipient);
         args[7] = abi.encodePacked(amount);
@@ -287,9 +253,9 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT);
         s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;
         s_requests[reqId].isPending = true;
-        s_requests[reqId].ccipMessageId = ccipMessageId;
+        s_requests[reqId].ccipMessageId = messageId;
 
-        emit UnconfirmedTXSent(ccipMessageId, sender, recipient, amount, token, dstChainSelector);
+        emit UnconfirmedTXSent(messageId, sender, recipient, amount, token, dstChainSelector);
     }
 
     function _handleDstFunctionsResponse(Request storage request) internal {
@@ -301,33 +267,20 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
         if (transaction.dstSwapData.length > 1) {
-            IDexSwap.SwapData[] memory swapData = abi.decode(
-                transaction.dstSwapData,
-                (IDexSwap.SwapData[])
-            );
+            IDexSwap.SwapData[] memory swapData = abi.decode(transaction.dstSwapData, (IDexSwap.SwapData[]));
             swapData[0].fromAmount = amount;
 
             IPool(i_poolProxy).takeLoan(tokenReceived, amount, address(this));
 
             (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-                abi.encodeWithSelector(
-                    IDexSwap.entrypoint.selector,
-                    swapData,
-                    transaction.recipient
-                )
+                abi.encodeWithSelector(IDexSwap.entrypoint.selector, swapData, transaction.recipient)
             );
             if (!swapSuccess) revert ConceroFunctions_FailedToReleaseTx(swapError);
         } else {
             IPool(i_poolProxy).takeLoan(tokenReceived, amount, transaction.recipient);
         }
 
-        emit TXReleased(
-            request.ccipMessageId,
-            transaction.sender,
-            transaction.recipient,
-            tokenReceived,
-            amount
-        );
+        emit TXReleased(request.ccipMessageId, transaction.sender, transaction.recipient, tokenReceived, amount);
     }
 
     function _handleSrcFunctionsResponse(bytes memory response) internal {
@@ -344,12 +297,8 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
             uint256 linkNativeRate
         ) = abi.decode(response, (uint256, uint256, uint64, uint256, uint256, uint256));
 
-        s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice == 0
-            ? s_lastGasPrices[CHAIN_SELECTOR]
-            : srcGasPrice;
-        s_lastGasPrices[dstChainSelector] = dstGasPrice == 0
-            ? s_lastGasPrices[dstChainSelector]
-            : dstGasPrice;
+        s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice == 0 ? s_lastGasPrices[CHAIN_SELECTOR] : srcGasPrice;
+        s_lastGasPrices[dstChainSelector] = dstGasPrice == 0 ? s_lastGasPrices[dstChainSelector] : dstGasPrice;
         s_latestLinkUsdcRate = linkUsdcRate == 0 ? s_latestLinkUsdcRate : linkUsdcRate;
         s_latestNativeUsdcRate = nativeUsdcRate == 0 ? s_latestNativeUsdcRate : nativeUsdcRate;
         s_latestLinkNativeRate = linkNativeRate == 0 ? s_latestLinkNativeRate : linkNativeRate;
@@ -358,9 +307,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     /////////////////////////////
     /// VIEW & PURE FUNCTIONS ///
     /////////////////////////////
-    function _swapDataToBytes(
-        IDexSwap.SwapData[] memory _swapData
-    ) private pure returns (bytes memory _encodedData) {
+    function _swapDataToBytes(IDexSwap.SwapData[] memory _swapData) private pure returns (bytes memory _encodedData) {
         if (_swapData.length == 0) {
             _encodedData = new bytes(1);
         } else {

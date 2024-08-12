@@ -65,29 +65,18 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
     ///@notice event emitted when a Cross-chain tx is received.
+
     event ConceroChildPool_CCIPReceived(
-        bytes32 indexed ccipMessageId,
-        uint64 srcChainSelector,
-        address sender,
-        address token,
-        uint256 amount
+        bytes32 indexed ccipMessageId, uint64 srcChainSelector, address sender, address token, uint256 amount
     );
     ///@notice event emitted when a Cross-chain message is sent.
     event ConceroChildPool_CCIPSent(
-        bytes32 indexed messageId,
-        uint64 destinationChainSelector,
-        address receiver,
-        address linkToken,
-        uint256 fees
+        bytes32 indexed messageId, uint64 destinationChainSelector, address receiver, address linkToken, uint256 fees
     );
     ///@notice event emitted in takeLoan when a loan is taken
     event ConceroChildPool_LoanTaken(address receiver, uint256 amount);
     ///@notice event emitted when a allowed Cross-chain contract is updated
-    event ConceroChildPool_ConceroSendersUpdated(
-        uint64 chainSelector,
-        address conceroContract,
-        uint256 isAllowed
-    );
+    event ConceroChildPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
     ///@notice event emitted when a new pool is added
     event ConceroChildPool_PoolReceiverUpdated(uint64 chainSelector, address pool);
     ///@notice event emitted when a pool is removed
@@ -100,8 +89,9 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @notice modifier to ensure if the function is being executed in the proxy context.
      */
     modifier onlyProxyContext() {
-        if (address(this) != i_childProxy)
+        if (address(this) != i_childProxy) {
             revert ConceroChildPool_CallerIsNotTheProxy(address(this));
+        }
         _;
     }
 
@@ -124,8 +114,9 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @param _sender address of the sender contract
      */
     modifier _onlyAllowlistedSenderOfChainSelector(uint64 _chainSelector, address _sender) {
-        if (s_contractsToReceiveFrom[_chainSelector][_sender] != ALLOWED)
+        if (s_contractsToReceiveFrom[_chainSelector][_sender] != ALLOWED) {
             revert ConceroChildPool_SenderNotAllowed(_sender);
+        }
         _;
     }
 
@@ -163,15 +154,15 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @param _lpAddress the LP that requested withdraw.
      * @param _amountToSend the amount to redistribute between pools.
      */
-    function ccipSendToPool(
-        uint64 _chainSelector,
-        address _lpAddress,
-        uint256 _amountToSend,
-        bytes32 _withdrawId
-    ) external onlyProxyContext onlyMessenger {
+    function ccipSendToPool(uint64 _chainSelector, address _lpAddress, uint256 _amountToSend, bytes32 _withdrawId)
+        external
+        onlyProxyContext
+        onlyMessenger
+    {
         if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroChildPool_InvalidAddress();
-        if (s_withdrawRequests[_withdrawId] == true)
+        if (s_withdrawRequests[_withdrawId] == true) {
             revert ConceroChildPool_WithdrawAlreadyPerformed();
+        }
 
         s_withdrawRequests[_withdrawId] = true;
 
@@ -183,11 +174,11 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @param _chainSelector The chain selector of the new pool
      * @param _amountToSend the amount to redistribute between pools.
      */
-    function distributeLiquidity(
-        uint64 _chainSelector,
-        uint256 _amountToSend,
-        bytes32 _requestId
-    ) external onlyProxyContext onlyMessenger {
+    function distributeLiquidity(uint64 _chainSelector, uint256 _amountToSend, bytes32 _requestId)
+        external
+        onlyProxyContext
+        onlyMessenger
+    {
         if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroChildPool_InvalidAddress();
         if (s_distributeLiquidityRequestProcessed[_requestId] != false) {
             revert ConceroChildPool_RequestAlreadyProceeded(_requestId);
@@ -201,9 +192,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @dev this functions should be called only if there is no transaction being processed
      * @dev If Orchestrator took a loan and the money didn't rebalance yet, it will be left behind.
      */
-    function liquidatePool(
-        bytes32 distributeLiquidityRequestId
-    ) external onlyProxyContext onlyMessenger {
+    function liquidatePool(bytes32 distributeLiquidityRequestId) external onlyProxyContext onlyMessenger {
         if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
             revert ConceroChildPool_RequestAlreadyProceeded(distributeLiquidityRequestId);
         }
@@ -214,7 +203,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
 
         uint256 amountToSentToEachPool = (i_USDC.balanceOf(address(this)) / poolsCount) - 1;
 
-        for (uint256 i; i < poolsCount; ) {
+        for (uint256 i; i < poolsCount;) {
             //This is a function to deal with adding&removing pools. So, the second param will always be address(0)
             _ccipSend(s_poolChainSelectors[i], address(0), amountToSentToEachPool);
             unchecked {
@@ -231,11 +220,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @dev only the Orchestrator contract should be able to call this function
      * @dev for ether transfer, the _receiver need to be known and trusted
      */
-    function takeLoan(
-        address _token,
-        uint256 _amount,
-        address _receiver
-    ) external onlyProxyContext {
+    function takeLoan(address _token, uint256 _amount, address _receiver) external onlyProxyContext {
         if (msg.sender != i_infraProxy) revert ConceroChildPool_CallerIsNotConcero(msg.sender);
         if (_receiver == address(0)) revert ConceroChildPool_InvalidAddress();
 
@@ -258,11 +243,12 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @dev it's payable to save some gas.
      * @dev this functions is used on ConceroPool.sol
      */
-    function setConceroContractSender(
-        uint64 _chainSelector,
-        address _contractAddress,
-        uint256 _isAllowed
-    ) external payable onlyProxyContext onlyOwner {
+    function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed)
+        external
+        payable
+        onlyProxyContext
+        onlyOwner
+    {
         if (_contractAddress == address(0)) revert ConceroChildPool_InvalidAddress();
         s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
 
@@ -276,12 +262,10 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @dev only owner can call it
      * @dev it's payable to save some gas.
      */
-    function setPools(
-        uint64 _chainSelector,
-        address _pool
-    ) external payable onlyProxyContext onlyOwner {
-        if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0))
+    function setPools(uint64 _chainSelector, address _pool) external payable onlyProxyContext onlyOwner {
+        if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) {
             revert ConceroChildPool_InvalidAddress();
+        }
 
         s_poolChainSelectors.push(_chainSelector);
         s_poolToSendTo[_chainSelector] = _pool;
@@ -294,7 +278,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @param _chainSelector the CCIP chainSelector for the specific chain
      */
     function removePools(uint64 _chainSelector) external payable onlyProxyContext onlyOwner {
-        for (uint256 i; i < s_poolChainSelectors.length; ) {
+        for (uint256 i; i < s_poolChainSelectors.length;) {
             if (s_poolChainSelectors[i] == _chainSelector) {
                 s_poolChainSelectors[i] = s_poolChainSelectors[s_poolChainSelectors.length - 1];
                 s_poolChainSelectors.pop();
@@ -316,9 +300,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @param any2EvmMessage the CCIP message
      * @dev only allowed chains and sender must be able to deliver a message in this function.
      */
-    function _ccipReceive(
-        Client.Any2EVMMessage memory any2EvmMessage
-    )
+    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage)
         internal
         override
         _onlyAllowlistedSenderOfChainSelector(
@@ -326,22 +308,24 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
             abi.decode(any2EvmMessage.sender, (address))
         )
     {
-        (, /*address liquidityProvider*/ address _user, uint256 receivedFee) = abi.decode(
-            any2EvmMessage.data,
-            (address, address, uint256)
-        );
+        // Decode the encoded data back into the CcipTxData struct
+        CcipTxData memory ccipTxData = abi.decode(any2EvmMessage.data, (CcipTxData));
+        CcipTxType memory txType = ccipTxData.ccipTxType;
 
-        //If receivedFee > 0, it means is user transaction. If receivedFee == 0, means it's a deposit from ParentPool
-        bool isUserTx = _user != address(0) && receivedFee > 0;
-        if (isUserTx) {
-            IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransaction(
-                any2EvmMessage.messageId
+        if (txType == CcipTxType.infraTx) {
+            IStorage.Transaction memory transaction =
+                IOrchestrator(i_infraProxy).getTransaction(any2EvmMessage.messageId);
+
+            bool isExecutionLayerFailed = (
+                (transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false)
+                    || transaction.ccipMessageId == 0
             );
 
-            bool isExecutionLayerFailed = ((transaction.ccipMessageId == any2EvmMessage.messageId &&
-                transaction.isConfirmed == false) || transaction.ccipMessageId == 0);
-
             if (isExecutionLayerFailed) {
+                // bytes memory batchedTxData = ccipTxData.data;
+                // (bytes32[] memory batchedTxIds, address[] memory batchedTxRecipients, uint256[] memory batchedTxAmounts)
+                // = abi.decode(batchedTxData, (bytes32[], address[], uint256[]));
+
                 //We don't subtract it here because the loan was not performed. And the value is not added into the `s_loanInUse` variable.
                 i_USDC.safeTransfer(_user, any2EvmMessage.destTokenAmounts[0].amount);
             } else {
@@ -367,17 +351,15 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @dev This function will sent the address of the user as data. This address will be used to update the mapping on ParentPool.
      * @dev when processing withdrawals, the _chainSelector will always be the index 0 of s_poolChainSelectors
      */
-    function _ccipSend(
-        uint64 _chainSelector,
-        address _lpAddress,
-        uint256 _amount
-    ) internal onlyMessenger onlyProxyContext returns (bytes32 messageId) {
+    function _ccipSend(uint64 _chainSelector, address _lpAddress, uint256 _amount)
+        internal
+        onlyMessenger
+        onlyProxyContext
+        returns (bytes32 messageId)
+    {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
 
-        Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({
-            token: address(i_USDC),
-            amount: _amount
-        });
+        Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({token: address(i_USDC), amount: _amount});
 
         tokenAmounts[0] = tokenAmount;
 
@@ -395,11 +377,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
 
         emit ConceroChildPool_CCIPSent(
-            messageId,
-            _chainSelector,
-            s_poolToSendTo[_chainSelector],
-            address(i_linkToken),
-            ccipFeeAmount
+            messageId, _chainSelector, s_poolToSendTo[_chainSelector], address(i_linkToken), ccipFeeAmount
         );
 
         messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);

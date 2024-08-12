@@ -5,7 +5,9 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+
+return (async () => {
 	const [
 		_,
 		__,
@@ -311,7 +313,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 	let nonce = 0;
 	let retries = 0;
 	let gasPrice;
-	let maxPriorityFeePerGas;
+	// let maxPriorityFeePerGas;
 
 	const sendTransaction = async (contract, signer, txOptions) => {
 		try {
@@ -367,7 +369,6 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 					headers: {'Content-Type': 'application/json'},
 					body: JSON.stringify(payload),
 				});
-				console.log(payload);
 				const res = await resp.json();
 				if (res.length === undefined) {
 					return [res];
@@ -387,7 +388,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
 		gasPrice = feeData.gasPrice;
-		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
+		// maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
 			nonce,
 			// maxPriorityFeePerGas: maxPriorityFeePerGas,

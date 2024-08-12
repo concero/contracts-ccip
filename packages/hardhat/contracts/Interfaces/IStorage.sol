@@ -72,15 +72,21 @@ interface IStorage {
         address functionsRouter;
     }
 
-    // ///@notice BridgeTx details for CCIP transaction batching
-    // struct ConceroBridgeTx {
-    //     address recipient;
-    //     uint256 amount;
-    // }
+ 
 
     ///@notice CCIP transaction data ie infraType with txIds, recipients, amounts
     struct CcipTxData {
         CcipTxType ccipTxType  
         bytes data
+    }
+
+    struct InfraTx {
+        address recipient;
+        uint256 amount;
+        bytes32 conceroBridgeTxId
+    }
+      
+    struct WithdrawTx {
+        bytes32 withdrawalId;
     }
 }

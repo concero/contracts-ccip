@@ -66,10 +66,9 @@ contract ConceroCCIP is ConceroFunctions {
         uint64 _destinationChainSelector,
         address _token,
         uint256 _amount,
-        uint256 _lpFee,
-        bytes memory _batchedTxData
+        InfraTx[] _pendingCCIPTransactions
     ) internal onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
-        CcipTxData memory ccipTxData = CcipTxData({ccipTxType: CcipTxType.infraTx, data: _batchedTxData});
+        CcipTxData memory ccipTxData = CcipTxData({ccipTxType: CcipTxType.infraTx, data: _pendingCCIPTransactions});
 
         Client.EVM2AnyMessage memory evm2AnyMessage =
             _buildCCIPMessage(_token, _amount, _receiver, _lpFee, _destinationChainSelector, ccipTxData);

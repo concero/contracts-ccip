@@ -390,7 +390,10 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		await sendTransaction(contract, signer, {
 			nonce,
 			// maxPriorityFeePerGas: maxPriorityFeePerGas,
-			maxFeePerGas: gasPrice + getPercent(gasPrice, 10),
+			maxFeePerGas:
+				dstChainSelector === [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]
+					? gasPrice
+					: gasPrice + getPercent(gasPrice, 10),
 		});
 
 		const srcUrl =

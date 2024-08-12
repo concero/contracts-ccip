@@ -45,4 +45,13 @@ abstract contract Storage is ReentrancyGuard, IStorage {
     mapping(bytes32 => Request) public s_requests;
     ///@notice Functions: Mapping to keep track of cross-chain gas prices
     mapping(uint64 chainSelector => uint256 lastGasPrice) public s_lastGasPrices;
+
+    ///@notice Bridge: array to track pending CCIP transactions for batched execution
+    bytes32[] internal s_pendingCCIPTransactions;
+    ///@notice Bridge: array to track pending CCIP transaction recipients for batched execution
+    address[] internal s_pendingCCIPTransactionRecipients;
+    ///@notice Bridge: array to track pending CCIP transaction amounts for batched execution
+    uint256[] internal s_pendingCCIPTransactionAmounts;
+    ///@notice Bridge: mapping of bridgeTxIds to struct containing bridgeTx details
+    mapping(bytes32 conceroBridgeTxId => ConceroBridgeTx) internal s_conceroBridgeTransactions;
 }

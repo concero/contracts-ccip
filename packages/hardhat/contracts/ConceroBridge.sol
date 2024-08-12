@@ -24,6 +24,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     ///////////////
     uint16 internal constant CONCERO_FEE_FACTOR = 1000;
     uint64 private constant HALF_DST_GAS = 600_000;
+    uint8 internal constant MAX_PENDING_CCIP_TRANSACTIONS = 5;
 
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
@@ -50,19 +51,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         address _pool,
         address _proxy,
         address[3] memory _messengers
-    )
-        ConceroCCIP(
-            _variables,
-            _chainSelector,
-            _chainIndex,
-            _link,
-            _ccipRouter,
-            _dexSwap,
-            _pool,
-            _proxy,
-            _messengers
-        )
-    {}
+    ) ConceroCCIP(_variables, _chainSelector, _chainIndex, _link, _ccipRouter, _dexSwap, _pool, _proxy, _messengers) {}
 
     ///////////////////////////////////////////////////////////////
     ///////////////////////////Functions///////////////////////////
@@ -74,18 +63,11 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
      * @dev dstSwapData can be empty if there is no swap on destination
      * @dev this function should only be able to called thought infra Proxy
      */
-    function startBridge(
-        BridgeData memory bridgeData,
-        IDexSwap.SwapData[] memory dstSwapData
-    ) external payable {
+    function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] memory dstSwapData) external payable {
         if (address(this) != i_proxy) revert ConceroBridge_OnlyProxyContext(address(this));
         address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
         uint256 totalSrcFee = _convertToUSDCDecimals(
-            _getSrcTotalFeeInUsdc(
-                bridgeData.tokenType,
-                bridgeData.dstChainSelector,
-                bridgeData.amount
-            )
+            _getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount)
         );
 
         if (bridgeData.amount < totalSrcFee) {
@@ -95,17 +77,40 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         uint256 amountToSend = bridgeData.amount - totalSrcFee;
         uint256 lpFee = getDstTotalFeeInUsdc(amountToSend);
 
-        bytes32 ccipMessageId = _sendTokenPayLink(
-            bridgeData.dstChainSelector,
-            fromToken,
-            amountToSend,
-            bridgeData.receiver,
-            lpFee
-        );
+        bytes32 batchedTxId =
+            keccak256(abi.encodePacked(msg.sender, bridgeData, dstSwapData, block.timestamp, block.prevrandao));
+
+        s_pendingCCIPTransactions.push(batchedTxId);
+        s_pendingCCIPTransactionRecipients.push(bridgeData.receiver);
+        s_pendingCCIPTransactionAmounts.push(amountToSend);
+
+        bytes32 ccipMessageId;
+
+        bytes32[] pendingCCIPTransactions = s_pendingCCIPTransactions;
+
+        if (pendingCCIPTransactions.length >= MAX_PENDING_CCIP_TRANSACTIONS) {
+            address[] recipients = s_pendingCCIPTransactionRecipients;
+            uint256[] amounts = s_pendingCCIPTransactionAmounts;
+
+            uint256 batchedAmountsToSend;
+            for (uint256 i; i < amounts.length; ++i) {
+                batchedAmountsToSend += amounts[i];
+            }
+
+            bytes memory batchedTxData = abi.encode(pendingCCIPTransactions, recipients, amounts);
+
+            delete s_pendingCCIPTransactions;
+            delete s_pendingCCIPTransactionRecipients;
+            delete s_pendingCCIPTransactionAmounts;
+
+            ccipMessageId =
+                _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, batchedAmountsToSend, lpFee, batchedTxData);
+        }
+
         // TODO: for dstSwaps: add unique keccak id with all argument including dstSwapData
         //    bytes32 id = keccak256(abi.encodePacked(ccipMessageId, bridgeData, dstSwapData));
         emit CCIPSent(
-            ccipMessageId,
+            batchedTxId,
             msg.sender,
             bridgeData.receiver,
             bridgeData.tokenType,
@@ -113,7 +118,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
             bridgeData.dstChainSelector
         );
         sendUnconfirmedTX(
-            ccipMessageId,
+            ccipMessageId, // should this be batchedTxId??
             msg.sender,
             bridgeData.receiver,
             amountToSend,
@@ -133,16 +138,13 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     function getFunctionsFeeInLink(uint64 dstChainSelector) public view returns (uint256) {
         uint256 srcGasPrice = s_lastGasPrices[CHAIN_SELECTOR];
         uint256 dstGasPrice = s_lastGasPrices[dstChainSelector];
-        uint256 srcClFeeInLink = clfPremiumFees[CHAIN_SELECTOR] +
-            (srcGasPrice *
-                (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT) *
-                s_latestLinkNativeRate) /
-            1e18;
+        uint256 srcClFeeInLink = clfPremiumFees[CHAIN_SELECTOR]
+            + (srcGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT) * s_latestLinkNativeRate)
+                / 1e18;
 
-        uint256 dstClFeeInLink = clfPremiumFees[dstChainSelector] +
-            ((dstGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT)) *
-                s_latestLinkNativeRate) /
-            1e18;
+        uint256 dstClFeeInLink = clfPremiumFees[dstChainSelector]
+            + ((dstGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT)) * s_latestLinkNativeRate)
+                / 1e18;
 
         return srcClFeeInLink + dstClFeeInLink;
     }
@@ -163,11 +165,11 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
      * @param tokenType the position of the CCIPToken enum
      * @param dstChainSelector the destination blockchain chain selector
      */
-    function getCCIPFeeInLink(
-        CCIPToken tokenType,
-        uint64 dstChainSelector,
-        uint256 _amount
-    ) public view returns (uint256) {
+    function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector, uint256 _amount)
+        public
+        view
+        returns (uint256)
+    {
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
             getUSDCAddressByChainIndex(tokenType, i_chainIndex),
             _amount,
@@ -183,11 +185,11 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
      * @param tokenType the position of the CCIPToken enum
      * @param dstChainSelector the destination blockchain chain selector
      */
-    function getCCIPFeeInUsdc(
-        CCIPToken tokenType,
-        uint64 dstChainSelector,
-        uint256 _amount
-    ) public view returns (uint256) {
+    function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 _amount)
+        public
+        view
+        returns (uint256)
+    {
         uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector, _amount);
         return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
     }
@@ -198,11 +200,11 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
      * @param dstChainSelector the destination blockchain chain selector
      * @param amount the amount of value the fees will calculated over.
      */
-    function _getSrcTotalFeeInUsdc(
-        CCIPToken tokenType,
-        uint64 dstChainSelector,
-        uint256 amount
-    ) internal view returns (uint256) {
+    function _getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount)
+        internal
+        view
+        returns (uint256)
+    {
         // @notice cl functions fee
         uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
 
@@ -215,17 +217,17 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         // @notice gas fee
         uint256 messengerDstGasInNative = HALF_DST_GAS * s_lastGasPrices[dstChainSelector];
         uint256 messengerSrcGasInNative = HALF_DST_GAS * s_lastGasPrices[CHAIN_SELECTOR];
-        uint256 messengerGasFeeInUsdc = ((messengerDstGasInNative + messengerSrcGasInNative) *
-            s_latestNativeUsdcRate) / STANDARD_TOKEN_DECIMALS;
+        uint256 messengerGasFeeInUsdc =
+            ((messengerDstGasInNative + messengerSrcGasInNative) * s_latestNativeUsdcRate) / STANDARD_TOKEN_DECIMALS;
 
         return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + messengerGasFeeInUsdc);
     }
 
-    function getSrcTotalFeeInUSDC(
-        CCIPToken tokenType,
-        uint64 dstChainSelector,
-        uint256 amount
-    ) external view returns (uint256) {
+    function getSrcTotalFeeInUSDC(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount)
+        external
+        view
+        returns (uint256)
+    {
         return _getSrcTotalFeeInUsdc(tokenType, dstChainSelector, amount);
     }
 }

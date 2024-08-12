@@ -25,6 +25,13 @@ interface IStorage {
         eth
     }
 
+    ///@notice CCIP transaction types
+    enum CcipTxType {
+        depositTx,
+        infraTx,
+        withdrawTx
+    }
+
     ///@notice Function Request
     struct Request {
         RequestType requestType;
@@ -63,5 +70,17 @@ interface IStorage {
         uint64 subscriptionId;
         bytes32 donId;
         address functionsRouter;
+    }
+
+    // ///@notice BridgeTx details for CCIP transaction batching
+    // struct ConceroBridgeTx {
+    //     address recipient;
+    //     uint256 amount;
+    // }
+
+    ///@notice CCIP transaction data ie infraType with txIds, recipients, amounts
+    struct CcipTxData {
+        CcipTxType ccipTxType  
+        bytes data
     }
 }

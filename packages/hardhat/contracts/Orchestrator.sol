@@ -368,8 +368,8 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     ///VIEW & PURE FUNCTIONS///
     ///////////////////////////
     function getTransaction(
-        bytes32 _ccipMessageId
+        bytes32 _conceroBridgeTxId
     ) external view returns (Transaction memory transaction) {
-        transaction = s_transactions[_ccipMessageId];
+        transaction = s_transactions[_conceroBridgeTxId];
     }
 }

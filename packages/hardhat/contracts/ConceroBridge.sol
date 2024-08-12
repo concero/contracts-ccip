@@ -80,31 +80,21 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         bytes32 batchedTxId =
             keccak256(abi.encodePacked(msg.sender, bridgeData, dstSwapData, block.timestamp, block.prevrandao));
 
-        s_pendingCCIPTransactions.push(batchedTxId);
-        s_pendingCCIPTransactionRecipients.push(bridgeData.receiver);
-        s_pendingCCIPTransactionAmounts.push(amountToSend);
+        InfraTx memory newInfraTx = InfraTx(bridgeData.receiver, amountToSend, batchedTxId);
 
-        bytes32 ccipMessageId;
-
-        bytes32[] pendingCCIPTransactions = s_pendingCCIPTransactions;
+        s_pendingCCIPTransactions.push(newInfraTx);
+        InfraTx[] pendingCCIPTransactions = s_pendingCCIPTransactions;
 
         if (pendingCCIPTransactions.length >= MAX_PENDING_CCIP_TRANSACTIONS) {
-            address[] recipients = s_pendingCCIPTransactionRecipients;
-            uint256[] amounts = s_pendingCCIPTransactionAmounts;
-
             uint256 batchedAmountsToSend;
             for (uint256 i; i < amounts.length; ++i) {
-                batchedAmountsToSend += amounts[i];
+                batchedAmountsToSend += pendingCCIPTransactions[i].amount;
             }
 
-            bytes memory batchedTxData = abi.encode(pendingCCIPTransactions, recipients, amounts);
-
             delete s_pendingCCIPTransactions;
-            delete s_pendingCCIPTransactionRecipients;
-            delete s_pendingCCIPTransactionAmounts;
 
-            ccipMessageId =
-                _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, batchedAmountsToSend, lpFee, batchedTxData);
+            bytes32 ccipMessageId =
+                _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, batchedAmountsToSend, pendingCCIPTransactions);
         }
 
         // TODO: for dstSwaps: add unique keccak id with all argument including dstSwapData

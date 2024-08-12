@@ -46,8 +46,7 @@ contract ParentPoolStorage {
     //todo: rename s_poolToSendTo to childPools
 
     ///@notice Mapping to keep track of allowed pool senders
-    mapping(uint64 chainSelector => mapping(address poolAddress => uint256))
-        public s_contractsToReceiveFrom;
+    mapping(uint64 chainSelector => mapping(address poolAddress => uint256)) public s_contractsToReceiveFrom;
 
     ///@notice Mapping to keep track of Liquidity Providers withdraw requests
     mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;
@@ -60,5 +59,14 @@ contract ParentPoolStorage {
 
     mapping(bytes32 clfReqId => bytes32 withdrawalId) public s_withdrawalIdByCLFRequestId;
 
-    mapping(bytes32 clfReqId => IParentPool.WithdrawRequest) public s_withdrawRequests;
+    mapping(bytes32 withdrawalId => IParentPool.WithdrawRequest) public s_withdrawRequests;
+
+    ///@notice variable to store the automation keeper address
+    address public s_forwarderAddress;
+
+    ///@notice array to store the withdraw requests of users
+    bytes32[] public s_withdrawalRequestIds;
+
+    ///@notice Mapping to keep track of Chainlink Functions requests
+    mapping(bytes32 withdrawalId => bool isTriggered) public s_withdrawTriggered;
 }

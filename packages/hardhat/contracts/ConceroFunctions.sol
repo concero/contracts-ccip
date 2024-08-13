@@ -298,6 +298,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     }
 
     function _handleDstFunctionsResponse(Request storage request) internal {
+        //todo: make references to transaction object to save on gas
         Transaction storage transaction = s_transactions[request.ccipMessageId];
 
         _confirmTX(request.ccipMessageId, transaction);

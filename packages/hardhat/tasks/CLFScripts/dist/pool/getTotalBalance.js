@@ -1,33 +1,26 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+return (async () => {
 	const chainSelectors = {
 		[`0x${BigInt('4949039107694359620').toString(16)}`]: {
-			urls: [
-				`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
-			],
+			urls: [`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa4b1',
 			usdcAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
 			poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
 		},
 		[`0x${BigInt('4051577828743386545').toString(16)}`]: {
-			urls: [
-				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
-			],
+			urls: [`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0x89',
 			usdcAddress: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
 			poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
 		},
 		[`0x${BigInt('6433500567565415381').toString(16)}`]: {
-			urls: [
-				`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
-			],
+			urls: [`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa86a',
 			usdcAddress: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
 			poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
 		},
 		[`0x${BigInt('15971525489660198786').toString(16)}`]: {
-			urls: [
-				`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-			],
+			urls: [`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
 			chainId: '0x2105',
 			usdcAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
 			poolAddress: '0x0AE1B2730066AD46481ab0a5fd2B5893f8aBa323',
@@ -78,19 +71,17 @@
 	const getChildPoolsCcipLogs = async ccipLines => {
 		const ethersId = ethers.id('ConceroChildPool_CCIPReceived(bytes32,uint64,address,address,uint256)');
 		const promises = [];
-		for (const chain in chainSelectors) {
+		for (const chainSelectorsKey in chainSelectors) {
 			const reqFromLines = ccipLines.filter(line => {
 				const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`.toLowerCase();
-				return hexChainSelector === chain;
+				return hexChainSelector === chainSelectorsKey;
 			});
 			if (!reqFromLines.length) continue;
-			const provider = getProviderByChainSelector(chain);
-			let i = 0;
+			const provider = getProviderByChainSelector(chainSelectorsKey);
 			for (const line of reqFromLines) {
-				if (i++ > 5) break;
 				promises.push(
 					provider.getLogs({
-						address: chainSelectors[chain].poolAddress,
+						address: chainSelectors[chainSelectorsKey].poolAddress,
 						topics: [ethersId, line.ccipMessageId],
 						fromBlock: 0,
 						toBlock: 'latest',
@@ -114,6 +105,7 @@
 		const result = new Uint8Array(32 + conceroIds.length + 1);
 		const encodedTotalBalance = Functions.encodeUint256(_totalBalance);
 		result.set(encodedTotalBalance, 0);
+		console.log(encodedTotalBalance);
 		if (_conceroIds.length) {
 			for (let i = 0; i < _conceroIds.length; i++) {
 				const encodedConceroId = new Uint8Array([Number(_conceroIds[i])]);
@@ -142,10 +134,14 @@
 	const depositsOnTheWay = results[results.length - 1];
 	let conceroIds = [];
 	if (depositsOnTheWay.length) {
-		const ccipLines = depositsOnTheWay.map(line => {
-			const [conceroId, chainSelector, ccipMessageId] = line;
-			return {conceroId, chainSelector, ccipMessageId};
-		});
+		const ccipLines = [];
+		for (let i = 0; i < 250; i++) {
+			ccipLines.push({
+				conceroId: '0x' + i.toString(16),
+				chainSelector: 6433500567565415381n,
+				ccipMessageId: '0x0fbe88fb5f2c85d0e42b031bcf44ddfb4c965a91a1fedcd796e86c13853e937d',
+			});
+		}
 		if (ccipLines.length) {
 			try {
 				const logs = await getChildPoolsCcipLogs(ccipLines);

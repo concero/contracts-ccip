@@ -4,10 +4,10 @@ import deployConceroAutomation from "../../../deploy/06_ConceroAutomation";
 import { setAutomationsVariables } from "./setAutomationsVariables";
 import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
 import { getEnvVar } from "../../../utils/getEnvVar";
-import addCLFConsumer from "../../sub/add";
+import addCLFConsumer from "../../CLF/subscriptions/add";
 import log from "../../../utils/log";
 import abi from "@chainlink/contracts/abi/v0.8/AutomationRegistrar2_1.json";
-import { getFallbackClients } from "../../utils/getViemClients";
+import { getFallbackClients } from "../../../utils/getViemClients";
 import { erc20Abi } from "viem";
 import { compileContracts } from "../../../utils/compileContracts";
 

@@ -1,6 +1,6 @@
-import { getSecretsBySlotId } from "../utils/getSecretsBySlotId";
+import { getSecretsBySlotId } from "./getSecretsBySlotId";
 import load from "../../../utils/load";
-import { getFallbackClients } from "../../utils/getViemClients";
+import { getFallbackClients } from "../../../utils/getViemClients";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
 import log, { err } from "../../../utils/log";

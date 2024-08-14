@@ -2,7 +2,7 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import { encodeAbiParameters, formatUnits } from "viem";
 import ERC20ABI from "../abi/ERC20.json";
 import { abi as ConceroOrchestratorAbi } from "../artifacts/contracts/Orchestrator.sol/Orchestrator.json";
-import { getFallbackClients } from "../tasks/utils/getViemClients";
+import { getFallbackClients } from "../utils/getViemClients";
 import chains from "../constants/CNetworks";
 import log from "../utils/log";
 import { PublicClient } from "viem/clients/createPublicClient";

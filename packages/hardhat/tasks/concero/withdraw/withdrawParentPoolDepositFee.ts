@@ -1,7 +1,7 @@
 import { task } from "hardhat/config";
 import chains from "../../../constants/CNetworks";
 import { CNetwork } from "../../../types/CNetwork";
-import { getClients } from "../../utils/getViemClients";
+import { getClients } from "../../../utils/getViemClients";
 import { getEnvVar } from "../../../utils/getEnvVar";
 import log, { err } from "../../../utils/log";
 import load from "../../../utils/load";

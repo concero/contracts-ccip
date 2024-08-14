@@ -3,7 +3,7 @@ import CNetworks from "../../constants/CNetworks";
 import { privateKeyToAccount } from "viem/accounts";
 import log, { err } from "../../utils/log";
 import { task } from "hardhat/config";
-import { getFallbackClients } from "../utils/getViemClients";
+import { getFallbackClients } from "../../utils/getViemClients";
 import { DeploymentPrefixes, ProxyType, viemReceiptConfig } from "../../constants/deploymentVariables";
 import { formatGas } from "../../utils/formatting";
 

@@ -1,10 +1,10 @@
 import CNetworks, { networkEnvKeys, networkTypes } from "../../../constants/CNetworks";
 import { CNetwork, CNetworkNames } from "../../../types/CNetwork";
-import { getFallbackClients } from "../../utils/getViemClients";
+import { getFallbackClients } from "../../../utils/getViemClients";
 import load from "../../../utils/load";
 import { getEnvAddress, getEnvVar } from "../../../utils/getEnvVar";
 import log, { err } from "../../../utils/log";
-import { getEthersV5FallbackSignerAndProvider } from "../../utils/getEthersSignerAndProvider";
+import { getEthersV5FallbackSignerAndProvider } from "../../../utils/getEthersSignerAndProvider";
 import { SecretsManager } from "@chainlink/functions-toolkit";
 import getHashSum from "../../../utils/getHashSum";
 import { conceroChains, mainnetChains, testnetChains } from "../liveChains";

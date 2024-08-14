@@ -1,5 +1,5 @@
 import { CNetwork } from "../../../types/CNetwork";
-import { getFallbackClients } from "../../utils/getViemClients";
+import { getFallbackClients } from "../../../utils/getViemClients";
 import { getEnvAddress, getEnvVar } from "../../../utils/getEnvVar";
 import { networkEnvKeys, networkTypes } from "../../../constants/CNetworks";
 import { ethersV6CodeUrl, parentPoolJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
@@ -7,7 +7,7 @@ import { Address } from "viem";
 import log, { err } from "../../../utils/log";
 import getHashSum from "../../../utils/getHashSum";
 import load from "../../../utils/load";
-import { getEthersV5FallbackSignerAndProvider } from "../../utils/getEthersSignerAndProvider";
+import { getEthersV5FallbackSignerAndProvider } from "../../../utils/getEthersSignerAndProvider";
 import { SecretsManager } from "@chainlink/functions-toolkit";
 import { mainnetChains, testnetChains } from "../liveChains";
 import { viemReceiptConfig } from "../../../constants/deploymentVariables";

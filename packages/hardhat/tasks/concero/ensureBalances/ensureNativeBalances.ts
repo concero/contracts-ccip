@@ -96,7 +96,7 @@ async function performTopUps(walletBalances: BalanceInfo[], donorAccount: any): 
   }
 }
 
-async function ensureBalances(isTestnet: boolean) {
+async function ensureNativeBalances(isTestnet: boolean) {
   const donorBalances: BalanceInfo[] = [];
   const walletBalances: BalanceInfo[] = [];
   const chains = isTestnet ? testnetChains : mainnetChains;
@@ -151,7 +151,7 @@ async function ensureBalances(isTestnet: boolean) {
 task("ensure-balances", "Ensure balances of wallets")
   .addFlag("testnet")
   .setAction(async taskArgs => {
-    await ensureBalances(taskArgs.testnet);
+    await ensureNativeBalances(taskArgs.testnet);
   });
 
-export default ensureBalances;
+export default ensureNativeBalances;

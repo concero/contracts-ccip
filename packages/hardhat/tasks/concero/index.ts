@@ -12,8 +12,9 @@ import withdrawParentPoolDepositFee from "./withdraw/withdrawParentPoolDepositFe
 import upgradeProxyImplementation from "./upgradeProxyImplementation";
 import changeOwnership from "./changeOwnership";
 
-import ensureBalances from "./ensureBalances/ensureBalances";
+import ensureNativeBalances from "./ensureBalances/ensureNativeBalances";
 import ensureERC20Balances from "./ensureBalances/ensureErc20Balances";
+import ensureCLFSubscriptionBalances from "./ensureBalances/ensureCLFSubscriptionBalances";
 
 import fundContract from "./fundContract";
 import dripBnm from "./dripBnm";
@@ -33,8 +34,9 @@ export default {
   upgradeProxyImplementation,
   changeOwnership,
   withdrawParentPoolDepositFee,
-  ensureBalances,
+  ensureNativeBalances,
   ensureERC20Balances,
+  ensureCLFSubscriptionBalances,
   deployCCIPInfrastructure,
   fundContract,
   dripBnm,

@@ -37,13 +37,14 @@ export const conceroChains: ConceroChains = {
   },
 };
 
-export const testnetChains: CNetwork[] = [
+export const testnetChains: CNetwork[] = Array.from(new Set([
   ...conceroChains.testnet.parentPool,
   ...conceroChains.testnet.childPools,
   ...conceroChains.testnet.infra,
-];
-export const mainnetChains: CNetwork[] = [
+]));
+
+export const mainnetChains: CNetwork[] = Array.from(new Set([
   ...conceroChains.mainnet.parentPool,
   ...conceroChains.mainnet.childPools,
   ...conceroChains.mainnet.infra,
-];
+]));

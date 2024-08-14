@@ -1,3 +1,6 @@
+import donSecretsList from "./donSecrets/list";
+import donSecretsUpload from "./donSecrets/upload";
+
 import info from "./subscriptions/info";
 import add from "./subscriptions/add";
 import fund from "./subscriptions/fund";
@@ -9,7 +12,6 @@ import timeout from "./subscriptions/timeout";
 import consumer from "./unused/Functions-consumer";
 import clfRequest from "./unused/Functions-consumer";
 
-import donSecretsList
 // import getHashSum from "./CLFScripts/listHashes";
 
 export default {
@@ -22,4 +24,6 @@ export default {
   clfRequest,
   remove,
   timeout,
+  donSecretsList,
+  donSecretsUpload,
 }

@@ -3,29 +3,31 @@ import { SubscriptionManager } from "@chainlink/functions-toolkit";
 import chains from "../../../constants/CNetworks";
 import { formatEther } from "viem";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { getEthersV5FallbackSignerAndProvider } from "../../../utils/getEthersSignerAndProvider";
 
 // run with: bunx hardhat clf-sub-info --subid 5810 --network avalancheFuji
 task(
   "clf-sub-info",
   "Gets the Functions billing subscription balance, owner, and list of authorized consumer contract addresses",
 )
-  .addParam("subid", "Subscription ID")
+  .addOptionalParam("subid", "Subscription ID", undefined)
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
 
     const { name, live } = hre.network;
-    const subscriptionId = parseInt(taskArgs.subid);
+    const {linkToken, functionsRouter, functionsSubIds} = chains[name];
 
-    const signer = await hre.ethers.getSigner();
-    const linkTokenAddress = chains[name].linkToken;
-    const functionsRouterAddress = chains[name].functionsRouter;
+    const subscriptionId = taskArgs.subid? parseInt(taskArgs.subid) : functionsSubIds[0];
 
-    const sm = new SubscriptionManager({ signer, linkTokenAddress, functionsRouterAddress });
+    const { signer } = await getEthersV5FallbackSignerAndProvider(name)
+    const sm = new SubscriptionManager({ signer, linkTokenAddress:linkToken, functionsRouterAddress: functionsRouter });
     await sm.initialize();
+    console.log(`Getting info for subscription ${subscriptionId}...`);
 
     const subInfo = await sm.getSubscriptionInfo(subscriptionId);
-    subInfo.balance = formatEther(subInfo.balance) + " LINK";
+    // subInfo.balance = formatEther(subInfo.balance) + " LINK";
     subInfo.blockedBalance = formatEther(subInfo.blockedBalance) + " LINK";
+    console.log(BigInt(subInfo.balance));
     console.log(`\nInfo for subscription ${subscriptionId}:\n`, subInfo);
   });
 

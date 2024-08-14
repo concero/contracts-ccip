@@ -10,8 +10,6 @@ import setAutoRequest from "./setAutoRequest";
 import uploadSecretsToDon from "../../donSecrets/upload";
 import listDonSecrets from "../../donSecrets/list";
 
-import ensureDonSecrets from "../../donSecrets/updateContract";
-
 export default {
   readResultAndError,
   request,
@@ -24,5 +22,4 @@ export default {
   setAutoRequest,
   uploadSecretsToDon,
   listDonSecrets,
-  ensureDonSecrets,
 };

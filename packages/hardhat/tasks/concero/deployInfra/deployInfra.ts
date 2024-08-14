@@ -13,7 +13,7 @@ import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import { compileContracts } from "../../../utils/compileContracts";
-import { ensureWalletBalance } from "../ensureBalances/ensureBalances";
+import { ensureWalletBalance } from "../ensureBalances/ensureNativeBalances";
 import { DeployInfraParams } from "./types";
 import { deployerTargetBalances } from "../../../constants/targetBalances";
 

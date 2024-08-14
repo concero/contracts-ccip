@@ -4,7 +4,7 @@ import CNetworks, { networkEnvKeys, networkTypes } from "../../../constants/CNet
 import log, { err } from "../../../utils/log";
 import { mainnetChains, testnetChains } from "../liveChains";
 import { viemReceiptConfig } from "../../../constants/deploymentVariables";
-import { getFallbackClients } from "../../utils/getViemClients";
+import { getFallbackClients } from "../../../utils/getViemClients";
 
 async function setConceroProxySender(hre) {
   const chain = CNetworks[hre.network.name];

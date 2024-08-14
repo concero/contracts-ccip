@@ -4,7 +4,7 @@ import log from "../../utils/log";
 import { task } from "hardhat/config";
 import { abi as ownableAbi } from "@openzeppelin/contracts/build/contracts/Ownable.json";
 import { viemReceiptConfig } from "../../constants/deploymentVariables";
-import { getFallbackClients } from "../utils/getViemClients";
+import { getFallbackClients } from "../../utils/getViemClients";
 
 export async function changeOwnership(hre, targetContract, newOwner: string) {
   const { name: chainName } = hre.network;

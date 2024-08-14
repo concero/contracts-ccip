@@ -3,7 +3,7 @@ import { getEnvVar } from "../../../utils/getEnvVar";
 import { networkEnvKeys } from "../../../constants/CNetworks";
 import { parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { getFallbackClients } from "../../utils/getViemClients";
+import { getFallbackClients } from "../../../utils/getViemClients";
 import log from "../../../utils/log";
 import { viemReceiptConfig } from "../../../constants/deploymentVariables";
 

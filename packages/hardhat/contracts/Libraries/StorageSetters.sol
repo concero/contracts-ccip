@@ -66,30 +66,50 @@ contract StorageSetters is Storage {
         emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
     }
 
+    /**
+     * @notice Function to update Secret Version
+     * @param _version the new Secret Version
+     */
     function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
         uint64 previousValue = s_donHostedSecretsVersion;
         s_donHostedSecretsVersion = _version;
         emit DonSecretVersionUpdated(previousValue, _version);
     }
 
+    /**
+     * @notice Function to update the CLF slot id
+     * @param _donHostedSecretsSlotId the new slot id
+     */
     function setDonHostedSecretsSlotID(uint8 _donHostedSecretsSlotId) external onlyOwner {
         uint8 previousValue = s_donHostedSecretsSlotId;
         s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
         emit DonSlotIdUpdated(previousValue, _donHostedSecretsSlotId);
     }
 
+    /**
+     * @notice Function to updated the Dst Hash Sum
+     * @param _hashSum the new hash sum
+     */
     function setDstJsHashSum(bytes32 _hashSum) external onlyOwner {
         bytes32 previousValue = s_dstJsHashSum;
         s_dstJsHashSum = _hashSum;
         emit DestinationJsHashSumUpdated(previousValue, _hashSum);
     }
 
+    /**
+     * @notice Function to updated the Src Hash sum
+     * @param _hashSum the new hash sum
+     */
     function setSrcJsHashSum(bytes32 _hashSum) external onlyOwner {
         bytes32 previousValue = s_srcJsHashSum;
         s_srcJsHashSum = _hashSum;
         emit SourceJsHashSumUpdated(previousValue, _hashSum);
     }
 
+    /**
+     * @notice Function to set the Ether HashSum
+     * @param _hashSum the new hash sum
+     */
     function setEthersHashSum(bytes32 _hashSum) external payable onlyOwner {
         bytes32 previousValue = s_ethersHashSum;
         s_ethersHashSum = _hashSum;
@@ -99,6 +119,11 @@ contract StorageSetters is Storage {
     /////////////////////////
     /// CONTRACT ADDRESSES///
     /////////////////////////
+    /**
+     * @notice Function to set a Cross-chain Concero contract
+     * @param _chainSelector The chain selector of the chain
+     * @param _conceroContract the address of the contract
+     */
     function setConceroContract(
         uint64 _chainSelector,
         address _conceroContract
@@ -108,6 +133,11 @@ contract StorageSetters is Storage {
         emit ConceroContractUpdated(_chainSelector, _conceroContract);
     }
 
+    /**
+     * @notice function to set the address of a Cross-chain pool
+     * @param _chainSelector The chain selector of the chain
+     * @param _pool the address of the Pool
+     */
     function setDstConceroPool(uint64 _chainSelector, address _pool) external payable onlyOwner {
         if (_pool == address(0)) revert StorageSetters_InvalidAddress();
         s_poolReceiver[_chainSelector] = _pool;

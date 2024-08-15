@@ -12,7 +12,7 @@ import checkERC20Balance from "./checkERC20Balance";
 import linkTokenAbi from "@chainlink/contracts/abi/v0.8/LinkToken.json";
 
 const donorAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
-const minBalance = parseEther("1");
+const minBalance = parseEther("10");
 
 const prompt = (question: string): Promise<string> => new Promise(resolve => rl.question(question, resolve));
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -63,7 +63,7 @@ async function topUpSubscription(chain: CNetwork, amount: bigint): Promise<void>
     });
 
     log(
-      `Topped up subscription ${subId} with ${formatEther(amount)} LINK on ${chainName}. Tx: ${hash}. Gas used: ${cumulativeGasUsed}`,
+      `Topped up subscription ${subId} with ${formatEther(amount)} LINK. Tx: ${hash} Gas used: ${cumulativeGasUsed}`,
       "topUpSubscription",
       chainName
     );

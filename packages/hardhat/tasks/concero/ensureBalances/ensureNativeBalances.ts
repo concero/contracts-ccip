@@ -148,7 +148,7 @@ async function ensureNativeBalances(isTestnet: boolean) {
   }
 }
 
-task("ensure-balances", "Ensure balances of wallets")
+task("ensure-native-balances", "Ensure balances of wallets")
   .addFlag("testnet")
   .setAction(async taskArgs => {
     await ensureNativeBalances(taskArgs.testnet);

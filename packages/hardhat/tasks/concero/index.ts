@@ -15,6 +15,7 @@ import changeOwnership from "./changeOwnership";
 import ensureNativeBalances from "./ensureBalances/ensureNativeBalances";
 import ensureERC20Balances from "./ensureBalances/ensureErc20Balances";
 import ensureCLFSubscriptionBalances from "./ensureBalances/ensureCLFSubscriptionBalances";
+import viewTokenBalances from "./ensureBalances/viewTokenBalances";
 
 import fundContract from "./fundContract";
 import dripBnm from "./dripBnm";
@@ -37,6 +38,7 @@ export default {
   ensureNativeBalances,
   ensureERC20Balances,
   ensureCLFSubscriptionBalances,
+  viewTokenBalances,
   deployCCIPInfrastructure,
   fundContract,
   dripBnm,

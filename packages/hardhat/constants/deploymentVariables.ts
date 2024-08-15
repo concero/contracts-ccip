@@ -38,6 +38,12 @@ export type DeploymentPrefixes = ProxyDeploymentPrefixes & {
   create3Factory: string;
   pause: string;
   uniswapRouter: string;
+  poolMessenger0: string;
+  poolMessenger1: string;
+  poolMessenger2: string;
+  infraMessenger0: string;
+  infraMessenger1: string;
+  infraMessenger2: string;
 };
 
 export const deploymentPrefixes: DeploymentPrefixes = {

@@ -2,12 +2,14 @@ import { mainnetChains, testnetChains } from "../liveChains";
 import { getFallbackClients } from "../../../utils/getViemClients";
 import { privateKeyToAccount } from "viem/accounts";
 import { task } from "hardhat/config";
-import { erc20Abi, formatEther, parseEther } from "viem";
+import { formatEther, parseEther } from "viem";
 import { type CNetwork } from "../../../types/CNetwork";
 import log, { err } from "../../../utils/log";
 import readline from "readline";
 import { viemReceiptConfig } from "../../../constants/deploymentVariables";
 import functionsRouterAbi from "@chainlink/contracts/abi/v0.8/FunctionsRouter.json";
+import checkERC20Balance from "./checkERC20Balance";
+import linkTokenAbi from "@chainlink/contracts/abi/v0.8/LinkToken.json";
 
 const donorAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
 const minBalance = parseEther("1");
@@ -21,18 +23,6 @@ interface SubscriptionInfo {
   deficit: bigint;
   donorBalance: bigint;
 }
-
-export async function checkERC20Balance(chain: CNetwork, token: string, address: string): Promise<bigint> {
-  const { publicClient } = getFallbackClients(chain);
-  const balance = await publicClient.readContract({
-    address: token,
-    abi: erc20Abi,
-    functionName: "balanceOf",
-    args: [address]
-  });
-  return balance;
-}
-
 
 async function checkSubscriptionBalance(chain: CNetwork): Promise<SubscriptionInfo> {
   const { publicClient } = getFallbackClients(chain);
@@ -62,17 +52,7 @@ async function topUpSubscription(chain: CNetwork, amount: bigint): Promise<void>
     const subIdHex = parseInt(subId, 10).toString(16).padStart(2, '0').padStart(64, '0');
     const hash = await walletClient.writeContract({
       address: linkToken,
-      abi: [{
-        "constant": false,
-        "inputs": [
-          { "name": "to", "type": "address" },
-          { "name": "amount", "type": "uint256" },
-          { "name": "data", "type": "bytes" }
-        ],
-        "name": "transferAndCall",
-        "outputs": [{ "name": "", "type": "bool" }],
-        "type": "function"
-      }],
+      abi: linkTokenAbi,
       functionName: "transferAndCall",
       args: [functionsRouter, amount, `0x${subIdHex}`],
     });
@@ -94,7 +74,6 @@ async function topUpSubscription(chain: CNetwork, amount: bigint): Promise<void>
 
 async function ensureCLFSubscriptionBalances(isTestnet: boolean) {
   const chains = isTestnet ? testnetChains : mainnetChains;
-  const subscriptionInfos: SubscriptionInfo[] = [];
 
   try {
     const subscriptionPromises = chains.map(chain => checkSubscriptionBalance(chain));

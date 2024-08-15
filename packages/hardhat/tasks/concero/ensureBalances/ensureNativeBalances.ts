@@ -12,7 +12,12 @@ import { viemReceiptConfig } from "../../../constants/deploymentVariables";
 import { messengerTargetBalances } from "../../../constants/targetBalances";
 
 const donorAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
-const wallets = [getEnvVar("MESSENGER_0_ADDRESS"), getEnvVar("POOL_MESSENGER_0_ADDRESS")];
+
+
+const wallets = [
+  getEnvVar("MESSENGER_0_ADDRESS"),
+  getEnvVar("POOL_MESSENGER_0_ADDRESS")
+];
 const prompt = (question: string): Promise<string> => new Promise(resolve => rl.question(question, resolve));
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
@@ -112,7 +117,6 @@ async function ensureNativeBalances(isTestnet: boolean) {
 
     const displayedDonorBalances = donorBalances.map(info => ({
       chain: info.chain.name,
-      address: info.address,
       balance: info.balance,
     }));
 

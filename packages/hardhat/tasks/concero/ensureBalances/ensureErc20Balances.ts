@@ -8,6 +8,7 @@ import log, { err } from "../../../utils/log";
 import readline from "readline";
 import { ProxyType, viemReceiptConfig } from "../../../constants/deploymentVariables";
 import { getEnvAddress } from "../../../utils/getEnvVar";
+import checkERC20Balance from "./checkERC20Balance";
 
 const donorAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
 
@@ -31,17 +32,6 @@ const minBalances : Record<ProxyType, bigint> = {
 };
 
 
-async function checkERC20Balance(chain: CNetwork, token: string, address: string): Promise<bigint> {
-  const { publicClient } = getFallbackClients(chain);
-  const balance = await publicClient.readContract({
-    address: token,
-    abi: erc20Abi,
-    functionName: "balanceOf",
-    args: [address]
-  });
-  return balance;
-}
-
 async function checkChainBalance(chain: CNetwork, contractType: ProxyType): Promise<BalanceInfo> {
   const { linkToken } = chain;
   const minBalance = minBalances[contractType];
@@ -58,7 +48,6 @@ async function checkChainBalance(chain: CNetwork, contractType: ProxyType): Prom
 async function topUpERC20(chain: CNetwork, amount: bigint, contractAddress, contractAlias): Promise<void> {
   const { publicClient, walletClient } = getFallbackClients(chain, donorAccount);
   const { linkToken, name: chainName } = chain;
-
 
   try {
     const hash = await walletClient.writeContract({

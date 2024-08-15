@@ -2,7 +2,7 @@ import { mainnetChains, testnetChains } from "../liveChains";
 import { getFallbackClients } from "../../../utils/getViemClients";
 import { privateKeyToAccount } from "viem/accounts";
 import { task } from "hardhat/config";
-import { formatEther, parseEther } from "viem";
+import { erc20Abi, formatEther, parseEther } from "viem";
 import { type CNetwork } from "../../../types/CNetwork";
 import log, { err } from "../../../utils/log";
 import readline from "readline";
@@ -19,11 +19,24 @@ interface SubscriptionInfo {
   chain: CNetwork;
   balance: bigint;
   deficit: bigint;
+  donorBalance: bigint;
 }
+
+export async function checkERC20Balance(chain: CNetwork, token: string, address: string): Promise<bigint> {
+  const { publicClient } = getFallbackClients(chain);
+  const balance = await publicClient.readContract({
+    address: token,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: [address]
+  });
+  return balance;
+}
+
 
 async function checkSubscriptionBalance(chain: CNetwork): Promise<SubscriptionInfo> {
   const { publicClient } = getFallbackClients(chain);
-  const { functionsRouter, name, functionsSubIds } = chain;
+  const { functionsRouter, name, functionsSubIds, linkToken } = chain;
   const subId = functionsSubIds[0];
   const subscriptionData = await publicClient.readContract({
     address: functionsRouter,
@@ -31,24 +44,37 @@ async function checkSubscriptionBalance(chain: CNetwork): Promise<SubscriptionIn
     functionName: "getSubscription",
     args: [BigInt(subId)]
   });
-  
-  // Extract the balance from the subscription data
+
   const balance = subscriptionData.balance;
   const deficit = balance < minBalance ? minBalance - balance : BigInt(0);
 
-  return { chain, balance, deficit };
+  const donorBalance = await checkERC20Balance(chain, linkToken, donorAccount.address);
+
+  return { chain, balance, deficit, donorBalance };
 }
+
 
 async function topUpSubscription(chain: CNetwork, amount: bigint): Promise<void> {
   const { publicClient, walletClient } = getFallbackClients(chain, donorAccount);
-  const { functionsRouter, name, functionsSubIds } = chain;
+  const { functionsRouter, linkToken, name: chainName, functionsSubIds } = chain;
   const subId = functionsSubIds[0];
   try {
+    const subIdHex = parseInt(subId, 10).toString(16).padStart(2, '0').padStart(64, '0');
     const hash = await walletClient.writeContract({
-      address: functionsRouter,
-      abi: functionsRouterAbi,
-      functionName: "addFunds",
-      args: [BigInt(subId), amount]
+      address: linkToken,
+      abi: [{
+        "constant": false,
+        "inputs": [
+          { "name": "to", "type": "address" },
+          { "name": "amount", "type": "uint256" },
+          { "name": "data", "type": "bytes" }
+        ],
+        "name": "transferAndCall",
+        "outputs": [{ "name": "", "type": "bool" }],
+        "type": "function"
+      }],
+      functionName: "transferAndCall",
+      args: [functionsRouter, amount, `0x${subIdHex}`],
     });
 
     const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({
@@ -57,12 +83,12 @@ async function topUpSubscription(chain: CNetwork, amount: bigint): Promise<void>
     });
 
     log(
-      `Topped up subscription ${subId} with ${formatEther(amount)} LINK on ${chain.name}. Tx: ${hash}. Gas used: ${cumulativeGasUsed}`,
+      `Topped up subscription ${subId} with ${formatEther(amount)} LINK on ${chainName}. Tx: ${hash}. Gas used: ${cumulativeGasUsed}`,
       "topUpSubscription",
-      chain.name
+      chainName
     );
   } catch (error) {
-    err(`Error topping up subscription ${subId} on ${chain.name}: ${error}`, "topUpSubscription");
+    err(`Error topping up subscription ${subId} on ${chainName}: ${error}`, "topUpSubscription");
   }
 }
 
@@ -72,14 +98,14 @@ async function ensureCLFSubscriptionBalances(isTestnet: boolean) {
 
   try {
     const subscriptionPromises = chains.map(chain => checkSubscriptionBalance(chain));
-
-    // Wait for all promises to resolve simultaneously
     const subscriptionInfos = await Promise.all(subscriptionPromises);
 
     const displayedBalances = subscriptionInfos.map(info => ({
       chain: info.chain.name,
+      subId: info.chain.functionsSubIds[0],
       balance: formatEther(info.balance),
       deficit: formatEther(info.deficit),
+      donorBalance: formatEther(info.donorBalance),
     }));
 
     console.log("\nCLF Subscription Balances:");

@@ -26,7 +26,7 @@ interface BalanceInfo {
 }
 
 const minBalances : Record<ProxyType, bigint> = {
-  parentPoolProxy: parseEther("0"),
+  parentPoolProxy: parseEther("1"),
   childPoolProxy: parseEther("1"),
   infraProxy: parseEther("1"),
 };
@@ -63,7 +63,7 @@ async function topUpERC20(chain: CNetwork, amount: bigint, contractAddress, cont
     });
 
     log(
-      `Topped up ${contractAlias} with ${formatEther(amount)} LINK. Tx: ${hash}. Gas used: ${cumulativeGasUsed}`,
+      `Topped up ${contractAlias} with ${formatEther(amount)} LINK. Tx: ${hash} Gas used: ${cumulativeGasUsed}`,
       "topUpERC20",
       chainName
     );

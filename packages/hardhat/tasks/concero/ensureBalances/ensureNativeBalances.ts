@@ -18,6 +18,7 @@ const wallets = [
   getEnvVar("MESSENGER_0_ADDRESS"),
   getEnvVar("POOL_MESSENGER_0_ADDRESS")
 ];
+
 const prompt = (question: string): Promise<string> => new Promise(resolve => rl.question(question, resolve));
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
@@ -71,7 +72,7 @@ async function topUpWallet(wallet: string, publicClient: any, walletClient: any,
       hash,
     });
     log(
-      `Topped up ${wallet} with ${formatEther(amount)} ETH. Tx: ${hash}. Gas used: ${setDexRouterGasUsed}`,
+      `Topped up ${wallet} with ${formatEther(amount)} ETH. Tx: ${hash} Gas used: ${setDexRouterGasUsed}`,
       "topUpWallet",
       publicClient.chain.name,
     );

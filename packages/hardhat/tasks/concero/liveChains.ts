@@ -14,12 +14,12 @@ export const liveChains: CNetwork[] = [chains.polygon, chains.base, chains.arbit
 export interface ConceroChains {
   testnet: {
     parentPool: CNetwork[];
-    childPools: CNetwork[];
+    childPool: CNetwork[];
     infra: CNetwork[];
   };
   mainnet: {
     parentPool: CNetwork[];
-    childPools: CNetwork[];
+    childPool: CNetwork[];
     infra: CNetwork[];
   };
 }
@@ -27,24 +27,24 @@ export interface ConceroChains {
 export const conceroChains: ConceroChains = {
   testnet: {
     parentPool: [chains.baseSepolia],
-    childPools: [chains.polygonAmoy, chains.arbitrumSepolia, chains.avalancheFuji],
+    childPool: [chains.polygonAmoy, chains.arbitrumSepolia, chains.avalancheFuji],
     infra: [chains.polygonAmoy, chains.arbitrumSepolia, chains.avalancheFuji, chains.baseSepolia],
   },
   mainnet: {
-    parentPool: [chains.base],
-    childPools: [chains.polygon, chains.arbitrum, chains.avalanche],
-    infra: [chains.polygon, chains.arbitrum, chains.avalanche, chains.base],
+    parentPool: [chains.base], // 12
+    childPool: [chains.polygon, chains.arbitrum, chains.avalanche], // 2
+    infra: [chains.polygon, chains.arbitrum, chains.avalanche, chains.base], // 4
   },
 };
 
 export const testnetChains: CNetwork[] = Array.from(new Set([
   ...conceroChains.testnet.parentPool,
-  ...conceroChains.testnet.childPools,
+  ...conceroChains.testnet.childPool,
   ...conceroChains.testnet.infra,
 ]));
 
 export const mainnetChains: CNetwork[] = Array.from(new Set([
   ...conceroChains.mainnet.parentPool,
-  ...conceroChains.mainnet.childPools,
+  ...conceroChains.mainnet.childPool,
   ...conceroChains.mainnet.infra,
 ]));

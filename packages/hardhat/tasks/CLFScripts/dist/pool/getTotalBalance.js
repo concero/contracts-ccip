@@ -105,7 +105,6 @@ return (async () => {
 		const result = new Uint8Array(32 + conceroIds.length + 1);
 		const encodedTotalBalance = Functions.encodeUint256(_totalBalance);
 		result.set(encodedTotalBalance, 0);
-		console.log(encodedTotalBalance);
 		if (_conceroIds.length) {
 			for (let i = 0; i < _conceroIds.length; i++) {
 				const encodedConceroId = new Uint8Array([Number(_conceroIds[i])]);

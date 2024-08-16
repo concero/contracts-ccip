@@ -52,7 +52,19 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         address _pool,
         address _proxy,
         address[3] memory _messengers
-    ) ConceroCCIP(_variables, _chainSelector, _chainIndex, _link, _ccipRouter, _dexSwap, _pool, _proxy, _messengers) {}
+    )
+        ConceroCCIP(
+            _variables,
+            _chainSelector,
+            _chainIndex,
+            _link,
+            _ccipRouter,
+            _dexSwap,
+            _pool,
+            _proxy,
+            _messengers
+        )
+    {}
 
     ///////////////////////////////////////////////////////////////
     ///////////////////////////Functions///////////////////////////
@@ -64,12 +76,16 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
      * @dev dstSwapData can be empty if there is no swap on destination
      * @dev this function should only be able to called thought infra Proxy
      */
-    function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] memory dstSwapData) external payable {
+    function startBridge(
+        BridgeData memory bridgeData,
+        IDexSwap.SwapData[] memory dstSwapData
+    ) external payable {
         if (address(this) != i_proxy) revert ConceroBridge_OnlyProxyContext(address(this));
         address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
 
-        uint256 totalSrcFee =
-            _convertToUSDCDecimals(_getSrcTotalFeeInUsdc(bridgeData.dstChainSelector, bridgeData.amount));
+        uint256 totalSrcFee = _convertToUSDCDecimals(
+            _getSrcTotalFeeInUsdc(bridgeData.dstChainSelector, bridgeData.amount)
+        );
 
         if (bridgeData.amount < totalSrcFee) {
             revert ConceroBridge_InsufficientFees(bridgeData.amount, totalSrcFee);
@@ -79,7 +95,13 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         uint256 lpFee = getDstTotalFeeInUsdc(amountToSend);
 
         bytes32 batchedTxId = keccak256(
-            abi.encodePacked(msg.sender, bridgeData.receiver, amountToSend, block.timestamp, block.prevrandao)
+            abi.encodePacked(
+                msg.sender,
+                bridgeData.receiver,
+                amountToSend,
+                block.timestamp,
+                block.prevrandao
+            )
         );
 
         BridgeTx memory newBridgeTx = BridgeTx(bridgeData.receiver, amountToSend, batchedTxId);
@@ -87,8 +109,9 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         s_pendingCCIPTransactionsByDstChain[bridgeData.dstChainSelector].push(batchedTxId);
         s_pendingCCIPTransactions[batchedTxId] = newBridgeTx;
 
-        bytes32[] memory pendingCCIPTransactionsByDstChain =
-            s_pendingCCIPTransactionsByDstChain[bridgeData.dstChainSelector];
+        bytes32[] memory pendingCCIPTransactionsByDstChain = s_pendingCCIPTransactionsByDstChain[
+            bridgeData.dstChainSelector
+        ];
 
         if (pendingCCIPTransactionsByDstChain.length >= MAX_PENDING_CCIP_TRANSACTIONS) {
             uint256 batchedAmountsToSend;
@@ -104,8 +127,12 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
 
             delete s_pendingCCIPTransactionsByDstChain[bridgeData.dstChainSelector];
 
-            bytes32 ccipMessageId =
-                _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, batchedAmountsToSend, bridgeTxs);
+            bytes32 ccipMessageId = _sendTokenPayLink(
+                bridgeData.dstChainSelector,
+                fromToken,
+                batchedAmountsToSend,
+                bridgeTxs
+            );
         }
 
         // TODO: for dstSwaps: add unique keccak id with all argument including dstSwapData
@@ -139,13 +166,16 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     function getFunctionsFeeInLink(uint64 dstChainSelector) public view returns (uint256) {
         uint256 srcGasPrice = s_lastGasPrices[CHAIN_SELECTOR];
         uint256 dstGasPrice = s_lastGasPrices[dstChainSelector];
-        uint256 srcClFeeInLink = clfPremiumFees[CHAIN_SELECTOR]
-            + (srcGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT) * s_latestLinkNativeRate)
-                / 1e18;
+        uint256 srcClFeeInLink = clfPremiumFees[CHAIN_SELECTOR] +
+            (srcGasPrice *
+                (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT) *
+                s_latestLinkNativeRate) /
+            1e18;
 
-        uint256 dstClFeeInLink = clfPremiumFees[dstChainSelector]
-            + ((dstGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT)) * s_latestLinkNativeRate)
-                / 1e18;
+        uint256 dstClFeeInLink = clfPremiumFees[dstChainSelector] +
+            ((dstGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT)) *
+                s_latestLinkNativeRate) /
+            1e18;
 
         return srcClFeeInLink + dstClFeeInLink;
     }
@@ -183,7 +213,10 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
      * @param dstChainSelector the destination blockchain chain selector
      * @param amount the amount of value the fees will calculated over.
      */
-    function _getSrcTotalFeeInUsdc(uint64 dstChainSelector, uint256 amount) internal view returns (uint256) {
+    function _getSrcTotalFeeInUsdc(
+        uint64 dstChainSelector,
+        uint256 amount
+    ) internal view returns (uint256) {
         // @notice cl functions fee
         uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
 
@@ -197,13 +230,16 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         // @notice gas fee
         uint256 messengerDstGasInNative = HALF_DST_GAS * s_lastGasPrices[dstChainSelector];
         uint256 messengerSrcGasInNative = HALF_DST_GAS * s_lastGasPrices[CHAIN_SELECTOR];
-        uint256 messengerGasFeeInUsdc =
-            ((messengerDstGasInNative + messengerSrcGasInNative) * s_latestNativeUsdcRate) / STANDARD_TOKEN_DECIMALS;
+        uint256 messengerGasFeeInUsdc = ((messengerDstGasInNative + messengerSrcGasInNative) *
+            s_latestNativeUsdcRate) / STANDARD_TOKEN_DECIMALS;
 
         return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + messengerGasFeeInUsdc);
     }
 
-    function getSrcTotalFeeInUSDC(uint64 dstChainSelector, uint256 amount) external view returns (uint256) {
+    function getSrcTotalFeeInUSDC(
+        uint64 dstChainSelector,
+        uint256 amount
+    ) external view returns (uint256) {
         return _getSrcTotalFeeInUsdc(dstChainSelector, amount);
     }
 }

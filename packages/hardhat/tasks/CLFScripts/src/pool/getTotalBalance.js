@@ -1,71 +1,69 @@
-const ethers = await import('npm:ethers@6.10.0');
-
-return (async () => {
+(async () => {
 	const chainSelectors = {
-		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
-		// 	urls: [
-		// 		`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-		// 		// 'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
-		// 		// 'https://arbitrum-sepolia-rpc.publicnode.com',
-		// 	],
-		// 	chainId: '0x66eee',
-		// 	usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
-		// 	poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
-		// },
-		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
-		// 	urls: [
-		// 		`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
-		// 		// 'https://avalanche-fuji-c-chain-rpc.publicnode.com',
-		// 		// 'https://avalanche-fuji.blockpi.network/v1/rpc/public',
-		// 	],
-		// 	chainId: '0xa869',
-		// 	usdcAddress: '${USDC_FUJI}',
-		// 	poolAddress: '${CHILD_POOL_PROXY_FUJI}',
-		// },
-		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`]: {
-		// 	urls: [
-		// 		`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-		// 		// 'https://base-sepolia.blockpi.network/v1/rpc/public',
-		// 		// 'https://base-sepolia-rpc.publicnode.com',
-		// 	],
-		// 	chainId: '0x14a34',
-		// 	usdcAddress: '${USDC_BASE_SEPOLIA}',
-		// 	poolAddress: '${PARENT_POOL_PROXY_BASE_SEPOLIA}',
-		// },
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
+			urls: [
+				`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				// 'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
+				// 'https://arbitrum-sepolia-rpc.publicnode.com',
+			],
+			chainId: '0x66eee',
+			usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
+			poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
+		},
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
+			urls: [
+				`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				// 'https://avalanche-fuji-c-chain-rpc.publicnode.com',
+				// 'https://avalanche-fuji.blockpi.network/v1/rpc/public',
+			],
+			chainId: '0xa869',
+			usdcAddress: '${USDC_FUJI}',
+			poolAddress: '${CHILD_POOL_PROXY_FUJI}',
+		},
+		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`]: {
+			urls: [
+				`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
+				// 'https://base-sepolia.blockpi.network/v1/rpc/public',
+				// 'https://base-sepolia-rpc.publicnode.com',
+			],
+			chainId: '0x14a34',
+			usdcAddress: '${USDC_BASE_SEPOLIA}',
+			poolAddress: '${PARENT_POOL_PROXY_BASE_SEPOLIA}',
+		},
 
 		// mainnets
-		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
-			urls: [`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
-			chainId: '0xa4b1',
-			usdcAddress: '${USDC_ARBITRUM}',
-			poolAddress: '${CHILD_POOL_PROXY_ARBITRUM}',
-		},
-
-		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
-			urls: [`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
-			chainId: '0x89',
-			usdcAddress: '${USDC_POLYGON}',
-			poolAddress: '${CHILD_POOL_PROXY_POLYGON}',
-		},
-		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}').toString(16)}`]: {
-			urls: [`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
-			chainId: '0xa86a',
-			usdcAddress: '${USDC_AVALANCHE}',
-			poolAddress: '${CHILD_POOL_PROXY_AVALANCHE}',
-		},
-		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
-			urls: [`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
-			chainId: '0x2105',
-			usdcAddress: '${USDC_BASE}',
-			poolAddress: '${PARENT_POOL_PROXY_BASE}',
-		},
+		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
+		// 	urls: [`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+		// 	chainId: '0xa4b1',
+		// 	usdcAddress: '${USDC_ARBITRUM}',
+		// 	poolAddress: '${CHILD_POOL_PROXY_ARBITRUM}',
+		// },
+		//
+		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
+		// 	urls: [`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+		// 	chainId: '0x89',
+		// 	usdcAddress: '${USDC_POLYGON}',
+		// 	poolAddress: '${CHILD_POOL_PROXY_POLYGON}',
+		// },
+		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}').toString(16)}`]: {
+		// 	urls: [`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+		// 	chainId: '0xa86a',
+		// 	usdcAddress: '${USDC_AVALANCHE}',
+		// 	poolAddress: '${CHILD_POOL_PROXY_AVALANCHE}',
+		// },
+		// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
+		// 	urls: [`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
+		// 	chainId: '0x2105',
+		// 	usdcAddress: '${USDC_BASE}',
+		// 	poolAddress: '${PARENT_POOL_PROXY_BASE}',
+		// },
 	};
 
 	const baseChainSelector = `0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`;
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 	const poolAbi = [
 		'function s_loansInUse() external view returns (uint256)',
-		'function getDepositsOnTheWay() external view returns (tuple(bytes1, uint64, bytes32, uint256)[] memory)',
+		'function getDepositsOnTheWay() external view returns (tuple(uint64, bytes32, uint256)[150] memory)',
 	];
 
 	const findChainIdByUrl = url => {
@@ -104,12 +102,18 @@ return (async () => {
 
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
 
-	const getBaseDepositsOneTheWay = () => {
+	const getBaseDepositsOneTheWay = async () => {
 		const pool = new ethers.Contract('${PARENT_POOL_PROXY_BASE}', poolAbi, baseProvider);
-		return pool.getDepositsOnTheWay();
+		const depositsOnTheWay = await pool.getDepositsOnTheWay();
+		return depositsOnTheWay.reduce((acc, [chainSelector, ccipMessageId, amount], index) => {
+			if (ccipMessageId !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+				acc.push({index, chainSelector, ccipMessageId, amount});
+			}
+			return acc;
+		}, []);
 	};
 
-	const getChildPoolsCcipLogs = async ccipLines => {
+	const getChildPoolsCcipLogs = ccipLines => {
 		const ethersId = ethers.id('ConceroChildPool_CCIPReceived(bytes32,uint64,address,address,uint256)');
 		const promises = [];
 
@@ -123,9 +127,7 @@ return (async () => {
 
 			const provider = getProviderByChainSelector(chainSelectorsKey);
 
-			// let i = 0;
 			for (const line of reqFromLines) {
-				// if (i++ > 5) break;
 				promises.push(
 					provider.getLogs({
 						address: chainSelectors[chainSelectorsKey].poolAddress,
@@ -137,7 +139,7 @@ return (async () => {
 			}
 		}
 
-		return await Promise.all(promises);
+		return Promise.all(promises);
 	};
 
 	const getCompletedConceroIdsByLogs = (logs, ccipLines) => {
@@ -147,7 +149,7 @@ return (async () => {
 		for (const log of logs) {
 			const ccipMessageId = log[0].topics[1];
 			const ccipLine = ccipLines.find(line => line.ccipMessageId.toLowerCase() === ccipMessageId.toLowerCase());
-			conceroIds.push(ccipLine.conceroId);
+			conceroIds.push(ccipLine.index);
 		}
 
 		return conceroIds;
@@ -191,24 +193,13 @@ return (async () => {
 	}
 
 	const depositsOnTheWay = results[results.length - 1];
-	// console.log(depositsOnTheWay);
 	let conceroIds = [];
 
 	if (depositsOnTheWay.length) {
-		// const ccipLines = depositsOnTheWay.map(line => {
-		// 	const [conceroId, chainSelector, ccipMessageId] = line;
-		// 	return {conceroId, chainSelector, ccipMessageId};
-		// });
-
-		const ccipLines = [];
-
-		for (let i = 0; i < 250; i++) {
-			ccipLines.push({
-				conceroId: '0x' + i.toString(16),
-				chainSelector: 6433500567565415381n,
-				ccipMessageId: '0x0fbe88fb5f2c85d0e42b031bcf44ddfb4c965a91a1fedcd796e86c13853e937d',
-			});
-		}
+		const ccipLines = depositsOnTheWay.map(line => {
+			const [conceroId, chainSelector, ccipMessageId] = line;
+			return {conceroId, chainSelector, ccipMessageId};
+		});
 
 		if (ccipLines.length) {
 			try {

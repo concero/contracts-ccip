@@ -50,6 +50,7 @@ error ConceroParentPool_NotAllowedToComplete();
 ///@notice error emitted when the request doesn't exist
 error ConceroParentPool_RequestDoesntExist();
 error ConceroParentPool_NotConceroCLA(address caller);
+error ConceroParentPool_DepositsOnTheWayArrayFull();
 
 contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, ParentPoolStorage {
     ///////////////////////
@@ -79,7 +80,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     uint256 private constant USDC_DECIMALS = 1_000_000; // 10 ** 6
     uint256 private constant LP_TOKEN_DECIMALS = 1 ether;
     uint256 private constant PRECISION_HANDLER = 10_000_000_000; // 10 ** 10
-    uint256 internal constant MIN_DEPOSIT = 100_000_000;
+    // TODO: move to 100$ in prod!!!
+    //    uint256 internal constant MIN_DEPOSIT = 100_000_000;
+    uint256 internal constant MIN_DEPOSIT = 1_000_000;
     uint256 private constant WITHDRAW_DEADLINE_SECONDS = 597_600;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint256 private constant CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS = 2108;
@@ -97,7 +100,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
     ///@notice JS Code for Chainlink Functions
     string internal constant JS_CODE =
-        "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'release' + `/packages/hardhat/tasks/CLFScripts/dist/pool/${bytesArgs[2] === '0x1' ? 'distributeLiquidity' : 'getTotalBalance'}.min.js`; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
+        "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = 'https://raw.githubusercontent.com/concero/contracts-ccip/fix/dot-issue/packages/hardhat/tasks/CLFScripts/dist/pool/${bytesArgs[2] === '0x1' ? 'distributeLiquidity' : 'getTotalBalance'}.min.js`; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
     ////////////////
     ///IMMUTABLES///
@@ -294,9 +297,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
      */
     function startDeposit(uint256 _usdcAmount) external onlyProxyContext {
         if (_usdcAmount < MIN_DEPOSIT) revert ConceroParentPool_AmountBelowMinimum(MIN_DEPOSIT);
-        if (s_depositsOnTheWayArray.length >= MAX_DEPOSITS_ON_THE_WAY_COUNT - 5) {
-            revert ConceroParentPool_MaxCapReached(MAX_DEPOSITS_ON_THE_WAY_COUNT);
-        }
 
         uint256 maxDeposit = s_maxDeposit;
 
@@ -693,7 +693,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         for (uint256 i; i < childPoolsCount; ) {
             bytes32 ccipMessageId = _ccipSend(s_poolChainSelectors[i], amountToDistribute);
-            _addDepositOnTheWayRequest(ccipMessageId, s_poolChainSelectors[i], amountToDistribute);
+            _addDepositOnTheWay(ccipMessageId, s_poolChainSelectors[i], amountToDistribute);
 
             unchecked {
                 ++i;
@@ -848,7 +848,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         uint256 length = _depositsOnTheWayIndexesToDelete.length;
 
         for (uint256 i; i < length; ) {
-            uint256 indexToDelete = uint256(uint8(_depositsOnTheWayIndexesToDelete[i]));
+            uint8 indexToDelete = uint8(_depositsOnTheWayIndexesToDelete[i]);
 
             if (indexToDelete >= length) {
                 continue;
@@ -983,7 +983,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         return _convertToUSDCTokenDecimals(amountUsdcToWithdraw);
     }
 
-    function _addDepositOnTheWayRequest(
+    function _addDepositOnTheWay(
         bytes32 _ccipMessageId,
         uint64 _chainSelector,
         uint256 _amount
@@ -1001,9 +1001,9 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         s_depositsOnTheWayAmount += _amount;
     }
 
-    function _findLowestDepositOnTheWayUnusedIndex() private view returns (uint8) {
+    function _findLowestDepositOnTheWayUnusedIndex() internal view returns (uint8) {
         uint8 index;
-        for (uint8 i; i < MAX_DEPOSITS_ON_THE_WAY_COUNT; ) {
+        for (uint8 i = 1; i < MAX_DEPOSITS_ON_THE_WAY_COUNT; ) {
             if (s_depositsOnTheWayArray[i].ccipMessageId == bytes32(0)) {
                 index = i;
                 break;
@@ -1012,6 +1012,11 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
                 ++i;
             }
         }
+
+        if (index == 0) {
+            revert ConceroParentPool_DepositsOnTheWayArrayFull();
+        }
+
         return index;
     }
 
@@ -1131,7 +1136,11 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         return s_loansInUse;
     }
 
-    function getDepositsOnTheWay() external view returns (DepositOnTheWay[] memory) {
+    function getDepositsOnTheWay()
+        external
+        view
+        returns (DepositOnTheWay[MAX_DEPOSITS_ON_THE_WAY_COUNT] memory)
+    {
         return s_depositsOnTheWayArray;
     }
 

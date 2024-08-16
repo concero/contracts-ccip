@@ -104,7 +104,8 @@
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
 
 	const getBaseDepositsOneTheWay = async () => {
-		const pool = new ethers.Contract('${PARENT_POOL_PROXY_BASE}', poolAbi, baseProvider);
+		// const pool = new ethers.Contract('${PARENT_POOL_PROXY_BASE}', poolAbi, baseProvider);
+		const pool = new ethers.Contract('${PARENT_POOL_PROXY_BASE_SEPOLIA}', poolAbi, baseProvider);
 		const depositsOnTheWay = await pool.getDepositsOnTheWay();
 		return depositsOnTheWay.reduce((acc, [chainSelector, ccipMessageId, amount], index) => {
 			if (ccipMessageId !== '0x0000000000000000000000000000000000000000000000000000000000000000') {

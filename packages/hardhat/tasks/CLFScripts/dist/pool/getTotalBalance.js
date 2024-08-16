@@ -64,7 +64,7 @@
 	};
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
 	const getBaseDepositsOneTheWay = async () => {
-		const pool = new ethers.Contract('0x0AE1B2730066AD46481ab0a5fd2B5893f8aBa323', poolAbi, baseProvider);
+		const pool = new ethers.Contract('0x5a42824F47257090A20894E18b3271ADbE6Ab228', poolAbi, baseProvider);
 		const depositsOnTheWay = await pool.getDepositsOnTheWay();
 		return depositsOnTheWay.reduce((acc, [chainSelector, ccipMessageId, amount], index) => {
 			if (ccipMessageId !== '0x0000000000000000000000000000000000000000000000000000000000000000') {

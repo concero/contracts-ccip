@@ -1,5 +1,4 @@
-const ethers = await import('npm:ethers@6.10.0');
-return (async () => {
+(async () => {
 	const chainSelectors = {
 		[`0x${BigInt('3478487238524512106').toString(16)}`]: {
 			urls: [
@@ -64,15 +63,9 @@ return (async () => {
 		return new FunctionsJsonRpcProvider(url);
 	};
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
-	const getBaseDepositsOneTheWay = async () => {
+	const getBaseDepositsOneTheWayArray = () => {
 		const pool = new ethers.Contract('0x5a42824F47257090A20894E18b3271ADbE6Ab228', poolAbi, baseProvider);
-		const depositsOnTheWay = await pool.getDepositsOnTheWay();
-		return depositsOnTheWay.reduce((acc, [chainSelector, ccipMessageId, amount], index) => {
-			if (ccipMessageId !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-				acc.push({index, chainSelector, ccipMessageId, amount});
-			}
-			return acc;
-		}, []);
+		return pool.getDepositsOnTheWay();
 	};
 	const getChildPoolsCcipLogs = ccipLines => {
 		const ethersId = ethers.id('ConceroChildPool_CCIPReceived(bytes32,uint64,address,address,uint256)');
@@ -132,21 +125,25 @@ return (async () => {
 		promises.push(erc20.balanceOf(chainSelectors[chain].poolAddress));
 		promises.push(pool.s_loansInUse());
 	}
-	promises.push(getBaseDepositsOneTheWay());
+	promises.push(getBaseDepositsOneTheWayArray());
 	const results = await Promise.all(promises);
 	for (let i = 0; i < results.length - 2; i += 2) {
 		totalBalance += BigInt(results[i]) + BigInt(results[i + 1]);
 	}
-	const depositsOnTheWay = results[results.length - 1];
+	const depositsOnTheWayArray = results[results.length - 1];
+	const depositsOnTheWay = depositsOnTheWayArray.reduce((acc, [chainSelector, ccipMessageId, amount], index) => {
+		if (ccipMessageId !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+			acc.push({index, chainSelector, ccipMessageId, amount});
+		}
+		return acc;
+	}, []);
 	let conceroIds = [];
 	if (depositsOnTheWay.length) {
-		if (depositsOnTheWay.length) {
-			try {
-				const logs = await getChildPoolsCcipLogs(depositsOnTheWay);
-				conceroIds = getCompletedConceroIdsByLogs(logs, depositsOnTheWay);
-			} catch (e) {
-				console.error(e);
-			}
+		try {
+			const logs = await getChildPoolsCcipLogs(depositsOnTheWay);
+			conceroIds = getCompletedConceroIdsByLogs(logs, depositsOnTheWay);
+		} catch (e) {
+			console.error(e);
 		}
 	}
 	return packResult(totalBalance, conceroIds);

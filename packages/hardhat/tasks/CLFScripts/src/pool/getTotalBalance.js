@@ -1,6 +1,4 @@
-const ethers = await import('npm:ethers@6.10.0');
-
-return (async () => {
+(async () => {
 	const chainSelectors = {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 			urls: [
@@ -105,16 +103,10 @@ return (async () => {
 
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
 
-	const getBaseDepositsOneTheWay = async () => {
+	const getBaseDepositsOneTheWayArray = () => {
 		// const pool = new ethers.Contract('${PARENT_POOL_PROXY_BASE}', poolAbi, baseProvider);
 		const pool = new ethers.Contract('${PARENT_POOL_PROXY_BASE_SEPOLIA}', poolAbi, baseProvider);
-		const depositsOnTheWay = await pool.getDepositsOnTheWay();
-		return depositsOnTheWay.reduce((acc, [chainSelector, ccipMessageId, amount], index) => {
-			if (ccipMessageId !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
-				acc.push({index, chainSelector, ccipMessageId, amount});
-			}
-			return acc;
-		}, []);
+		return pool.getDepositsOnTheWay();
 	};
 
 	const getChildPoolsCcipLogs = ccipLines => {
@@ -189,7 +181,7 @@ return (async () => {
 		promises.push(pool.s_loansInUse());
 	}
 
-	promises.push(getBaseDepositsOneTheWay());
+	promises.push(getBaseDepositsOneTheWayArray());
 
 	const results = await Promise.all(promises);
 
@@ -197,22 +189,22 @@ return (async () => {
 		totalBalance += BigInt(results[i]) + BigInt(results[i + 1]);
 	}
 
-	const depositsOnTheWay = results[results.length - 1];
+	const depositsOnTheWayArray = results[results.length - 1];
+	const depositsOnTheWay = depositsOnTheWayArray.reduce((acc, [chainSelector, ccipMessageId, amount], index) => {
+		if (ccipMessageId !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+			acc.push({index, chainSelector, ccipMessageId, amount});
+		}
+		return acc;
+	}, []);
+
 	let conceroIds = [];
 
 	if (depositsOnTheWay.length) {
-		// const ccipLines = depositsOnTheWay.map(line => {
-		// 	const [conceroId, chainSelector, ccipMessageId] = line;
-		// 	return {conceroId, chainSelector, ccipMessageId};
-		// });
-
-		if (depositsOnTheWay.length) {
-			try {
-				const logs = await getChildPoolsCcipLogs(depositsOnTheWay);
-				conceroIds = getCompletedConceroIdsByLogs(logs, depositsOnTheWay);
-			} catch (e) {
-				console.error(e);
-			}
+		try {
+			const logs = await getChildPoolsCcipLogs(depositsOnTheWay);
+			conceroIds = getCompletedConceroIdsByLogs(logs, depositsOnTheWay);
+		} catch (e) {
+			console.error(e);
 		}
 	}
 

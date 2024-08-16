@@ -28,7 +28,7 @@ interface IStorage {
     ///@notice CCIP transaction types
     enum CcipTxType {
         depositTx,
-        infraTx,
+        bridgeTx,
         withdrawTx
     }
 
@@ -55,7 +55,7 @@ interface IStorage {
 
     ///@notice Chainlink Functions Transaction
     struct Transaction {
-        bytes32 ccipMessageId;
+        bytes32 messageId;
         address sender;
         address recipient;
         uint256 amount;
@@ -72,20 +72,18 @@ interface IStorage {
         address functionsRouter;
     }
 
- 
-
     ///@notice CCIP transaction data ie infraType with txIds, recipients, amounts
     struct CcipTxData {
-        CcipTxType ccipTxType  
-        bytes data
+        CcipTxType ccipTxType;
+        bytes data;
     }
 
-    struct InfraTx {
+    struct BridgeTx {
         address recipient;
         uint256 amount;
-        bytes32 conceroBridgeTxId
+        bytes32 conceroBridgeTxId;
     }
-      
+
     struct WithdrawTx {
         bytes32 withdrawalId;
     }

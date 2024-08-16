@@ -8,6 +8,7 @@ import {IERC20} from
     "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ConceroFunctions} from "./ConceroFunctions.sol";
+import {IStorage} from "contracts/Interfaces/IStorage.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -66,14 +67,16 @@ contract ConceroCCIP is ConceroFunctions {
         uint64 _destinationChainSelector,
         address _token,
         uint256 _amount,
-        InfraTx[] _pendingCCIPTransactions
+        BridgeTx[] memory _pendingCCIPTransactions
     ) internal onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
-        CcipTxData memory ccipTxData = CcipTxData({ccipTxType: CcipTxType.infraTx, data: _pendingCCIPTransactions});
+        IStorage.CcipTxData memory ccipTxData =
+            IStorage.CcipTxData({ccipTxType: IStorage.CcipTxType.bridgeTx, data: abi.encode(_pendingCCIPTransactions)});
 
         Client.EVM2AnyMessage memory evm2AnyMessage =
-            _buildCCIPMessage(_token, _amount, _receiver, _lpFee, _destinationChainSelector, ccipTxData);
+            _buildCCIPMessage(_token, _amount, _destinationChainSelector, ccipTxData);
 
         uint256 fees = i_ccipRouter.getFee(_destinationChainSelector, evm2AnyMessage);
+        s_lastCCIPFeeInLink[_destinationChainSelector] = fees;
 
         i_linkToken.approve(address(i_ccipRouter), fees);
         IERC20(_token).approve(address(i_ccipRouter), _amount);
@@ -84,16 +87,15 @@ contract ConceroCCIP is ConceroFunctions {
     function _buildCCIPMessage(
         address _token,
         uint256 _amount,
-        uint256 _lpFee,
         uint64 _destinationChainSelector,
-        CcipTxData _ccipTxData
+        IStorage.CcipTxData memory _ccipTxData
     ) internal view returns (Client.EVM2AnyMessage memory) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: _token, amount: _amount});
 
         return Client.EVM2AnyMessage({
             receiver: abi.encode(s_poolReceiver[_destinationChainSelector]),
-            data: abi.encode(_ccipTxData), // previously: data: abi.encode(address(0), _receiver, _lpFee),
+            data: abi.encode(_ccipTxData),
             tokenAmounts: tokenAmounts,
             extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: CCIP_CALLBACK_GAS_LIMIT})),
             feeToken: address(i_linkToken)

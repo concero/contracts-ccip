@@ -25,12 +25,11 @@ interface BalanceInfo {
   alias: string;
 }
 
-const minBalances : Record<ProxyType, bigint> = {
-  parentPoolProxy: parseEther("1"),
+const minBalances: Record<ProxyType, bigint> = {
+  parentPoolProxy: parseEther("7"),
   childPoolProxy: parseEther("1"),
   infraProxy: parseEther("1"),
 };
-
 
 async function checkChainBalance(chain: CNetwork, contractType: ProxyType): Promise<BalanceInfo> {
   const { linkToken } = chain;
@@ -65,7 +64,7 @@ async function topUpERC20(chain: CNetwork, amount: bigint, contractAddress, cont
     log(
       `Topped up ${contractAlias} with ${formatEther(amount)} LINK. Tx: ${hash} Gas used: ${cumulativeGasUsed}`,
       "topUpERC20",
-      chainName
+      chainName,
     );
   } catch (error) {
     err(`Error topping up ${contractAlias} on ${chainName}: ${error}`, "topUpERC20");
@@ -73,14 +72,14 @@ async function topUpERC20(chain: CNetwork, amount: bigint, contractAddress, cont
 }
 
 async function ensureERC20Balances(isTestnet: boolean) {
-  const networkType = isTestnet ? 'testnet' : 'mainnet';
+  const networkType = isTestnet ? "testnet" : "mainnet";
   const chains = conceroChains[networkType];
   const balanceInfos: BalanceInfo[] = [];
 
   try {
     for (const [chainType, chainList] of Object.entries(chains)) {
       const balancePromises = chainList.map(chain => checkChainBalance(chain, `${chainType}Proxy`));
-      balanceInfos.push(...await Promise.all(balancePromises));
+      balanceInfos.push(...(await Promise.all(balancePromises)));
     }
 
     const displayedBalances = balanceInfos.map(info => ({
@@ -98,7 +97,7 @@ async function ensureERC20Balances(isTestnet: boolean) {
 
     if (totalDeficit > BigInt(0)) {
       const answer = await prompt(
-        `Do you want to perform top-ups for a total of ${formatEther(totalDeficit)} LINK? (y/n): `
+        `Do you want to perform top-ups for a total of ${formatEther(totalDeficit)} LINK? (y/n): `,
       );
 
       if (answer.toLowerCase() === "y") {

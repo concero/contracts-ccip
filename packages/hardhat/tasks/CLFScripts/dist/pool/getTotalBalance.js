@@ -25,7 +25,7 @@
 			poolAddress: '0x5a42824F47257090A20894E18b3271ADbE6Ab228',
 		},
 	};
-	const baseChainSelector = `0x${BigInt('15971525489660198786').toString(16)}`;
+	const baseChainSelector = `0x${BigInt('10344971235874465080').toString(16)}`;
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 	const poolAbi = [
 		'function s_loansInUse() external view returns (uint256)',

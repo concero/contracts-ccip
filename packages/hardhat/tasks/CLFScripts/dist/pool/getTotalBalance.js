@@ -1,4 +1,5 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+return (async () => {
 	const chainSelectors = {
 		[`0x${BigInt('3478487238524512106').toString(16)}`]: {
 			urls: [
@@ -100,6 +101,7 @@
 		if (!logs?.length) return [];
 		const conceroIds = [];
 		for (const log of logs) {
+			if (!log.length) continue;
 			const ccipMessageId = log[0].topics[1];
 			const ccipLine = ccipLines.find(line => line.ccipMessageId.toLowerCase() === ccipMessageId.toLowerCase());
 			conceroIds.push(ccipLine.index);
@@ -138,14 +140,10 @@
 	const depositsOnTheWay = results[results.length - 1];
 	let conceroIds = [];
 	if (depositsOnTheWay.length) {
-		const ccipLines = depositsOnTheWay.map(line => {
-			const [conceroId, chainSelector, ccipMessageId] = line;
-			return {conceroId, chainSelector, ccipMessageId};
-		});
-		if (ccipLines.length) {
+		if (depositsOnTheWay.length) {
 			try {
-				const logs = await getChildPoolsCcipLogs(ccipLines);
-				conceroIds = getCompletedConceroIdsByLogs(logs, ccipLines);
+				const logs = await getChildPoolsCcipLogs(depositsOnTheWay);
+				conceroIds = getCompletedConceroIdsByLogs(logs, depositsOnTheWay);
 			} catch (e) {
 				console.error(e);
 			}

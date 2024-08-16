@@ -46,7 +46,8 @@ contract ParentPoolStorage {
     //todo: rename s_poolToSendTo to childPools
 
     ///@notice Mapping to keep track of allowed pool senders
-    mapping(uint64 chainSelector => mapping(address poolAddress => uint256)) public s_contractsToReceiveFrom;
+    mapping(uint64 chainSelector => mapping(address poolAddress => uint256))
+        public s_contractsToReceiveFrom;
 
     ///@notice Mapping to keep track of Liquidity Providers withdraw requests
     mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;

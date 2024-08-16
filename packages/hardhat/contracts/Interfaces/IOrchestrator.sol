@@ -5,11 +5,7 @@ import {IStorage} from "./IStorage.sol";
 import "./IDexSwap.sol";
 
 interface IOrchestrator {
-
-    function swap(
-        IDexSwap.SwapData[] calldata _swapData,
-        address _receiver
-    ) external payable;
+    function swap(IDexSwap.SwapData[] calldata _swapData, address _receiver) external payable;
 
     function bridge(
         IStorage.BridgeData memory bridgeData,

@@ -7,6 +7,7 @@ import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.s
 import {ConceroCCIP} from "./ConceroCCIP.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
+import {IStorage} from "contracts/Interfaces/IStorage.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -66,9 +67,9 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] memory dstSwapData) external payable {
         if (address(this) != i_proxy) revert ConceroBridge_OnlyProxyContext(address(this));
         address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
-        uint256 totalSrcFee = _convertToUSDCDecimals(
-            _getSrcTotalFeeInUsdc(bridgeData.tokenType, bridgeData.dstChainSelector, bridgeData.amount)
-        );
+
+        uint256 totalSrcFee =
+            _convertToUSDCDecimals(_getSrcTotalFeeInUsdc(bridgeData.dstChainSelector, bridgeData.amount));
 
         if (bridgeData.amount < totalSrcFee) {
             revert ConceroBridge_InsufficientFees(bridgeData.amount, totalSrcFee);
@@ -77,24 +78,34 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         uint256 amountToSend = bridgeData.amount - totalSrcFee;
         uint256 lpFee = getDstTotalFeeInUsdc(amountToSend);
 
-        bytes32 batchedTxId =
-            keccak256(abi.encodePacked(msg.sender, bridgeData, dstSwapData, block.timestamp, block.prevrandao));
+        bytes32 batchedTxId = keccak256(
+            abi.encodePacked(msg.sender, bridgeData.receiver, amountToSend, block.timestamp, block.prevrandao)
+        );
 
-        InfraTx memory newInfraTx = InfraTx(bridgeData.receiver, amountToSend, batchedTxId);
+        BridgeTx memory newBridgeTx = BridgeTx(bridgeData.receiver, amountToSend, batchedTxId);
 
-        s_pendingCCIPTransactions.push(newInfraTx);
-        InfraTx[] pendingCCIPTransactions = s_pendingCCIPTransactions;
+        s_pendingCCIPTransactionsByDstChain[bridgeData.dstChainSelector].push(batchedTxId);
+        s_pendingCCIPTransactions[batchedTxId] = newBridgeTx;
 
-        if (pendingCCIPTransactions.length >= MAX_PENDING_CCIP_TRANSACTIONS) {
+        bytes32[] memory pendingCCIPTransactionsByDstChain =
+            s_pendingCCIPTransactionsByDstChain[bridgeData.dstChainSelector];
+
+        if (pendingCCIPTransactionsByDstChain.length >= MAX_PENDING_CCIP_TRANSACTIONS) {
             uint256 batchedAmountsToSend;
-            for (uint256 i; i < amounts.length; ++i) {
-                batchedAmountsToSend += pendingCCIPTransactions[i].amount;
+            BridgeTx[] memory bridgeTxs = new BridgeTx[](pendingCCIPTransactionsByDstChain.length);
+
+            for (uint256 i; i < pendingCCIPTransactionsByDstChain.length; ++i) {
+                bytes32 txId = pendingCCIPTransactionsByDstChain[i];
+                BridgeTx memory bridgeTx = s_pendingCCIPTransactions[txId];
+
+                batchedAmountsToSend += bridgeTx.amount;
+                bridgeTxs[i] = bridgeTx;
             }
 
-            delete s_pendingCCIPTransactions;
+            delete s_pendingCCIPTransactionsByDstChain[bridgeData.dstChainSelector];
 
             bytes32 ccipMessageId =
-                _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, batchedAmountsToSend, pendingCCIPTransactions);
+                _sendTokenPayLink(bridgeData.dstChainSelector, fromToken, batchedAmountsToSend, bridgeTxs);
         }
 
         // TODO: for dstSwaps: add unique keccak id with all argument including dstSwapData
@@ -108,7 +119,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
             bridgeData.dstChainSelector
         );
         sendUnconfirmedTX(
-            ccipMessageId, // should this be batchedTxId??
+            batchedTxId,
             msg.sender,
             bridgeData.receiver,
             amountToSend,
@@ -152,54 +163,33 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
 
     /**
      * @notice Function to get the total amount of CCIP fees in Link
-     * @param tokenType the position of the CCIPToken enum
-     * @param dstChainSelector the destination blockchain chain selector
+     * @param _dstChainSelector the destination blockchain chain selector
      */
-    function getCCIPFeeInLink(CCIPToken tokenType, uint64 dstChainSelector, uint256 _amount)
-        public
-        view
-        returns (uint256)
-    {
-        Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
-            getUSDCAddressByChainIndex(tokenType, i_chainIndex),
-            _amount,
-            address(this),
-            (_amount / 1000),
-            dstChainSelector
-        );
-        return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
+    function getCCIPFeeInLink(uint64 _dstChainSelector) public view returns (uint256) {
+        return s_lastCCIPFeeInLink[_dstChainSelector];
     }
 
     /**
      * @notice Function to get the total amount of CCIP fees in USDC
-     * @param tokenType the position of the CCIPToken enum
-     * @param dstChainSelector the destination blockchain chain selector
+     * @param _dstChainSelector the destination blockchain chain selector
      */
-    function getCCIPFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 _amount)
-        public
-        view
-        returns (uint256)
-    {
-        uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector, _amount);
-        return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
+    function getCCIPFeeInUsdc(uint64 _dstChainSelector) public view returns (uint256) {
+        uint256 ccipFeeInLink = getCCIPFeeInLink(_dstChainSelector);
+        return (ccipFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
     }
 
     /**
      * @notice Function to get the total amount of fees on the source
-     * @param tokenType the position of the CCIPToken enum
      * @param dstChainSelector the destination blockchain chain selector
      * @param amount the amount of value the fees will calculated over.
      */
-    function _getSrcTotalFeeInUsdc(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount)
-        internal
-        view
-        returns (uint256)
-    {
+    function _getSrcTotalFeeInUsdc(uint64 dstChainSelector, uint256 amount) internal view returns (uint256) {
         // @notice cl functions fee
         uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
 
         // @notice cl ccip fee
-        uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector, amount);
+        uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(dstChainSelector);
+        ccipFeeInUsdc = ccipFeeInUsdc / MAX_PENDING_CCIP_TRANSACTIONS;
 
         // @notice concero fee
         uint256 conceroFee = amount / CONCERO_FEE_FACTOR;
@@ -213,11 +203,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         return (functionsFeeInUsdc + ccipFeeInUsdc + conceroFee + messengerGasFeeInUsdc);
     }
 
-    function getSrcTotalFeeInUSDC(CCIPToken tokenType, uint64 dstChainSelector, uint256 amount)
-        external
-        view
-        returns (uint256)
-    {
-        return _getSrcTotalFeeInUsdc(tokenType, dstChainSelector, amount);
+    function getSrcTotalFeeInUSDC(uint64 dstChainSelector, uint256 amount) external view returns (uint256) {
+        return _getSrcTotalFeeInUsdc(dstChainSelector, amount);
     }
 }

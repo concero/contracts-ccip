@@ -22,6 +22,7 @@ error ConceroFunctions_UnexpectedRequestId(bytes32 requestId);
 error ConceroFunctions_TxDoesntExist();
 ///@notice error emitted when a transaction was already confirmed
 error ConceroFunctions_TxAlreadyConfirmed();
+// q is this natspec correct?
 ///@notice error emitted when function receive a call from a not allowed address
 error ConceroFunctions_DstContractAddressNotSet();
 ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper

@@ -5,14 +5,7 @@ import {IDexSwap} from "./IDexSwap.sol";
 import {IStorage} from "./IStorage.sol";
 
 interface IConceroBridge is IStorage {
-    function startBridge(
-        BridgeData memory bridgeData,
-        IDexSwap.SwapData[] memory dstSwapData
-    ) external payable;
+    function startBridge(BridgeData memory bridgeData, IDexSwap.SwapData[] memory dstSwapData) external payable;
 
-    function getSrcTotalFeeInUSDC(
-        CCIPToken tokenType,
-        uint64 dstChainSelector,
-        uint256 amount
-    ) external view returns (uint256);
+    function getSrcTotalFeeInUSDC(uint64 dstChainSelector, uint256 amount) external view returns (uint256);
 }

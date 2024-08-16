@@ -308,30 +308,25 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
             abi.decode(any2EvmMessage.sender, (address))
         )
     {
-        // Decode the encoded data back into the CcipTxData struct
-        CcipTxData memory ccipTxData = abi.decode(any2EvmMessage.data, (CcipTxData));
-        CcipTxType memory txType = ccipTxData.ccipTxType;
+        IStorage.CcipTxData memory ccipTxData = abi.decode(any2EvmMessage.data, (IStorage.CcipTxData));
 
-        if (txType == CcipTxType.infraTx) {
-            IStorage.Transaction memory transaction =
-                IOrchestrator(i_infraProxy).getTransaction(any2EvmMessage.messageId);
+        if (ccipTxData.ccipTxType == IStorage.CcipTxType.bridgeTx) {
+            IStorage.BridgeTx[] memory bridgeTxs = abi.decode(ccipTxData.data, (IStorage.BridgeTx[]));
+            for (uint256 i; i < bridgeTxs.length; ++i) {
+                bytes32 txId = bridgeTxs[i].conceroBridgeTxId;
 
-            bool isExecutionLayerFailed = (
-                (transaction.ccipMessageId == any2EvmMessage.messageId && transaction.isConfirmed == false)
-                    || transaction.ccipMessageId == 0
-            );
+                IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy).getTransaction(txId);
 
-            if (isExecutionLayerFailed) {
-                // bytes memory batchedTxData = ccipTxData.data;
-                // (bytes32[] memory batchedTxIds, address[] memory batchedTxRecipients, uint256[] memory batchedTxAmounts)
-                // = abi.decode(batchedTxData, (bytes32[], address[], uint256[]));
+                bool isExecutionLayerFailed = (transaction.isConfirmed == false || transaction.messageId == 0);
 
-                //We don't subtract it here because the loan was not performed. And the value is not added into the `s_loanInUse` variable.
-                i_USDC.safeTransfer(_user, any2EvmMessage.destTokenAmounts[0].amount);
-            } else {
-                uint256 amountAfterFees = (any2EvmMessage.destTokenAmounts[0].amount - receivedFee);
-                //subtract the amount from the committed total amount
-                s_loansInUse -= amountAfterFees;
+                if (isExecutionLayerFailed) {
+                    // We don't subtract it here because the loan was not performed.
+                    // And the value is not added into the `s_loanInUse` variable.
+                    i_USDC.safeTransfer(bridgeTxs[i].recipient, bridgeTxs[i].amount);
+                } else {
+                    //subtract the amount from the committed total amount
+                    s_loansInUse -= any2EvmMessage.destTokenAmounts[0].amount;
+                }
             }
         }
 

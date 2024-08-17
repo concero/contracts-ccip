@@ -25,7 +25,7 @@ async function checkTokenBalance(
   chain: CNetwork,
   contractType: ProxyType,
   tokenSymbol: string,
-  tokenDecimals: number
+  tokenDecimals: number,
 ): Promise<BalanceInfo> {
   const { publicClient } = getFallbackClients(chain);
   const [contractAddress, contractAlias] = getEnvAddress(contractType, chain.name);
@@ -57,15 +57,13 @@ async function checkTokenBalance(
 }
 
 async function monitorTokenBalances(isTestnet: boolean) {
-
-  const chains = isTestnet? testnetChains: mainnetChains
+  const chains = isTestnet ? testnetChains : mainnetChains;
 
   const balancePromises: Promise<BalanceInfo>[] = [];
 
   for (const chain of Object.values(chains)) {
-      for (const token of tokensToMonitor) {
-        balancePromises.push(checkTokenBalance(chain, "infraProxy", token.symbol, token.decimals));
-
+    for (const token of tokensToMonitor) {
+      balancePromises.push(checkTokenBalance(chain, "infraProxy", token.symbol, token.decimals));
     }
   }
 
@@ -73,7 +71,7 @@ async function monitorTokenBalances(isTestnet: boolean) {
 
   console.log("\nToken Balances for Monitored Contracts:");
   console.table(balanceInfos);
-  
+
   const tokenTotals: { [key: string]: number } = {};
   for (const info of balanceInfos) {
     if (info.balance !== "Error") {
@@ -83,15 +81,17 @@ async function monitorTokenBalances(isTestnet: boolean) {
   }
 
   console.log("\nTotal Amount for Each Token:");
-  console.table(Object.entries(tokenTotals).map(([symbol, total]) => ({
-    Symbol: symbol,
-    TotalAmount: total.toFixed(6)
-  })));
+  console.table(
+    Object.entries(tokenTotals).map(([symbol, total]) => ({
+      Symbol: symbol,
+      TotalAmount: total.toFixed(6),
+    })),
+  );
 }
 
 task("view-token-balances", "View token balances for infraProxy contracts")
   .addFlag("testnet", "Use testnet instead of mainnet")
-  .setAction(async (taskArgs) => {
+  .setAction(async taskArgs => {
     await monitorTokenBalances(taskArgs.testnet);
   });
 

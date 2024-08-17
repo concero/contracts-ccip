@@ -52,7 +52,7 @@ describe("start deposit usdc to parent pool\n", () => {
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-    await sleep(40000);
+    await sleep(30000);
 
     await approve(usdcTokenAddress, poolAddress, BigInt(usdcAmount), walletClient, srcPublicClient);
 

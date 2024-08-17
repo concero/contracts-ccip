@@ -845,20 +845,23 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     function _deleteDepositsOnTheWayByIndexes(
         bytes1[] memory _depositsOnTheWayIndexesToDelete
     ) internal {
-        uint256 length = _depositsOnTheWayIndexesToDelete.length;
+        uint256 depositsOnTheWayIndexesToDeleteLength = _depositsOnTheWayIndexesToDelete.length;
 
-        for (uint256 i; i < length; ) {
+        if (depositsOnTheWayIndexesToDeleteLength == 1) {
+            return;
+        }
+
+        uint256 s_depositsOnTheWayArrayLength = s_depositsOnTheWayArray.length;
+
+        for (uint256 i; i < depositsOnTheWayIndexesToDeleteLength; i++) {
             uint8 indexToDelete = uint8(_depositsOnTheWayIndexesToDelete[i]);
 
-            if (indexToDelete >= length) {
+            if (indexToDelete >= s_depositsOnTheWayArrayLength || indexToDelete == 0) {
                 continue;
             }
 
+            s_depositsOnTheWayAmount -= s_depositsOnTheWayArray[indexToDelete].amount;
             delete s_depositsOnTheWayArray[indexToDelete];
-
-            unchecked {
-                ++i;
-            }
         }
     }
 

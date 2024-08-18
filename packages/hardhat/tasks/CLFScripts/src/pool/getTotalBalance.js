@@ -1,21 +1,18 @@
-const ethers = await import('npm:ethers@6.10.0');
-
-return (async () => {
+(async () => {
 	const chainSelectors = {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
-			urls: [
-				`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://arb-sepolia.g.alchemy.com/v2/PX-ca2E4aZy0SZcSkxJIeJ847EtBxcY4',
-			],
+			urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0x66eee',
 			usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
 			poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
+			poolContractCreationBlockNumber: 71460446n,
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa869',
 			usdcAddress: '${USDC_FUJI}',
 			poolAddress: '${CHILD_POOL_PROXY_FUJI}',
+			poolContractCreationBlockNumber: 35416599n,
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`]: {
 			urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
@@ -59,6 +56,7 @@ return (async () => {
 		'function s_loansInUse() external view returns (uint256)',
 		'function getDepositsOnTheWay() external view returns (tuple(uint64, bytes32, uint256)[150] memory)',
 	];
+	const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 	const findChainIdByUrl = url => {
 		for (const chain in chainSelectors) {
@@ -77,7 +75,7 @@ return (async () => {
 				const _chainId = findChainIdByUrl(this.url);
 				return [{jsonrpc: '2.0', id: payload.id, result: _chainId}];
 			}
-			let resp = await fetch(this.url, {
+			const resp = await fetch(this.url, {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
 				body: JSON.stringify(payload),
@@ -102,35 +100,50 @@ return (async () => {
 		return pool.getDepositsOnTheWay();
 	};
 
-	const getChildPoolsCcipLogs = ccipLines => {
+	const getChildPoolsCcipLogs = async ccipLines => {
 		const ethersId = ethers.id('ConceroChildPool_CCIPReceived(bytes32,uint64,address,address,uint256)');
-		const promises = [];
+		const indexes = {};
 
-		for (const chainSelectorsKey in chainSelectors) {
-			const reqFromLines = ccipLines.filter(line => {
-				const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`.toLowerCase();
-				return hexChainSelector === chainSelectorsKey;
-			});
+		const getCcipLogs = async () => {
+			const promises = [];
+			for (const chainSelectorsKey in chainSelectors) {
+				const reqFromLines = ccipLines.filter(line => {
+					const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`.toLowerCase();
+					return hexChainSelector === chainSelectorsKey;
+				});
 
-			if (!reqFromLines.length) continue;
+				if (!reqFromLines.length) continue;
 
-			const provider = getProviderByChainSelector(chainSelectorsKey);
+				const provider = getProviderByChainSelector(chainSelectorsKey);
 
-			let i = 0;
-			for (const line of reqFromLines) {
-				if (i++ > 5) break;
-				promises.push(
-					provider.getLogs({
-						address: chainSelectors[chainSelectorsKey].poolAddress,
-						topics: [ethersId, line.ccipMessageId],
-						fromBlock: 0,
-						toBlock: 'latest',
-					}),
-				);
+				if (!indexes[chainSelectorsKey]) {
+					indexes[chainSelectorsKey] = 0;
+				}
+
+				let i = indexes[chainSelectorsKey];
+				for (; i < reqFromLines.length && i < indexes[chainSelectorsKey] + 5; i++) {
+					promises.push(
+						provider.getLogs({
+							address: chainSelectors[chainSelectorsKey].poolAddress,
+							topics: [ethersId, reqFromLines[i].ccipMessageId],
+							fromBlock: 0,
+							toBlock: 'latest',
+						}),
+					);
+				}
+				indexes[chainSelectorsKey] = i;
 			}
-		}
 
-		return Promise.all(promises);
+			return await Promise.all(promises);
+		};
+
+		const logs1 = await getCcipLogs();
+		await sleep(1000);
+		const logs2 = await getCcipLogs();
+		await sleep(1000);
+		const logs3 = await getCcipLogs();
+
+		return logs1.concat(logs2).concat(logs3);
 	};
 
 	const getCompletedConceroIdsByLogs = (logs, ccipLines) => {

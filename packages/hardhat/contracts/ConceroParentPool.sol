@@ -1006,7 +1006,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         s_depositsOnTheWayAmount += _amount;
     }
 
-    function _findLowestDepositOnTheWayUnusedIndex() internal view returns (uint8) {
+    function _findLowestDepositOnTheWayUnusedIndex() internal returns (uint8) {
         uint8 index;
         for (uint8 i = 1; i < MAX_DEPOSITS_ON_THE_WAY_COUNT; ) {
             if (s_depositsOnTheWayArray[i].ccipMessageId == bytes32(0)) {

@@ -39,7 +39,7 @@ contract ParentPoolStorage {
     /////////////
     ///@notice array of Pools to receive Liquidity through `ccipSend` function
     uint64[] internal s_poolChainSelectors;
-    IParentPool.DepositOnTheWay[] internal s_depositsOnTheWayArray_DEPRECATED;
+    IParentPool.DepositOnTheWay_DEPRECATED[] internal s_depositsOnTheWayArray_DEPRECATED;
 
     ///@notice Mapping to keep track of valid pools to transfer in case of liquidation or rebalance
     mapping(uint64 chainSelector => address pool) public s_poolToSendTo;

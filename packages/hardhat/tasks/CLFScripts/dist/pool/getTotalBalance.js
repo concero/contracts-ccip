@@ -1,5 +1,4 @@
-const ethers = await import('npm:ethers@6.10.0');
-return (async () => {
+(async () => {
 	const chainSelectors = {
 		['3478487238524512106']: {
 			urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
@@ -142,12 +141,8 @@ return (async () => {
 	}, []);
 	let conceroIds = [];
 	if (depositsOnTheWay.length) {
-		try {
-			const logs = await getChildPoolsCcipLogs(depositsOnTheWay);
-			conceroIds = getCompletedConceroIdsByLogs(logs, depositsOnTheWay);
-		} catch (e) {
-			console.error(e);
-		}
+		const logs = await getChildPoolsCcipLogs(depositsOnTheWay);
+		conceroIds = getCompletedConceroIdsByLogs(logs, depositsOnTheWay);
 	}
 	return packResult(totalBalance, conceroIds);
 })();

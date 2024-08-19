@@ -198,12 +198,8 @@
 	let conceroIds = [];
 
 	if (depositsOnTheWay.length) {
-		try {
-			const logs = await getChildPoolsCcipLogs(depositsOnTheWay);
-			conceroIds = getCompletedConceroIdsByLogs(logs, depositsOnTheWay);
-		} catch (e) {
-			console.error(e);
-		}
+		const logs = await getChildPoolsCcipLogs(depositsOnTheWay);
+		conceroIds = getCompletedConceroIdsByLogs(logs, depositsOnTheWay);
 	}
 
 	return packResult(totalBalance, conceroIds);

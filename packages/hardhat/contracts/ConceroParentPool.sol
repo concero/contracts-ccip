@@ -847,7 +847,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     ) internal {
         uint256 depositsOnTheWayIndexesToDeleteLength = _depositsOnTheWayIndexesToDelete.length;
 
-        if (depositsOnTheWayIndexesToDeleteLength == 1) {
+        if (depositsOnTheWayIndexesToDeleteLength == 0) {
             return;
         }
 
@@ -856,7 +856,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         for (uint256 i; i < depositsOnTheWayIndexesToDeleteLength; i++) {
             uint8 indexToDelete = uint8(_depositsOnTheWayIndexesToDelete[i]);
 
-            if (indexToDelete >= s_depositsOnTheWayArrayLength || indexToDelete == 0) {
+            if (indexToDelete >= s_depositsOnTheWayArrayLength) {
                 continue;
             }
 
@@ -995,8 +995,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         uint64 _chainSelector,
         uint256 _amount
     ) internal {
-        uint8 index = s_latestDepositOnTheWayId < MAX_DEPOSITS_ON_THE_WAY_COUNT
-            ? ++s_latestDepositOnTheWayId
+        uint8 index = s_latestDepositOnTheWayIndex < MAX_DEPOSITS_ON_THE_WAY_COUNT
+            ? ++s_latestDepositOnTheWayIndex
             : _findLowestDepositOnTheWayUnusedIndex();
 
         s_depositsOnTheWayArray[index] = DepositOnTheWay({
@@ -1013,6 +1013,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         for (uint8 i = 1; i < MAX_DEPOSITS_ON_THE_WAY_COUNT; ) {
             if (s_depositsOnTheWayArray[i].ccipMessageId == bytes32(0)) {
                 index = i;
+                s_latestDepositOnTheWayIndex = i;
                 break;
             }
             unchecked {

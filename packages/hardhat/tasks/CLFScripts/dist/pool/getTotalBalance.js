@@ -1,25 +1,26 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+return (async () => {
 	const chainSelectors = {
-		[`0x${BigInt('3478487238524512106').toString(16)}`]: {
+		['3478487238524512106']: {
 			urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0x66eee',
 			usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
 			poolAddress: '0x82F144741b9AD801FBb2fA52D3ee7B7e6e93B204',
 		},
-		[`0x${BigInt('14767482510784806043').toString(16)}`]: {
+		['14767482510784806043']: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa869',
 			usdcAddress: '0x5425890298aed601595a70ab815c96711a31bc65',
 			poolAddress: '0x3c69809aC32618F4E8842729b63A4679d1971aA5',
 		},
-		[`0x${BigInt('10344971235874465080').toString(16)}`]: {
+		['10344971235874465080']: {
 			urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
 			chainId: '0x14a34',
 			usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
 			poolAddress: '0x5a42824F47257090A20894E18b3271ADbE6Ab228',
 		},
 	};
-	const baseChainSelector = `0x${BigInt('10344971235874465080').toString(16)}`;
+	const baseChainSelector = '10344971235874465080';
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 	const poolAbi = [
 		'function s_loansInUse() external view returns (uint256)',
@@ -68,10 +69,7 @@
 		const getCcipLogs = async () => {
 			const promises = [];
 			for (const chainSelectorsKey in chainSelectors) {
-				const reqFromLines = ccipLines.filter(line => {
-					const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`.toLowerCase();
-					return hexChainSelector === chainSelectorsKey;
-				});
+				const reqFromLines = ccipLines.filter(line => line.chainSelector === chainSelectorsKey);
 				if (!reqFromLines.length) continue;
 				const provider = getProviderByChainSelector(chainSelectorsKey);
 				if (!indexes[chainSelectorsKey]) {

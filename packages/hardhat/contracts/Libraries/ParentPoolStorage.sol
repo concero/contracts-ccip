@@ -23,7 +23,7 @@ contract ParentPoolStorage {
     ///@notice variable to store not processed amounts deposited by LPs
     uint256 public s_depositsOnTheWayAmount;
 
-    uint8 internal s_latestDepositOnTheWayId;
+    uint8 internal s_latestDepositOnTheWayIndex;
 
     uint256 internal s_depositFeeAmount;
 

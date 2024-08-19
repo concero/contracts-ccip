@@ -71,14 +71,6 @@ contract StartBridgeTest is BaseTest {
     function test_startBridge_success() public {
         _dealUserFundsAndApprove();
 
-        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
-            tokenType: IStorage.CCIPToken.usdc,
-            amount: USER_FUNDS,
-            dstChainSelector: arbitrumChainSelector,
-            receiver: msg.sender
-        });
-        IDexSwap.SwapData[] memory dstSwapData;
-
         uint256 txIdCount;
 
         vm.recordLogs();

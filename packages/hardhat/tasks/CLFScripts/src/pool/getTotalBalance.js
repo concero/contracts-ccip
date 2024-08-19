@@ -5,14 +5,12 @@
 			chainId: '0x66eee',
 			usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
 			poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
-			poolContractCreationBlockNumber: 71460446n,
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa869',
 			usdcAddress: '${USDC_FUJI}',
 			poolAddress: '${CHILD_POOL_PROXY_FUJI}',
-			poolContractCreationBlockNumber: 35416599n,
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`]: {
 			urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
@@ -121,7 +119,7 @@
 				}
 
 				let i = indexes[chainSelectorsKey];
-				for (; i < reqFromLines.length && i < indexes[chainSelectorsKey] + 5; i++) {
+				for (; i < reqFromLines.length && i < indexes[chainSelectorsKey] + 6; i++) {
 					promises.push(
 						provider.getLogs({
 							address: chainSelectors[chainSelectorsKey].poolAddress,
@@ -161,18 +159,13 @@
 	};
 
 	const packResult = (_totalBalance, _conceroIds) => {
-		const result = new Uint8Array(32 + conceroIds.length + 1);
+		const result = new Uint8Array(32 + _conceroIds.length);
 		const encodedTotalBalance = Functions.encodeUint256(_totalBalance);
 		result.set(encodedTotalBalance, 0);
-		if (_conceroIds.length) {
-			for (let i = 0; i < _conceroIds.length; i++) {
-				const encodedConceroId = new Uint8Array([Number(_conceroIds[i])]);
-				result.set(encodedConceroId, 32 + i);
-			}
-		} else {
-			result.set(new Uint8Array([0]), 32);
+		for (let i = 0; i < _conceroIds.length; i++) {
+			const encodedConceroId = new Uint8Array([Number(_conceroIds[i])]);
+			result.set(encodedConceroId, 32 + i);
 		}
-
 		return result;
 	};
 

@@ -873,12 +873,16 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             totalBalance := mload(add(response, 32))
         }
 
-        bytes1[] memory depositsOnTheWayIdsToDelete = new bytes1[](response.length - 32);
-        for (uint256 i = 32; i < response.length; i++) {
-            depositsOnTheWayIdsToDelete[i - 32] = response[i];
-        }
+        if (response.length == 32) {
+            return (totalBalance, new bytes1[](0));
+        } else {
+            bytes1[] memory depositsOnTheWayIdsToDelete = new bytes1[](response.length - 32);
+            for (uint256 i = 32; i < response.length; i++) {
+                depositsOnTheWayIdsToDelete[i - 32] = response[i];
+            }
 
-        return (totalBalance, depositsOnTheWayIdsToDelete);
+            return (totalBalance, depositsOnTheWayIdsToDelete);
+        }
     }
 
     function _handleStartWithdrawalCLFFulfill(bytes32 requestId, bytes memory response) internal {

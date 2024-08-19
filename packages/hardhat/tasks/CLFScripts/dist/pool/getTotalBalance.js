@@ -5,14 +5,12 @@
 			chainId: '0x66eee',
 			usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
 			poolAddress: '0x82F144741b9AD801FBb2fA52D3ee7B7e6e93B204',
-			poolContractCreationBlockNumber: 71460446n,
 		},
 		[`0x${BigInt('14767482510784806043').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa869',
 			usdcAddress: '0x5425890298aed601595a70ab815c96711a31bc65',
 			poolAddress: '0x3c69809aC32618F4E8842729b63A4679d1971aA5',
-			poolContractCreationBlockNumber: 35416599n,
 		},
 		[`0x${BigInt('10344971235874465080').toString(16)}`]: {
 			urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
@@ -80,7 +78,7 @@
 					indexes[chainSelectorsKey] = 0;
 				}
 				let i = indexes[chainSelectorsKey];
-				for (; i < reqFromLines.length && i < indexes[chainSelectorsKey] + 5; i++) {
+				for (; i < reqFromLines.length && i < indexes[chainSelectorsKey] + 6; i++) {
 					promises.push(
 						provider.getLogs({
 							address: chainSelectors[chainSelectorsKey].poolAddress,
@@ -113,16 +111,12 @@
 		return conceroIds;
 	};
 	const packResult = (_totalBalance, _conceroIds) => {
-		const result = new Uint8Array(32 + conceroIds.length + 1);
+		const result = new Uint8Array(32 + _conceroIds.length);
 		const encodedTotalBalance = Functions.encodeUint256(_totalBalance);
 		result.set(encodedTotalBalance, 0);
-		if (_conceroIds.length) {
-			for (let i = 0; i < _conceroIds.length; i++) {
-				const encodedConceroId = new Uint8Array([Number(_conceroIds[i])]);
-				result.set(encodedConceroId, 32 + i);
-			}
-		} else {
-			result.set(new Uint8Array([0]), 32);
+		for (let i = 0; i < _conceroIds.length; i++) {
+			const encodedConceroId = new Uint8Array([Number(_conceroIds[i])]);
+			result.set(encodedConceroId, 32 + i);
 		}
 		return result;
 	};

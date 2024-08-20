@@ -344,6 +344,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
      * @param request the CLF request to be used
      */
     function _handleDstFunctionsResponse(Request storage request) internal {
+        //todo: make references to transaction object to save on gas
         Transaction storage transaction = s_transactions[request.ccipMessageId];
 
         _confirmTX(request.ccipMessageId, transaction);

@@ -29,7 +29,7 @@ type ContractType = keyof typeof contractKeys;
 
 const withdrawToken = async (chain: CNetwork, tokenAddress: Address, contractType: ContractType, amount: string) => {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = chain;
-  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
+  const { walletClient, publicClient, account } = getFallbackClients(chain);
   const conceroProxy = getEnvVar(`${contractKeys[contractType]}_${networkEnvKeys[dcName]}`);
   const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
   const amountToWithdraw = BigInt(amount);
@@ -68,7 +68,7 @@ const withdrawToken = async (chain: CNetwork, tokenAddress: Address, contractTyp
 
 const depositToken = async (chain: CNetwork, tokenAddress: Address, contractType: ContractType, amount: string) => {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = chain;
-  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
+  const { walletClient, publicClient, account } = getFallbackClients(chain);
   const recipientAddress = getEnvVar(`${contractKeys[contractType]}_${networkEnvKeys[dcName]}`);
   const amountToDeposit = BigInt(amount);
 

@@ -1047,6 +1047,13 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         s_withdrawalsOnTheWayAmount += amountToWithdraw;
     }
 
+    function clearDepositsOnTheWay() external onlyOwner {
+        while (s_depositsOnTheWayArray.length > 0) {
+            s_depositsOnTheWayArray.pop();
+        }
+        s_depositsOnTheWayAmount = 0;
+    }
+
     // function _calculateDepositTransactionFee(uint256 _amountToDistribute) internal view returns(uint256 _totalUSDCCost){
     //   uint256 numberOfPools = s_poolChainSelectors.length;
     //   uint256 costOfLinkForLiquidityDistribution;

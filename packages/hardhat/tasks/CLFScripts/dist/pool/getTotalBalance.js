@@ -74,7 +74,7 @@
 		const getCcipLogs = async () => {
 			const promises = [];
 			for (const chainSelectorsKey in chainSelectors) {
-				const reqFromLines = ccipLines.filter(line => line.chainSelector === chainSelectorsKey);
+				const reqFromLines = ccipLines.filter(line => BigInt(line.chainSelector) === BigInt(chainSelectorsKey));
 				if (!reqFromLines.length) continue;
 				const provider = getProviderByChainSelector(chainSelectorsKey);
 				if (!indexes[chainSelectorsKey]) {

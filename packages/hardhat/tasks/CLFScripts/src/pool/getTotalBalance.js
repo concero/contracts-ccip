@@ -26,7 +26,6 @@
 			usdcAddress: '${USDC_ARBITRUM}',
 			poolAddress: '${CHILD_POOL_PROXY_ARBITRUM}',
 		},
-
 		['${CL_CCIP_CHAIN_SELECTOR_POLYGON}']: {
 			urls: [`https://polygon-mainnet.infura.io/v3/${secrets.PARENT_POOL_INFURA_API_KEY}`],
 			chainId: '0x89',
@@ -103,7 +102,7 @@
 		const getCcipLogs = async () => {
 			const promises = [];
 			for (const chainSelectorsKey in chainSelectors) {
-				const reqFromLines = ccipLines.filter(line => line.chainSelector === chainSelectorsKey);
+				const reqFromLines = ccipLines.filter(line => BigInt(line.chainSelector) === BigInt(chainSelectorsKey));
 
 				if (!reqFromLines.length) continue;
 

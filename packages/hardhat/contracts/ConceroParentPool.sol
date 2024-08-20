@@ -923,6 +923,13 @@ contract ConceroParentPool is
         return _calculateWithdrawableAmount(childPoolsBalance, clpAmount, i_lp.totalSupply());
     }
 
+    function clearDepositsOnTheWay() external onlyOwner {
+        while (s_depositsOnTheWayArray.length > 0) {
+            s_depositsOnTheWayArray.pop();
+        }
+        s_depositsOnTheWayAmount = 0;
+    }
+
     ///////////////
     /// PRIVATE ///
     ///////////////

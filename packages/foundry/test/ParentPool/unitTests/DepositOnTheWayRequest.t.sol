@@ -54,7 +54,7 @@ contract DepositOnTheWayRequest is ConceroParentPool, CreateAndSwitchToForkTest 
         console.log("length:", depositsOnTheWayIdsToDelete.length);
 
         uint256 gasBefore = gasleft();
-        _deleteDepositsOnTheWayByIds(depositsOnTheWayIdsToDelete);
+        _deleteDepositsOnTheWayByIndexes(depositsOnTheWayIdsToDelete);
         uint256 gasAfter = gasleft();
 
         uint256 gasUsed = gasBefore - gasAfter;

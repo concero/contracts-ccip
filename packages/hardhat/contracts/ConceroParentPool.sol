@@ -50,6 +50,7 @@ error ConceroParentPool_NotAllowedToComplete();
 ///@notice error emitted when the request doesn't exist
 error ConceroParentPool_RequestDoesntExist();
 error ConceroParentPool_NotConceroCLA(address caller);
+error ConceroParentPool_DepositsOnTheWayArrayFull();
 
 contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, ParentPoolStorage {
     ///////////////////////
@@ -92,8 +93,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     uint256 private constant WRITE_FUNCTIONS_COST = 600_000;
     ///@notice Chainlink Functions Gas Limit
     uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 2_000_000;
-    uint32 internal constant MAX_DEPOSIT_REQUESTS_COUNT = 255;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * 10 ** 6;
+    uint8 internal constant MAX_DEPOSITS_ON_THE_WAY_COUNT = 150;
 
     ///@notice JS Code for Chainlink Functions
     string internal constant JS_CODE =
@@ -294,9 +295,6 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
      */
     function startDeposit(uint256 _usdcAmount) external onlyProxyContext {
         if (_usdcAmount < MIN_DEPOSIT) revert ConceroParentPool_AmountBelowMinimum(MIN_DEPOSIT);
-        if (s_depositsOnTheWayArray.length >= MAX_DEPOSIT_REQUESTS_COUNT - 5) {
-            revert ConceroParentPool_MaxCapReached(MAX_DEPOSIT_REQUESTS_COUNT);
-        }
 
         uint256 maxDeposit = s_maxDeposit;
 
@@ -490,7 +488,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     }
 
     function deleteDepositsOnTheWayByIds(bytes1[] calldata _ids) external onlyOwner {
-        _deleteDepositsOnTheWayByIds(_ids);
+        _deleteDepositsOnTheWayByIndexes(_ids);
     }
 
     /**
@@ -693,7 +691,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         for (uint256 i; i < childPoolsCount; ) {
             bytes32 ccipMessageId = _ccipSend(s_poolChainSelectors[i], amountToDistribute);
-            _addDepositOnTheWayRequest(ccipMessageId, s_poolChainSelectors[i], amountToDistribute);
+            _addDepositOnTheWay(ccipMessageId, s_poolChainSelectors[i], amountToDistribute);
 
             unchecked {
                 ++i;
@@ -834,15 +832,37 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         (
             uint256 childPoolsLiquidity,
-            bytes1[] memory depositsOnTheWayIdsToDelete
+            bytes1[] memory depositsOnTheWayIndexesToDelete
         ) = _decodeCLFResponse(response);
 
         request.childPoolsLiquiditySnapshot = childPoolsLiquidity;
 
-        _deleteDepositsOnTheWayByIds(depositsOnTheWayIdsToDelete);
+        _deleteDepositsOnTheWayByIndexes(depositsOnTheWayIndexesToDelete);
     }
 
-    //todo: rename
+    function _deleteDepositsOnTheWayByIndexes(
+        bytes1[] memory _depositsOnTheWayIndexesToDelete
+    ) internal {
+        uint256 depositsOnTheWayIndexesToDeleteLength = _depositsOnTheWayIndexesToDelete.length;
+
+        if (depositsOnTheWayIndexesToDeleteLength == 0) {
+            return;
+        }
+
+        uint256 s_depositsOnTheWayArrayLength = s_depositsOnTheWayArray.length;
+
+        for (uint256 i; i < depositsOnTheWayIndexesToDeleteLength; i++) {
+            uint8 indexToDelete = uint8(_depositsOnTheWayIndexesToDelete[i]);
+
+            if (indexToDelete >= s_depositsOnTheWayArrayLength) {
+                continue;
+            }
+
+            s_depositsOnTheWayAmount -= s_depositsOnTheWayArray[indexToDelete].amount;
+            delete s_depositsOnTheWayArray[indexToDelete];
+        }
+    }
+
     function _decodeCLFResponse(
         bytes memory response
     ) internal pure returns (uint256, bytes1[] memory) {
@@ -851,12 +871,16 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
             totalBalance := mload(add(response, 32))
         }
 
-        bytes1[] memory depositsOnTheWayIdsToDelete = new bytes1[](response.length - 32);
-        for (uint256 i = 32; i < response.length; i++) {
-            depositsOnTheWayIdsToDelete[i - 32] = response[i];
-        }
+        if (response.length == 32) {
+            return (totalBalance, new bytes1[](0));
+        } else {
+            bytes1[] memory depositsOnTheWayIdsToDelete = new bytes1[](response.length - 32);
+            for (uint256 i = 32; i < response.length; i++) {
+                depositsOnTheWayIdsToDelete[i - 32] = response[i];
+            }
 
-        return (totalBalance, depositsOnTheWayIdsToDelete);
+            return (totalBalance, depositsOnTheWayIdsToDelete);
+        }
     }
 
     function _handleStartWithdrawalCLFFulfill(bytes32 requestId, bytes memory response) internal {
@@ -869,53 +893,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
 
         _updateWithdrawalRequest(request, withdrawalId, childPoolsLiquidity);
-        _deleteDepositsOnTheWayByIds(depositsOnTheWayIdsToDelete);
-    }
-
-    function _deleteDepositsOnTheWayByIds(bytes1[] memory depositsOnTheWayStatuses) internal {
-        if (depositsOnTheWayStatuses.length == 0) return;
-
-        uint256 depositsOnTheWayArrayLength = s_depositsOnTheWayArray.length;
-        uint256 depositsOnTheWayStatusesLength = depositsOnTheWayStatuses.length;
-
-        if (depositsOnTheWayArrayLength == 0) return;
-        if (depositsOnTheWayStatusesLength == 0) return;
-
-        uint64 maxIterationsCount = 15;
-
-        for (uint256 i; i < depositsOnTheWayArrayLength; ) {
-            for (uint256 k; k < depositsOnTheWayStatusesLength; ) {
-                if (s_depositsOnTheWayArray[i].id == depositsOnTheWayStatuses[k]) {
-                    if (s_depositsOnTheWayArray[i].amount > s_depositsOnTheWayAmount) {
-                        s_depositsOnTheWayAmount = 0;
-                    } else {
-                        s_depositsOnTheWayAmount -= s_depositsOnTheWayArray[i].amount;
-                    }
-
-                    s_depositsOnTheWayArray[i] = s_depositsOnTheWayArray[
-                        --depositsOnTheWayArrayLength
-                    ];
-                    s_depositsOnTheWayArray.pop();
-                    break;
-                }
-
-                if (i + k >= maxIterationsCount) {
-                    return;
-                }
-
-                unchecked {
-                    ++k;
-                }
-            }
-
-            if (i >= maxIterationsCount) {
-                return;
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
+        _deleteDepositsOnTheWayByIndexes(depositsOnTheWayIdsToDelete);
     }
 
     /**
@@ -1010,30 +988,42 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         return _convertToUSDCTokenDecimals(amountUsdcToWithdraw);
     }
 
-    function _addDepositOnTheWayRequest(
+    function _addDepositOnTheWay(
         bytes32 _ccipMessageId,
         uint64 _chainSelector,
         uint256 _amount
     ) internal {
-        bytes1 id;
+        uint8 index = s_latestDepositOnTheWayIndex < MAX_DEPOSITS_ON_THE_WAY_COUNT
+            ? ++s_latestDepositOnTheWayIndex
+            : _findLowestDepositOnTheWayUnusedIndex();
 
-        if (s_latestDepositOnTheWayId < MAX_DEPOSIT_REQUESTS_COUNT) {
-            id = bytes1(++s_latestDepositOnTheWayId);
-        } else {
-            id = bytes1(uint8(1));
-            s_latestDepositOnTheWayId = uint8(1);
-        }
-
-        s_depositsOnTheWayArray.push(
-            DepositOnTheWay({
-                id: id,
-                chainSelector: _chainSelector,
-                ccipMessageId: _ccipMessageId,
-                amount: _amount
-            })
-        );
+        s_depositsOnTheWayArray[index] = DepositOnTheWay({
+            ccipMessageId: _ccipMessageId,
+            chainSelector: _chainSelector,
+            amount: _amount
+        });
 
         s_depositsOnTheWayAmount += _amount;
+    }
+
+    function _findLowestDepositOnTheWayUnusedIndex() internal returns (uint8) {
+        uint8 index;
+        for (uint8 i = 1; i < MAX_DEPOSITS_ON_THE_WAY_COUNT; ) {
+            if (s_depositsOnTheWayArray[i].ccipMessageId == bytes32(0)) {
+                index = i;
+                s_latestDepositOnTheWayIndex = i;
+                break;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+
+        if (index == 0) {
+            revert ConceroParentPool_DepositsOnTheWayArrayFull();
+        }
+
+        return index;
     }
 
     function addWithdrawalOnTheWayAmountById(
@@ -1152,7 +1142,11 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         return s_loansInUse;
     }
 
-    function getDepositsOnTheWay() external view returns (DepositOnTheWay[] memory) {
+    function getDepositsOnTheWay()
+        external
+        view
+        returns (DepositOnTheWay[MAX_DEPOSITS_ON_THE_WAY_COUNT] memory)
+    {
         return s_depositsOnTheWayArray;
     }
 

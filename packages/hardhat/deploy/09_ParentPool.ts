@@ -38,16 +38,17 @@ const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: Const
       ccipRouter: ccipRouter,
       usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
       lpToken: getEnvVar(`LPTOKEN_${networkEnvKeys[name]}`),
+      automation: getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[name]}`),
       conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
       owner: deployer,
-      slotid: 0,
       poolMessengers,
     };
 
     // Merge defaultArgs with constructorArgs
     const args = { ...defaultArgs, ...constructorArgs };
 
-    log("Deploying...", "deployParentPool", name);
+    log("Deploying...", `deployParentPool, ${deployer}`, name);
+
     const deployParentPool = (await deploy("ConceroParentPool", {
       from: deployer,
       args: [
@@ -59,9 +60,9 @@ const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: Const
         args.ccipRouter,
         args.usdc,
         args.lpToken,
+        args.automation,
         args.conceroProxyAddress,
         args.owner,
-        args.slotId,
         args.poolMessengers,
       ],
       log: true,

@@ -7,11 +7,11 @@ import addCLFConsumer from "../../CLF/subscriptions/add";
 import uploadDonSecrets from "../../CLF/donSecrets/upload";
 import { CNetwork } from "../../../types/CNetwork";
 import { setParentPoolVariables } from "./setParentPoolVariables";
-import deployParentPool from "../../../deploy/09_ParentPool";
 import deployTransparentProxy from "../../../deploy/11_TransparentProxy";
-import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 import { compileContracts } from "../../../utils/compileContracts";
+import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
+import deployParentPool from "../../../deploy/09_ParentPool";
 
 task("deploy-parent-pool", "Deploy the pool")
   .addFlag("deployproxy", "Deploy the proxy")

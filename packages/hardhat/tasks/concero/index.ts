@@ -20,7 +20,7 @@ import viewTokenBalances from "./ensureBalances/viewTokenBalances";
 import fundContract from "./fundContract";
 import dripBnm from "./dripBnm";
 import transferTokens from "./transferTokens";
-
+import callContractFunction from "./callFunction";
 import testScript from "./test";
 
 export default {
@@ -44,4 +44,5 @@ export default {
   dripBnm,
   transferTokens,
   testScript,
-}
+  callContractFunction,
+};

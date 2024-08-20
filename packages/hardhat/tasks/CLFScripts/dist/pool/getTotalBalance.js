@@ -1,25 +1,25 @@
 (async () => {
 	const chainSelectors = {
 		['4949039107694359620']: {
-			urls: [`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+			urls: [`https://arbitrum-mainnet.infura.io/v3/${secrets.PARENT_POOL_INFURA_API_KEY}`],
 			chainId: '0xa4b1',
 			usdcAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
 			poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
 		},
 		['4051577828743386545']: {
-			urls: [`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+			urls: [`https://polygon-mainnet.infura.io/v3/${secrets.PARENT_POOL_INFURA_API_KEY}`],
 			chainId: '0x89',
 			usdcAddress: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
 			poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
 		},
 		['6433500567565415381']: {
-			urls: [`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+			urls: [`https://avalanche-mainnet.infura.io/v3/${secrets.PARENT_POOL_INFURA_API_KEY}`],
 			chainId: '0xa86a',
 			usdcAddress: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
 			poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
 		},
 		['15971525489660198786']: {
-			urls: [`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
+			urls: [`https://base-mainnet.g.alchemy.com/v2/${secrets.PARENT_POOL_ALCHEMY_API_KEY}`],
 			chainId: '0x2105',
 			usdcAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
 			poolAddress: '0x0AE1B2730066AD46481ab0a5fd2B5893f8aBa323',

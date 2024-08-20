@@ -6,6 +6,8 @@ export type CLFSecrets = {
   POOL_MESSENGER_0_PRIVATE_KEY: envString;
   INFURA_API_KEY: envString;
   ALCHEMY_API_KEY: envString;
+  PARENT_POOL_INFURA_API_KEY: envString;
+  PARENT_POOL_ALCHEMY_API_KEY: envString;
 };
 
 const secrets: CLFSecrets = {
@@ -15,6 +17,8 @@ const secrets: CLFSecrets = {
   POOL_MESSENGER_0_PRIVATE_KEY: process.env.POOL_MESSENGER_0_PRIVATE_KEY,
   INFURA_API_KEY: process.env.INFURA_API_KEY,
   ALCHEMY_API_KEY: process.env.ALCHEMY_API_KEY,
+  PARENT_POOL_INFURA_API_KEY: process.env.PARENT_POOL_INFURA_API_KEY,
+  PARENT_POOL_ALCHEMY_API_KEY: process.env.PARENT_POOL_ALCHEMY_API_KEY,
 };
 
 export default secrets;

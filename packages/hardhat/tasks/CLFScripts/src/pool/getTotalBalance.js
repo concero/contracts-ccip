@@ -21,26 +21,26 @@
 
 		// mainnets
 		['${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}']: {
-			urls: [`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+			urls: [`https://arbitrum-mainnet.infura.io/v3/${secrets.PARENT_POOL_INFURA_API_KEY}`],
 			chainId: '0xa4b1',
 			usdcAddress: '${USDC_ARBITRUM}',
 			poolAddress: '${CHILD_POOL_PROXY_ARBITRUM}',
 		},
 
 		['${CL_CCIP_CHAIN_SELECTOR_POLYGON}']: {
-			urls: [`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+			urls: [`https://polygon-mainnet.infura.io/v3/${secrets.PARENT_POOL_INFURA_API_KEY}`],
 			chainId: '0x89',
 			usdcAddress: '${USDC_POLYGON}',
 			poolAddress: '${CHILD_POOL_PROXY_POLYGON}',
 		},
 		['${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}']: {
-			urls: [`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`],
+			urls: [`https://avalanche-mainnet.infura.io/v3/${secrets.PARENT_POOL_INFURA_API_KEY}`],
 			chainId: '0xa86a',
 			usdcAddress: '${USDC_AVALANCHE}',
 			poolAddress: '${CHILD_POOL_PROXY_AVALANCHE}',
 		},
 		['${CL_CCIP_CHAIN_SELECTOR_BASE}']: {
-			urls: [`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
+			urls: [`https://base-mainnet.g.alchemy.com/v2/${secrets.PARENT_POOL_ALCHEMY_API_KEY}`],
 			chainId: '0x2105',
 			usdcAddress: '${USDC_BASE}',
 			poolAddress: '${PARENT_POOL_PROXY_BASE}',

@@ -993,7 +993,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         uint64 _chainSelector,
         uint256 _amount
     ) internal {
-        uint8 index = s_latestDepositOnTheWayIndex < MAX_DEPOSITS_ON_THE_WAY_COUNT
+        uint8 index = s_latestDepositOnTheWayIndex <= MAX_DEPOSITS_ON_THE_WAY_COUNT
             ? ++s_latestDepositOnTheWayIndex
             : _findLowestDepositOnTheWayUnusedIndex();
 

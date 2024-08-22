@@ -199,6 +199,9 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         req.initializeRequestForInlineJavaScript(jsCode);
         req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
         req.setBytesArgs(args);
+
+        s_lastSrcGasPrice = tx.gasprice;
+
         return _sendRequest(req.encodeCBOR(), i_subscriptionId, gasLimit, i_donId);
     }
 

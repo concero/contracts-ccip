@@ -4,15 +4,11 @@ pragma solidity ^0.8.0;
 import {BaseTest, console, Vm} from "./BaseTest.t.sol";
 import {ParentPool_Wrapper, IParentPoolWrapper} from "./wrappers/ParentPool_Wrapper.sol";
 import {Client} from "../../lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/libraries/Client.sol";
-import {IAny2EVMMessageReceiver} from
-    "../../lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol";
+import {IAny2EVMMessageReceiver} from "../../lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {FunctionsRouter} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsRouter.sol";
 import {FunctionsResponse} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/libraries/FunctionsResponse.sol";
-import {
-    FunctionsCoordinator,
-    FunctionsBillingConfig
-} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsCoordinator.sol";
+import {FunctionsCoordinator, FunctionsBillingConfig} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsCoordinator.sol";
 
 contract Deposit is BaseTest {
     /*//////////////////////////////////////////////////////////////
@@ -21,7 +17,8 @@ contract Deposit is BaseTest {
     uint256 internal constant DEPOSIT_AMOUNT_USDC = 100 * 10 ** 6;
     uint256 internal constant MIN_DEPOSIT = 1 * 1_000_000;
     /// @dev transmitter address retrieved from coordinator logs
-    address internal constant BASE_FUNCTIONS_TRANSMITTER = 0xAdE50D64476177aAe4505DFEA094B1a0ffa49332;
+    address internal constant BASE_FUNCTIONS_TRANSMITTER =
+        0xAdE50D64476177aAe4505DFEA094B1a0ffa49332;
     uint256 internal constant CCIP_FEES = 10 * 1e18;
     uint256 internal constant USDC_PRECISION = 1e6;
     uint256 internal constant WAD_PRECISION = 1e18;
@@ -47,10 +44,10 @@ contract Deposit is BaseTest {
             address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
             address(vm.envAddress("USDC_BASE")),
             address(lpToken),
+            vm.envAddress("CONCERO_AUTOMATION_BASE"),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
             address(deployer),
-            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)],
-            0
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
 
         setProxyImplementation(address(parentPoolImplementation));
@@ -62,17 +59,21 @@ contract Deposit is BaseTest {
                              START DEPOSIT
     //////////////////////////////////////////////////////////////*/
     function test_startDeposit_Success() public {
-        (bytes32 requestId,,) = _startDepositAndMonitorLogs(user1, DEPOSIT_AMOUNT_USDC);
+        (bytes32 requestId, , ) = _startDepositAndMonitorLogs(user1, DEPOSIT_AMOUNT_USDC);
 
         // Verify storage changes using the requestId
-        ParentPool_Wrapper.DepositRequest memory depositRequest =
-            IParentPoolWrapper(address(parentPoolProxy)).getDepositRequest(requestId);
+        ParentPool_Wrapper.DepositRequest memory depositRequest = IParentPoolWrapper(
+            address(parentPoolProxy)
+        ).getDepositRequest(requestId);
 
         assertEq(depositRequest.lpAddress, address(user1));
         assertEq(depositRequest.usdcAmountToDeposit, DEPOSIT_AMOUNT_USDC);
     }
 
-    function _startDepositAndMonitorLogs(address _caller, uint256 _amount)
+    function _startDepositAndMonitorLogs(
+        address _caller,
+        uint256 _amount
+    )
         internal
         returns (bytes32 requestId, uint32 callbackGasLimit, uint96 estimatedTotalCostJuels)
     {
@@ -87,13 +88,17 @@ contract Deposit is BaseTest {
         /// @dev find the RequestStart log and params we need for commitment
         for (uint256 i = 0; i < entries.length; ++i) {
             if (
-                entries[i].topics[0]
-                    == keccak256("RequestStart(bytes32,bytes32,uint64,address,address,address,bytes,uint16,uint32,uint96)")
+                entries[i].topics[0] ==
+                keccak256(
+                    "RequestStart(bytes32,bytes32,uint64,address,address,address,bytes,uint16,uint32,uint96)"
+                )
             ) {
                 /// @dev get the values we need
                 requestId = entries[i].topics[1];
-                (,,,,, callbackGasLimit, estimatedTotalCostJuels) =
-                    abi.decode(entries[i].data, (address, address, address, bytes, uint16, uint32, uint96));
+                (, , , , , callbackGasLimit, estimatedTotalCostJuels) = abi.decode(
+                    entries[i].data,
+                    (address, address, address, bytes, uint16, uint32, uint96)
+                );
                 break;
             }
         }
@@ -105,14 +110,19 @@ contract Deposit is BaseTest {
         vm.assume(_amount < MIN_DEPOSIT);
 
         vm.prank(user1);
-        vm.expectRevert(abi.encodeWithSignature("ConceroParentPool_AmountBelowMinimum(uint256)", MIN_DEPOSIT));
+        vm.expectRevert(
+            abi.encodeWithSignature("ConceroParentPool_AmountBelowMinimum(uint256)", MIN_DEPOSIT)
+        );
         IParentPoolWrapper(address(parentPoolProxy)).startDeposit(_amount);
     }
 
     function test_startDeposit_RevertNonProxyCall(address _caller) public {
         vm.prank(_caller);
         vm.expectRevert(
-            abi.encodeWithSignature("ConceroParentPool_NotParentPoolProxy(address)", address(parentPoolImplementation))
+            abi.encodeWithSignature(
+                "ConceroParentPool_NotParentPoolProxy(address)",
+                address(parentPoolImplementation)
+            )
         );
         parentPoolImplementation.startDeposit(DEPOSIT_AMOUNT_USDC);
     }
@@ -130,8 +140,11 @@ contract Deposit is BaseTest {
         deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), CCIP_FEES);
 
         /// @dev startDeposit
-        (bytes32 depositRequestId, uint32 callbackGasLimit, uint96 estimatedTotalCostJuels) =
-            _startDepositAndMonitorLogs(user1, DEPOSIT_AMOUNT_USDC);
+        (
+            bytes32 depositRequestId,
+            uint32 callbackGasLimit,
+            uint96 estimatedTotalCostJuels
+        ) = _startDepositAndMonitorLogs(user1, DEPOSIT_AMOUNT_USDC);
 
         /// @dev fulfill active request
         bytes memory response = abi.encode(MIN_DEPOSIT); // 1 usdc
@@ -141,13 +154,15 @@ contract Deposit is BaseTest {
         _completeDeposit(user1, depositRequestId);
 
         /// @dev assert lp tokens minted as expected
-        uint256 expectedLpTokensMinted = ((DEPOSIT_AMOUNT_USDC - DEPOSIT_FEE_USDC) * WAD_PRECISION) / USDC_PRECISION;
+        uint256 expectedLpTokensMinted = ((DEPOSIT_AMOUNT_USDC - DEPOSIT_FEE_USDC) *
+            WAD_PRECISION) / USDC_PRECISION;
         uint256 actualLptokensMinted = IERC20(parentPoolImplementation.i_lp()).balanceOf(user1);
         assertEq(expectedLpTokensMinted, actualLptokensMinted);
 
         /// @dev assert storage has been deleted
-        ParentPool_Wrapper.DepositRequest memory depositRequest =
-            IParentPoolWrapper(address(parentPoolProxy)).getDepositRequest(depositRequestId);
+        ParentPool_Wrapper.DepositRequest memory depositRequest = IParentPoolWrapper(
+            address(parentPoolProxy)
+        ).getDepositRequest(depositRequestId);
         assertEq(depositRequest.lpAddress, address(0));
         assertEq(depositRequest.usdcAmountToDeposit, 0);
     }
@@ -155,7 +170,9 @@ contract Deposit is BaseTest {
     function _completeDeposit(address _caller, bytes32 _requestId) internal {
         /// @dev call completeDeposit via proxy
         vm.prank(_caller);
-        (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("completeDeposit(bytes32)", _requestId));
+        (bool success, ) = address(parentPoolProxy).call(
+            abi.encodeWithSignature("completeDeposit(bytes32)", _requestId)
+        );
         require(success, "completeDeposit call failed");
     }
 
@@ -195,8 +212,8 @@ contract Deposit is BaseTest {
 
         /// @dev prank the coordinator to call fulfill on functionsRouter
         vm.prank(coordinator);
-        (FunctionsResponse.FulfillResult resultCode, uint96 callbackGasCostJuels) =
-            functionsRouter.fulfill(_response, err, juelsPerGas, costWithoutFulfillment, transmitter, commitment);
+        (FunctionsResponse.FulfillResult resultCode, uint96 callbackGasCostJuels) = functionsRouter
+            .fulfill(_response, err, juelsPerGas, costWithoutFulfillment, transmitter, commitment);
 
         console.log("Result Code:", uint8(resultCode));
         console.log("Callback Gas Cost Juels:", callbackGasCostJuels);
@@ -207,8 +224,12 @@ contract Deposit is BaseTest {
     //////////////////////////////////////////////////////////////*/
     function test_lpToken_integrity_multiple_depositors(uint256 _amount1, uint256 _amount2) public {
         /// @dev restrict fuzzed deposit amounts
-        vm.assume((_amount1 > MIN_DEPOSIT + DEPOSIT_FEE_USDC) && (_amount1 < MAX_INDIVIDUAL_DEPOSIT));
-        vm.assume((_amount2 > MIN_DEPOSIT + DEPOSIT_FEE_USDC) && (_amount2 < MAX_INDIVIDUAL_DEPOSIT));
+        vm.assume(
+            (_amount1 > MIN_DEPOSIT + DEPOSIT_FEE_USDC) && (_amount1 < MAX_INDIVIDUAL_DEPOSIT)
+        );
+        vm.assume(
+            (_amount2 > MIN_DEPOSIT + DEPOSIT_FEE_USDC) && (_amount2 < MAX_INDIVIDUAL_DEPOSIT)
+        );
 
         /// @dev fund users with USDC and approve parentPoolProxy to spend
         deal(usdc, user1, _amount1);
@@ -222,8 +243,11 @@ contract Deposit is BaseTest {
         deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), CCIP_FEES);
 
         /// @dev startDeposit and fulfillRequest for first user
-        (bytes32 depositRequestId1, uint32 callbackGasLimit1, uint96 estimatedTotalCostJuels1) =
-            _startDepositAndMonitorLogs(user1, _amount1);
+        (
+            bytes32 depositRequestId1,
+            uint32 callbackGasLimit1,
+            uint96 estimatedTotalCostJuels1
+        ) = _startDepositAndMonitorLogs(user1, _amount1);
         bytes memory response1 = abi.encode(MIN_DEPOSIT); // 1 usdc
         _fulfillRequest(response1, depositRequestId1, callbackGasLimit1, estimatedTotalCostJuels1);
 
@@ -234,11 +258,15 @@ contract Deposit is BaseTest {
         assertGt(IParentPoolWrapper(address(parentPoolProxy)).getDepositsOnTheWayAmount(), 0);
 
         /// @dev we need the totalSupply to calculate user2's owed lp tokens
-        uint256 lpTotalSupplyBeforeSecondDeposit = IERC20(parentPoolImplementation.i_lp()).totalSupply();
+        uint256 lpTotalSupplyBeforeSecondDeposit = IERC20(parentPoolImplementation.i_lp())
+            .totalSupply();
 
         /// @dev startDeposit and fulfillRequest for second user
-        (bytes32 depositRequestId2, uint32 callbackGasLimit2, uint96 estimatedTotalCostJuels2) =
-            _startDepositAndMonitorLogs(user2, _amount2);
+        (
+            bytes32 depositRequestId2,
+            uint32 callbackGasLimit2,
+            uint96 estimatedTotalCostJuels2
+        ) = _startDepositAndMonitorLogs(user2, _amount2);
         bytes memory response2 = abi.encode(MIN_DEPOSIT + (_amount1 / 2)); // 1 usdc + (first deposit / parent+child)
         _fulfillRequest(response2, depositRequestId2, callbackGasLimit2, estimatedTotalCostJuels2);
 
@@ -253,24 +281,32 @@ contract Deposit is BaseTest {
         uint256 totalCrossChainLiquiditySnapshot;
         for (uint256 i = 0; i < entries.length; ++i) {
             if (
-                entries[i].topics[0]
-                    == keccak256("ConceroParentPool_DepositCompleted(bytes32,address,uint256,uint256,uint256)")
+                entries[i].topics[0] ==
+                keccak256(
+                    "ConceroParentPool_DepositCompleted(bytes32,address,uint256,uint256,uint256)"
+                )
             ) {
-                (,, totalCrossChainLiquiditySnapshot) = abi.decode(entries[i].data, (uint256, uint256, uint256));
+                (, , totalCrossChainLiquiditySnapshot) = abi.decode(
+                    entries[i].data,
+                    (uint256, uint256, uint256)
+                );
                 break;
             }
         }
 
         /// @dev assert user2 lp tokens minted as expected
-        uint256 amountDepositedConverted = ((_amount2 - DEPOSIT_FEE_USDC) * WAD_PRECISION) / USDC_PRECISION;
-        uint256 crossChainBalanceConverted = (totalCrossChainLiquiditySnapshot * WAD_PRECISION) / USDC_PRECISION;
+        uint256 amountDepositedConverted = ((_amount2 - DEPOSIT_FEE_USDC) * WAD_PRECISION) /
+            USDC_PRECISION;
+        uint256 crossChainBalanceConverted = (totalCrossChainLiquiditySnapshot * WAD_PRECISION) /
+            USDC_PRECISION;
 
-        uint256 expectedLpTokensMintedUser2 = (
-            ((crossChainBalanceConverted + amountDepositedConverted) * lpTotalSupplyBeforeSecondDeposit)
-                / crossChainBalanceConverted
-        ) - lpTotalSupplyBeforeSecondDeposit;
+        uint256 expectedLpTokensMintedUser2 = (((crossChainBalanceConverted +
+            amountDepositedConverted) * lpTotalSupplyBeforeSecondDeposit) /
+            crossChainBalanceConverted) - lpTotalSupplyBeforeSecondDeposit;
 
-        uint256 actualLptokensMintedUser2 = IERC20(parentPoolImplementation.i_lp()).balanceOf(user2);
+        uint256 actualLptokensMintedUser2 = IERC20(parentPoolImplementation.i_lp()).balanceOf(
+            user2
+        );
         assertEq(expectedLpTokensMintedUser2, actualLptokensMintedUser2);
     }
 
@@ -281,7 +317,10 @@ contract Deposit is BaseTest {
         vm.prank(vm.envAddress("CL_CCIP_ROUTER_BASE"));
 
         Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](1);
-        destTokenAmounts[0] = Client.EVMTokenAmount({token: vm.envAddress("USDC_BASE"), amount: 100000000});
+        destTokenAmounts[0] = Client.EVMTokenAmount({
+            token: vm.envAddress("USDC_BASE"),
+            amount: 100000000
+        });
 
         Client.Any2EVMMessage memory message = Client.Any2EVMMessage({
             messageId: keccak256(abi.encodePacked("test")),

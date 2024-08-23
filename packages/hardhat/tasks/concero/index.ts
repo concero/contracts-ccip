@@ -16,6 +16,7 @@ import ensureNativeBalances from "./ensureBalances/ensureNativeBalances";
 import ensureERC20Balances from "./ensureBalances/ensureErc20Balances";
 import ensureCLFSubscriptionBalances from "./ensureBalances/ensureCLFSubscriptionBalances";
 import viewTokenBalances from "./ensureBalances/viewTokenBalances";
+import withdrawTokens from "./ensureBalances/withdrawTokens";
 
 import fundContract from "./fundContract";
 import dripBnm from "./dripBnm";
@@ -39,6 +40,7 @@ export default {
   ensureERC20Balances,
   ensureCLFSubscriptionBalances,
   viewTokenBalances,
+  withdrawTokens,
   deployCCIPInfrastructure,
   fundContract,
   dripBnm,

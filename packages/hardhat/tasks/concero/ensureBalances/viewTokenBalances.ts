@@ -9,11 +9,12 @@ import { getEnvAddress, getEnvVar } from "../../../utils/getEnvVar";
 import { networkEnvKeys } from "../../../constants/CNetworks";
 
 interface BalanceInfo {
-  chain: string;
+  chainName: string;
   contractAddress: string;
   contractAlias: string;
-  tokenSymbol: string;
-  balance: string;
+  symbol: string;
+  balance: bigint;
+  tokenDecimals: number;
 }
 
 const tokensToMonitor = [
@@ -24,12 +25,12 @@ const tokensToMonitor = [
 async function checkTokenBalance(
   chain: CNetwork,
   contractType: ProxyType,
-  tokenSymbol: string,
+  symbol: string,
   tokenDecimals: number,
 ): Promise<BalanceInfo> {
   const { publicClient } = getFallbackClients(chain);
   const [contractAddress, contractAlias] = getEnvAddress(contractType, chain.name);
-  const tokenAddress = getEnvVar(`${tokenSymbol}_${networkEnvKeys[chain.name]}`);
+  const tokenAddress = getEnvVar(`${symbol}_${networkEnvKeys[chain.name]}`);
 
   try {
     const balance = await publicClient.readContract({
@@ -40,25 +41,20 @@ async function checkTokenBalance(
     });
 
     return {
-      chain: chain.name,
-      address: contractAlias,
-      symbol: tokenSymbol,
-      balance: formatUnits(balance, tokenDecimals),
+      chainName: chain.name,
+      contractAddress,
+      contractAlias,
+      symbol,
+      tokenDecimals,
+      balance,
     };
   } catch (error) {
-    err(`Error checking ${tokenSymbol} balance for ${contractAlias} on ${chain.name}: ${error}`, "checkTokenBalance");
-    return {
-      chain: chain.name,
-      address: contractAlias,
-      symbol: tokenSymbol,
-      balance: "Error",
-    };
+    err(`Error checking ${symbol} balance for ${contractAlias} on ${chain.name}: ${error}`, "checkTokenBalance");
   }
 }
 
-async function monitorTokenBalances(isTestnet: boolean) {
+async function monitorTokenBalances(isTestnet: boolean): Promise<BalanceInfo[]> {
   const chains = isTestnet ? testnetChains : mainnetChains;
-
   const balancePromises: Promise<BalanceInfo>[] = [];
 
   for (const chain of Object.values(chains)) {
@@ -70,23 +66,29 @@ async function monitorTokenBalances(isTestnet: boolean) {
   const balanceInfos = await Promise.all(balancePromises);
 
   console.log("\nToken Balances for Monitored Contracts:");
-  console.table(balanceInfos);
+  const displayedBalanceInfos = balanceInfos.map(info => ({
+    Contract: info.contractAlias,
+    Chain: info.chainName,
+    Balance: formatUnits(info.balance, info.tokenDecimals),
+    Symbol: info.symbol,
+  }));
 
-  const tokenTotals: { [key: string]: number } = {};
+  console.table(displayedBalanceInfos);
+
+  const tokenTotals: { [key: string]: bigint } = {};
   for (const info of balanceInfos) {
-    if (info.balance !== "Error") {
-      const amount = parseFloat(info.balance);
-      tokenTotals[info.symbol] = (tokenTotals[info.symbol] || 0) + amount;
-    }
+    tokenTotals[info.symbol] = (tokenTotals[info.symbol] || BigInt(0)) + info.balance;
   }
 
   console.log("\nTotal Amount for Each Token:");
   console.table(
     Object.entries(tokenTotals).map(([symbol, total]) => ({
       Symbol: symbol,
-      TotalAmount: total.toFixed(6),
+      TotalAmount: formatUnits(total, tokensToMonitor.find(t => t.symbol === symbol)?.decimals || 18),
     })),
   );
+
+  return balanceInfos;
 }
 
 task("view-token-balances", "View token balances for infraProxy contracts")

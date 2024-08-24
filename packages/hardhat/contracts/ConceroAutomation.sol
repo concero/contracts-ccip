@@ -281,6 +281,11 @@ contract ConceroAutomation is IConceroAutomation, AutomationCompatible, Function
         emit ConceroAutomation_RetryPerformed(reqId);
     }
 
+    function addWithdrawRequest(bytes32 _withdrawalId) external onlyOwner {
+        s_withdrawalRequestIds.push(_withdrawalId);
+        emit ConceroAutomation_RequestAdded(_withdrawalId);
+    }
+
     //////////////
     ///INTERNAL///
     //////////////
@@ -322,9 +327,7 @@ contract ConceroAutomation is IConceroAutomation, AutomationCompatible, Function
             return;
         }
 
-        uint256 withdrawalRequestsCount = s_withdrawalRequestIds.length;
-
-        for (uint256 i; i < withdrawalRequestsCount; ++i) {
+        for (uint256 i; i < s_withdrawalRequestIds.length; ++i) {
             if (s_withdrawalRequestIds[i] == withdrawalId) {
                 s_withdrawalRequestIds[i] = s_withdrawalRequestIds[
                     s_withdrawalRequestIds.length - 1

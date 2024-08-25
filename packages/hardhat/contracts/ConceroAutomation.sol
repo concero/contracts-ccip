@@ -281,9 +281,23 @@ contract ConceroAutomation is IConceroAutomation, AutomationCompatible, Function
         emit ConceroAutomation_RetryPerformed(reqId);
     }
 
-    function addWithdrawRequest(bytes32 _withdrawalId) external onlyOwner {
-        s_withdrawalRequestIds.push(_withdrawalId);
-        emit ConceroAutomation_RequestAdded(_withdrawalId);
+    function addWithdrawRequests(
+        bytes32[] calldata _withdrawalIds,
+        bool[] calldata _isTriggered
+    ) external onlyOwner {
+        require(
+            _withdrawalIds.length == _isTriggered.length,
+            "Input arrays must have the same length"
+        );
+
+        for (uint i = 0; i < _withdrawalIds.length; i++) {
+            bytes32 withdrawalId = _withdrawalIds[i];
+            if (!s_withdrawTriggered[withdrawalId]) {
+                s_withdrawalRequestIds.push(withdrawalId);
+                s_withdrawTriggered[withdrawalId] = _isTriggered[i];
+                emit ConceroAutomation_RequestAdded(withdrawalId);
+            }
+        }
     }
 
     //////////////

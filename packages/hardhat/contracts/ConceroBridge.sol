@@ -6,6 +6,8 @@
  */
 pragma solidity 0.8.20;
 
+import {console} from "forge-std/Test.sol";
+
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -13,7 +15,7 @@ import {ConceroCCIP} from "./ConceroCCIP.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
 import {IPriceRegistry, Internal} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IPriceRegistry.sol";
-import {IFunctionsBillingExtension, FunctionsBilling} from "./Interfaces/IFunctionsBillingExtension.sol";
+import {IFunctionsBilling} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsBilling.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 ////////////////////////////////////////////////////////
@@ -35,6 +37,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
 
     address internal immutable i_functionsCoordinator;
     address internal immutable i_priceRegistry;
+    uint64 internal immutable i_subscriptionId;
 
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
@@ -62,7 +65,8 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         address _proxy,
         address[3] memory _messengers,
         address _functionsCoordinator,
-        address _priceRegistry
+        address _priceRegistry,
+        uint64 _subscriptionId
     )
         ConceroCCIP(
             _variables,
@@ -78,6 +82,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     {
         i_functionsCoordinator = _functionsCoordinator;
         i_priceRegistry = _priceRegistry;
+        i_subscriptionId = _subscriptionId;
     }
 
     ///////////////////////////////////////////////////////////////
@@ -147,72 +152,39 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
      * @param dstChainSelector the destination blockchain chain selector
      */
     function getFunctionsFeeInLink(uint64 dstChainSelector) public view returns (uint256) {
-        // uint256 srcGasPrice = s_lastGasPrices[CHAIN_SELECTOR];
-        // uint256 dstGasPrice = s_lastGasPrices[dstChainSelector];
+        uint256 srcGasPrice = s_lastGasPrices[CHAIN_SELECTOR];
+        uint256 dstGasPrice = s_lastGasPrices[dstChainSelector];
 
-        uint256 srcGasPrice = s_lastSrcGasPrice;
+        /// ----------------------------- ///
 
-        /// @dev this value is encoded differently for different chains according to the IPriceRegistry natspec
-        Internal.TimestampedPackedUint224 memory timestampedPacked = IPriceRegistry(i_priceRegistry)
-            .getDestinationChainGasPrice(dstChainSelector);
-        /// this needs to be properly decoded
-        uint256 dstGasPrice = uint256(timestampedPacked.value);
+        // uint256 srcGasPrice = s_lastSrcGasPrice;
 
-        uint256 srcClFeeInLink = uint256(
-            _clfCalculateFee(srcGasPrice, CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT)
+        // /// @dev this value is encoded differently for different chains according to the IPriceRegistry natspec
+        // Internal.TimestampedPackedUint224 memory timestampedPacked = IPriceRegistry(i_priceRegistry)
+        //     .getDestinationChainGasPrice(dstChainSelector);
+        // /// this needs to be properly decoded
+        // uint256 dstGasPrice = uint256(timestampedPacked.value);
+
+        /// ----------------------------- ///
+
+        // data can be empty because it isnt actually used in FunctionsBilling
+        bytes memory data;
+
+        uint96 srcClFeeInLink = IFunctionsBilling(i_functionsCoordinator).estimateCost(
+            i_subscriptionId,
+            data,
+            CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT,
+            srcGasPrice
         );
-        uint256 dstClFeeInLink = uint256(
-            _clfCalculateFee(dstGasPrice, CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT)
+
+        uint96 dstClFeeInLink = IFunctionsBilling(i_functionsCoordinator).estimateCost(
+            i_subscriptionId,
+            data,
+            CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT,
+            dstGasPrice
         );
 
-        // uint256 srcClFeeInLink = clfPremiumFees[CHAIN_SELECTOR] +
-        //     (srcGasPrice *
-        //         (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT) *
-        //         s_latestLinkNativeRate) /
-        //     1e18;
-
-        // uint256 dstClFeeInLink = clfPremiumFees[dstChainSelector] +
-        //     ((dstGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT)) *
-        //         s_latestLinkNativeRate) /
-        //     1e18;
-
-        return srcClFeeInLink + dstClFeeInLink;
-    }
-
-    function _clfCalculateFee(
-        uint256 _gasPriceWei,
-        uint256 _callbackGasLimit
-    ) internal view returns (uint96) {
-        FunctionsBilling.Config memory config = IFunctionsBillingExtension(i_functionsCoordinator)
-            .getConfig();
-
-        uint256 executionGas = config.gasOverheadBeforeCallback +
-            config.gasOverheadAfterCallback +
-            _callbackGasLimit;
-
-        uint256 gasPriceWithOverestimation = _gasPriceWei +
-            ((_gasPriceWei * config.fulfillmentGasPriceOverEstimationBP) / 10_000);
-        /// @NOTE: Basis Points are 1/100th of 1%, divide by 10_000 to bring back to original units
-
-        uint96 juelsPerGas = _getJuelsPerGas(gasPriceWithOverestimation);
-        uint256 estimatedGasReimbursement = juelsPerGas * executionGas;
-
-        uint72 adminFee = IFunctionsBillingExtension(i_functionsCoordinator).getAdminFee();
-
-        uint96 fees = uint96(config.donFee) + uint96(adminFee);
-
-        return SafeCast.toUint96(estimatedGasReimbursement + fees);
-    }
-
-    function _getJuelsPerGas(uint256 _gasPriceWei) private view returns (uint96) {
-        // (1e18 juels/link) * (wei/gas) / (wei/link) = juels per gas
-        // There are only 1e9*1e18 = 1e27 juels in existence, should not exceed uint96 (2^96 ~ 7e28)
-        return
-            SafeCast.toUint96(
-                (1e18 * _gasPriceWei) /
-                    // IFunctionsBillingExtension(i_functionsCoordinator).getWeiPerUnitLink()
-                    s_latestLinkNativeRate
-            );
+        return uint256(srcClFeeInLink + dstClFeeInLink);
     }
 
     /**

@@ -17,7 +17,8 @@ contract ConceroDeploy is Script {
         address _proxy,
         address[3] memory _messengers,
         address _functionsCoordinator,
-        address _priceRegistry
+        address _priceRegistry,
+        uint64 _subscriptionId
     ) public returns (ConceroBridge concero) {
         vm.startBroadcast();
         concero = new ConceroBridge(
@@ -31,7 +32,8 @@ contract ConceroDeploy is Script {
             _proxy,
             _messengers,
             _functionsCoordinator,
-            _priceRegistry
+            _priceRegistry,
+            _subscriptionId
         );
         vm.stopBroadcast();
     }

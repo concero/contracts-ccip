@@ -172,7 +172,7 @@ contract Deposit is BaseTest {
         assertEq(depositRequest.usdcAmountToDeposit, 0);
     }
 
-    function test_completeDeposit_success_native_ccip_fees() public {
+    function test_completeDeposit_CCIP_native_fees() public {
         /// @dev fund user with USDC and approve parentPoolProxy to spend
         deal(usdc, user1, DEPOSIT_AMOUNT_USDC);
         vm.prank(user1);

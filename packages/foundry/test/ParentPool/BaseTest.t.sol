@@ -72,9 +72,9 @@ contract BaseTest is Test {
             vm.envAddress("CL_CCIP_ROUTER_BASE"),
             vm.envAddress("USDC_BASE"),
             address(lpToken),
+            vm.envAddress("CONCERO_AUTOMATION_BASE"),
             vm.envAddress("CONCERO_ORCHESTRATOR_BASE"),
             address(deployer),
-            0, // slotId
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
     }

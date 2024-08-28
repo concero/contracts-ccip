@@ -81,7 +81,8 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
      */
     function startBridge(
         BridgeData memory bridgeData,
-        IDexSwap.SwapData[] memory dstSwapData
+        IDexSwap.SwapData[] memory dstSwapData,
+        address _feeToken
     ) external payable {
         if (address(this) != i_proxy) revert ConceroBridge_OnlyProxyContext(address(this));
         address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
@@ -89,7 +90,8 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
             _getSrcTotalFeeInUsdc(
                 bridgeData.tokenType,
                 bridgeData.dstChainSelector,
-                bridgeData.amount
+                bridgeData.amount,
+                _feeToken
             )
         );
 
@@ -100,13 +102,26 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         uint256 amountToSend = bridgeData.amount - totalSrcFee;
         uint256 lpFee = getDstTotalFeeInUsdc(amountToSend);
 
-        bytes32 ccipMessageId = _sendTokenPayLink(
-            bridgeData.dstChainSelector,
-            fromToken,
-            amountToSend,
-            bridgeData.receiver,
-            lpFee
-        );
+        bytes32 ccipMessageId;
+
+        if (_feeToken == address(i_linkToken)) {
+            ccipMessageId = _sendTokenPayLink(
+                bridgeData.dstChainSelector,
+                fromToken,
+                amountToSend,
+                bridgeData.receiver,
+                lpFee
+            );
+        } else {
+            ccipMessageId = _sendTokenPayNative(
+                bridgeData.dstChainSelector,
+                fromToken,
+                amountToSend,
+                bridgeData.receiver,
+                lpFee
+            );
+        }
+
         // TODO: for dstSwaps: add unique keccak id with all argument including dstSwapData
         //    bytes32 id = keccak256(abi.encodePacked(ccipMessageId, bridgeData, dstSwapData));
         emit CCIPSent(
@@ -164,23 +179,25 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     }
 
     /**
-     * @notice Function to get the total amount of CCIP fees in Link
-     * @param tokenType the position of the CCIPToken enum
-     * @param dstChainSelector the destination blockchain chain selector
+     * @notice Function to get the total amount of CCIP fees
+     * @param _tokenType the position of the CCIPToken enum
+     * @param _dstChainSelector the destination blockchain chain selector
      */
-    function getCCIPFeeInLink(
-        CCIPToken tokenType,
-        uint64 dstChainSelector,
-        uint256 _amount
+    function getCCIPFee(
+        CCIPToken _tokenType,
+        uint64 _dstChainSelector,
+        uint256 _amount,
+        address _feeToken
     ) public view returns (uint256) {
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
-            getUSDCAddressByChainIndex(tokenType, i_chainIndex),
+            getUSDCAddressByChainIndex(_tokenType, i_chainIndex),
             _amount,
             address(this),
             (_amount / 1000),
-            dstChainSelector
+            _dstChainSelector,
+            _feeToken
         );
-        return i_ccipRouter.getFee(dstChainSelector, evm2AnyMessage);
+        return i_ccipRouter.getFee(_dstChainSelector, evm2AnyMessage);
     }
 
     /**
@@ -191,10 +208,16 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     function getCCIPFeeInUsdc(
         CCIPToken tokenType,
         uint64 dstChainSelector,
-        uint256 _amount
+        uint256 _amount,
+        address _feeToken
     ) public view returns (uint256) {
-        uint256 ccpFeeInLink = getCCIPFeeInLink(tokenType, dstChainSelector, _amount);
-        return (ccpFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
+        if (_feeToken == address(i_linkToken)) {
+            uint256 ccipFeeInLink = getCCIPFee(tokenType, dstChainSelector, _amount, _feeToken);
+            return (ccipFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
+        } else if (_feeToken == address(0)) {
+            uint256 ccipFeeInNative = getCCIPFee(tokenType, dstChainSelector, _amount, _feeToken);
+            return (ccipFeeInNative * uint256(s_latestNativeUsdcRate)) / STANDARD_TOKEN_DECIMALS;
+        }
     }
 
     /**
@@ -206,13 +229,19 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     function _getSrcTotalFeeInUsdc(
         CCIPToken tokenType,
         uint64 dstChainSelector,
-        uint256 amount
+        uint256 amount,
+        address _ccipFeeToken
     ) internal view returns (uint256) {
         // @notice cl functions fee
         uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
 
         // @notice cl ccip fee
-        uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(tokenType, dstChainSelector, amount);
+        uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(
+            tokenType,
+            dstChainSelector,
+            amount,
+            _ccipFeeToken
+        );
 
         // @notice concero fee
         uint256 conceroFee = amount / CONCERO_FEE_FACTOR;
@@ -229,8 +258,9 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     function getSrcTotalFeeInUSDC(
         CCIPToken tokenType,
         uint64 dstChainSelector,
-        uint256 amount
+        uint256 amount,
+        address _ccipFeeToken
     ) external view returns (uint256) {
-        return _getSrcTotalFeeInUsdc(tokenType, dstChainSelector, amount);
+        return _getSrcTotalFeeInUsdc(tokenType, dstChainSelector, amount, _ccipFeeToken);
     }
 }

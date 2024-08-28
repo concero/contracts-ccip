@@ -72,7 +72,8 @@ interface IParentPool is IPool {
     function distributeLiquidity(
         uint64 _chainSelector,
         uint256 _amountToSend,
-        bytes32 distributeLiquidityRequestId
+        bytes32 distributeLiquidityRequestId,
+        address _ccipFeeToken
     ) external;
     function setPools(
         uint64 _chainSelector,

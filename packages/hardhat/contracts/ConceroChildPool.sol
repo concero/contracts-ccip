@@ -35,6 +35,15 @@ error ConceroChildPool_SenderNotAllowed(address sender);
 error ConceroChildPool_ThereIsNoPoolToDistribute();
 error ConceroChildPool_RequestAlreadyProceeded(bytes32 reqId);
 error ConceroChildPool_WithdrawAlreadyPerformed();
+///@notice error emitted when the pool's link balance can not cover the CCIP fees
+error ConceroChildPool_InsufficientBalanceForCCIPLinkFees(uint256 linkBalance, uint256 fees);
+///@notice error emitted when the pool balance can not cover the CCIP fees
+error ConceroChildPool_InsufficientBalanceForCCIPNativeFees(
+    uint256 nativeBalance,
+    uint256 requiredFeeAmount
+);
+///@notice error emitted when a feeToken other than link or address(0)/native fee passed to function
+error ConceroChildPool_InvalidCCIPFeeToken(address invalidFeeToken);
 
 contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     using SafeERC20 for IERC20;
@@ -82,9 +91,9 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         bytes32 indexed messageId,
         uint64 destinationChainSelector,
         address receiver,
-        address linkToken,
+        address feeToken,
         uint256 fees
-    );
+    ); // if feeToken is address(0), the native token was used
     ///@notice event emitted in takeLoan when a loan is taken
     event ConceroChildPool_LoanTaken(address receiver, uint256 amount);
     ///@notice event emitted when a allowed Cross-chain contract is updated
@@ -180,7 +189,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
 
         s_withdrawRequests[_withdrawId] = true;
 
-        _ccipSend(_chainSelector, _lpAddress, _amountToSend);
+        _ccipSend(_chainSelector, _lpAddress, _amountToSend, address(0));
     }
 
     /**
@@ -198,7 +207,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
             revert ConceroChildPool_RequestAlreadyProceeded(_requestId);
         }
         s_distributeLiquidityRequestProcessed[_requestId] = true;
-        _ccipSend(_chainSelector, address(0), _amountToSend);
+        _ccipSend(_chainSelector, address(0), _amountToSend, address(0));
     }
 
     /**
@@ -221,7 +230,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
 
         for (uint256 i; i < poolsCount; ) {
             //This is a function to deal with adding&removing pools. So, the second param will always be address(0)
-            _ccipSend(s_poolChainSelectors[i], address(0), amountToSentToEachPool);
+            _ccipSend(s_poolChainSelectors[i], address(0), amountToSentToEachPool, address(0));
             unchecked {
                 ++i;
             }
@@ -375,7 +384,8 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     function _ccipSend(
         uint64 _chainSelector,
         address _lpAddress,
-        uint256 _amount
+        uint256 _amount,
+        address _feeToken
     ) internal onlyMessenger onlyProxyContext returns (bytes32 messageId) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
 
@@ -386,28 +396,69 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
 
         tokenAmounts[0] = tokenAmount;
 
-        Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
-            receiver: abi.encode(s_poolToSendTo[_chainSelector]),
-            data: abi.encode(_lpAddress, address(0), 0), //0== lp fee. It will always be zero because here we are only processing withdraws
-            tokenAmounts: tokenAmounts,
-            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
-            feeToken: address(i_linkToken)
-        });
+        if (_feeToken == address(i_linkToken)) {
+            Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
+                receiver: abi.encode(s_poolToSendTo[_chainSelector]),
+                data: abi.encode(_lpAddress, address(0), 0), //0== lp fee. It will always be zero because here we are only processing withdraws
+                tokenAmounts: tokenAmounts,
+                extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
+                feeToken: address(i_linkToken)
+            });
 
-        uint256 ccipFeeAmount = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
+            uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
 
-        i_USDC.approve(i_ccipRouter, _amount);
-        i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
+            if (i_linkToken.balanceOf(address(this)) < fees)
+                revert ConceroChildPool_InsufficientBalanceForCCIPLinkFees(
+                    i_linkToken.balanceOf(address(this)),
+                    fees
+                );
 
-        emit ConceroChildPool_CCIPSent(
-            messageId,
-            _chainSelector,
-            s_poolToSendTo[_chainSelector],
-            address(i_linkToken),
-            ccipFeeAmount
-        );
+            i_USDC.approve(i_ccipRouter, _amount);
+            i_linkToken.approve(i_ccipRouter, fees);
 
-        messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
+            emit ConceroChildPool_CCIPSent(
+                messageId,
+                _chainSelector,
+                s_poolToSendTo[_chainSelector],
+                address(i_linkToken),
+                fees
+            );
+
+            messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
+        } else if (_feeToken == address(0)) {
+            Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
+                receiver: abi.encode(s_poolToSendTo[_chainSelector]),
+                data: abi.encode(_lpAddress, address(0), 0), //0== lp fee. It will always be zero because here we are only processing withdraws
+                tokenAmounts: tokenAmounts,
+                extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
+                feeToken: address(0)
+            });
+
+            uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
+
+            if (address(this).balance < fees)
+                revert ConceroChildPool_InsufficientBalanceForCCIPNativeFees(
+                    address(this).balance,
+                    fees
+                );
+
+            i_USDC.approve(i_ccipRouter, _amount);
+
+            emit ConceroChildPool_CCIPSent(
+                messageId,
+                _chainSelector,
+                s_poolToSendTo[_chainSelector],
+                address(0), // native token used for feeToken
+                fees
+            );
+
+            messageId = IRouterClient(i_ccipRouter).ccipSend{value: fees}(
+                _chainSelector,
+                evm2AnyMessage
+            );
+        } else {
+            revert ConceroChildPool_InvalidCCIPFeeToken(_feeToken);
+        }
     }
 
     ///////////////////////////

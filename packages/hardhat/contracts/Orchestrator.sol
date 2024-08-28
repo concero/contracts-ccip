@@ -197,7 +197,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         uint256 amountReceivedFromSwap = _swap(srcSwapData, 0, false, address(this));
         bridgeData.amount = amountReceivedFromSwap;
 
-        _startBridge(bridgeData, dstSwapData);
+        _startBridge(bridgeData, dstSwapData, address(0));
     }
 
     function swap(
@@ -241,7 +241,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
         LibConcero.transferFromERC20(fromToken, msg.sender, address(this), bridgeData.amount);
 
-        _startBridge(bridgeData, dstSwapData);
+        _startBridge(bridgeData, dstSwapData, address(0));
     }
 
     function addUnconfirmedTX(
@@ -339,11 +339,17 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     }
 
     function _startBridge(
-        BridgeData memory bridgeData,
-        IDexSwap.SwapData[] memory _dstSwapData
+        BridgeData memory _bridgeData,
+        IDexSwap.SwapData[] memory _dstSwapData,
+        address _ccipFeeToken
     ) internal {
         (bool success, bytes memory error) = i_concero.delegatecall(
-            abi.encodeWithSelector(IConceroBridge.startBridge.selector, bridgeData, _dstSwapData)
+            abi.encodeWithSelector(
+                IConceroBridge.startBridge.selector,
+                _bridgeData,
+                _dstSwapData,
+                _ccipFeeToken
+            )
         );
         if (!success) revert Orchestrator_UnableToCompleteDelegateCall(error);
     }

@@ -29,10 +29,10 @@ contract ParentPool_Wrapper is ConceroParentPool {
         address _ccipRouter,
         address _usdc,
         address _lpToken,
+        address _automation,
         address _orchestrator,
         address _owner,
-        address[3] memory _messengers,
-        uint8 _slotId
+        address[3] memory _messengers
     )
         ConceroParentPool(
             _parentPoolProxy,
@@ -43,9 +43,9 @@ contract ParentPool_Wrapper is ConceroParentPool {
             _ccipRouter,
             _usdc,
             _lpToken,
+            _automation,
             _orchestrator,
             _owner,
-            _slotId,
             _messengers
         )
     {}

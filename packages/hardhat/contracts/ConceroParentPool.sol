@@ -50,6 +50,13 @@ error ConceroParentPool_NotAllowedToComplete();
 ///@notice error emitted when the request doesn't exist
 error ConceroParentPool_RequestDoesntExist();
 error ConceroParentPool_NotConceroCLA(address caller);
+///@notice error emitted when the pool balance can not cover the CCIP fees
+error ConceroParentPool_InsufficientBalanceForCCIPNativeFees(
+    uint256 balance,
+    uint256 requiredFeeAmount
+);
+///@notice error emitted when token other than link or address(0)/native is passed to ccipSend
+error ConceroParentPool_InvalidCCIPFeeToken(address invalidFeeToken);
 
 contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, ParentPoolStorage {
     ///////////////////////
@@ -149,7 +156,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         bytes32 indexed messageId,
         uint64 destinationChainSelector,
         address receiver,
-        address linkToken,
+        address feeToken,
         uint256 fees
     );
     ///@notice event emitted in depositLiquidity when a deposit is successful executed
@@ -352,7 +359,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         i_lp.mint(msg.sender, lpTokensToMint);
 
-        _distributeLiquidityToChildPools(usdcAmountAfterFee);
+        _distributeLiquidityToChildPools(usdcAmountAfterFee, address(0));
 
         s_depositFeeAmount += DEPOSIT_FEE_USDC;
 
@@ -456,14 +463,15 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     function distributeLiquidity(
         uint64 _chainSelector,
         uint256 _amountToSend,
-        bytes32 distributeLiquidityRequestId
+        bytes32 distributeLiquidityRequestId,
+        address _ccipFeeToken
     ) external onlyProxyContext onlyMessenger {
         if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroParentPool_InvalidAddress();
         if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
             revert ConceroParentPool_RequestAlreadyProceeded(distributeLiquidityRequestId);
         }
         s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
-        _ccipSend(_chainSelector, _amountToSend);
+        _ccipSend(_chainSelector, _amountToSend, _ccipFeeToken);
     }
 
     ///////////////////////
@@ -686,13 +694,20 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
      * @notice helper function to distribute liquidity after LP deposits.
      * @param _usdcAmountToDeposit amount of USDC should be distributed to the pools.
      */
-    function _distributeLiquidityToChildPools(uint256 _usdcAmountToDeposit) internal {
+    function _distributeLiquidityToChildPools(
+        uint256 _usdcAmountToDeposit,
+        address _ccipFeeToken
+    ) internal {
         uint256 childPoolsCount = s_poolChainSelectors.length;
         uint256 amountToDistribute = ((_usdcAmountToDeposit * PRECISION_HANDLER) /
             (childPoolsCount + 1)) / PRECISION_HANDLER;
 
         for (uint256 i; i < childPoolsCount; ) {
-            bytes32 ccipMessageId = _ccipSend(s_poolChainSelectors[i], amountToDistribute);
+            bytes32 ccipMessageId = _ccipSend(
+                s_poolChainSelectors[i],
+                amountToDistribute,
+                _ccipFeeToken
+            );
             _addDepositOnTheWayRequest(ccipMessageId, s_poolChainSelectors[i], amountToDistribute);
 
             unchecked {
@@ -707,35 +722,73 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
      */
     function _ccipSend(
         uint64 _chainSelector,
-        uint256 _amountToDistribute
+        uint256 _amountToDistribute,
+        address _feeToken
     ) internal returns (bytes32 messageId) {
-        Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
-            _chainSelector,
-            address(i_USDC),
-            _amountToDistribute
-        );
+        if (_feeToken == address(i_linkToken)) {
+            Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
+                _chainSelector,
+                address(i_USDC),
+                _amountToDistribute,
+                _feeToken
+            );
 
-        uint256 ccipFeeAmount = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
+            uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
 
-        i_USDC.approve(i_ccipRouter, _amountToDistribute);
-        i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
+            i_USDC.approve(i_ccipRouter, _amountToDistribute);
+            i_linkToken.approve(i_ccipRouter, fees);
 
-        messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
+            messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
 
-        emit ConceroParentPool_CCIPSent(
-            messageId,
-            _chainSelector,
-            s_poolToSendTo[_chainSelector],
-            address(i_linkToken),
-            ccipFeeAmount
-        );
+            emit ConceroParentPool_CCIPSent(
+                messageId,
+                _chainSelector,
+                s_poolToSendTo[_chainSelector],
+                address(i_linkToken),
+                fees
+            );
+        } else {
+            Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
+                _chainSelector,
+                address(i_USDC),
+                _amountToDistribute,
+                _feeToken
+            );
+
+            uint256 fees = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
+
+            if (address(this).balance < fees)
+                revert ConceroParentPool_InsufficientBalanceForCCIPNativeFees(
+                    address(this).balance,
+                    fees
+                );
+
+            i_USDC.approve(i_ccipRouter, _amountToDistribute);
+
+            messageId = IRouterClient(i_ccipRouter).ccipSend{value: fees}(
+                _chainSelector,
+                evm2AnyMessage
+            );
+
+            emit ConceroParentPool_CCIPSent(
+                messageId,
+                _chainSelector,
+                s_poolToSendTo[_chainSelector],
+                address(0),
+                fees
+            );
+        }
     }
 
     function _buildCCIPMessage(
         uint64 _chainSelector,
         address _token,
-        uint256 _amount
+        uint256 _amount,
+        address _feeToken
     ) internal view returns (Client.EVM2AnyMessage memory) {
+        if (_feeToken != address(i_linkToken) && _feeToken != address(0))
+            revert ConceroParentPool_InvalidCCIPFeeToken(_feeToken);
+
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: _token, amount: _amount});
 
@@ -745,7 +798,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
                 data: abi.encode(address(0), address(0), 0), //Here the 1° address is (0) because this is the Parent Pool and we never send to withdraw in another place.
                 tokenAmounts: tokenAmounts,
                 extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 350_000})),
-                feeToken: address(i_linkToken)
+                feeToken: _feeToken
             });
     }
 

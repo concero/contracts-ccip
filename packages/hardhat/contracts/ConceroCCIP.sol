@@ -22,6 +22,18 @@ contract ConceroCCIP is ConceroFunctions {
     using SafeERC20 for IERC20;
 
     ///////////////////////////////////////////////////////////
+    //////////////////////// ERRORS ///////////////////////////
+    ///////////////////////////////////////////////////////////
+
+    ///@notice error emitted when balance is not enough to cover CCIP fee
+    error ConceroCCIP_InsufficientBalanceForCCIPNativeFees(
+        uint256 insufficientBalance,
+        uint256 requiredAmount
+    );
+    ///@notice error emitted when invalid fee token passed
+    error ConceroCCIP_InvalidCCIPFeeToken(address invalidFeeToken);
+
+    ///////////////////////////////////////////////////////////
     //////////////////////// VARIABLES ////////////////////////
     ///////////////////////////////////////////////////////////
 
@@ -87,7 +99,8 @@ contract ConceroCCIP is ConceroFunctions {
             _amount,
             _receiver,
             _lpFee,
-            _destinationChainSelector
+            _destinationChainSelector,
+            address(i_linkToken)
         );
 
         uint256 fees = i_ccipRouter.getFee(_destinationChainSelector, evm2AnyMessage);
@@ -98,13 +111,42 @@ contract ConceroCCIP is ConceroFunctions {
         messageId = i_ccipRouter.ccipSend(_destinationChainSelector, evm2AnyMessage);
     }
 
+    function _sendTokenPayNative(
+        uint64 _destinationChainSelector,
+        address _token,
+        uint256 _amount,
+        address _receiver,
+        uint256 _lpFee
+    ) internal onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
+        Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
+            _token,
+            _amount,
+            _receiver,
+            _lpFee,
+            _destinationChainSelector,
+            address(0)
+        );
+
+        uint256 fees = i_ccipRouter.getFee(_destinationChainSelector, evm2AnyMessage);
+        if (address(this).balance < fees)
+            revert ConceroCCIP_InsufficientBalanceForCCIPNativeFees(address(this).balance, fees);
+
+        IERC20(_token).approve(address(i_ccipRouter), _amount);
+
+        messageId = i_ccipRouter.ccipSend{value: fees}(_destinationChainSelector, evm2AnyMessage);
+    }
+
     function _buildCCIPMessage(
         address _token,
         uint256 _amount,
         address _receiver,
         uint256 _lpFee,
-        uint64 _destinationChainSelector
+        uint64 _destinationChainSelector,
+        address _feeToken
     ) internal view returns (Client.EVM2AnyMessage memory) {
+        if (_feeToken != address(i_linkToken) && _feeToken != address(0))
+            revert ConceroCCIP_InvalidCCIPFeeToken(_feeToken);
+
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: _token, amount: _amount});
 
@@ -116,7 +158,7 @@ contract ConceroCCIP is ConceroFunctions {
                 extraArgs: Client._argsToBytes(
                     Client.EVMExtraArgsV1({gasLimit: CCIP_CALLBACK_GAS_LIMIT})
                 ),
-                feeToken: address(i_linkToken)
+                feeToken: _feeToken
             });
     }
 }

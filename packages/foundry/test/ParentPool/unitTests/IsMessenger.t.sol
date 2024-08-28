@@ -10,7 +10,6 @@ contract IsMessengerTest is BaseTest {
     address messenger2 = vm.envAddress("MESSENGER_1_ADDRESS");
     address messenger3 = vm.envAddress("MESSENGER_2_ADDRESS");
     address notMessenger = user1;
-    uint8 slotId = 0;
 
     function setUp() public override {
         vm.selectFork(forkId);
@@ -24,9 +23,9 @@ contract IsMessengerTest is BaseTest {
             address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
             address(vm.envAddress("USDC_BASE")),
             address(lpToken),
+            vm.envAddress("CONCERO_AUTOMATION_BASE"),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
             address(deployer),
-            slotId,
             [messenger1, address(0), address(0)]
         );
 

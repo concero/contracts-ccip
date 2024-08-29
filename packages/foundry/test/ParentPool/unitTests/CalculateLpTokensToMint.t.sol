@@ -4,8 +4,16 @@ pragma solidity ^0.8.20;
 import {BaseTest} from "../BaseTest.t.sol";
 import {Test, console, Vm} from "forge-std/Test.sol";
 import {ParentPool_Wrapper} from "../wrappers/ParentPool_Wrapper.sol";
+import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
+
+interface IERC20 {
+    function balanceOf(address account) external view returns (uint256);
+}
 
 contract CalculateLpTokensToMintTest is BaseTest {
+    uint256 internal constant USDC_DECIMALS = 10 ** 6;
+    uint256 internal constant LP_DECIMALS = 10 ** 18;
+
     /*//////////////////////////////////////////////////////////////
 								SETUP
    //////////////////////////////////////////////////////////////*/
@@ -34,5 +42,85 @@ contract CalculateLpTokensToMintTest is BaseTest {
         addFunctionsConsumer();
     }
 
-    function test_CalculateLpTokensToMint() public {}
+    /*/////////////////////////////////////////////////////////////
+       						    TESTS
+    /////////////////////////////////////////////////////////////*/
+
+    function test_CalculateLpTokensToMint_DepositInPurePool() public {
+        uint256 totalCrossChainBalanceUSDC = 0;
+        uint256 childPoolBalanceUSDC = 0;
+        uint256 amountToDepositUSDC = 200_000_000;
+        uint256 expectedLpAmountToMint = 200 ether;
+
+        uint256 lpAmountToMint = ConceroParentPool(payable(parentPoolProxy)).calculateLpAmount(
+            childPoolBalanceUSDC,
+            amountToDepositUSDC
+        );
+
+        require(lpAmountToMint == expectedLpAmountToMint, "Incorrect LP amount calculated");
+    }
+
+    function test_CalculateLpTokensToMint_DepositInPoolWithDepositsOnTheWay() public {
+        uint256 totalCrossChainBalanceBody = 3000;
+        uint256 totalCrossChainBalanceUSDC = totalCrossChainBalanceBody * USDC_DECIMALS;
+        uint256 amountToDepositUSDC = 100 * USDC_DECIMALS;
+        uint256 childPoolsCount = 3;
+        uint256 expectedLpAmountToMint = 100 ether;
+        uint256 prevDepositAmountUSDC = 100 * USDC_DECIMALS;
+
+        _simulateParentPoolDepositOnTheWay(amountToDepositUSDC, childPoolsCount);
+        uint256 childPoolsBalanceUSDC = _simulatePoolsBalanceUSDC(
+            totalCrossChainBalanceUSDC,
+            prevDepositAmountUSDC
+        );
+
+        _mintLpToken((totalCrossChainBalanceBody * LP_DECIMALS), makeAddr("1"));
+
+        uint256 lpAmountToMint = ConceroParentPool(payable(parentPoolProxy)).calculateLpAmount(
+            childPoolsBalanceUSDC,
+            amountToDepositUSDC
+        );
+
+        require(lpAmountToMint == expectedLpAmountToMint, "Incorrect LP amount calculated");
+    }
+
+    /*///////////////////////////////////////
+					HELPERS
+	///////////////////////////////////////*/
+
+    function _mintLpToken(uint256 amount, address receiver) private {
+        vm.prank(address(parentPoolProxy));
+        lpToken.mint(receiver, amount);
+    }
+
+    function _USDCToLpDecimals(uint256 amount) private returns (uint256) {
+        return (amount * LP_DECIMALS) / USDC_DECIMALS;
+    }
+
+    function _simulateParentPoolDepositOnTheWay(uint256 amount, uint256 childPoolsCount) internal {
+        for (uint256 i = 0; i < childPoolsCount; i++) {
+            ParentPool_Wrapper(payable(parentPoolProxy)).addDepositOnTheWay(
+                bytes32(uint256(1)),
+                uint64(i),
+                amount / (childPoolsCount + 1)
+            );
+        }
+    }
+
+    function _simulatePoolsBalanceUSDC(
+        uint256 totalCrossChainBalanceUSDC,
+        uint256 depositOnTheWayAmountUSDC
+    ) internal returns (uint256) {
+        uint256 depositsOnTheWayAmount = ConceroParentPool(payable(parentPoolProxy))
+            .s_depositsOnTheWayAmount();
+        uint256 childPoolsBalanceUSDC = ((totalCrossChainBalanceUSDC - depositOnTheWayAmountUSDC) *
+            3) / 4;
+        uint256 parentPoolBalanceUSDC = totalCrossChainBalanceUSDC -
+            childPoolsBalanceUSDC -
+            depositsOnTheWayAmount;
+
+        deal(usdc, address(parentPoolProxy), parentPoolBalanceUSDC);
+
+        return childPoolsBalanceUSDC;
+    }
 }

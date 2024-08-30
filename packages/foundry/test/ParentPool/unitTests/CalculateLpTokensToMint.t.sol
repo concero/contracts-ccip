@@ -67,14 +67,35 @@ contract CalculateLpTokensToMintTest is BaseTest {
         uint256 childPoolsCount = 3;
         uint256 expectedLpAmountToMint = 100 ether;
         uint256 prevDepositAmountUSDC = 100 * USDC_DECIMALS;
-
-        _simulateParentPoolDepositOnTheWay(amountToDepositUSDC, childPoolsCount);
-        uint256 childPoolsBalanceUSDC = _simulatePoolsBalanceUSDC(
+        uint256 lpTokenAmount = totalCrossChainBalanceBody * LP_DECIMALS;
+        uint256 childPoolsBalanceUSDC = _setupPoolsAndLpToken(
             totalCrossChainBalanceUSDC,
+            lpTokenAmount,
             prevDepositAmountUSDC
         );
 
-        _mintLpToken((totalCrossChainBalanceBody * LP_DECIMALS), makeAddr("1"));
+        uint256 lpAmountToMint = ConceroParentPool(payable(parentPoolProxy)).calculateLpAmount(
+            childPoolsBalanceUSDC,
+            amountToDepositUSDC
+        );
+
+        require(lpAmountToMint == expectedLpAmountToMint, "Incorrect LP amount calculated");
+    }
+
+    function test_CalculateLpTokensToMint_DepositInPoolWithFees() public {
+        uint256 totalCrossChainBalanceBody = 94_000;
+        uint256 feesEarnedBody = 400;
+        uint256 totalCrossChainBalanceUSDC = (totalCrossChainBalanceBody + feesEarnedBody) *
+            USDC_DECIMALS;
+        uint256 amountToDepositUSDC = 100 * USDC_DECIMALS;
+        uint256 childPoolsCount = 3;
+        uint256 expectedLpAmountToMint = 99576271186440677966;
+        uint256 lpTokenAmount = totalCrossChainBalanceBody * LP_DECIMALS;
+        uint256 childPoolsBalanceUSDC = _setupPoolsAndLpToken(
+            totalCrossChainBalanceUSDC,
+            lpTokenAmount,
+            0
+        );
 
         uint256 lpAmountToMint = ConceroParentPool(payable(parentPoolProxy)).calculateLpAmount(
             childPoolsBalanceUSDC,
@@ -122,5 +143,14 @@ contract CalculateLpTokensToMintTest is BaseTest {
         deal(usdc, address(parentPoolProxy), parentPoolBalanceUSDC);
 
         return childPoolsBalanceUSDC;
+    }
+
+    function _setupPoolsAndLpToken(
+        uint256 crossChainBalanceUSDC,
+        uint256 lpTokenAmount,
+        uint256 depositOnTheWatAmount
+    ) internal returns (uint256) {
+        _mintLpToken((lpTokenAmount), makeAddr("1"));
+        return _simulatePoolsBalanceUSDC(crossChainBalanceUSDC, depositOnTheWatAmount);
     }
 }

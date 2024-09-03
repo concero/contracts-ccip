@@ -254,7 +254,8 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   base: {
     saveDeployments,
     chainId: 8453,
-    url: "https://base-rpc.publicnode.com",
+    // url: "https://base-rpc.publicnode.com",
+    url: "https://base.llamarpc.com",
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_BASE,
     functionsDonIdAlias: process.env.CLF_DONID_BASE_ALIAS,

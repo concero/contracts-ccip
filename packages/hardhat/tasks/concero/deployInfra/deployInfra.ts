@@ -1,6 +1,6 @@
 import { task, types } from "hardhat/config";
 import chains, { networkEnvKeys } from "../../../constants/CNetworks";
-import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
+import { setContractVariables } from "./setContractVariables";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../../types/CNetwork";
 import log from "../../../utils/log";
@@ -19,6 +19,7 @@ import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 let deployableChains: CNetwork[] = liveChains;
 
 // 3 months in sec = 7776000
+//                   129600
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
@@ -57,10 +58,10 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
 
     if (!taskArgs.skipsetvars) {
       if (taskArgs.uploadsecrets) {
-        await uploadDonSecrets(deployableChains, slotId, 4320);
+        await uploadDonSecrets(deployableChains, slotId, 129600);
       }
       await setContractVariables(liveChains, deployableChains, slotId, taskArgs.uploadsecrets);
-      await setConceroProxyDstContracts(liveChains);
+      // await setConceroProxyDstContracts(liveChains);
     }
   });
 

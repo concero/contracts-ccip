@@ -1,4 +1,5 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+return (async () => {
 	const [
 		_,
 		__,
@@ -108,7 +109,6 @@
 		},
 		[`0x${BigInt('15971525489660198786').toString(16)}`]: {
 			urls: [
-				`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
 				'https://base.blockpi.network/v1/rpc/public',
 				'https://base-rpc.publicnode.com',
 			],
@@ -140,7 +140,6 @@
 		},
 		[`0x${BigInt('4051577828743386545').toString(16)}`]: {
 			urls: [
-				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 				'https://polygon.blockpi.network/v1/rpc/public',
 				'https://polygon-bor-rpc.publicnode.com',
 			],
@@ -157,7 +156,6 @@
 		},
 		[`0x${BigInt('6433500567565415381').toString(16)}`]: {
 			urls: [
-				`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 				'https://avalanche.blockpi.network/v1/rpc/public',
 				'https://avalanche-c-chain-rpc.publicnode.com',
 			],
@@ -258,18 +256,8 @@
 		};
 		const srcNativeCurrency = chainSelectors[srcChainSelector].nativeCurrency;
 		const dstNativeCurrency = chainSelectors[dstChainSelector].nativeCurrency;
-		if (srcNativeCurrency === 'eth') {
-			if (dstNativeCurrency === 'matic') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.maticUsd, _gasPrice);
-			} else if (dstNativeCurrency === 'avax') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
-			}
-		} else if (srcNativeCurrency === 'matic') {
-			if (dstNativeCurrency === 'eth') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.ethUsd, _gasPrice);
-			} else if (dstNativeCurrency === 'avax') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
-			}
+		if (srcNativeCurrency !== dstNativeCurrency) {
+			return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds[`${dstNativeCurrency}Usd`], _gasPrice);
 		}
 		return _gasPrice;
 	};
@@ -348,13 +336,6 @@
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
 		gasPrice = feeData.gasPrice;
-		await sendTransaction(contract, signer, {
-			nonce,
-			maxFeePerGas:
-				dstChainSelector === [`0x${BigInt('4051577828743386545').toString(16)}`]
-					? gasPrice
-					: gasPrice + getPercent(gasPrice, 10),
-		});
 		const srcUrl =
 			chainSelectors[srcChainSelector].urls[Math.floor(Math.random() * chainSelectors[srcChainSelector].urls.length)];
 		const srcChainProvider = new FunctionsJsonRpcProvider(srcUrl);
@@ -363,6 +344,8 @@
 			getPriceRates(srcChainProvider, srcChainSelector),
 		]);
 		const dstGasPriceInSrcCurrency = getDstGasPriceInSrcCurrency(gasPrice, srcPriceFeeds);
+		console.log('_gasPrice', dstGasPriceInSrcCurrency);
+		console.log('dst gas price:', gasPrice);
 		return constructResult([
 			dstGasPriceInSrcCurrency,
 			srcFeeData.gasPrice,

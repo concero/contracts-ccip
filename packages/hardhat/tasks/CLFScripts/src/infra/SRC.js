@@ -5,7 +5,9 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+
+return (async () => {
 	const [
 		_,
 		__,
@@ -118,7 +120,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
 			urls: [
-				`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
+				// `https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
 				'https://base.blockpi.network/v1/rpc/public',
 				'https://base-rpc.publicnode.com',
 			],
@@ -150,7 +152,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
 			urls: [
-				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				// `https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 				'https://polygon.blockpi.network/v1/rpc/public',
 				'https://polygon-bor-rpc.publicnode.com',
 			],
@@ -167,7 +169,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}').toString(16)}`]: {
 			urls: [
-				`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				// `https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 				'https://avalanche.blockpi.network/v1/rpc/public',
 				'https://avalanche-c-chain-rpc.publicnode.com',
 			],
@@ -276,37 +278,12 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		const srcNativeCurrency = chainSelectors[srcChainSelector].nativeCurrency;
 		const dstNativeCurrency = chainSelectors[dstChainSelector].nativeCurrency;
 
-		if (srcNativeCurrency === 'eth') {
-			if (dstNativeCurrency === 'matic') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.maticUsd, _gasPrice);
-			} else if (dstNativeCurrency === 'avax') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
-			}
-		} else if (srcNativeCurrency === 'matic') {
-			if (dstNativeCurrency === 'eth') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.ethUsd, _gasPrice);
-			} else if (dstNativeCurrency === 'avax') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
-			}
+		if (srcNativeCurrency !== dstNativeCurrency) {
+			return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds[`${dstNativeCurrency}Usd`], _gasPrice);
 		}
 
 		return _gasPrice;
 	};
-
-	// const getAverageSrcGasPrice = gasPrice => {
-	// 	let res = gasPrice;
-	// 	const bigIntSrcChainSelector = BigInt(srcChainSelector);
-	// 	if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}')) {
-	// 		res = gasPrice > 110000000000n ? 110000000000n : gasPrice;
-	// 	} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}')) {
-	// 		res = gasPrice > 64000000n ? 64000000n : gasPrice;
-	// 	} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}')) {
-	// 		res = gasPrice > 1300000000n ? 1300000000n : gasPrice;
-	// 	} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}')) {
-	// 		res = gasPrice > 10713000000n ? 10713000000n : gasPrice;
-	// 	}
-	// 	return res;
-	// };
 
 	let nonce = 0;
 	let retries = 0;
@@ -387,14 +364,14 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
 		gasPrice = feeData.gasPrice;
 		// maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
-		await sendTransaction(contract, signer, {
-			nonce,
-			// maxPriorityFeePerGas: maxPriorityFeePerGas,
-			maxFeePerGas:
-				dstChainSelector === [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]
-					? gasPrice
-					: gasPrice + getPercent(gasPrice, 10),
-		});
+		// await sendTransaction(contract, signer, {
+		// 	nonce,
+		// 	// maxPriorityFeePerGas: maxPriorityFeePerGas,
+		// 	maxFeePerGas:
+		// 		dstChainSelector === [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]
+		// 			? gasPrice
+		// 			: gasPrice + getPercent(gasPrice, 10),
+		// });
 
 		const srcUrl =
 			chainSelectors[srcChainSelector].urls[Math.floor(Math.random() * chainSelectors[srcChainSelector].urls.length)];
@@ -405,6 +382,9 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		]);
 
 		const dstGasPriceInSrcCurrency = getDstGasPriceInSrcCurrency(gasPrice, srcPriceFeeds);
+
+		console.log('_gasPrice', dstGasPriceInSrcCurrency);
+		console.log('dst gas price:', gasPrice);
 
 		return constructResult([
 			dstGasPriceInSrcCurrency,
@@ -423,3 +403,6 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		}
 	}
 })();
+
+// 28118 avax gas price in eth -                           0.000000000000028118 eth
+// 25000000000 avax gas price in avax - 0.000000025 avax - 0.0000000002215803225 eth

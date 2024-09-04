@@ -5,9 +5,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
-const ethers = await import('npm:ethers@6.10.0');
-
-return (async () => {
+(async () => {
 	const [
 		_,
 		__,
@@ -121,7 +119,7 @@ return (async () => {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
 			urls: [
 				// `https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-				'https://base.blockpi.network/v1/rpc/public',
+				// 'https://base.blockpi.network/v1/rpc/public',
 				'https://base-rpc.publicnode.com',
 			],
 			chainId: '0x2105',
@@ -170,7 +168,7 @@ return (async () => {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}').toString(16)}`]: {
 			urls: [
 				// `https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://avalanche.blockpi.network/v1/rpc/public',
+				// 'https://avalanche.blockpi.network/v1/rpc/public',
 				'https://avalanche-c-chain-rpc.publicnode.com',
 			],
 			chainId: '0xa86a',
@@ -268,10 +266,12 @@ return (async () => {
 		return result;
 	};
 	const getDstGasPriceInSrcCurrency = (_gasPrice, srcPriceFeeds) => {
-		const getGasPriceByPriceFeeds = (nativeUsdPriceFeed, dstAssetUsdPriceFeed, __gasPrice) => {
-			if (dstAssetUsdPriceFeed === undefined) return 0n;
-			const srcNativeDstNativeRate = (nativeUsdPriceFeed * 10n ** 10n) / dstAssetUsdPriceFeed;
-			const dstGasPriceInSrcCurrency = (__gasPrice * srcNativeDstNativeRate) / 10n ** 18n;
+		const getGasPriceByPriceFeeds = (nativeUsdPriceFeed, dstAssetUsdPriceFeed, gasPriceInDstCurrency) => {
+			if (dstAssetUsdPriceFeed === undefined) return 1n;
+
+			const srcNativeDstNativeRate = nativeUsdPriceFeed / dstAssetUsdPriceFeed;
+			const dstGasPriceInSrcCurrency = gasPriceInDstCurrency / srcNativeDstNativeRate;
+
 			return dstGasPriceInSrcCurrency < 1n ? 1n : dstGasPriceInSrcCurrency;
 		};
 
@@ -380,11 +380,9 @@ return (async () => {
 			srcChainProvider.getFeeData(),
 			getPriceRates(srcChainProvider, srcChainSelector),
 		]);
-
 		const dstGasPriceInSrcCurrency = getDstGasPriceInSrcCurrency(gasPrice, srcPriceFeeds);
-
-		console.log('_gasPrice', dstGasPriceInSrcCurrency);
-		console.log('dst gas price:', gasPrice);
+		console.log('dstGasPriceInOriginalCurrency', gasPrice);
+		console.log('dstGasPriceInSrcCurrency', dstGasPriceInSrcCurrency);
 
 		return constructResult([
 			dstGasPriceInSrcCurrency,
@@ -403,6 +401,3 @@ return (async () => {
 		}
 	}
 })();
-
-// 28118 avax gas price in eth -                           0.000000000000028118 eth
-// 25000000000 avax gas price in avax - 0.000000025 avax - 0.0000000002215803225 eth

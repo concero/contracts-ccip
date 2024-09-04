@@ -1,5 +1,4 @@
-const ethers = await import('npm:ethers@6.10.0');
-return (async () => {
+(async () => {
 	const [
 		_,
 		__,
@@ -109,7 +108,6 @@ return (async () => {
 		},
 		[`0x${BigInt('15971525489660198786').toString(16)}`]: {
 			urls: [
-				'https://base.blockpi.network/v1/rpc/public',
 				'https://base-rpc.publicnode.com',
 			],
 			chainId: '0x2105',
@@ -156,7 +154,6 @@ return (async () => {
 		},
 		[`0x${BigInt('6433500567565415381').toString(16)}`]: {
 			urls: [
-				'https://avalanche.blockpi.network/v1/rpc/public',
 				'https://avalanche-c-chain-rpc.publicnode.com',
 			],
 			chainId: '0xa86a',
@@ -248,10 +245,10 @@ return (async () => {
 		return result;
 	};
 	const getDstGasPriceInSrcCurrency = (_gasPrice, srcPriceFeeds) => {
-		const getGasPriceByPriceFeeds = (nativeUsdPriceFeed, dstAssetUsdPriceFeed, __gasPrice) => {
-			if (dstAssetUsdPriceFeed === undefined) return 0n;
-			const srcNativeDstNativeRate = (nativeUsdPriceFeed * 10n ** 10n) / dstAssetUsdPriceFeed;
-			const dstGasPriceInSrcCurrency = (__gasPrice * srcNativeDstNativeRate) / 10n ** 18n;
+		const getGasPriceByPriceFeeds = (nativeUsdPriceFeed, dstAssetUsdPriceFeed, gasPriceInDstCurrency) => {
+			if (dstAssetUsdPriceFeed === undefined) return 1n;
+			const srcNativeDstNativeRate = nativeUsdPriceFeed / dstAssetUsdPriceFeed;
+			const dstGasPriceInSrcCurrency = gasPriceInDstCurrency / srcNativeDstNativeRate;
 			return dstGasPriceInSrcCurrency < 1n ? 1n : dstGasPriceInSrcCurrency;
 		};
 		const srcNativeCurrency = chainSelectors[srcChainSelector].nativeCurrency;
@@ -344,8 +341,8 @@ return (async () => {
 			getPriceRates(srcChainProvider, srcChainSelector),
 		]);
 		const dstGasPriceInSrcCurrency = getDstGasPriceInSrcCurrency(gasPrice, srcPriceFeeds);
-		console.log('_gasPrice', dstGasPriceInSrcCurrency);
-		console.log('dst gas price:', gasPrice);
+		console.log('dstGasPriceInOriginalCurrency', gasPrice);
+		console.log('dstGasPriceInSrcCurrency', dstGasPriceInSrcCurrency);
 		return constructResult([
 			dstGasPriceInSrcCurrency,
 			srcFeeData.gasPrice,

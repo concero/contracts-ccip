@@ -156,6 +156,22 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
             );
     }
 
+    function getFunctionsFeeInLink(uint64 chainSelector) external view returns (uint256) {
+        return
+            IOrchestratorViewDelegate(address(this)).getFunctionsFeeInLinkViaDelegateCall(
+                chainSelector
+            );
+    }
+
+    function getFunctionsFeeInLinkViaDelegateCall(uint64 chainSelector) external returns (uint256) {
+        (bool success, bytes memory data) = i_concero.delegatecall(
+            abi.encodeWithSelector(IConceroBridge.getFunctionsFeeInLink.selector, chainSelector)
+        );
+
+        if (!success) revert Orchestrator_UnableToCompleteDelegateCall(data);
+        return abi.decode(data, (uint256));
+    }
+
     function getSrcTotalFeeInUSDCViaDelegateCall(
         CCIPToken tokenType,
         uint64 dstChainSelector,

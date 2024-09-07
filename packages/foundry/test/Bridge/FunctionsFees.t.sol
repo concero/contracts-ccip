@@ -3,6 +3,7 @@
 pragma solidity 0.8.20;
 
 import {BaseTest, console} from "../BaseTest.t.sol";
+import {ConceroBridge} from "contracts/ConceroBridge.sol";
 
 contract FunctionsFeesTest is BaseTest {
     /*//////////////////////////////////////////////////////////////
@@ -31,7 +32,9 @@ contract FunctionsFeesTest is BaseTest {
                        GET FUNCTIONS FEE IN LINK
     //////////////////////////////////////////////////////////////*/
     function test_getFunctionsFeeInLink() public {
-        uint256 fee = baseBridgeImplementation.getFunctionsFeeInLink(arbitrumChainSelector);
+        uint256 fee = ConceroBridge(payable(baseOrchestratorProxy)).getFunctionsFeeInLink(
+            arbitrumChainSelector
+        );
 
         console.log("fee:", fee);
         assertGt(fee, 0);

@@ -1,4 +1,5 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+return (async () => {
 	const [
 		_,
 		__,

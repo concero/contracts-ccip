@@ -15,4 +15,6 @@ interface IConceroBridge is IStorage {
         uint64 dstChainSelector,
         uint256 amount
     ) external view returns (uint256);
+
+    function getFunctionsFeeInLink(uint64 dstChainSelector) external view returns (uint256);
 }

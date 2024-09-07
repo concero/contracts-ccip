@@ -63,7 +63,7 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
     execSync(`bunx hardhat clf-script-build --all`, { stdio: "inherit" });
 
     if (taskArgs.function === "infra_src") {
-      await simulate(path.join(__dirname, "../", "./CLFScripts/dist/infra/SRC.min.js"), [
+      await simulate(path.join(__dirname, "../", "./CLFScripts/dist/infra/eval.min.js"), [
         getHashSum(await (await fetch(infraSrcJsCodeUrl)).text()),
         getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
         "0x0",
@@ -72,14 +72,14 @@ task("clf-script-simulate", "Executes the JavaScript source code locally")
         "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // sender
         "0x70E73f067a1fC9FE6D53151bd271715811746d3a", // recipient
         "0x" + 100000000000000000n.toString(16), // amount
-        "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_BASE).toString(16), // srcChainSelector
+        "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_AVALANCHE).toString(16), // srcChainSelector
         "0x" + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON).toString(16), // dstChainSelector
         "0x" + 1n.toString(16), // token
         "0xA65233", // blockNumber
         "0x00", //dst swap data
       ]);
     } else if (taskArgs.function === "infra_dst") {
-      await simulate(path.join(__dirname, "../", "./CLFScripts/dist/eval.min.js"), [
+      await simulate(path.join(__dirname, "../", "./CLFScripts/dist/DST.min.js"), [
         "0xada5df165da01ec1249e7ae55303f8587fd50170729ed2b33a8b53be71f8d8ab",
         "0x05f8cc312ae3687e5581353da9c5889b92d232f7776c8b81dc234fb330fda265", // ethers hash sum
         "0x1",

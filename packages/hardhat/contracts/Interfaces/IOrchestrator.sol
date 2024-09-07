@@ -15,4 +15,8 @@ interface IOrchestratorViewDelegate {
         uint64 dstChainSelector,
         uint256 amount
     ) external view returns (uint256);
+
+    function getFunctionsFeeInLinkViaDelegateCall(
+        uint64 chainSelector
+    ) external view returns (uint256);
 }

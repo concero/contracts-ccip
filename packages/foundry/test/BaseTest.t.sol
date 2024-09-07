@@ -92,7 +92,7 @@ contract BaseTest is Test {
 
         /// @dev set initial child pool
         (arbitrumChildProxy, arbitrumChildImplementation) = _deployChildPool(
-            vm.envAddress("CONCERO_PROXY_ARBITRUM"),
+            vm.envAddress("CONCERO_INFRA_PROXY_ARBITRUM"),
             vm.envAddress("LINK_ARBITRUM"),
             vm.envAddress("CL_CCIP_ROUTER_ARBITRUM"),
             vm.envAddress("USDC_ARBITRUM"),

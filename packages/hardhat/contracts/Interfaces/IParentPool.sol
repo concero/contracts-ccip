@@ -9,6 +9,16 @@ interface IParentPool is IPool {
     ///TYPE DECLARATIONS///
     ///////////////////////
 
+    enum FunctionsRequestType {
+        getTotalPoolsBalance,
+        distributeLiquidity
+    }
+
+    enum DistributeLiquidityType {
+        addPool,
+        removePool
+    }
+
     ///@notice `ccipSend` to distribute liquidity
     struct Pools {
         uint64 chainSelector;
@@ -42,6 +52,12 @@ interface IParentPool is IPool {
     }
 
     struct DepositOnTheWay {
+        uint64 chainSelector;
+        bytes32 ccipMessageId;
+        uint256 amount;
+    }
+
+    struct DepositOnTheWay_DEPRECATED {
         bytes1 id;
         uint64 chainSelector;
         bytes32 ccipMessageId;
@@ -58,23 +74,21 @@ interface IParentPool is IPool {
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
-    ///@notice event emitted when a new withdraw request is made
-    event ConceroPool_WithdrawRequest(
-        address caller,
-        address token,
-        uint256 condition,
-        uint256 amount
-    );
-    ///@notice event emitted when value is deposited into the contract
-    event ConceroPool_Deposited(address indexed token, address indexed from, uint256 amount);
+
     ///@notice event emitted when a new withdraw request is made
     event ConceroParentPool_WithdrawRequestInitiated(
+        bytes32 indexed requestId,
         address caller,
         IERC20 token,
         uint256 deadline
     );
     ///@notice event emitted when a value is withdraw from the contract
-    event ConceroParentPool_Withdrawn(address indexed to, address token, uint256 amount);
+    event ConceroParentPool_Withdrawn(
+        bytes32 indexed requestId,
+        address indexed to,
+        address token,
+        uint256 amount
+    );
     ///@notice event emitted when a Cross-chain tx is received.
     event ConceroParentPool_CCIPReceived(
         bytes32 indexed ccipMessageId,
@@ -87,9 +101,7 @@ interface IParentPool is IPool {
     event ConceroParentPool_CCIPSent(
         bytes32 indexed messageId,
         uint64 destinationChainSelector,
-        address receiver,
-        address linkToken,
-        uint256 fees
+        address receiver
     );
     ///@notice event emitted in depositLiquidity when a deposit is successful executed
     event ConceroParentPool_DepositInitiated(
@@ -121,10 +133,6 @@ interface IParentPool is IPool {
         address conceroContract,
         uint256 isAllowed
     );
-    ///@notice event emitted in setConceroContract when the address is emitted
-    event ConceroParentPool_ConceroContractUpdated(address concero);
-    ///@notice event emitted when a contract is removed from the distribution array
-    event ConceroParentPool_ChainAndAddressRemoved(uint64 _chainSelector);
     ///@notice event emitted when a pool is removed and the redistribution process start
     event ConceroParentPool_RedistributionStarted(bytes32 requestId);
     ///@notice event emitted when the MasterPool Cap is increased
@@ -132,8 +140,6 @@ interface IParentPool is IPool {
 
     ///@notice event emitted when a new request is added
     event ConceroParentPool_RequestAdded(bytes32 requestId);
-    ///@notice event emitted when the Pool Address is updated
-    event ConceroParentPool_PoolAddressUpdated(address pool);
     ///@notice event emitted when the Keeper Address is updated
     event ConceroParentPool_ForwarderAddressUpdated(address forwarderAddress);
     ///@notice event emitted when a Chainlink Functions request is not fulfilled

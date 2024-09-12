@@ -5,7 +5,9 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+
+return (async () => {
 	const [
 		_,
 		__,
@@ -383,6 +385,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		const dstGasPriceInSrcCurrency = getDstGasPriceInSrcCurrency(gasPrice, srcPriceFeeds);
 		console.log('dstGasPriceInOriginalCurrency', gasPrice);
 		console.log('dstGasPriceInSrcCurrency', dstGasPriceInSrcCurrency);
+		console.log('linkNative', srcPriceFeeds.linkNative);
 
 		return constructResult([
 			dstGasPriceInSrcCurrency,

@@ -344,6 +344,7 @@ return (async () => {
 		const dstGasPriceInSrcCurrency = getDstGasPriceInSrcCurrency(gasPrice, srcPriceFeeds);
 		console.log('dstGasPriceInOriginalCurrency', gasPrice);
 		console.log('dstGasPriceInSrcCurrency', dstGasPriceInSrcCurrency);
+		console.log('linkNative', srcPriceFeeds.linkNative);
 		return constructResult([
 			dstGasPriceInSrcCurrency,
 			srcFeeData.gasPrice,

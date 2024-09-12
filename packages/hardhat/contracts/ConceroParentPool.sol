@@ -247,7 +247,7 @@ contract ConceroParentPool is
         // uint256 depositMinusFee = _usdcAmount - _convertToUSDCTokenDecimals(depositFee);
 
         bytes[] memory args = new bytes[](3);
-        args[0] = abi.encodePacked(s_hashSum);
+        args[0] = abi.encodePacked(s_getBalanceJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(FunctionsRequestType.getTotalPoolsBalance);
 
@@ -310,7 +310,7 @@ contract ConceroParentPool is
         }
 
         bytes[] memory args = new bytes[](2);
-        args[0] = abi.encodePacked(s_hashSum);
+        args[0] = abi.encodePacked(s_getBalanceJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
 
         bytes32 withdrawalId = keccak256(
@@ -478,7 +478,7 @@ contract ConceroParentPool is
         }
 
         bytes[] memory args = new bytes[](5);
-        args[0] = abi.encodePacked(s_hashSum);
+        args[0] = abi.encodePacked(s_collectLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(lpAddress);
         args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
@@ -512,7 +512,7 @@ contract ConceroParentPool is
         }
 
         bytes[] memory args = new bytes[](5);
-        args[0] = abi.encodePacked(s_hashSum);
+        args[0] = abi.encodePacked(s_collectLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(lpAddress);
         args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
@@ -583,9 +583,16 @@ contract ConceroParentPool is
      * @param _hashSum  the JsCode
      * @dev this functions was used inside of ConceroFunctions
      */
-    function setHashSum(bytes32 _hashSum) external payable onlyProxyContext onlyOwner {
-        s_hashSum = _hashSum;
-        emit ConceroParentPool_HashSumUpdated(_hashSum);
+    function setCollectLiquidityJsCodeHashSum(
+        bytes32 _hashSum
+    ) external payable onlyProxyContext onlyOwner {
+        s_collectLiquidityJsCodeHashSum = _hashSum;
+    }
+
+    function setDistributeLiquidityJsCodeHashSum(
+        bytes32 _hashSum
+    ) external payable onlyProxyContext onlyOwner {
+        s_distributeLiquidityJsCodeHashSum = _hashSum;
     }
 
     /**
@@ -595,7 +602,6 @@ contract ConceroParentPool is
      */
     function setEthersHashSum(bytes32 _ethersHashSum) external payable onlyProxyContext onlyOwner {
         s_ethersHashSum = _ethersHashSum;
-        emit ConceroParentPool_EthersHashSumUpdated(_ethersHashSum);
     }
 
     /**
@@ -633,7 +639,7 @@ contract ConceroParentPool is
             );
 
             bytes[] memory args = new bytes[](6);
-            args[0] = abi.encodePacked(s_hashSum);
+            args[0] = abi.encodePacked(s_distributeLiquidityJsCodeHashSum);
             args[1] = abi.encodePacked(s_ethersHashSum);
             args[2] = abi.encodePacked(FunctionsRequestType.distributeLiquidity);
             args[3] = abi.encodePacked(_chainSelector);
@@ -676,7 +682,7 @@ contract ConceroParentPool is
         );
 
         bytes[] memory args = new bytes[](6);
-        args[0] = abi.encodePacked(s_hashSum);
+        args[0] = abi.encodePacked(s_distributeLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(FunctionsRequestType.distributeLiquidity);
         args[3] = abi.encodePacked(_chainSelector);

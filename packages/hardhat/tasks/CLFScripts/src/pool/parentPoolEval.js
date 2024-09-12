@@ -1,12 +1,12 @@
 try {
+	const [b, o, f] = bytesArgs[2];
 	const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';
 	const q =
 		'https://raw.githubusercontent.com/concero/contracts-ccip/' +
 		'${CLF_JS_CODE_BRANCH}' +
-		`/packages/hardhat/tasks/CLFScripts/dist/pool/${bytesArgs[2] === '0x1' ? 'distributeLiquidity' : 'getTotalBalance'}.min.js`;
+		`/packages/hardhat/tasks/CLFScripts/dist/pool/${f === '0x2' ? 'collectLiquidity' : f === '0x1' ? 'distributeLiquidity' : 'getTotalBalance'}.min.js`;
 	const [t, p] = await Promise.all([fetch(u), fetch(q)]);
 	const [e, c] = await Promise.all([t.text(), p.text()]);
-
 	const g = async s => {
 		return (
 			'0x' +
@@ -17,9 +17,7 @@ try {
 	};
 	const r = await g(c);
 	const x = await g(e);
-	const b = bytesArgs[0].toLowerCase();
-	const o = bytesArgs[1].toLowerCase();
-	if (r === b && x === o) {
+	if (r === b.toLowerCase() && x === o.toLowerCase()) {
 		const ethers = new Function(e + '; return ethers;')();
 		return await eval(c);
 	}

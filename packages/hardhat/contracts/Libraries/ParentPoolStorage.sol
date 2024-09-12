@@ -17,7 +17,7 @@ contract ParentPoolStorage {
     ///@notice variable to store the Chainlink Function DON Secret Version
     uint64 internal s_donHostedSecretsVersion;
     ///@notice variable to store the Chainlink Function Source Hashsum
-    bytes32 internal s_hashSum;
+    bytes32 internal s_getBalanceJsCodeHashSum;
     ///@notice variable to store Ethers Hashsum
     bytes32 internal s_ethersHashSum;
     ///@notice variable to store not processed amounts deposited by LPs
@@ -68,7 +68,11 @@ contract ParentPoolStorage {
     IParentPool.DepositOnTheWay[150] internal s_depositsOnTheWayArray;
 
     ///@notice variable to store the automation keeper address
-    address public s_forwarderAddress;
+    address internal s_forwarderAddress;
+
+    bytes32 internal s_collectLiquidityJsCodeHashSum;
+
+    bytes32 internal s_distributeLiquidityJsCodeHashSum;
 
     ///@notice array to store the withdraw requests of users
     bytes32[] public s_withdrawalRequestIds;

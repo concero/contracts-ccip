@@ -150,10 +150,6 @@ interface IParentPool is IPool {
     event ConceroParentPool_DonSecretVersionUpdated(uint64 version);
     ///@notice event emitted when the Don Slot ID is updated
     event ConceroParentPool_DonHostedSlotId(uint8 slotId);
-    ///@notice event emitted when the hashSum of Chainlink Function is updated
-    event ConceroParentPool_HashSumUpdated(bytes32 hashSum);
-    ///@notice event emitted when the Ethers HashSum is updated
-    event ConceroParentPool_EthersHashSumUpdated(bytes32 hashSum);
     ///@notice event emitted when a LP retries a withdrawal request
     event ConceroParentPool_RetryPerformed(bytes32 reqId);
 

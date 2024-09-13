@@ -40,7 +40,8 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         address recipient,
         CCIPToken token,
         uint256 amount,
-        uint64 dstChainSelector
+        uint64 dstChainSelector,
+        bytes32 dstSwapDataHashSum
     );
     /// @notice event emitted when a stuck amount is withdraw
     event Concero_StuckAmountWithdraw(address owner, address token, uint256 amount);
@@ -107,15 +108,15 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
             bridgeData.receiver,
             lpFee
         );
-        // TODO: for dstSwaps: add unique keccak id with all argument including dstSwapData
-        //    bytes32 id = keccak256(abi.encodePacked(ccipMessageId, bridgeData, dstSwapData));
+        bytes32 dstSwapDataHashSum = keccak256(abi.encode(ccipMessageId, bridgeData, dstSwapData));
         emit CCIPSent(
             ccipMessageId,
             msg.sender,
             bridgeData.receiver,
             bridgeData.tokenType,
             amountToSend,
-            bridgeData.dstChainSelector
+            bridgeData.dstChainSelector,
+            dstSwapDataHashSum
         );
         sendUnconfirmedTX(
             ccipMessageId,
@@ -151,6 +152,9 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
 
         return srcClFeeInLink + dstClFeeInLink;
     }
+    // 1225781991000
+    // 7370076402000
+    // 0.00319761642488786
 
     /**
      * @notice Function to get the total amount of fees charged by Chainlink functions in USDC

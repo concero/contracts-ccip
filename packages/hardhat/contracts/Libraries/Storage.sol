@@ -46,6 +46,8 @@ abstract contract Storage is ReentrancyGuard, IStorage {
     ///@notice Functions: Mapping to keep track of cross-chain gas prices
     mapping(uint64 chainSelector => uint256 lastGasPrice) public s_lastGasPrices;
 
+    ///@notice Bridge: mapping to track pending batched CCIP tx amount per destination chain
+    mapping(uint64 dstChainSelector => uint256 amount) internal s_pendingBatchedTxAmountByDstChain;
     ///@notice Bridge: mapping to track pending CCIP txs for batched execution per destination chain
     mapping(uint64 dstChainSelector => bytes32[] bridgeTxIds)
         internal s_pendingCCIPTransactionsByDstChain;

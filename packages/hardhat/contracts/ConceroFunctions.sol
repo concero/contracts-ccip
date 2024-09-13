@@ -262,13 +262,11 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     function sendUnconfirmedTX(
         bytes32 messageId,
         address sender,
-        address recipient,
+        BridgeData memory bridgeData,
         uint256 amount,
-        uint64 dstChainSelector,
-        CCIPToken token,
         IDexSwap.SwapData[] memory dstSwapData
     ) internal {
-        if (s_conceroContracts[dstChainSelector] == address(0)) {
+        if (s_conceroContracts[bridgeData.dstChainSelector] == address(0)) {
             revert ConceroFunctions_DstContractAddressNotSet();
         }
 
@@ -276,14 +274,14 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         args[0] = abi.encodePacked(s_srcJsHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(RequestType.addUnconfirmedTxDst);
-        args[3] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
+        args[3] = abi.encodePacked(s_conceroContracts[bridgeData.dstChainSelector]);
         args[4] = abi.encodePacked(messageId);
         args[5] = abi.encodePacked(sender);
-        args[6] = abi.encodePacked(recipient);
+        args[6] = abi.encodePacked(bridgeData.receiver);
         args[7] = abi.encodePacked(amount);
         args[8] = abi.encodePacked(CHAIN_SELECTOR);
-        args[9] = abi.encodePacked(dstChainSelector);
-        args[10] = abi.encodePacked(uint8(token));
+        args[9] = abi.encodePacked(bridgeData.dstChainSelector);
+        args[10] = abi.encodePacked(uint8(bridgeData.tokenType));
         args[11] = abi.encodePacked(block.number);
         args[12] = _swapDataToBytes(dstSwapData);
 
@@ -292,7 +290,14 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         s_requests[reqId].isPending = true;
         s_requests[reqId].ccipMessageId = messageId;
 
-        emit UnconfirmedTXSent(messageId, sender, recipient, amount, token, dstChainSelector);
+        emit UnconfirmedTXSent(
+            messageId,
+            sender,
+            bridgeData.receiver,
+            amount,
+            bridgeData.tokenType,
+            bridgeData.dstChainSelector
+        );
     }
 
     function _handleDstFunctionsResponse(Request storage request) internal {

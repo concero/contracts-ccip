@@ -174,7 +174,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         args[9] = abi.encodePacked(uint8(token));
         args[10] = abi.encodePacked(amount);
         args[11] = abi.encodePacked(CHAIN_SELECTOR);
-        //todo: generate dstSwapDataHashSum, add to args, send to CLF to compare sums
+        args[12] = abi.encodePacked(keccak256(dstSwapData));
 
         bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT);
 
@@ -366,7 +366,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     /////////////////////////////
     function _swapDataToBytes(
         IDexSwap.SwapData[] memory _swapData
-    ) private pure returns (bytes memory _encodedData) {
+    ) internal pure returns (bytes memory _encodedData) {
         if (_swapData.length == 0) {
             _encodedData = new bytes(1);
         } else {

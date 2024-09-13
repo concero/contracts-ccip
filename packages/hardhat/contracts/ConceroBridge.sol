@@ -108,7 +108,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
             bridgeData.receiver,
             lpFee
         );
-        bytes32 dstSwapDataHashSum = keccak256(abi.encode(ccipMessageId, bridgeData, dstSwapData));
+        bytes32 dstSwapDataHashSum = keccak256(_swapDataToBytes(dstSwapData));
         emit CCIPSent(
             ccipMessageId,
             msg.sender,

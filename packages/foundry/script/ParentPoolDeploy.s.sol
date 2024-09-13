@@ -14,10 +14,10 @@ contract ParentPoolDeploy is Script {
         address _ccipRouter,
         address _usdc,
         address _lpToken,
+        address _automation,
         address _orchestrator,
         address _owner,
-        address[3] memory _msgrs,
-        uint8 _slotId
+        address[3] memory _msgrs
     ) public returns (ConceroParentPool pool) {
         uint256 forkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
         vm.selectFork(forkId);
@@ -32,9 +32,9 @@ contract ParentPoolDeploy is Script {
             _ccipRouter,
             _usdc,
             _lpToken,
+            _automation,
             _orchestrator,
             _owner,
-            _slotId,
             _msgrs
         );
         vm.stopBroadcast();

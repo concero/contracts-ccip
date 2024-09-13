@@ -14,10 +14,11 @@ import {
   sepolia,
 } from "viem/chains";
 import { urls } from "./rpcUrls";
+import { getEnvVar } from "../utils/getEnvVar";
 
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
-const deployerPK = process.env.DEPLOYER_PRIVATE_KEY;
-const proxyDeployerPK = process.env.PROXY_DEPLOYER_PRIVATE_KEY;
+const deployerPK = getEnvVar("DEPLOYER_PRIVATE_KEY");
+const proxyDeployerPK = getEnvVar("PROXY_DEPLOYER_PRIVATE_KEY");
 const saveDeployments = false;
 
 export type NetworkType = "mainnet" | "testnet";
@@ -26,14 +27,6 @@ export const networkTypes: Record<NetworkType, string> = {
   mainnet: "mainnet",
   testnet: "testnet",
 };
-
-if (!deployerPK) {
-  console.error("DEPLOYER_PRIVATE_KEY is not set");
-}
-
-if (!proxyDeployerPK) {
-  console.error("PROXY_DEPLOYER_PRIVATE_KEY is not set");
-}
 
 export const networkEnvKeys: Record<string, string> = {
   // mainnets

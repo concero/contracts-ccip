@@ -112,6 +112,8 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
 
         uint256 batchedTxAmount = s_pendingBatchedTxAmountByDstChain[bridgeData.dstChainSelector];
 
+        sendUnconfirmedTX(batchedTxId, msg.sender, bridgeData, amountToSend, dstSwapData);
+
         if (
             batchedTxAmount >= MINIMUM_BATCHED_TX_THRESHOLD &&
             batchedTxAmount <= MAXIMUM_BATCHED_TX_THRESHOLD
@@ -141,7 +143,6 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
             );
 
             emit CCIPSent(ccipMessageId, msg.sender, bridgeData, batchedTxAmount);
-            sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData, batchedTxAmount, dstSwapData);
         } else if (batchedTxAmount > MAXIMUM_BATCHED_TX_THRESHOLD) {
             s_pendingBatchedTxAmountByDstChain[bridgeData.dstChainSelector] -= amountToSend;
             s_pendingCCIPTransactionsByDstChain[bridgeData.dstChainSelector].pop();
@@ -157,7 +158,6 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
             );
 
             emit CCIPSent(ccipMessageId, msg.sender, bridgeData, amountToSend);
-            sendUnconfirmedTX(ccipMessageId, msg.sender, bridgeData, amountToSend, dstSwapData);
         }
     }
 

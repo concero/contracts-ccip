@@ -34,8 +34,11 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
     if (live) deployableChains = [CNetworks[hre.network.name]];
 
     let liveChains: CNetwork[] = [];
-    if (networkType == networkTypes.mainnet) liveChains = conceroChains.mainnet.infra;
-    else liveChains = conceroChains.testnet.infra;
+    if (networkType == networkTypes.mainnet) {
+      liveChains = conceroChains.mainnet.infra;
+    } else {
+      liveChains = conceroChains.testnet.infra;
+    }
 
     await deployInfra({
       hre,
@@ -60,7 +63,7 @@ async function deployInfra(params: DeployInfraParams) {
     await deployProxyAdmin(hre, ProxyType.infraProxy);
     await deployTransparentProxy(hre, ProxyType.infraProxy);
 
-    const [proxyAddress, _] = getEnvAddress(ProxyType.infraProxy, name);
+    const [proxyAddress] = getEnvAddress(ProxyType.infraProxy, name);
     const { functionsSubIds } = CNetworks[name];
     await addCLFConsumer(CNetworks[name], [proxyAddress], functionsSubIds[0]);
   }

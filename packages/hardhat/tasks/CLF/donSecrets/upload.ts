@@ -19,7 +19,7 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
 
   for (const chain of chains) {
     const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls, name } = chain;
-    const { signer } = await getEthersV5FallbackSignerAndProvider(name);
+    const { signer } = getEthersV5FallbackSignerAndProvider(name);
 
     const secretsManager = new SecretsManager({
       signer,

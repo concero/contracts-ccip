@@ -377,7 +377,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         uint64 _chainSelector,
         address _lpAddress,
         uint256 _amount
-    ) internal onlyMessenger onlyProxyContext returns (bytes32 messageId) {
+    ) internal onlyMessenger onlyProxyContext returns (bytes32) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
 
         Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({
@@ -400,6 +400,8 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         i_USDC.approve(i_ccipRouter, _amount);
         i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
 
+        bytes32 messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
+
         emit ConceroChildPool_CCIPSent(
             messageId,
             _chainSelector,
@@ -408,7 +410,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
             ccipFeeAmount
         );
 
-        messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
+        return messageId;
     }
 
     ///////////////////////////

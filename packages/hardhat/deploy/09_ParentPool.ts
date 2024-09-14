@@ -19,6 +19,7 @@ interface ConstructorArgs {
   owner?: string;
   slotId?: number;
   poolMessengers?: string[];
+  automationForwarder: string;
 }
 
 const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: ConstructorArgs) => Promise<void> =
@@ -60,9 +61,9 @@ const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: Const
         args.ccipRouter,
         args.usdc,
         args.lpToken,
-        args.automation,
         args.conceroProxyAddress,
         args.owner,
+        args.automationforwarder,
         args.poolMessengers,
       ],
       log: true,

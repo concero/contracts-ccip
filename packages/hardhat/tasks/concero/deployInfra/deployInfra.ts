@@ -16,6 +16,7 @@ import { compileContracts } from "../../../utils/compileContracts";
 import { ensureWalletBalance } from "../ensureBalances/ensureNativeBalances";
 import { DeployInfraParams } from "./types";
 import { deployerTargetBalances } from "../../../constants/targetBalances";
+import { ProxyType } from "../../../constants/deploymentVariables";
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("deployproxy", "Deploy the proxy")
@@ -56,10 +57,10 @@ async function deployInfra(params: DeployInfraParams) {
 
   if (deployProxy) {
     await ensureWalletBalance(proxyDeployer, deployerTargetBalances, CNetworks[name]);
-    await deployProxyAdmin(hre, "infraProxy");
-    await deployTransparentProxy(hre, "infraProxy");
+    await deployProxyAdmin(hre, ProxyType.infraProxy);
+    await deployTransparentProxy(hre, ProxyType.infraProxy);
 
-    const [proxyAddress, _] = getEnvAddress("infraProxy", name);
+    const [proxyAddress, _] = getEnvAddress(ProxyType.infraProxy, name);
     const { functionsSubIds } = CNetworks[name];
     await addCLFConsumer(CNetworks[name], [proxyAddress], functionsSubIds[0]);
   }
@@ -70,7 +71,7 @@ async function deployInfra(params: DeployInfraParams) {
     await deployConceroDexSwap(hre);
     await deployConcero(hre, { slotId });
     await deployConceroOrchestrator(hre);
-    await upgradeProxyImplementation(hre, "infraProxy", false);
+    await upgradeProxyImplementation(hre, ProxyType.infraProxy, false);
   }
 
   if (setVars) {

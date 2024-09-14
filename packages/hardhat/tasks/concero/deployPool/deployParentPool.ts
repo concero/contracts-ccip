@@ -13,8 +13,10 @@ import deployParentPool from "../../../deploy/09_ParentPool";
 import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import deployProxyAdmin from "../../../deploy/10_ProxyAdmin";
+import { zeroAddress } from "viem";
 
 task("deploy-parent-pool", "Deploy the pool")
+  .addOptionalParam("automationforwarder", "Set the contract var for automation forwarder", zeroAddress)
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .addFlag("deployproxy", "Deploy the proxy")
@@ -40,7 +42,7 @@ task("deploy-parent-pool", "Deploy the pool")
     if (taskArgs.skipdeploy) {
       log("Skipping deployment", "deploy-parent-pool");
     } else {
-      await deployParentPool(hre);
+      await deployParentPool(hre, { automationforwarder: taskArgs.automationforwarder });
       await upgradeProxyImplementation(hre, ProxyType.parentPool, false);
     }
 

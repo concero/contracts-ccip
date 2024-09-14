@@ -4,7 +4,12 @@ import { privateKeyToAccount } from "viem/accounts";
 import log, { err } from "../../utils/log";
 import { task } from "hardhat/config";
 import { getFallbackClients } from "../../utils/getViemClients";
-import { DeploymentPrefixes, type IProxyType, viemReceiptConfig } from "../../constants/deploymentVariables";
+import {
+  DeploymentPrefixes,
+  type IProxyType,
+  viemReceiptConfig,
+  writeContractConfig,
+} from "../../constants/deploymentVariables";
 import { formatGas } from "../../utils/formatting";
 
 export async function upgradeProxyImplementation(hre, proxyType: IProxyType, shouldPause: boolean) {
@@ -48,6 +53,7 @@ export async function upgradeProxyImplementation(hre, proxyType: IProxyType, sho
     account: viemAccount,
     args: [conceroProxy, implementation, "0x"],
     chain: viemChain,
+    ...writeContractConfig,
   });
 
   const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ ...viemReceiptConfig, hash: txHash });

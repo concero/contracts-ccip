@@ -1,5 +1,6 @@
 import { getEnvVar } from "../utils/getEnvVar";
 import type { WaitForTransactionReceiptParameters } from "viem/actions/public/waitForTransactionReceipt";
+import { WriteContractParameters } from "viem";
 
 export const messengers: string[] = [
   getEnvVar("MESSENGER_0_ADDRESS"),
@@ -17,7 +18,9 @@ export const viemReceiptConfig: WaitForTransactionReceiptParameters = {
   timeout: 0,
   confirmations: 2,
 };
-
+export const writeContractConfig: WriteContractParameters = {
+  gas: 3000000n, // 3M
+};
 export enum ProxyType {
   infraProxy = "infraProxy",
   parentPoolProxy = "parentPoolProxy",

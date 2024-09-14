@@ -18,7 +18,11 @@ export const viemReceiptConfig: WaitForTransactionReceiptParameters = {
   confirmations: 2,
 };
 
-export type ProxyType = "infraProxy" | "parentPoolProxy" | "childPoolProxy";
+export enum ProxyType {
+  infraProxy = "infraProxy",
+  parentPoolProxy = "parentPoolProxy",
+  childPoolProxy = "childPoolProxy",
+}
 
 type ProxyDeploymentPrefixes = {
   [key in ProxyType]: string;
@@ -26,13 +30,16 @@ type ProxyDeploymentPrefixes = {
 
 export type DeploymentPrefixes = ProxyDeploymentPrefixes & {
   infraProxyAdmin: string;
+  infraProxy: string;
   bridge: string;
   dexSwap: string;
   orchestrator: string;
   parentPoolProxyAdmin: string;
   parentPool: string;
+  parentPoolProxy: string;
   childPoolProxyAdmin: string;
   childPool: string;
+  childPoolProxy: string;
   automation: string;
   lpToken: string;
   create3Factory: string;

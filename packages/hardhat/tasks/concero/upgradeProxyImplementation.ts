@@ -7,6 +7,7 @@ import { getFallbackClients } from "../../utils/getViemClients";
 import {
   DeploymentPrefixes,
   type IProxyType,
+  ProxyType,
   viemReceiptConfig,
   writeContractConfig,
 } from "../../constants/deploymentVariables";
@@ -21,11 +22,11 @@ export async function upgradeProxyImplementation(hre, proxyType: IProxyType, sho
 
   if (shouldPause) {
     implementationKey = "pause";
-  } else if (proxyType === "infraProxy") {
+  } else if (proxyType === ProxyType.infraProxy) {
     implementationKey = "orchestrator";
-  } else if (proxyType === "childPoolProxy") {
+  } else if (proxyType === ProxyType.childPoolProxy) {
     implementationKey = "childPool";
-  } else if (proxyType === "parentPoolProxy") {
+  } else if (proxyType === ProxyType.parentPoolProxy) {
     implementationKey = "parentPool";
   } else {
     err(`Proxy type ${proxyType} not found`, "upgradeProxyImplementation", chainName);
@@ -33,7 +34,7 @@ export async function upgradeProxyImplementation(hre, proxyType: IProxyType, sho
   }
 
   const { abi: proxyAdminAbi } = await import(
-    "../../artifacts/contracts/transparentProxy/ConceroProxyAdmin.sol/ConceroProxyAdmin.json"
+    "../../artifacts/contracts/Proxy/ConceroProxyAdmin.sol/ConceroProxyAdmin.json"
   );
 
   const viemAccount = privateKeyToAccount(`0x${process.env.PROXY_DEPLOYER_PRIVATE_KEY}`);

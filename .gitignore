@@ -35,3 +35,5 @@ packages/nextjs/**/*.js
 
 # except for the CLF js dist files
 !packages/hardhat/tasks/CLFScripts/dist/**/*.js
+
+bun.lockb

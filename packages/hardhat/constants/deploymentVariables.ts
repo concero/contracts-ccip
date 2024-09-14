@@ -32,16 +32,13 @@ type ProxyDeploymentPrefixes = {
 
 export type DeploymentPrefixes = ProxyDeploymentPrefixes & {
   infraProxyAdmin: string;
-  infraProxy: string;
   bridge: string;
   dexSwap: string;
   orchestrator: string;
   parentPoolProxyAdmin: string;
   parentPool: string;
-  parentPoolProxy: string;
   childPoolProxyAdmin: string;
   childPool: string;
-  childPoolProxy: string;
   automation: string;
   lpToken: string;
   create3Factory: string;

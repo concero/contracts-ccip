@@ -4,10 +4,10 @@ import { privateKeyToAccount } from "viem/accounts";
 import log, { err } from "../../utils/log";
 import { task } from "hardhat/config";
 import { getFallbackClients } from "../../utils/getViemClients";
-import { DeploymentPrefixes, ProxyType, viemReceiptConfig } from "../../constants/deploymentVariables";
+import { DeploymentPrefixes, type IProxyType, viemReceiptConfig } from "../../constants/deploymentVariables";
 import { formatGas } from "../../utils/formatting";
 
-export async function upgradeProxyImplementation(hre, proxyType: ProxyType, shouldPause: boolean) {
+export async function upgradeProxyImplementation(hre, proxyType: IProxyType, shouldPause: boolean) {
   const { name: chainName } = hre.network;
   const chainId = hre.network.config.chainId;
   const { viemChain } = CNetworks[chainName];

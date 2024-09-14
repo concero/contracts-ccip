@@ -4,11 +4,11 @@ import CNetworks from "../constants/CNetworks";
 import { updateEnvAddress } from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
-import { ProxyType } from "../constants/deploymentVariables";
+import { type IProxyType } from "../constants/deploymentVariables";
 
-const deployProxyAdmin: (hre: HardhatRuntimeEnvironment, proxyType: ProxyType) => Promise<void> = async function (
+const deployProxyAdmin: (hre: HardhatRuntimeEnvironment, proxyType: IProxyType) => Promise<void> = async function (
   hre: HardhatRuntimeEnvironment,
-  proxyType: ProxyType,
+  proxyType: IProxyType,
 ) {
   const { proxyDeployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;

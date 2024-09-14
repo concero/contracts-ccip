@@ -10,7 +10,7 @@ import deployConceroOrchestrator from "../../../deploy/05_ConceroOrchestrator";
 import addCLFConsumer from "../../CLF/subscriptions/add";
 import { getEnvAddress } from "../../../utils/getEnvVar";
 import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
-import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
+import deployTransparentProxy from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import { compileContracts } from "../../../utils/compileContracts";
 import { ensureWalletBalance } from "../ensureBalances/ensureNativeBalances";

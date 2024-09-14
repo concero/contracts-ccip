@@ -3,7 +3,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import deployChildPool from "../../../deploy/08_ChildPool";
 import { setChildProxyVariables } from "./setChildProxyVariables";
 import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
-import deployTransparentProxy, { ProxyType } from "../../../deploy/11_TransparentProxy";
+import deployTransparentProxy from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import { compileContracts } from "../../../utils/compileContracts";
 

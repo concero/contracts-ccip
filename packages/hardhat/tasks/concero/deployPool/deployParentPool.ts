@@ -8,16 +8,18 @@ import uploadDonSecrets from "../../CLF/donSecrets/upload";
 import { CNetwork } from "../../../types/CNetwork";
 import { setParentPoolVariables } from "./setParentPoolVariables";
 import deployTransparentProxy from "../../../deploy/11_TransparentProxy";
-import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 import { compileContracts } from "../../../utils/compileContracts";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import deployParentPool from "../../../deploy/09_ParentPool";
+import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
+import { zeroAddress } from "viem";
 
 task("deploy-parent-pool", "Deploy the pool")
   .addFlag("deployproxy", "Deploy the proxy")
   .addFlag("deployimplementation", "Deploy the implementation")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .addFlag("setvars", "Set the contract variables")
+  .addOptionalParam("automationforwarder", "Set the contract var for automation forwarder", zeroAddress)
   .addFlag("uploadsecrets", "Set the contract variables")
   .setAction(async taskArgs => {
     compileContracts({ quiet: true });
@@ -36,7 +38,7 @@ task("deploy-parent-pool", "Deploy the pool")
     }
 
     if (taskArgs.deployimplementation) {
-      await deployParentPool(hre);
+      await deployParentPool(hre, { automationForwarder: taskArgs.automationforwarder }); //todo: not passing slotId to deployParentPool functions' constructor args
       await upgradeProxyImplementation(hre, "parentPoolProxy", false);
     }
 

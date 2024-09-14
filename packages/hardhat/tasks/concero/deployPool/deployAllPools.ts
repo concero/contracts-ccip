@@ -8,7 +8,7 @@ const executeCommand = (command: string) => {
 
 task("deploy-all-pools", "Deploy all pool")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
-  .addFlag("mainnet", "is CLF_SUBID_BASE_SEPOLIA deploy")
+  .addFlag("mainnet", "is !CLF_SUBID_BASE_SEPOLIA deploy")
   .setAction(async taskArgs => {
     const slotId = parseInt(taskArgs.slotid);
     const parentPoolNetwork = taskArgs.mainnet ? "base" : "baseSepolia";
@@ -19,7 +19,7 @@ task("deploy-all-pools", "Deploy all pool")
       `yarn hardhat deploy-parent-pool --network ${parentPoolNetwork} --slotid ${slotId} --deployproxy --uploadsecrets --skipdeploy --skipsetvars`,
     );
 
-    executeCommand(`yarn hardhat deploy-pool-clfcla --network ${parentPoolNetwork} --slotid ${slotId}`);
+    // executeCommand(`yarn hardhat deploy-pool-clfcla --network ${parentPoolNetwork} --slotid ${slotId}`);
 
     for (const chain of liveChains) {
       if (chain.name === "base" || chain.name === "baseSepolia") continue;

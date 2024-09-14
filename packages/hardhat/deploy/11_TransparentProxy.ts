@@ -4,7 +4,7 @@ import CNetworks from "../constants/CNetworks";
 import { updateEnvAddress } from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvAddress } from "../utils/getEnvVar";
-import { type IProxyType } from "../constants/deploymentVariables";
+import { type IProxyType, writeContractConfig } from "../constants/deploymentVariables";
 
 const deployTransparentProxy: (hre: HardhatRuntimeEnvironment, proxyType: IProxyType) => Promise<void> =
   async function (hre: HardhatRuntimeEnvironment, proxyType: IProxyType) {
@@ -23,6 +23,7 @@ const deployTransparentProxy: (hre: HardhatRuntimeEnvironment, proxyType: IProxy
       args: [initialImplementation, proxyAdmin, "0x"],
       log: true,
       autoMine: true,
+      gasLimit: writeContractConfig.gas,
     })) as Deployment;
 
     if (live) {

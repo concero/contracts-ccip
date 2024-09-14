@@ -67,8 +67,8 @@ export const urls: Record<string, string[]> = {
     "https://polygon-bor-rpc.publicnode.com",
   ],
   polygonAmoy: [
-    `https://polygon-amoy.blastapi.io/${BLAST_API_KEY}`,
     "https://rpc.ankr.com/polygon_amoy",
+    `https://polygon-amoy.blastapi.io/${BLAST_API_KEY}`,
     `https://polygon-amoy.infura.io/v3/${INFURA_API_KEY}`,
   ],
   base: [

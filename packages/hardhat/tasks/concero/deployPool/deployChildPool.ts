@@ -16,8 +16,8 @@ task("deploy-child-pool", "Deploy the pool")
     const hre: HardhatRuntimeEnvironment = require("hardhat");
 
     if (taskArgs.deployproxy) {
-      await deployProxyAdmin(hre, "childPoolProxy");
-      await deployTransparentProxy(hre, "childPoolProxy");
+      await deployProxyAdmin(hre, ProxyType.childPoolProxy);
+      await deployTransparentProxy(hre, ProxyType.childPoolProxy);
     }
 
     if (taskArgs.deployimplementation) {

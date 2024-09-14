@@ -13,6 +13,7 @@ import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import deployParentPool from "../../../deploy/09_ParentPool";
 import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 import { zeroAddress } from "viem";
+import { ProxyType } from "../../../constants/deploymentVariables";
 
 task("deploy-parent-pool", "Deploy the pool")
   .addFlag("deployproxy", "Deploy the proxy")
@@ -30,16 +31,16 @@ task("deploy-parent-pool", "Deploy the pool")
     const deployableChains: CNetwork[] = [CNetworks[hre.network.name]];
 
     if (taskArgs.deployproxy) {
-      await deployProxyAdmin(hre, "parentPoolProxy");
-      await deployTransparentProxy(hre, "parentPoolProxy");
-      const [proxyAddress, _] = getEnvAddress("parentPoolProxy", name);
+      await deployProxyAdmin(hre, ProxyType.parentPoolProxy);
+      await deployTransparentProxy(hre, ProxyType.parentPoolProxy);
+      const [proxyAddress, _] = getEnvAddress(ProxyType.parentPoolProxy, name);
       const { functionsSubIds } = chains[name];
       await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
     }
 
     if (taskArgs.deployimplementation) {
       await deployParentPool(hre, { automationForwarder: taskArgs.automationforwarder }); //todo: not passing slotId to deployParentPool functions' constructor args
-      await upgradeProxyImplementation(hre, "parentPoolProxy", false);
+      await upgradeProxyImplementation(hre, ProxyType.parentPoolProxy, false);
     }
 
     if (taskArgs.uploadsecrets) {

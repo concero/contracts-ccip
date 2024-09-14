@@ -15,7 +15,6 @@ import { formatGas } from "../../utils/formatting";
 
 export async function upgradeProxyImplementation(hre, proxyType: IProxyType, shouldPause: boolean) {
   const { name: chainName } = hre.network;
-  const chainId = hre.network.config.chainId;
   const { viemChain } = CNetworks[chainName];
 
   let implementationKey: keyof DeploymentPrefixes;

@@ -14,6 +14,7 @@ task("deploy-child-pool", "Deploy the pool")
   .addFlag("setvars", "Set the contract variables")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
+    compileContracts({ quiet: true });
 
     if (taskArgs.deployproxy) {
       await deployProxyAdmin(hre, ProxyType.childPoolProxy);
@@ -21,7 +22,6 @@ task("deploy-child-pool", "Deploy the pool")
     }
 
     if (taskArgs.deployimplementation) {
-      compileContracts({ quiet: true });
       await deployChildPool(hre);
       await upgradeProxyImplementation(hre, ProxyType.childPoolProxy, false);
     }

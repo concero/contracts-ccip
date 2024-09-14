@@ -36,7 +36,7 @@ task("deploy-parent-pool", "Deploy the pool")
     }
 
     if (taskArgs.deployimplementation) {
-      await deployParentPool(hre); //todo: not passing slotId to deployParentPool functions' constructor args
+      await deployParentPool(hre);
       await upgradeProxyImplementation(hre, "parentPoolProxy", false);
     }
 

@@ -24,6 +24,8 @@ export enum ProxyType {
   childPoolProxy = "childPoolProxy",
 }
 
+export type IProxyType = keyof typeof ProxyType;
+
 type ProxyDeploymentPrefixes = {
   [key in ProxyType]: string;
 };

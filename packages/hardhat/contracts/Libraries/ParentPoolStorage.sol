@@ -17,13 +17,13 @@ contract ParentPoolStorage {
     ///@notice variable to store the Chainlink Function DON Secret Version
     uint64 internal s_donHostedSecretsVersion;
     ///@notice variable to store the Chainlink Function Source Hashsum
-    bytes32 internal s_hashSum;
+    bytes32 internal s_getBalanceJsCodeHashSum;
     ///@notice variable to store Ethers Hashsum
     bytes32 internal s_ethersHashSum;
     ///@notice variable to store not processed amounts deposited by LPs
     uint256 public s_depositsOnTheWayAmount;
 
-    uint8 internal s_latestDepositOnTheWayId;
+    uint8 internal s_latestDepositOnTheWayIndex;
 
     uint256 internal s_depositFeeAmount;
 
@@ -39,11 +39,10 @@ contract ParentPoolStorage {
     /////////////
     ///@notice array of Pools to receive Liquidity through `ccipSend` function
     uint64[] internal s_poolChainSelectors;
-    IParentPool.DepositOnTheWay[] internal s_depositsOnTheWayArray;
+    IParentPool.DepositOnTheWay_DEPRECATED[] internal s_depositsOnTheWayArray_DEPRECATED;
 
     ///@notice Mapping to keep track of valid pools to transfer in case of liquidation or rebalance
-    mapping(uint64 chainSelector => address pool) public s_poolToSendTo;
-    //todo: rename s_poolToSendTo to childPools
+    mapping(uint64 chainSelector => address pool) public s_childPools;
 
     ///@notice Mapping to keep track of allowed pool senders
     mapping(uint64 chainSelector => mapping(address poolAddress => uint256))
@@ -61,4 +60,23 @@ contract ParentPoolStorage {
     mapping(bytes32 clfReqId => bytes32 withdrawalId) public s_withdrawalIdByCLFRequestId;
 
     mapping(bytes32 withdrawalId => IParentPool.WithdrawRequest) public s_withdrawRequests;
+
+    ///////////////////////////
+    //// NEW STORAGE SLOTS/////
+    ///////////////////////////
+
+    IParentPool.DepositOnTheWay[150] internal s_depositsOnTheWayArray;
+
+    ///@notice variable to store the automation keeper address
+    address internal s_forwarderAddress;
+
+    bytes32 internal s_collectLiquidityJsCodeHashSum;
+
+    bytes32 internal s_distributeLiquidityJsCodeHashSum;
+
+    ///@notice array to store the withdraw requests of users
+    bytes32[] public s_withdrawalRequestIds;
+
+    ///@notice Mapping to keep track of Chainlink Functions requests
+    mapping(bytes32 withdrawalId => bool isTriggered) public s_withdrawTriggered;
 }

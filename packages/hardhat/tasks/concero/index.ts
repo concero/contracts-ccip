@@ -22,6 +22,7 @@ import fundContract from "./fundContract";
 import dripBnm from "./dripBnm";
 import transferTokens from "./transferTokens";
 import callContractFunction from "./callFunction";
+import decodeCLFFulfill from "./decodeClfFulfill";
 import testScript from "./test";
 
 export default {
@@ -47,4 +48,5 @@ export default {
   transferTokens,
   testScript,
   callContractFunction,
+  decodeCLFFulfill,
 };

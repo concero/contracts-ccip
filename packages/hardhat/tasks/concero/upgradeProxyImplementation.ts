@@ -9,7 +9,6 @@ import { formatGas } from "../../utils/formatting";
 
 export async function upgradeProxyImplementation(hre, proxyType: IProxyType, shouldPause: boolean) {
   const { name: chainName } = hre.network;
-  const chainId = hre.network.config.chainId;
   const { viemChain } = CNetworks[chainName];
 
   let implementationKey: keyof DeploymentPrefixes;
@@ -28,7 +27,7 @@ export async function upgradeProxyImplementation(hre, proxyType: IProxyType, sho
   }
 
   const { abi: proxyAdminAbi } = await import(
-    "../../artifacts/contracts/transparentProxy/ConceroProxyAdmin.sol/ConceroProxyAdmin.json"
+    "../../artifacts/contracts/Proxy/ConceroProxyAdmin.sol/ConceroProxyAdmin.json"
   );
 
   const viemAccount = privateKeyToAccount(`0x${process.env.PROXY_DEPLOYER_PRIVATE_KEY}`);

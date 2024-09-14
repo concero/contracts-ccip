@@ -13,18 +13,20 @@ import {
   polygonAmoy,
   sepolia,
 } from "viem/chains";
+import { urls } from "./rpcUrls";
+import { getEnvVar } from "../utils/getEnvVar";
 
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
-const deployerPK = process.env.DEPLOYER_PRIVATE_KEY;
-const proxyDeployerPK = process.env.PROXY_DEPLOYER_PRIVATE_KEY;
+const deployerPK = getEnvVar("DEPLOYER_PRIVATE_KEY");
+const proxyDeployerPK = getEnvVar("PROXY_DEPLOYER_PRIVATE_KEY");
 const saveDeployments = false;
-if (!deployerPK) {
-  console.error("DEPLOYER_PRIVATE_KEY is not set");
-}
 
-if (!proxyDeployerPK) {
-  console.error("PROXY_DEPLOYER_PRIVATE_KEY is not set");
-}
+export type NetworkType = "mainnet" | "testnet";
+
+export const networkTypes: Record<NetworkType, string> = {
+  mainnet: "mainnet",
+  testnet: "testnet",
+};
 
 export const networkEnvKeys: Record<string, string> = {
   // mainnets
@@ -98,8 +100,10 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   } as HardhatNetworkUserConfig,
   // TESTNETS
   sepolia: {
+    type: networkTypes.testnet,
     saveDeployments,
     chainId: 11155111,
+    rpcs: urls.sepolia,
     url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_SEPOLIA,
@@ -119,9 +123,11 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     name: "sepolia",
   },
   avalancheFuji: {
+    type: networkTypes.testnet,
     saveDeployments,
     chainId: 43113,
     url: `https://avalanche-fuji.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    rpcs: urls.avalancheFuji,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_FUJI,
     functionsDonIdAlias: process.env.CLF_DONID_FUJI_ALIAS,
@@ -140,9 +146,11 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     name: "avalancheFuji",
   },
   optimismSepolia: {
+    type: networkTypes.testnet,
     saveDeployments,
     chainId: 11155420,
     url: `https://optimism-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    rpcs: urls.optimismSepolia,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_OPTIMISM_SEPOLIA,
     functionsDonIdAlias: process.env.CLF_DONID_OPTIMISM_SEPOLIA_ALIAS,
@@ -168,9 +176,11 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     },
   },
   arbitrumSepolia: {
+    type: networkTypes.testnet,
     saveDeployments,
     chainId: 421614,
     url: `https://arbitrum-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    rpcs: urls.arbitrumSepolia,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_ARBITRUM_SEPOLIA,
     functionsDonIdAlias: process.env.CLF_DONID_ARBITRUM_SEPOLIA_ALIAS,
@@ -196,9 +206,11 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     },
   },
   baseSepolia: {
+    type: networkTypes.testnet,
     saveDeployments,
     chainId: 84532,
     url: `https://base-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+    rpcs: urls.baseSepolia,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_BASE_SEPOLIA,
     functionsDonIdAlias: process.env.CLF_DONID_BASE_SEPOLIA_ALIAS,
@@ -224,9 +236,11 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     },
   },
   polygonAmoy: {
+    type: networkTypes.testnet,
     saveDeployments,
     chainId: 80002,
     url: `https://polygon-amoy.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    rpcs: urls.polygonAmoy,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_POLYGON_AMOY,
     functionsDonIdAlias: process.env.CLF_DONID_POLYGON_AMOY_ALIAS,
@@ -252,9 +266,11 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
   },
   // MAINNETS
   base: {
+    type: networkTypes.mainnet,
     saveDeployments,
     chainId: 8453,
     url: "https://base-rpc.publicnode.com",
+    rpcs: urls.base,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_BASE,
     functionsDonIdAlias: process.env.CLF_DONID_BASE_ALIAS,
@@ -279,9 +295,11 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     },
   },
   arbitrum: {
+    type: networkTypes.mainnet,
     saveDeployments,
     chainId: 42161,
     url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+    rpcs: urls.arbitrum,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_ARBITRUM,
     functionsDonIdAlias: process.env.CLF_DONID_ARBITRUM_ALIAS,
@@ -306,10 +324,12 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     },
   },
   polygon: {
+    type: networkTypes.mainnet,
     saveDeployments,
     chainId: 137,
     // url: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
     url: "https://polygon-bor-rpc.publicnode.com",
+    rpcs: urls.polygon,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_POLYGON,
     functionsDonIdAlias: process.env.CLF_DONID_POLYGON_ALIAS,
@@ -334,10 +354,12 @@ const CNetworks: Record<CNetworkNames, CNetwork> = {
     },
   },
   avalanche: {
+    type: networkTypes.mainnet,
     saveDeployments,
     chainId: 43114,
     // url: `https://avax.meowrpc.com`,
     url: `https://avalanche-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+    rpcs: urls.avalanche,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_AVALANCHE,
     functionsDonIdAlias: process.env.CLF_DONID_AVALANCHE_ALIAS,

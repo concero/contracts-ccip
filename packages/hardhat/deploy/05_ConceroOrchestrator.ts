@@ -1,4 +1,4 @@
-import { DeployFunction, Deployment } from "hardhat-deploy/types";
+import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
@@ -6,13 +6,18 @@ import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
 import { messengers } from "../constants/deploymentVariables";
 
-const deployConceroOrchestrator: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const deployConceroOrchestrator: (hre: HardhatRuntimeEnvironment) => Promise<void> = async function (
+  hre: HardhatRuntimeEnvironment,
+) {
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const { name } = hre.network;
-  const { linkToken, ccipRouter, functionsRouter, conceroChainIndex } = chains[name];
+  const { name, live } = hre.network;
+  const { functionsRouter, conceroChainIndex, type } = chains[name];
+
   const conceroDexSwapAddress = getEnvVar(`CONCERO_DEX_SWAP_${networkEnvKeys[name]}`);
   const conceroAddress = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`);
+
+  //todo: fix this
   const conceroPoolAddress =
     name === "base" || name === "baseSepolia"
       ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`)
@@ -20,7 +25,7 @@ const deployConceroOrchestrator: DeployFunction = async function (hre: HardhatRu
 
   const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`);
 
-  console.log("Deploying ConceroOrchestrator...");
+  log("Deploying...", "ConceroOrchestrator", name);
 
   const conceroProxyDeployment = (await deploy("Orchestrator", {
     from: deployer,
@@ -37,12 +42,12 @@ const deployConceroOrchestrator: DeployFunction = async function (hre: HardhatRu
     autoMine: true,
   })) as Deployment;
 
-  if (name !== "hardhat" && name !== "localhost") {
-    log(`ConceroOrchestrator deployed to ${name} to: ${conceroProxyDeployment.address}`, "deployConceroOrchestrator");
+  if (live) {
+    log(`Deployed at: ${conceroProxyDeployment.address}`, "ConceroOrchestrator", name);
     updateEnvVariable(
       `CONCERO_ORCHESTRATOR_${networkEnvKeys[name]}`,
       conceroProxyDeployment.address,
-      "../../../.env.deployments",
+      `deployments.${type}`,
     );
   }
 };

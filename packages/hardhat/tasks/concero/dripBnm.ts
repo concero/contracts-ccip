@@ -1,13 +1,13 @@
 import { CNetwork } from "../../types/CNetwork";
-import { getClients } from "../utils/getViemClients";
 import chains from "../../constants/CNetworks";
-import { liveChains } from "./deployInfra/deployInfra";
+import liveChains from "./deployInfra/deployInfra";
 import { task } from "hardhat/config";
+import { viemReceiptConfig } from "../../constants/deploymentVariables";
 
 export async function dripBnm(chains: CNetwork[], amount: number = 20) {
   for (const chain of chains) {
     const { ccipBnmToken, viemChain, url, name } = chain;
-    const { walletClient, publicClient, account } = getClients(viemChain, url);
+    const { walletClient, publicClient, account } = getFallbackClients(chain);
     const gasPrice = await publicClient.getGasPrice();
 
     for (let i = 0; i < amount; i++) {
@@ -29,7 +29,10 @@ export async function dripBnm(chains: CNetwork[], amount: number = 20) {
       });
 
       const sendHash = await walletClient.writeContract(sendReq);
-      const { cumulativeGasUsed: sendGasUsed } = await publicClient.waitForTransactionReceipt({ hash: sendHash });
+      const { cumulativeGasUsed: sendGasUsed } = await publicClient.waitForTransactionReceipt({
+        ...viemReceiptConfig,
+        hash: sendHash,
+      });
       console.log(`Sent 1 CCIPBNM token to ${name}:${account.address}. Gas used: ${sendGasUsed.toString()}`);
     }
   }
@@ -38,9 +41,9 @@ export async function dripBnm(chains: CNetwork[], amount: number = 20) {
 task("drip-bnm", "Drips CCIPBNM tokens to the deployer")
   .addOptionalParam("amount", "Amount of CCIPBNM to drip", "5")
   .setAction(async taskArgs => {
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     const amount = parseInt(taskArgs.amount, 10);
-    if (name !== "localhost" && name !== "hardhat") {
+    if (live) {
       await dripBnm([chains[name]], amount);
     } else {
       for (const chain of liveChains) {

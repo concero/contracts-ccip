@@ -372,6 +372,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @dev This function will sent the address of the user as data. This address will be used to update the mapping on ParentPool.
      * @dev when processing withdrawals, the _chainSelector will always be the index 0 of s_poolChainSelectors
      */
+    //todo: rename _lpAddress
     function _ccipSend(
         uint64 _chainSelector,
         address _lpAddress,

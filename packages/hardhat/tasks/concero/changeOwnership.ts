@@ -1,9 +1,10 @@
 import CNetworks from "../../constants/CNetworks";
-import { getClients } from "../utils/getViemClients";
 import { privateKeyToAccount } from "viem/accounts";
 import log from "../../utils/log";
 import { task } from "hardhat/config";
 import { abi as ownableAbi } from "@openzeppelin/contracts/build/contracts/Ownable.json";
+import { viemReceiptConfig } from "../../constants/deploymentVariables";
+import { getFallbackClients } from "../../utils/getViemClients";
 
 export async function changeOwnership(hre, targetContract, newOwner: string) {
   const { name: chainName } = hre.network;
@@ -16,7 +17,7 @@ export async function changeOwnership(hre, targetContract, newOwner: string) {
   }
 
   const viemAccount = privateKeyToAccount(`0x${process.env.PROXY_DEPLOYER_PRIVATE_KEY}`);
-  const { walletClient, publicClient } = getClients(viemChain, url, viemAccount);
+  const { walletClient, publicClient } = getFallbackClients(chain, viemAccount);
 
   const txHash = await walletClient.writeContract({
     address: targetContract,
@@ -28,7 +29,7 @@ export async function changeOwnership(hre, targetContract, newOwner: string) {
     gas: 200_000n,
   });
 
-  const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ ...viemReceiptConfig, hash: txHash });
 
   log(`Change Ownership: gasUsed: ${cumulativeGasUsed}, hash: ${txHash}`, "changeOwnership");
 }
@@ -37,8 +38,8 @@ task("change-ownership", "Changes the ownership of the contract")
   .addParam("newowner", "The address of the new owner")
   .addParam("targetcontract", "The address of the target contract")
   .setAction(async taskArgs => {
-    const { name } = hre.network;
-    if (name !== "localhost" && name !== "hardhat") {
+    const { name, live } = hre.network;
+    if (live) {
       await changeOwnership(hre, taskArgs.targetcontract, taskArgs.newowner);
     }
   });

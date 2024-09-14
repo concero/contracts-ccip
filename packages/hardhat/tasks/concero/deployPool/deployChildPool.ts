@@ -6,6 +6,7 @@ import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 import deployTransparentProxy from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import { compileContracts } from "../../../utils/compileContracts";
+import { ProxyType } from "../../../constants/deploymentVariables";
 
 task("deploy-child-pool", "Deploy the pool")
   .addFlag("deployproxy", "Deploy the proxy")
@@ -22,7 +23,7 @@ task("deploy-child-pool", "Deploy the pool")
     if (taskArgs.deployimplementation) {
       compileContracts({ quiet: true });
       await deployChildPool(hre);
-      await upgradeProxyImplementation(hre, ProxyType.childPool, false);
+      await upgradeProxyImplementation(hre, ProxyType.childPoolProxy, false);
     }
 
     if (taskArgs.setvars) {

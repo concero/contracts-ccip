@@ -1,0 +1,38 @@
+# Solidity API
+
+## IConceroBridge
+
+### startBridge
+
+```solidity
+function startBridge(struct IStorage.BridgeData bridgeData, struct IDexSwap.SwapData[] dstSwapData) external payable
+```
+
+Function responsible to trigger CCIP and start the bridging process
+
+_dstSwapData can be empty if there is no swap on destination
+this function should only be able to called thought infra Proxy_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| bridgeData | struct IStorage.BridgeData | The bytes data payload with transaction infos |
+| dstSwapData | struct IDexSwap.SwapData[] | The bytes data payload with destination swap Data |
+
+### getSrcTotalFeeInUSDC
+
+```solidity
+function getSrcTotalFeeInUSDC(enum IStorage.CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) external view returns (uint256)
+```
+
+Function to get the total amount of fees on the source
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| tokenType | enum IStorage.CCIPToken | the position of the CCIPToken enum |
+| dstChainSelector | uint64 | the destination blockchain chain selector |
+| amount | uint256 | the amount of value the fees will calculated over. |
+

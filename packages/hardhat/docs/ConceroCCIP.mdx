@@ -1,0 +1,80 @@
+# Solidity API
+
+## ConceroCCIP_ChainNotAllowed
+
+```solidity
+error ConceroCCIP_ChainNotAllowed(uint64 chainSelector)
+```
+
+## ConceroCCIP
+
+### i_linkToken
+
+```solidity
+contract LinkTokenInterface i_linkToken
+```
+
+IMMUTABLES///
+
+### i_ccipRouter
+
+```solidity
+contract IRouterClient i_ccipRouter
+```
+
+### onlyAllowListedChain
+
+```solidity
+modifier onlyAllowListedChain(uint64 _chainSelector)
+```
+
+CCIP Modifier to check receivers for a specific chain
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _chainSelector | uint64 | Id of the destination chain |
+
+### constructor
+
+```solidity
+constructor(struct IStorage.FunctionsVariables _variables, uint64 _chainSelector, uint256 _chainIndex, address _link, address _ccipRouter, address _dexSwap, address _pool, address _proxy, address[3] _messengers) public
+```
+
+### _sendTokenPayLink
+
+```solidity
+function _sendTokenPayLink(uint64 _destinationChainSelector, address _token, uint256 _amount, address _receiver, uint256 _lpFee) internal returns (bytes32 messageId)
+```
+
+Sends USDC to the destination chain using CCIP
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _destinationChainSelector | uint64 | The destination chain selector |
+| _token | address | the token to be send |
+| _amount | uint256 | the amount of tokens to ben send |
+| _receiver | address | the receiver address |
+| _lpFee | uint256 | the fee for Liquidity Providers |
+
+### _buildCCIPMessage
+
+```solidity
+function _buildCCIPMessage(address _token, uint256 _amount, address _receiver, uint256 _lpFee, uint64 _destinationChainSelector) internal view returns (struct Client.EVM2AnyMessage)
+```
+
+Chainlink CCIP helper function to build the EVM2AnyMessage
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _token | address | the token to be send |
+| _amount | uint256 | the amount of tokens to ben send |
+| _receiver | address | the receiver address |
+| _lpFee | uint256 | the fee for Liquidity Providers |
+| _destinationChainSelector | uint64 | The destination chain selector |
+

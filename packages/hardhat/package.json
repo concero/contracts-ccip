@@ -61,6 +61,7 @@
     "hardhat-contract-sizer": "^2.10.0",
     "hardhat-deploy": "^0.12.4",
     "hardhat-deploy-ethers": "^0.4.2",
+    "hardhat-docgen": "^1.3.0",
     "hardhat-gas-reporter": "^1.0.10",
     "ora": "^8.0.1",
     "prettier": "^3.3.3",
@@ -68,8 +69,8 @@
     "qrcode": "^1.5.1",
     "solhint": "^5.0.1",
     "solhint-community": "^4.0.0",
-    "solhint-plugin-prettier": "^0.1.0",
     "solhint-plugin-chainlink-solidity": "git+https://github.com/smartcontractkit/chainlink-solhint-rules.git#v1.3.0",
+    "solhint-plugin-prettier": "^0.1.0",
     "solidity-coverage": "^0.8.12",
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
@@ -83,6 +84,9 @@
     "@nomicfoundation/hardhat-viem": "^2.0.3",
     "@openzeppelin/contracts": "^5.0.2",
     "@typechain/ethers-v6": "^0.5.1",
+    "@uniswap/swap-router-contracts": "https://github.com/Uniswap/swap-router-contracts",
+    "@uniswap/v2-periphery": "https://github.com/Uniswap/v2-periphery",
+    "@uniswap/v3-periphery": "https://github.com/sushiswap/v3-periphery",
     "dotenv": "^16.4.5",
     "envfile": "^7.1.0",
     "ethers": "6.12.1",
@@ -91,11 +95,9 @@
     "regenerator-runtime": "^0.14.1",
     "solhint-plugin-chainlink-solidity": "git+https://github.com/smartcontractkit/chainlink-solhint-rules.git#v1.2.1",
     "solidity-bytes-utils": "0.8.0",
-    "viem": "^2.19.1",
-    "@uniswap/swap-router-contracts": "https://github.com/Uniswap/swap-router-contracts",
-    "@uniswap/v2-periphery": "https://github.com/Uniswap/v2-periphery",
-    "@uniswap/v3-periphery": "https://github.com/sushiswap/v3-periphery",
+    "solidity-docgen": "^0.6.0-beta.36",
     "sushiswap-v3-periphery": "https://github.com/sushiswap/v3-periphery",
-    "velodrome": "https://github.com/velodrome-finance/contracts"
+    "velodrome": "https://github.com/velodrome-finance/contracts",
+    "viem": "^2.19.1"
   }
 }

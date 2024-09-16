@@ -1,0 +1,57 @@
+# Solidity API
+
+## IDexSwap
+
+### DexType
+
+Concero Enum to track DEXes
+
+```solidity
+enum DexType {
+  UniswapV2,
+  UniswapV2FoT,
+  SushiV3Single,
+  UniswapV3Single,
+  SushiV3Multi,
+  UniswapV3Multi,
+  Aerodrome,
+  AerodromeFoT,
+  UniswapV2Ether,
+  WrapNative,
+  UnwrapWNative
+}
+```
+
+### SwapData
+
+Concero Struct to track DEX Data
+
+```solidity
+struct SwapData {
+  enum IDexSwap.DexType dexType;
+  address fromToken;
+  uint256 fromAmount;
+  address toToken;
+  uint256 toAmount;
+  uint256 toAmountMin;
+  bytes dexData;
+}
+```
+
+### entrypoint
+
+```solidity
+function entrypoint(struct IDexSwap.SwapData[] _swapData, address _recipient) external payable
+```
+
+Entry point function for the Orchestrator to take loans
+
+_only the Orchestrator contract should be able to call this function_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _swapData | struct IDexSwap.SwapData[] | a struct array that contains dex information. |
+| _recipient | address |  |
+

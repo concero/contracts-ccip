@@ -1,0 +1,287 @@
+# Solidity API
+
+## IParentPool
+
+### FunctionsRequestType
+
+TYPE DECLARATIONS///
+
+```solidity
+enum FunctionsRequestType {
+  getTotalPoolsBalance,
+  distributeLiquidity
+}
+```
+
+### DistributeLiquidityType
+
+```solidity
+enum DistributeLiquidityType {
+  addPool,
+  removePool
+}
+```
+
+### Pools
+
+`ccipSend` to distribute liquidity
+
+```solidity
+struct Pools {
+  uint64 chainSelector;
+  address poolAddress;
+}
+```
+
+### RequestType
+
+Struct to track Functions Requests Type
+
+```solidity
+enum RequestType {
+  startDeposit_getChildPoolsLiquidity,
+  startWithdrawal_getChildPoolsLiquidity,
+  performUpkeep_requestLiquidityTransfer
+}
+```
+
+### WithdrawRequest
+
+```solidity
+struct WithdrawRequest {
+  address lpAddress;
+  uint256 lpSupplySnapshot;
+  uint256 lpAmountToBurn;
+  uint256 totalCrossChainLiquiditySnapshot;
+  uint256 amountToWithdraw;
+  uint256 liquidityRequestedFromEachPool;
+  uint256 remainingLiquidityFromChildPools;
+  uint256 triggeredAtTimestamp;
+}
+```
+
+### DepositRequest
+
+```solidity
+struct DepositRequest {
+  address lpAddress;
+  uint256 childPoolsLiquiditySnapshot;
+  uint256 usdcAmountToDeposit;
+  uint256 deadline;
+}
+```
+
+### DepositOnTheWay
+
+```solidity
+struct DepositOnTheWay {
+  uint64 chainSelector;
+  bytes32 ccipMessageId;
+  uint256 amount;
+}
+```
+
+### DepositOnTheWay_DEPRECATED
+
+```solidity
+struct DepositOnTheWay_DEPRECATED {
+  bytes1 id;
+  uint64 chainSelector;
+  bytes32 ccipMessageId;
+  uint256 amount;
+}
+```
+
+### PerformWithdrawRequest
+
+```solidity
+struct PerformWithdrawRequest {
+  address liquidityProvider;
+  uint256 amount;
+  bytes32 withdrawId;
+  bool failed;
+}
+```
+
+### ConceroParentPool_WithdrawRequestInitiated
+
+```solidity
+event ConceroParentPool_WithdrawRequestInitiated(bytes32 requestId, address caller, contract IERC20 token, uint256 deadline)
+```
+
+event emitted when a new withdraw request is made
+
+### ConceroParentPool_Withdrawn
+
+```solidity
+event ConceroParentPool_Withdrawn(bytes32 requestId, address to, address token, uint256 amount)
+```
+
+event emitted when a value is withdraw from the contract
+
+### ConceroParentPool_CCIPReceived
+
+```solidity
+event ConceroParentPool_CCIPReceived(bytes32 ccipMessageId, uint64 srcChainSelector, address sender, address token, uint256 amount)
+```
+
+event emitted when a Cross-chain tx is received.
+
+### ConceroParentPool_CCIPSent
+
+```solidity
+event ConceroParentPool_CCIPSent(bytes32 messageId, uint64 destinationChainSelector, address receiver)
+```
+
+event emitted when a Cross-chain message is sent.
+
+### ConceroParentPool_DepositInitiated
+
+```solidity
+event ConceroParentPool_DepositInitiated(bytes32 requestId, address liquidityProvider, uint256 _amount, uint256 deadline)
+```
+
+event emitted in depositLiquidity when a deposit is successful executed
+
+### ConceroParentPool_DepositCompleted
+
+```solidity
+event ConceroParentPool_DepositCompleted(bytes32 requestId, address lpAddress, uint256 usdcAmount, uint256 _lpTokensToMint)
+```
+
+event emitted when a deposit is completed
+
+### ConceroParentPool_RequestUpdated
+
+```solidity
+event ConceroParentPool_RequestUpdated(bytes32 requestId)
+```
+
+event emitted when a request is updated with the total USDC to withdraw
+
+### ConceroParentPool_CLFRequestError
+
+```solidity
+event ConceroParentPool_CLFRequestError(bytes32 requestId, enum IParentPool.RequestType requestType, bytes error)
+```
+
+event emitted when the Functions request return error
+
+### ConceroParentPool_PoolReceiverUpdated
+
+```solidity
+event ConceroParentPool_PoolReceiverUpdated(uint64 chainSelector, address pool)
+```
+
+event emitted when a Concero pool is added
+
+### ConceroParentPool_ConceroSendersUpdated
+
+```solidity
+event ConceroParentPool_ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed)
+```
+
+event emitted when a allowed Cross-chain contract is updated
+
+### ConceroParentPool_RedistributionStarted
+
+```solidity
+event ConceroParentPool_RedistributionStarted(bytes32 requestId)
+```
+
+event emitted when a pool is removed and the redistribution process start
+
+### ConceroParentPool_MasterPoolCapUpdated
+
+```solidity
+event ConceroParentPool_MasterPoolCapUpdated(uint256 _newCap)
+```
+
+event emitted when the MasterPool Cap is increased
+
+### ConceroParentPool_RequestAdded
+
+```solidity
+event ConceroParentPool_RequestAdded(bytes32 requestId)
+```
+
+event emitted when a new request is added
+
+### ConceroParentPool_ForwarderAddressUpdated
+
+```solidity
+event ConceroParentPool_ForwarderAddressUpdated(address forwarderAddress)
+```
+
+event emitted when the Keeper Address is updated
+
+### FunctionsRequestError
+
+```solidity
+event FunctionsRequestError(bytes32 requestId)
+```
+
+event emitted when a Chainlink Functions request is not fulfilled
+
+### ConceroParentPool_UpkeepPerformed
+
+```solidity
+event ConceroParentPool_UpkeepPerformed(bytes32 reqId)
+```
+
+event emitted when an upkeep is performed
+
+### ConceroParentPool_DonSecretVersionUpdated
+
+```solidity
+event ConceroParentPool_DonSecretVersionUpdated(uint64 version)
+```
+
+event emitted when the Don Secret is Updated
+
+### ConceroParentPool_DonHostedSlotId
+
+```solidity
+event ConceroParentPool_DonHostedSlotId(uint8 slotId)
+```
+
+event emitted when the Don Slot ID is updated
+
+### ConceroParentPool_RetryPerformed
+
+```solidity
+event ConceroParentPool_RetryPerformed(bytes32 reqId)
+```
+
+event emitted when a LP retries a withdrawal request
+
+### getWithdrawalIdByLPAddress
+
+```solidity
+function getWithdrawalIdByLPAddress(address lpAddress) external view returns (bytes32)
+```
+
+### startDeposit
+
+```solidity
+function startDeposit(uint256 _usdcAmount) external
+```
+
+### distributeLiquidity
+
+```solidity
+function distributeLiquidity(uint64 _chainSelector, uint256 _amountToSend, bytes32 distributeLiquidityRequestId) external
+```
+
+### setPools
+
+```solidity
+function setPools(uint64 _chainSelector, address _pool, bool isRebalancingNeeded) external payable
+```
+
+### setConceroContractSender
+
+```solidity
+function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable
+```
+

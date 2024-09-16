@@ -1,4 +1,6 @@
 import "./utils/dotenvConfig";
+
+/* Hardhat plugins */
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-viem";
@@ -8,9 +10,11 @@ import "hardhat-deploy";
 import "hardhat-deploy-ethers";
 import "hardhat-gas-reporter";
 import "hardhat-contract-sizer";
-import { HardhatUserConfig } from "hardhat/config";
 import "solidity-coverage";
 import "@chainlink/hardhat-chainlink";
+import "solidity-docgen";
+
+import { HardhatUserConfig } from "hardhat/config";
 import CNetworks from "./constants/CNetworks";
 import "./tasks";
 import { setup as setupTenderly } from "@tenderly/hardhat-tenderly";
@@ -77,6 +81,10 @@ const config: HardhatUserConfig = {
   },
   gasReporter: {
     enabled: enableGasReport,
+  },
+  docgen: {
+    pages: "files",
+    pageExtension: ".mdx",
   },
 };
 

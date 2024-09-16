@@ -1,0 +1,106 @@
+# Solidity API
+
+## IStorage
+
+### RequestType
+
+Chainlink Functions Request Type
+
+```solidity
+enum RequestType {
+  addUnconfirmedTxDst,
+  checkTxSrc
+}
+```
+
+### CCIPToken
+
+CCIP Compatible Tokens
+
+```solidity
+enum CCIPToken {
+  bnm,
+  usdc
+}
+```
+
+### Chain
+
+Operational Chains
+
+```solidity
+enum Chain {
+  arb,
+  base,
+  opt,
+  pol,
+  avax,
+  eth
+}
+```
+
+### Request
+
+Function Request
+
+```solidity
+struct Request {
+  enum IStorage.RequestType requestType;
+  bool isPending;
+  bytes32 ccipMessageId;
+}
+```
+
+### BridgeData
+
+CCIP Data to Bridge
+
+```solidity
+struct BridgeData {
+  enum IStorage.CCIPToken tokenType;
+  uint256 amount;
+  uint64 dstChainSelector;
+  address receiver;
+}
+```
+
+### Pools
+
+`ccipSend` to distribute liquidity
+
+```solidity
+struct Pools {
+  uint64 chainSelector;
+  address poolAddress;
+}
+```
+
+### Transaction
+
+Chainlink Functions Transaction
+
+```solidity
+struct Transaction {
+  bytes32 ccipMessageId;
+  address sender;
+  address recipient;
+  uint256 amount;
+  enum IStorage.CCIPToken token;
+  uint64 srcChainSelector;
+  bool isConfirmed;
+  bytes dstSwapData;
+}
+```
+
+### FunctionsVariables
+
+Chainlink Functions Variables
+
+```solidity
+struct FunctionsVariables {
+  uint64 subscriptionId;
+  bytes32 donId;
+  address functionsRouter;
+}
+```
+

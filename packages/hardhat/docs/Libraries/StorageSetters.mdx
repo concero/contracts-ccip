@@ -1,0 +1,238 @@
+# Solidity API
+
+## StorageSetters
+
+### StorageSetters_InvalidAddress
+
+```solidity
+error StorageSetters_InvalidAddress()
+```
+
+error emitted when the input is the address(0)
+
+### StorageSetters_CallableOnlyByOwner
+
+```solidity
+error StorageSetters_CallableOnlyByOwner(address msgSender, address owner)
+```
+
+error emitted when a non-owner address call access controlled functions
+
+### i_owner
+
+```solidity
+address i_owner
+```
+
+IMMUTABLE///
+
+### CLFPremiumFeeUpdated
+
+```solidity
+event CLFPremiumFeeUpdated(uint64 chainSelector, uint256 previousValue, uint256 feeAmount)
+```
+
+event emitted when the CLF Premium fee is updated
+
+### ConceroContractUpdated
+
+```solidity
+event ConceroContractUpdated(uint64 chainSelector, address conceroContract)
+```
+
+event emitted when a new Concero Contract is added or updated
+
+### DonSecretVersionUpdated
+
+```solidity
+event DonSecretVersionUpdated(uint64 previousDonSecretVersion, uint64 newDonSecretVersion)
+```
+
+event emitted when the CLF secret is updated
+
+### DonSlotIdUpdated
+
+```solidity
+event DonSlotIdUpdated(uint8 previousDonSlot, uint8 newDonSlot)
+```
+
+event emitted when the CLF slot id is updated
+
+### DestinationJsHashSumUpdated
+
+```solidity
+event DestinationJsHashSumUpdated(bytes32 previousDstHashSum, bytes32 newDstHashSum)
+```
+
+event emitted when the Destination JS Hash Sum is updated
+
+### SourceJsHashSumUpdated
+
+```solidity
+event SourceJsHashSumUpdated(bytes32 previousSrcHashSum, bytes32 newSrcHashSum)
+```
+
+event emitted when the Source JS Hash Sum is updated
+
+### EthersHashSumUpdated
+
+```solidity
+event EthersHashSumUpdated(bytes32 previousValue, bytes32 hashSum)
+```
+
+event emitted when the Ethers hash sum is updated
+
+### Storage_NewRouterAdded
+
+```solidity
+event Storage_NewRouterAdded(address router, uint256 isApproved)
+```
+
+event emitted when a new router address is added
+
+### constructor
+
+```solidity
+constructor(address _initialOwner) public
+```
+
+### onlyOwner
+
+```solidity
+modifier onlyOwner()
+```
+
+### setClfPremiumFees
+
+```solidity
+function setClfPremiumFees(uint64 _chainSelector, uint256 feeAmount) external payable
+```
+
+Function to update Chainlink Functions fees
+
+_arb default fee: 3478487238524512106 == 4000000000000000; // 0.004 link
+base default fee: 10344971235874465080 == 1847290640394088; // 0.0018 link
+opt default fee: 5224473277236331295 == 2000000000000000; // 0.002 link_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _chainSelector | uint64 | Chain Identifier |
+| feeAmount | uint256 | fee amount |
+
+### setDonHostedSecretsVersion
+
+```solidity
+function setDonHostedSecretsVersion(uint64 _version) external
+```
+
+Function to update Secret Version
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _version | uint64 | the new Secret Version |
+
+### setDonHostedSecretsSlotID
+
+```solidity
+function setDonHostedSecretsSlotID(uint8 _donHostedSecretsSlotId) external
+```
+
+Function to update the CLF slot id
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _donHostedSecretsSlotId | uint8 | the new slot id |
+
+### setDstJsHashSum
+
+```solidity
+function setDstJsHashSum(bytes32 _hashSum) external
+```
+
+Function to updated the Dst Hash Sum
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _hashSum | bytes32 | the new hash sum |
+
+### setSrcJsHashSum
+
+```solidity
+function setSrcJsHashSum(bytes32 _hashSum) external
+```
+
+Function to updated the Src Hash sum
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _hashSum | bytes32 | the new hash sum |
+
+### setEthersHashSum
+
+```solidity
+function setEthersHashSum(bytes32 _hashSum) external payable
+```
+
+Function to set the Ether HashSum
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _hashSum | bytes32 | the new hash sum |
+
+### setConceroContract
+
+```solidity
+function setConceroContract(uint64 _chainSelector, address _conceroContract) external
+```
+
+Function to set a Cross-chain Concero contract
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _chainSelector | uint64 | The chain selector of the chain |
+| _conceroContract | address | the address of the contract |
+
+### setDstConceroPool
+
+```solidity
+function setDstConceroPool(uint64 _chainSelector, address _pool) external payable
+```
+
+function to set the address of a Cross-chain pool
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _chainSelector | uint64 | The chain selector of the chain |
+| _pool | address | the address of the Pool |
+
+### setDexRouterAddress
+
+```solidity
+function setDexRouterAddress(address _router, uint256 _isApproved) external payable
+```
+
+function to manage DEX routers addresses
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _router | address | the address of the router |
+| _isApproved | uint256 | 1 == Approved | Any other value is not Approved. |
+

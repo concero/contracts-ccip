@@ -1,0 +1,196 @@
+# Solidity API
+
+## ParentPoolStorage
+
+### s_maxDeposit
+
+```solidity
+uint256 s_maxDeposit
+```
+
+variable to store the max value that can be deposited on this pool
+
+### s_loansInUse
+
+```solidity
+uint256 s_loansInUse
+```
+
+variable to store the amount that will be temporary used by Chainlink Functions
+
+### s_donHostedSecretsSlotId
+
+```solidity
+uint8 s_donHostedSecretsSlotId
+```
+
+variable to store the Chainlink Function DON Slot ID
+
+### s_donHostedSecretsVersion
+
+```solidity
+uint64 s_donHostedSecretsVersion
+```
+
+variable to store the Chainlink Function DON Secret Version
+
+### s_getBalanceJsCodeHashSum
+
+```solidity
+bytes32 s_getBalanceJsCodeHashSum
+```
+
+variable to store the Chainlink Function Source Hashsum
+
+### s_ethersHashSum
+
+```solidity
+bytes32 s_ethersHashSum
+```
+
+variable to store Ethers Hashsum
+
+### s_depositsOnTheWayAmount
+
+```solidity
+uint256 s_depositsOnTheWayAmount
+```
+
+variable to store not processed amounts deposited by LPs
+
+### s_latestDepositOnTheWayIndex
+
+```solidity
+uint8 s_latestDepositOnTheWayIndex
+```
+
+### s_depositFeeAmount
+
+```solidity
+uint256 s_depositFeeAmount
+```
+
+### s_withdrawAmountLocked
+
+```solidity
+uint256 s_withdrawAmountLocked
+```
+
+variable to store the amount requested in withdraws, incremented at startWithdrawal, decremented at completewithdrawal
+
+### s_withdrawalsOnTheWayAmount
+
+```solidity
+uint256 s_withdrawalsOnTheWayAmount
+```
+
+### s_poolChainSelectors
+
+```solidity
+uint64[] s_poolChainSelectors
+```
+
+array of Pools to receive Liquidity through `ccipSend` function
+
+### s_depositsOnTheWayArray_DEPRECATED
+
+```solidity
+struct IParentPool.DepositOnTheWay_DEPRECATED[] s_depositsOnTheWayArray_DEPRECATED
+```
+
+### s_childPools
+
+```solidity
+mapping(uint64 => address) s_childPools
+```
+
+Mapping to keep track of valid pools to transfer in case of liquidation or rebalance
+
+### s_contractsToReceiveFrom
+
+```solidity
+mapping(uint64 => mapping(address => uint256)) s_contractsToReceiveFrom
+```
+
+Mapping to keep track of allowed pool senders
+
+### s_distributeLiquidityRequestProcessed
+
+```solidity
+mapping(bytes32 => bool) s_distributeLiquidityRequestProcessed
+```
+
+Mapping to keep track of Liquidity Providers withdraw requests
+
+### s_clfRequestTypes
+
+```solidity
+mapping(bytes32 => enum IParentPool.RequestType) s_clfRequestTypes
+```
+
+### s_depositRequests
+
+```solidity
+mapping(bytes32 => struct IParentPool.DepositRequest) s_depositRequests
+```
+
+### s_withdrawalIdByLPAddress
+
+```solidity
+mapping(address => bytes32) s_withdrawalIdByLPAddress
+```
+
+### s_withdrawalIdByCLFRequestId
+
+```solidity
+mapping(bytes32 => bytes32) s_withdrawalIdByCLFRequestId
+```
+
+### s_withdrawRequests
+
+```solidity
+mapping(bytes32 => struct IParentPool.WithdrawRequest) s_withdrawRequests
+```
+
+### s_depositsOnTheWayArray
+
+```solidity
+struct IParentPool.DepositOnTheWay[150] s_depositsOnTheWayArray
+```
+
+### s_forwarderAddress
+
+```solidity
+address s_forwarderAddress
+```
+
+variable to store the automation keeper address
+
+### s_collectLiquidityJsCodeHashSum
+
+```solidity
+bytes32 s_collectLiquidityJsCodeHashSum
+```
+
+### s_distributeLiquidityJsCodeHashSum
+
+```solidity
+bytes32 s_distributeLiquidityJsCodeHashSum
+```
+
+### s_withdrawalRequestIds
+
+```solidity
+bytes32[] s_withdrawalRequestIds
+```
+
+array to store the withdraw requests of users
+
+### s_withdrawTriggered
+
+```solidity
+mapping(bytes32 => bool) s_withdrawTriggered
+```
+
+Mapping to keep track of Chainlink Functions requests
+

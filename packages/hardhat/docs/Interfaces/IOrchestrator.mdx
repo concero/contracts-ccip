@@ -1,0 +1,36 @@
+# Solidity API
+
+## IOrchestrator
+
+### swap
+
+```solidity
+function swap(struct IDexSwap.SwapData[] _swapData, address _receiver) external payable
+```
+
+### bridge
+
+```solidity
+function bridge(struct IStorage.BridgeData bridgeData, struct IDexSwap.SwapData[] dstSwapData) external payable
+```
+
+### swapAndBridge
+
+```solidity
+function swapAndBridge(struct IStorage.BridgeData bridgeData, struct IDexSwap.SwapData[] srcSwapData, struct IDexSwap.SwapData[] dstSwapData) external payable
+```
+
+### getTransaction
+
+```solidity
+function getTransaction(bytes32 _ccipMessageId) external view returns (struct IStorage.Transaction transaction)
+```
+
+## IOrchestratorViewDelegate
+
+### getSrcTotalFeeInUSDCViaDelegateCall
+
+```solidity
+function getSrcTotalFeeInUSDCViaDelegateCall(enum IStorage.CCIPToken tokenType, uint64 dstChainSelector, uint256 amount) external view returns (uint256)
+```
+

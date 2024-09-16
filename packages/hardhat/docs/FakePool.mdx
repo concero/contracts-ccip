@@ -1,0 +1,81 @@
+# Solidity API
+
+## FakePool
+
+### ConceroPool_CallableOnlyByOwner
+
+```solidity
+error ConceroPool_CallableOnlyByOwner(address caller, address owner)
+```
+
+### ConceroPool_ItsNotAnOrchestrator
+
+```solidity
+error ConceroPool_ItsNotAnOrchestrator(address caller)
+```
+
+### ConceroPool_InvalidAddress
+
+```solidity
+error ConceroPool_InvalidAddress()
+```
+
+### ConceroPool_InsufficientBalance
+
+```solidity
+error ConceroPool_InsufficientBalance()
+```
+
+### constructor
+
+```solidity
+constructor(address _ccipRouter, address _proxy) public
+```
+
+### onlyOwner
+
+```solidity
+modifier onlyOwner()
+```
+
+### takeLoan
+
+```solidity
+function takeLoan(address _token, uint256 _amount, address _receiver) external
+```
+
+function to the Concero Orchestrator contract take loans
+
+_only the Orchestrator contract should be able to call this function
+for ether transfer, the _receiver need to be known and trusted_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _token | address | address of the token being loaned |
+| _amount | uint256 | being loaned |
+| _receiver | address | address of the user that will receive the amount |
+
+### withdraw
+
+```solidity
+function withdraw(address recipient, address token, uint256 amount) external payable
+```
+
+### _ccipReceive
+
+```solidity
+function _ccipReceive(struct Client.Any2EVMMessage any2EvmMessage) internal
+```
+
+CCIP function to receive bridged values
+
+_only allowed chains and sender must be able to deliver a message in this function._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| any2EvmMessage | struct Client.Any2EVMMessage | the CCIP message |
+

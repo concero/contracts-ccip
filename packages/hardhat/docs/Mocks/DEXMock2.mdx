@@ -1,0 +1,71 @@
+# Solidity API
+
+## DEXMock2
+
+### ExactInputParams
+
+```solidity
+struct ExactInputParams {
+  bytes path;
+  address recipient;
+  uint256 amountIn;
+  uint256 amountOutMinimum;
+}
+```
+
+### USDC
+
+```solidity
+address USDC
+```
+
+### USDC_DECIMALS
+
+```solidity
+uint256 USDC_DECIMALS
+```
+
+### STANDARD_DECIMALS
+
+```solidity
+uint256 STANDARD_DECIMALS
+```
+
+### DexMock_Transferred
+
+```solidity
+event DexMock_Transferred()
+```
+
+### constructor
+
+```solidity
+constructor(address _usdc) public
+```
+
+### exactInputSingle
+
+```solidity
+function exactInputSingle(struct ISwapRouter.ExactInputSingleParams _params) external returns (uint256 amount)
+```
+
+### swapExactTokensForTokens
+
+```solidity
+function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, struct IRouter.Route[] routes, address to, uint256 deadline) external returns (uint256[] amounts)
+```
+
+### depositToken
+
+```solidity
+function depositToken(address _token, uint256 _amount) external
+```
+
+UTILITIES ///
+
+### withdraw
+
+```solidity
+function withdraw(address _token, uint256 _amount) external
+```
+

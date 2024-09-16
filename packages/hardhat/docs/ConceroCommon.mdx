@@ -1,0 +1,117 @@
+# Solidity API
+
+## ConceroCommon_NotMessenger
+
+```solidity
+error ConceroCommon_NotMessenger(address _messenger)
+```
+
+## ConceroCommon_ChainIndexOutOfBounds
+
+```solidity
+error ConceroCommon_ChainIndexOutOfBounds()
+```
+
+## ConceroCommon_TokenTypeOutOfBounds
+
+```solidity
+error ConceroCommon_TokenTypeOutOfBounds()
+```
+
+## ConceroCommon_ChainNotSupported
+
+```solidity
+error ConceroCommon_ChainNotSupported()
+```
+
+## ConceroCommon
+
+### APPROVED
+
+```solidity
+uint256 APPROVED
+```
+
+removing magic-numbers
+
+### USDC_DECIMALS
+
+```solidity
+uint256 USDC_DECIMALS
+```
+
+### STANDARD_TOKEN_DECIMALS
+
+```solidity
+uint256 STANDARD_TOKEN_DECIMALS
+```
+
+### constructor
+
+```solidity
+constructor(address[3] _messengers) public
+```
+
+### onlyMessenger
+
+```solidity
+modifier onlyMessenger()
+```
+
+modifier to check if the caller is the an approved messenger
+
+### getUSDCAddressByChainIndex
+
+```solidity
+function getUSDCAddressByChainIndex(enum IStorage.CCIPToken tokenType, enum IStorage.Chain _chainIndex) internal view returns (address)
+```
+
+Function to check for allowed tokens on specific networks
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| tokenType | enum IStorage.CCIPToken | The enum flag of the token |
+| _chainIndex | enum IStorage.Chain | the index of the chain |
+
+### _isMessenger
+
+```solidity
+function _isMessenger(address _messenger) internal view returns (bool)
+```
+
+Function to check if a caller address is an allowed messenger
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _messenger | address | the address of the caller |
+
+### getWrappedNative
+
+```solidity
+function getWrappedNative() internal view returns (address _wrappedAddress)
+```
+
+### _convertToUSDCDecimals
+
+```solidity
+function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256)
+```
+
+Internal function to convert USDC Decimals to LP Decimals
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _amount | uint256 | the amount of USDC |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | _adjustedAmount the adjusted amount |
+

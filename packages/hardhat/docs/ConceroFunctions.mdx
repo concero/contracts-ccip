@@ -1,0 +1,326 @@
+# Solidity API
+
+## ConceroFunctions_TxAlreadyExists
+
+```solidity
+error ConceroFunctions_TxAlreadyExists(bytes32 txHash, bool isConfirmed)
+```
+
+error emitted when a TX was already added
+
+## ConceroFunctions_UnexpectedRequestId
+
+```solidity
+error ConceroFunctions_UnexpectedRequestId(bytes32 requestId)
+```
+
+error emitted when a unexpected ID is added
+
+## ConceroFunctions_TxDoesntExist
+
+```solidity
+error ConceroFunctions_TxDoesntExist()
+```
+
+error emitted when a transaction does not exist
+
+## ConceroFunctions_TxAlreadyConfirmed
+
+```solidity
+error ConceroFunctions_TxAlreadyConfirmed()
+```
+
+error emitted when a transaction was already confirmed
+
+## ConceroFunctions_DstContractAddressNotSet
+
+```solidity
+error ConceroFunctions_DstContractAddressNotSet()
+```
+
+error emitted when function receive a call from a not allowed address
+
+## ConceroFunctions_OnlyProxyContext
+
+```solidity
+error ConceroFunctions_OnlyProxyContext(address caller)
+```
+
+error emitted when an arbitrary address calls fulfillRequestWrapper
+
+## ConceroFunctions_FailedToReleaseTx
+
+```solidity
+error ConceroFunctions_FailedToReleaseTx(bytes error)
+```
+
+error emitted when the delegatecall to DexSwap fails
+
+## ConceroFunctions
+
+### CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT
+
+```solidity
+uint32 CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT
+```
+
+### CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT
+
+```solidity
+uint32 CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT
+```
+
+### CL_FUNCTIONS_GAS_OVERHEAD
+
+```solidity
+uint256 CL_FUNCTIONS_GAS_OVERHEAD
+```
+
+### CHAIN_SELECTOR
+
+```solidity
+uint64 CHAIN_SELECTOR
+```
+
+### i_dexSwap
+
+```solidity
+address i_dexSwap
+```
+
+variable to store the DexSwap address
+
+### i_poolProxy
+
+```solidity
+address i_poolProxy
+```
+
+variable to store the ConceroPool address
+
+### i_proxy
+
+```solidity
+address i_proxy
+```
+
+Immutable variable to hold proxy address
+
+### i_chainIndex
+
+```solidity
+enum IStorage.Chain i_chainIndex
+```
+
+ID of the deployed chain on getChain() function
+
+### UnconfirmedTXSent
+
+```solidity
+event UnconfirmedTXSent(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, enum IStorage.CCIPToken token, uint64 dstChainSelector)
+```
+
+emitted on source when a Unconfirmed TX is sent
+
+### UnconfirmedTXAdded
+
+```solidity
+event UnconfirmedTXAdded(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, enum IStorage.CCIPToken token, uint64 srcChainSelector)
+```
+
+emitted when a Unconfirmed TX is added by a cross-chain TX
+
+### TXReleased
+
+```solidity
+event TXReleased(bytes32 ccipMessageId, address sender, address recipient, address token, uint256 amount)
+```
+
+### TXConfirmed
+
+```solidity
+event TXConfirmed(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, enum IStorage.CCIPToken token)
+```
+
+emitted when on destination when a TX is validated.
+
+### FunctionsRequestError
+
+```solidity
+event FunctionsRequestError(bytes32 ccipMessageId, bytes32 requestId, uint8 requestType)
+```
+
+emitted when a Function Request returns an error
+
+### ConceroPoolAddressUpdated
+
+```solidity
+event ConceroPoolAddressUpdated(address previousAddress, address pool)
+```
+
+emitted when the concero pool address is updated
+
+### constructor
+
+```solidity
+constructor(struct IStorage.FunctionsVariables _variables, uint64 _chainSelector, uint256 _chainIndex, address _dexSwap, address _pool, address _proxy, address[3] _messengers) public
+```
+
+### addUnconfirmedTX
+
+```solidity
+function addUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 srcChainSelector, enum IStorage.CCIPToken token, uint256 blockNumber, bytes dstSwapData) external
+```
+
+Receives an unconfirmed TX from the source chain and validates it through Chainlink Functions
+
+_dstSwapData can be empty. Which means the user will receive USDC._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| ccipMessageId | bytes32 | The CCIP message ID from the initiate bridge transaction |
+| sender | address | The address of the TX sender |
+| recipient | address | The address of the bridge token receiver |
+| amount | uint256 | the amount of the token to be processed |
+| srcChainSelector | uint64 | the Chainlink variable for the src chain |
+| token | enum IStorage.CCIPToken | the token address |
+| blockNumber | uint256 | the blockNumber in which the transaction was initiated |
+| dstSwapData | bytes | The Payload to process the destination swap. |
+
+### sendRequest
+
+```solidity
+function sendRequest(bytes[] args, string jsCode, uint32 gasLimit) internal returns (bytes32)
+```
+
+Function to send a Request to Chainlink Functions
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| args | bytes[] | the arguments for the request as bytes array |
+| jsCode | string | the JScode that will be executed. |
+| gasLimit | uint32 |  |
+
+### fulfillRequestWrapper
+
+```solidity
+function fulfillRequestWrapper(bytes32 requestId, bytes response, bytes err) external
+```
+
+Function to receive delegatecall from Orchestrator Proxy
+
+_We will always receive response or err populated. Never both._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| requestId | bytes32 | the ID of CLF request |
+| response | bytes | the response of CLF request |
+| err | bytes | the error of CLF request |
+
+### fulfillRequest
+
+```solidity
+function fulfillRequest(bytes32 requestId, bytes response, bytes err) internal
+```
+
+CLF internal function to fulfill requests
+
+_response and error will never be populated at the same time._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| requestId | bytes32 | the initiate request ID |
+| response | bytes | the response |
+| err | bytes | the error |
+
+### _confirmTX
+
+```solidity
+function _confirmTX(bytes32 ccipMessageId, struct IStorage.Transaction transaction) internal
+```
+
+Internal helper function to check if the TX is valid
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| ccipMessageId | bytes32 | The CCIP message ID to be checked |
+| transaction | struct IStorage.Transaction | the storage to be updated. |
+
+### sendUnconfirmedTX
+
+```solidity
+function sendUnconfirmedTX(bytes32 ccipMessageId, address sender, address recipient, uint256 amount, uint64 dstChainSelector, enum IStorage.CCIPToken token, struct IDexSwap.SwapData[] dstSwapData) internal
+```
+
+Sends an unconfirmed TX to the destination chain
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| ccipMessageId | bytes32 | the CCIP message to be checked |
+| sender | address | the address to query information |
+| recipient | address | the address of transfer recipient after checking |
+| amount | uint256 | the amount to be transferred |
+| dstChainSelector | uint64 | the Chainlink CCIP destination chain selector |
+| token | enum IStorage.CCIPToken | the token address |
+| dstSwapData | struct IDexSwap.SwapData[] | the payload to be swapped if it exists |
+
+### _handleDstFunctionsResponse
+
+```solidity
+function _handleDstFunctionsResponse(struct IStorage.Request request) internal
+```
+
+Internal CLF function to finalize bridge process on Destination
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| request | struct IStorage.Request | the CLF request to be used |
+
+### _handleSrcFunctionsResponse
+
+```solidity
+function _handleSrcFunctionsResponse(bytes response) internal
+```
+
+Internal helper function to updated destination storage data
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| response | bytes | the CLF response that contains the data |
+
+### getDstTotalFeeInUsdc
+
+```solidity
+function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256)
+```
+
+getter function to calculate Destination fee amount on Source
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| amount | uint256 | the amount of tokens to calculate over |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | the fee amount |
+

@@ -25,7 +25,7 @@ interface IDexSwap {
         address toToken;
         uint256 toAmount;
         uint256 toAmountMin;
-        bytes dexData; //routerAddress + data left to do swap
+        bytes dexData;
     }
 
     /**

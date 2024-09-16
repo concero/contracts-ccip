@@ -1,0 +1,769 @@
+# Solidity API
+
+## ConceroParentPool_InvalidAddress
+
+```solidity
+error ConceroParentPool_InvalidAddress()
+```
+
+error emitted when the receiver is the address(0)
+
+## ConceroParentPool_NotMessenger
+
+```solidity
+error ConceroParentPool_NotMessenger(address caller)
+```
+
+error emitted when the caller is not a valid Messenger
+
+## ConceroParentPool_SenderNotAllowed
+
+```solidity
+error ConceroParentPool_SenderNotAllowed(address _sender)
+```
+
+error emitted when the CCIP message sender is not allowed.
+
+## ConceroParentPool_ActiveRequestNotFulfilledYet
+
+```solidity
+error ConceroParentPool_ActiveRequestNotFulfilledYet()
+```
+
+error emitted when an attempt to create a new request is made while other is still active.
+
+## ConceroParentPool_AmountBelowMinimum
+
+```solidity
+error ConceroParentPool_AmountBelowMinimum(uint256 minAmount)
+```
+
+emitted in depositLiquidity when the input amount is not enough
+
+## ConceroParentPool_WithdrawalAmountNotReady
+
+```solidity
+error ConceroParentPool_WithdrawalAmountNotReady(uint256 received)
+```
+
+emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
+
+## ConceroParentPool_NotInfraProxy
+
+```solidity
+error ConceroParentPool_NotInfraProxy(address caller)
+```
+
+error emitted when the caller is not the Orchestrator
+
+## ConceroParentPool_MaxCapReached
+
+```solidity
+error ConceroParentPool_MaxCapReached(uint256 maxCap)
+```
+
+error emitted when the max amount accepted by the pool is reached
+
+## ConceroParentPool_NotParentPoolProxy
+
+```solidity
+error ConceroParentPool_NotParentPoolProxy(address caller)
+```
+
+error emitted when it's not the proxy calling the function
+
+## ConceroParentPool_NotContractOwner
+
+```solidity
+error ConceroParentPool_NotContractOwner()
+```
+
+error emitted when the input TX was already removed
+
+## ConceroParentPool_RequestAlreadyProceeded
+
+```solidity
+error ConceroParentPool_RequestAlreadyProceeded(bytes32 requestId)
+```
+
+## ConceroParentPool_NotAllowedToComplete
+
+```solidity
+error ConceroParentPool_NotAllowedToComplete()
+```
+
+error emitted when the caller is not the LP who opened the request
+
+## ConceroParentPool_RequestDoesntExist
+
+```solidity
+error ConceroParentPool_RequestDoesntExist()
+```
+
+error emitted when the request doesn't exist
+
+## ConceroParentPool_CallerNotAllowed
+
+```solidity
+error ConceroParentPool_CallerNotAllowed(address caller)
+```
+
+error emitted when the caller is not the owner.
+
+## ConceroParentPool_WithdrawAlreadyTriggered
+
+```solidity
+error ConceroParentPool_WithdrawAlreadyTriggered(bytes32 withdrawalId)
+```
+
+## ConceroParentPool_WithdrawRequestDoesntExist
+
+```solidity
+error ConceroParentPool_WithdrawRequestDoesntExist(bytes32 withdrawalId)
+```
+
+## ConceroParentPool_WithdrawRequestNotReady
+
+```solidity
+error ConceroParentPool_WithdrawRequestNotReady(bytes32 withdrawalId)
+```
+
+## ConceroParentPool_DepositsOnTheWayArrayFull
+
+```solidity
+error ConceroParentPool_DepositsOnTheWayArrayFull()
+```
+
+## ConceroParentPool
+
+### MIN_DEPOSIT
+
+```solidity
+uint256 MIN_DEPOSIT
+```
+
+### DEPOSIT_DEADLINE_SECONDS
+
+```solidity
+uint256 DEPOSIT_DEADLINE_SECONDS
+```
+
+### CL_FUNCTIONS_CALLBACK_GAS_LIMIT
+
+```solidity
+uint32 CL_FUNCTIONS_CALLBACK_GAS_LIMIT
+```
+
+Chainlink Functions Gas Limit
+
+### DEPOSIT_FEE_USDC
+
+```solidity
+uint256 DEPOSIT_FEE_USDC
+```
+
+### MAX_DEPOSITS_ON_THE_WAY_COUNT
+
+```solidity
+uint8 MAX_DEPOSITS_ON_THE_WAY_COUNT
+```
+
+### JS_CODE
+
+```solidity
+string JS_CODE
+```
+
+JS Code for Chainlink Functions
+
+### i_lp
+
+```solidity
+contract LPToken i_lp
+```
+
+Pool liquidity token
+
+### i_owner
+
+```solidity
+address i_owner
+```
+
+Contract Owner
+
+### i_automationForwarder
+
+```solidity
+address i_automationForwarder
+```
+
+### onlyAllowlistedSenderOfChainSelector
+
+```solidity
+modifier onlyAllowlistedSenderOfChainSelector(uint64 _chainSelector, address _sender)
+```
+
+CCIP Modifier to check Chains And senders
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _chainSelector | uint64 | Id of the source chain of the message |
+| _sender | address | address of the sender contract |
+
+### onlyProxyContext
+
+```solidity
+modifier onlyProxyContext()
+```
+
+modifier to ensure if the function is being executed in the proxy context.
+
+### onlyOwner
+
+```solidity
+modifier onlyOwner()
+```
+
+### onlyMessenger
+
+```solidity
+modifier onlyMessenger()
+```
+
+modifier to check if the caller is the an approved messenger
+
+### receive
+
+```solidity
+receive() external payable
+```
+
+### constructor
+
+```solidity
+constructor(address _parentPoolProxy, address _link, bytes32 _donId, uint64 _subscriptionId, address _functionsRouter, address _ccipRouter, address _usdc, address _lpToken, address _orchestrator, address _owner, address _automationForwarder, address[3] _messengers) public
+```
+
+### takeLoan
+
+```solidity
+function takeLoan(address _token, uint256 _amount, address _receiver) external payable
+```
+
+function for the Concero Orchestrator contract to take loans
+
+_only the Orchestrator contract should be able to call this function
+for ether transfer, the _receiver need to be known and trusted_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _token | address | address of the token being loaned |
+| _amount | uint256 | being loaned |
+| _receiver | address | address of the user that will receive the amount |
+
+### startDeposit
+
+```solidity
+function startDeposit(uint256 _usdcAmount) external
+```
+
+Function for user to deposit liquidity of allowed tokens
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _usdcAmount | uint256 | the amount to be deposited |
+
+### completeDeposit
+
+```solidity
+function completeDeposit(bytes32 _depositRequestId) external
+```
+
+### startWithdrawal
+
+```solidity
+function startWithdrawal(uint256 _lpAmount) external
+```
+
+Function to allow Liquidity Providers to start the Withdraw of their USDC deposited
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _lpAmount | uint256 | the amount of lp token the user wants to burn to get USDC back. |
+
+### completeWithdrawal
+
+```solidity
+function completeWithdrawal() external
+```
+
+Function called to finalize the withdraw process.
+
+_The msg.sender will be used to load the withdraw request data
+if the request received the total amount requested from other pools,
+the withdraw will be finalize. If not, it must revert_
+
+### withdrawDepositFees
+
+```solidity
+function withdrawDepositFees() external payable
+```
+
+### distributeLiquidity
+
+```solidity
+function distributeLiquidity(uint64 _chainSelector, uint256 _amountToSend, bytes32 distributeLiquidityRequestId) external
+```
+
+Function called by Messenger to send USDC to a recently added pool.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _chainSelector | uint64 | The chain selector of the new pool |
+| _amountToSend | uint256 | the amount to redistribute between pools. |
+| distributeLiquidityRequestId | bytes32 |  |
+
+### _addPendingWithdrawalId
+
+```solidity
+function _addPendingWithdrawalId(bytes32 _withdrawalId) internal
+```
+
+Function to add new withdraw request to CLA monitoring system
+
+_this function should only be called by the ConceroPool.sol_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _withdrawalId | bytes32 | the ID of the withdrawal request |
+
+### checkUpkeep
+
+```solidity
+function checkUpkeep(bytes) external view returns (bool, bytes)
+```
+
+Chainlink Automation Function to check for requests with fulfilled conditions
+We don't use the calldata
+
+_this function must only be simulated offchain by Chainlink Automation nodes_
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | bool | _upkeepNeeded it will return true, if the time condition is reached |
+| [1] | bytes | _performData the payload we need to send through performUpkeep to Chainlink functions. |
+
+### performUpkeep
+
+```solidity
+function performUpkeep(bytes _performData) external
+```
+
+Chainlink Automation function that will perform storage update and call Chainlink Functions
+
+_this function must be called only by the Chainlink Forwarder unique address_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _performData | bytes | the performData encoded in checkUpkeep function |
+
+### retryPerformWithdrawalRequest
+
+```solidity
+function retryPerformWithdrawalRequest() external
+```
+
+### setConceroContractSender
+
+```solidity
+function setConceroContractSender(uint64 _chainSelector, address _contractAddress, uint256 _isAllowed) external payable
+```
+
+function to manage the Cross-chains Concero contracts
+
+_only owner can call it
+it's payable to save some gas.
+this functions is used on ConceroPool.sol_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _chainSelector | uint64 | chain identifications |
+| _contractAddress | address | address of the Cross-chains Concero contracts |
+| _isAllowed | uint256 | 1 == allowed | Any other value == not allowed |
+
+### deleteDepositsOnTheWayByIds
+
+```solidity
+function deleteDepositsOnTheWayByIds(bytes1[] _ids) external
+```
+
+### setPoolCap
+
+```solidity
+function setPoolCap(uint256 _newCap) external payable
+```
+
+Function to set the Cap of the Master pool.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _newCap | uint256 | The new Cap of the pool |
+
+### setDonHostedSecretsSlotId
+
+```solidity
+function setDonHostedSecretsSlotId(uint8 _slotId) external payable
+```
+
+### setDonHostedSecretsVersion
+
+```solidity
+function setDonHostedSecretsVersion(uint64 _version) external payable
+```
+
+Function to set the Don Secrets Version from Chainlink Functions
+
+_this functions was used inside of ConceroFunctions_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _version | uint64 | the version |
+
+### setCollectLiquidityJsCodeHashSum
+
+```solidity
+function setCollectLiquidityJsCodeHashSum(bytes32 _hashSum) external payable
+```
+
+Function to set the Source JS code for Chainlink Functions
+
+_this functions was used inside of ConceroFunctions_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _hashSum | bytes32 | the JsCode |
+
+### setDistributeLiquidityJsCodeHashSum
+
+```solidity
+function setDistributeLiquidityJsCodeHashSum(bytes32 _hashSum) external payable
+```
+
+### setEthersHashSum
+
+```solidity
+function setEthersHashSum(bytes32 _ethersHashSum) external payable
+```
+
+Function to set the Ethers JS code for Chainlink Functions
+
+_this functions was used inside of ConceroFunctions_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _ethersHashSum | bytes32 | the JsCode |
+
+### setPools
+
+```solidity
+function setPools(uint64 _chainSelector, address _pool, bool isRebalancingNeeded) external payable
+```
+
+function to manage the Cross-chain ConceroPool contracts
+
+_only owner can call it
+it's payable to save some gas.
+this functions is used on ConceroPool.sol_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _chainSelector | uint64 | chain identifications |
+| _pool | address | address of the Cross-chain ConceroPool contract |
+| isRebalancingNeeded | bool |  |
+
+### removePools
+
+```solidity
+function removePools(uint64 _chainSelector) external payable
+```
+
+Function to remove Cross-chain address disapproving transfers
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _chainSelector | uint64 | the CCIP chainSelector for the specific chain |
+
+### _ccipReceive
+
+```solidity
+function _ccipReceive(struct Client.Any2EVMMessage any2EvmMessage) internal
+```
+
+CCIP function to receive bridged values
+
+_only allowed chains and sender must be able to deliver a message in this function._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| any2EvmMessage | struct Client.Any2EVMMessage | the CCIP message |
+
+### _distributeLiquidityToChildPools
+
+```solidity
+function _distributeLiquidityToChildPools(uint256 _usdcAmountToDeposit) internal
+```
+
+helper function to distribute liquidity after LP deposits.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _usdcAmountToDeposit | uint256 | amount of USDC should be distributed to the pools. |
+
+### _ccipSend
+
+```solidity
+function _ccipSend(uint64 _chainSelector, uint256 _amountToDistribute) internal returns (bytes32 messageId)
+```
+
+Function to distribute funds automatically right after LP deposits into the pool
+
+_this function will only be called internally._
+
+### _buildCCIPMessage
+
+```solidity
+function _buildCCIPMessage(uint64 _chainSelector, address _token, uint256 _amount) internal view returns (struct Client.EVM2AnyMessage)
+```
+
+### _sendRequest
+
+```solidity
+function _sendRequest(bytes[] _args, string _jsCode) internal returns (bytes32)
+```
+
+Function to send a Request to Chainlink Functions
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _args | bytes[] | the arguments for the request as bytes array |
+| _jsCode | string | the JScode that will be executed. |
+
+### fulfillRequest
+
+```solidity
+function fulfillRequest(bytes32 requestId, bytes response, bytes err) internal
+```
+
+Chainlink Functions fallback function
+
+_response & err will never be empty or populated at same time._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| requestId | bytes32 | the ID of the request sent |
+| response | bytes | the response of the request sent |
+| err | bytes | the error of the request sent |
+
+### calculateLpAmount
+
+```solidity
+function calculateLpAmount(uint256 childPoolsBalance, uint256 amountToDeposit) external view returns (uint256)
+```
+
+### calculateWithdrawableAmount
+
+```solidity
+function calculateWithdrawableAmount(uint256 childPoolsBalance, uint256 clpAmount) external view returns (uint256)
+```
+
+### _handleAutomationCLFFulfill
+
+```solidity
+function _handleAutomationCLFFulfill(bytes32 _requestId, bytes _response) internal
+```
+
+_taken from the ConceroAutomation::fulfillRequest logic_
+
+### _handleStartDepositCLFFulfill
+
+```solidity
+function _handleStartDepositCLFFulfill(bytes32 requestId, bytes response) internal
+```
+
+### _decodeCLFResponse
+
+```solidity
+function _decodeCLFResponse(bytes response) internal pure returns (uint256, bytes1[])
+```
+
+### _handleStartWithdrawalCLFFulfill
+
+```solidity
+function _handleStartWithdrawalCLFFulfill(bytes32 requestId, bytes response) internal
+```
+
+### _deleteDepositsOnTheWayByIndexes
+
+```solidity
+function _deleteDepositsOnTheWayByIndexes(bytes1[] _depositsOnTheWayIndexesToDelete) internal
+```
+
+### _calculateWithdrawableAmount
+
+```solidity
+function _calculateWithdrawableAmount(uint256 _childPoolsBalance, uint256 _clpAmount, uint256 _lpSupply) internal view returns (uint256)
+```
+
+### _addDepositOnTheWay
+
+```solidity
+function _addDepositOnTheWay(bytes32 _ccipMessageId, uint64 _chainSelector, uint256 _amount) internal
+```
+
+### _findLowestDepositOnTheWayUnusedIndex
+
+```solidity
+function _findLowestDepositOnTheWayUnusedIndex() internal returns (uint8)
+```
+
+### _addWithdrawalOnTheWayAmountById
+
+```solidity
+function _addWithdrawalOnTheWayAmountById(bytes32 _withdrawalId) internal
+```
+
+### _convertToLPTokenDecimals
+
+```solidity
+function _convertToLPTokenDecimals(uint256 _usdcAmount) internal pure returns (uint256)
+```
+
+Internal function to convert USDC Decimals to LP Decimals
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _usdcAmount | uint256 | the amount of USDC |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | _adjustedAmount the adjusted amount |
+
+### _convertToUSDCTokenDecimals
+
+```solidity
+function _convertToUSDCTokenDecimals(uint256 _lpAmount) internal pure returns (uint256)
+```
+
+Internal function to convert LP Decimals to USDC Decimals
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _lpAmount | uint256 | the amount of LP |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | _adjustedAmount the adjusted amount |
+
+### _getWithdrawalRequestById
+
+```solidity
+function _getWithdrawalRequestById(bytes32 _withdrawalId) internal view returns (struct IParentPool.WithdrawRequest)
+```
+
+### getWithdrawalIdByLPAddress
+
+```solidity
+function getWithdrawalIdByLPAddress(address _lpAddress) external view returns (bytes32)
+```
+
+### getMaxDeposit
+
+```solidity
+function getMaxDeposit() external view returns (uint256)
+```
+
+### getUsdcInUse
+
+```solidity
+function getUsdcInUse() external view returns (uint256)
+```
+
+### getDepositsOnTheWay
+
+```solidity
+function getDepositsOnTheWay() external view returns (struct IParentPool.DepositOnTheWay[150])
+```
+
+### getPendingRequests
+
+```solidity
+function getPendingRequests() external view returns (bytes32[] _requests)
+```
+
+### getPendingWithdrawRequestsLength
+
+```solidity
+function getPendingWithdrawRequestsLength() public view returns (uint256)
+```
+
+### _isMessenger
+
+```solidity
+function _isMessenger(address _messenger) internal view returns (bool)
+```
+
+Function to check if a caller address is an allowed messenger
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _messenger | address | the address of the caller |
+

@@ -1,0 +1,56 @@
+# Solidity API
+
+## ChildPoolStorage
+
+### s_loansInUse
+
+```solidity
+uint256 s_loansInUse
+```
+
+variable to store the value that will be temporary used by Chainlink Functions
+
+### __gap
+
+```solidity
+uint256[50] __gap
+```
+
+gap to reserve storage in the contract for future variable additions
+
+### s_poolChainSelectors
+
+```solidity
+uint64[] s_poolChainSelectors
+```
+
+array of chain IDS of Pools to receive Liquidity through `ccipSend` function
+
+### s_contractsToReceiveFrom
+
+```solidity
+mapping(uint64 => mapping(address => uint256)) s_contractsToReceiveFrom
+```
+
+Mapping to keep track of allowed pool senders
+
+### s_poolToSendTo
+
+```solidity
+mapping(uint64 => address) s_poolToSendTo
+```
+
+Mapping to keep track of valid pools to transfer in case of liquidation or rebalance
+
+### s_distributeLiquidityRequestProcessed
+
+```solidity
+mapping(bytes32 => bool) s_distributeLiquidityRequestProcessed
+```
+
+### s_withdrawRequests
+
+```solidity
+mapping(bytes32 => bool) s_withdrawRequests
+```
+

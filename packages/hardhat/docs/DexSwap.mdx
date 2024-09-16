@@ -1,0 +1,97 @@
+# Solidity API
+
+## DexSwap_OnlyProxyContext
+
+```solidity
+error DexSwap_OnlyProxyContext(address caller)
+```
+
+error emitted when the caller is not allowed
+
+## DexSwap_EmptyDexData
+
+```solidity
+error DexSwap_EmptyDexData()
+```
+
+error emitted when the swap data is empty
+
+## DexSwap_RouterNotAllowed
+
+```solidity
+error DexSwap_RouterNotAllowed()
+```
+
+error emitted when the router is not allowed
+
+## DexSwap_InvalidPath
+
+```solidity
+error DexSwap_InvalidPath()
+```
+
+error emitted when the path to swaps is invalid
+
+## DexSwap_SwapDataNotChained
+
+```solidity
+error DexSwap_SwapDataNotChained(address toToken, address fromToken)
+```
+
+error emitted if a swapData has invalid tokens
+
+## DexSwap_InvalidDexData
+
+```solidity
+error DexSwap_InvalidDexData()
+```
+
+error emitted when the DexData is not valid
+
+## DexSwap_UnwrapWNativeFailed
+
+```solidity
+error DexSwap_UnwrapWNativeFailed()
+```
+
+## DexSwap
+
+### DexSwap_OrchestratorContractUpdated
+
+```solidity
+event DexSwap_OrchestratorContractUpdated(address previousAddress, address orchestrator)
+```
+
+event emitted when the orchestrator address is updated
+
+### DexSwap_RemovingDust
+
+```solidity
+event DexSwap_RemovingDust(address receiver, uint256 amount)
+```
+
+event emitted when value locked in the contract is removed
+
+### constructor
+
+```solidity
+constructor(address _proxy, address[3] _messengers) public
+```
+
+### entrypoint
+
+```solidity
+function entrypoint(struct IDexSwap.SwapData[] _swapData, address _recipient) external payable
+```
+
+Entry point function for the Orchestrator to take loans
+
+_only the Orchestrator contract should be able to call this function_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _swapData | struct IDexSwap.SwapData[] | a struct array that contains dex information. |
+| _recipient | address |  |
+

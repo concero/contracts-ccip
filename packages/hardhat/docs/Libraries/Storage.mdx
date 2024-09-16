@@ -1,0 +1,132 @@
+# Solidity API
+
+## Storage
+
+### s_donHostedSecretsSlotId
+
+```solidity
+uint8 s_donHostedSecretsSlotId
+```
+
+variable to store the Chainlink Function DON Slot ID
+
+### s_donHostedSecretsVersion
+
+```solidity
+uint64 s_donHostedSecretsVersion
+```
+
+variable to store the Chainlink Function DON Secret Version
+
+### s_srcJsHashSum
+
+```solidity
+bytes32 s_srcJsHashSum
+```
+
+variable to store the Chainlink Function Source Hashsum
+
+### s_dstJsHashSum
+
+```solidity
+bytes32 s_dstJsHashSum
+```
+
+variable to store the Chainlink Function Destination Hashsum
+
+### s_ethersHashSum
+
+```solidity
+bytes32 s_ethersHashSum
+```
+
+variable to store Ethers Hashsum
+
+### s_latestLinkUsdcRate
+
+```solidity
+uint256 s_latestLinkUsdcRate
+```
+
+Variable to store the Link to USDC latest rate
+
+### s_latestNativeUsdcRate
+
+```solidity
+uint256 s_latestNativeUsdcRate
+```
+
+Variable to store the Native to USDC latest rate
+
+### s_latestLinkNativeRate
+
+```solidity
+uint256 s_latestLinkNativeRate
+```
+
+Variable to store the Link to Native latest rate
+
+### __gap
+
+```solidity
+uint256[50] __gap
+```
+
+gap to reserve storage in the contract for future variable additions
+
+### clfPremiumFees
+
+```solidity
+mapping(uint64 => uint256) clfPremiumFees
+```
+
+Concero: Mapping to keep track of CLF fees for different chains
+
+### s_routerAllowed
+
+```solidity
+mapping(address => uint256) s_routerAllowed
+```
+
+DexSwap: mapping to keep track of allowed routers to perform swaps. 1 == Allowed.
+
+### s_poolReceiver
+
+```solidity
+mapping(uint64 => address) s_poolReceiver
+```
+
+Mapping to keep track of allowed pool receiver
+
+### s_conceroContracts
+
+```solidity
+mapping(uint64 => address) s_conceroContracts
+```
+
+Functions: Mapping to keep track of Concero.sol contracts to send cross-chain Chainlink Functions messages
+
+### s_transactions
+
+```solidity
+mapping(bytes32 => struct IStorage.Transaction) s_transactions
+```
+
+Functions: Mapping to keep track of cross-chain transactions
+
+### s_requests
+
+```solidity
+mapping(bytes32 => struct IStorage.Request) s_requests
+```
+
+Functions: Mapping to keep track of Chainlink Functions requests
+
+### s_lastGasPrices
+
+```solidity
+mapping(uint64 => uint256) s_lastGasPrices
+```
+
+Functions: Mapping to keep track of cross-chain gas prices
+

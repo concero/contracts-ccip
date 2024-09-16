@@ -49,9 +49,7 @@
 			});
 			const res = await resp.json();
 			if (res.length === undefined) return [res];
-			return res.map((r, i) => {
-				return {jsonrpc: '2.0', id: payload[i].id, result: r.result};
-			});
+			return res;
 		}
 	}
 	const getProviderByChainSelector = _chainSelector => {

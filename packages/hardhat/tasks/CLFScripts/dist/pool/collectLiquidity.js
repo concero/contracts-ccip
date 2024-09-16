@@ -29,7 +29,7 @@
 			}
 			return null;
 		};
-		const baseChainSelector = `0x${BigInt('15971525489660198786').toString(16)}`;
+		const baseChainSelector = `0x${BigInt('10344971235874465080').toString(16)}`;
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 			constructor(url) {
 				super(url);

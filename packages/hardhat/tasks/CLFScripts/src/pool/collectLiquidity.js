@@ -64,7 +64,8 @@
 			return null;
 		};
 
-		const baseChainSelector = `0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`;
+		// const baseChainSelector = `0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`;
+		const baseChainSelector = `0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`;
 
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 			constructor(url) {

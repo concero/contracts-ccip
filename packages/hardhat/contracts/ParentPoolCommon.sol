@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import {LPToken} from "./LPToken.sol";
+
 error NotParentPoolProxy(address sender);
 error NotMessenger(address sender);
 
@@ -18,13 +20,16 @@ contract ParentPoolCommon {
     uint256 internal constant ALLOWED = 1;
     uint256 internal constant PRECISION_HANDLER = 10_000_000_000; // 10 ** 10
     uint8 internal constant MAX_DEPOSITS_ON_THE_WAY_COUNT = 150;
+    // TODO: change the deadline in production!!!!!!
+    //    uint256 private constant WITHDRAW_DEADLINE_SECONDS = 597_600;
+    uint256 private constant WITHDRAW_DEADLINE_SECONDS = 60;
 
     /////////////////
     ////IMMUTABLES///
     /////////////////
 
     address internal immutable i_parentPoolProxy;
-    address internal immutable i_lpToken;
+    LPToken internal immutable i_lpToken;
     address internal immutable i_msgr0;
     address internal immutable i_msgr1;
     address internal immutable i_msgr2;
@@ -47,8 +52,9 @@ contract ParentPoolCommon {
         _;
     }
 
-    constructor(address parentPool, address msg0, address msg1, address msg2) {
+    constructor(address parentPool, address lpToken, address msg0, address msg1, address msg2) {
         i_parentPoolProxy = parentPool;
+        i_lpToken = lpToken;
         i_msgr0 = msg0;
         i_msgr1 = msg1;
         i_msgr2 = msg2;

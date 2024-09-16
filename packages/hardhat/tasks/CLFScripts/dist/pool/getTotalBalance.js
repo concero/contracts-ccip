@@ -19,7 +19,7 @@
 			poolAddress: '0x0fB1ef702a3fA805e221AAF653A853b34b23dd33',
 		},
 	};
-	const baseChainSelector = '15971525489660198786';
+	const baseChainSelector = '10344971235874465080';
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 	const poolAbi = [
 		'function s_loansInUse() external view returns (uint256)',
@@ -61,7 +61,7 @@
 	};
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
 	const getBaseDepositsOneTheWayArray = () => {
-		const pool = new ethers.Contract('0x0AE1B2730066AD46481ab0a5fd2B5893f8aBa323', poolAbi, baseProvider);
+		const pool = new ethers.Contract('0x0fB1ef702a3fA805e221AAF653A853b34b23dd33', poolAbi, baseProvider);
 		return pool.getDepositsOnTheWay();
 	};
 	const getChildPoolsCcipLogs = async ccipLines => {

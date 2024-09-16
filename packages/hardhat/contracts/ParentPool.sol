@@ -18,6 +18,7 @@ import {IParentPool} from "./Interfaces/IParentPool.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
 import {ParentPoolStorage} from "contracts/Libraries/ParentPoolStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
+import {ParentPoolCommon} from "./ParentPoolCommon.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -55,25 +56,18 @@ error ConceroParentPool_WithdrawRequestDoesntExist(bytes32 withdrawalId);
 error ConceroParentPool_WithdrawRequestNotReady(bytes32 withdrawalId);
 error ConceroParentPool_DepositsOnTheWayArrayFull();
 
-contract ParentPool is IParentPool, CCIPReceiver, ParentPoolStorage {
+contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolStorage {
     ///////////////////////
     ///TYPE DECLARATIONS///
     ///////////////////////
     using FunctionsRequest for FunctionsRequest.Request;
     using SafeERC20 for IERC20;
 
-    ///////////////////////////////////////////////////////////
-    //////////////////////// VARIABLES ////////////////////////
-    ///////////////////////////////////////////////////////////
-
     ///////////////
     ///CONSTANTS///
     ///////////////
 
     uint256 internal constant MIN_DEPOSIT = 100_000_000;
-    // TODO: change the deadline in production!!!!!!
-    //    uint256 private constant WITHDRAW_DEADLINE_SECONDS = 597_600;
-    uint256 private constant WITHDRAW_DEADLINE_SECONDS = 60;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint256 private constant CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS = 2108;
     uint256 private constant ARRAY_MANIPULATION = 10_000;
@@ -84,34 +78,20 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolStorage {
     ///@notice variable to store the costs of updating store on CLF callback
     uint256 private constant WRITE_FUNCTIONS_COST = 600_000;
     ///@notice Chainlink Functions Gas Limit
-    uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 2_000_000;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * 10 ** 6;
-
-    ///@notice JS Code for Chainlink Functions
-    // TODO: add automation js code to this contract
-    string internal constant JS_CODE =
-        "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'release' + `/packages/hardhat/tasks/CLFScripts/dist/pool/${bytesArgs[2] === '0x1' ? 'distributeLiquidity' : 'getTotalBalance'}.min.js`; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
     ////////////////
     ///IMMUTABLES///
     ////////////////
-    ///@notice ConceroParentPool proxy address
-    address private immutable i_parentPoolProxy;
+
     ///@notice Orchestrator Proxy immutable address
     address private immutable i_infraProxy;
     ///@notice Chainlink Link Token interface
     LinkTokenInterface private immutable i_linkToken;
-    ///@notice Pool liquidity token
-    LPToken public immutable i_lp;
-    ///@notice Chainlink Function Don ID
-    bytes32 private immutable i_donId;
     ///@notice Chainlink Functions Protocol Subscription ID
-    uint64 private immutable i_subscriptionId;
-    address internal immutable i_parentPoolProxy;
     address internal immutable i_parentPoolCLACLF;
     address internal immutable i_owner;
     IERC20 internal immutable i_USDC;
-    address internal immutable i_automationForwarder;
 
     ///////////////
     ///MODIFIERS///
@@ -136,25 +116,16 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolStorage {
     constructor(
         address _parentPoolProxy,
         address _link,
-        bytes32 _donId,
-        uint64 _subscriptionId,
-        address _functionsRouter,
         address _ccipRouter,
         address _usdc,
         address _lpToken,
-        address _orchestrator,
+        address _infraProxy,
         address _owner,
-        address _automationForwarder,
         address[3] memory _messengers
-    ) CCIPReceiver(_ccipRouter) {
-        i_donId = _donId;
-        i_subscriptionId = _subscriptionId;
-        i_parentPoolProxy = _parentPoolProxy;
+    ) CCIPReceiver(_ccipRouter) ParentPoolCommon() {
         i_linkToken = LinkTokenInterface(_link);
         i_USDC = IERC20(_usdc);
-        //        i_lp = LPToken(_lpToken);
-        i_infraProxy = _orchestrator;
-        i_automationForwarder = _automationForwarder;
+        i_infraProxy = _infraProxy;
     }
 
     ////////////////////////
@@ -240,7 +211,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolStorage {
 
         i_USDC.safeTransferFrom(msg.sender, address(this), usdcAmount);
 
-        i_lp.mint(msg.sender, lpTokensToMint);
+        i_lpToken.mint(msg.sender, lpTokensToMint);
 
         _distributeLiquidityToChildPools(usdcAmountAfterFee);
 
@@ -275,14 +246,14 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolStorage {
             abi.encodePacked(msg.sender, _lpAmount, block.number, block.prevrandao)
         );
 
-        IERC20(i_lp).safeTransferFrom(msg.sender, address(this), _lpAmount);
+        IERC20(i_lpToken).safeTransferFrom(msg.sender, address(this), _lpAmount);
 
         bytes32 clfRequestId = _sendRequest(args, JS_CODE);
         s_clfRequestTypes[clfRequestId] = RequestType.startWithdrawal_getChildPoolsLiquidity;
 
         // partially initialise withdrawalRequest struct
         s_withdrawRequests[withdrawalId].lpAddress = msg.sender;
-        s_withdrawRequests[withdrawalId].lpSupplySnapshot = i_lp.totalSupply();
+        s_withdrawRequests[withdrawalId].lpSupplySnapshot = i_lpToken.totalSupply();
         s_withdrawRequests[withdrawalId].lpAmountToBurn = _lpAmount;
 
         s_withdrawalIdByCLFRequestId[clfRequestId] = withdrawalId;
@@ -328,7 +299,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolStorage {
         delete s_withdrawalIdByLPAddress[msg.sender];
         delete s_withdrawRequests[withdrawalId];
 
-        i_lp.burn(lpAmountToBurn);
+        i_lpToken.burn(lpAmountToBurn);
 
         i_USDC.safeTransfer(msg.sender, amountToWithdraw);
 
@@ -767,7 +738,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolStorage {
         uint256 childPoolsBalance,
         uint256 clpAmount
     ) external view returns (uint256) {
-        return _calculateWithdrawableAmount(childPoolsBalance, clpAmount, i_lp.totalSupply());
+        return _calculateWithdrawableAmount(childPoolsBalance, clpAmount, i_lpToken.totalSupply());
     }
 
     ///////////////
@@ -915,75 +886,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolStorage {
         }
     }
 
-    function _handleStartDepositCLFFulfill(bytes32 requestId, bytes memory response) internal {
-        DepositRequest storage request = s_depositRequests[requestId];
-
-        (
-            uint256 childPoolsLiquidity,
-            bytes1[] memory depositsOnTheWayIdsToDelete
-        ) = _decodeCLFResponse(response);
-
-        request.childPoolsLiquiditySnapshot = childPoolsLiquidity;
-
-        _deleteDepositsOnTheWayByIndexes(depositsOnTheWayIdsToDelete);
-    }
-
-    function _decodeCLFResponse(
-        bytes memory response
-    ) internal pure returns (uint256, bytes1[] memory) {
-        uint256 totalBalance;
-        assembly {
-            totalBalance := mload(add(response, 32))
-        }
-
-        if (response.length == 32) {
-            return (totalBalance, new bytes1[](0));
-        } else {
-            bytes1[] memory depositsOnTheWayIdsToDelete = new bytes1[](response.length - 32);
-            for (uint256 i = 32; i < response.length; i++) {
-                depositsOnTheWayIdsToDelete[i - 32] = response[i];
-            }
-
-            return (totalBalance, depositsOnTheWayIdsToDelete);
-        }
-    }
-
-    function _handleStartWithdrawalCLFFulfill(bytes32 requestId, bytes memory response) internal {
-        (
-            uint256 childPoolsLiquidity,
-            bytes1[] memory depositsOnTheWayIdsToDelete
-        ) = _decodeCLFResponse(response);
-
-        bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
-        WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
-
-        _updateWithdrawalRequest(request, withdrawalId, childPoolsLiquidity);
-        _deleteDepositsOnTheWayByIndexes(depositsOnTheWayIdsToDelete);
-    }
-
-    function _deleteDepositsOnTheWayByIndexes(
-        bytes1[] memory _depositsOnTheWayIndexesToDelete
-    ) internal {
-        uint256 depositsOnTheWayIndexesToDeleteLength = _depositsOnTheWayIndexesToDelete.length;
-
-        if (depositsOnTheWayIndexesToDeleteLength == 0) {
-            return;
-        }
-
-        uint256 s_depositsOnTheWayArrayLength = s_depositsOnTheWayArray.length;
-
-        for (uint256 i; i < depositsOnTheWayIndexesToDeleteLength; i++) {
-            uint8 indexToDelete = uint8(_depositsOnTheWayIndexesToDelete[i]);
-
-            if (indexToDelete >= s_depositsOnTheWayArrayLength) {
-                continue;
-            }
-
-            s_depositsOnTheWayAmount -= s_depositsOnTheWayArray[indexToDelete].amount;
-            delete s_depositsOnTheWayArray[indexToDelete];
-        }
-    }
-
     /**
      * @notice Function called by Chainlink Functions fulfillRequest to update deposit information
      * @param _childPoolBalance The total cross chain balance of child pools
@@ -1004,7 +906,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolStorage {
         uint256 totalCrossChainLiquidity = _childPoolBalance + parentPoolLiquidity;
         uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(totalCrossChainLiquidity);
         uint256 amountDepositedConverted = _convertToLPTokenDecimals(_amountToDeposit);
-        uint256 _totalLPSupply = i_lp.totalSupply();
+        uint256 _totalLPSupply = i_lpToken.totalSupply();
 
         //N° lpTokens = (((Total USDC Liq + user deposit) * Total sToken) / Total USDC Liq) - Total sToken
         uint256 lpTokensToMint;
@@ -1018,41 +920,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolStorage {
             lpTokensToMint = amountDepositedConverted;
         }
         return lpTokensToMint;
-    }
-
-    /**
-     * @notice Function to update cross-chain rewards which will be paid to liquidity providers in the end of
-     * withdraw period.
-     * @param _withdrawalRequest - pointer to the WithdrawRequest struct
-     * @param _childPoolsLiquidity The total liquidity of all child pools
-     * @dev This function must be called only by an allowed Messenger & must not revert
-     * @dev _totalUSDCCrossChainBalance MUST have 10**6 decimals.
-     */
-    function _updateWithdrawalRequest(
-        WithdrawRequest storage _withdrawalRequest,
-        bytes32 _withdrawalId,
-        uint256 _childPoolsLiquidity
-    ) private {
-        uint256 lpToBurn = _withdrawalRequest.lpAmountToBurn;
-        uint256 lpSupplySnapshot = _withdrawalRequest.lpSupplySnapshot;
-        uint256 childPoolsCount = s_poolChainSelectors.length;
-
-        uint256 amountToWithdrawWithUsdcDecimals = _calculateWithdrawableAmount(
-            _childPoolsLiquidity,
-            lpToBurn,
-            lpSupplySnapshot
-        );
-        uint256 withdrawalPortionPerPool = amountToWithdrawWithUsdcDecimals / (childPoolsCount + 1);
-
-        _withdrawalRequest.amountToWithdraw = amountToWithdrawWithUsdcDecimals;
-        _withdrawalRequest.liquidityRequestedFromEachPool = withdrawalPortionPerPool;
-        _withdrawalRequest.remainingLiquidityFromChildPools =
-            amountToWithdrawWithUsdcDecimals -
-            withdrawalPortionPerPool;
-        _withdrawalRequest.triggeredAtTimestamp = block.timestamp + WITHDRAW_DEADLINE_SECONDS;
-
-        _addPendingWithdrawalId(_withdrawalId);
-        emit ConceroParentPool_RequestUpdated(_withdrawalId);
     }
 
     function _calculateWithdrawableAmount(

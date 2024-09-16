@@ -96,6 +96,12 @@ contract ParentPoolCLFCLA is
         delete s_clfRequestTypes[requestId];
     }
 
+    function sendCLFRequest(
+        IParentPool.RequestType requestType,
+        bytes memory args,
+        uint256 gasLimit
+    ) external onlyProxyContext {}
+
     ///////////////
     /// INTERNAL ///
     ///////////////
@@ -202,5 +208,25 @@ contract ParentPoolCLFCLA is
 
         _addPendingWithdrawalId(_withdrawalId);
         emit ConceroParentPool_RequestUpdated(_withdrawalId);
+    }
+
+    /**
+     * @notice Function to send a Request to Chainlink Functions
+     * @param _args the arguments for the request as bytes array
+     * @param _jsCode the JScode that will be executed.
+     */
+    function _sendRequest(bytes[] memory _args, string memory _jsCode) internal returns (bytes32) {
+        FunctionsRequest.Request memory req;
+        req.initializeRequestForInlineJavaScript(_jsCode);
+        req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
+        req.setBytesArgs(_args);
+
+        return
+            _sendRequest(
+                req.encodeCBOR(),
+                i_subscriptionId,
+                CL_FUNCTIONS_CALLBACK_GAS_LIMIT,
+                i_donId
+            );
     }
 }

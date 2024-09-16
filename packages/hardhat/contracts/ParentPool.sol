@@ -131,6 +131,37 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     ////////////////////////
     ///EXTERNAL FUNCTIONS///
     ////////////////////////
+
+    receive() external payable {}
+
+    function getWithdrawalIdByLPAddress(address _lpAddress) external view returns (bytes32) {
+        return s_withdrawalIdByLPAddress[_lpAddress];
+    }
+
+    function getMaxDeposit() external view returns (uint256) {
+        return s_maxDeposit;
+    }
+
+    function getUsdcInUse() external view returns (uint256) {
+        return s_loansInUse;
+    }
+
+    function getDepositsOnTheWay()
+        external
+        view
+        returns (DepositOnTheWay[MAX_DEPOSITS_ON_THE_WAY_COUNT] memory)
+    {
+        return s_depositsOnTheWayArray;
+    }
+
+    function getPendingRequests() external view returns (bytes32[] memory _requests) {
+        _requests = s_withdrawalRequestIds;
+    }
+
+    function getPendingWithdrawRequestsLength() public view returns (uint256) {
+        return s_withdrawalRequestIds.length;
+    }
+
     /**
      * @notice function for the Concero Orchestrator contract to take loans
      * @param _token address of the token being loaned
@@ -329,8 +360,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         _ccipSend(_chainSelector, _amountToSend);
     }
 
-    receive() external payable {}
-
     function withdrawDepositFees() external payable onlyOwner {
         i_USDC.safeTransfer(i_owner, s_depositFeeAmount);
         s_depositFeeAmount = 0;
@@ -340,82 +369,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     /////VIEW FUNCTIONS/////
     ////////////////////////
 
-    function delegateCallWrapper(bytes memory data, address target) internal returns (uint256) {
-        (bool success, bytes memory data) = target.delegatecall(data);
-
-        if (!success) {
-            revert UnableToCompleteDelegateCall(data);
-        }
-        return data;
-    }
-
-    function calculateLpAmount(
-        uint256 childPoolsBalance,
-        uint256 amountToDeposit
-    ) external view returns (uint256) {
-        bytes memory data = abi.encodeWithSelector(
-            IParentPoolCCIP.calculateLpAmount.selector,
-            childPoolsBalance,
-            amountToDeposit
-        );
-
-        return
-            IParentPoolViewViaDelegate(address(this)).calculateLpAmountViaDelegate(
-                data,
-                i_parentPoolCCIP
-            );
-    }
-
-    /**
-     * @notice Internal function to convert USDC Decimals to LP Decimals
-     * @param _usdcAmount the amount of USDC
-     * @return _adjustedAmount the adjusted amount
-     */
-    function _convertToLPTokenDecimals(uint256 _usdcAmount) internal pure returns (uint256) {
-        return (_usdcAmount * LP_TOKEN_DECIMALS) / USDC_DECIMALS;
-    }
-
-    /**
-     * @notice Internal function to convert LP Decimals to USDC Decimals
-     * @param _lpAmount the amount of LP
-     * @return _adjustedAmount the adjusted amount
-     */
-    function _convertToUSDCTokenDecimals(uint256 _lpAmount) internal pure returns (uint256) {
-        return (_lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
-    }
-
     function _getWithdrawalRequestById(
         bytes32 _withdrawalId
     ) internal view onlyProxyContext returns (WithdrawRequest memory) {
         return s_withdrawRequests[_withdrawalId];
-    }
-
-    function getWithdrawalIdByLPAddress(address _lpAddress) external view returns (bytes32) {
-        return s_withdrawalIdByLPAddress[_lpAddress];
-    }
-
-    function getMaxDeposit() external view returns (uint256) {
-        return s_maxDeposit;
-    }
-
-    function getUsdcInUse() external view returns (uint256) {
-        return s_loansInUse;
-    }
-
-    function getDepositsOnTheWay()
-        external
-        view
-        returns (DepositOnTheWay[MAX_DEPOSITS_ON_THE_WAY_COUNT] memory)
-    {
-        return s_depositsOnTheWayArray;
-    }
-
-    function getPendingRequests() external view returns (bytes32[] memory _requests) {
-        _requests = s_withdrawalRequestIds;
-    }
-
-    function getPendingWithdrawRequestsLength() public view returns (uint256) {
-        return s_withdrawalRequestIds.length;
     }
 
     ///////////////////////
@@ -705,26 +662,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         s_withdrawalIdByCLFRequestId[reqId] = withdrawalId;
 
         emit ConceroParentPool_RetryPerformed(reqId);
-    }
-
-    /**
-     * @notice Function to send a Request to Chainlink Functions
-     * @param _args the arguments for the request as bytes array
-     * @param _jsCode the JScode that will be executed.
-     */
-    function _sendRequest(bytes[] memory _args, string memory _jsCode) internal returns (bytes32) {
-        FunctionsRequest.Request memory req;
-        req.initializeRequestForInlineJavaScript(_jsCode);
-        req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
-        req.setBytesArgs(_args);
-
-        return
-            _sendRequest(
-                req.encodeCBOR(),
-                i_subscriptionId,
-                CL_FUNCTIONS_CALLBACK_GAS_LIMIT,
-                i_donId
-            );
     }
 
     function calculateLpAmount(

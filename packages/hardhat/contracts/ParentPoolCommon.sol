@@ -54,11 +54,15 @@ contract ParentPoolCommon {
 
     constructor(address parentPool, address lpToken, address msg0, address msg1, address msg2) {
         i_parentPoolProxy = parentPool;
-        i_lpToken = lpToken;
+        i_lpToken = LPToken(lpToken);
         i_msgr0 = msg0;
         i_msgr1 = msg1;
         i_msgr2 = msg2;
     }
+
+    ////////////////
+    /// INTERNAL ///
+    ////////////////
 
     /**
      * @notice Function to check if a caller address is an allowed messenger
@@ -66,5 +70,23 @@ contract ParentPoolCommon {
      */
     function _isMessenger(address _messenger) internal view returns (bool) {
         return (_messenger == i_msgr0 || _messenger == i_msgr1 || _messenger == i_msgr2);
+    }
+
+    /**
+     * @notice Internal function to convert USDC Decimals to LP Decimals
+     * @param _usdcAmount the amount of USDC
+     * @return _adjustedAmount the adjusted amount
+     */
+    function _convertToLPTokenDecimals(uint256 _usdcAmount) internal pure returns (uint256) {
+        return (_usdcAmount * LP_TOKEN_DECIMALS) / USDC_DECIMALS;
+    }
+
+    /**
+     * @notice Internal function to convert LP Decimals to USDC Decimals
+     * @param _lpAmount the amount of LP
+     * @return _adjustedAmount the adjusted amount
+     */
+    function _convertToUSDCTokenDecimals(uint256 _lpAmount) internal pure returns (uint256) {
+        return (_lpAmount * USDC_DECIMALS) / LP_TOKEN_DECIMALS;
     }
 }

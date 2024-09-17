@@ -1,10 +1,8 @@
-import { mainnetChains, testnetChains } from "../../../constants/liveChains";
+import { mainnetChains, networkEnvKeys, ProxyEnum, testnetChains } from "../../../constants";
 import { err, getEnvAddress, getEnvVar, getFallbackClients } from "../../../utils";
 import { task } from "hardhat/config";
 import { erc20Abi, formatUnits } from "viem";
 import { type CNetwork } from "../../../types/CNetwork";
-import { ProxyEnum } from "../../../constants/deploymentVariables";
-import { networkEnvKeys } from "../../../constants";
 import { BalanceInfo } from "./types";
 
 const tokensToMonitor = [

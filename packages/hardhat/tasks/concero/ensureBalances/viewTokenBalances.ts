@@ -59,7 +59,7 @@ async function monitorTokenBalances(isTestnet: boolean): Promise<BalanceInfo[]> 
 
   for (const chain of Object.values(chains)) {
     for (const token of tokensToMonitor) {
-      balancePromises.push(checkTokenBalance(chain, "infraProxy", token.symbol, token.decimals));
+      balancePromises.push(checkTokenBalance(chain, ProxyType.infraProxy, token.symbol, token.decimals));
     }
   }
 

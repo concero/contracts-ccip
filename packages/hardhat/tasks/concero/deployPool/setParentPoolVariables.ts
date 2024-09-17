@@ -10,14 +10,14 @@ import load from "../../../utils/load";
 import { getEthersV5FallbackSignerAndProvider } from "../../../utils/getEthersSignerAndProvider";
 import { SecretsManager } from "@chainlink/functions-toolkit";
 import { mainnetChains, testnetChains } from "../liveChains";
-import { viemReceiptConfig } from "../../../constants/deploymentVariables";
+import { ProxyType, viemReceiptConfig } from "../../../constants/deploymentVariables";
 import { formatGas, shorten } from "../../../utils/formatting";
 
 async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
   const { viemChain, name } = chain;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const [parentPoolProxy, parentPoolAlias] = getEnvAddress("parentPoolProxy", name);
+    const [parentPoolProxy, parentPoolAlias] = getEnvAddress(ProxyType.parentPoolProxy, name);
     const parentPoolJsCode = await (await fetch(parentPoolJsCodeUrl)).text();
     const ethersCode = await (await fetch(ethersV6CodeUrl)).text();
 
@@ -50,7 +50,7 @@ async function setParentPoolCap(chain: CNetwork, abi: any) {
   const { name } = chain;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress("parentPoolProxy", name);
+    const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress(ProxyType.parentPoolProxy, name);
     const poolCap = 100_000n * 10n ** 6n;
 
     const { request: setCapReq } = await publicClient.simulateContract({
@@ -80,7 +80,7 @@ async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slotId: nu
   const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls, name } = chain;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress("parentPoolProxy", name);
+    const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress(ProxyType.parentPoolProxy, name);
     const { signer: dcSigner } = getEthersV5FallbackSignerAndProvider(name);
 
     const secretsManager = new SecretsManager({
@@ -124,7 +124,7 @@ async function setParentPoolSecretsSlotId(chain: CNetwork, abi: any, slotId: num
   const { name } = chain;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
-    const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress("parentPoolProxy", name);
+    const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress(ProxyType.parentPoolProxy, name);
 
     const { request } = await publicClient.simulateContract({
       address: parentPoolProxy,
@@ -153,7 +153,7 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
 
   const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
-  const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress("parentPoolProxy", name);
+  const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress(ProxyType.parentPoolProxy, name);
 
   const dstChains = type === networkTypes.mainnet ? mainnetChains : testnetChains;
 
@@ -165,8 +165,8 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
     if (!dstChainName) throw new Error("Destination chain name not found");
     if (!dstChainSelector) throw new Error("Destination chain selector not found");
 
-    const [dstConceroProxy, _] = getEnvAddress("infraProxy", dstChainName);
-    const [childPoolProxy, __] = getEnvAddress("childPoolProxy", dstChainName);
+    const [dstConceroProxy, _] = getEnvAddress(ProxyType.infraProxy, dstChainName);
+    const [childPoolProxy, __] = getEnvAddress(ProxyType.childPoolProxy, dstChainName);
 
     const setSender = async (sender: Address) => {
       const { request: setSenderReq } = await publicClient.simulateContract({
@@ -207,8 +207,8 @@ async function setPools(chain: CNetwork, abi: any) {
       if (dstChain.chainId === chain.chainId) continue;
       const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
 
-      const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress("parentPoolProxy", name);
-      const [childPoolProxy, childPoolProxyAlias] = getEnvAddress("childPoolProxy", dstChainName);
+      const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress(ProxyType.parentPoolProxy, name);
+      const [childPoolProxy, childPoolProxyAlias] = getEnvAddress(ProxyType.childPoolProxy, dstChainName);
 
       const { request: setReceiverReq } = await publicClient.simulateContract({
         address: parentPoolProxy,

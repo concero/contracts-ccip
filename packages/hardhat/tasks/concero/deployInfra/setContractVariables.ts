@@ -13,7 +13,7 @@ import {
 import { SecretsManager } from "@chainlink/functions-toolkit";
 
 import {
-  CNetworks,
+  cNetworks,
   conceroChains,
   mainnetChains,
   networkEnvKeys,
@@ -209,7 +209,7 @@ export async function setDstConceroPools(deployableChain: CNetwork, abi: any) {
     for (const chain of chainsToSet) {
       const { name: dstChainName, chainSelector: dstChainSelector } = chain;
       const [dstConceroPool, dstConceroPoolAlias] =
-        chain === CNetworks.base || chain === CNetworks.baseSepolia
+        chain === cNetworks.base || chain === cNetworks.baseSepolia
           ? getEnvAddress(ProxyEnum.parentPoolProxy, dstChainName)
           : getEnvAddress(ProxyEnum.childPoolProxy, dstChainName);
       const { request: setDstConceroPoolReq } = await publicClient.simulateContract({

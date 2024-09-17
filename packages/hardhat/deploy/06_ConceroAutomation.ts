@@ -1,6 +1,6 @@
 // import { Deployment } from "hardhat-deploy/types";
 // import { HardhatRuntimeEnvironment } from "hardhat/types";
-// import chains, { networkEnvKeys } from "../constants/CNetworks";
+// import chains, { networkEnvKeys } from "../constants/cNetworks";
 // import updateEnvVariable from "../utils/updateEnvVariable";
 // import log from "../utils/log";
 // import getHashSum from "../utils/getHashSum";

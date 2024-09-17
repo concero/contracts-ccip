@@ -7,7 +7,7 @@ var __importDefault =
 Object.defineProperty(exports, "__esModule", { value: true });
 const config_1 = require("hardhat/config");
 const functions_toolkit_1 = require("@chainlink/functions-toolkit");
-const CNetworks_1 = __importDefault(require("../../../../constants/CNetworks"));
+const CNetworks_1 = __importDefault(require("../../../../constants/cNetworks"));
 (0, config_1.task)("clf-sub-transfer", "Request ownership of an Functions subscription be transferred to a new address")
   .addParam("subid", "Subscription ID")
   .addParam("newowner", "Address of the new owner")

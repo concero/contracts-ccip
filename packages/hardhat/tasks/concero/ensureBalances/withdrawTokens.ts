@@ -1,7 +1,7 @@
 import { task } from "hardhat/config";
 import monitorTokenBalances, { BalanceInfo } from "./viewTokenBalances";
 import { getEnvVar, getFallbackClients } from "../../../utils";
-import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
+import cNetworks, { networkEnvKeys } from "../../../constants/cNetworks";
 import { viemReceiptConfig } from "../../../constants";
 import log from "../../../utils/log";
 
@@ -41,7 +41,7 @@ async function withdrawTokens(isTestnet: boolean) {
   // Step 4: Withdraw the tokens
   for (const token of tokensWithBalance) {
     const { chainName, contractAddress, symbol, balance } = token;
-    const chain = CNetworks[chainName];
+    const chain = cNetworks[chainName];
     const viemChain = chain.viemChain;
 
     const tokenAddress = getEnvVar(`${symbol}_${networkEnvKeys[chainName]}`);

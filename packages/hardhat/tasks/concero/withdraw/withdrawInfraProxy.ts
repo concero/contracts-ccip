@@ -1,5 +1,5 @@
 import { task } from "hardhat/config";
-import chains, { networkEnvKeys } from "../../../constants/CNetworks";
+import chains, { networkEnvKeys } from "../../../constants/cNetworks";
 import { CNetwork } from "../../../types/CNetwork";
 import { getEnvVar, getFallbackClients } from "../../../utils";
 import { Address, erc20Abi } from "viem";

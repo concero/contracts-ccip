@@ -54,7 +54,7 @@ async function deployInfra(params: DeployInfraParams) {
   // const { deployer, proxyDeployer } = await hre.getNamedAccounts();
 
   if (deployProxy) {
-    // await ensureWalletBalance(proxyDeployer, deployerTargetBalances, CNetworks[name]);
+    // await ensureWalletBalance(proxyDeployer, deployerTargetBalances, cNetworks[name]);
     await deployProxyAdmin(hre, ProxyEnum.infraProxy);
     await deployTransparentProxy(hre, ProxyEnum.infraProxy);
 
@@ -63,7 +63,7 @@ async function deployInfra(params: DeployInfraParams) {
     await addCLFConsumer(CNetworks[name], [proxyAddress], functionsSubIds[0]);
   }
 
-  // await ensureWalletBalance(deployer, deployerTargetBalances, CNetworks[name]);
+  // await ensureWalletBalance(deployer, deployerTargetBalances, cNetworks[name]);
 
   if (deployImplementation) {
     await deployConceroDexSwap(hre);

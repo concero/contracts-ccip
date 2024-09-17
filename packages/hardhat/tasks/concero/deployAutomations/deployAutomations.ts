@@ -2,7 +2,7 @@ import { task, types } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import deployConceroAutomation from "../../../deploy/06_ConceroAutomation";
 import { setAutomationsVariables } from "./setAutomationsVariables";
-import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
+import cNetworks, { networkEnvKeys } from "../../../constants/cNetworks";
 import { compileContracts, getEnvVar, getFallbackClients } from "../../../utils";
 import addCLFConsumer from "../../CLF/subscriptions/add";
 import log from "../../../utils/log";
@@ -20,7 +20,7 @@ task("deploy-pool-clfcla", "Deploy the automations")
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const { name } = hre.network;
     const slotId = parseInt(taskArgs.slotid);
-    const chain = CNetworks[name];
+    const chain = cNetworks[name];
     const { viemChain } = chain;
     if (!taskArgs.skipdeploy) {
       await deployConceroAutomation(hre, { slotId });

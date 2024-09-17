@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import { SubscriptionManager } from "@chainlink/functions-toolkit";
-import chains from "../../../constants/CNetworks";
+import chains from "../../../constants/cNetworks";
 import { formatEther } from "viem";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getEthersV5FallbackSignerAndProvider } from "../../../utils/getEthersSignerAndProvider";
@@ -15,12 +15,16 @@ task(
     const hre: HardhatRuntimeEnvironment = require("hardhat");
 
     const { name, live } = hre.network;
-    const {linkToken, functionsRouter, functionsSubIds} = chains[name];
+    const { linkToken, functionsRouter, functionsSubIds } = chains[name];
 
-    const subscriptionId = taskArgs.subid? parseInt(taskArgs.subid) : functionsSubIds[0];
+    const subscriptionId = taskArgs.subid ? parseInt(taskArgs.subid) : functionsSubIds[0];
 
-    const { signer } = await getEthersV5FallbackSignerAndProvider(name)
-    const sm = new SubscriptionManager({ signer, linkTokenAddress:linkToken, functionsRouterAddress: functionsRouter });
+    const { signer } = await getEthersV5FallbackSignerAndProvider(name);
+    const sm = new SubscriptionManager({
+      signer,
+      linkTokenAddress: linkToken,
+      functionsRouterAddress: functionsRouter,
+    });
     await sm.initialize();
     console.log(`Getting info for subscription ${subscriptionId}...`);
 

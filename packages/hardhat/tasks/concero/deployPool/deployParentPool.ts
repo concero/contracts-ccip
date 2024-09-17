@@ -1,7 +1,6 @@
 import { task, types } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import chains from "../../../constants/CNetworks";
-import CNetworks from "../../../constants/CNetworks";
+import { cNetworks, ProxyEnum } from "../../../constants";
 import { compileContracts, getEnvAddress } from "../../../utils";
 import addCLFConsumer from "../../CLF/subscriptions/add";
 import uploadDonSecrets from "../../CLF/donSecrets/upload";
@@ -12,7 +11,6 @@ import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import deployParentPool from "../../../deploy/09_ParentPool";
 import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 import { zeroAddress } from "viem";
-import { ProxyEnum } from "../../../constants/deploymentVariables";
 
 task("deploy-parent-pool", "Deploy the pool")
   .addFlag("deployproxy", "Deploy the proxy")
@@ -27,14 +25,14 @@ task("deploy-parent-pool", "Deploy the pool")
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
     const { name } = hre.network;
-    const deployableChains: CNetwork[] = [CNetworks[hre.network.name]];
+    const deployableChains: CNetwork[] = [cNetworks[hre.network.name]];
 
     if (taskArgs.deployproxy) {
       await deployProxyAdmin(hre, ProxyEnum.parentPoolProxy);
       await deployTransparentProxy(hre, ProxyEnum.parentPoolProxy);
       const [proxyAddress, _] = getEnvAddress(ProxyEnum.parentPoolProxy, name);
-      const { functionsSubIds } = chains[name];
-      await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
+      const { functionsSubIds } = cNetworks[name];
+      await addCLFConsumer(cNetworks[name], [proxyAddress], functionsSubIds[0]);
     }
 
     if (taskArgs.deployimplementation) {

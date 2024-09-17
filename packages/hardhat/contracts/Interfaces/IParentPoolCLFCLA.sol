@@ -14,6 +14,15 @@ interface IParentPoolCLFCLA {
         uint256 childPoolsBalance,
         uint256 clpAmount
     ) external view returns (uint256);
+
+    function fulfillRequestWrapper(
+        bytes32 requestId,
+        bytes memory response,
+        bytes memory err
+    ) external;
+
+    //    function performUpkeep(bytes calldata _performData) external;
+    //    function checkUpkeep(bytes calldata) external view;
 }
 
 interface IParentPoolCLFCLAViewDelegate {
@@ -21,4 +30,6 @@ interface IParentPoolCLFCLAViewDelegate {
         uint256 childPoolsBalance,
         uint256 clpAmount
     ) external view returns (uint256);
+
+    function checkUpkeepViaDelegate() external view returns (bool, bytes memory);
 }

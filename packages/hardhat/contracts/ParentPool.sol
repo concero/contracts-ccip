@@ -19,6 +19,7 @@ import {ParentPoolStorage} from "contracts/Libraries/ParentPoolStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
 import {ParentPoolCommon} from "./ParentPoolCommon.sol";
 import {IParentPoolCLFCLA, IParentPoolCLFCLAViewDelegate} from "./Interfaces/IParentPoolCLFCLA.sol";
+import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -58,6 +59,8 @@ error ConceroParentPool_DepositsOnTheWayArrayFull();
 
 error UnableToCompleteDelegateCall(bytes data);
 error NotContractOwner(address);
+error OnlyRouterCanFulfill(address);
+error CallerNotAllowed(address);
 
 contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolStorage {
     ///////////////////////
@@ -79,20 +82,18 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     uint64 private constant BASE_CHAIN_SELECTOR = 15971525489660198786;
     ///@notice variable to store the costs of updating store on CLF callback
     uint256 private constant WRITE_FUNCTIONS_COST = 600_000;
-    ///@notice Chainlink Functions Gas Limit
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * 10 ** 6;
 
     ////////////////
     ///IMMUTABLES///
     ////////////////
 
-    ///@notice Orchestrator Proxy immutable address
     address private immutable i_infraProxy;
-    ///@notice Chainlink Link Token interface
     LinkTokenInterface private immutable i_linkToken;
-    ///@notice Chainlink Functions Protocol Subscription ID
     IParentPoolCLFCLA internal immutable i_parentPoolCLACLF;
     address internal immutable i_owner;
+    address internal immutable i_clfRouter;
+    address internal immutable i_automationForwarder;
 
     ///////////////
     ///MODIFIERS///
@@ -117,11 +118,13 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     constructor(
         address _parentPoolProxy,
         address _parentPoolCLFCLA,
+        address _automationForwarder,
         address _link,
         address _ccipRouter,
         address _usdc,
         address _lpToken,
         address _infraProxy,
+        address _clfRouter,
         address _owner,
         address[3] memory _messengers
     ) CCIPReceiver(_ccipRouter) ParentPoolCommon(_parentPoolProxy, _lpToken, _usdc, _messengers) {
@@ -129,6 +132,8 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         i_infraProxy = _infraProxy;
         i_owner = _owner;
         i_parentPoolCLACLF = IParentPoolCLFCLA(_parentPoolCLFCLA);
+        i_clfRouter = _clfRouter;
+        i_automationForwarder = _automationForwarder;
     }
 
     ////////////////////////
@@ -163,6 +168,53 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
     function getPendingWithdrawRequestsLength() public view returns (uint256) {
         return s_withdrawalRequestIds.length;
+    }
+
+    function handleOracleFulfillment(
+        bytes32 requestId,
+        bytes memory response,
+        bytes memory err
+    ) external {
+        if (msg.sender != i_clfRouter) {
+            revert OnlyRouterCanFulfill(msg.sender);
+        }
+
+        address(i_parentPoolCLACLF).delegatecall(
+            abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector)
+        );
+    }
+
+    function checkUpkeep(bytes calldata) external view returns (bool, bytes memory) {
+        return IParentPoolCLFCLAViewDelegate(address(this)).checkUpkeepViaDelegate();
+    }
+
+    function checkUpkeepViaDelegate() external returns (bool, bytes memory) {
+        (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
+            abi.encodeWithSelector(AutomationCompatibleInterface.checkUpkeep.selector, bytes(""))
+        );
+
+        if (!success) {
+            revert UnableToCompleteDelegateCall(data);
+        }
+
+        return abi.decode(data, (bool, bytes));
+    }
+
+    function performUpkeep(bytes calldata _performData) external {
+        if (msg.sender != i_automationForwarder) {
+            revert CallerNotAllowed(msg.sender);
+        }
+
+        (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
+            abi.encodeWithSelector(
+                AutomationCompatibleInterface.performUpkeep.selector,
+                _performData
+            )
+        );
+
+        if (!success) {
+            revert UnableToCompleteDelegateCall(data);
+        }
     }
 
     /**

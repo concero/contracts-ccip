@@ -1,66 +1,65 @@
-import { mainnetChains, testnetChains } from "../liveChains";
-import { getFallbackClients } from "../../../utils/getViemClients";
+import { mainnetChains, messengerTargetBalances, testnetChains, viemReceiptConfig } from "../../../constants";
+import { getEnvAddress, getEnvVar, getFallbackClients } from "../../../utils";
 import { privateKeyToAccount } from "viem/accounts";
 import { task } from "hardhat/config";
 import { formatEther, parseEther } from "viem";
 import { type CNetwork } from "../../../types/CNetwork";
 import log, { err } from "../../../utils/log";
 import { type BalanceInfo } from "./types";
-import { getEnvVar } from "../../../utils/getEnvVar";
 import readline from "readline";
-import { viemReceiptConfig } from "../../../constants/deploymentVariables";
-import { messengerTargetBalances } from "../../../constants/targetBalances";
 
-const donorAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
-
-
+const donorAccount = privateKeyToAccount(`0x${getEnvVar("DEPLOYER_PRIVATE_KEY")}`);
 const wallets = [
-  getEnvVar("MESSENGER_0_ADDRESS"),
-  getEnvVar("POOL_MESSENGER_0_ADDRESS")
+  getEnvAddress("poolMessenger0"),
+  getEnvAddress("infraMessenger0"),
+  // getEnvAddress("infraMessenger1"),
+  // getEnvAddress("infraMessenger2"),
 ];
 
 const prompt = (question: string): Promise<string> => new Promise(resolve => rl.question(question, resolve));
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-export async function ensureWalletBalance(wallet: string, targetBalances: Record<string, bigint>, chain: CNetwork) {
-  const balance = await checkWalletBalance(wallet, targetBalances, chain);
-  const displayedWalletBalances = {
-    chain: balance.chain.name,
-    address: balance.address,
-    balance: balance.balance,
-    target: balance.target,
-    deficit: balance.deficit,
-  };
+// export async function ensureWalletBalance(wallet: string, targetBalances: Record<string, bigint>, chain: CNetwork) {
+//   const balance = await checkNativeBalance(wallet, targetBalances, chain);
+//   const displayedWalletBalances = {
+//     chain: balance.chain.name,
+//     address: balance.address,
+//     balance: balance.balance,
+//     targetBalance: balance.targetBalance,
+//     deficit: balance.deficit,
+//   };
+//
+//   if (parseFloat(balance.deficit) > 0) {
+//     err(
+//       `Insufficient balance for ${wallet}. Balance: ${balance.balance}. Deficit: ${balance.deficit}`,
+//       "ensureWalletBalance",
+//       chain.name,
+//     );
+//     throw new Error();
+//   }
+//   console.table([displayedWalletBalances]);
+//   return balance;
+// }
 
-  if (parseFloat(balance.deficit) > 0) {
-    err(
-      `Insufficient balance for ${wallet}. Balance: ${balance.balance}. Deficit: ${balance.deficit}`,
-      "ensureWalletBalance",
-      chain.name,
-    );
-    throw new Error();
-  }
-  console.table([displayedWalletBalances]);
-  return balance;
-}
-
-export async function checkWalletBalance(
-  wallet: string,
+async function checkNativeBalance(
+  address: string,
+  alias: string,
   targetBalances: Record<string, bigint>,
   chain: CNetwork,
 ): Promise<BalanceInfo> {
   const { publicClient } = getFallbackClients(chain);
-
-  const balance = await publicClient.getBalance({ address: wallet });
+  const balance = await publicClient.getBalance({ address });
   const targetBalance = targetBalances[chain.name] || BigInt(0);
   const deficit = balance < targetBalance ? targetBalance - balance : BigInt(0);
 
   return {
     chain,
-    address: wallet,
-    balance: formatEther(balance),
-    target: formatEther(targetBalance),
-    deficit: formatEther(deficit),
+    address,
+    alias,
+    balance,
+    donorBalance: BigInt(0),
+    targetBalance,
+    deficit,
   };
 }
 
@@ -81,66 +80,63 @@ async function topUpWallet(wallet: string, publicClient: any, walletClient: any,
   }
 }
 
-async function getBalanceInfo(targetAddresses: [], chain: CNetwork): Promise<BalanceInfo[]> {
-  const walletInfos: BalanceInfo[] = [];
-  for (const wallet of targetAddresses) {
-    const walletInfo = await checkWalletBalance(wallet, messengerTargetBalances, chain);
-    walletInfos.push(walletInfo);
-  }
-
-  return walletInfos;
+async function getBalanceInfo(addresses: [string, string][], chain: CNetwork): Promise<BalanceInfo[]> {
+  const balancePromises = addresses.map(([address, alias]) =>
+    checkNativeBalance(address, alias, messengerTargetBalances, chain),
+  );
+  return await Promise.all(balancePromises);
 }
 
 async function performTopUps(walletBalances: BalanceInfo[], donorAccount: any): Promise<void> {
-  for (const walletInfo of walletBalances) {
+  const topUpPromises = walletBalances.map(async walletInfo => {
     const deficit = parseEther(walletInfo.deficit);
-
     if (deficit > BigInt(0)) {
       const { publicClient, walletClient } = getFallbackClients(walletInfo.chain, donorAccount);
       await topUpWallet(walletInfo.address, publicClient, walletClient, deficit);
     }
-  }
+  });
+  await Promise.all(topUpPromises);
 }
 
 async function ensureNativeBalances(isTestnet: boolean) {
-  const donorBalances: BalanceInfo[] = [];
-  const walletBalances: BalanceInfo[] = [];
   const chains = isTestnet ? testnetChains : mainnetChains;
+  const allBalances: Record<string, BalanceInfo[]> = {};
 
   try {
-    for (const chain of chains) {
+    const balancePromises = chains.map(async chain => {
       const walletInfos = await getBalanceInfo(wallets, chain);
-      const donorInfo = await getBalanceInfo([donorAccount.address], chain);
+      const donorInfo = await getBalanceInfo([[donorAccount.address, "Donor"]], chain);
+      allBalances[chain.name] = [...walletInfos, ...donorInfo];
+    });
 
-      donorBalances.push(...donorInfo);
-      walletBalances.push(...walletInfos);
-    }
+    await Promise.all(balancePromises);
 
-    const displayedDonorBalances = donorBalances.map(info => ({
-      chain: info.chain.name,
-      balance: info.balance,
-    }));
+    const displayedBalances = Object.entries(allBalances).flatMap(([chainName, balances]) => {
+      const donorBalance = balances.find(b => b.alias === "Donor");
+      return balances
+        .filter(b => b.alias !== "Donor")
+        .map(info => ({
+          chain: chainName,
+          address: info.alias,
+          balance: formatEther(info.balance),
+          target: formatEther(info.targetBalance),
+          deficit: formatEther(info.deficit),
+          donorBalance: formatEther(donorBalance?.balance || BigInt(0)),
+        }));
+    });
 
-    const displayedWalletBalances = walletBalances.map(info => ({
-      chain: info.chain.name,
-      address: info.address,
-      balance: info.balance,
-      target: info.target,
-      deficit: info.deficit,
-    }));
+    console.log("\nWallet and Donor Balances:");
+    console.table(displayedBalances);
 
-    console.log("\nDonor Balances:");
-    console.table(displayedDonorBalances);
-
-    console.log("\nWallet Balances:");
-    console.table(displayedWalletBalances);
-
-    const totalDeficit = walletBalances.reduce((sum, info) => sum + parseFloat(info.deficit), 0);
+    const totalDeficit = displayedBalances.reduce((sum, info) => sum + parseFloat(info.deficit), 0);
     if (totalDeficit > 0) {
       const answer = await prompt(
-        `Do you want to perform top-ups for a total of ${totalDeficit.toFixed(6)} ETH? (y/n): `,
+        `Do you want to perform top-ups for a total of ${formatEther(totalDeficit)} ETH? (y/n): `,
       );
       if (answer.toLowerCase() === "y") {
+        const walletBalances = Object.values(allBalances)
+          .flat()
+          .filter(b => b.alias !== "Donor");
         await performTopUps(walletBalances, donorAccount);
       } else {
         console.log("Top-ups cancelled.");

@@ -1,5 +1,5 @@
 // Purpose: To have a single source of truth for networks across the project
-import { type CNetwork, CNetworkNames } from "../types/CNetwork";
+import { type CNetwork, CNetworkNames, NetworkType } from "../types/CNetwork";
 import { HardhatNetworkUserConfig } from "hardhat/src/types/config";
 import {
   arbitrum,
@@ -14,14 +14,11 @@ import {
   sepolia,
 } from "viem/chains";
 import { urls } from "./rpcUrls";
-import { getEnvVar } from "../utils/getEnvVar";
 
 const DEFAULT_BLOCK_CONFIRMATIONS = 2;
-const deployerPK = getEnvVar("DEPLOYER_PRIVATE_KEY");
-const proxyDeployerPK = getEnvVar("PROXY_DEPLOYER_PRIVATE_KEY");
+const deployerPK = process.env.DEPLOYER_PRIVATE_KEY;
+const proxyDeployerPK = process.env.PROXY_DEPLOYER_PRIVATE_KEY;
 const saveDeployments = false;
-
-export type NetworkType = "mainnet" | "testnet";
 
 export const networkTypes: Record<NetworkType, string> = {
   mainnet: "mainnet",

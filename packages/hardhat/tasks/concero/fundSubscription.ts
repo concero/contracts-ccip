@@ -3,7 +3,8 @@ import functionsRouterAbi from "@chainlink/contracts/abi/v0.8/FunctionsRouter.js
 import linkTokenAbi from "@chainlink/contracts/abi/v0.8/LinkToken.json";
 import { CNetwork } from "../../types/CNetwork";
 import log from "../../utils/log";
-import { viemReceiptConfig } from "../../constants/deploymentVariables";
+import { viemReceiptConfig } from "../../constants";
+import { getFallbackClients } from "../../utils";
 
 export async function fundSubscription(selectedChains: CNetwork[]) {
   for (const chain of selectedChains) {

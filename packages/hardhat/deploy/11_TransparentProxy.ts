@@ -4,7 +4,8 @@ import CNetworks from "../constants/CNetworks";
 import { updateEnvAddress } from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvAddress } from "../utils/getEnvVar";
-import { type IProxyType, writeContractConfig } from "../constants/deploymentVariables";
+import { writeContractConfig } from "../constants/deploymentVariables";
+import { IProxyType } from "../types/deploymentVariables";
 
 const deployTransparentProxy: (hre: HardhatRuntimeEnvironment, proxyType: IProxyType) => Promise<void> =
   async function (hre: HardhatRuntimeEnvironment, proxyType: IProxyType) {

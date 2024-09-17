@@ -1,21 +1,11 @@
-import { mainnetChains, testnetChains } from "../liveChains";
-import { getFallbackClients } from "../../../utils/getViemClients";
+import { mainnetChains, testnetChains } from "../../../constants/liveChains";
+import { err, getEnvAddress, getEnvVar, getFallbackClients } from "../../../utils";
 import { task } from "hardhat/config";
 import { erc20Abi, formatUnits } from "viem";
 import { type CNetwork } from "../../../types/CNetwork";
-import { err } from "../../../utils/log";
-import { ProxyType } from "../../../constants/deploymentVariables";
-import { getEnvAddress, getEnvVar } from "../../../utils/getEnvVar";
-import { networkEnvKeys } from "../../../constants/CNetworks";
-
-interface BalanceInfo {
-  chainName: string;
-  contractAddress: string;
-  contractAlias: string;
-  symbol: string;
-  balance: bigint;
-  tokenDecimals: number;
-}
+import { ProxyEnum } from "../../../constants/deploymentVariables";
+import { networkEnvKeys } from "../../../constants";
+import { BalanceInfo } from "./types";
 
 const tokensToMonitor = [
   { symbol: "USDC", decimals: 6 },
@@ -24,7 +14,7 @@ const tokensToMonitor = [
 
 async function checkTokenBalance(
   chain: CNetwork,
-  contractType: ProxyType,
+  contractType: ProxyEnum,
   symbol: string,
   tokenDecimals: number,
 ): Promise<BalanceInfo> {
@@ -59,7 +49,7 @@ async function monitorTokenBalances(isTestnet: boolean): Promise<BalanceInfo[]> 
 
   for (const chain of Object.values(chains)) {
     for (const token of tokensToMonitor) {
-      balancePromises.push(checkTokenBalance(chain, ProxyType.infraProxy, token.symbol, token.decimals));
+      balancePromises.push(checkTokenBalance(chain, ProxyEnum.infraProxy, token.symbol, token.decimals));
     }
   }
 

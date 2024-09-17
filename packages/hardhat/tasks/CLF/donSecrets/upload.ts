@@ -4,12 +4,11 @@ import chains, { networkEnvKeys } from "../../../constants/CNetworks";
 import secrets from "../../../constants/CLFSecrets";
 import updateEnvVariable from "../../../utils/updateEnvVariable";
 import { CNetwork } from "../../../types/CNetwork";
-import { getEthersV5FallbackSignerAndProvider } from "../../../utils/getEthersSignerAndProvider";
+import { getEthersV5FallbackSignerAndProvider } from "../../../utils";
 import log, { err } from "../../../utils/log";
 import listSecrets from "./list";
 import { setDonHostedSecretsVersion } from "../../concero/deployInfra/setContractVariables";
-import load from "../../../utils/load";
-import { liveChains } from "../../concero/deployInfra/deployInfra";
+import { liveChains } from "../../../constants";
 
 // const path = require("path");
 
@@ -84,7 +83,7 @@ task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")
     const processNetwork = async (chain: CNetwork) => {
       await upload([chain], slotid, ttl);
       if (updatecontracts) {
-        const { abi } = await load("../artifacts/contracts/Concero.sol/Concero.json");
+        const { abi } = await import("../artifacts/contracts/Concero.sol/Concero.json");
         await setDonHostedSecretsVersion(chain, parseInt(slotid), abi);
       }
     };

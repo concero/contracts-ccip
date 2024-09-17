@@ -3,8 +3,8 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
-import { getEnvVar } from "../utils/getEnvVar";
-import { messengers } from "../constants/deploymentVariables";
+import { getEnvVar } from "../utils";
+import { messengers } from "../constants";
 
 const deployConceroDexSwap: (hre: HardhatRuntimeEnvironment) => Promise<void> = async function (
   hre: HardhatRuntimeEnvironment,

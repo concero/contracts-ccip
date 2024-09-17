@@ -1,8 +1,7 @@
-import { getEnvVar } from "../../utils/getEnvVar";
+import { getEnvVar, getFallbackClients } from "../../utils";
 import log from "../../utils/log";
 import { task } from "hardhat/config";
 import CNetworks, { networkEnvKeys } from "../../constants/CNetworks";
-import { getFallbackClients } from "../../utils/getViemClients";
 
 export async function callContractFunction() {
   const chain = CNetworks.base;

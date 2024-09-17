@@ -1,6 +1,6 @@
 import { CNetworkNames } from "../types/CNetwork";
 
-export const networkColors: Record<CNetworkNames, string> = {
+const networkColors: Record<CNetworkNames, string> = {
   mainnet: "\x1b[30m", // grey
   arbitrum: "\x1b[34m", // blue
   polygon: "\x1b[35m", // magenta

@@ -1,6 +1,6 @@
 import { ethers } from "ethers-v5";
 import { ethers as ethersv6 } from "ethers";
-import { urls } from "../constants/rpcUrls";
+import { urls } from "../constants";
 import { type CNetworkNames } from "../types/CNetwork";
 //todo: deployer PK to be passed as arg
 //todo: rename to getEthersV5SignerAndProvider

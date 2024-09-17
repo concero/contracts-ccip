@@ -1,12 +1,10 @@
 import { getSecretsBySlotId } from "./getSecretsBySlotId";
-import load from "../../../utils/load";
-import { getFallbackClients } from "../../../utils/getViemClients";
-import { getEnvVar } from "../../../utils/getEnvVar";
+import { getEnvVar, getFallbackClients } from "../../../utils";
 import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
 import log, { err } from "../../../utils/log";
 import getHashSum from "../../../utils/getHashSum";
 import { automationsJsCodeUrl, ethersV6CodeUrl } from "../../../constants/functionsJsCodeUrls";
-import { viemReceiptConfig } from "../../../constants/deploymentVariables";
+import { viemReceiptConfig } from "../../../constants";
 
 const setDonHostedSecretsVersion = async (hre, slotId: number, abi) => {
   try {
@@ -158,7 +156,7 @@ const setEthersHashSum = async (hre, abi: any) => {
 };
 
 export async function setAutomationsVariables(hre, slotId: number, forwarderAddress: string | undefined) {
-  const { abi } = await load("../artifacts/contracts/ConceroAutomation.sol/ConceroAutomation.json");
+  const { abi } = await import("../artifacts/contracts/ConceroAutomation.sol/ConceroAutomation.json");
 
   await setDonHostedSecretsVersion(hre, slotId, abi);
   await setDonHostedSecretsSlotId(hre, slotId, abi);

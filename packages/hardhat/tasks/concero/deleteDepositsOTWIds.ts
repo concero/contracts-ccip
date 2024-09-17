@@ -1,4 +1,4 @@
-import { ProxyType, viemReceiptConfig } from "../../constants/deploymentVariables";
+import { ProxyEnum, viemReceiptConfig } from "../../constants/deploymentVariables";
 import { getFallbackClients } from "../../utils/getViemClients";
 import { getEnvAddress } from "../../utils/getEnvVar";
 import log from "../../utils/log";
@@ -11,7 +11,7 @@ export async function deleteDepositsOTWIds() {
   const { walletClient, publicClient, account } = getFallbackClients(chain);
   const gasPrice = await publicClient.getGasPrice();
 
-  const [parentPoolProxy, _] = getEnvAddress(ProxyType.parentPoolProxy, chain.name);
+  const [parentPoolProxy, _] = getEnvAddress(ProxyEnum.parentPoolProxy, chain.name);
   const idsToDelete = [
     "0xc6",
     "0xc5",

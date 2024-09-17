@@ -2,11 +2,13 @@
 import { NetworkUserConfig } from "hardhat/types";
 import { HttpNetworkUserConfig } from "hardhat/src/types/config";
 import { Chain } from "viem";
-import { NetworkType } from "../constants/CNetworks";
 
 export type envString = string | undefined;
+
 export type CNetworkNames = "localhost" |
   "mainnet" | "arbitrum" | "optimism" | "polygon" | "polygonZkEvm" | "avalanche" | "base" | "sepolia" | "optimismSepolia" | "arbitrumSepolia" | "avalancheFuji" | "baseSepolia" | "polygonAmoy";
+
+export type NetworkType = "mainnet" | "testnet";
 
 export type CLFNetwork = {
   saveDeployments: boolean;

@@ -26,37 +26,26 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/autom
 ////////////////////////////////////////////////////////
 ///@notice error emitted when the receiver is the address(0)
 error InvalidAddress();
-///@notice error emitted when the caller is not a valid Messenger
-error ConceroParentPool_NotMessenger(address caller);
 ///@notice error emitted when the CCIP message sender is not allowed.
-error ConceroParentPool_SenderNotAllowed(address _sender);
+error SenderNotAllowed(address _sender);
 ///@notice error emitted when an attempt to create a new request is made while other is still active.
-error ConceroParentPool_ActiveRequestNotFulfilledYet();
-///@notice emitted in depositLiquidity when the input amount is not enough
-error ConceroParentPool_AmountBelowMinimum(uint256 minAmount);
+error ActiveRequestNotFulfilledYet();
+error DepositAmountBelowMinimum(uint256 minAmount);
+error WithdrawAmountBelowMinimum(uint256 minAmount);
 ///@notice emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
-error ConceroParentPool_WithdrawalAmountNotReady(uint256 received);
+error WithdrawalAmountNotReady(uint256 received);
 ///@notice error emitted when the caller is not the Orchestrator
-error ConceroParentPool_NotInfraProxy(address caller);
+error NotConceroInfraProxy(address caller);
 ///@notice error emitted when the max amount accepted by the pool is reached
-error ConceroParentPool_MaxCapReached(uint256 maxCap);
+error MaxDepositCapReached(uint256 maxCap);
 ///@notice error emitted when it's not the proxy calling the function
 error ConceroParentPool_NotParentPoolProxy(address caller);
-///@notice error emitted when the input TX was already removed
-error ConceroParentPool_NotContractOwner();
-error ConceroParentPool_RequestAlreadyProceeded(bytes32 requestId);
+error DistributeLiquidityRequestAlreadyProceeded(bytes32 requestId);
 ///@notice error emitted when the caller is not the LP who opened the request
-error ConceroParentPool_NotAllowedToComplete();
+error NotAllowedToCompleteDeposit();
 ///@notice error emitted when the request doesn't exist
-error ConceroParentPool_RequestDoesntExist();
-
-///@notice error emitted when the caller is not the owner.
-error ConceroParentPool_CallerNotAllowed(address caller);
-error ConceroParentPool_WithdrawAlreadyTriggered(bytes32 withdrawalId);
-error ConceroParentPool_WithdrawRequestDoesntExist(bytes32 withdrawalId);
-error ConceroParentPool_WithdrawRequestNotReady(bytes32 withdrawalId);
-error ConceroParentPool_DepositsOnTheWayArrayFull();
-
+error WithdrawRequestDoesntExist();
+error DepositsOnTheWayArrayFull();
 error UnableToCompleteDelegateCall(bytes data);
 error NotContractOwner(address);
 error OnlyRouterCanFulfill(address);
@@ -105,7 +94,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      */
     modifier onlyAllowlistedSenderOfChainSelector(uint64 _chainSelector, address _sender) {
         if (s_contractsToReceiveFrom[_chainSelector][_sender] != ALLOWED) {
-            revert ConceroParentPool_SenderNotAllowed(_sender);
+            revert SenderNotAllowed(_sender);
         }
         _;
     }
@@ -230,7 +219,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint256 _amount,
         address _receiver
     ) external payable onlyProxyContext {
-        if (msg.sender != i_infraProxy) revert ConceroParentPool_NotInfraProxy(msg.sender);
+        if (msg.sender != i_infraProxy) revert NotConceroInfraProxy(msg.sender);
         if (_receiver == address(0)) revert InvalidAddress();
 
         IERC20(_token).safeTransfer(_receiver, _amount);
@@ -242,7 +231,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * @param _usdcAmount the amount to be deposited
      */
     function startDeposit(uint256 _usdcAmount) external onlyProxyContext {
-        if (_usdcAmount < MIN_DEPOSIT) revert ConceroParentPool_AmountBelowMinimum(MIN_DEPOSIT);
+        if (_usdcAmount < MIN_DEPOSIT) {
+            revert DepositAmountBelowMinimum(MIN_DEPOSIT);
+        }
 
         uint256 maxDeposit = s_maxDeposit;
 
@@ -255,7 +246,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
                 s_withdrawAmountLocked >
             maxDeposit
         ) {
-            revert ConceroParentPool_MaxCapReached(maxDeposit);
+            revert MaxDepositCapReached(maxDeposit);
         }
 
         // uint256 depositFee = _calculateDepositTransactionFee(_usdcAmount);
@@ -293,10 +284,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint256 childPoolsLiquiditySnapshot = request.childPoolsLiquiditySnapshot;
 
         if (msg.sender != lpAddress) {
-            revert ConceroParentPool_NotAllowedToComplete();
+            revert NotAllowedToCompleteDeposit();
         }
         if (childPoolsLiquiditySnapshot == 0) {
-            revert ConceroParentPool_ActiveRequestNotFulfilledYet();
+            revert ActiveRequestNotFulfilledYet();
         }
 
         uint256 lpTokensToMint = _calculateLPTokensToMint(
@@ -328,9 +319,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * @param _lpAmount the amount of lp token the user wants to burn to get USDC back.
      */
     function startWithdrawal(uint256 _lpAmount) external onlyProxyContext {
-        if (_lpAmount == 0) revert ConceroParentPool_AmountBelowMinimum(1);
+        if (_lpAmount == 0) revert WithdrawAmountBelowMinimum(1);
         if (s_withdrawalIdByLPAddress[msg.sender] != bytes32(0)) {
-            revert ConceroParentPool_ActiveRequestNotFulfilledYet();
+            revert ActiveRequestNotFulfilledYet();
         }
 
         bytes[] memory args = new bytes[](2);
@@ -377,7 +368,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      */
     function completeWithdrawal() external onlyProxyContext {
         bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
-        if (withdrawalId == bytes32(0)) revert ConceroParentPool_RequestDoesntExist();
+        if (withdrawalId == bytes32(0)) revert WithdrawRequestDoesntExist();
 
         WithdrawRequest memory withdrawRequest = s_withdrawRequests[withdrawalId];
 
@@ -385,10 +376,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint256 lpAmountToBurn = withdrawRequest.lpAmountToBurn;
         uint256 remainingLiquidityFromChildPools = withdrawRequest.remainingLiquidityFromChildPools;
 
-        if (amountToWithdraw == 0) revert ConceroParentPool_ActiveRequestNotFulfilledYet();
+        if (amountToWithdraw == 0) revert ActiveRequestNotFulfilledYet();
 
         if (remainingLiquidityFromChildPools > 10) {
-            revert ConceroParentPool_WithdrawalAmountNotReady(remainingLiquidityFromChildPools);
+            revert WithdrawalAmountNotReady(remainingLiquidityFromChildPools);
         }
 
         s_withdrawAmountLocked = s_withdrawAmountLocked > amountToWithdraw
@@ -425,7 +416,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     ) external onlyProxyContext onlyMessenger {
         if (s_childPools[_chainSelector] == address(0)) revert InvalidAddress();
         if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
-            revert ConceroParentPool_RequestAlreadyProceeded(distributeLiquidityRequestId);
+            revert DistributeLiquidityRequestAlreadyProceeded(distributeLiquidityRequestId);
         }
         s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
         _ccipSend(_chainSelector, _amountToSend);
@@ -699,7 +690,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             }
         } else if (isWithdrawalTx) {
             bytes32 withdrawalId = s_withdrawalIdByLPAddress[lpAddress];
-            if (withdrawalId == bytes32(0)) revert ConceroParentPool_RequestDoesntExist();
+            if (withdrawalId == bytes32(0)) revert WithdrawRequestDoesntExist();
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
 
             request.remainingLiquidityFromChildPools = request.remainingLiquidityFromChildPools >=
@@ -854,7 +845,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         }
 
         if (index == 0) {
-            revert ConceroParentPool_DepositsOnTheWayArrayFull();
+            revert DepositsOnTheWayArrayFull();
         }
 
         return index;

@@ -12,19 +12,19 @@ import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
-import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {LPToken} from "./LPToken.sol";
 import {IParentPool} from "./Interfaces/IParentPool.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
 import {ParentPoolStorage} from "contracts/Libraries/ParentPoolStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
 import {ParentPoolCommon} from "./ParentPoolCommon.sol";
+import {IParentPoolCLFCLA, IParentPoolCLFCLAViewDelegate} from "./Interfaces/IParentPoolCLFCLA.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
 ///@notice error emitted when the receiver is the address(0)
-error ConceroParentPool_InvalidAddress();
+error InvalidAddress();
 ///@notice error emitted when the caller is not a valid Messenger
 error ConceroParentPool_NotMessenger(address caller);
 ///@notice error emitted when the CCIP message sender is not allowed.
@@ -56,11 +56,13 @@ error ConceroParentPool_WithdrawRequestDoesntExist(bytes32 withdrawalId);
 error ConceroParentPool_WithdrawRequestNotReady(bytes32 withdrawalId);
 error ConceroParentPool_DepositsOnTheWayArrayFull();
 
+error UnableToCompleteDelegateCall(bytes data);
+error NotContractOwner(address);
+
 contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolStorage {
     ///////////////////////
     ///TYPE DECLARATIONS///
     ///////////////////////
-    using FunctionsRequest for FunctionsRequest.Request;
     using SafeERC20 for IERC20;
 
     ///////////////
@@ -89,9 +91,8 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     ///@notice Chainlink Link Token interface
     LinkTokenInterface private immutable i_linkToken;
     ///@notice Chainlink Functions Protocol Subscription ID
-    address internal immutable i_parentPoolCLACLF;
+    IParentPoolCLFCLA internal immutable i_parentPoolCLACLF;
     address internal immutable i_owner;
-    IERC20 internal immutable i_USDC;
 
     ///////////////
     ///MODIFIERS///
@@ -115,6 +116,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
     constructor(
         address _parentPoolProxy,
+        address _parentPoolCLFCLA,
         address _link,
         address _ccipRouter,
         address _usdc,
@@ -122,10 +124,11 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         address _infraProxy,
         address _owner,
         address[3] memory _messengers
-    ) CCIPReceiver(_ccipRouter) ParentPoolCommon() {
+    ) CCIPReceiver(_ccipRouter) ParentPoolCommon(_parentPoolProxy, _lpToken, _usdc, _messengers) {
         i_linkToken = LinkTokenInterface(_link);
-        i_USDC = IERC20(_usdc);
         i_infraProxy = _infraProxy;
+        i_owner = _owner;
+        i_parentPoolCLACLF = IParentPoolCLFCLA(_parentPoolCLFCLA);
     }
 
     ////////////////////////
@@ -176,7 +179,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         address _receiver
     ) external payable onlyProxyContext {
         if (msg.sender != i_infraProxy) revert ConceroParentPool_NotInfraProxy(msg.sender);
-        if (_receiver == address(0)) revert ConceroParentPool_InvalidAddress();
+        if (_receiver == address(0)) revert InvalidAddress();
 
         IERC20(_token).safeTransfer(_receiver, _amount);
         s_loansInUse += _amount;
@@ -211,11 +214,18 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(FunctionsRequestType.getTotalPoolsBalance);
 
-        bytes32 clfRequestId = _sendRequest(args, JS_CODE);
-        s_clfRequestTypes[clfRequestId] = RequestType.startDeposit_getChildPoolsLiquidity;
+        (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
+            abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args)
+        );
 
+        if (!success) {
+            revert UnableToCompleteDelegateCall(data);
+        }
+
+        bytes32 clfRequestId = bytes32(data);
         uint256 _deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
+        s_clfRequestTypes[clfRequestId] = RequestType.startDeposit_getChildPoolsLiquidity;
         s_depositRequests[clfRequestId].lpAddress = msg.sender;
         s_depositRequests[clfRequestId].usdcAmountToDeposit = _usdcAmount;
         s_depositRequests[clfRequestId].deadline = _deadline;
@@ -230,7 +240,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint256 usdcAmountAfterFee = usdcAmount - DEPOSIT_FEE_USDC;
         uint256 childPoolsLiquiditySnapshot = request.childPoolsLiquiditySnapshot;
 
-        if (msg.sender != lpAddress) revert ConceroParentPool_NotAllowedToComplete();
+        if (msg.sender != lpAddress) {
+            revert ConceroParentPool_NotAllowedToComplete();
+        }
         if (childPoolsLiquiditySnapshot == 0) {
             revert ConceroParentPool_ActiveRequestNotFulfilledYet();
         }
@@ -279,14 +291,21 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
         IERC20(i_lpToken).safeTransferFrom(msg.sender, address(this), _lpAmount);
 
-        bytes32 clfRequestId = _sendRequest(args, JS_CODE);
-        s_clfRequestTypes[clfRequestId] = RequestType.startWithdrawal_getChildPoolsLiquidity;
+        (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
+            abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args)
+        );
 
+        if (!success) {
+            revert UnableToCompleteDelegateCall(data);
+        }
+
+        bytes32 clfRequestId = bytes32(data);
+
+        s_clfRequestTypes[clfRequestId] = RequestType.startWithdrawal_getChildPoolsLiquidity;
         // partially initialise withdrawalRequest struct
         s_withdrawRequests[withdrawalId].lpAddress = msg.sender;
         s_withdrawRequests[withdrawalId].lpSupplySnapshot = i_lpToken.totalSupply();
         s_withdrawRequests[withdrawalId].lpAmountToBurn = _lpAmount;
-
         s_withdrawalIdByCLFRequestId[clfRequestId] = withdrawalId;
         s_withdrawalIdByLPAddress[msg.sender] = withdrawalId;
 
@@ -352,7 +371,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint256 _amountToSend,
         bytes32 distributeLiquidityRequestId
     ) external onlyProxyContext onlyMessenger {
-        if (s_childPools[_chainSelector] == address(0)) revert ConceroParentPool_InvalidAddress();
+        if (s_childPools[_chainSelector] == address(0)) revert InvalidAddress();
         if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
             revert ConceroParentPool_RequestAlreadyProceeded(distributeLiquidityRequestId);
         }
@@ -363,16 +382,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     function withdrawDepositFees() external payable onlyOwner {
         i_USDC.safeTransfer(i_owner, s_depositFeeAmount);
         s_depositFeeAmount = 0;
-    }
-
-    ////////////////////////
-    /////VIEW FUNCTIONS/////
-    ////////////////////////
-
-    function _getWithdrawalRequestById(
-        bytes32 _withdrawalId
-    ) internal view onlyProxyContext returns (WithdrawRequest memory) {
-        return s_withdrawRequests[_withdrawalId];
     }
 
     ///////////////////////
@@ -396,10 +405,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
 
         emit ConceroParentPool_ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
-    }
-
-    function deleteDepositsOnTheWayByIds(bytes1[] calldata _ids) external onlyOwner {
-        _deleteDepositsOnTheWayByIndexes(_ids);
     }
 
     /**
@@ -497,7 +502,15 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             args[4] = abi.encodePacked(distributeLiquidityRequestId);
             args[5] = abi.encodePacked(DistributeLiquidityType.addPool);
 
-            bytes32 requestId = _sendRequest(args, JS_CODE);
+            (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
+                abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args)
+            );
+
+            if (!success) {
+                revert UnableToCompleteDelegateCall(data);
+            }
+
+            bytes32 requestId = abi.decode(data, (bytes32));
 
             emit ConceroParentPool_RedistributionStarted(requestId);
         }
@@ -540,128 +553,17 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         args[4] = abi.encodePacked(distributeLiquidityRequestId);
         args[5] = abi.encodePacked(DistributeLiquidityType.removePool);
 
-        bytes32 requestId = _sendRequest(args, JS_CODE);
+        (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
+            abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args)
+        );
+
+        if (!success) {
+            revert UnableToCompleteDelegateCall(data);
+        }
+
+        bytes32 requestId = abi.decode(data, (bytes32));
 
         emit ConceroParentPool_RedistributionStarted(requestId);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                          AUTOMATION EXTERNAL
-    //////////////////////////////////////////////////////////////*/
-    /**
-     * @notice Function to add new withdraw request to CLA monitoring system
-     * @param _withdrawalId the ID of the withdrawal request
-     * @dev this function should only be called by the ConceroPool.sol
-     */
-    function _addPendingWithdrawalId(bytes32 _withdrawalId) internal {
-        s_withdrawalRequestIds.push(_withdrawalId);
-        emit ConceroParentPool_RequestAdded(_withdrawalId);
-    }
-
-    /**
-     * @notice Chainlink Automation Function to check for requests with fulfilled conditions
-     * We don't use the calldata
-     * @return _upkeepNeeded it will return true, if the time condition is reached
-     * @return _performData the payload we need to send through performUpkeep to Chainlink functions.
-     * @dev this function must only be simulated offchain by Chainlink Automation nodes
-     */
-    function checkUpkeep(
-        bytes calldata /* checkData */
-    ) external view override cannotExecute returns (bool, bytes memory) {
-        uint256 withdrawalRequestsCount = s_withdrawalRequestIds.length;
-
-        for (uint256 i; i < withdrawalRequestsCount; ++i) {
-            bytes32 withdrawalId = s_withdrawalRequestIds[i];
-
-            WithdrawRequest memory withdrawalRequest = _getWithdrawalRequestById(withdrawalId);
-
-            address lpAddress = withdrawalRequest.lpAddress;
-            uint256 amountToWithdraw = withdrawalRequest.amountToWithdraw;
-            uint256 liquidityRequestedFromEachPool = withdrawalRequest
-                .liquidityRequestedFromEachPool;
-
-            if (amountToWithdraw == 0) {
-                continue;
-            }
-            // s_withdrawTriggered is used to prevent multiple CLA triggers of the same withdrawal request
-            if (
-                s_withdrawTriggered[withdrawalId] == false &&
-                block.timestamp > withdrawalRequest.triggeredAtTimestamp
-            ) {
-                bytes memory _performData = abi.encode(
-                    lpAddress,
-                    liquidityRequestedFromEachPool,
-                    withdrawalId
-                );
-                bool _upkeepNeeded = true;
-                return (_upkeepNeeded, _performData);
-            }
-        }
-        return (false, "");
-    }
-
-    /**
-     * @notice Chainlink Automation function that will perform storage update and call Chainlink Functions
-     * @param _performData the performData encoded in checkUpkeep function
-     * @dev this function must be called only by the Chainlink Forwarder unique address
-     */
-    function performUpkeep(bytes calldata _performData) external override {
-        if (msg.sender != i_automationForwarder)
-            revert ConceroParentPool_CallerNotAllowed(msg.sender);
-        (address lpAddress, uint256 liquidityRequestedFromEachPool, bytes32 withdrawalId) = abi
-            .decode(_performData, (address, uint256, bytes32));
-
-        if (s_withdrawTriggered[withdrawalId] == true) {
-            revert ConceroParentPool_WithdrawAlreadyTriggered(withdrawalId);
-        } else {
-            s_withdrawTriggered[withdrawalId] = true;
-        }
-
-        bytes[] memory args = new bytes[](5);
-        args[0] = abi.encodePacked(s_collectLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(lpAddress);
-        args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
-        args[4] = abi.encodePacked(withdrawalId);
-
-        bytes32 reqId = _sendRequest(args, JS_CODE);
-        s_withdrawalIdByCLFRequestId[reqId] = withdrawalId;
-        s_clfRequestTypes[reqId] = RequestType.performUpkeep_requestLiquidityTransfer;
-
-        _addWithdrawalOnTheWayAmountById(withdrawalId);
-        emit ConceroParentPool_UpkeepPerformed(reqId);
-    }
-
-    function retryPerformWithdrawalRequest() external {
-        bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
-        WithdrawRequest memory withdrawalRequest = _getWithdrawalRequestById(withdrawalId);
-
-        uint256 amountToWithdraw = withdrawalRequest.amountToWithdraw;
-        address lpAddress = withdrawalRequest.lpAddress;
-        uint256 liquidityRequestedFromEachPool = withdrawalRequest.liquidityRequestedFromEachPool;
-        uint256 triggeredAtTimestamp = withdrawalRequest.triggeredAtTimestamp;
-
-        if (msg.sender != lpAddress) revert ConceroParentPool_CallerNotAllowed(msg.sender);
-
-        if (amountToWithdraw == 0) {
-            revert ConceroParentPool_WithdrawRequestDoesntExist(withdrawalId);
-        }
-
-        if (block.timestamp < triggeredAtTimestamp + 30 minutes) {
-            revert ConceroParentPool_WithdrawRequestNotReady(withdrawalId);
-        }
-
-        bytes[] memory args = new bytes[](5);
-        args[0] = abi.encodePacked(s_collectLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(lpAddress);
-        args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
-        args[4] = abi.encodePacked(withdrawalId);
-
-        bytes32 reqId = _sendRequest(args, JS_CODE);
-        s_withdrawalIdByCLFRequestId[reqId] = withdrawalId;
-
-        emit ConceroParentPool_RetryPerformed(reqId);
     }
 
     function calculateLpAmount(
@@ -675,7 +577,30 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint256 childPoolsBalance,
         uint256 clpAmount
     ) external view returns (uint256) {
-        return _calculateWithdrawableAmount(childPoolsBalance, clpAmount, i_lpToken.totalSupply());
+        return
+            IParentPoolCLFCLAViewDelegate(address(this)).calculateWithdrawableAmount(
+                childPoolsBalance,
+                clpAmount
+            );
+    }
+
+    function calculateWithdrawableAmountViaDelegateCall(
+        uint256 childPoolsBalance,
+        uint256 clpAmount
+    ) external returns (uint256) {
+        (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
+            abi.encodeWithSelector(
+                IParentPoolCLFCLA.calculateWithdrawableAmount.selector,
+                childPoolsBalance,
+                clpAmount
+            )
+        );
+
+        if (!success) {
+            revert UnableToCompleteDelegateCall(data);
+        }
+
+        return abi.decode(data, (uint256));
     }
 
     ///////////////
@@ -809,20 +734,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             });
     }
 
-    /// @dev taken from the ConceroAutomation::fulfillRequest logic
-    function _handleAutomationCLFFulfill(bytes32 _requestId, bytes memory _response) internal {
-        bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[_requestId];
-
-        for (uint256 i; i < s_withdrawalRequestIds.length; ++i) {
-            if (s_withdrawalRequestIds[i] == withdrawalId) {
-                s_withdrawalRequestIds[i] = s_withdrawalRequestIds[
-                    s_withdrawalRequestIds.length - 1
-                ];
-                s_withdrawalRequestIds.pop();
-            }
-        }
-    }
-
     /**
      * @notice Function called by Chainlink Functions fulfillRequest to update deposit information
      * @param _childPoolBalance The total cross chain balance of child pools
@@ -857,24 +768,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             lpTokensToMint = amountDepositedConverted;
         }
         return lpTokensToMint;
-    }
-
-    function _calculateWithdrawableAmount(
-        uint256 _childPoolsBalance,
-        uint256 _clpAmount,
-        uint256 _lpSupply
-    ) internal view returns (uint256) {
-        uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) +
-            s_loansInUse +
-            s_depositsOnTheWayAmount -
-            s_depositFeeAmount;
-        uint256 totalCrossChainLiquidity = _childPoolsBalance + parentPoolLiquidity;
-
-        //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
-        uint256 amountUsdcToWithdraw = (((_convertToLPTokenDecimals(totalCrossChainLiquidity) *
-            _clpAmount) * PRECISION_HANDLER) / _lpSupply) / PRECISION_HANDLER;
-
-        return _convertToUSDCTokenDecimals(amountUsdcToWithdraw);
     }
 
     function _addDepositOnTheWay(
@@ -913,15 +806,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         }
 
         return index;
-    }
-
-    function _addWithdrawalOnTheWayAmountById(bytes32 _withdrawalId) internal {
-        uint256 amountToWithdraw = s_withdrawRequests[_withdrawalId].amountToWithdraw -
-            s_withdrawRequests[_withdrawalId].liquidityRequestedFromEachPool;
-
-        if (amountToWithdraw == 0) revert ConceroParentPool_RequestDoesntExist();
-
-        s_withdrawalsOnTheWayAmount += amountToWithdraw;
     }
 
     // function _calculateDepositTransactionFee(uint256 _amountToDistribute) internal view returns(uint256 _totalUSDCCost){

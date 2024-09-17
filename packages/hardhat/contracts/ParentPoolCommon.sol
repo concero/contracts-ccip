@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {LPToken} from "./LPToken.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 error NotParentPoolProxy(address sender);
 error NotMessenger(address sender);
@@ -22,7 +23,7 @@ contract ParentPoolCommon {
     uint8 internal constant MAX_DEPOSITS_ON_THE_WAY_COUNT = 150;
     // TODO: change the deadline in production!!!!!!
     //    uint256 private constant WITHDRAW_DEADLINE_SECONDS = 597_600;
-    uint256 private constant WITHDRAW_DEADLINE_SECONDS = 60;
+    uint256 internal constant WITHDRAW_DEADLINE_SECONDS = 60;
 
     /////////////////
     ////IMMUTABLES///
@@ -30,6 +31,7 @@ contract ParentPoolCommon {
 
     address internal immutable i_parentPoolProxy;
     LPToken internal immutable i_lpToken;
+    IERC20 internal immutable i_USDC;
     address internal immutable i_msgr0;
     address internal immutable i_msgr1;
     address internal immutable i_msgr2;
@@ -52,12 +54,13 @@ contract ParentPoolCommon {
         _;
     }
 
-    constructor(address parentPool, address lpToken, address msg0, address msg1, address msg2) {
+    constructor(address parentPool, address lpToken, address USDC, address[3] memory messengers) {
         i_parentPoolProxy = parentPool;
         i_lpToken = LPToken(lpToken);
-        i_msgr0 = msg0;
-        i_msgr1 = msg1;
-        i_msgr2 = msg2;
+        i_msgr0 = messengers[0];
+        i_msgr1 = messengers[1];
+        i_msgr2 = messengers[2];
+        i_USDC = IERC20(USDC);
     }
 
     ////////////////

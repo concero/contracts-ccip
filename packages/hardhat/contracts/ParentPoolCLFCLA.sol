@@ -7,16 +7,30 @@
 pragma solidity ^0.8.0;
 
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
+import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ParentPoolStorage} from "./Libraries/ParentPoolStorage.sol";
 import {ParentPoolCommon} from "./ParentPoolCommon.sol";
+import {IParentPoolCLFCLA} from "./Interfaces/IParentPoolCLFCLA.sol";
+import {IParentPool} from "./Interfaces/IParentPool.sol";
+
+error CallerNotAllowed(address caller);
+error WithdrawAlreadyTriggered(bytes32);
+error WithdrawRequestDoesntExist(bytes32 id);
+error WithdrawRequestNotReady(bytes32 id);
 
 contract ParentPoolCLFCLA is
+    IParentPoolCLFCLA,
     FunctionsClient,
     AutomationCompatible,
     ParentPoolCommon,
     ParentPoolStorage
 {
+    using FunctionsRequest for FunctionsRequest.Request;
+    using SafeERC20 for IERC20;
+
     ///////////////
     ///CONSTANTS///
     ///////////////
@@ -41,14 +55,25 @@ contract ParentPoolCLFCLA is
     //////////////
 
     event CLFRequestError(bytes32 requestId, IParentPool.RequestType requestType, bytes err);
+    event RetryWithdrawPerformed(bytes32 id);
+    event WithdrawUpkeepPerformed(bytes32 id);
+    event WithdrawRequestUpdated(bytes32 id);
+    event PendingWithdrawRequestAdded(bytes32 id);
 
     constructor(
         address parentPoolProxy,
         address lpToken,
-        address msg0,
-        address msg1,
-        address msg2
-    ) ParentPoolCommon(parentPoolProxy, lpToken, msg0, msg1, msg2) {}
+        address USDC,
+        address clfRouter,
+        uint64 subscriptionId,
+        address automationForwarder,
+        bytes32 donId,
+        address[3] memory messengers
+    ) ParentPoolCommon(parentPoolProxy, lpToken, USDC, messengers) FunctionsClient(clfRouter) {
+        i_subscriptionId = subscriptionId;
+        i_donId = donId;
+        i_automationForwarder = automationForwarder;
+    }
 
     /**
      * @notice Chainlink Functions fallback function
@@ -85,10 +110,14 @@ contract ParentPoolCLFCLA is
         } else {
             if (requestType == IParentPool.RequestType.startDeposit_getChildPoolsLiquidity) {
                 _handleStartDepositCLFFulfill(requestId, response);
-            } else if (requestType == RequestType.startWithdrawal_getChildPoolsLiquidity) {
+            } else if (
+                requestType == IParentPool.RequestType.startWithdrawal_getChildPoolsLiquidity
+            ) {
                 _handleStartWithdrawalCLFFulfill(requestId, response);
                 delete s_withdrawalIdByCLFRequestId[requestId];
-            } else if (requestType == RequestType.performUpkeep_requestLiquidityTransfer) {
+            } else if (
+                requestType == IParentPool.RequestType.performUpkeep_requestLiquidityTransfer
+            ) {
                 _handleAutomationCLFFulfill(requestId, response);
             }
         }
@@ -96,18 +125,138 @@ contract ParentPoolCLFCLA is
         delete s_clfRequestTypes[requestId];
     }
 
-    function sendCLFRequest(
-        IParentPool.RequestType requestType,
-        bytes memory args,
-        uint256 gasLimit
-    ) external onlyProxyContext {}
+    function sendCLFRequest(bytes[] memory args) external onlyProxyContext returns (bytes32) {
+        return _sendRequest(args);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+						 AUTOMATION EXTERNAL
+   //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Chainlink Automation Function to check for requests with fulfilled conditions
+     * We don't use the calldata
+     * @return _upkeepNeeded it will return true, if the time condition is reached
+     * @return _performData the payload we need to send through performUpkeep to Chainlink functions.
+     * @dev this function must only be simulated offchain by Chainlink Automation nodes
+     */
+    function checkUpkeep(
+        bytes calldata /* checkData */
+    ) external view override cannotExecute returns (bool, bytes memory) {
+        uint256 withdrawalRequestsCount = s_withdrawalRequestIds.length;
+
+        for (uint256 i; i < withdrawalRequestsCount; ++i) {
+            bytes32 withdrawalId = s_withdrawalRequestIds[i];
+
+            IParentPool.WithdrawRequest memory withdrawalRequest = _getWithdrawalRequestById(
+                withdrawalId
+            );
+
+            address lpAddress = withdrawalRequest.lpAddress;
+            uint256 amountToWithdraw = withdrawalRequest.amountToWithdraw;
+            uint256 liquidityRequestedFromEachPool = withdrawalRequest
+                .liquidityRequestedFromEachPool;
+
+            if (amountToWithdraw == 0) {
+                continue;
+            }
+            // s_withdrawTriggered is used to prevent multiple CLA triggers of the same withdrawal request
+            if (
+                s_withdrawTriggered[withdrawalId] == false &&
+                block.timestamp > withdrawalRequest.triggeredAtTimestamp
+            ) {
+                bytes memory _performData = abi.encode(
+                    lpAddress,
+                    liquidityRequestedFromEachPool,
+                    withdrawalId
+                );
+                bool _upkeepNeeded = true;
+                return (_upkeepNeeded, _performData);
+            }
+        }
+        return (false, "");
+    }
+
+    /**
+     * @notice Chainlink Automation function that will perform storage update and call Chainlink Functions
+     * @param _performData the performData encoded in checkUpkeep function
+     * @dev this function must be called only by the Chainlink Forwarder unique address
+     */
+    function performUpkeep(bytes calldata _performData) external override onlyProxyContext {
+        if (msg.sender != i_automationForwarder) {
+            revert CallerNotAllowed(msg.sender);
+        }
+        (address lpAddress, uint256 liquidityRequestedFromEachPool, bytes32 withdrawalId) = abi
+            .decode(_performData, (address, uint256, bytes32));
+
+        if (s_withdrawTriggered[withdrawalId] == true) {
+            revert WithdrawAlreadyTriggered(withdrawalId);
+        } else {
+            s_withdrawTriggered[withdrawalId] = true;
+        }
+
+        bytes[] memory args = new bytes[](5);
+        args[0] = abi.encodePacked(s_collectLiquidityJsCodeHashSum);
+        args[1] = abi.encodePacked(s_ethersHashSum);
+        args[2] = abi.encodePacked(lpAddress);
+        args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
+        args[4] = abi.encodePacked(withdrawalId);
+
+        bytes32 reqId = _sendRequest(args);
+        s_withdrawalIdByCLFRequestId[reqId] = withdrawalId;
+        s_clfRequestTypes[reqId] = IParentPool.RequestType.performUpkeep_requestLiquidityTransfer;
+
+        _addWithdrawalOnTheWayAmountById(withdrawalId);
+        emit WithdrawUpkeepPerformed(reqId);
+    }
+
+    function retryPerformWithdrawalRequest() external {
+        bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
+        IParentPool.WithdrawRequest memory withdrawalRequest = _getWithdrawalRequestById(
+            withdrawalId
+        );
+
+        uint256 amountToWithdraw = withdrawalRequest.amountToWithdraw;
+        address lpAddress = withdrawalRequest.lpAddress;
+        uint256 liquidityRequestedFromEachPool = withdrawalRequest.liquidityRequestedFromEachPool;
+        uint256 triggeredAtTimestamp = withdrawalRequest.triggeredAtTimestamp;
+
+        if (msg.sender != lpAddress) revert CallerNotAllowed(msg.sender);
+
+        if (amountToWithdraw == 0) {
+            revert WithdrawRequestDoesntExist(withdrawalId);
+        }
+
+        if (block.timestamp < triggeredAtTimestamp + 30 minutes) {
+            revert WithdrawRequestNotReady(withdrawalId);
+        }
+
+        bytes[] memory args = new bytes[](5);
+        args[0] = abi.encodePacked(s_collectLiquidityJsCodeHashSum);
+        args[1] = abi.encodePacked(s_ethersHashSum);
+        args[2] = abi.encodePacked(lpAddress);
+        args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
+        args[4] = abi.encodePacked(withdrawalId);
+
+        bytes32 reqId = _sendRequest(args);
+        s_withdrawalIdByCLFRequestId[reqId] = withdrawalId;
+
+        emit RetryWithdrawPerformed(reqId);
+    }
+
+    function calculateWithdrawableAmount(
+        uint256 childPoolsBalance,
+        uint256 clpAmount
+    ) external view returns (uint256) {
+        return _calculateWithdrawableAmount(childPoolsBalance, clpAmount, i_lpToken.totalSupply());
+    }
 
     ///////////////
     /// INTERNAL ///
     ///////////////
 
     function _handleStartDepositCLFFulfill(bytes32 requestId, bytes memory response) internal {
-        DepositRequest storage request = s_depositRequests[requestId];
+        IParentPool.DepositRequest storage request = s_depositRequests[requestId];
 
         (
             uint256 childPoolsLiquidity,
@@ -126,10 +275,24 @@ contract ParentPoolCLFCLA is
         ) = _decodeCLFResponse(response);
 
         bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
-        WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
+        IParentPool.WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
 
         _updateWithdrawalRequest(request, withdrawalId, childPoolsLiquidity);
         _deleteDepositsOnTheWayByIndexes(depositsOnTheWayIdsToDelete);
+    }
+
+    /// @dev taken from the ConceroAutomation::fulfillRequest logic
+    function _handleAutomationCLFFulfill(bytes32 _requestId, bytes memory _response) internal {
+        bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[_requestId];
+
+        for (uint256 i; i < s_withdrawalRequestIds.length; ++i) {
+            if (s_withdrawalRequestIds[i] == withdrawalId) {
+                s_withdrawalRequestIds[i] = s_withdrawalRequestIds[
+                    s_withdrawalRequestIds.length - 1
+                ];
+                s_withdrawalRequestIds.pop();
+            }
+        }
     }
 
     function _decodeCLFResponse(
@@ -184,7 +347,7 @@ contract ParentPoolCLFCLA is
      * @dev _totalUSDCCrossChainBalance MUST have 10**6 decimals.
      */
     function _updateWithdrawalRequest(
-        WithdrawRequest storage _withdrawalRequest,
+        IParentPool.WithdrawRequest storage _withdrawalRequest,
         bytes32 _withdrawalId,
         uint256 _childPoolsLiquidity
     ) private {
@@ -207,17 +370,16 @@ contract ParentPoolCLFCLA is
         _withdrawalRequest.triggeredAtTimestamp = block.timestamp + WITHDRAW_DEADLINE_SECONDS;
 
         _addPendingWithdrawalId(_withdrawalId);
-        emit ConceroParentPool_RequestUpdated(_withdrawalId);
+        emit WithdrawRequestUpdated(_withdrawalId);
     }
 
     /**
      * @notice Function to send a Request to Chainlink Functions
      * @param _args the arguments for the request as bytes array
-     * @param _jsCode the JScode that will be executed.
      */
-    function _sendRequest(bytes[] memory _args, string memory _jsCode) internal returns (bytes32) {
+    function _sendRequest(bytes[] memory _args) internal returns (bytes32) {
         FunctionsRequest.Request memory req;
-        req.initializeRequestForInlineJavaScript(_jsCode);
+        req.initializeRequestForInlineJavaScript(JS_CODE);
         req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
         req.setBytesArgs(_args);
 
@@ -228,5 +390,50 @@ contract ParentPoolCLFCLA is
                 CL_FUNCTIONS_CALLBACK_GAS_LIMIT,
                 i_donId
             );
+    }
+
+    /**
+     * @notice Function to add new withdraw request to CLA monitoring system
+     * @param _withdrawalId the ID of the withdrawal request
+     * @dev this function should only be called by the ConceroPool.sol
+     */
+    function _addPendingWithdrawalId(bytes32 _withdrawalId) internal {
+        s_withdrawalRequestIds.push(_withdrawalId);
+        emit PendingWithdrawRequestAdded(_withdrawalId);
+    }
+
+    function _getWithdrawalRequestById(
+        bytes32 _withdrawalId
+    ) internal view onlyProxyContext returns (IParentPool.WithdrawRequest memory) {
+        return s_withdrawRequests[_withdrawalId];
+    }
+
+    function _addWithdrawalOnTheWayAmountById(bytes32 _withdrawalId) internal {
+        uint256 amountToWithdraw = s_withdrawRequests[_withdrawalId].amountToWithdraw -
+            s_withdrawRequests[_withdrawalId].liquidityRequestedFromEachPool;
+
+        if (amountToWithdraw == 0) {
+            revert WithdrawRequestDoesntExist(_withdrawalId);
+        }
+
+        s_withdrawalsOnTheWayAmount += amountToWithdraw;
+    }
+
+    function _calculateWithdrawableAmount(
+        uint256 _childPoolsBalance,
+        uint256 _clpAmount,
+        uint256 _lpSupply
+    ) internal view returns (uint256) {
+        uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) +
+            s_loansInUse +
+            s_depositsOnTheWayAmount -
+            s_depositFeeAmount;
+        uint256 totalCrossChainLiquidity = _childPoolsBalance + parentPoolLiquidity;
+
+        //USDC_WITHDRAWABLE = POOL_BALANCE x (LP_INPUT_AMOUNT / TOTAL_LP)
+        uint256 amountUsdcToWithdraw = (((_convertToLPTokenDecimals(totalCrossChainLiquidity) *
+            _clpAmount) * PRECISION_HANDLER) / _lpSupply) / PRECISION_HANDLER;
+
+        return _convertToUSDCTokenDecimals(amountUsdcToWithdraw);
     }
 }

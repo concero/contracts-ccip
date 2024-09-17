@@ -45,7 +45,6 @@ contract ParentPoolCLFCLA is
     ////IMMUTABLES///
     /////////////////
 
-    address internal immutable i_automationForwarder;
     ///@notice Chainlink Function Don ID
     bytes32 private immutable i_donId;
     uint64 private immutable i_subscriptionId;
@@ -72,7 +71,6 @@ contract ParentPoolCLFCLA is
     ) ParentPoolCommon(parentPoolProxy, lpToken, USDC, messengers) FunctionsClient(clfRouter) {
         i_subscriptionId = subscriptionId;
         i_donId = donId;
-        i_automationForwarder = automationForwarder;
     }
 
     /**
@@ -183,9 +181,6 @@ contract ParentPoolCLFCLA is
      * @dev this function must be called only by the Chainlink Forwarder unique address
      */
     function performUpkeep(bytes calldata _performData) external override onlyProxyContext {
-        if (msg.sender != i_automationForwarder) {
-            revert CallerNotAllowed(msg.sender);
-        }
         (address lpAddress, uint256 liquidityRequestedFromEachPool, bytes32 withdrawalId) = abi
             .decode(_performData, (address, uint256, bytes32));
 
@@ -249,6 +244,14 @@ contract ParentPoolCLFCLA is
         uint256 clpAmount
     ) external view returns (uint256) {
         return _calculateWithdrawableAmount(childPoolsBalance, clpAmount, i_lpToken.totalSupply());
+    }
+
+    function fulfillRequestWrapper(
+        bytes32 requestId,
+        bytes memory response,
+        bytes memory err
+    ) external onlyProxyContext {
+        fulfillRequest(requestId, response, err);
     }
 
     ///////////////

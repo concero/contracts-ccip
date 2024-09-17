@@ -7,7 +7,7 @@ import { type CNetwork } from "../../../types/CNetwork";
 import log, { err } from "../../../utils/log";
 import readline from "readline";
 import checkERC20Balance from "./checkERC20Balance";
-import { BalanceInfo } from "./types";
+import { type BalanceInfo } from "./types";
 
 const donorAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
 
@@ -17,7 +17,7 @@ const prompt = (question: string): Promise<string> => new Promise(resolve => rl.
 const minBalances: Record<ProxyEnum, bigint> = {
   parentPoolProxy: parseEther("7"),
   childPoolProxy: parseEther("1"),
-  infraProxy: parseEther("1"),
+  infraProxy: parseEther("2"),
 };
 
 async function checkChainBalance(chain: CNetwork, contractType: ProxyEnum): Promise<BalanceInfo> {

@@ -1,10 +1,10 @@
 import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import CNetworks from "../constants/CNetworks";
-import { updateEnvAddress } from "../utils/updateEnvVariable";
+import { getEnvVar, updateEnvAddress } from "../utils";
 import log from "../utils/log";
-import { getEnvVar } from "../utils/getEnvVar";
-import { type IProxyType } from "../constants/deploymentVariables";
+
+import { IProxyType } from "../types/deploymentVariables";
 
 const deployProxyAdmin: (hre: HardhatRuntimeEnvironment, proxyType: IProxyType) => Promise<void> = async function (
   hre: HardhatRuntimeEnvironment,

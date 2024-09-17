@@ -4,7 +4,7 @@ import chains from "../constants/CNetworks";
 import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
-import { getEnvVar } from "../utils/getEnvVar";
+import { getEnvVar } from "../utils";
 
 interface ConstructorArgs {
   linkToken?: string;

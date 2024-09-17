@@ -1,5 +1,6 @@
-import { CNetwork } from "../../types/CNetwork";
-import chains from "../../constants/CNetworks";
+import { CNetwork } from "../types/CNetwork";
+import chains from "./CNetworks";
+import { ConceroChains } from "../types/chains";
 
 // export const liveChains: CNetwork[] = [
 //   chains.baseSepolia,
@@ -10,19 +11,6 @@ import chains from "../../constants/CNetworks";
 // ];
 
 export const liveChains: CNetwork[] = [chains.polygon, chains.base, chains.arbitrum, chains.avalanche];
-
-export interface ConceroChains {
-  testnet: {
-    parentPool: CNetwork[];
-    childPool: CNetwork[];
-    infra: CNetwork[];
-  };
-  mainnet: {
-    parentPool: CNetwork[];
-    childPool: CNetwork[];
-    infra: CNetwork[];
-  };
-}
 
 export const conceroChains: ConceroChains = {
   testnet: {
@@ -37,14 +25,10 @@ export const conceroChains: ConceroChains = {
   },
 };
 
-export const testnetChains: CNetwork[] = Array.from(new Set([
-  ...conceroChains.testnet.parentPool,
-  ...conceroChains.testnet.childPool,
-  ...conceroChains.testnet.infra,
-]));
+export const testnetChains: CNetwork[] = Array.from(
+  new Set([...conceroChains.testnet.parentPool, ...conceroChains.testnet.childPool, ...conceroChains.testnet.infra]),
+);
 
-export const mainnetChains: CNetwork[] = Array.from(new Set([
-  ...conceroChains.mainnet.parentPool,
-  ...conceroChains.mainnet.childPool,
-  ...conceroChains.mainnet.infra,
-]));
+export const mainnetChains: CNetwork[] = Array.from(
+  new Set([...conceroChains.mainnet.parentPool, ...conceroChains.mainnet.childPool, ...conceroChains.mainnet.infra]),
+);

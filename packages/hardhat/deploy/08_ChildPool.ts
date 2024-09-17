@@ -3,8 +3,8 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import chains, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
-import { getEnvVar } from "../utils/getEnvVar";
-import { poolMessengers } from "../constants/deploymentVariables";
+import { getEnvVar } from "../utils";
+import { poolMessengers } from "../constants";
 
 interface ConstructorArgs {
   conceroProxyAddress?: string;

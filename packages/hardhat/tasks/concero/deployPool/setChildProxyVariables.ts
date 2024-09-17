@@ -1,17 +1,14 @@
-import load from "../../../utils/load";
-import { getEnvVar } from "../../../utils/getEnvVar";
+import { getEnvVar, getFallbackClients } from "../../../utils";
 import CNetworks, { networkEnvKeys, networkTypes } from "../../../constants/CNetworks";
 import log, { err } from "../../../utils/log";
-import { mainnetChains, testnetChains } from "../liveChains";
-import { viemReceiptConfig } from "../../../constants/deploymentVariables";
-import { getFallbackClients } from "../../../utils/getViemClients";
+import { mainnetChains, testnetChains, viemReceiptConfig } from "../../../constants";
 
 async function setConceroProxySender(hre) {
   const chain = CNetworks[hre.network.name];
   const { name: chainName, viemChain, url, type } = chain;
   const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
-  const { abi } = await load("../artifacts/contracts/ConceroChildPool.sol/ConceroChildPool.json");
+  const { abi } = await import("../artifacts/contracts/ConceroChildPool.sol/ConceroChildPool.json");
   if (!chainName) throw new Error("Chain name not found");
   const chains = type === networkTypes.mainnet ? mainnetChains : testnetChains;
 
@@ -83,7 +80,7 @@ async function addPoolsToAllChains(hre) {
   const { name: chainName, viemChain, type } = chain;
   const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
-  const { abi } = await load("../artifacts/contracts/ConceroChildPool.sol/ConceroChildPool.json");
+  const { abi } = await import("../artifacts/contracts/ConceroChildPool.sol/ConceroChildPool.json");
   if (!chainName) throw new Error("Chain name not found");
   const chains = type === networkTypes.mainnet ? mainnetChains : testnetChains;
 

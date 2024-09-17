@@ -4,28 +4,23 @@ import { privateKeyToAccount } from "viem/accounts";
 import log, { err } from "../../utils/log";
 import { task } from "hardhat/config";
 import { getFallbackClients } from "../../utils/getViemClients";
-import {
-  DeploymentPrefixes,
-  type IProxyType,
-  ProxyType,
-  viemReceiptConfig,
-  writeContractConfig,
-} from "../../constants/deploymentVariables";
+import { ProxyEnum, viemReceiptConfig, writeContractConfig } from "../../constants/deploymentVariables";
 import { formatGas } from "../../utils/formatting";
+import { EnvPrefixes, IProxyType } from "../../types/deploymentVariables";
 
 export async function upgradeProxyImplementation(hre, proxyType: IProxyType, shouldPause: boolean) {
   const { name: chainName } = hre.network;
   const { viemChain } = CNetworks[chainName];
 
-  let implementationKey: keyof DeploymentPrefixes;
+  let implementationKey: keyof EnvPrefixes;
 
   if (shouldPause) {
     implementationKey = "pause";
-  } else if (proxyType === ProxyType.infraProxy) {
+  } else if (proxyType === ProxyEnum.infraProxy) {
     implementationKey = "orchestrator";
-  } else if (proxyType === ProxyType.childPoolProxy) {
+  } else if (proxyType === ProxyEnum.childPoolProxy) {
     implementationKey = "childPool";
-  } else if (proxyType === ProxyType.parentPoolProxy) {
+  } else if (proxyType === ProxyEnum.parentPoolProxy) {
     implementationKey = "parentPool";
   } else {
     err(`Proxy type ${proxyType} not found`, "upgradeProxyImplementation", chainName);
@@ -65,6 +60,7 @@ export async function upgradeProxyImplementation(hre, proxyType: IProxyType, sho
     chainName,
   );
 }
+
 export default {};
 
 task("upgrade-proxy-implementation", "Upgrades the proxy implementation")

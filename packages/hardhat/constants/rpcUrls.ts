@@ -1,6 +1,6 @@
 const { INFURA_API_KEY, ALCHEMY_API_KEY, BLAST_API_KEY, CHAINSTACK_API_KEY, TENDERLY_API_KEY } = process.env;
 
-const rpc: Record<string, string> = {
+export const rpc: Record<string, string> = {
   arbitrum: `https://arbitrum-mainnet.infura.io/v3/${INFURA_API_KEY}`,
   arbitrumSepolia: `https://arbitrum-sepolia.infura.io/v3/${INFURA_API_KEY}`,
   base: `https://base-sepolia.infura.io/v3/${INFURA_API_KEY}`,

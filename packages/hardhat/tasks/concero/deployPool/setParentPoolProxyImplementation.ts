@@ -1,11 +1,8 @@
-import { getEnvVar } from "../../../utils/getEnvVar";
-import { networkEnvKeys } from "../../../constants/CNetworks";
+import { getEnvVar, getFallbackClients, log } from "../../../utils";
+import { networkEnvKeys, viemReceiptConfig } from "../../../constants";
 import { parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { getFallbackClients } from "../../../utils/getViemClients";
-import log from "../../../utils/log";
 import { CNetwork } from "../../../types/CNetwork";
-import { viemReceiptConfig } from "../../../constants/deploymentVariables";
 
 export async function setParentPoolProxyImplementation(hre, liveChains: CNetwork[]) {
   const { name: chainName } = hre.network;

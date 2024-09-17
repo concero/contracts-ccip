@@ -1,14 +1,12 @@
 import { task } from "hardhat/config";
 import monitorTokenBalances, { BalanceInfo } from "./viewTokenBalances";
-import { getFallbackClients } from "../../../utils/getViemClients";
-import { getEnvVar } from "../../../utils/getEnvVar";
+import { getEnvVar, getFallbackClients } from "../../../utils";
 import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
-import load from "../../../utils/load";
-import { viemReceiptConfig } from "../../../constants/deploymentVariables";
+import { viemReceiptConfig } from "../../../constants";
 import log from "../../../utils/log";
 
 async function withdrawTokens(isTestnet: boolean) {
-  const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
+  const { abi } = await import("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
   // Step 1: Get balances
   const balances: BalanceInfo[] = await monitorTokenBalances(isTestnet);
 

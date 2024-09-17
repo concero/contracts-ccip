@@ -5,8 +5,8 @@ import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import path from "path";
 import fs from "fs";
-import { getEnvVar } from "../utils/getEnvVar";
-import { messengers } from "../constants/deploymentVariables";
+import { getEnvVar } from "../utils";
+import { messengers } from "../constants";
 
 interface ConstructorArgs {
   slotId?: number;

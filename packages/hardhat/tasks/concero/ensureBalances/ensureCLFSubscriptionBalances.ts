@@ -1,15 +1,15 @@
-import { mainnetChains, testnetChains } from "../liveChains";
-import { getFallbackClients } from "../../../utils/getViemClients";
+import { mainnetChains, testnetChains, viemReceiptConfig } from "../../../constants";
+import { getFallbackClients } from "../../../utils";
 import { privateKeyToAccount } from "viem/accounts";
 import { task } from "hardhat/config";
 import { formatEther, parseEther } from "viem";
 import { type CNetwork } from "../../../types/CNetwork";
 import log, { err } from "../../../utils/log";
 import readline from "readline";
-import { viemReceiptConfig } from "../../../constants/deploymentVariables";
 import functionsRouterAbi from "@chainlink/contracts/abi/v0.8/FunctionsRouter.json";
 import checkERC20Balance from "./checkERC20Balance";
 import linkTokenAbi from "@chainlink/contracts/abi/v0.8/LinkToken.json";
+import { BalanceInfo } from "./types";
 
 const donorAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
 const minBalance = parseEther("10");
@@ -17,14 +17,7 @@ const minBalance = parseEther("10");
 const prompt = (question: string): Promise<string> => new Promise(resolve => rl.question(question, resolve));
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-interface SubscriptionInfo {
-  chain: CNetwork;
-  balance: bigint;
-  deficit: bigint;
-  donorBalance: bigint;
-}
-
-async function checkSubscriptionBalance(chain: CNetwork): Promise<SubscriptionInfo> {
+async function checkSubscriptionBalance(chain: CNetwork): Promise<BalanceInfo> {
   const { publicClient } = getFallbackClients(chain);
   const { functionsRouter, name, functionsSubIds, linkToken } = chain;
   const subId = functionsSubIds[0];
@@ -32,24 +25,21 @@ async function checkSubscriptionBalance(chain: CNetwork): Promise<SubscriptionIn
     address: functionsRouter,
     abi: functionsRouterAbi,
     functionName: "getSubscription",
-    args: [BigInt(subId)]
+    args: [BigInt(subId)],
   });
 
   const balance = subscriptionData.balance;
   const deficit = balance < minBalance ? minBalance - balance : BigInt(0);
-
-  const donorBalance = await checkERC20Balance(chain, linkToken, donorAccount.address);
-
+  const { balance: donorBalance } = await checkERC20Balance(chain, linkToken, donorAccount.address);
   return { chain, balance, deficit, donorBalance };
 }
-
 
 async function topUpSubscription(chain: CNetwork, amount: bigint): Promise<void> {
   const { publicClient, walletClient } = getFallbackClients(chain, donorAccount);
   const { functionsRouter, linkToken, name: chainName, functionsSubIds } = chain;
   const subId = functionsSubIds[0];
   try {
-    const subIdHex = parseInt(subId, 10).toString(16).padStart(2, '0').padStart(64, '0');
+    const subIdHex = parseInt(subId, 10).toString(16).padStart(2, "0").padStart(64, "0");
     const hash = await walletClient.writeContract({
       address: linkToken,
       abi: linkTokenAbi,
@@ -65,7 +55,7 @@ async function topUpSubscription(chain: CNetwork, amount: bigint): Promise<void>
     log(
       `Topped up subscription ${subId} with ${formatEther(amount)} LINK. Tx: ${hash} Gas used: ${cumulativeGasUsed}`,
       "topUpSubscription",
-      chainName
+      chainName,
     );
   } catch (error) {
     err(`Error topping up subscription ${subId} on ${chainName}: ${error}`, "topUpSubscription");
@@ -94,7 +84,7 @@ async function ensureCLFSubscriptionBalances(isTestnet: boolean) {
 
     if (totalDeficit > BigInt(0)) {
       const answer = await prompt(
-        `Do you want to perform top-ups for a total of ${formatEther(totalDeficit)} LINK? (y/n): `
+        `Do you want to perform top-ups for a total of ${formatEther(totalDeficit)} LINK? (y/n): `,
       );
 
       if (answer.toLowerCase() === "y") {

@@ -1,45 +1,34 @@
-import { conceroChains } from "../liveChains";
-import { getFallbackClients } from "../../../utils/getViemClients";
+import { conceroChains, ProxyEnum, viemReceiptConfig } from "../../../constants";
+import { getEnvAddress, getFallbackClients } from "../../../utils";
 import { privateKeyToAccount } from "viem/accounts";
 import { task } from "hardhat/config";
 import { erc20Abi, formatEther, parseEther } from "viem";
 import { type CNetwork } from "../../../types/CNetwork";
 import log, { err } from "../../../utils/log";
 import readline from "readline";
-import { ProxyType, viemReceiptConfig } from "../../../constants/deploymentVariables";
-import { getEnvAddress } from "../../../utils/getEnvVar";
 import checkERC20Balance from "./checkERC20Balance";
+import { BalanceInfo } from "./types";
 
 const donorAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const prompt = (question: string): Promise<string> => new Promise(resolve => rl.question(question, resolve));
 
-interface BalanceInfo {
-  chain: CNetwork;
-  balance: bigint;
-  deficit: bigint;
-  donorBalance: bigint;
-  contractType: ProxyType;
-  address: string;
-  alias: string;
-}
-
-const minBalances: Record<ProxyType, bigint> = {
+const minBalances: Record<ProxyEnum, bigint> = {
   parentPoolProxy: parseEther("7"),
   childPoolProxy: parseEther("1"),
   infraProxy: parseEther("1"),
 };
 
-async function checkChainBalance(chain: CNetwork, contractType: ProxyType): Promise<BalanceInfo> {
+async function checkChainBalance(chain: CNetwork, contractType: ProxyEnum): Promise<BalanceInfo> {
   const { linkToken } = chain;
   const minBalance = minBalances[contractType];
 
   const [address, alias] = getEnvAddress(contractType, chain.name);
 
-  const balance = await checkERC20Balance(chain, linkToken, address);
+  const { balance } = await checkERC20Balance(chain, linkToken, address);
   const deficit = balance < minBalance ? minBalance - balance : BigInt(0);
-  const donorBalance = await checkERC20Balance(chain, linkToken, donorAccount.address);
+  const { balance: donorBalance } = await checkERC20Balance(chain, linkToken, donorAccount.address);
 
   return { chain, address, alias, balance, deficit, donorBalance, contractType };
 }

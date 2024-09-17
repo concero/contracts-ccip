@@ -1,5 +1,5 @@
 import { CNetwork } from "../types/CNetwork";
-import chains from "./CNetworks";
+import chains from "./cNetworks";
 import { ConceroChains } from "../types/chains";
 
 // export const liveChains: CNetwork[] = [

@@ -1,10 +1,15 @@
-import { getEnvVar, getFallbackClients } from "../../../utils";
-import CNetworks, { networkEnvKeys, networkTypes } from "../../../constants/CNetworks";
-import log, { err } from "../../../utils/log";
-import { mainnetChains, testnetChains, viemReceiptConfig } from "../../../constants";
+import { err, getEnvVar, getFallbackClients, log } from "../../../utils";
+import {
+  cNetworks,
+  mainnetChains,
+  networkEnvKeys,
+  networkTypes,
+  testnetChains,
+  viemReceiptConfig,
+} from "../../../constants";
 
 async function setConceroProxySender(hre) {
-  const chain = CNetworks[hre.network.name];
+  const chain = cNetworks[hre.network.name];
   const { name: chainName, viemChain, url, type } = chain;
   const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
@@ -20,7 +25,7 @@ async function setConceroProxySender(hre) {
     if (!dstChainSelector) throw new Error("Destination chain selector not found");
     const dstConceroAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dstChainName]}`);
     const dstConceroPoolAddress =
-      dstChain.chainId === CNetworks.base.chainId || dstChain.chainId === CNetworks.baseSepolia.chainId
+      dstChain.chainId === cNetworks.base.chainId || dstChain.chainId === cNetworks.baseSepolia.chainId
         ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dstChainName]}`)
         : getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}`);
     const conceroPoolAddress = getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[chainName]}`);
@@ -76,7 +81,7 @@ async function setConceroProxySender(hre) {
 }
 
 async function addPoolsToAllChains(hre) {
-  const chain = CNetworks[hre.network.name];
+  const chain = cNetworks[hre.network.name];
   const { name: chainName, viemChain, type } = chain;
   const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
@@ -89,7 +94,7 @@ async function addPoolsToAllChains(hre) {
 
     const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
     const poolAddressToAdd =
-      dstChain.chainId === CNetworks.base.chainId || dstChain.chainId === CNetworks.baseSepolia.chainId
+      dstChain.chainId === cNetworks.base.chainId || dstChain.chainId === cNetworks.baseSepolia.chainId
         ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dstChain.name]}`)
         : getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChain.name]}`);
 

@@ -1,10 +1,9 @@
 import { mainnetChains, testnetChains, viemReceiptConfig } from "../../../constants";
-import { getFallbackClients } from "../../../utils";
+import { err, getFallbackClients, log } from "../../../utils";
 import { privateKeyToAccount } from "viem/accounts";
 import { task } from "hardhat/config";
 import { formatEther, parseEther } from "viem";
 import { type CNetwork } from "../../../types/CNetwork";
-import log, { err } from "../../../utils/log";
 import readline from "readline";
 import functionsRouterAbi from "@chainlink/contracts/abi/v0.8/FunctionsRouter.json";
 import checkERC20Balance from "./checkERC20Balance";

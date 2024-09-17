@@ -6,7 +6,7 @@ import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
 import deployTransparentProxy from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import { compileContracts } from "../../../utils";
-import { ProxyEnum } from "../../../constants/deploymentVariables";
+import { ProxyEnum } from "../../../constants";
 
 task("deploy-child-pool", "Deploy the pool")
   .addFlag("deployproxy", "Deploy the proxy")

@@ -1,5 +1,5 @@
 import { task } from "hardhat/config";
-import chains from "../../../constants/CNetworks";
+import chains from "../../../constants/cNetworks";
 import { CNetwork } from "../../../types/CNetwork";
 import { getClients, getEnvVar } from "../../../utils";
 import log, { err } from "../../../utils/log";

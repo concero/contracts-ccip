@@ -1,6 +1,6 @@
 import { CNetwork } from "../../types/CNetwork";
 import ierc20Abi from "@chainlink/contracts/abi/v0.8/IERC20.json";
-import chains, { networkEnvKeys } from "../../constants/CNetworks";
+import chains, { networkEnvKeys } from "../../constants/cNetworks";
 import { dripBnm } from "./dripBnm";
 import { task } from "hardhat/config";
 import { liveChains } from "./deployInfra/deployInfra";

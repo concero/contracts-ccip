@@ -1,6 +1,6 @@
 import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
+import cNetworks, { networkEnvKeys } from "../constants/cNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils";
@@ -15,7 +15,7 @@ const deployLPToken: (hre: HardhatRuntimeEnvironment, constructorArgs?: Construc
     const { proxyDeployer } = await hre.getNamedAccounts();
     const { deploy } = hre.deployments;
     const { name, live } = hre.network;
-    const networkType = CNetworks[name].type;
+    const networkType = cNetworks[name].type;
 
     const defaultArgs = {
       parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`),

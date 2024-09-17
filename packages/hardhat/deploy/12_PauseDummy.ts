@@ -1,6 +1,6 @@
 import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
+import cNetworks, { networkEnvKeys } from "../constants/cNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 
@@ -10,7 +10,7 @@ const deployPauseDummy: (hre: HardhatRuntimeEnvironment) => Promise<void> = asyn
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
-  const networkType = CNetworks[name].type;
+  const networkType = cNetworks[name].type;
 
   console.log("Deploying...", "deployPauseDummy", name);
 

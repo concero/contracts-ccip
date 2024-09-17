@@ -1,5 +1,5 @@
 import { getEnvAddress } from "../../utils/getEnvVar";
-import CNetworks from "../../constants/CNetworks";
+import cNetworks from "../../constants/cNetworks";
 import { privateKeyToAccount } from "viem/accounts";
 import log, { err } from "../../utils/log";
 import { task } from "hardhat/config";
@@ -10,7 +10,7 @@ import { EnvPrefixes, IProxyType } from "../../types/deploymentVariables";
 
 export async function upgradeProxyImplementation(hre, proxyType: IProxyType, shouldPause: boolean) {
   const { name: chainName } = hre.network;
-  const { viemChain } = CNetworks[chainName];
+  const { viemChain } = cNetworks[chainName];
 
   let implementationKey: keyof EnvPrefixes;
 
@@ -32,7 +32,7 @@ export async function upgradeProxyImplementation(hre, proxyType: IProxyType, sho
   );
 
   const viemAccount = privateKeyToAccount(`0x${process.env.PROXY_DEPLOYER_PRIVATE_KEY}`);
-  const { walletClient, publicClient } = getFallbackClients(CNetworks[chainName], viemAccount);
+  const { walletClient, publicClient } = getFallbackClients(cNetworks[chainName], viemAccount);
 
   const [conceroProxy, conceroProxyAlias] = getEnvAddress(proxyType, chainName);
   const [proxyAdmin, proxyAdminAlias] = getEnvAddress(`${proxyType}Admin`, chainName);

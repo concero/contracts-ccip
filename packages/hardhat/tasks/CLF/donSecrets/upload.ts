@@ -1,6 +1,6 @@
 import { task, types } from "hardhat/config";
 import { SecretsManager } from "@chainlink/functions-toolkit";
-import chains, { networkEnvKeys } from "../../../constants/CNetworks";
+import chains, { networkEnvKeys } from "../../../constants/cNetworks";
 import secrets from "../../../constants/CLFSecrets";
 import updateEnvVariable from "../../../utils/updateEnvVariable";
 import { CNetwork } from "../../../types/CNetwork";

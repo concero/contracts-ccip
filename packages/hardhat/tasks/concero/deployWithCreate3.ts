@@ -1,4 +1,4 @@
-// import CNetworks, { networkEnvKeys } from "../../constants/CNetworks";
+// import cNetworks, { networkEnvKeys } from "../../constants/cNetworks";
 // import { getClients } from "../utils/getViemClients";
 // import { getEnvVar } from "../../utils/getEnvVar";
 // import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -14,10 +14,10 @@
 //   const initCodeHash = keccak256(bytecode);
 //   console.log("Initialization Code Hash:", initCodeHash);
 //   return
-//   if (!CNetworks[hre.network.name]) return console.error("Network not supported");
+//   if (!cNetworks[hre.network.name]) return console.error("Network not supported");
 //
 //
-//   const { viemChain, url, name } = CNetworks[hre.network.name];
+//   const { viemChain, url, name } = cNetworks[hre.network.name];
 //   const { walletClient, publicClient } = getFallbackClients(chain);
 //
 //   let salt;

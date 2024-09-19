@@ -272,7 +272,7 @@ for ether transfer, the _receiver need to be known and trusted_
 function startDeposit(uint256 _usdcAmount) external
 ```
 
-Function for user to deposit liquidity of allowed tokens
+Allows a user to initiate the deposit. Currently supports USDC only.
 
 #### Parameters
 
@@ -286,19 +286,29 @@ Function for user to deposit liquidity of allowed tokens
 function completeDeposit(bytes32 _depositRequestId) external
 ```
 
+Completes the deposit process initiated via startDeposit().
+This function needs to be called within the deadline of DEPOSIT_DEADLINE_SECONDS, set in startDeposit().
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _depositRequestId | bytes32 | the ID of the deposit request |
+
 ### startWithdrawal
 
 ```solidity
 function startWithdrawal(uint256 _lpAmount) external
 ```
 
-Function to allow Liquidity Providers to start the Withdraw of their USDC deposited
+Allows liquidity providers to initiate the withdrawal which can then be completed via completeWithdrawal()
+A cooldown period of WITHDRAW_DEADLINE_SECONDS needs to pass before the withdrawal can be completed.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| _lpAmount | uint256 | the amount of lp token the user wants to burn to get USDC back. |
+| _lpAmount | uint256 | the amount of LP tokens to be burnt |
 
 ### completeWithdrawal
 
@@ -306,11 +316,11 @@ Function to allow Liquidity Providers to start the Withdraw of their USDC deposi
 function completeWithdrawal() external
 ```
 
-Function called to finalize the withdraw process.
+Completes the withdrawal process initiated via startWithdrawal().
 
 _The msg.sender will be used to load the withdraw request data
 if the request received the total amount requested from other pools,
-the withdraw will be finalize. If not, it must revert_
+the withdraw will be finalized._
 
 ### withdrawDepositFees
 
@@ -389,6 +399,8 @@ _this function must be called only by the Chainlink Forwarder unique address_
 ```solidity
 function retryPerformWithdrawalRequest() external
 ```
+
+Allows the LP to retry the withdrawal request if the Chainlink Functions failed to execute it
 
 ### setConceroContractSender
 

@@ -85,6 +85,7 @@ contract ConceroParentPool is
     uint256 internal constant MIN_DEPOSIT = 100_000_000;
     // TODO: change the deadline in production!!!!!!
     //    uint256 private constant WITHDRAW_DEADLINE_SECONDS = 597_600;
+    // todo: this has to be renamed to WITHDRAW_COOLDOWN_SECONDS
     uint256 private constant WITHDRAW_DEADLINE_SECONDS = 60;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint256 private constant CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS = 2108;
@@ -225,7 +226,7 @@ contract ConceroParentPool is
     }
 
     /**
-     * @notice Function for user to deposit liquidity of allowed tokens
+     * @notice Allows a user to initiate the deposit. Currently supports USDC only.
      * @param _usdcAmount the amount to be deposited
      */
     function startDeposit(uint256 _usdcAmount) external onlyProxyContext {
@@ -265,6 +266,11 @@ contract ConceroParentPool is
         emit ConceroParentPool_DepositInitiated(clfRequestId, msg.sender, _usdcAmount, _deadline);
     }
 
+    /**
+     * @notice Completes the deposit process initiated via startDeposit().
+     * @notice This function needs to be called within the deadline of DEPOSIT_DEADLINE_SECONDS, set in startDeposit().
+     * @param _depositRequestId the ID of the deposit request
+     */
     function completeDeposit(bytes32 _depositRequestId) external onlyProxyContext {
         DepositRequest storage request = s_depositRequests[_depositRequestId];
         address lpAddress = request.lpAddress;
@@ -302,8 +308,9 @@ contract ConceroParentPool is
     }
 
     /**
-     * @notice Function to allow Liquidity Providers to start the Withdraw of their USDC deposited
-     * @param _lpAmount the amount of lp token the user wants to burn to get USDC back.
+     * @notice Allows liquidity providers to initiate the withdrawal which can then be completed via completeWithdrawal()
+     * @notice A cooldown period of WITHDRAW_DEADLINE_SECONDS needs to pass before the withdrawal can be completed.
+     * @param _lpAmount the amount of LP tokens to be burnt
      */
     function startWithdrawal(uint256 _lpAmount) external onlyProxyContext {
         if (_lpAmount == 0) revert ConceroParentPool_AmountBelowMinimum(1);
@@ -341,10 +348,10 @@ contract ConceroParentPool is
     }
 
     /**
-     * @notice Function called to finalize the withdraw process.
+     * @notice Completes the withdrawal process initiated via startWithdrawal().
      * @dev The msg.sender will be used to load the withdraw request data
      * if the request received the total amount requested from other pools,
-     * the withdraw will be finalize. If not, it must revert
+     * the withdraw will be finalized.
      */
     function completeWithdrawal() external onlyProxyContext {
         bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
@@ -494,6 +501,9 @@ contract ConceroParentPool is
         emit ConceroParentPool_UpkeepPerformed(reqId);
     }
 
+    /**
+     * @notice Allows the LP to retry the withdrawal request if the Chainlink Functions failed to execute it
+     */
     function retryPerformWithdrawalRequest() external {
         bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
         WithdrawRequest memory withdrawalRequest = _getWithdrawalRequestById(withdrawalId);

@@ -79,7 +79,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
     address private immutable i_infraProxy;
     LinkTokenInterface private immutable i_linkToken;
-    IParentPoolCLFCLA internal immutable i_parentPoolCLACLF;
+    IParentPoolCLFCLA internal immutable i_parentPoolCLFCLA;
     address internal immutable i_owner;
     address internal immutable i_clfRouter;
     address internal immutable i_automationForwarder;
@@ -120,7 +120,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         i_linkToken = LinkTokenInterface(_link);
         i_infraProxy = _infraProxy;
         i_owner = _owner;
-        i_parentPoolCLACLF = IParentPoolCLFCLA(_parentPoolCLFCLA);
+        i_parentPoolCLFCLA = IParentPoolCLFCLA(_parentPoolCLFCLA);
         i_clfRouter = _clfRouter;
         i_automationForwarder = _automationForwarder;
     }
@@ -168,25 +168,24 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             revert OnlyRouterCanFulfill(msg.sender);
         }
 
-        address(i_parentPoolCLACLF).delegatecall(
+        address(i_parentPoolCLFCLA).delegatecall(
             abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector)
         );
     }
 
     function checkUpkeep(bytes calldata) external view returns (bool, bytes memory) {
-        return IParentPoolCLFCLAViewDelegate(address(this)).checkUpkeepViaDelegate();
-    }
-
-    function checkUpkeepViaDelegate() external returns (bool, bytes memory) {
-        (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
-            abi.encodeWithSelector(AutomationCompatibleInterface.checkUpkeep.selector, bytes(""))
+        bytes memory data = abi.encodeWithSelector(
+            AutomationCompatibleInterface.checkUpkeep.selector
         );
 
-        if (!success) {
-            revert UnableToCompleteDelegateCall(data);
-        }
-
-        return abi.decode(data, (bool, bytes));
+        return
+            abi.decode(
+                IParentPoolCLFCLAViewDelegate(address(this)).viewDelegateCall(
+                    address(i_parentPoolCLFCLA),
+                    data
+                ),
+                (bool, bytes)
+            );
     }
 
     function performUpkeep(bytes calldata _performData) external {
@@ -194,7 +193,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             revert CallerNotAllowed(msg.sender);
         }
 
-        (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
+        (bool success, bytes memory data) = address(i_parentPoolCLFCLA).delegatecall(
             abi.encodeWithSelector(
                 AutomationCompatibleInterface.performUpkeep.selector,
                 _performData
@@ -257,7 +256,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(FunctionsRequestType.getTotalPoolsBalance);
 
-        (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
+        (bool success, bytes memory data) = address(i_parentPoolCLFCLA).delegatecall(
             abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args)
         );
 
@@ -334,7 +333,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
         IERC20(i_lpToken).safeTransferFrom(msg.sender, address(this), _lpAmount);
 
-        (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
+        (bool success, bytes memory data) = address(i_parentPoolCLFCLA).delegatecall(
             abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args)
         );
 
@@ -545,7 +544,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             args[4] = abi.encodePacked(distributeLiquidityRequestId);
             args[5] = abi.encodePacked(DistributeLiquidityType.addPool);
 
-            (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
+            (bool success, bytes memory data) = address(i_parentPoolCLFCLA).delegatecall(
                 abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args)
             );
 
@@ -596,7 +595,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         args[4] = abi.encodePacked(distributeLiquidityRequestId);
         args[5] = abi.encodePacked(DistributeLiquidityType.removePool);
 
-        (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
+        (bool success, bytes memory data) = address(i_parentPoolCLFCLA).delegatecall(
             abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args)
         );
 
@@ -616,38 +615,40 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         return _calculateLPTokensToMint(childPoolsBalance, amountToDeposit);
     }
 
+    function viewDelegateCall(address target, bytes memory data) private returns (bytes memory) {
+        (bool success, bytes memory returnData) = target.delegatecall(data);
+
+        if (!success) {
+            assembly {
+                revert(add(returnData, 0x20), mload(returnData))
+            }
+        }
+
+        return returnData;
+    }
+
     function calculateWithdrawableAmount(
         uint256 childPoolsBalance,
         uint256 clpAmount
     ) external view returns (uint256) {
+        bytes memory data = abi.encodeWithSelector(
+            IParentPoolCLFCLA.calculateWithdrawableAmount.selector,
+            childPoolsBalance,
+            clpAmount
+        );
+
         return
-            IParentPoolCLFCLAViewDelegate(address(this)).calculateWithdrawableAmount(
-                childPoolsBalance,
-                clpAmount
+            abi.decode(
+                IParentPoolCLFCLAViewDelegate(address(this)).viewDelegateCall(
+                    address(i_parentPoolCLFCLA),
+                    data
+                ),
+                (uint256)
             );
     }
 
-    function calculateWithdrawableAmountViaDelegateCall(
-        uint256 childPoolsBalance,
-        uint256 clpAmount
-    ) external returns (uint256) {
-        (bool success, bytes memory data) = address(i_parentPoolCLACLF).delegatecall(
-            abi.encodeWithSelector(
-                IParentPoolCLFCLA.calculateWithdrawableAmount.selector,
-                childPoolsBalance,
-                clpAmount
-            )
-        );
-
-        if (!success) {
-            revert UnableToCompleteDelegateCall(data);
-        }
-
-        return abi.decode(data, (uint256));
-    }
-
     ///////////////
-    /// INTERNAL ///
+    /// INTERNAL //
     ///////////////
 
     /**

@@ -1,6 +1,6 @@
 import { task, types } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import deployConceroAutomation from "../../../deploy/06_ConceroAutomation";
+import deployConceroAutomation from "../../../deploy/ConceroAutomation";
 import { setAutomationsVariables } from "./setAutomationsVariables";
 import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
 import { getEnvVar } from "../../../utils/getEnvVar";

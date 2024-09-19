@@ -5,21 +5,23 @@ import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
 import { poolMessengers } from "../constants/deploymentVariables";
+import { zeroAddress } from "viem";
 
 interface ConstructorArgs {
-  parentProxyAddress?: string;
-  linkToken?: string;
-  functionsDonId?: number;
-  functionsSubId?: number;
-  functionsRouter?: string;
-  ccipRouter?: string;
-  usdc?: string;
-  lpToken?: string;
-  conceroProxyAddress?: string;
-  owner?: string;
-  slotId?: number;
-  poolMessengers?: string[];
-  automationForwarder: string;
+  automationForwarder?: string;
+}
+
+interface Args {
+  parentProxyAddress: string;
+  parentPoolCLFCLA: string;
+  linkToken: string;
+  ccipRouter: string;
+  usdc: string;
+  lpToken: string;
+  clfRouter: string;
+  infraProxyAddress: string;
+  owner: string;
+  poolMessengers: string[];
 }
 
 const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: ConstructorArgs) => Promise<void> =
@@ -30,17 +32,15 @@ const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: Const
     const networkType = chains[name].type;
     const { linkToken, ccipRouter, functionsRouter, functionsDonId, functionsSubIds } = chains[name];
 
-    const defaultArgs = {
+    const defaultArgs: Args = {
       parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`),
+      parentPoolCLFCLA: getEnvVar(`PARENT_POOL_CLF_CLA_${networkEnvKeys[name]}`),
       linkToken: linkToken,
-      functionsDonId: functionsDonId,
-      functionsSubId: functionsSubIds[0],
-      functionsRouter: functionsRouter,
       ccipRouter: ccipRouter,
       usdc: getEnvVar(`USDC_${networkEnvKeys[name]}`),
       lpToken: getEnvVar(`LPTOKEN_${networkEnvKeys[name]}`),
-      automation: getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[name]}`),
-      conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
+      clfRouter: functionsRouter,
+      infraProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
       owner: deployer,
       poolMessengers,
     };
@@ -50,20 +50,19 @@ const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: Const
 
     log("Deploying...", `deployParentPool, ${deployer}`, name);
 
-    const deployParentPool = (await deploy("ConceroParentPool", {
+    const deployParentPool = (await deploy("ParentPool", {
       from: deployer,
       args: [
         args.parentProxyAddress,
+        args.parentPoolCLFCLA,
+        args.automationForwarder ?? zeroAddress,
         args.linkToken,
-        args.functionsDonId,
-        args.functionsSubId,
-        args.functionsRouter,
         args.ccipRouter,
         args.usdc,
         args.lpToken,
-        args.conceroProxyAddress,
+        args.infraProxyAddress,
+        args.clfRouter,
         args.owner,
-        args.automationforwarder,
         args.poolMessengers,
       ],
       log: true,

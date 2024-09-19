@@ -17,6 +17,7 @@ import { ensureWalletBalance } from "../ensureBalances/ensureNativeBalances";
 import { DeployInfraParams } from "./types";
 import { deployerTargetBalances } from "../../../constants/targetBalances";
 import { ProxyType } from "../../../constants/deploymentVariables";
+import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecretsConfig";
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("deployproxy", "Deploy the proxy")
@@ -57,6 +58,7 @@ async function deployInfra(params: DeployInfraParams) {
   const { hre, deployableChains, deployProxy, deployImplementation, setVars, uploadSecrets, slotId } = params;
   const { name } = hre.network;
   const { deployer, proxyDeployer } = await hre.getNamedAccounts();
+  const isTestnet = deployableChains[0].type === "testnet";
 
   if (deployProxy) {
     await ensureWalletBalance(proxyDeployer, deployerTargetBalances, CNetworks[name]);
@@ -79,7 +81,11 @@ async function deployInfra(params: DeployInfraParams) {
 
   if (setVars) {
     if (uploadSecrets) {
-      await uploadDonSecrets(deployableChains, slotId, 4320);
+      await uploadDonSecrets(
+        deployableChains,
+        slotId,
+        isTestnet ? CLF_SECRETS_TESTNET_EXPIRATION : CLF_SECRETS_MAINNET_EXPIRATION,
+      );
     }
     await setContractVariables(deployableChains, slotId, uploadSecrets);
     await setConceroProxyDstContracts(deployableChains);

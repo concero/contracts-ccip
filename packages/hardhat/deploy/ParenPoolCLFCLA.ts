@@ -41,8 +41,8 @@ const deployParentPoolCLFCLA: (hre: HardhatRuntimeEnvironment, constructorArgs?:
 
     const args = { ...defaultArgs, ...constructorArgs };
 
-    console.log("Deploying LpToken...");
-    const deployLPToken = (await deploy("ParentPoolCLFCLA", {
+    console.log("Deploying parent pool clf cla...");
+    const deployParentPoolCLFCLA = (await deploy("ParentPoolCLFCLA", {
       from: proxyDeployer,
       args: [
         args.parentProxyAddress,
@@ -59,8 +59,12 @@ const deployParentPoolCLFCLA: (hre: HardhatRuntimeEnvironment, constructorArgs?:
     })) as Deployment;
 
     if (live) {
-      log(`LpToken deployed to ${name} to: ${deployLPToken.address}`, "deployLPToken");
-      updateEnvVariable(`LPTOKEN_${networkEnvKeys[name]}`, deployLPToken.address, `deployments.${networkType}`);
+      log(`Parent pool clf cla deployed to ${name} to: ${deployParentPoolCLFCLA.address}`, "deployParentPoolCLFCLA");
+      updateEnvVariable(
+        `PARENT_POOL_CLF_CLA_${networkEnvKeys[name]}`,
+        deployParentPoolCLFCLA.address,
+        `deployments.${networkType}`,
+      );
     }
   };
 

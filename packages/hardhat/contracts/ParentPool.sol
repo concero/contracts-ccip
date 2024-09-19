@@ -177,7 +177,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         return IParentPoolCLFCLAViewDelegate(address(this)).checkUpkeepViaDelegate();
     }
 
-    function checkUpkeepViaDelegate() external returns (bool, bytes memory) {
+    function checkUpkeepViaDelegate() private returns (bool, bytes memory) {
         (bool success, bytes memory data) = address(i_parentPoolCLFCLA).delegatecall(
             abi.encodeWithSelector(AutomationCompatibleInterface.checkUpkeep.selector, bytes(""))
         );
@@ -630,7 +630,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     function calculateWithdrawableAmountViaDelegateCall(
         uint256 childPoolsBalance,
         uint256 clpAmount
-    ) external returns (uint256) {
+    ) private returns (uint256) {
         (bool success, bytes memory data) = address(i_parentPoolCLFCLA).delegatecall(
             abi.encodeWithSelector(
                 IParentPoolCLFCLA.calculateWithdrawableAmount.selector,

@@ -23,8 +23,10 @@ interface IParentPoolCLFCLA {
 }
 
 interface IParentPoolCLFCLAViewDelegate {
-    function viewDelegateCall(
-        address target,
-        bytes memory data
-    ) external view returns (bytes memory);
+    function calculateWithdrawableAmountViaDelegateCall(
+        uint256 childPoolsBalance,
+        uint256 clpAmount
+    ) external view returns (uint256);
+
+    function checkUpkeepViaDelegate() external view returns (bool, bytes memory);
 }

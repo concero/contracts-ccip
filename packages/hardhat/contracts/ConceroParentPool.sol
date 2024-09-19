@@ -51,6 +51,7 @@ error ConceroParentPool_NotAllowedToComplete();
 error ConceroParentPool_RequestDoesntExist();
 error ConceroParentPool_NotConceroCLA(address caller);
 error ConceroParentPool_DepositsOnTheWayArrayFull();
+error ConceroParentPool_DepositDeadlinePassed();
 
 contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, ParentPoolStorage {
     ///////////////////////
@@ -338,6 +339,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         uint256 childPoolsLiquiditySnapshot = request.childPoolsLiquiditySnapshot;
 
         if (msg.sender != lpAddress) revert ConceroParentPool_NotAllowedToComplete();
+        if (block.timestamp > request.deadline) revert ConceroParentPool_DepositDeadlinePassed();
+
         if (childPoolsLiquiditySnapshot == 0)
             revert ConceroParentPool_ActiveRequestNotFulfilledYet();
 

@@ -46,8 +46,8 @@ contract ParentPoolCLFCLA is
     /////////////////
 
     ///@notice Chainlink Function Don ID
-    bytes32 private immutable i_donId;
-    uint64 private immutable i_subscriptionId;
+    bytes32 private immutable i_clfDonId;
+    uint64 private immutable i_clfSubId;
 
     //////////////
     /// EVENTS ///
@@ -64,13 +64,13 @@ contract ParentPoolCLFCLA is
         address lpToken,
         address USDC,
         address clfRouter,
-        uint64 subscriptionId,
+        uint64 clfSubId,
+        bytes32 clfDonId,
         address automationForwarder,
-        bytes32 donId,
         address[3] memory messengers
     ) ParentPoolCommon(parentPoolProxy, lpToken, USDC, messengers) FunctionsClient(clfRouter) {
-        i_subscriptionId = subscriptionId;
-        i_donId = donId;
+        i_clfSubId = clfSubId;
+        i_clfDonId = clfDonId;
     }
 
     /**
@@ -387,12 +387,7 @@ contract ParentPoolCLFCLA is
         req.setBytesArgs(_args);
 
         return
-            _sendRequest(
-                req.encodeCBOR(),
-                i_subscriptionId,
-                CL_FUNCTIONS_CALLBACK_GAS_LIMIT,
-                i_donId
-            );
+            _sendRequest(req.encodeCBOR(), i_clfSubId, CL_FUNCTIONS_CALLBACK_GAS_LIMIT, i_clfDonId);
     }
 
     /**

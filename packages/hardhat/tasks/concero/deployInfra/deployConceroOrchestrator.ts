@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import deployConceroOrchestrator from "../../../deploy/05_ConceroOrchestrator";
+import deployConceroOrchestrator from "../../../deploy/ConceroOrchestrator";
 
 task("deploy-orchestrator", "Deploy the concero orchestrator").setAction(async taskArgs => {
   try {

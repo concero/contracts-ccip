@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import deployConceroDexSwap from "../../../deploy/03_ConceroDexSwap";
+import deployConceroDexSwap from "../../../deploy/ConceroDexSwap";
 
 task("deploy-dex-swap", "Deploy the concero dex swap contract").setAction(async taskArgs => {
   try {

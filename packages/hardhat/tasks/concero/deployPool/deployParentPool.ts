@@ -7,11 +7,11 @@ import addCLFConsumer from "../../CLF/subscriptions/add";
 import uploadDonSecrets from "../../CLF/donSecrets/upload";
 import { CNetwork } from "../../../types/CNetwork";
 import { setParentPoolVariables } from "./setParentPoolVariables";
-import deployTransparentProxy from "../../../deploy/11_TransparentProxy";
+import deployTransparentProxy from "../../../deploy/TransparentProxy";
 import { compileContracts } from "../../../utils/compileContracts";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
-import deployParentPool from "../../../deploy/09_ParentPool";
-import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
+import deployParentPool from "../../../deploy/ParentPool";
+import deployProxyAdmin from "../../../deploy/ConceroProxyAdmin";
 import { zeroAddress } from "viem";
 import { ProxyType } from "../../../constants/deploymentVariables";
 

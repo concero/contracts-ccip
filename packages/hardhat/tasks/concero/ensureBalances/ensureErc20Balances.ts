@@ -17,7 +17,7 @@ const prompt = (question: string): Promise<string> => new Promise(resolve => rl.
 const minBalances: Record<ProxyEnum, bigint> = {
   parentPoolProxy: parseEther("7"),
   childPoolProxy: parseEther("1"),
-  infraProxy: parseEther("2"),
+  infraProxy: parseEther("5"),
 };
 
 async function checkChainBalance(chain: CNetwork, contractType: ProxyEnum): Promise<BalanceInfo> {

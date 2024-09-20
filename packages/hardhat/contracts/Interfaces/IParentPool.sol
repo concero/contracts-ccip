@@ -174,4 +174,9 @@ interface IParentPool is IPool {
         address _contractAddress,
         uint256 _isAllowed
     ) external payable;
+
+    function calculateWithdrawableAmount(
+        uint256 childPoolsBalance,
+        uint256 clpAmount
+    ) external view returns (uint256);
 }

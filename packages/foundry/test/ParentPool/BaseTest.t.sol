@@ -41,11 +41,11 @@ contract BaseTest is Test {
 
     function deployPoolsInfra() public {
         deployParentPoolProxy();
+        deployLpToken();
         _deployParentPool();
         setProxyImplementation(address(parentPoolImplementation));
         setParentPoolVars();
         _deployCcipLocalSimulation();
-        deployLpToken();
         addFunctionsConsumer();
         _fundLinkParentProxy(100000000000000000000);
     }
@@ -147,5 +147,14 @@ contract BaseTest is Test {
 
     function _fundLinkParentProxy(uint256 amount) internal {
         deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), amount);
+    }
+
+    function mintLpToken(address to, uint256 amount) internal {
+        vm.prank(address(parentPoolProxy));
+        lpToken.mint(to, amount);
+    }
+
+    function mintUSDC(address to, uint256 amount) internal {
+        deal(address(vm.envAddress("USDC_BASE")), to, amount);
     }
 }

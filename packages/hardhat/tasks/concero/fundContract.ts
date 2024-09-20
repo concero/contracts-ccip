@@ -1,12 +1,12 @@
 import { CNetwork } from "../../types/CNetwork";
 import ierc20Abi from "@chainlink/contracts/abi/v0.8/IERC20.json";
-import chains, { networkEnvKeys } from "../../constants/CNetworks";
+import chains, { networkEnvKeys } from "../../constants/cNetworks";
 import { dripBnm } from "./dripBnm";
 import { task } from "hardhat/config";
 import { liveChains } from "./deployInfra/deployInfra";
-import { getEnvVar } from "../../utils/getEnvVar";
+import { getEnvVar } from "../../utils";
 import log, { err } from "../../utils/log";
-import { viemReceiptConfig } from "../../constants/deploymentVariables";
+import { viemReceiptConfig } from "../../constants";
 
 export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
   //checks balance of CCIPBnm of deployer
@@ -29,6 +29,7 @@ export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
     }
   }
 }
+
 export async function fundContract(chains: CNetwork[], amount: number = 1) {
   for (const chain of chains) {
     const { name, viemChain, ccipBnmToken, url } = chain;

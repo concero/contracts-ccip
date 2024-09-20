@@ -2,14 +2,12 @@ import { task, types } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import deployConceroAutomation from "../../../deploy/ConceroAutomation";
 import { setAutomationsVariables } from "./setAutomationsVariables";
-import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
-import { getEnvVar } from "../../../utils/getEnvVar";
+import cNetworks, { networkEnvKeys } from "../../../constants/cNetworks";
+import { compileContracts, getEnvVar, getFallbackClients } from "../../../utils";
 import addCLFConsumer from "../../CLF/subscriptions/add";
 import log from "../../../utils/log";
 import abi from "@chainlink/contracts/abi/v0.8/AutomationRegistrar2_1.json";
-import { getFallbackClients } from "../../../utils/getViemClients";
 import { erc20Abi } from "viem";
-import { compileContracts } from "../../../utils/compileContracts";
 
 task("deploy-pool-clfcla", "Deploy the automations")
   .addFlag("skipdeploy", "Deploy the contract to a specific network")
@@ -22,7 +20,7 @@ task("deploy-pool-clfcla", "Deploy the automations")
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const { name } = hre.network;
     const slotId = parseInt(taskArgs.slotid);
-    const chain = CNetworks[name];
+    const chain = cNetworks[name];
     const { viemChain } = chain;
     if (!taskArgs.skipdeploy) {
       await deployConceroAutomation(hre, { slotId });

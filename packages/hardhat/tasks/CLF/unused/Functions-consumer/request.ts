@@ -13,7 +13,7 @@
 // import networks from "../../../constants/CLFnetworks";
 // import { HardhatRuntimeEnvironment } from "hardhat/types";
 //
-// import chains from "../../../constants/CNetworks";
+// import chains from "../../../constants/cNetworks";
 //
 // const utils = require("../../utils");
 // const chalk = require("chalk");

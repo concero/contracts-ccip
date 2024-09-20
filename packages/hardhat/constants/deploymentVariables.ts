@@ -1,6 +1,7 @@
-import { getEnvVar } from "../utils/getEnvVar";
+import { getEnvVar } from "../utils";
 import type { WaitForTransactionReceiptParameters } from "viem/actions/public/waitForTransactionReceipt";
 import { WriteContractParameters } from "viem";
+import { EnvPrefixes } from "../types/deploymentVariables";
 
 export const messengers: string[] = [
   getEnvVar("MESSENGER_0_ADDRESS"),
@@ -12,7 +13,6 @@ export const poolMessengers: string[] = [
   getEnvVar("POOL_MESSENGER_0_ADDRESS"),
   getEnvVar("POOL_MESSENGER_0_ADDRESS"),
 ];
-// The address is the same on 4 chains: ARB,POL,BASE,AVAX. Can be deployed to others later using Lifi's Create3 Factory.
 
 export const viemReceiptConfig: WaitForTransactionReceiptParameters = {
   timeout: 0,
@@ -21,41 +21,13 @@ export const viemReceiptConfig: WaitForTransactionReceiptParameters = {
 export const writeContractConfig: WriteContractParameters = {
   gas: 3000000n, // 3M
 };
-export enum ProxyType {
+export enum ProxyEnum {
   infraProxy = "infraProxy",
   parentPoolProxy = "parentPoolProxy",
   childPoolProxy = "childPoolProxy",
 }
 
-export type IProxyType = keyof typeof ProxyType;
-
-type ProxyDeploymentPrefixes = {
-  [key in ProxyType]: string;
-};
-
-export type DeploymentPrefixes = ProxyDeploymentPrefixes & {
-  infraProxyAdmin: string;
-  bridge: string;
-  dexSwap: string;
-  orchestrator: string;
-  parentPoolProxyAdmin: string;
-  parentPool: string;
-  childPoolProxyAdmin: string;
-  childPool: string;
-  automation: string;
-  lpToken: string;
-  create3Factory: string;
-  pause: string;
-  uniswapRouter: string;
-  poolMessenger0: string;
-  poolMessenger1: string;
-  poolMessenger2: string;
-  infraMessenger0: string;
-  infraMessenger1: string;
-  infraMessenger2: string;
-};
-
-export const deploymentPrefixes: DeploymentPrefixes = {
+export const envPrefixes: EnvPrefixes = {
   infraProxy: "CONCERO_INFRA_PROXY",
   infraProxyAdmin: "CONCERO_INFRA_PROXY_ADMIN",
   bridge: "CONCERO_BRIDGE",
@@ -72,4 +44,10 @@ export const deploymentPrefixes: DeploymentPrefixes = {
   create3Factory: "CREATE3_FACTORY",
   pause: "CONCERO_PAUSE",
   uniswapRouter: "UNISWAP_ROUTER",
+  poolMessenger0: "POOL_MESSENGER_0_ADDRESS",
+  poolMessenger1: "POOL_MESSENGER_1_ADDRESS",
+  poolMessenger2: "POOL_MESSENGER_2_ADDRESS",
+  infraMessenger0: "MESSENGER_0_ADDRESS",
+  infraMessenger1: "MESSENGER_1_ADDRESS",
+  infraMessenger2: "MESSENGER_2_ADDRESS",
 };

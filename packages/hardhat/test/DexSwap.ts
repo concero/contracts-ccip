@@ -3,7 +3,7 @@ import { encodeAbiParameters, formatUnits } from "viem";
 import ERC20ABI from "../abi/ERC20.json";
 import { abi as ConceroOrchestratorAbi } from "../artifacts/contracts/Orchestrator.sol/Orchestrator.json";
 import { getFallbackClients } from "../utils/getViemClients";
-import chains from "../constants/CNetworks";
+import chains from "../constants/cNetworks";
 import log from "../utils/log";
 import { PublicClient } from "viem/clients/createPublicClient";
 import { WalletClient } from "viem/clients/createWalletClient";

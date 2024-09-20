@@ -1,5 +1,5 @@
 import { task } from "hardhat/config";
-import chains from "../../../constants/CNetworks";
+import chains from "../../../constants/cNetworks";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import log from "../../../utils/log";
 import { formatEther } from "viem";

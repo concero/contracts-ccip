@@ -1,19 +1,23 @@
 import { task, types } from "hardhat/config";
-import CNetworks, { networkTypes } from "../../../constants/CNetworks";
+import CNetworks, { conceroChains, networkTypes, ProxyEnum } from "../../../constants";
 import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
 import { CNetwork } from "../../../types/CNetwork";
 import uploadDonSecrets from "../../CLF/donSecrets/upload";
+import deployConcero from "../../../deploy/04_ConceroBridge";
+import deployConceroDexSwap from "../../../deploy/03_ConceroDexSwap";
+import deployConceroOrchestrator from "../../../deploy/05_ConceroOrchestrator";
 import deployConcero from "../../../deploy/ConceroBridge";
 import { conceroChains } from "../liveChains";
 import deployConceroDexSwap from "../../../deploy/ConceroDexSwap";
 import deployConceroOrchestrator from "../../../deploy/ConceroOrchestrator";
 import addCLFConsumer from "../../CLF/subscriptions/add";
+import { compileContracts, getEnvAddress } from "../../../utils";
+import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
+import deployTransparentProxy from "../../../deploy/11_TransparentProxy";
 import { getEnvAddress } from "../../../utils/getEnvVar";
 import deployProxyAdmin from "../../../deploy/ConceroProxyAdmin";
 import deployTransparentProxy from "../../../deploy/TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
-import { compileContracts } from "../../../utils/compileContracts";
-import { ensureWalletBalance } from "../ensureBalances/ensureNativeBalances";
 import { DeployInfraParams } from "./types";
 import { deployerTargetBalances } from "../../../constants/targetBalances";
 import { ProxyType } from "../../../constants/deploymentVariables";
@@ -57,26 +61,26 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
 async function deployInfra(params: DeployInfraParams) {
   const { hre, deployableChains, deployProxy, deployImplementation, setVars, uploadSecrets, slotId } = params;
   const { name } = hre.network;
-  const { deployer, proxyDeployer } = await hre.getNamedAccounts();
+  // const { deployer, proxyDeployer } = await hre.getNamedAccounts();
   const isTestnet = deployableChains[0].type === "testnet";
 
   if (deployProxy) {
-    await ensureWalletBalance(proxyDeployer, deployerTargetBalances, CNetworks[name]);
-    await deployProxyAdmin(hre, ProxyType.infraProxy);
-    await deployTransparentProxy(hre, ProxyType.infraProxy);
+    // await ensureWalletBalance(proxyDeployer, deployerTargetBalances, cNetworks[name]);
+    await deployProxyAdmin(hre, ProxyEnum.infraProxy);
+    await deployTransparentProxy(hre, ProxyEnum.infraProxy);
 
-    const [proxyAddress] = getEnvAddress(ProxyType.infraProxy, name);
+    const [proxyAddress] = getEnvAddress(ProxyEnum.infraProxy, name);
     const { functionsSubIds } = CNetworks[name];
     await addCLFConsumer(CNetworks[name], [proxyAddress], functionsSubIds[0]);
   }
 
-  await ensureWalletBalance(deployer, deployerTargetBalances, CNetworks[name]);
+  // await ensureWalletBalance(deployer, deployerTargetBalances, cNetworks[name]);
 
   if (deployImplementation) {
     await deployConceroDexSwap(hre);
     await deployConcero(hre, { slotId });
     await deployConceroOrchestrator(hre);
-    await upgradeProxyImplementation(hre, ProxyType.infraProxy, false);
+    await upgradeProxyImplementation(hre, ProxyEnum.infraProxy, false);
   }
 
   if (setVars) {

@@ -1,6 +1,6 @@
 import { task, types } from "hardhat/config";
 import { fetchRequestCommitment, SubscriptionManager, TransactionOptions } from "@chainlink/functions-toolkit";
-import chains from "../../../constants/CNetworks";
+import chains from "../../../constants/cNetworks";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getEthersV6FallbackSignerAndProvider } from "../../../utils/getEthersSignerAndProvider";
 

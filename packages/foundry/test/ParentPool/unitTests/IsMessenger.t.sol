@@ -17,16 +17,15 @@ contract IsMessengerTest is BaseTest {
         deployParentPoolProxy();
         parentPoolImplementation = new ParentPool_DepositWrapper(
             address(parentPoolProxy),
+            address(0x0),
+            address(0x0),
             vm.envAddress("LINK_BASE"),
-            vm.envBytes32("CLF_DONID_BASE"),
-            uint64(vm.envUint("CLF_SUBID_BASE")),
-            address(vm.envAddress("CLF_ROUTER_BASE")),
             address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
             address(vm.envAddress("USDC_BASE")),
             address(lpToken),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
+            address(vm.envAddress("CLF_ROUTER_BASE")),
             address(deployer),
-            slotId,
             [messenger1, address(0), address(0)]
         );
 

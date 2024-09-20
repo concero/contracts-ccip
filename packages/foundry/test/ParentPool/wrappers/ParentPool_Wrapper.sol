@@ -2,50 +2,46 @@
 
 pragma solidity 0.8.20;
 
-import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
+import {ParentPool} from "contracts/ParentPool.sol";
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 
 interface IParentPoolWrapper is IParentPool {
     function getDepositRequest(
         bytes32 requestId
-    ) external view returns (ConceroParentPool.DepositRequest memory);
-    function getRequestType(
-        bytes32 requestId
-    ) external view returns (ConceroParentPool.RequestType);
+    ) external view returns (ParentPool.DepositRequest memory);
+    function getRequestType(bytes32 requestId) external view returns (ParentPool.RequestType);
     function isMessenger(address _messenger) external view returns (bool);
     function getDepositsOnTheWayAmount() external view returns (uint256);
 }
 
-contract ParentPool_Wrapper is ConceroParentPool {
+contract ParentPool_Wrapper is ParentPool {
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
     constructor(
         address _parentPoolProxy,
+        address _parentPoolCLFCLA,
+        address _automationForwarder,
         address _link,
-        bytes32 _donId,
-        uint64 _subscriptionId,
-        address _functionsRouter,
         address _ccipRouter,
         address _usdc,
         address _lpToken,
-        address _orchestrator,
+        address _infraProxy,
+        address _clfRouter,
         address _owner,
-        address[3] memory _messengers,
-        uint8 _slotId
+        address[3] memory _messengers
     )
-        ConceroParentPool(
+        ParentPool(
             _parentPoolProxy,
+            _parentPoolCLFCLA,
+            _automationForwarder,
             _link,
-            _donId,
-            _subscriptionId,
-            _functionsRouter,
             _ccipRouter,
             _usdc,
             _lpToken,
-            _orchestrator,
+            _infraProxy,
+            _clfRouter,
             _owner,
-            _slotId,
             _messengers
         )
     {}
@@ -55,13 +51,11 @@ contract ParentPool_Wrapper is ConceroParentPool {
     //////////////////////////////////////////////////////////////*/
     function getDepositRequest(
         bytes32 requestId
-    ) external view returns (ConceroParentPool.DepositRequest memory) {
+    ) external view returns (ParentPool.DepositRequest memory) {
         return s_depositRequests[requestId];
     }
 
-    function getRequestType(
-        bytes32 requestId
-    ) external view returns (ConceroParentPool.RequestType) {
+    function getRequestType(bytes32 requestId) external view returns (ParentPool.RequestType) {
         return s_clfRequestTypes[requestId];
     }
 

@@ -30,7 +30,7 @@ contract ParentPoolCommon {
     /////////////////
 
     address internal immutable i_parentPoolProxy;
-    LPToken internal immutable i_lpToken;
+    LPToken public immutable i_lpToken;
     IERC20 internal immutable i_USDC;
     address internal immutable i_msgr0;
     address internal immutable i_msgr1;

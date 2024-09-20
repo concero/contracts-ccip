@@ -7,13 +7,10 @@ import uploadDonSecrets from "../../CLF/donSecrets/upload";
 import { CNetwork } from "../../../types/CNetwork";
 import { setParentPoolVariables } from "./setParentPoolVariables";
 import deployTransparentProxy from "../../../deploy/TransparentProxy";
-import { compileContracts } from "../../../utils/compileContracts";
-import deployTransparentProxy from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import deployParentPool from "../../../deploy/ParentPool";
 import deployProxyAdmin from "../../../deploy/ConceroProxyAdmin";
 import { zeroAddress } from "viem";
-import { ProxyType } from "../../../constants/deploymentVariables";
 import deployParentPoolCLFCLA from "../../../deploy/ParenPoolCLFCLA";
 import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecretsConfig";
 
@@ -31,7 +28,6 @@ task("deploy-parent-pool", "Deploy the pool")
     const slotId = parseInt(taskArgs.slotid);
     const { name } = hre.network;
     const deployableChains: CNetwork[] = [cNetworks[hre.network.name]];
-    const deployableChains: CNetwork[] = [CNetworks[hre.network.name]];
     const isTestnet = deployableChains[0].type === "testnet";
 
     if (taskArgs.deployproxy) {

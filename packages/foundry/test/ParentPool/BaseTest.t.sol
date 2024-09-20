@@ -4,8 +4,9 @@ pragma solidity 0.8.20;
 import {Test, console, Vm} from "forge-std/Test.sol";
 import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
 import {ParentPoolProxyDeploy} from "../../../script/ParentPoolProxyDeploy.s.sol";
-import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
-import {ParentPoolProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/ParentPoolProxy.sol";
+import {ParentPool} from "contracts/ParentPool.sol";
+import {ParentPoolCLFCLA} from "contracts/ParentPoolCLFCLA.sol";
+import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/TransparentUpgradeableProxy.sol";
 import {LPToken} from "contracts/LPToken.sol";
 import {CCIPLocalSimulator} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulator.sol";
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
@@ -15,8 +16,9 @@ contract BaseTest is Test {
     /*//////////////////////////////////////////////////////////////
                                VARIABLES
     //////////////////////////////////////////////////////////////*/
-    ConceroParentPool public parentPoolImplementation;
-    ParentPoolProxy public parentPoolProxy;
+    ParentPool public parentPoolImplementation;
+    ParentPoolCLFCLA public parentPoolCLFCLA;
+    TransparentUpgradeableProxy public parentPoolProxy;
     LPToken public lpToken;
     FunctionsSubscriptions public functionsSubscriptions;
     CCIPLocalSimulator public ccipLocalSimulator;
@@ -53,7 +55,7 @@ contract BaseTest is Test {
     //////////////////////////////////////////////////////////////*/
     function deployParentPoolProxy() public {
         vm.prank(proxyDeployer);
-        parentPoolProxy = new ParentPoolProxy(
+        parentPoolProxy = new TransparentUpgradeableProxy(
             vm.envAddress("CONCERO_PAUSE_BASE"),
             proxyDeployer,
             bytes("")
@@ -61,20 +63,31 @@ contract BaseTest is Test {
     }
 
     function _deployParentPool() private {
-        // Deploy the default ConceroParentPool if no custom address is provided
+        // Deploy the default ParentPool if no custom address is provided
         vm.prank(deployer);
-        parentPoolImplementation = new ConceroParentPool(
+
+        parentPoolCLFCLA = new ParentPoolCLFCLA(
             address(parentPoolProxy),
-            vm.envAddress("LINK_BASE"),
-            vm.envBytes32("CLF_DONID_BASE"),
-            uint64(vm.envUint("CLF_SUBID_BASE")),
+            address(lpToken),
+            vm.envAddress("USDC_BASE"),
             vm.envAddress("CLF_ROUTER_BASE"),
+            uint64(vm.envUint("CLF_SUBID_BASE")),
+            vm.envBytes32("CLF_DONID_BASE"),
+            address(0x0),
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
+        );
+
+        parentPoolImplementation = new ParentPool(
+            address(parentPoolProxy),
+            address(parentPoolCLFCLA),
+            address(0x0),
+            vm.envAddress("LINK_BASE"),
             vm.envAddress("CL_CCIP_ROUTER_BASE"),
             vm.envAddress("USDC_BASE"),
             address(lpToken),
             vm.envAddress("CONCERO_ORCHESTRATOR_BASE"),
+            vm.envAddress("CLF_ROUTER_BASE"),
             address(deployer),
-            0, // slotId
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
     }

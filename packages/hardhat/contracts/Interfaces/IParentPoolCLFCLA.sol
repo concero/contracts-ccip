@@ -29,4 +29,9 @@ interface IParentPoolCLFCLAViewDelegate {
     ) external view returns (uint256);
 
     function checkUpkeepViaDelegate() external view returns (bool, bytes memory);
+
+    function viewDelegateCallWrapper(
+        address target,
+        bytes memory data
+    ) external view returns (bytes memory);
 }

@@ -228,17 +228,13 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint256 childPoolsBalance,
         uint256 clpAmount
     ) external returns (uint256) {
-        (bool success, bytes memory data) = address(i_parentPoolCLFCLA).delegatecall(
-            abi.encodeWithSelector(
-                IParentPoolCLFCLA.calculateWithdrawableAmount.selector,
-                childPoolsBalance,
-                clpAmount
-            )
+        bytes memory data = abi.encodeWithSelector(
+            IParentPoolCLFCLA.calculateWithdrawableAmount.selector,
+            childPoolsBalance,
+            clpAmount
         );
 
-        if (!success) {
-            revert UnableToCompleteDelegateCall(data);
-        }
+        bytes memory returnData = LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), data);
 
         return abi.decode(data, (uint256));
     }

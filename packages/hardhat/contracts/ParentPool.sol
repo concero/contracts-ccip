@@ -162,48 +162,52 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
     function handleOracleFulfillment(
         bytes32 requestId,
-        bytes memory response,
+        bytes memory delegateCallResponse,
         bytes memory err
     ) external {
         if (msg.sender != i_clfRouter) {
             revert OnlyRouterCanFulfill(msg.sender);
         }
 
-        bytes memory data = abi.encodeWithSelector(
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
             IParentPoolCLFCLA.fulfillRequestWrapper.selector,
             requestId,
-            response,
+            delegateCallResponse,
             err
         );
 
-        LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), data);
+        LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
     }
 
     function checkUpkeep(bytes calldata) external view returns (bool, bytes memory) {
-        bytes memory data = abi.encodeWithSelector(
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
             AutomationCompatibleInterface.checkUpkeep.selector,
             bytes("")
         );
 
-        (bool success, bytes memory returnData) = IParentPoolCLFCLAViewDelegate(address(this))
-            .checkUpkeepViaDelegate();
+        (bool success, bytes memory delegateCallResponse) = IParentPoolCLFCLAViewDelegate(
+            address(this)
+        ).checkUpkeepViaDelegate();
 
         if (!success) {
-            revert UnableToCompleteDelegateCall(data);
+            revert UnableToCompleteDelegateCall(delegateCallArgs);
         }
 
-        return abi.decode(data, (bool, bytes));
+        return abi.decode(delegateCallResponse, (bool, bytes));
     }
 
     function checkUpkeepViaDelegate() external returns (bool, bytes memory) {
-        bytes memory data = abi.encodeWithSelector(
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
             AutomationCompatibleInterface.checkUpkeep.selector,
             bytes("")
         );
 
-        bytes memory returnData = LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), data);
+        bytes memory delegateCallResponse = LibConcero.safeDelegateCall(
+            address(i_parentPoolCLFCLA),
+            delegateCallArgs
+        );
 
-        return abi.decode(returnData, (bool, bytes));
+        return abi.decode(delegateCallResponse, (bool, bytes));
     }
 
     function calculateLpAmount(
@@ -228,15 +232,18 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint256 childPoolsBalance,
         uint256 clpAmount
     ) external returns (uint256) {
-        bytes memory data = abi.encodeWithSelector(
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
             IParentPoolCLFCLA.calculateWithdrawableAmount.selector,
             childPoolsBalance,
             clpAmount
         );
 
-        bytes memory returnData = LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), data);
+        bytes memory delegateCallResponse = LibConcero.safeDelegateCall(
+            address(i_parentPoolCLFCLA),
+            delegateCallArgs
+        );
 
-        return abi.decode(returnData, (uint256));
+        return abi.decode(delegateCallResponse, (uint256));
     }
 
     function performUpkeep(bytes calldata _performData) external {
@@ -244,12 +251,12 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             revert CallerNotAllowed(msg.sender);
         }
 
-        bytes memory data = abi.encodeWithSelector(
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
             AutomationCompatibleInterface.performUpkeep.selector,
             _performData
         );
 
-        LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), data);
+        LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
     }
 
     /**
@@ -303,9 +310,15 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(FunctionsRequestType.getTotalPoolsBalance);
 
-        bytes memory data = abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args);
-        bytes memory returnData = LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), data);
-        bytes32 clfRequestId = bytes32(returnData);
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            IParentPoolCLFCLA.sendCLFRequest.selector,
+            args
+        );
+        bytes memory delegateCallResponse = LibConcero.safeDelegateCall(
+            address(i_parentPoolCLFCLA),
+            delegateCallArgs
+        );
+        bytes32 clfRequestId = bytes32(delegateCallResponse);
         uint256 _deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
         s_clfRequestTypes[clfRequestId] = RequestType.startDeposit_getChildPoolsLiquidity;
@@ -374,9 +387,15 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
         IERC20(i_lpToken).safeTransferFrom(msg.sender, address(this), _lpAmount);
 
-        bytes memory data = abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args);
-        bytes memory returnData = LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), data);
-        bytes32 clfRequestId = bytes32(returnData);
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            IParentPoolCLFCLA.sendCLFRequest.selector,
+            args
+        );
+        bytes memory delegateCallResponse = LibConcero.safeDelegateCall(
+            address(i_parentPoolCLFCLA),
+            delegateCallArgs
+        );
+        bytes32 clfRequestId = bytes32(delegateCallResponse);
 
         s_clfRequestTypes[clfRequestId] = RequestType.startWithdrawal_getChildPoolsLiquidity;
         // partially initialise withdrawalRequest struct
@@ -579,16 +598,18 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             args[4] = abi.encodePacked(distributeLiquidityRequestId);
             args[5] = abi.encodePacked(DistributeLiquidityType.addPool);
 
-            bytes memory data = abi.encodeWithSelector(
+            bytes memory delegateCallArgs = abi.encodeWithSelector(
                 IParentPoolCLFCLA.sendCLFRequest.selector,
                 args
             );
-            bytes memory returnData = LibConcero.safeDelegateCall(
+            bytes memory delegateCallResponse = LibConcero.safeDelegateCall(
                 address(i_parentPoolCLFCLA),
-                data
+                delegateCallArgs
             );
 
-            emit ConceroParentPool_RedistributionStarted(abi.decode(returnData, (bytes32)));
+            emit ConceroParentPool_RedistributionStarted(
+                abi.decode(delegateCallResponse, (bytes32))
+            );
         }
     }
 
@@ -629,15 +650,15 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         args[4] = abi.encodePacked(distributeLiquidityRequestId);
         args[5] = abi.encodePacked(DistributeLiquidityType.removePool);
 
-        (bool success, bytes memory data) = address(i_parentPoolCLFCLA).delegatecall(
-            abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args)
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            IParentPoolCLFCLA.sendCLFRequest.selector,
+            args
         );
-
-        if (!success) {
-            revert UnableToCompleteDelegateCall(data);
-        }
-
-        bytes32 requestId = abi.decode(data, (bytes32));
+        bytes memory delegateCallResponse = LibConcero.safeDelegateCall(
+            address(i_parentPoolCLFCLA),
+            delegateCallArgs
+        );
+        bytes32 requestId = abi.decode(delegateCallResponse, (bytes32));
 
         emit ConceroParentPool_RedistributionStarted(requestId);
     }

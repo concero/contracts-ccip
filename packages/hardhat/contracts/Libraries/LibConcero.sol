@@ -53,12 +53,12 @@ library LibConcero {
         }
     }
 
-    function safeDelegateCall(address target, bytes memory data) internal returns (bytes memory) {
-        (bool success, bytes memory returnData) = target.delegatecall(data);
+    function safeDelegateCall(address target, bytes memory args) internal returns (bytes memory) {
+        (bool success, bytes memory response) = target.delegatecall(args);
         if (!success) {
-            revert UnableToCompleteDelegateCall(data);
+            revert UnableToCompleteDelegateCall(args);
         }
 
-        return returnData;
+        return response;
     }
 }

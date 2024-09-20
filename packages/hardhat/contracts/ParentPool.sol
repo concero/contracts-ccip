@@ -203,7 +203,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
         bytes memory returnData = LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), data);
 
-        return abi.decode(data, (bool, bytes));
+        return abi.decode(returnData, (bool, bytes));
     }
 
     function calculateLpAmount(
@@ -236,7 +236,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
         bytes memory returnData = LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), data);
 
-        return abi.decode(data, (uint256));
+        return abi.decode(returnData, (uint256));
     }
 
     function performUpkeep(bytes calldata _performData) external {
@@ -303,15 +303,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(FunctionsRequestType.getTotalPoolsBalance);
 
-        (bool success, bytes memory data) = address(i_parentPoolCLFCLA).delegatecall(
-            abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args)
-        );
-
-        if (!success) {
-            revert UnableToCompleteDelegateCall(data);
-        }
-
-        bytes32 clfRequestId = bytes32(data);
+        bytes memory data = abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args);
+        bytes memory returnData = LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), data);
+        bytes32 clfRequestId = bytes32(returnData);
         uint256 _deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
         s_clfRequestTypes[clfRequestId] = RequestType.startDeposit_getChildPoolsLiquidity;
@@ -380,15 +374,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
         IERC20(i_lpToken).safeTransferFrom(msg.sender, address(this), _lpAmount);
 
-        (bool success, bytes memory data) = address(i_parentPoolCLFCLA).delegatecall(
-            abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args)
-        );
-
-        if (!success) {
-            revert UnableToCompleteDelegateCall(data);
-        }
-
-        bytes32 clfRequestId = bytes32(data);
+        bytes memory data = abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args);
+        bytes memory returnData = LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), data);
+        bytes32 clfRequestId = bytes32(returnData);
 
         s_clfRequestTypes[clfRequestId] = RequestType.startWithdrawal_getChildPoolsLiquidity;
         // partially initialise withdrawalRequest struct
@@ -591,17 +579,16 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             args[4] = abi.encodePacked(distributeLiquidityRequestId);
             args[5] = abi.encodePacked(DistributeLiquidityType.addPool);
 
-            (bool success, bytes memory data) = address(i_parentPoolCLFCLA).delegatecall(
-                abi.encodeWithSelector(IParentPoolCLFCLA.sendCLFRequest.selector, args)
+            bytes memory data = abi.encodeWithSelector(
+                IParentPoolCLFCLA.sendCLFRequest.selector,
+                args
+            );
+            bytes memory returnData = LibConcero.safeDelegateCall(
+                address(i_parentPoolCLFCLA),
+                data
             );
 
-            if (!success) {
-                revert UnableToCompleteDelegateCall(data);
-            }
-
-            bytes32 requestId = abi.decode(data, (bytes32));
-
-            emit ConceroParentPool_RedistributionStarted(requestId);
+            emit ConceroParentPool_RedistributionStarted(abi.decode(returnData, (bytes32)));
         }
     }
 

@@ -1,5 +1,4 @@
-import { CNetwork } from "../../../types/CNetwork";
-import { NetworkType } from "../../../constants/CNetworks";
+import { CNetwork, NetworkType } from "../../../types/CNetwork";
 
 export interface DeployInfraParams {
   hre: any;

@@ -1,4 +1,4 @@
-import chains from "../../../../constants/CNetworks";
+import chains from "../../../../constants/cNetworks";
 import { task } from "hardhat/config";
 
 task(

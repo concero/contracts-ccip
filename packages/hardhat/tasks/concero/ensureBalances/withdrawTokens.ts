@@ -1,14 +1,14 @@
 import { task } from "hardhat/config";
-import monitorTokenBalances, { BalanceInfo } from "./viewTokenBalances";
-import { getFallbackClients } from "../../../utils/getViemClients";
-import { getEnvVar } from "../../../utils/getEnvVar";
-import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
-import load from "../../../utils/load";
-import { viemReceiptConfig } from "../../../constants/deploymentVariables";
+import monitorTokenBalances from "./viewTokenBalances";
+import { getEnvVar, getFallbackClients } from "../../../utils";
+import cNetworks, { networkEnvKeys } from "../../../constants/cNetworks";
+import { viemReceiptConfig } from "../../../constants";
 import log from "../../../utils/log";
+import { formatUnits } from "viem";
+import { type BalanceInfo } from "./types";
 
 async function withdrawTokens(isTestnet: boolean) {
-  const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
+  const { abi } = await import("../../../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
   // Step 1: Get balances
   const balances: BalanceInfo[] = await monitorTokenBalances(isTestnet);
 
@@ -43,7 +43,7 @@ async function withdrawTokens(isTestnet: boolean) {
   // Step 4: Withdraw the tokens
   for (const token of tokensWithBalance) {
     const { chainName, contractAddress, symbol, balance } = token;
-    const chain = CNetworks[chainName];
+    const chain = cNetworks[chainName];
     const viemChain = chain.viemChain;
 
     const tokenAddress = getEnvVar(`${symbol}_${networkEnvKeys[chainName]}`);
@@ -65,7 +65,7 @@ async function withdrawTokens(isTestnet: boolean) {
       hash,
     });
 
-    log(`Withdrawn ${balance} ${symbol}(Gas Used: ${cumulativeGasUsed})`, "withdrawToken", chain.name);
+    log(`Withdrawn ${formatUnits(balance, 6)} ${symbol}(Gas Used: ${cumulativeGasUsed})`, "withdrawToken", chain.name);
   }
 }
 

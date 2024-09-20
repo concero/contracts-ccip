@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { createPublicClient } from "viem";
-import chains from "../../constants/CNetworks";
+import chains from "../../constants/cNetworks";
 import { BigNumber } from "ethers-v5";
 import { task } from "hardhat/config";
 import { multicall } from "viem/actions";

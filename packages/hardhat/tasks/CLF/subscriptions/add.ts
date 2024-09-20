@@ -1,5 +1,5 @@
 import { SubscriptionManager } from "@chainlink/functions-toolkit";
-import chains from "../../../constants/CNetworks";
+import chains from "../../../constants/cNetworks";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../../types/CNetwork";

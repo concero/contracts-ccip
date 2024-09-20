@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import { SubscriptionManager } from "@chainlink/functions-toolkit";
-import chains from "../../../constants/CNetworks";
+import chains from "../../../constants/cNetworks";
 import { formatEther } from "viem";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import log from "../../../utils/log";

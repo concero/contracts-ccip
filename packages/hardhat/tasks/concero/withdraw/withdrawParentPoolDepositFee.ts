@@ -1,16 +1,14 @@
 import { task } from "hardhat/config";
-import chains from "../../../constants/CNetworks";
+import chains from "../../../constants/cNetworks";
 import { CNetwork } from "../../../types/CNetwork";
-import { getClients } from "../../../utils/getViemClients";
-import { getEnvVar } from "../../../utils/getEnvVar";
+import { getClients, getEnvVar } from "../../../utils";
 import log, { err } from "../../../utils/log";
-import load from "../../../utils/load";
 
 const withdrawToken = async (chain: CNetwork) => {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = chain;
   const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
   const conceroProxy = getEnvVar(`PARENT_POOL_PROXY_BASE`);
-  const { abi } = await load("../artifacts/contracts/ConceroParentPool.sol/ConceroParentPool.json");
+  const { abi } = await import("../artifacts/contracts/ConceroParentPool.sol/ConceroParentPool.json");
 
   try {
     const { request: withdrawReq } = await publicClient.simulateContract({

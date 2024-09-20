@@ -1,4 +1,4 @@
-import CNetworks from "../../constants/CNetworks";
+import cNetworks from "../../constants/cNetworks";
 import { privateKeyToAccount } from "viem/accounts";
 import log from "../../utils/log";
 import { task } from "hardhat/config";
@@ -9,7 +9,7 @@ import { getFallbackClients } from "../../utils/getViemClients";
 export async function changeOwnership(hre, targetContract, newOwner: string) {
   const { name: chainName } = hre.network;
   const chainId = hre.network.config.chainId;
-  const { viemChain, url } = CNetworks[chainName];
+  const { viemChain, url } = cNetworks[chainName];
 
   if (!viemChain) {
     log(`Chain ${chainId} not found in live chains`, "changeOwnership");

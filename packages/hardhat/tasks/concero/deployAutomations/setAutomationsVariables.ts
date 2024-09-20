@@ -1,16 +1,14 @@
 import { getSecretsBySlotId } from "./getSecretsBySlotId";
-import load from "../../../utils/load";
-import { getFallbackClients } from "../../../utils/getViemClients";
-import { getEnvVar } from "../../../utils/getEnvVar";
-import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
+import { getEnvVar, getFallbackClients } from "../../../utils";
+import cNetworks, { networkEnvKeys } from "../../../constants/cNetworks";
 import log, { err } from "../../../utils/log";
 import getHashSum from "../../../utils/getHashSum";
 import { automationsJsCodeUrl, ethersV6CodeUrl } from "../../../constants/functionsJsCodeUrls";
-import { viemReceiptConfig } from "../../../constants/deploymentVariables";
+import { viemReceiptConfig } from "../../../constants";
 
 const setDonHostedSecretsVersion = async (hre, slotId: number, abi) => {
   try {
-    const chain = CNetworks[hre.network.name];
+    const chain = cNetworks[hre.network.name];
     const { viemChain } = chain;
     const secretsVersion = (await getSecretsBySlotId(hre.network.name, slotId)).version;
 
@@ -40,7 +38,7 @@ const setDonHostedSecretsVersion = async (hre, slotId: number, abi) => {
 
 const setDonHostedSecretsSlotId = async (hre, slotId: number, abi: any) => {
   try {
-    const chain = CNetworks[hre.network.name];
+    const chain = cNetworks[hre.network.name];
     const { viemChain } = chain;
     const { walletClient, publicClient, account } = getFallbackClients(chain);
     const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);
@@ -70,7 +68,7 @@ const setDonHostedSecretsSlotId = async (hre, slotId: number, abi: any) => {
 const setForwarderAddress = async (hre, forwarderAddress: string, abi: any) => {
   const name = hre.network.name;
   try {
-    const chain = CNetworks[name];
+    const chain = cNetworks[name];
     const { viemChain } = chain;
     const { walletClient, publicClient, account } = getFallbackClients(chain);
     const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);
@@ -99,7 +97,7 @@ const setForwarderAddress = async (hre, forwarderAddress: string, abi: any) => {
 
 const setHashSum = async (hre, abi: any) => {
   try {
-    const chain = CNetworks[hre.network.name];
+    const chain = cNetworks[hre.network.name];
     const { viemChain } = chain;
     const { walletClient, publicClient, account } = getFallbackClients(chain);
     const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);
@@ -129,7 +127,7 @@ const setHashSum = async (hre, abi: any) => {
 
 const setEthersHashSum = async (hre, abi: any) => {
   try {
-    const chain = CNetworks[hre.network.name];
+    const chain = cNetworks[hre.network.name];
     const { viemChain } = chain;
     const { walletClient, publicClient, account } = getFallbackClients(chain);
     const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);
@@ -158,7 +156,7 @@ const setEthersHashSum = async (hre, abi: any) => {
 };
 
 export async function setAutomationsVariables(hre, slotId: number, forwarderAddress: string | undefined) {
-  const { abi } = await load("../artifacts/contracts/ConceroAutomation.sol/ConceroAutomation.json");
+  const { abi } = await import("../artifacts/contracts/ConceroAutomation.sol/ConceroAutomation.json");
 
   await setDonHostedSecretsVersion(hre, slotId, abi);
   await setDonHostedSecretsSlotId(hre, slotId, abi);

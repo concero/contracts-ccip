@@ -1,10 +1,10 @@
 import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import CNetworks from "../constants/CNetworks";
-import { updateEnvAddress } from "../utils/updateEnvVariable";
+import cNetworks from "../constants/cNetworks";
+import { getEnvVar, updateEnvAddress } from "../utils";
 import log from "../utils/log";
-import { getEnvVar } from "../utils/getEnvVar";
-import { type IProxyType } from "../constants/deploymentVariables";
+
+import { IProxyType } from "../types/deploymentVariables";
 
 const deployProxyAdmin: (hre: HardhatRuntimeEnvironment, proxyType: IProxyType) => Promise<void> = async function (
   hre: HardhatRuntimeEnvironment,
@@ -13,7 +13,7 @@ const deployProxyAdmin: (hre: HardhatRuntimeEnvironment, proxyType: IProxyType) 
   const { proxyDeployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
-  const networkType = CNetworks[name].type;
+  const networkType = cNetworks[name].type;
 
   const initialOwner = getEnvVar(`PROXY_DEPLOYER_ADDRESS`);
 

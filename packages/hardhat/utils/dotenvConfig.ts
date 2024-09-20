@@ -24,7 +24,7 @@ function configureDotEnv(basePath = "../../") {
 }
 configureDotEnv();
 
-export function reloadDotEnv(basePath = "../../") {
+function reloadDotEnv(basePath = "../../") {
   const normalizedBasePath = basePath.endsWith("/") ? basePath : `${basePath}/`;
 
   ENV_FILES.forEach(file => {

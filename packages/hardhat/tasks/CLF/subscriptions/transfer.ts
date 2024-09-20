@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import { SubscriptionManager, TransactionOptions } from "@chainlink/functions-toolkit";
-import chains from "../../../constants/CNetworks";
+import chains from "../../../constants/cNetworks";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 

@@ -1,5 +1,5 @@
 import { task } from "hardhat/config";
-import CNetworks from "../../constants/CNetworks";
+import cNetworks from "../../constants/cNetworks";
 import { getFallbackClients } from "../../utils/getViemClients";
 import { decodeAbiParameters, parseAbiParameters } from "viem";
 
@@ -23,7 +23,7 @@ const reportAbiParameters = parseAbiParameters([
 task("decode-clf-fulfill", "Decodes CLF TX to get signers and fulfillment data")
   .addParam("txhash", "Transaction hash to decode")
   .setAction(async taskArgs => {
-    const chain = CNetworks[hre.network.name];
+    const chain = cNetworks[hre.network.name];
     const { publicClient } = getFallbackClients(chain);
     const tx = await publicClient.getTransaction({
       hash: taskArgs.txhash,

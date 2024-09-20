@@ -1,14 +1,14 @@
 import { task, types } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import chains from "../../../constants/CNetworks";
-import CNetworks from "../../../constants/CNetworks";
-import { getEnvAddress } from "../../../utils/getEnvVar";
+import { cNetworks, ProxyEnum } from "../../../constants";
+import { compileContracts, getEnvAddress } from "../../../utils";
 import addCLFConsumer from "../../CLF/subscriptions/add";
 import uploadDonSecrets from "../../CLF/donSecrets/upload";
 import { CNetwork } from "../../../types/CNetwork";
 import { setParentPoolVariables } from "./setParentPoolVariables";
 import deployTransparentProxy from "../../../deploy/TransparentProxy";
 import { compileContracts } from "../../../utils/compileContracts";
+import deployTransparentProxy from "../../../deploy/11_TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import deployParentPool from "../../../deploy/ParentPool";
 import deployProxyAdmin from "../../../deploy/ConceroProxyAdmin";
@@ -30,22 +30,22 @@ task("deploy-parent-pool", "Deploy the pool")
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
     const { name } = hre.network;
+    const deployableChains: CNetwork[] = [cNetworks[hre.network.name]];
     const deployableChains: CNetwork[] = [CNetworks[hre.network.name]];
     const isTestnet = deployableChains[0].type === "testnet";
 
     if (taskArgs.deployproxy) {
-      await deployProxyAdmin(hre, ProxyType.parentPoolProxy);
-      await deployTransparentProxy(hre, ProxyType.parentPoolProxy);
-      const [proxyAddress, _] = getEnvAddress(ProxyType.parentPoolProxy, name);
-      const { functionsSubIds } = chains[name];
-      await addCLFConsumer(chains[name], [proxyAddress], functionsSubIds[0]);
+      await deployProxyAdmin(hre, ProxyEnum.parentPoolProxy);
+      await deployTransparentProxy(hre, ProxyEnum.parentPoolProxy);
+      const [proxyAddress, _] = getEnvAddress(ProxyEnum.parentPoolProxy, name);
+      const { functionsSubIds } = cNetworks[name];
+      await addCLFConsumer(cNetworks[name], [proxyAddress], functionsSubIds[0]);
     }
 
     if (taskArgs.deployimplementation) {
       await deployParentPoolCLFCLA(hre, { automationForwarder: taskArgs.automationforwarder });
       await deployParentPool(hre, { automationForwarder: taskArgs.automationforwarder });
-
-      await upgradeProxyImplementation(hre, ProxyType.parentPoolProxy, false);
+      await upgradeProxyImplementation(hre, ProxyEnum.parentPoolProxy, false);
     }
 
     if (taskArgs.uploadsecrets) {

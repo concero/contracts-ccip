@@ -3,24 +3,15 @@ import CNetworks, { conceroChains, networkTypes, ProxyEnum } from "../../../cons
 import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
 import { CNetwork } from "../../../types/CNetwork";
 import uploadDonSecrets from "../../CLF/donSecrets/upload";
-import deployConcero from "../../../deploy/04_ConceroBridge";
-import deployConceroDexSwap from "../../../deploy/03_ConceroDexSwap";
-import deployConceroOrchestrator from "../../../deploy/05_ConceroOrchestrator";
 import deployConcero from "../../../deploy/ConceroBridge";
-import { conceroChains } from "../liveChains";
 import deployConceroDexSwap from "../../../deploy/ConceroDexSwap";
 import deployConceroOrchestrator from "../../../deploy/ConceroOrchestrator";
 import addCLFConsumer from "../../CLF/subscriptions/add";
 import { compileContracts, getEnvAddress } from "../../../utils";
-import deployProxyAdmin from "../../../deploy/10_ConceroProxyAdmin";
-import deployTransparentProxy from "../../../deploy/11_TransparentProxy";
-import { getEnvAddress } from "../../../utils/getEnvVar";
 import deployProxyAdmin from "../../../deploy/ConceroProxyAdmin";
 import deployTransparentProxy from "../../../deploy/TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import { DeployInfraParams } from "./types";
-import { deployerTargetBalances } from "../../../constants/targetBalances";
-import { ProxyType } from "../../../constants/deploymentVariables";
 import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecretsConfig";
 
 task("deploy-infra", "Deploy the CCIP infrastructure")

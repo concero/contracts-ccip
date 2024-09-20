@@ -206,13 +206,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         return abi.decode(data, (bool, bytes));
     }
 
-    function viewDelegateCallWrapper(
-        address target,
-        bytes memory data
-    ) private returns (bytes memory) {
-        return LibConcero.safeDelegateCall(target, data);
-    }
-
     function calculateLpAmount(
         uint256 childPoolsBalance,
         uint256 amountToDeposit
@@ -224,17 +217,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint256 childPoolsBalance,
         uint256 clpAmount
     ) external view returns (uint256) {
-        //        bytes memory data = abi.encodeWithSelector(
-        //            IParentPoolCLFCLA.calculateWithdrawableAmount.selector,
-        //            childPoolsBalance,
-        //            clpAmount
-        //        );
-
-        //        bytes memory returnData = IParentPoolCLFCLAViewDelegate(address(this))
-        //            .viewDelegateCallWrapper(address(i_parentPoolCLFCLA), data);
-        //
-        //        return abi.decode(returnData, (uint256));
-
         return
             IParentPoolCLFCLAViewDelegate(address(this)).calculateWithdrawableAmountViaDelegateCall(
                 childPoolsBalance,
@@ -266,16 +248,12 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             revert CallerNotAllowed(msg.sender);
         }
 
-        (bool success, bytes memory data) = address(i_parentPoolCLFCLA).delegatecall(
-            abi.encodeWithSelector(
-                AutomationCompatibleInterface.performUpkeep.selector,
-                _performData
-            )
+        bytes memory data = abi.encodeWithSelector(
+            AutomationCompatibleInterface.performUpkeep.selector,
+            _performData
         );
 
-        if (!success) {
-            revert UnableToCompleteDelegateCall(data);
-        }
+        LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), data);
     }
 
     /**

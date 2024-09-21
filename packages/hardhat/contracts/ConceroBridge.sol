@@ -99,7 +99,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
 
         uint256 amountToSend = bridgeData.amount - totalSrcFee;
         bytes32 conceroMessageId = keccak256(
-            abi.encodePacked(msg.sender, bridgeData.receiver, amountToSend)
+            abi.encodePacked(msg.sender, bridgeData.receiver, amountToSend, block.timestamp)
         );
 
         BridgeTx memory newBridgeTx = BridgeTx(bridgeData.receiver, amountToSend, conceroMessageId);

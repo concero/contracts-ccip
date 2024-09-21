@@ -33,8 +33,8 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
     /// @notice event emitted when an individual tx is sent through CLF
-    event ConceroMessageSent(bytes32 indexed conceroMessageId, address sender, BridgeData bridgeData, uint256 amount);
-    /// @notice event emitted when a CCIP message is sent
+    event ConceroBridgeSent(bytes32 indexed conceroMessageId, address sender, BridgeData bridgeData, uint256 amount);
+    /// @notice event emitted when a batched CCIP message is sent
     event ConceroSettlementSent(bytes32 indexed ccipMessageId, address sender, BridgeData bridgeData, uint256 amount);
     /// @notice event emitted when a stuck amount is withdraw
     event Concero_StuckAmountWithdraw(address owner, address token, uint256 amount);
@@ -88,7 +88,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         uint256 batchedTxAmount = s_pendingBatchedTxAmountByDstChain[bridgeData.dstChainSelector];
 
         sendUnconfirmedTX(conceroMessageId, msg.sender, bridgeData, amountToSend, dstSwapData);
-        emit ConceroMessageSent(conceroMessageId, msg.sender, bridgeData, amountToSend);
+        emit ConceroBridgeSent(conceroMessageId, msg.sender, bridgeData, amountToSend);
 
         if (batchedTxAmount >= MINIMUM_BATCHED_TX_THRESHOLD && batchedTxAmount <= MAXIMUM_BATCHED_TX_THRESHOLD) {
             bytes32[] memory pendingCCIPTransactionsByDstChain =

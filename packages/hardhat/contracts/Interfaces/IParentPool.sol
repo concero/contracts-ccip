@@ -2,6 +2,7 @@
 pragma solidity 0.8.20;
 
 import {IPool} from "./IPool.sol";
+import {IStorage} from "./IStorage.sol";
 
 interface IParentPool is IPool {
     ///////////////////////
@@ -72,7 +73,8 @@ interface IParentPool is IPool {
     function distributeLiquidity(
         uint64 _chainSelector,
         uint256 _amountToSend,
-        bytes32 distributeLiquidityRequestId
+        bytes32 distributeLiquidityRequestId,
+        IStorage.CcipTxType _ccipTxType
     ) external;
     function setPools(
         uint64 _chainSelector,

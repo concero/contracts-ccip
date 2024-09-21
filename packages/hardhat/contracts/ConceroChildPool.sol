@@ -179,7 +179,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
 
         s_withdrawRequests[_withdrawId] = true;
 
-        _ccipSend(_chainSelector, _lpAddress, _amountToSend);
+        _ccipSend(_chainSelector, _lpAddress, _amountToSend, IStorage.CcipTxType.withdrawTx);
     }
 
     /**
@@ -190,14 +190,15 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     function distributeLiquidity(
         uint64 _chainSelector,
         uint256 _amountToSend,
-        bytes32 _requestId
+        bytes32 _requestId,
+        IStorage.CcipTxType _ccipTxType
     ) external onlyProxyContext onlyMessenger {
         if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroChildPool_InvalidAddress();
         if (s_distributeLiquidityRequestProcessed[_requestId] != false) {
             revert ConceroChildPool_RequestAlreadyProceeded(_requestId);
         }
         s_distributeLiquidityRequestProcessed[_requestId] = true;
-        _ccipSend(_chainSelector, address(0), _amountToSend);
+        _ccipSend(_chainSelector, address(0), _amountToSend, _ccipTxType);
     }
 
     /**
@@ -206,7 +207,8 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @dev If Orchestrator took a loan and the money didn't rebalance yet, it will be left behind.
      */
     function liquidatePool(
-        bytes32 distributeLiquidityRequestId
+        bytes32 distributeLiquidityRequestId,
+        IStorage.CcipTxType _ccipTxType
     ) external onlyProxyContext onlyMessenger {
         if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
             revert ConceroChildPool_RequestAlreadyProceeded(distributeLiquidityRequestId);
@@ -220,7 +222,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
 
         for (uint256 i; i < poolsCount; ) {
             //This is a function to deal with adding&removing pools. So, the second param will always be address(0)
-            _ccipSend(s_poolChainSelectors[i], address(0), amountToSentToEachPool);
+            _ccipSend(s_poolChainSelectors[i], address(0), amountToSentToEachPool, _ccipTxType);
             unchecked {
                 ++i;
             }
@@ -380,8 +382,15 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     function _ccipSend(
         uint64 _chainSelector,
         address _lpAddress,
-        uint256 _amount
+        uint256 _amount,
+        IStorage.CcipTxType _ccipTxType
     ) internal onlyMessenger onlyProxyContext returns (bytes32 messageId) {
+        IStorage.BridgeTx[] memory emptyBridgeTxArray;
+        IStorage.CcipTxData memory ccipTxData = IStorage.CcipTxData({
+            ccipTxType: _ccipTxType,
+            data: abi.encode(emptyBridgeTxArray)
+        });
+
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
 
         Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({
@@ -393,7 +402,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
 
         Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
             receiver: abi.encode(s_poolToSendTo[_chainSelector]),
-            data: abi.encode(_lpAddress, address(0), 0), //0== lp fee. It will always be zero because here we are only processing withdraws
+            data: abi.encode(ccipTxData),
             tokenAmounts: tokenAmounts,
             extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
             feeToken: address(i_linkToken)

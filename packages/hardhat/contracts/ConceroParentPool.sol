@@ -356,7 +356,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
 
         i_lp.mint(msg.sender, lpTokensToMint);
 
-        _distributeLiquidityToChildPools(usdcAmountAfterFee);
+        _distributeLiquidityToChildPools(usdcAmountAfterFee, IStorage.CcipTxType.depositTx);
 
         s_depositFeeAmount += DEPOSIT_FEE_USDC;
 
@@ -462,14 +462,15 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     function distributeLiquidity(
         uint64 _chainSelector,
         uint256 _amountToSend,
-        bytes32 distributeLiquidityRequestId
+        bytes32 distributeLiquidityRequestId,
+        IStorage.CcipTxType _ccipTxType
     ) external onlyProxyContext onlyMessenger {
         if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroParentPool_InvalidAddress();
         if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
             revert ConceroParentPool_RequestAlreadyProceeded(distributeLiquidityRequestId);
         }
         s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
-        _ccipSend(_chainSelector, _amountToSend);
+        _ccipSend(_chainSelector, _amountToSend, _ccipTxType);
     }
 
     ///////////////////////
@@ -696,13 +697,20 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
      * @notice helper function to distribute liquidity after LP deposits.
      * @param _usdcAmountToDeposit amount of USDC should be distributed to the pools.
      */
-    function _distributeLiquidityToChildPools(uint256 _usdcAmountToDeposit) internal {
+    function _distributeLiquidityToChildPools(
+        uint256 _usdcAmountToDeposit,
+        IStorage.CcipTxType _ccipTxType
+    ) internal {
         uint256 childPoolsCount = s_poolChainSelectors.length;
         uint256 amountToDistribute = ((_usdcAmountToDeposit * PRECISION_HANDLER) /
             (childPoolsCount + 1)) / PRECISION_HANDLER;
 
         for (uint256 i; i < childPoolsCount; ) {
-            bytes32 ccipMessageId = _ccipSend(s_poolChainSelectors[i], amountToDistribute);
+            bytes32 ccipMessageId = _ccipSend(
+                s_poolChainSelectors[i],
+                amountToDistribute,
+                _ccipTxType
+            );
             _addDepositOnTheWayRequest(ccipMessageId, s_poolChainSelectors[i], amountToDistribute);
 
             unchecked {
@@ -717,12 +725,20 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
      */
     function _ccipSend(
         uint64 _chainSelector,
-        uint256 _amountToDistribute
+        uint256 _amountToDistribute,
+        IStorage.CcipTxType _ccipTxType
     ) internal returns (bytes32 messageId) {
+        IStorage.BridgeTx[] memory emptyBridgeTxArray;
+        IStorage.CcipTxData memory ccipTxData = IStorage.CcipTxData({
+            ccipTxType: _ccipTxType,
+            data: abi.encode(emptyBridgeTxArray)
+        });
+
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
             _chainSelector,
             address(i_USDC),
-            _amountToDistribute
+            _amountToDistribute,
+            ccipTxData
         );
 
         uint256 ccipFeeAmount = IRouterClient(i_ccipRouter).getFee(_chainSelector, evm2AnyMessage);
@@ -744,7 +760,8 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
     function _buildCCIPMessage(
         uint64 _chainSelector,
         address _token,
-        uint256 _amount
+        uint256 _amount,
+        IStorage.CcipTxData memory _ccipTxData
     ) internal view returns (Client.EVM2AnyMessage memory) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: _token, amount: _amount});
@@ -752,7 +769,7 @@ contract ConceroParentPool is IParentPool, CCIPReceiver, FunctionsClient, Parent
         return
             Client.EVM2AnyMessage({
                 receiver: abi.encode(s_poolToSendTo[_chainSelector]),
-                data: abi.encode(address(0), address(0), 0), //Here the 1° address is (0) because this is the Parent Pool and we never send to withdraw in another place.
+                data: abi.encode(_ccipTxData),
                 tokenAmounts: tokenAmounts,
                 extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 350_000})),
                 feeToken: address(i_linkToken)

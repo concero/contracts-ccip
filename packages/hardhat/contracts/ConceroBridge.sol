@@ -111,48 +111,74 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
 
         sendUnconfirmedTX(conceroMessageId, msg.sender, bridgeData, amountToSend, dstSwapData);
         emit ConceroBridgeSent(conceroMessageId, msg.sender, bridgeData, amountToSend);
+        _processBatchedTx(batchedTxAmount, bridgeData, fromToken, amountToSend, conceroMessageId);
+    }
 
+    function _processBatchedTx(
+        uint256 batchedTxAmount,
+        BridgeData memory bridgeData,
+        address fromToken,
+        uint256 amountToSend,
+        bytes32 conceroMessageId
+    ) internal {
         if (
             batchedTxAmount >= MINIMUM_BATCHED_TX_THRESHOLD &&
             batchedTxAmount <= MAXIMUM_BATCHED_TX_THRESHOLD
         ) {
-            bytes32[]
-                memory pendingCCIPTransactionsByDstChain = s_pendingCCIPTransactionsByDstChain[
-                    bridgeData.dstChainSelector
-                ];
-
-            BridgeTx[] memory bridgeTxs = new BridgeTx[](pendingCCIPTransactionsByDstChain.length);
-
-            for (uint256 i; i < pendingCCIPTransactionsByDstChain.length; ++i) {
-                bytes32 txId = pendingCCIPTransactionsByDstChain[i];
-                BridgeTx memory bridgeTx = s_pendingCCIPTransactions[txId];
-                bridgeTxs[i] = bridgeTx;
-            }
-
-            delete s_pendingCCIPTransactionsByDstChain[bridgeData.dstChainSelector];
-            s_pendingBatchedTxAmountByDstChain[bridgeData.dstChainSelector] = 0;
-
-            bytes32 ccipMessageId = _sendTokenPayLink(
-                bridgeData.dstChainSelector,
-                fromToken,
-                batchedTxAmount,
-                bridgeTxs
-            );
-            emit ConceroSettlementSent(ccipMessageId, msg.sender, bridgeData, batchedTxAmount);
+            _handleBatchedTransactions(fromToken, batchedTxAmount, bridgeData);
         } else if (batchedTxAmount > MAXIMUM_BATCHED_TX_THRESHOLD) {
-            s_pendingBatchedTxAmountByDstChain[bridgeData.dstChainSelector] -= amountToSend;
-            s_pendingCCIPTransactionsByDstChain[bridgeData.dstChainSelector].pop();
-            BridgeTx[] memory bridgeTxs = new BridgeTx[](1);
-            bridgeTxs[0] = newBridgeTx;
-
-            bytes32 ccipMessageId = _sendTokenPayLink(
-                bridgeData.dstChainSelector,
-                fromToken,
-                amountToSend,
-                bridgeTxs
-            );
-            emit ConceroSettlementSent(ccipMessageId, msg.sender, bridgeData, batchedTxAmount);
+            _handleExcessTransactions(bridgeData, fromToken, amountToSend, conceroMessageId);
         }
+    }
+
+    function _handleBatchedTransactions(
+        address fromToken,
+        uint256 batchedTxAmount,
+        BridgeData memory bridgeData
+    ) internal {
+        bytes32[] memory pendingCCIPTransactionsByDstChain = s_pendingCCIPTransactionsByDstChain[
+            bridgeData.dstChainSelector
+        ];
+
+        BridgeTx[] memory bridgeTxs = new BridgeTx[](pendingCCIPTransactionsByDstChain.length);
+
+        for (uint256 i; i < pendingCCIPTransactionsByDstChain.length; ++i) {
+            bytes32 txId = pendingCCIPTransactionsByDstChain[i];
+            BridgeTx memory bridgeTx = s_pendingCCIPTransactions[txId];
+            bridgeTxs[i] = bridgeTx;
+        }
+
+        delete s_pendingCCIPTransactionsByDstChain[bridgeData.dstChainSelector];
+        s_pendingBatchedTxAmountByDstChain[bridgeData.dstChainSelector] = 0;
+
+        bytes32 ccipMessageId = _sendTokenPayLink(
+            bridgeData.dstChainSelector,
+            fromToken,
+            batchedTxAmount,
+            bridgeTxs
+        );
+        emit ConceroSettlementSent(ccipMessageId, msg.sender, bridgeData, batchedTxAmount);
+    }
+
+    function _handleExcessTransactions(
+        BridgeData memory bridgeData,
+        address fromToken,
+        uint256 amountToSend,
+        bytes32 conceroMessageId
+    ) internal {
+        s_pendingBatchedTxAmountByDstChain[bridgeData.dstChainSelector] -= amountToSend;
+        s_pendingCCIPTransactionsByDstChain[bridgeData.dstChainSelector].pop();
+
+        BridgeTx[] memory bridgeTxs = new BridgeTx[](1);
+        bridgeTxs[0] = s_pendingCCIPTransactions[conceroMessageId];
+
+        bytes32 ccipMessageId = _sendTokenPayLink(
+            bridgeData.dstChainSelector,
+            fromToken,
+            amountToSend,
+            bridgeTxs
+        );
+        emit ConceroSettlementSent(ccipMessageId, msg.sender, bridgeData, amountToSend);
     }
 
     /////////////////

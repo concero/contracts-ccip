@@ -143,6 +143,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
             s_pendingBatchedTxAmountByDstChain[bridgeData.dstChainSelector] -= amountToSend;
             s_pendingCCIPTransactionsByDstChain[bridgeData.dstChainSelector].pop();
             BridgeTx[] memory bridgeTxs = new BridgeTx[](1);
+            bridgeTxs[0] = newBridgeTx;
 
             bytes32 ccipMessageId = _sendTokenPayLink(
                 bridgeData.dstChainSelector,

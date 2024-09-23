@@ -139,7 +139,7 @@
       throw new Error('Not enough confirmations');
     }
 
-    const ethersId = ethers.id('ConceroBridgeSent(bytes32,address,address,uint8,uint256,uint64)');
+    const ethersId = ethers.id('ConceroBridgeSent(bytes32,uint8,uint256,uint64,address)');
     const logs = await provider.getLogs({
       address: srcContractAddress,
       topics: [ethersId, messageId],
@@ -152,7 +152,7 @@
     }
 
     const log = logs[0];
-    const abi = ['event ConceroBridgeSent(bytes32 indexed, address, address, uint8, uint256, uint64)'];
+    const abi = ['event ConceroBridgeSent(bytes32 indexed, uint8, uint256, uin64, address)'];
     const contract = new ethers.Interface(abi);
     const logData = {
       topics: [ethersId, log.topics[1]],

@@ -21,13 +21,51 @@ contract OrchestratorWrapper is Orchestrator {
     /*//////////////////////////////////////////////////////////////
                                  GETTER
     //////////////////////////////////////////////////////////////*/
-    //    function getLastCCIPFeeInLink(uint64 _dstChainSelector) external view returns (uint256) {
-    //        return s_lastCCIPFeeInLink[_dstChainSelector];
-    //    }
+    function getLastCCIPFeeInLink(uint64 _dstChainSelector) external view returns (uint256) {
+        return s_lastCCIPFeeInLink[_dstChainSelector];
+    }
 
     function getBridgeTxIdsPerChain(
         uint64 _dstChainSelector
     ) external view returns (bytes32[] memory) {
         return s_pendingSettlementTxsByDstChain[_dstChainSelector];
+    }
+    function getFunctionsFeeInUsdcDelegateCall(
+        uint64 _dstChainSelector
+    ) external returns (uint256) {
+        (bool success, bytes memory returnData) = i_concero.delegatecall(
+            abi.encodeWithSelector(
+                bytes4(keccak256("getFunctionsFeeInUsdc(uint64)")),
+                _dstChainSelector
+            )
+        );
+        require(success, "getFunctionsFeeInUsdc delegate call failed");
+        uint256 functionsFeeInUsdc = abi.decode(returnData, (uint256));
+        return functionsFeeInUsdc;
+    }
+
+    function getCcipFeeInUsdcDelegateCall(uint64 _dstChainSelector) external returns (uint256) {
+        (bool success, bytes memory returnData) = i_concero.delegatecall(
+            abi.encodeWithSelector(bytes4(keccak256("getCCIPFeeInUsdc(uint64)")), _dstChainSelector)
+        );
+        require(success, "getCCIPFeeInUsdc delegate call failed");
+        uint256 ccipFeeInUsdc = abi.decode(returnData, (uint256));
+        return ccipFeeInUsdc;
+    }
+
+    function getSrcTotalFeeInUSDCDelegateCall(
+        uint64 _dstChainSelector,
+        uint256 _amount
+    ) external returns (uint256) {
+        (bool success, bytes memory returnData) = i_concero.delegatecall(
+            abi.encodeWithSelector(
+                bytes4(keccak256("getSrcTotalFeeInUSDC(uint64,uint256)")),
+                _dstChainSelector,
+                _amount
+            )
+        );
+        require(success, "getSrcTotalFeeInUSDC delegate call failed");
+        uint256 srcTotalFeeInUsdc = abi.decode(returnData, (uint256));
+        return srcTotalFeeInUsdc;
     }
 }

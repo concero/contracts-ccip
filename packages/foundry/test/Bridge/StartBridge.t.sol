@@ -17,17 +17,28 @@ contract StartBridgeTest is BaseTest {
                                VARIABLES
     //////////////////////////////////////////////////////////////*/
     uint256 internal constant LIQUIDITY_PROVIDED = 100_000_000_000;
-    uint256 internal constant USER_FUNDS = 2_000_000_000;
+    uint256 internal constant USER_FUNDS = 1_000_000_000;
     uint256 internal constant USER_FUNDS_THRESHOLD_TXS = 1_200_000_000;
     uint256 internal constant USER_FUNDS_THRESHOLD_OVERFLOW = 7_001_000_000;
     uint256 internal constant MIN_BRIDGE_AMOUNT = 100_000_000;
     uint256 internal constant MAX_BRIDGE_AMOUNT = 100_000_000_000;
-    uint256 internal constant BATCHED_TX_THRESHOLD_AMOUNT = 6_500_000_000; // 6,500 USDC
+    uint256 internal constant BATCHED_TX_THRESHOLD = 5_000_000_000; // 5,000 USDC
+    uint16 internal constant CONCERO_FEE_FACTOR = 1000;
+    uint64 private constant HALF_DST_GAS = 600_000;
+    uint256 internal constant STANDARD_TOKEN_DECIMALS = 1 ether;
 
     address[] users;
     address user3 = makeAddr("user3");
     address user4 = makeAddr("user4");
     address user5 = makeAddr("user5");
+
+    /// @dev using this struct to get around stack too deep errors for ccipFee calculation test
+    struct FeeData {
+        uint256 totalFeeInUsdc;
+        uint256 functionsFeeInUsdc;
+        uint256 conceroFee;
+        uint256 messengerGasFeeInUsdc;
+    }
 
     /*//////////////////////////////////////////////////////////////
                                  SETUP
@@ -90,7 +101,7 @@ contract StartBridgeTest is BaseTest {
         }
 
         /// @dev assert s_pendingCCIPTransactionsByDstChain[_dstChainSelector] gets updated
-        assertEq(txIdCount, 3 - 1); // batched users - FINAL_SENDING_USER
+        assertEq(txIdCount, 5 - 1); // batched users - FINAL_SENDING_USER
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
 
@@ -121,7 +132,7 @@ contract StartBridgeTest is BaseTest {
             abi.encodeWithSignature("getBridgeTxIdsPerChain(uint64)", arbitrumChainSelector)
         );
         bytes32[] memory remainingBatchedTxIds = abi.decode(updatedReturnData, (bytes32[]));
-        assertEq(remainingBatchedTxIds.length, 2); // 2 left because we had 5 users, but hit the threshold at 3
+        assertEq(remainingBatchedTxIds.length, 0); // 2 left because we had 5 users, but hit the threshold at 3
 
         /// @dev assert lastCcipFeeInLink is correct
         (, bytes memory retData) = address(baseOrchestratorProxy).call(
@@ -133,186 +144,7 @@ contract StartBridgeTest is BaseTest {
         /// @dev assert that the EVM2EVMOnRamp.CCIPSendRequested event was emitted only once
         assertEq(eventCount, 1);
         /// @dev assert that the amount sent in the single tx was equal to the funds of the 3 users who got batched
-        assertEq(amountSent, 3 * USER_FUNDS);
-    }
-
-    function test_startBridge_below_max_threshold_success() public {
-        _dealUserFundsAndApprove();
-
-        uint256 txIdCount;
-
-        vm.recordLogs();
-        for (uint256 i; i < 2; ++i) {
-            _startBridge(users[i], USER_FUNDS, arbitrumChainSelector);
-
-            (, bytes memory updatedReturnData) = address(baseOrchestratorProxy).call(
-                abi.encodeWithSignature("getBridgeTxIdsPerChain(uint64)", arbitrumChainSelector)
-            );
-            bytes32[] memory updatedBatchedTxId = abi.decode(updatedReturnData, (bytes32[]));
-            uint256 updatedTxIdLength = updatedBatchedTxId.length;
-
-            if (updatedTxIdLength > txIdCount) txIdCount++;
-        }
-
-        /// @dev assert s_pendingCCIPTransactionsByDstChain[_dstChainSelector] gets updated
-        assertEq(txIdCount, 2); // batched users
-
-        for (uint256 i = 2; i < 4; ++i) {
-            _startBridge(users[i], USER_FUNDS_THRESHOLD_TXS, arbitrumChainSelector);
-
-            (, bytes memory updatedReturnData) = address(baseOrchestratorProxy).call(
-                abi.encodeWithSignature("getBridgeTxIdsPerChain(uint64)", arbitrumChainSelector)
-            );
-            bytes32[] memory updatedBatchedTxId = abi.decode(updatedReturnData, (bytes32[]));
-            uint256 updatedTxIdLength = updatedBatchedTxId.length;
-
-            if (updatedTxIdLength > txIdCount) txIdCount++;
-        }
-
-        /// @dev assert s_pendingCCIPTransactionsByDstChain[_dstChainSelector] gets updated
-        assertEq(txIdCount, 4 - 1); // batched users - final user
-
-        Vm.Log[] memory logs = vm.getRecordedLogs();
-
-        uint256 eventCount;
-        uint256 amountSent;
-        uint256 expectedLastCcipFee;
-        bytes32 eventSignature = keccak256(
-            "CCIPSendRequested((uint64,address,address,uint64,uint256,bool,uint64,address,uint256,bytes,(address,uint256)[],bytes[],bytes32))"
-        );
-
-        for (uint256 i = 0; i < logs.length; i++) {
-            if (logs[i].topics[0] == eventSignature) {
-                eventCount++;
-
-                Internal.EVM2EVMMessage memory message = abi.decode(
-                    logs[i].data,
-                    (Internal.EVM2EVMMessage)
-                );
-                Client.EVMTokenAmount[] memory tokenAmounts = message.tokenAmounts;
-
-                amountSent = tokenAmounts[0].amount;
-                expectedLastCcipFee = message.feeTokenAmount;
-            }
-        }
-
-        /// @dev assert that the pendingTxs for the chain we sent to are now 0
-        (, bytes memory updatedReturnData) = address(baseOrchestratorProxy).call(
-            abi.encodeWithSignature("getBridgeTxIdsPerChain(uint64)", arbitrumChainSelector)
-        );
-        bytes32[] memory remainingBatchedTxIds = abi.decode(updatedReturnData, (bytes32[]));
-        assertEq(remainingBatchedTxIds.length, 0);
-
-        /// @dev assert lastCcipFeeInLink is correct
-        (, bytes memory retData) = address(baseOrchestratorProxy).call(
-            abi.encodeWithSignature("getLastCCIPFeeInLink(uint64)", arbitrumChainSelector)
-        );
-        uint256 actualAmountLastCcipFee = abi.decode(retData, (uint256));
-        assertEq(expectedLastCcipFee, actualAmountLastCcipFee);
-
-        /// @dev assert that the EVM2EVMOnRamp.CCIPSendRequested event was emitted only once
-        assertEq(eventCount, 1);
-        /// @dev assert that the amount sent in the single tx was equal to the funds of the 3 users who got batched
-        assertEq(amountSent, (2 * USER_FUNDS) + (2 * USER_FUNDS_THRESHOLD_TXS));
-    }
-
-    function test_startBridge_above_max_threshold_success() public {
-        _dealUserFundsAndApprove();
-
-        uint256 txIdCount;
-
-        vm.recordLogs();
-        for (uint256 i; i < 2; ++i) {
-            _startBridge(users[i], USER_FUNDS, arbitrumChainSelector);
-
-            (, bytes memory updatedReturnData) = address(baseOrchestratorProxy).call(
-                abi.encodeWithSignature("getBridgeTxIdsPerChain(uint64)", arbitrumChainSelector)
-            );
-            bytes32[] memory updatedBatchedTxId = abi.decode(updatedReturnData, (bytes32[]));
-            uint256 updatedTxIdLength = updatedBatchedTxId.length;
-
-            if (updatedTxIdLength > txIdCount) txIdCount++;
-        }
-
-        /// @dev assert s_pendingCCIPTransactionsByDstChain[_dstChainSelector] gets updated
-        assertEq(txIdCount, 2); // batched users
-
-        {
-            deal(usdc, user5, USER_FUNDS_THRESHOLD_OVERFLOW);
-            vm.prank(user5);
-            IERC20(usdc).approve(address(baseOrchestratorProxy), USER_FUNDS_THRESHOLD_OVERFLOW);
-            _startBridge(user5, USER_FUNDS_THRESHOLD_OVERFLOW, arbitrumChainSelector);
-            (, bytes memory updatedReturnData) = address(baseOrchestratorProxy).call(
-                abi.encodeWithSignature("getBridgeTxIdsPerChain(uint64)", arbitrumChainSelector)
-            );
-            bytes32[] memory updatedBatchedTxId = abi.decode(updatedReturnData, (bytes32[]));
-            uint256 updatedTxIdLength = updatedBatchedTxId.length;
-
-            if (updatedTxIdLength > txIdCount) txIdCount++;
-        }
-
-        assertEq(txIdCount, 2); // batched users
-
-        for (uint256 i = 2; i < 4; ++i) {
-            _startBridge(users[i], USER_FUNDS_THRESHOLD_TXS, arbitrumChainSelector);
-
-            (, bytes memory updatedReturnData) = address(baseOrchestratorProxy).call(
-                abi.encodeWithSignature("getBridgeTxIdsPerChain(uint64)", arbitrumChainSelector)
-            );
-            bytes32[] memory updatedBatchedTxId = abi.decode(updatedReturnData, (bytes32[]));
-            uint256 updatedTxIdLength = updatedBatchedTxId.length;
-
-            if (updatedTxIdLength > txIdCount) txIdCount++;
-        }
-
-        /// @dev assert s_pendingCCIPTransactionsByDstChain[_dstChainSelector] gets updated
-        assertEq(txIdCount, 4 - 1); // batched users - final user
-
-        Vm.Log[] memory logs = vm.getRecordedLogs();
-
-        uint256 eventCount;
-        uint256 amountSent;
-        uint256 expectedLastCcipFee;
-        bytes32 eventSignature = keccak256(
-            "CCIPSendRequested((uint64,address,address,uint64,uint256,bool,uint64,address,uint256,bytes,(address,uint256)[],bytes[],bytes32))"
-        );
-
-        for (uint256 i = 0; i < logs.length; i++) {
-            if (logs[i].topics[0] == eventSignature) {
-                eventCount++;
-
-                Internal.EVM2EVMMessage memory message = abi.decode(
-                    logs[i].data,
-                    (Internal.EVM2EVMMessage)
-                );
-                Client.EVMTokenAmount[] memory tokenAmounts = message.tokenAmounts;
-
-                amountSent += tokenAmounts[0].amount;
-                expectedLastCcipFee = message.feeTokenAmount;
-            }
-        }
-
-        /// @dev assert that the pendingTxs for the chain we sent to are now 0
-        (, bytes memory updatedReturnData) = address(baseOrchestratorProxy).call(
-            abi.encodeWithSignature("getBridgeTxIdsPerChain(uint64)", arbitrumChainSelector)
-        );
-        bytes32[] memory remainingBatchedTxIds = abi.decode(updatedReturnData, (bytes32[]));
-        assertEq(remainingBatchedTxIds.length, 0);
-
-        /// @dev assert lastCcipFeeInLink is correct
-        (, bytes memory retData) = address(baseOrchestratorProxy).call(
-            abi.encodeWithSignature("getLastCCIPFeeInLink(uint64)", arbitrumChainSelector)
-        );
-        uint256 actualAmountLastCcipFee = abi.decode(retData, (uint256));
-        assertEq(expectedLastCcipFee, actualAmountLastCcipFee);
-
-        /// @dev assert that the EVM2EVMOnRamp.CCIPSendRequested event was emitted twice
-        assertEq(eventCount, 2);
-        /// @dev assert that the amount sent in both txs was equal to the batched and overflowed txs
-        assertEq(
-            amountSent,
-            (2 * USER_FUNDS) + (2 * USER_FUNDS_THRESHOLD_TXS) + USER_FUNDS_THRESHOLD_OVERFLOW
-        );
+        assertEq(amountSent, 5 * USER_FUNDS);
     }
 
     function test_startBridge_reverts_if_not_proxy(address _caller) public {
@@ -356,6 +188,40 @@ contract StartBridgeTest is BaseTest {
     }
 
     /*//////////////////////////////////////////////////////////////
+                            FEE CALCULATION
+    //////////////////////////////////////////////////////////////*/
+    function test_ccipFee_calculation(uint256 _amount) public {
+        /// @dev bound fuzzed _amount to realistic value
+        _amount = bound(_amount, MIN_BRIDGE_AMOUNT, MAX_BRIDGE_AMOUNT);
+
+        /// @dev get the lastCCIPFeeInUsdc
+        (, bytes memory lastCCIPFeeInUsdcData) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature("getCcipFeeInUsdcDelegateCall(uint64)", arbitrumChainSelector)
+        );
+        uint256 lastCCIPFeeInUsdc = abi.decode(lastCCIPFeeInUsdcData, (uint256));
+
+        /// @dev get all the fees bundled in a struct
+        FeeData memory feeData = _getFeeData(_amount);
+
+        console.log("Total fee in USDC:", feeData.totalFeeInUsdc);
+        console.log("Functions fee in USDC:", feeData.functionsFeeInUsdc);
+        console.log("Concero fee:", feeData.conceroFee);
+        console.log("Messenger gas fee in USDC:", feeData.messengerGasFeeInUsdc);
+        console.log("lastCCIPFeeInUsdc:", lastCCIPFeeInUsdc);
+
+        /// @dev calculate the fee
+        uint256 calculatedFee = feeData.totalFeeInUsdc -
+            feeData.functionsFeeInUsdc -
+            feeData.conceroFee -
+            feeData.messengerGasFeeInUsdc;
+
+        /// @dev assert the fee is expected
+        if (_amount >= BATCHED_TX_THRESHOLD) assertEq(calculatedFee, lastCCIPFeeInUsdc);
+        uint256 expectedFee = (lastCCIPFeeInUsdc * _amount) / BATCHED_TX_THRESHOLD;
+        assertEq(calculatedFee, expectedFee);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                  GETTER
     //////////////////////////////////////////////////////////////*/
     function _getPendingTxsLengthPerChain(uint64 _dstChainSelector) internal returns (uint256) {
@@ -366,14 +232,71 @@ contract StartBridgeTest is BaseTest {
         return batchedTxs.length;
     }
 
+    function _getFeeData(uint256 _amount) internal returns (FeeData memory) {
+        FeeData memory feeData;
+
+        /// @dev get the totalFeeInUsdc
+        (, bytes memory totalFeeInUsdcData) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature(
+                "getSrcTotalFeeInUSDCDelegateCall(uint64,uint256)",
+                arbitrumChainSelector,
+                _amount
+            )
+        );
+        feeData.totalFeeInUsdc = abi.decode(totalFeeInUsdcData, (uint256));
+
+        /// @dev get the functionsFeeInUsdc
+        (, bytes memory functionsFeeInUsdcData) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature(
+                "getFunctionsFeeInUsdcDelegateCall(uint64)",
+                arbitrumChainSelector
+            )
+        );
+        feeData.functionsFeeInUsdc = abi.decode(functionsFeeInUsdcData, (uint256));
+
+        /// @dev calculate the conceroFee
+        feeData.conceroFee = _amount / CONCERO_FEE_FACTOR;
+
+        /// @dev get the messengerGasFeeInUsdc
+        feeData.messengerGasFeeInUsdc = _getMessengerGasFeeInUsdc();
+
+        return feeData;
+    }
+
+    function _getMessengerGasFeeInUsdc() internal returns (uint256) {
+        /// @dev get the lastGasPrices
+        (, bytes memory dstGasPriceData) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature("s_lastGasPrices(uint64)", arbitrumChainSelector)
+        );
+        uint256 dstGasPrice = abi.decode(dstGasPriceData, (uint256));
+
+        (, bytes memory srcGasPriceData) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature("s_lastGasPrices(uint64)", baseChainSelector)
+        );
+        uint256 srcGasPrice = abi.decode(srcGasPriceData, (uint256));
+
+        uint256 messengerDstGasInNative = HALF_DST_GAS * dstGasPrice;
+        uint256 messengerSrcGasInNative = HALF_DST_GAS * srcGasPrice;
+
+        /// @dev get the latestNativeUsdcRate
+        (, bytes memory latestNativeUsdcRateData) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature("s_latestNativeUsdcRate()")
+        );
+        uint256 latestNativeUsdcRate = abi.decode(latestNativeUsdcRateData, (uint256));
+
+        return
+            ((messengerDstGasInNative + messengerSrcGasInNative) * latestNativeUsdcRate) /
+            STANDARD_TOKEN_DECIMALS;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 UTILITY
     //////////////////////////////////////////////////////////////*/
     function _dealUserFundsAndApprove() internal {
         for (uint256 i; i < users.length; ++i) {
-            deal(usdc, users[i], USER_FUNDS);
+            deal(usdc, users[i], USER_FUNDS * 10);
             vm.prank(users[i]);
-            IERC20(usdc).approve(address(baseOrchestratorProxy), USER_FUNDS);
+            IERC20(usdc).approve(address(baseOrchestratorProxy), type(uint256).max);
         }
     }
 }

@@ -41,15 +41,15 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     ///IMMUTABLE///
     ///////////////
     ///@notice the address of Functions router
-    address immutable i_functionsRouter;
+    address internal immutable i_functionsRouter;
     ///@notice variable to store the DexSwap address
-    address immutable i_dexSwap;
+    address internal immutable i_dexSwap;
     ///@notice variable to store the Concero address
-    address immutable i_concero;
+    address internal immutable i_concero;
     ///@notice variable to store the ConceroPool address
-    address immutable i_pool;
+    address internal immutable i_pool;
     ///@notice variable to store the immutable Proxy Address
-    address immutable i_proxy;
+    address internal immutable i_proxy;
     ///@notice ID of the deployed chain on getChain() function
     Chain internal immutable i_chainIndex;
 
@@ -171,6 +171,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         );
 
         if (!success) revert Orchestrator_UnableToCompleteDelegateCall(data);
+        // @audit potential precision loss bug
         return _convertToUSDCDecimals(abi.decode(data, (uint256)));
     }
 

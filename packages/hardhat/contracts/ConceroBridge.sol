@@ -25,9 +25,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     ///////////////
     uint16 internal constant CONCERO_FEE_FACTOR = 1000;
     uint64 private constant HALF_DST_GAS = 600_000;
-    uint256 internal constant MIN_BATCH_AMOUNT = 6_000_000_000; // 6,000 USDC
-    uint256 internal constant MAX_BATCH_AMOUNT = 7_000_000_000; // 7,000 USDC
-    uint256 internal constant CCIP_FEE_IN_USDC = 20_000; // 2c worth of USDC
+    uint256 internal constant BATCHED_TX_THRESHOLD = 5_000_000_000; // 5,000 USDC
 
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
@@ -106,7 +104,9 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         uint256 batchedTxAmount = s_pendingBatchedTxAmountByDstChain[bridgeData.dstChainSelector];
 
         _sendUnconfirmedTX(conceroMessageId, msg.sender, bridgeData, amountToSend, dstSwapData);
-        _handleBatch(batchedTxAmount, bridgeData, fromToken, amountToSend, conceroMessageId);
+
+        if (batchedTxAmount >= BATCHED_TX_THRESHOLD)
+            _sendBatchViaSettlement(fromToken, batchedTxAmount, bridgeData.dstChainSelector);
 
         emit ConceroBridgeSent(
             conceroMessageId,
@@ -156,19 +156,17 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
      * @notice Function to get the total amount of CCIP fees in Link
      * @param _dstChainSelector the destination blockchain chain selector
      */
-    //    function getCCIPFeeInLink(uint64 _dstChainSelector) public view returns (uint256) {
-    //        return s_lastCCIPFeeInLink[_dstChainSelector];
-    //    }
+    function getCCIPFeeInLink(uint64 _dstChainSelector) public view returns (uint256) {
+        return s_lastCCIPFeeInLink[_dstChainSelector];
+    }
 
     /**
      * @notice Function to get the total amount of CCIP fees in USDC
      * @param _dstChainSelector the destination blockchain chain selector
      */
     function getCCIPFeeInUsdc(uint64 _dstChainSelector) public view returns (uint256) {
-        //        uint256 ccipFeeInLink = getCCIPFeeInLink(_dstChainSelector);
-        //        return (ccipFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
-
-        return CCIP_FEE_IN_USDC;
+        uint256 ccipFeeInLink = getCCIPFeeInLink(_dstChainSelector);
+        return (ccipFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
     }
 
     function getSrcTotalFeeInUSDC(
@@ -182,27 +180,13 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     ///// INTERNAl FUNCTIONS ///////
     ////////////////////////////////
 
-    function _handleBatch(
-        uint256 batchedTxAmount,
-        BridgeData memory bridgeData,
-        address fromToken,
-        uint256 amountToSend,
-        bytes32 conceroMessageId
-    ) internal {
-        if (batchedTxAmount >= MIN_BATCH_AMOUNT && batchedTxAmount <= MAX_BATCH_AMOUNT) {
-            _sendBatchViaSettlement(fromToken, batchedTxAmount, bridgeData);
-        } else if (batchedTxAmount > MAX_BATCH_AMOUNT) {
-            _sendExcessViaSettlement(bridgeData, fromToken, amountToSend, conceroMessageId);
-        }
-    }
-
     function _sendBatchViaSettlement(
         address fromToken,
         uint256 batchedTxAmount,
-        BridgeData memory bridgeData
+        uint64 dstChainSelector
     ) internal {
         bytes32[] memory pendingCCIPTransactionsByDstChain = s_pendingSettlementTxsByDstChain[
-            bridgeData.dstChainSelector
+            dstChainSelector
         ];
 
         BridgeTx[] memory bridgeTxs = new BridgeTx[](pendingCCIPTransactionsByDstChain.length);
@@ -213,37 +197,16 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
             bridgeTxs[i] = bridgeTx;
         }
 
-        delete s_pendingSettlementTxsByDstChain[bridgeData.dstChainSelector];
-        s_pendingBatchedTxAmountByDstChain[bridgeData.dstChainSelector] = 0;
+        delete s_pendingSettlementTxsByDstChain[dstChainSelector];
+        s_pendingBatchedTxAmountByDstChain[dstChainSelector] = 0;
 
         bytes32 ccipMessageId = _sendTokenPayLink(
-            bridgeData.dstChainSelector,
+            dstChainSelector,
             fromToken,
             batchedTxAmount,
             bridgeTxs
         );
         emit ConceroSettlementSent(ccipMessageId, batchedTxAmount);
-    }
-
-    function _sendExcessViaSettlement(
-        BridgeData memory bridgeData,
-        address fromToken,
-        uint256 amountToSend,
-        bytes32 conceroMessageId
-    ) internal {
-        s_pendingBatchedTxAmountByDstChain[bridgeData.dstChainSelector] -= amountToSend;
-        s_pendingSettlementTxsByDstChain[bridgeData.dstChainSelector].pop();
-
-        BridgeTx[] memory bridgeTxs = new BridgeTx[](1);
-        bridgeTxs[0] = s_pendingTxsBySettlementId[conceroMessageId];
-
-        bytes32 ccipMessageId = _sendTokenPayLink(
-            bridgeData.dstChainSelector,
-            fromToken,
-            amountToSend,
-            bridgeTxs
-        );
-        emit ConceroSettlementSent(ccipMessageId, amountToSend);
     }
 
     /**
@@ -259,8 +222,8 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
 
         // @notice cl ccip fee
-        /// Replaced with 2c constant CCIP_FEE_IN_USDC
-        // uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(dstChainSelector);
+        uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(dstChainSelector);
+        uint256 adjustedCcipFeeInUsdc = _calculateProportionalCCIPFee(ccipFeeInUsdc, amount);
 
         // @notice concero fee
         uint256 conceroFee = amount / CONCERO_FEE_FACTOR;
@@ -271,6 +234,19 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         uint256 messengerGasFeeInUsdc = ((messengerDstGasInNative + messengerSrcGasInNative) *
             s_latestNativeUsdcRate) / STANDARD_TOKEN_DECIMALS;
 
-        return (functionsFeeInUsdc + CCIP_FEE_IN_USDC + conceroFee + messengerGasFeeInUsdc);
+        return (functionsFeeInUsdc + adjustedCcipFeeInUsdc + conceroFee + messengerGasFeeInUsdc);
+    }
+
+    /**
+     * @notice Function to calculate the proportional CCIP fee based on the amount
+     * @param ccipFeeInUsdc the total CCIP fee for a full batch (5000 USDC)
+     * @param amount the amount of USDC being transferred
+     */
+    function _calculateProportionalCCIPFee(
+        uint256 ccipFeeInUsdc,
+        uint256 amount
+    ) internal pure returns (uint256) {
+        if (amount >= BATCHED_TX_THRESHOLD) return ccipFeeInUsdc;
+        return (ccipFeeInUsdc * amount) / BATCHED_TX_THRESHOLD;
     }
 }

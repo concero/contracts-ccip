@@ -55,5 +55,5 @@ abstract contract Storage is ReentrancyGuard, IStorage {
     mapping(bytes32 bridgeTxId => BridgeTx pendingTx) public s_pendingTxsBySettlementId;
 
     ///@notice Bridge: mapping to track last CCIP tx fee in LINK for each destination chain
-    //    mapping(uint64 dstChainSelector => uint256 lastCCIPFeeInLink) internal s_lastCCIPFeeInLink;
+    mapping(uint64 dstChainSelector => uint256 lastCCIPFeeInLink) internal s_lastCCIPFeeInLink;
 }

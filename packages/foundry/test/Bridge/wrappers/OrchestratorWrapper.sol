@@ -21,11 +21,13 @@ contract OrchestratorWrapper is Orchestrator {
     /*//////////////////////////////////////////////////////////////
                                  GETTER
     //////////////////////////////////////////////////////////////*/
-    function getLastCCIPFeeInLink(uint64 _dstChainSelector) external view returns (uint256) {
-        return s_lastCCIPFeeInLink[_dstChainSelector];
-    }
+    //    function getLastCCIPFeeInLink(uint64 _dstChainSelector) external view returns (uint256) {
+    //        return s_lastCCIPFeeInLink[_dstChainSelector];
+    //    }
 
-    function getBridgeTxIdsPerChain(uint64 _dstChainSelector) external view returns (bytes32[] memory) {
-        return s_pendingCCIPTransactionsByDstChain[_dstChainSelector];
+    function getBridgeTxIdsPerChain(
+        uint64 _dstChainSelector
+    ) external view returns (bytes32[] memory) {
+        return s_pendingSettlementTxsByDstChain[_dstChainSelector];
     }
 }

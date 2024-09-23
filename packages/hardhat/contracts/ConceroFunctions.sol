@@ -258,8 +258,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         );
     }
 
-    //todo: Internal function sendUnconfirmedTX is not prefixed with underscore
-    function sendUnconfirmedTX(
+    function _sendUnconfirmedTX(
         bytes32 messageId,
         address sender,
         BridgeData memory bridgeData,

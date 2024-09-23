@@ -39,7 +39,6 @@ interface IStorage {
         bytes32 ccipMessageId;
     }
 
-    ///@notice CCIP Data to Bridge
     struct BridgeData {
         CCIPToken tokenType;
         uint256 amount;

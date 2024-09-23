@@ -91,7 +91,7 @@ contract ConceroCCIP is ConceroFunctions {
         );
 
         uint256 fees = i_ccipRouter.getFee(_destinationChainSelector, evm2AnyMessage);
-        s_lastCCIPFeeInLink[_destinationChainSelector] = fees;
+        //        s_lastCCIPFeeInLink[_destinationChainSelector] = fees;
 
         i_linkToken.approve(address(i_ccipRouter), fees);
         IERC20(_token).approve(address(i_ccipRouter), _amount);

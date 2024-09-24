@@ -33,6 +33,10 @@ contract OrchestratorWrapper is Orchestrator {
         s_latestNativeUsdcRate = _latestRate;
     }
 
+    function setLatestLinkUsdcRate(uint256 _latestRate) external {
+        s_latestLinkUsdcRate = _latestRate;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                  GETTER
     //////////////////////////////////////////////////////////////*/

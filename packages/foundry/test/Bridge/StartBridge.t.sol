@@ -188,9 +188,10 @@ contract StartBridgeTest is BaseTest {
     /*//////////////////////////////////////////////////////////////
                             FEE CALCULATION
     //////////////////////////////////////////////////////////////*/
-    function test_ccipFee_calculation(uint256 _amount) public {
+    function test_ccipFee_calculation_amount_higher_than_threshold(uint256 _amount) public {
         /// @dev bound fuzzed _amount to realistic value
-        _amount = bound(_amount, MIN_BRIDGE_AMOUNT, MAX_BRIDGE_AMOUNT);
+        _amount = bound(_amount, BATCHED_TX_THRESHOLD, MAX_BRIDGE_AMOUNT);
+        _setStorageVars();
 
         /// @dev get the lastCCIPFeeInUsdc
         (, bytes memory lastCCIPFeeInUsdcData) = address(baseOrchestratorProxy).call(
@@ -201,11 +202,29 @@ contract StartBridgeTest is BaseTest {
         /// @dev get all the fees bundled in a struct
         FeeData memory feeData = _getFeeData(_amount);
 
-        console.log("Total fee in USDC:", feeData.totalFeeInUsdc);
-        console.log("Functions fee in USDC:", feeData.functionsFeeInUsdc);
-        console.log("Concero fee:", feeData.conceroFee);
-        console.log("Messenger gas fee in USDC:", feeData.messengerGasFeeInUsdc);
-        console.log("lastCCIPFeeInUsdc:", lastCCIPFeeInUsdc);
+        /// @dev calculate the fee
+        uint256 calculatedFee = feeData.totalFeeInUsdc -
+            feeData.functionsFeeInUsdc -
+            feeData.conceroFee -
+            feeData.messengerGasFeeInUsdc;
+
+        /// @dev assert the fee is expected
+        assertEq(calculatedFee, lastCCIPFeeInUsdc);
+    }
+
+    function test_ccipFee_calculation_amount_lower_than_threshold(uint256 _amount) public {
+        /// @dev bound fuzzed _amount to realistic value
+        _amount = bound(_amount, MIN_BRIDGE_AMOUNT, BATCHED_TX_THRESHOLD);
+        _setStorageVars();
+
+        /// @dev get the lastCCIPFeeInUsdc
+        (, bytes memory lastCCIPFeeInUsdcData) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature("getCcipFeeInUsdcDelegateCall(uint64)", arbitrumChainSelector)
+        );
+        uint256 lastCCIPFeeInUsdc = abi.decode(lastCCIPFeeInUsdcData, (uint256));
+
+        /// @dev get all the fees bundled in a struct
+        FeeData memory feeData = _getFeeData(_amount);
 
         /// @dev calculate the fee
         uint256 calculatedFee = feeData.totalFeeInUsdc -
@@ -214,14 +233,12 @@ contract StartBridgeTest is BaseTest {
             feeData.messengerGasFeeInUsdc;
 
         /// @dev assert the fee is expected
-        if (_amount >= BATCHED_TX_THRESHOLD) assertEq(calculatedFee, lastCCIPFeeInUsdc);
         uint256 expectedFee = (lastCCIPFeeInUsdc * _amount) / BATCHED_TX_THRESHOLD;
         assertEq(calculatedFee, expectedFee);
     }
 
-    function test_setters() public {
-        // Go to Concero address on Base 15971525489660198786
-        // 0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d
+    function _setStorageVars() internal {
+        /// @dev used cast call on the current mainnet infrastructure to get values
         // cast call 0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d "s_lastGasPrices(uint64)" 4949039107694359620 --rpc-url https://mainnet.base.org
         // 10000000
         // cast call 0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d "s_lastGasPrices(uint64)" 15971525489660198786 --rpc-url https://mainnet.base.org
@@ -246,10 +263,6 @@ contract StartBridgeTest is BaseTest {
         );
         require(s3, "setLatestNativeUsdcRate failed");
 
-        uint256 messengerFee = _getMessengerGasFeeInUsdc();
-        console.log("messengerFee:", messengerFee);
-
-        //
         // cast call 0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d "clfPremiumFees(uint64)" 4949039107694359620 --rpc-url https://mainnet.base.org
         // 20000000000000000
         vm.prank(deployer);
@@ -261,7 +274,7 @@ contract StartBridgeTest is BaseTest {
             )
         );
         require(s4, "setClfPremiumFees failed");
-        //
+
         // cast call 0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d "clfPremiumFees(uint64)" 15971525489660198786 --rpc-url https://mainnet.base.org
         // 60000000000000000
         vm.prank(deployer);
@@ -284,19 +297,12 @@ contract StartBridgeTest is BaseTest {
         );
         require(s6, "setLastCCIPFeeInLink failed");
 
-        /// @dev get the last CCIP fee in LINK that we just set
-        (, bytes memory lastCCIPFeeInLinkData) = address(baseOrchestratorProxy).call(
-            abi.encodeWithSignature("getLastCCIPFeeInLink(uint64)", arbitrumChainSelector)
+        // cast call 0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d "s_latestLinkUsdcRate()" --rpc-url https://mainnet.base.org
+        // 11491601885989307360
+        (bool s7, ) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature("setLatestLinkUsdcRate(uint256)", 11491601885989307360)
         );
-        uint256 lastCCIPFeeInLink = abi.decode(lastCCIPFeeInLinkData, (uint256));
-        console.log("lastCCIPFeeInLink:", lastCCIPFeeInLink);
-
-        /// @dev get the lastCCIPFeeInUsdc
-        (, bytes memory lastCCIPFeeInUsdcData) = address(baseOrchestratorProxy).call(
-            abi.encodeWithSignature("getCcipFeeInUsdcDelegateCall(uint64)", arbitrumChainSelector)
-        );
-        uint256 lastCCIPFeeInUsdc = abi.decode(lastCCIPFeeInUsdcData, (uint256));
-        console.log("lastCCIPFeeInUsdc:", lastCCIPFeeInUsdc);
+        require(s7, "setLatestLinkUsdcRate failed");
     }
 
     /*//////////////////////////////////////////////////////////////

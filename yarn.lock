@@ -2661,7 +2661,7 @@
     "@tanstack/query-core" "4.36.1"
     use-sync-external-store "^1.2.0"
 
-"@tenderly/api-client@^1.0.0":
+"@tenderly/api-client@^1.0.0", "@tenderly/api-client@^1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@tenderly/api-client/-/api-client-1.0.1.tgz#0238bf5cc48e9a87a8f4b4c4a13743aab8721ea8"
   integrity sha512-u/982299rccyvkuGuyM93AxnGXFHpIs8ZozD+E8gXHIRxLPyz/rZW/mjrcOGW9EBJwCvimVpLKcdDTKQ+DJTlQ==

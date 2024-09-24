@@ -19,6 +19,21 @@ contract OrchestratorWrapper is Orchestrator {
     ) Orchestrator(_functionsRouter, _dexSwap, _concero, _pool, _proxy, _chainIndex, _messengers) {}
 
     /*//////////////////////////////////////////////////////////////
+                                 SETTER
+    //////////////////////////////////////////////////////////////*/
+    function setLastCCIPFeeInLink(uint64 _dstChainSelector, uint256 _lastFeeInLink) external {
+        s_lastCCIPFeeInLink[_dstChainSelector] = _lastFeeInLink;
+    }
+
+    function setLastGasPrices(uint64 _chainSelector, uint256 _lastGasPrice) external {
+        s_lastGasPrices[_chainSelector] = _lastGasPrice;
+    }
+
+    function setLatestNativeUsdcRate(uint256 _latestRate) external {
+        s_latestNativeUsdcRate = _latestRate;
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                  GETTER
     //////////////////////////////////////////////////////////////*/
     function getLastCCIPFeeInLink(uint64 _dstChainSelector) external view returns (uint256) {
@@ -30,6 +45,7 @@ contract OrchestratorWrapper is Orchestrator {
     ) external view returns (bytes32[] memory) {
         return s_pendingSettlementTxsByDstChain[_dstChainSelector];
     }
+
     function getFunctionsFeeInUsdcDelegateCall(
         uint64 _dstChainSelector
     ) external returns (uint256) {
@@ -46,7 +62,7 @@ contract OrchestratorWrapper is Orchestrator {
 
     function getCcipFeeInUsdcDelegateCall(uint64 _dstChainSelector) external returns (uint256) {
         (bool success, bytes memory returnData) = i_concero.delegatecall(
-            abi.encodeWithSelector(bytes4(keccak256("getCCIPFeeInUsdc(uint64)")), _dstChainSelector)
+            abi.encodeWithSignature("getCCIPFeeInUsdc(uint64)", _dstChainSelector)
         );
         require(success, "getCCIPFeeInUsdc delegate call failed");
         uint256 ccipFeeInUsdc = abi.decode(returnData, (uint256));

@@ -18,8 +18,6 @@ contract StartBridgeTest is BaseTest {
     //////////////////////////////////////////////////////////////*/
     uint256 internal constant LIQUIDITY_PROVIDED = 100_000_000_000;
     uint256 internal constant USER_FUNDS = 1_000_000_000;
-    uint256 internal constant USER_FUNDS_THRESHOLD_TXS = 1_200_000_000;
-    uint256 internal constant USER_FUNDS_THRESHOLD_OVERFLOW = 7_001_000_000;
     uint256 internal constant MIN_BRIDGE_AMOUNT = 100_000_000;
     uint256 internal constant MAX_BRIDGE_AMOUNT = 100_000_000_000;
     uint256 internal constant BATCHED_TX_THRESHOLD = 5_000_000_000; // 5,000 USDC
@@ -132,7 +130,7 @@ contract StartBridgeTest is BaseTest {
             abi.encodeWithSignature("getBridgeTxIdsPerChain(uint64)", arbitrumChainSelector)
         );
         bytes32[] memory remainingBatchedTxIds = abi.decode(updatedReturnData, (bytes32[]));
-        assertEq(remainingBatchedTxIds.length, 0); // 2 left because we had 5 users, but hit the threshold at 3
+        assertEq(remainingBatchedTxIds.length, 0);
 
         /// @dev assert lastCcipFeeInLink is correct
         (, bytes memory retData) = address(baseOrchestratorProxy).call(
@@ -143,7 +141,7 @@ contract StartBridgeTest is BaseTest {
 
         /// @dev assert that the EVM2EVMOnRamp.CCIPSendRequested event was emitted only once
         assertEq(eventCount, 1);
-        /// @dev assert that the amount sent in the single tx was equal to the funds of the 3 users who got batched
+        /// @dev assert that the amount sent in the single tx was equal to the funds of the 5 users who got batched
         assertEq(amountSent, 5 * USER_FUNDS);
     }
 
@@ -219,6 +217,86 @@ contract StartBridgeTest is BaseTest {
         if (_amount >= BATCHED_TX_THRESHOLD) assertEq(calculatedFee, lastCCIPFeeInUsdc);
         uint256 expectedFee = (lastCCIPFeeInUsdc * _amount) / BATCHED_TX_THRESHOLD;
         assertEq(calculatedFee, expectedFee);
+    }
+
+    function test_setters() public {
+        // Go to Concero address on Base 15971525489660198786
+        // 0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d
+        // cast call 0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d "s_lastGasPrices(uint64)" 4949039107694359620 --rpc-url https://mainnet.base.org
+        // 10000000
+        // cast call 0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d "s_lastGasPrices(uint64)" 15971525489660198786 --rpc-url https://mainnet.base.org
+        // 7426472
+        /// @dev set the lastGasPrices
+        (bool s1, ) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature(
+                "setLastGasPrices(uint64,uint256)",
+                arbitrumChainSelector,
+                10000000
+            )
+        );
+        require(s1, "setLastGasPrices failed");
+        (bool s2, ) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature("setLastGasPrices(uint64,uint256)", baseChainSelector, 7426472)
+        );
+        require(s2, "setLastGasPrices failed");
+        // cast call 0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d "s_latestNativeUsdcRate()" --rpc-url https://mainnet.base.org
+        // 2648148683069102878667
+        (bool s3, ) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature("setLatestNativeUsdcRate(uint256)", 2648148683069102878667)
+        );
+        require(s3, "setLatestNativeUsdcRate failed");
+
+        uint256 messengerFee = _getMessengerGasFeeInUsdc();
+        console.log("messengerFee:", messengerFee);
+
+        //
+        // cast call 0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d "clfPremiumFees(uint64)" 4949039107694359620 --rpc-url https://mainnet.base.org
+        // 20000000000000000
+        vm.prank(deployer);
+        (bool s4, ) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature(
+                "setClfPremiumFees(uint64,uint256)",
+                arbitrumChainSelector,
+                20000000000000000
+            )
+        );
+        require(s4, "setClfPremiumFees failed");
+        //
+        // cast call 0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d "clfPremiumFees(uint64)" 15971525489660198786 --rpc-url https://mainnet.base.org
+        // 60000000000000000
+        vm.prank(deployer);
+        (bool s5, ) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature(
+                "setClfPremiumFees(uint64,uint256)",
+                baseChainSelector,
+                60000000000000000
+            )
+        );
+        require(s5, "setClfPremiumFees failed");
+
+        /// @dev set the last CCIP fee in LINK
+        (bool s6, ) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature(
+                "setLastCCIPFeeInLink(uint64,uint256)",
+                arbitrumChainSelector,
+                1e18
+            )
+        );
+        require(s6, "setLastCCIPFeeInLink failed");
+
+        /// @dev get the last CCIP fee in LINK that we just set
+        (, bytes memory lastCCIPFeeInLinkData) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature("getLastCCIPFeeInLink(uint64)", arbitrumChainSelector)
+        );
+        uint256 lastCCIPFeeInLink = abi.decode(lastCCIPFeeInLinkData, (uint256));
+        console.log("lastCCIPFeeInLink:", lastCCIPFeeInLink);
+
+        /// @dev get the lastCCIPFeeInUsdc
+        (, bytes memory lastCCIPFeeInUsdcData) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature("getCcipFeeInUsdcDelegateCall(uint64)", arbitrumChainSelector)
+        );
+        uint256 lastCCIPFeeInUsdc = abi.decode(lastCCIPFeeInUsdcData, (uint256));
+        console.log("lastCCIPFeeInUsdc:", lastCCIPFeeInUsdc);
     }
 
     /*//////////////////////////////////////////////////////////////

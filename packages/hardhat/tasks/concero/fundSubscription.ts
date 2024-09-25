@@ -1,14 +1,15 @@
 import { encodeAbiParameters, formatUnits, getContract } from "viem";
 import functionsRouterAbi from "@chainlink/contracts/abi/v0.8/FunctionsRouter.json";
 import linkTokenAbi from "@chainlink/contracts/abi/v0.8/LinkToken.json";
-import { getClients } from "../utils/getViemClients";
 import { CNetwork } from "../../types/CNetwork";
 import log from "../../utils/log";
+import { viemReceiptConfig } from "../../constants";
+import { getFallbackClients } from "../../utils";
 
 export async function fundSubscription(selectedChains: CNetwork[]) {
   for (const chain of selectedChains) {
     const { linkToken, functionsRouter, functionsSubIds, viemChain, url, name } = chain;
-    const { walletClient, publicClient } = getClients(viemChain, url);
+    const { walletClient, publicClient } = getFallbackClients(chain);
     // const contract = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`);
     // console.log(`Checking subscription for ${contract} on ${name}`);
 
@@ -32,7 +33,7 @@ export async function fundSubscription(selectedChains: CNetwork[]) {
       const encodedData = encodeAbiParameters([{ type: "uint64", name: "subscriptionId" }], [functionsSubIds[0]]);
 
       const hash = await linkTokenContract.write.transferAndCall([functionsRouter, amountToFund, encodedData]);
-      const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ hash });
+      const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({ ...viemReceiptConfig, hash });
       log(
         `Funded Sub ${functionsSubIds[0]} with ${formatUnits(amountToFund, 18)} LINK. Tx Hash: ${hash} Gas used: ${cumulativeGasUsed.toString()}`,
         "fundSubscription",

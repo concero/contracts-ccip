@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
+/**
+ * @title Security Reporting
+ * @notice If you discover any security vulnerabilities, please report them responsibly.
+ * @contact email: security@concero.io
+ */
 pragma solidity 0.8.20;
 
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
@@ -72,6 +77,14 @@ contract ConceroCCIP is ConceroFunctions {
     ///////////////////////////Functions///////////////////////////
     ///////////////////////////////////////////////////////////////
 
+    /**
+     * @notice Sends USDC to the destination chain using CCIP
+     * @param _destinationChainSelector The destination chain selector
+     * @param _token the token to be send
+     * @param _amount the amount of tokens to ben send
+     * @param _receiver the receiver address
+     * @param _lpFee the fee for Liquidity Providers
+     */
     function _sendTokenPayLink(
         uint64 _destinationChainSelector,
         address _token,
@@ -99,6 +112,14 @@ contract ConceroCCIP is ConceroFunctions {
         messageId = i_ccipRouter.ccipSend(_destinationChainSelector, evm2AnyMessage);
     }
 
+    /**
+     * @notice Chainlink CCIP helper function to build the EVM2AnyMessage
+     * @param _token the token to be send
+     * @param _amount the amount of tokens to ben send
+     * @param _receiver the receiver address
+     * @param _lpFee the fee for Liquidity Providers
+     * @param _destinationChainSelector The destination chain selector
+     */
     function _buildCCIPMessage(
         address _token,
         uint256 _amount,

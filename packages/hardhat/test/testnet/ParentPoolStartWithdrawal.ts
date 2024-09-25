@@ -1,53 +1,35 @@
 import "@nomicfoundation/hardhat-chai-matchers";
-import { WalletClient } from "viem/clients/createWalletClient";
-import { HttpTransport } from "viem/clients/transports/http";
-import { Chain } from "viem/types/chain";
-import type { Account } from "viem/accounts/types";
-import { RpcSchema } from "viem/types/eip1193";
-import { privateKeyToAccount } from "viem/accounts";
-import { Address, createPublicClient, createWalletClient, PrivateKeyAccount } from "viem";
-import { PublicClient } from "viem/clients/createPublicClient";
-import { abi as ParentPoolAbi } from "../../artifacts/contracts/ConceroParentPool.sol/ConceroParentPool.json";
-import { chainsMap } from "../utils/chainsMap";
+import { Address, parseUnits } from "viem";
+import { abi as ParentPoolAbi } from "../../artifacts/contracts/ParentPool.sol/ParentPool.json";
 import { approve } from "../utils/approve";
+import { getFallbackClients } from "../../utils";
+import { cNetworks } from "../../constants";
 
-const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
-const lpAmount = "900000000000000000";
-const lpTokenAddress = process.env.LPTOKEN_BASE_SEPOLIA as Address;
-const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
+const fromChain = cNetworks.baseSepolia;
+const lpAmount = parseUnits("1", 18);
+const lpTokenAddress = process.env.LPTOKEN_BASE_SEPOLIA;
+const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA;
 
 describe("start withdrawal usdc from parent pool\n", () => {
-  let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
-    chain: chainsMap[srcChainSelector].viemChain,
-    transport: chainsMap[srcChainSelector].viemTransport,
-  });
-
-  const viemAccount: PrivateKeyAccount = privateKeyToAccount(("0x" + process.env.DEPLOYER_PRIVATE_KEY) as `0x${string}`);
-  const walletClient: WalletClient<HttpTransport, Chain, Account, RpcSchema> = createWalletClient({
-    chain: chainsMap[srcChainSelector].viemChain,
-    transport: chainsMap[srcChainSelector].viemTransport,
-    account: viemAccount,
-  });
+  const { walletClient, publicClient } = getFallbackClients(fromChain);
 
   it("should start withdraw usdc from pool", async () => {
-    await approve(lpTokenAddress, poolAddress, BigInt(lpAmount), walletClient, srcPublicClient);
+    await approve(lpTokenAddress, poolAddress, lpAmount, walletClient, publicClient);
 
     const startWithdrawalHash = await walletClient.writeContract({
       abi: ParentPoolAbi,
       functionName: "startWithdrawal",
       address: poolAddress as Address,
-      args: [BigInt(lpAmount)],
+      args: [lpAmount],
       gas: 3_000_000n,
     });
 
-    const { status, logs } = await srcPublicClient.waitForTransactionReceipt({ hash: startWithdrawalHash });
-
-    console.log("transactionHash: ", startWithdrawalHash);
+    const { status } = await publicClient.waitForTransactionReceipt({ hash: startWithdrawalHash });
 
     if (status === "reverted") {
-      throw new Error(`Transaction reverted`);
+      throw new Error(`Transaction reverted. hash: ${startWithdrawalHash}`);
     } else {
-      console.log("Transaction successful");
+      console.log(`Transaction successful. hash: ${startWithdrawalHash}`);
     }
   }).timeout(0);
 });

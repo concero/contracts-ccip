@@ -4,6 +4,8 @@ pragma solidity ^0.8.20;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+error UnableToCompleteDelegateCall(bytes data);
+
 library LibConcero {
     using SafeERC20 for IERC20;
 
@@ -49,5 +51,20 @@ library LibConcero {
         if (balanceAfter - balanceBefore != amount) {
             revert InsufficientBalance(balanceAfter, amount);
         }
+    }
+
+    // @dev Safe delegate call to target contract
+    // @notice This function is used to call a function in another contract
+    // @notice This function should be forever internal. Never expose it to the public
+    // @param target The address of the contract to call
+    // @param args The data to send to the target contract
+
+    function safeDelegateCall(address target, bytes memory args) internal returns (bytes memory) {
+        (bool success, bytes memory response) = target.delegatecall(args);
+        if (!success) {
+            revert UnableToCompleteDelegateCall(args);
+        }
+
+        return response;
     }
 }

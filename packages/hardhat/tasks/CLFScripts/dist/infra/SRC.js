@@ -125,7 +125,7 @@
 		},
 		[`0x${BigInt('4949039107694359620').toString(16)}`]: {
 			urls: [
-				`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 				'https://arbitrum.blockpi.network/v1/rpc/public',
 				'https://arbitrum-rpc.publicnode.com',
 			],
@@ -276,7 +276,6 @@
 	let nonce = 0;
 	let retries = 0;
 	let gasPrice;
-	let maxPriorityFeePerGas;
 	const sendTransaction = async (contract, signer, txOptions) => {
 		try {
 			if ((await contract.s_transactions(ccipMessageId))[1] !== '0x0000000000000000000000000000000000000000') return;
@@ -349,11 +348,12 @@
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
 		gasPrice = feeData.gasPrice;
-		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
 			nonce,
-			maxPriorityFeePerGas: maxPriorityFeePerGas + getPercent(maxPriorityFeePerGas, 10),
-			maxFeePerGas: gasPrice + getPercent(gasPrice, 10),
+			maxFeePerGas:
+				dstChainSelector === [`0x${BigInt('4051577828743386545').toString(16)}`]
+					? gasPrice
+					: gasPrice + getPercent(gasPrice, 10),
 		});
 		const srcUrl =
 			chainSelectors[srcChainSelector].urls[Math.floor(Math.random() * chainSelectors[srcChainSelector].urls.length)];

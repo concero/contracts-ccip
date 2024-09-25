@@ -39,7 +39,7 @@ contract ParentPoolCLFCLA is
 
     uint32 internal constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 2_000_000;
     string internal constant JS_CODE =
-        "try { const [b, o, f] = bytesArgs; const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'master' + `/packages/hardhat/tasks/CLFScripts/dist/pool/${f === '0x2' ? 'collectLiquidity' : f === '0x1' ? 'distributeLiquidity' : 'getTotalBalance'}.min.js`; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); if (r === b.toLowerCase() && x === o.toLowerCase()) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
+        "try { const [b, o, f] = bytesArgs; const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'master' + `/packages/hardhat/tasks/CLFScripts/dist/pool/${f === '0x02' ? 'collectLiquidity' : f === '0x01' ? 'distributeLiquidity' : 'getTotalBalance'}.min.js`; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); if (r === b.toLowerCase() && x === o.toLowerCase()) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
     /////////////////
     ////IMMUTABLES///
@@ -190,22 +190,19 @@ contract ParentPoolCLFCLA is
             s_withdrawTriggered[withdrawalId] = true;
         }
 
-        bytes[] memory args = new bytes[](5);
-        args[0] = abi.encodePacked(s_collectLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(lpAddress);
-        args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
-        args[4] = abi.encodePacked(withdrawalId);
+        bytes32 reqId = _sendCollectLiquidityRequest(
+            lpAddress,
+            withdrawalId,
+            liquidityRequestedFromEachPool
+        );
 
-        bytes32 reqId = _sendRequest(args);
-        s_withdrawalIdByCLFRequestId[reqId] = withdrawalId;
         s_clfRequestTypes[reqId] = IParentPool.RequestType.performUpkeep_requestLiquidityTransfer;
 
         _addWithdrawalOnTheWayAmountById(withdrawalId);
         emit WithdrawUpkeepPerformed(reqId);
     }
 
-    function retryPerformWithdrawalRequest() external {
+    function retryPerformWithdrawalRequest() external onlyProxyContext {
         bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
         IParentPool.WithdrawRequest memory withdrawalRequest = _getWithdrawalRequestById(
             withdrawalId
@@ -226,15 +223,11 @@ contract ParentPoolCLFCLA is
             revert WithdrawRequestNotReady(withdrawalId);
         }
 
-        bytes[] memory args = new bytes[](5);
-        args[0] = abi.encodePacked(s_collectLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(lpAddress);
-        args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
-        args[4] = abi.encodePacked(withdrawalId);
-
-        bytes32 reqId = _sendRequest(args);
-        s_withdrawalIdByCLFRequestId[reqId] = withdrawalId;
+        bytes32 reqId = _sendCollectLiquidityRequest(
+            lpAddress,
+            withdrawalId,
+            liquidityRequestedFromEachPool
+        );
 
         emit RetryWithdrawPerformed(reqId);
     }
@@ -433,5 +426,25 @@ contract ParentPoolCLFCLA is
             _clpAmount) * PRECISION_HANDLER) / _lpSupply) / PRECISION_HANDLER;
 
         return _convertToUSDCTokenDecimals(amountUsdcToWithdraw);
+    }
+
+    function _sendCollectLiquidityRequest(
+        address lpAddress,
+        bytes32 withdrawalId,
+        uint256 liquidityRequestedFromEachPool
+    ) internal returns (bytes32) {
+        bytes[] memory args = new bytes[](6);
+        args[0] = abi.encodePacked(s_collectLiquidityJsCodeHashSum);
+        args[1] = abi.encodePacked(s_ethersHashSum);
+        args[2] = abi.encodePacked(IParentPool.FunctionsRequestType.collectLiquidity);
+        args[3] = abi.encodePacked(lpAddress);
+        args[4] = abi.encodePacked(liquidityRequestedFromEachPool);
+        args[5] = abi.encodePacked(withdrawalId);
+
+        bytes32 reqId = _sendRequest(args);
+
+        s_withdrawalIdByCLFRequestId[reqId] = withdrawalId;
+
+        return reqId;
     }
 }

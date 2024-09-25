@@ -4,7 +4,7 @@ try {
 	const q =
 		'https://raw.githubusercontent.com/concero/contracts-ccip/' +
 		'master' +
-		`/packages/hardhat/tasks/CLFScripts/dist/pool/${f === '0x2' ? 'collectLiquidity' : f === '0x1' ? 'distributeLiquidity' : 'getTotalBalance'}.min.js`;
+		`/packages/hardhat/tasks/CLFScripts/dist/pool/${f === '0x02' ? 'collectLiquidity' : f === '0x01' ? 'distributeLiquidity' : 'getTotalBalance'}.min.js`;
 	const [t, p] = await Promise.all([fetch(u), fetch(q)]);
 	const [e, c] = await Promise.all([t.text(), p.text()]);
 	const g = async s => {

@@ -10,7 +10,6 @@ import deployTransparentProxy from "../../../deploy/TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import deployParentPool from "../../../deploy/ParentPool";
 import deployProxyAdmin from "../../../deploy/ConceroProxyAdmin";
-import { zeroAddress } from "viem";
 import deployParentPoolCLFCLA from "../../../deploy/ParenPoolCLFCLA";
 import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecretsConfig";
 
@@ -19,7 +18,6 @@ task("deploy-parent-pool", "Deploy the pool")
   .addFlag("deployimplementation", "Deploy the implementation")
   .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
   .addFlag("setvars", "Set the contract variables")
-  .addOptionalParam("automationforwarder", "Set the contract var for automation forwarder", zeroAddress)
   .addFlag("uploadsecrets", "Set the contract variables")
   .setAction(async taskArgs => {
     compileContracts({ quiet: true });
@@ -39,8 +37,8 @@ task("deploy-parent-pool", "Deploy the pool")
     }
 
     if (taskArgs.deployimplementation) {
-      await deployParentPoolCLFCLA(hre, { automationForwarder: taskArgs.automationforwarder });
-      await deployParentPool(hre, { automationForwarder: taskArgs.automationforwarder });
+      await deployParentPoolCLFCLA(hre);
+      await deployParentPool(hre);
       await upgradeProxyImplementation(hre, ProxyEnum.parentPoolProxy, false);
     }
 

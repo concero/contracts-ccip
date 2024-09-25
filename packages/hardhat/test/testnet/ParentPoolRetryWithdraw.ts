@@ -1,50 +1,29 @@
 import "@nomicfoundation/hardhat-chai-matchers";
-import { WalletClient } from "viem/clients/createWalletClient";
-import { HttpTransport } from "viem/clients/transports/http";
-import { Chain } from "viem/types/chain";
-import type { Account } from "viem/accounts/types";
-import { RpcSchema } from "viem/types/eip1193";
-import { privateKeyToAccount } from "viem/accounts";
-import { Address, createPublicClient, createWalletClient, PrivateKeyAccount } from "viem";
-import { PublicClient } from "viem/clients/createPublicClient";
-import { abi as AutomationAbi } from "../../artifacts/contracts/ConceroAutomation.sol/ConceroAutomation.json";
-import { chainsMap } from "../utils/chainsMap";
+import { Address } from "viem";
+import { abi as ParentPoolAbi } from "../../artifacts/contracts/ParentPool.sol/ParentPool.json";
+import { getFallbackClients } from "../../utils";
+import { cNetworks } from "../../constants";
 
-const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE;
-const automationAddress = process.env.CONCERO_AUTOMATION_BASE as Address;
+const parentPoolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 
 describe("start deposit usdc to parent pool\n", () => {
-  let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
-    chain: chainsMap[srcChainSelector].viemChain,
-    transport: chainsMap[srcChainSelector].viemTransport,
-  });
-
-  const viemAccount: PrivateKeyAccount = privateKeyToAccount(
-    ("0x" + process.env.DEPLOYER_PRIVATE_KEY) as `0x${string}`,
-  );
-  const walletClient: WalletClient<HttpTransport, Chain, Account, RpcSchema> = createWalletClient({
-    chain: chainsMap[srcChainSelector].viemChain,
-    transport: chainsMap[srcChainSelector].viemTransport,
-    account: viemAccount,
-  });
+  const { walletClient, publicClient } = getFallbackClients(cNetworks.baseSepolia);
 
   it("should retry withdraw from automation", async () => {
     const startDepositHash = await walletClient.writeContract({
-      abi: AutomationAbi,
+      abi: ParentPoolAbi,
       functionName: "retryPerformWithdrawalRequest",
-      address: automationAddress,
-      args: ["0x98d77fae1faf2d4b17c951cb005514a381b1806806a23fe45bd855ce8fba7ef1"],
+      address: parentPoolAddress,
+      args: [],
       gas: 3_000_000n,
     });
 
-    const { status, logs } = await srcPublicClient.waitForTransactionReceipt({ hash: startDepositHash });
-
-    console.log("transactionHash: ", startDepositHash);
+    const { status } = await publicClient.waitForTransactionReceipt({ hash: startDepositHash });
 
     if (status === "reverted") {
-      throw new Error(`Transaction reverted`);
+      throw new Error(`Transaction reverted. Hash: ${startDepositHash}`);
     } else {
-      console.log("Transaction successful");
+      console.log(`Transaction successful. Hash: ${startDepositHash}`);
     }
   }).timeout(0);
 });

@@ -3,7 +3,7 @@ import { getEnvVar, getFallbackClients } from "../../../utils";
 import cNetworks, { networkEnvKeys } from "../../../constants/cNetworks";
 import log, { err } from "../../../utils/log";
 import getHashSum from "../../../utils/getHashSum";
-import { automationsJsCodeUrl, ethersV6CodeUrl } from "../../../constants/functionsJsCodeUrls";
+import { collectLuqiudytyCodeUrl, ethersV6CodeUrl } from "../../../constants/functionsJsCodeUrls";
 import { viemReceiptConfig } from "../../../constants";
 
 const setDonHostedSecretsVersion = async (hre, slotId: number, abi) => {
@@ -101,7 +101,7 @@ const setHashSum = async (hre, abi: any) => {
     const { viemChain } = chain;
     const { walletClient, publicClient, account } = getFallbackClients(chain);
     const automationsContract = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);
-    const jsCodeHashSum = getHashSum(await (await fetch(automationsJsCodeUrl)).text());
+    const jsCodeHashSum = getHashSum(await (await fetch(collectLuqiudytyCodeUrl)).text());
 
     const { request: setHashSumReq } = await publicClient.simulateContract({
       address: automationsContract,

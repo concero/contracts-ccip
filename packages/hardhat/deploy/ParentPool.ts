@@ -7,10 +7,6 @@ import { zeroAddress } from "viem";
 import { getEnvVar, getFallbackClients } from "../utils";
 import { poolMessengers } from "../constants";
 
-interface ConstructorArgs {
-  automationForwarder?: string;
-}
-
 interface Args {
   parentProxyAddress: string;
   parentPoolCLFCLA: string;
@@ -22,10 +18,11 @@ interface Args {
   infraProxyAddress: string;
   owner: string;
   poolMessengers: string[];
+  automationForwarder: string;
 }
 
 const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: ConstructorArgs) => Promise<void> =
-  async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
+  async function (hre: HardhatRuntimeEnvironment, constructorArgs = {}) {
     const { deployer } = await hre.getNamedAccounts();
     const { deploy } = hre.deployments;
     const { name, live } = hre.network;
@@ -43,6 +40,7 @@ const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: Const
       infraProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),
       owner: deployer,
       poolMessengers,
+      automationForwarder: getEnvVar(`PARENT_POOL_AUTOMATION_FORWARDER_${networkEnvKeys[name]}`),
     };
 
     // Merge defaultArgs with constructorArgs

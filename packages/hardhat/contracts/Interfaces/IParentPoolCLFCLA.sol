@@ -20,6 +20,8 @@ interface IParentPoolCLFCLA {
         bytes memory response,
         bytes memory err
     ) external;
+
+    function retryPerformWithdrawalRequest() external;
 }
 
 interface IParentPoolCLFCLAViewDelegate {

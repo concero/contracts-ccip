@@ -16,7 +16,7 @@
 			urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
 			chainId: '0x14a34',
 			usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-			poolAddress: '0x6dCC61b865aA11FA502AeAdABb5269f6a8fB7d61',
+			poolAddress: '0x5d705253031395BE45C7766220e010AddD5Fbf6b',
 		},
 	};
 	const baseChainSelector = `0x${BigInt('10344971235874465080').toString(16)}`;
@@ -58,7 +58,7 @@
 	};
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
 	const getBaseDepositsOneTheWay = () => {
-		const pool = new ethers.Contract('0x6dCC61b865aA11FA502AeAdABb5269f6a8fB7d61', poolAbi, baseProvider);
+		const pool = new ethers.Contract('0x5d705253031395BE45C7766220e010AddD5Fbf6b', poolAbi, baseProvider);
 		return pool.getDepositsOnTheWay();
 	};
 	const getChildPoolsCcipLogs = async ccipLines => {

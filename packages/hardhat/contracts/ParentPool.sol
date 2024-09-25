@@ -62,7 +62,8 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     ///CONSTANTS///
     ///////////////
 
-    uint256 internal constant MIN_DEPOSIT = 100_000_000;
+    //    uint256 internal constant MIN_DEPOSIT = 100_000_000;
+    uint256 internal constant MIN_DEPOSIT = 1_000_000;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint256 private constant CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS = 2108;
     uint256 private constant ARRAY_MANIPULATION = 10_000;
@@ -554,6 +555,12 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      */
     function setEthersHashSum(bytes32 _ethersHashSum) external payable onlyProxyContext onlyOwner {
         s_ethersHashSum = _ethersHashSum;
+    }
+
+    function setGetBalanceJsCodeHashSum(
+        bytes32 _hashSum
+    ) external payable onlyProxyContext onlyOwner {
+        s_getBalanceJsCodeHashSum = _hashSum;
     }
 
     /**

@@ -48,7 +48,7 @@ async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
       log(`[Set] ${parentPoolAlias}.jsHash -> ${shorten(hash)}. Gas: ${formatGas(setHashGasUsed)}`, functionName, name);
     };
 
-    await setHash(getHashSum(parentPoolJsCode), "setHashSum");
+    await setHash(getHashSum(parentPoolJsCode), "setGetBalanceJsCodeHashSum");
     await setHash(getHashSum(ethersCode), "setEthersHashSum");
   } catch (error) {
     err(`${error?.message}`, "setHashSum", name);
@@ -311,7 +311,7 @@ async function removePool(chain: CNetwork, abi: any, networkName: string) {
 }
 
 export async function setParentPoolVariables(chain: CNetwork, slotId: number) {
-  const { abi: ParentPoolAbi } = await import("../artifacts/contracts/ParentPool.sol/ParentPool.json");
+  const { abi: ParentPoolAbi } = await import("../../../artifacts/contracts/ParentPool.sol/ParentPool.json");
 
   await setParentPoolSecretsVersion(chain, ParentPoolAbi, slotId);
   await setParentPoolSecretsSlotId(chain, ParentPoolAbi, slotId);

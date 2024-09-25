@@ -2,9 +2,10 @@ import deployCCIPInfrastructure from "./deployInfra/deployInfra";
 import deployConceroDexSwap from "./deployInfra/deployConceroDexSwap";
 import deployConceroOrchestrator from "./deployInfra/deployConceroOrchestrator";
 
-import deployChildPool from "./deployPool/deployChildPool";
-import deployAllPools from "./deployPool/deployAllPools";
-import deployParentPool from "./deployPool/deployParentPool";
+import deployChildPool from "./pools/deployChildPool";
+import deployAllPools from "./pools/deployAllPools";
+import deployParentPool from "./pools/deployParentPool";
+import removePoolFromPool from "./pools/removePoolFromPool";
 import deployLpToken from "./deployLpToken/deployLpToken";
 import deployAutomations from "./deployAutomations/deployAutomations";
 import withdrawInfraProxy from "./withdraw/withdrawInfraProxy";
@@ -49,4 +50,5 @@ export default {
   testScript,
   callContractFunction,
   decodeCLFFulfill,
+  removePoolFromPool,
 };

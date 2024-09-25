@@ -1,0 +1,39 @@
+import { compileContracts, getClients, getEnvAddress, getEnvVar } from "../../../utils";
+import { cNetworks, networkEnvKeys, ProxyEnum } from "../../../constants";
+import { task } from "hardhat/config";
+
+task("remove-pool-from-pool", "Deploy the CCIP infrastructure")
+  .addParam("pooltoremovechain", "Deploy the proxy")
+  .setAction(async taskArgs => {
+    compileContracts({ quiet: true });
+
+    const hre = require("hardhat");
+    const { live, name } = hre.network;
+    const poolToRemoveNetworkName = taskArgs.pooltoremovechain;
+    const poolToRemoveChainSelector = getEnvVar(`CL_CCIP_CHAIN_SELECTOR_${networkEnvKeys[name]}`);
+    const [poolToRemoveFromAddress] = getEnvAddress(ProxyEnum.parentPoolProxy, name);
+    const cNetwork = cNetworks[name];
+    const { walletClient, publicClient, account } = getClients(cNetwork.viemChain);
+    const { abi: ParentPoolAbi } = await import("../../../artifacts/contracts/ParentPool.sol/ParentPool.json");
+
+    const hash = await walletClient.writeContract({
+      account,
+      address: poolToRemoveFromAddress,
+      functionName: "removePools",
+      args: [poolToRemoveChainSelector],
+      abi: ParentPoolAbi,
+      chain: cNetwork.viemChain,
+    });
+
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash,
+    });
+
+    if (receipt.status === "success") {
+      console.log(`Pool removed successfully`);
+    } else {
+      console.log(`Pool removal failed`);
+    }
+  });
+
+export default {};

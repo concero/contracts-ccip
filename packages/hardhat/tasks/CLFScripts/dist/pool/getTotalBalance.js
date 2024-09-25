@@ -4,19 +4,19 @@
 			urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0x66eee',
 			usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-			poolAddress: '0x1bb4233765838Ee69076845D10fa231c8cd500a3',
+			poolAddress: '0x09526c5844F836f4EF326924d8AA484F8Cb135A1',
 		},
 		[`0x${BigInt('14767482510784806043').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0xa869',
 			usdcAddress: '0x5425890298aed601595a70ab815c96711a31bc65',
-			poolAddress: '0xED007301D6AfacD5FA30Fb2fD4B45951A064f798',
+			poolAddress: '0xeEc7f643aF972fB7943B7bf59b159A748Ff16715',
 		},
 		[`0x${BigInt('10344971235874465080').toString(16)}`]: {
 			urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
 			chainId: '0x14a34',
 			usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-			poolAddress: '0x5d705253031395BE45C7766220e010AddD5Fbf6b',
+			poolAddress: '0xa03e491Ad6D93cbEB903767e2465CAe3676C6d60',
 		},
 	};
 	const baseChainSelector = `0x${BigInt('10344971235874465080').toString(16)}`;
@@ -58,7 +58,7 @@
 	};
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
 	const getBaseDepositsOneTheWay = () => {
-		const pool = new ethers.Contract('0x5d705253031395BE45C7766220e010AddD5Fbf6b', poolAbi, baseProvider);
+		const pool = new ethers.Contract('0xa03e491Ad6D93cbEB903767e2465CAe3676C6d60', poolAbi, baseProvider);
 		return pool.getDepositsOnTheWay();
 	};
 	const getChildPoolsCcipLogs = async ccipLines => {

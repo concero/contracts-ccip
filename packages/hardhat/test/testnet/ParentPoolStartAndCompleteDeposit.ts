@@ -21,7 +21,7 @@ describe("start deposit usdc to parent pool\n", () => {
       gas: 3_000_000n,
     });
 
-    const { status, logs } = await publicClient.waitForTransactionReceipt({ hash: startDepositHash });
+    const { status, logs } = await publicClient.waitForTransactionReceipt({ hash: startDepositHash, confirmations: 3 });
     const decodedLogs = logs.map(log => {
       try {
         return decodeEventLog({

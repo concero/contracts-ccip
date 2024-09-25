@@ -391,10 +391,9 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         uint256 _amount,
         IStorage.CcipTxType _ccipTxType
     ) internal onlyMessenger onlyProxyContext returns (bytes32) {
-        IStorage.BridgeTx[] memory emptyBridgeTxArray;
         IStorage.CcipTxData memory ccipTxData = IStorage.CcipTxData({
             ccipTxType: _ccipTxType,
-            data: abi.encode(emptyBridgeTxArray)
+            data: ""
         });
 
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);

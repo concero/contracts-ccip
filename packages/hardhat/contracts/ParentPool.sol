@@ -348,7 +348,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
         i_lpToken.mint(msg.sender, lpTokensToMint);
 
-        _distributeLiquidityToChildPools(usdcAmountAfterFee,  IStorage.CcipTxType.depositTx);
+        _distributeLiquidityToChildPools(usdcAmountAfterFee, IStorage.CcipTxType.depositTx);
 
         s_depositFeeAmount += DEPOSIT_FEE_USDC;
 
@@ -767,9 +767,8 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
                 amountToDistribute,
                 _ccipTxType
             );
-            bytes32 ccipMessageId = _ccipSend(s_poolChainSelectors[i], amountToDistribute);
-	        _addDepositOnTheWay(ccipMessageId, s_poolChainSelectors[i], amountToDistribute);
 
+            _addDepositOnTheWay(ccipMessageId, s_poolChainSelectors[i], amountToDistribute);
 
             unchecked {
                 ++i;

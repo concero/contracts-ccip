@@ -82,8 +82,7 @@ contract ConceroCCIP is ConceroFunctions {
      * @param _destinationChainSelector The destination chain selector
      * @param _token the token to be send
      * @param _amount the amount of tokens to ben send
-     * @param _receiver the receiver address
-     * @param _lpFee the fee for Liquidity Providers
+     * @param _pendingCCIPTransactions the pending transactions to be sent
      */
     function _sendTokenPayLink(
         uint64 _destinationChainSelector,
@@ -116,9 +115,8 @@ contract ConceroCCIP is ConceroFunctions {
      * @notice Chainlink CCIP helper function to build the EVM2AnyMessage
      * @param _token the token to be send
      * @param _amount the amount of tokens to ben send
-     * @param _receiver the receiver address
-     * @param _lpFee the fee for Liquidity Providers
      * @param _destinationChainSelector The destination chain selector
+     * @param _ccipTxData the CCIP transaction data
      */
     function _buildCCIPMessage(
         address _token,

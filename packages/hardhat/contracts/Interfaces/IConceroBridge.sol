@@ -19,7 +19,6 @@ interface IConceroBridge is IStorage {
 
     /**
      * @notice Function to get the total amount of fees on the source
-     * @param tokenType the position of the CCIPToken enum
      * @param dstChainSelector the destination blockchain chain selector
      * @param amount the amount of value the fees will calculated over.
      */

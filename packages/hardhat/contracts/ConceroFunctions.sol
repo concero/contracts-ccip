@@ -294,21 +294,17 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         );
     }
 
-    function _sendUnconfirmedTX(
-        bytes32 messageId,
     //todo: Internal function sendUnconfirmedTX is not prefixed with underscore
     /**
      * @notice Sends an unconfirmed TX to the destination chain
-     * @param ccipMessageId the CCIP message to be checked
+     * @param messageId the CCIP message to be checked
      * @param sender the address to query information
-     * @param recipient the address of transfer recipient after checking
+     * @param bridgeData the bridge data to be sent
      * @param amount the amount to be transferred
-     * @param dstChainSelector the Chainlink CCIP destination chain selector
-     * @param token the token address
      * @param dstSwapData the payload to be swapped if it exists
      */
-    function sendUnconfirmedTX(
-        bytes32 ccipMessageId,
+    function _sendUnconfirmedTX(
+        bytes32 messageId,
         address sender,
         BridgeData memory bridgeData,
         uint256 amount,

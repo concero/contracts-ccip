@@ -10,6 +10,7 @@
       "packages/nextjs"
     ]
   },
+
   "scripts": {
     "account": "yarn workspace @se-2/hardhat account",
     "chain": "yarn workspace @se-2/hardhat chain",

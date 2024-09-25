@@ -1,6 +1,7 @@
 import { arbitrumSepolia, base, baseSepolia, optimismSepolia, polygon } from "viem/chains";
 import { http } from "viem";
 
+//todo move to cnetworks
 export const chainsMap = {
   [process.env.CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA]: {
     viemChain: optimismSepolia,
@@ -8,7 +9,7 @@ export const chainsMap = {
   },
   [process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA]: {
     viemChain: baseSepolia,
-    viemTransport: http(`https://base-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`),
+    viemTransport: http(`https://base-rpc.publicnode.com`),
   },
   [process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA]: {
     viemChain: arbitrumSepolia,

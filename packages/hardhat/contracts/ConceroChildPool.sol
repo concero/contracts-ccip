@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
+/**
+ * @title Security Reporting
+ * @notice If you discover any security vulnerabilities, please report them responsibly.
+ * @contact email: security@concero.io
+ */
 pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -379,12 +384,13 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @dev This function will sent the address of the user as data. This address will be used to update the mapping on ParentPool.
      * @dev when processing withdrawals, the _chainSelector will always be the index 0 of s_poolChainSelectors
      */
+    //todo: rename _lpAddress
     function _ccipSend(
         uint64 _chainSelector,
         address _lpAddress,
         uint256 _amount,
         IStorage.CcipTxType _ccipTxType
-    ) internal onlyMessenger onlyProxyContext returns (bytes32 messageId) {
+    ) internal onlyMessenger onlyProxyContext returns (bytes32) {
         IStorage.BridgeTx[] memory emptyBridgeTxArray;
         IStorage.CcipTxData memory ccipTxData = IStorage.CcipTxData({
             ccipTxType: _ccipTxType,
@@ -413,6 +419,8 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         i_USDC.approve(i_ccipRouter, _amount);
         i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
 
+        bytes32 messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
+
         emit ConceroChildPool_CCIPSent(
             messageId,
             _chainSelector,
@@ -421,7 +429,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
             ccipFeeAmount
         );
 
-        messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
+        return messageId;
     }
 
     ///////////////////////////

@@ -7,12 +7,11 @@ import "@typechain/hardhat";
 import "hardhat-deploy";
 import "hardhat-deploy-ethers";
 import "hardhat-gas-reporter";
-// import "hardhat-change-network";
 import "hardhat-contract-sizer";
 import { HardhatUserConfig } from "hardhat/config";
 import "solidity-coverage";
 import "@chainlink/hardhat-chainlink";
-import CNetworks from "./constants/CNetworks";
+import cNetworks from "./constants/cNetworks";
 import "./tasks";
 import { setup as setupTenderly } from "@tenderly/hardhat-tenderly";
 
@@ -52,7 +51,7 @@ const config: HardhatUserConfig = {
       default: 1,
     },
   },
-  networks: CNetworks,
+  networks: cNetworks,
   etherscan: {
     apiKey: {
       avalancheFuji: "snowtrace",

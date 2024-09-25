@@ -1,14 +1,13 @@
 import { task } from "hardhat/config";
-import chains, { networkEnvKeys } from "../../../constants/CNetworks";
+import chains, { networkEnvKeys } from "../../../constants/cNetworks";
 import { CNetwork } from "../../../types/CNetwork";
-import { getClients } from "../../utils/getViemClients";
-import { getEnvVar } from "../../../utils/getEnvVar";
+import { getEnvVar, getFallbackClients } from "../../../utils";
 import { Address, erc20Abi } from "viem";
-import log from "../../../utils/log";
-import load from "../../../utils/load";
+import log, { err } from "../../../utils/log";
+import { viemReceiptConfig } from "../../../constants";
 
 const getBalance = async (tokenAddress: Address, account: Address, chain: CNetwork) => {
-  const { publicClient } = getClients(chain.viemChain, chain.url);
+  const { publicClient } = getFallbackClients(chain);
 
   return await publicClient.readContract({
     address: tokenAddress,
@@ -19,7 +18,7 @@ const getBalance = async (tokenAddress: Address, account: Address, chain: CNetwo
 };
 
 const contractKeys = {
-  conceroproxy: "CONCERO_PROXY",
+  conceroproxy: "CONCERO_INFRA_PROXY",
   parentpoolproxy: "PARENT_POOL_PROXY",
   childpoolproxy: "CHILD_POOL_PROXY",
 };
@@ -28,9 +27,9 @@ type ContractType = keyof typeof contractKeys;
 
 const withdrawToken = async (chain: CNetwork, tokenAddress: Address, contractType: ContractType, amount: string) => {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = chain;
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+  const { walletClient, publicClient, account } = getFallbackClients(chain);
   const conceroProxy = getEnvVar(`${contractKeys[contractType]}_${networkEnvKeys[dcName]}`);
-  const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
+  const { abi } = await import("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
   const amountToWithdraw = BigInt(amount);
   try {
     const usdBalance = await getBalance(tokenAddress, conceroProxy, chain);
@@ -44,7 +43,7 @@ const withdrawToken = async (chain: CNetwork, tokenAddress: Address, contractTyp
     }
 
     const { request: withdrawReq } = await publicClient.simulateContract({
-      address: conceroProxy as Address,
+      address: conceroProxy,
       abi,
       functionName: "withdraw",
       account,
@@ -52,24 +51,27 @@ const withdrawToken = async (chain: CNetwork, tokenAddress: Address, contractTyp
       chain: dcViemChain,
     });
     const hash = await walletClient.writeContract(withdrawReq);
-    const { cumulativeGasUsed: setDonSecretsSlotIdGasUsed } = await publicClient.waitForTransactionReceipt({ hash });
+    const { cumulativeGasUsed: setDonSecretsSlotIdGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
+      hash,
+    });
     log(
       `Withdrawn from ${dcName}:${conceroProxy}: ${amountToWithdraw}. Gas used: ${setDonSecretsSlotIdGasUsed.toString()}`,
       "withdrawToken",
     );
   } catch (error) {
-    log(`Error for ${dcName}: ${error.message}`, "setDonHostedSecretsSlotID");
+    err(`${error.message}`, "setDonHostedSecretsSlotID", dcName);
   }
 };
 
 const depositToken = async (chain: CNetwork, tokenAddress: Address, contractType: ContractType, amount: string) => {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = chain;
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+  const { walletClient, publicClient, account } = getFallbackClients(chain);
   const recipientAddress = getEnvVar(`${contractKeys[contractType]}_${networkEnvKeys[dcName]}`);
   const amountToDeposit = BigInt(amount);
 
   try {
-    const accountBalance = await getBalance(tokenAddress, account.address as Address, chain);
+    const accountBalance = await getBalance(tokenAddress, account.address, chain);
     if (accountBalance < amountToDeposit) {
       log(
         `Not enough balance to deposit. Balance: ${accountBalance}, Amount to deposit: ${amountToDeposit}`,
@@ -88,14 +90,17 @@ const depositToken = async (chain: CNetwork, tokenAddress: Address, contractType
     });
 
     const hash = await walletClient.writeContract(depositReq);
-    const { cumulativeGasUsed: depositGasUsed } = await publicClient.waitForTransactionReceipt({ hash });
+    const { cumulativeGasUsed: depositGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
+      hash,
+    });
     log(
       `Deposited to ${dcName}:${recipientAddress}: ${amountToDeposit}. Gas used: ${depositGasUsed.toString()}`,
       "depositToken",
     );
   } catch (error) {
     console.error(error);
-    log(`Error for ${dcName}: ${error.message}`, "depositToken");
+    err(`${error.message}`, "depositToken", dcName);
   }
 };
 task("deposit-infra-proxy", "Deposits the token to the proxy contract")
@@ -103,9 +108,9 @@ task("deposit-infra-proxy", "Deposits the token to the proxy contract")
   .addParam("contracttype", "Contract Type")
   .addParam("amount", "Amount to deposit")
   .setAction(async taskArgs => {
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     const { contracttype, tokenaddress, amount } = taskArgs;
-    if (name !== "localhost" && name !== "hardhat") {
+    if (live) {
       await depositToken(chains[name], tokenaddress, contracttype, amount);
     }
   });
@@ -116,9 +121,9 @@ task("withdraw-infra-proxy", "Withdraws the token from the proxy contract")
   .addParam("contracttype", "Contract Type")
   .addParam("amount", "Amount to withdraw")
   .setAction(async taskArgs => {
-    const { name } = hre.network;
+    const { name, live } = hre.network;
     const { contracttype, tokenaddress, amount } = taskArgs;
-    if (name !== "localhost" && name !== "hardhat") {
+    if (live) {
       await withdrawToken(chains[name], tokenaddress, contracttype, amount);
     }
   });

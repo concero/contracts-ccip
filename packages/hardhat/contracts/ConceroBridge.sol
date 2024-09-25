@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
+/**
+ * @title Security Reporting
+ * @notice If you discover any security vulnerabilities, please report them responsibly.
+ * @contact email: security@concero.io
+ */
 pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -82,7 +87,6 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
     ) external payable {
         if (address(this) != i_proxy) revert ConceroBridge_OnlyProxyContext(address(this));
         address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
-
         uint256 totalSrcFee = _convertToUSDCDecimals(
             _getSrcTotalFeeInUsdc(bridgeData.dstChainSelector, bridgeData.amount)
         );

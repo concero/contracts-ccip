@@ -1,25 +1,38 @@
-import CNetworks, { networkEnvKeys } from "../../../constants/CNetworks";
-import { CNetwork } from "../../../types/CNetwork";
-import { getClients } from "../../utils/getViemClients";
-import load from "../../../utils/load";
-import { getEnvVar } from "../../../utils/getEnvVar";
-import log from "../../../utils/log";
-import { getEthersSignerAndProvider } from "../../utils/getEthersSignerAndProvider";
+import { CNetwork, CNetworkNames } from "../../../types/CNetwork";
+import {
+  err,
+  formatGas,
+  getEnvAddress,
+  getEnvVar,
+  getEthersV5FallbackSignerAndProvider,
+  getFallbackClients,
+  getHashSum,
+  log,
+  shorten,
+} from "../../../utils";
 import { SecretsManager } from "@chainlink/functions-toolkit";
-import { Address } from "viem";
-import getHashSum from "../../../utils/getHashSum";
-import { liveChains } from "../liveChains";
+
+import {
+  cNetworks,
+  conceroChains,
+  mainnetChains,
+  networkEnvKeys,
+  networkTypes,
+  ProxyEnum,
+  testnetChains,
+  viemReceiptConfig,
+} from "../../../constants";
 import { ethersV6CodeUrl, infraDstJsCodeUrl, infraSrcJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 
 const resetLastGasPrices = async (deployableChain: CNetwork, chains: CNetwork[], abi: any) => {
   const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[deployableChain.name]}`);
-  const { walletClient, publicClient, account } = getClients(deployableChain.viemChain, deployableChain.url);
+  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
 
   for (const chain of chains) {
     const { chainSelector } = chain;
 
     const resetGasPricesHash = await walletClient.writeContract({
-      address: conceroProxyAddress as Address,
+      address: conceroProxyAddress,
       abi: abi,
       functionName: "setLasGasPrices",
       args: [chainSelector!, 0n],
@@ -28,8 +41,8 @@ const resetLastGasPrices = async (deployableChain: CNetwork, chains: CNetwork[],
     });
 
     const { cumulativeGasUsed: resetGasPricesGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
       hash: resetGasPricesHash,
-      timeout: 0,
     });
 
     log(
@@ -39,24 +52,26 @@ const resetLastGasPrices = async (deployableChain: CNetwork, chains: CNetwork[],
   }
 };
 
-export async function setConceroProxyDstContracts(liveChains: CNetwork[]) {
-  const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
+export async function setConceroProxyDstContracts(deployableChains: CNetwork[]) {
+  const { abi } = await import("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
-  for (const chain of liveChains) {
-    const { viemChain, url, name } = chain;
-    const srcConceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`);
-    const { walletClient, publicClient, account } = getClients(viemChain, url);
+  for (const chain of deployableChains) {
+    const chainsToBeSet =
+      chain.type === networkTypes.mainnet ? conceroChains.mainnet.infra : conceroChains.testnet.infra;
+    const { viemChain, name } = chain;
+    const [conceroProxy, conceroProxyAlias] = getEnvAddress(ProxyEnum.infraProxy, name);
+    const { walletClient, publicClient, account } = getFallbackClients(chain);
 
-    for (const dstChain of liveChains) {
+    for (const dstChain of chainsToBeSet) {
       try {
         const { name: dstName, chainSelector: dstChainSelector } = dstChain;
         if (dstName !== name) {
-          const dstProxyContract = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dstName]}`);
+          const [dstProxy, dstProxyAlias] = getEnvAddress(ProxyEnum.infraProxy, dstName);
 
           // const gasPrice = await publicClient.getGasPrice();
 
           // const { request: setDstConceroContractReq } = await publicClient.simulateContract({
-          //   address: srcConceroProxyAddress as Address,
+          //   address: srcConceroProxyAddress ,
           //   abi,
           //   functionName: "setConceroContract",
           //   account,
@@ -66,25 +81,27 @@ export async function setConceroProxyDstContracts(liveChains: CNetwork[]) {
           // const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
 
           const setDstConceroContractHash = await walletClient.writeContract({
-            address: srcConceroProxyAddress as Address,
+            address: conceroProxy,
             abi,
             functionName: "setConceroContract",
             account,
-            args: [dstChainSelector, dstProxyContract],
+            args: [dstChainSelector, dstProxy],
             chain: viemChain,
           });
 
           const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({
+            ...viemReceiptConfig,
             hash: setDstConceroContractHash,
-            timeout: 0,
           });
+
           log(
-            `Set ${name}:${srcConceroProxyAddress} dstConceroContract[${dstName}, ${dstProxyContract}]. Gas used: ${setDstConceroContractGasUsed.toString()}`,
+            `[Set] ${conceroProxyAlias}.dstConceroContract[${dstName}] -> ${dstProxyAlias}. Gas: ${formatGas(setDstConceroContractGasUsed)}`,
             "setConceroProxyDstContracts",
+            name,
           );
         }
       } catch (error) {
-        log(`Error for ${name}: ${error.message}`, "setConceroProxyDstContracts");
+        err(`${error.message}`, "setConceroProxyDstContracts", name);
       }
     }
   }
@@ -100,10 +117,9 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
     name: dcName,
   } = deployableChain;
   try {
-    const conceroProxy = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dcName]}`) as Address;
-    const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
-
-    const { signer: dcSigner } = getEthersSignerAndProvider(dcUrl);
+    const [conceroProxy, conceroProxyAlias] = getEnvAddress(ProxyEnum.infraProxy, dcName);
+    const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
+    const { signer: dcSigner } = getEthersV5FallbackSignerAndProvider(dcName);
 
     const secretsManager = new SecretsManager({
       signer: dcSigner,
@@ -130,46 +146,48 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
     const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
 
     const { cumulativeGasUsed: setDstConceroContractGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
       hash: setDstConceroContractHash,
-      timeout: 0,
     });
 
     log(
-      `Set ${dcName}:${conceroProxy} donHostedSecretsVersion[${rowBySlotId.version}]. Gas used: ${setDstConceroContractGasUsed.toString()}`,
+      `[Set] ${conceroProxyAlias}.donHostedSecretsVersion -> ${rowBySlotId.version}. Gas: ${formatGas(setDstConceroContractGasUsed)}`,
       "setDonHostedSecretsVersion",
+      dcName,
     );
   } catch (error) {
-    log(`Error for ${dcName}: ${error.message}`, "setDonHostedSecretsVersion");
+    err(`${error.message}`, "setDonHostedSecretsVersion", dcName);
   }
 }
 
 async function setJsHashes(deployableChain: CNetwork, abi: any) {
   try {
-    const { url: dcUrl, viemChain: dcViemChain, name: srcChainName } = deployableChain;
-    const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
-    const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[srcChainName]}`);
+    const { viemChain, name } = deployableChain;
+    const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
+    const [conceroProxy, conceroProxyAlias] = getEnvAddress(ProxyEnum.infraProxy, name);
     const conceroSrcCode = await (await fetch(infraSrcJsCodeUrl)).text();
     const conceroDstCode = await (await fetch(infraDstJsCodeUrl)).text();
     const ethersCode = await (await fetch(ethersV6CodeUrl)).text();
 
     const setHash = async (hash: string, functionName: string) => {
       const { request: setHashReq } = await publicClient.simulateContract({
-        address: conceroProxyAddress as Address,
+        address: conceroProxy,
         abi,
         functionName,
         account,
         args: [hash],
-        chain: dcViemChain,
+        chain: viemChain,
       });
       const setHashHash = await walletClient.writeContract(setHashReq);
       const { cumulativeGasUsed: setHashGasUsed } = await publicClient.waitForTransactionReceipt({
+        ...viemReceiptConfig,
         hash: setHashHash,
-        timeout: 0,
       });
 
       log(
-        `Set ${srcChainName}:${conceroProxyAddress} jshash[${hash}]. Gas used: ${setHashGasUsed.toString()}`,
-        functionName,
+        `[Set] ${conceroProxyAlias}.jshash -> ${shorten(hash)}. Gas: ${formatGas(setHashGasUsed)}`,
+        "setJsHashes",
+        name,
       );
     };
 
@@ -177,24 +195,25 @@ async function setJsHashes(deployableChain: CNetwork, abi: any) {
     await setHash(getHashSum(conceroSrcCode), "setSrcJsHashSum");
     await setHash(getHashSum(ethersCode), "setEthersHashSum");
   } catch (error) {
-    log(`Error ${error.message}`, "setHashSum");
+    err(`${error.message}`, "setHashSum", deployableChain.name);
   }
 }
 
 export async function setDstConceroPools(deployableChain: CNetwork, abi: any) {
-  const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
-  const conceroProxy = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dcName]}`);
+  const { viemChain: dcViemChain, name: dcName } = deployableChain;
+  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
+  const [conceroProxy, conceroProxyAlias] = getEnvAddress(ProxyEnum.infraProxy, dcName);
+  const chainsToSet = deployableChain.type === networkTypes.mainnet ? mainnetChains : testnetChains;
 
   try {
-    for (const chain of liveChains) {
+    for (const chain of chainsToSet) {
       const { name: dstChainName, chainSelector: dstChainSelector } = chain;
-      const dstConceroPool =
-        chain === CNetworks.base || chain === CNetworks.baseSepolia
-          ? getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[dstChainName]}`)
-          : getEnvVar(`CHILD_POOL_PROXY_${networkEnvKeys[dstChainName]}`);
+      const [dstConceroPool, dstConceroPoolAlias] =
+        chain === cNetworks.base || chain === cNetworks.baseSepolia
+          ? getEnvAddress(ProxyEnum.parentPoolProxy, dstChainName)
+          : getEnvAddress(ProxyEnum.childPoolProxy, dstChainName);
       const { request: setDstConceroPoolReq } = await publicClient.simulateContract({
-        address: conceroProxy as Address,
+        address: conceroProxy,
         abi,
         functionName: "setDstConceroPool",
         account,
@@ -203,26 +222,28 @@ export async function setDstConceroPools(deployableChain: CNetwork, abi: any) {
       });
       const setDstConceroPoolHash = await walletClient.writeContract(setDstConceroPoolReq);
       const { cumulativeGasUsed: setDstConceroPoolGasUsed } = await publicClient.waitForTransactionReceipt({
+        ...viemReceiptConfig,
         hash: setDstConceroPoolHash,
       });
       log(
-        `Set ${dcName}:${conceroProxy} dstConceroPool[${dstChainName}:${dstConceroPool}]. Gas used: ${setDstConceroPoolGasUsed.toString()}`,
+        `[Set] ${conceroProxyAlias}.dstConceroPool[${dstChainName}] -> ${dstConceroPoolAlias}. Gas: ${formatGas(setDstConceroPoolGasUsed)}`,
         "setDstConceroPool",
+        dcName,
       );
     }
   } catch (error) {
-    log(`Error for ${dcName}: ${error.message}`, "setDstConceroPool");
+    err(`${error.message}`, "setDstConceroPool", dcName);
   }
 }
 
 export async function setDonSecretsSlotId(deployableChain: CNetwork, slotId: number, abi: any) {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
-  const conceroProxy = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dcName]}`);
+  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
+  const [conceroProxy, conceroProxyAlias] = getEnvAddress(ProxyEnum.infraProxy, dcName);
 
   try {
     const { request: setDonSecretsSlotIdReq } = await publicClient.simulateContract({
-      address: conceroProxy as Address,
+      address: conceroProxy,
       abi,
       functionName: "setDonHostedSecretsSlotID",
       account,
@@ -231,35 +252,24 @@ export async function setDonSecretsSlotId(deployableChain: CNetwork, slotId: num
     });
     const setDonSecretsSlotIdHash = await walletClient.writeContract(setDonSecretsSlotIdReq);
     const { cumulativeGasUsed: setDonSecretsSlotIdGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
       hash: setDonSecretsSlotIdHash,
-      timeout: 0,
     });
     log(
-      `Set ${dcName}:${conceroProxy} donSecretsSlotId[${slotId}]. Gas used: ${setDonSecretsSlotIdGasUsed.toString()}`,
+      `[Set] ${conceroProxyAlias}.donSecretsSlotId -> ${slotId}. Gas: ${formatGas(setDonSecretsSlotIdGasUsed)}`,
       "setDonHostedSecretsSlotID",
+      dcName,
     );
   } catch (error) {
-    log(`Error for ${dcName}: ${error.message}`, "setDonHostedSecretsSlotID");
+    err(`${error.message}`, "setDonHostedSecretsSlotID", dcName);
   }
 }
 
-const allowedRouters: Record<string, Address> = {
-  "137": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
-  "8453": "0x2626664c2603336E57B271c5C0b26F421741e481",
-  "42161": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
-  "43114": "0xbb00FF08d01D300023C629E8fFfFcb65A5a578cE",
-};
-
 export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: any) {
-  const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
-  const conceroProxy = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dcName]}`);
-
-  if (!deployableChain.chainId) {
-    return log(`No chainId for ${dcName}`, "setDexRouterAddress");
-  }
-
-  const allowedRouter = allowedRouters[deployableChain.chainId];
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+  const { viemChain: dcViemChain, name: dcName } = deployableChain;
+  const [conceroProxy, conceroProxyAlias] = getEnvAddress(ProxyEnum.infraProxy, dcName);
+  const [allowedRouter, allowedRouterAlias] = getEnvAddress("uniswapRouter", dcName);
+  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
 
   try {
     const { request: setDexRouterReq } = await publicClient.simulateContract({
@@ -272,67 +282,68 @@ export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: a
     });
     const setDexRouterHash = await walletClient.writeContract(setDexRouterReq);
     const { cumulativeGasUsed: setDexRouterGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
       hash: setDexRouterHash,
-      timeout: 0,
     });
     log(
-      `Set ${dcName}:${conceroProxy} dexRouterAddress[${allowedRouter}]. Gas used: ${setDexRouterGasUsed.toString()}`,
+      `[Set] ${conceroProxyAlias}.dexRouterAddress -> ${allowedRouterAlias}. Gas: ${formatGas(setDexRouterGasUsed)}`,
       "setDexRouterAddress",
+      dcName,
     );
   } catch (error) {
-    log(`Error for ${dcName}: ${error.message}`, "setDexRouterAddress");
+    err(`${error.message}`, "setDexRouterAddress", dcName);
   }
 }
 
 export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: any) {
-  const fees: Record<string, bigint> = {
-    "137": 33131965864723535n,
-    "42161": 20000000000000000n,
-    "8453": 60000000000000000n,
-    "43114": 240000000000000000n,
+  const defaultFee = 20000000000000000n;
+  const fees: Record<CNetworkNames, bigint> = {
+    polygon: 33131965864723535n,
+    arbitrum: 20000000000000000n,
+    base: 60000000000000000n,
+    avalanche: 240000000000000000n,
   };
 
-  const { url: dcUrl, viemChain: dcViemChain, name: dcName } = deployableChain;
-  const conceroProxy = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[dcName]}`);
-  const { walletClient, publicClient, account } = getClients(dcViemChain, dcUrl);
+  const { viemChain: dcViemChain, name: dcName, type } = deployableChain;
+  const [conceroProxy, conceroProxyAlias] = getEnvAddress(ProxyEnum.infraProxy, dcName);
+  const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
 
-  for (const chain of liveChains) {
+  const chainsToSet = type === networkTypes.mainnet ? mainnetChains : testnetChains;
+
+  for (const chain of chainsToSet) {
     try {
+      const feeToSet = fees[dcName] ?? defaultFee;
       const { request: setFunctionsPremiumFeesReq } = await publicClient.simulateContract({
-        address: conceroProxy as Address,
+        address: conceroProxy,
         abi,
         functionName: "setClfPremiumFees",
         account,
-        args: [chain.chainSelector, fees[chain.chainId?.toString()]],
+        args: [chain.chainSelector, feeToSet],
         chain: dcViemChain,
       });
 
       const setFunctionsPremiumFeesHash = await walletClient.writeContract(setFunctionsPremiumFeesReq);
       const { cumulativeGasUsed: setFunctionsPremiumFeesGasUsed } = await publicClient.waitForTransactionReceipt({
+        ...viemReceiptConfig,
         hash: setFunctionsPremiumFeesHash,
-        timeout: 0,
       });
 
       log(
-        `Set ${dcName}:${conceroProxy} functionsPremiumFees[${fees[chain.chainId?.toString()]}. Gas used: ${setFunctionsPremiumFeesGasUsed.toString()}`,
+        `[Set] ${conceroProxyAlias}.functionsPremiumFees[${dcName}] -> ${feeToSet}. Gas: ${formatGas(setFunctionsPremiumFeesGasUsed)}`,
         "setClfPremiumFees",
+        dcName,
       );
     } catch (error) {
-      log(`Error for ${dcName}: ${error.message}`, "setClfPremiumFees");
+      err(`${error.message}`, "setClfPremiumFees", dcName);
     }
   }
 }
 
-export async function setContractVariables(
-  liveChains: CNetwork[],
-  deployableChains: CNetwork[],
-  slotId: number,
-  uploadsecrets: boolean,
-) {
-  const { abi } = await load("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
+export async function setContractVariables(deployableChains: CNetwork[], slotId: number, uploadsecrets: boolean) {
+  const { abi } = await import("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
   for (const deployableChain of deployableChains) {
-    await setDexSwapAllowedRouters(deployableChain, abi); // once
+    if (deployableChain.type === networkTypes.mainnet) await setDexSwapAllowedRouters(deployableChain, abi); // once
     await setDstConceroPools(deployableChain, abi); // once
 
     await setDonHostedSecretsVersion(deployableChain, slotId, abi);

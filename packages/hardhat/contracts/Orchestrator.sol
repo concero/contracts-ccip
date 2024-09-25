@@ -175,6 +175,12 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         return _convertToUSDCDecimals(abi.decode(data, (uint256)));
     }
 
+    /**
+     * @notice Function To swap a token into a bridgeable one and start bridging
+     * @param bridgeData the payload to bridge token
+     * @param srcSwapData the payload to swap on src
+     * @param dstSwapData the payload to swap on dst, if it's not empty.
+     */
     function swapAndBridge(
         BridgeData memory bridgeData,
         IDexSwap.SwapData[] calldata srcSwapData,
@@ -201,6 +207,11 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         _startBridge(bridgeData, dstSwapData);
     }
 
+    /**
+     * @notice external function to start swap
+     * @param _swapData the swap payload
+     * @param _receiver the receiver of the swapped amount
+     */
     function swap(
         IDexSwap.SwapData[] calldata _swapData,
         address _receiver
@@ -217,6 +228,11 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         _swap(_swapData, msg.value, true, _receiver);
     }
 
+    /**
+     * @notice function to start a bridge transaction
+     * @param bridgeData the bridge payload
+     * @param dstSwapData the destination swap payload, if not empty.
+     */
     function bridge(
         BridgeData memory bridgeData,
         IDexSwap.SwapData[] memory dstSwapData
@@ -245,6 +261,17 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         _startBridge(bridgeData, dstSwapData);
     }
 
+    /**
+     * @notice Wrapper function to delegate call to ConceroBridge.addUnconfirmedTX
+     * @param ccipMessageId the CCIP message ID to be added on destination
+     * @param sender the address of the sender
+     * @param recipient the address of recipient of the bridge transaction
+     * @param amount the amount to be bridged
+     * @param srcChainSelector the CCIP chain selector of source chain
+     * @param token the address of the token
+     * @param blockNumber the transaction block number
+     * @param dstSwapData the swap data to perform, if it's not empty
+     */
     function addUnconfirmedTX(
         bytes32 ccipMessageId,
         address sender,
@@ -271,6 +298,13 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         if (!success) revert Orchestrator_UnableToCompleteDelegateCall(error);
     }
 
+    /**
+     * @notice Helper function to delegate call to ConceroBridge contract
+     * @param requestId the CLF request ID from callback
+     * @param response the response
+     * @param err the error
+     * @dev response and error will never be populated at the same time.
+     */
     function handleOracleFulfillment(
         bytes32 requestId,
         bytes memory response,
@@ -294,6 +328,12 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         emit Orchestrator_RequestFulfilled(requestId);
     }
 
+    /**
+     * @notice Function to allow Concero Team to withdraw
+     * @param recipient the recipient address
+     * @param token the token to withdraw
+     * @param amount the amount to withdraw
+     */
     function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
         uint256 balance = LibConcero.getBalance(token, address(this));
         if (balance < amount) revert Orchestrator_InvalidAmount();
@@ -308,6 +348,13 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     //////////////////////////
     /// INTERNAL FUNCTIONS ///
     //////////////////////////
+    /**
+     * @notice Internal function to perform swaps. Delegate calls DexSwap.entrypoint
+     * @param swapData the payload to be passed to swap functions
+     * @param _nativeAmount the native amount entered on the external function
+     * @param isTakingConceroFee flag to indicate when take fees
+     * @param _receiver the address of the receiver of the swap
+     */
     function _swap(
         IDexSwap.SwapData[] memory swapData,
         uint256 _nativeAmount,

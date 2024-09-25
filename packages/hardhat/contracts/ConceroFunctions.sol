@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
+/**
+ * @title Security Reporting
+ * @notice If you discover any security vulnerabilities, please report them responsibly.
+ * @contact email: security@concero.io
+ */
 pragma solidity ^0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -22,7 +27,6 @@ error ConceroFunctions_UnexpectedRequestId(bytes32 requestId);
 error ConceroFunctions_TxDoesntExist();
 ///@notice error emitted when a transaction was already confirmed
 error ConceroFunctions_TxAlreadyConfirmed();
-// q is this natspec correct?
 ///@notice error emitted when function receive a call from a not allowed address
 error ConceroFunctions_DstContractAddressNotSet();
 ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
@@ -42,7 +46,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     ///////////////////////////////////////////////////////////
     uint32 public constant CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT = 150_000;
     uint32 public constant CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT = 2_000_000;
-    uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 185_000;
+    uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 220_500;
     uint8 private constant CL_SRC_RESPONSE_LENGTH = 192;
     ///@notice JS Code for Chainlink Functions
     string private constant CL_JS_CODE =
@@ -132,6 +136,19 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     ///////////////////////////////////////////////////////////////
     ///////////////////////////Functions///////////////////////////
     ///////////////////////////////////////////////////////////////
+
+    /**
+     * @notice Receives an unconfirmed TX from the source chain and validates it through Chainlink Functions
+     * @param messageId The concero message ID from the initiate bridge transaction
+     * @param sender The address of the TX sender
+     * @param recipient The address of the bridge token receiver
+     * @param amount the amount of the token to be processed
+     * @param srcChainSelector the Chainlink variable for the src chain
+     * @param token the token address
+     * @param blockNumber the blockNumber in which the transaction was initiated
+     * @param dstSwapData The Payload to process the destination swap.
+     * @dev dstSwapData can be empty. Which means the user will receive USDC.
+     */
     function addUnconfirmedTX(
         bytes32 messageId,
         address sender,
@@ -199,6 +216,13 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         return _sendRequest(req.encodeCBOR(), i_subscriptionId, gasLimit, i_donId);
     }
 
+    /**
+     * @notice Function to receive delegatecall from Orchestrator Proxy
+     * @param requestId the ID of CLF request
+     * @param response the response of CLF request
+     * @param err the error of CLF request
+     * @dev We will always receive response or err populated. Never both.
+     */
     function fulfillRequestWrapper(
         bytes32 requestId,
         bytes memory response,
@@ -213,6 +237,13 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     ///INTERNAL FUNCTIONS///
     ////////////////////////
 
+    /**
+     * @notice CLF internal function to fulfill requests
+     * @param requestId the initiate request ID
+     * @param response the response
+     * @param err the error
+     * @dev response and error will never be populated at the same time.
+     */
     function fulfillRequest(
         bytes32 requestId,
         bytes memory response,
@@ -243,6 +274,11 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         }
     }
 
+    /**
+     * @notice Internal helper function to check if the TX is valid
+     * @param ccipMessageId The CCIP message ID to be checked
+     * @param transaction the storage to be updated.
+     */
     function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
         if (transaction.sender == address(0)) revert ConceroFunctions_TxDoesntExist();
         if (transaction.isConfirmed == true) revert ConceroFunctions_TxAlreadyConfirmed();
@@ -260,6 +296,19 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
 
     function _sendUnconfirmedTX(
         bytes32 messageId,
+    //todo: Internal function sendUnconfirmedTX is not prefixed with underscore
+    /**
+     * @notice Sends an unconfirmed TX to the destination chain
+     * @param ccipMessageId the CCIP message to be checked
+     * @param sender the address to query information
+     * @param recipient the address of transfer recipient after checking
+     * @param amount the amount to be transferred
+     * @param dstChainSelector the Chainlink CCIP destination chain selector
+     * @param token the token address
+     * @param dstSwapData the payload to be swapped if it exists
+     */
+    function sendUnconfirmedTX(
+        bytes32 ccipMessageId,
         address sender,
         BridgeData memory bridgeData,
         uint256 amount,
@@ -299,7 +348,12 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         );
     }
 
+    /**
+     * @notice Internal CLF function to finalize bridge process on Destination
+     * @param request the CLF request to be used
+     */
     function _handleDstFunctionsResponse(Request storage request) internal {
+        //todo: make references to transaction object to save on gas
         Transaction storage transaction = s_transactions[request.ccipMessageId];
 
         _confirmTX(request.ccipMessageId, transaction);
@@ -337,6 +391,10 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         );
     }
 
+    /**
+     * @notice Internal helper function to updated destination storage data
+     * @param response the CLF response that contains the data
+     */
     function _handleSrcFunctionsResponse(bytes memory response) internal {
         if (response.length != CL_SRC_RESPONSE_LENGTH) {
             return;
@@ -365,6 +423,11 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     /////////////////////////////
     /// VIEW & PURE FUNCTIONS ///
     /////////////////////////////
+
+    /**
+     * @notice Helper function to convert swapData into bytes payload to be sent through functions
+     * @param _swapData The array of swap data
+     */
     function _swapDataToBytes(
         IDexSwap.SwapData[] memory _swapData
     ) private pure returns (bytes memory _encodedData) {
@@ -375,6 +438,11 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         }
     }
 
+    /**
+     * @notice getter function to calculate Destination fee amount on Source
+     * @param amount the amount of tokens to calculate over
+     * @return the fee amount
+     */
     function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
         return amount / 1000;
         //@audit we can have loss of precision here?

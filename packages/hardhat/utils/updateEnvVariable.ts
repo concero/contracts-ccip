@@ -1,17 +1,14 @@
 import { readFileSync, writeFileSync } from "fs";
 import path from "path";
 import log from "./log";
+import { envPrefixes, networkEnvKeys } from "../constants";
+import { CNetworkNames } from "../types/CNetwork";
+import { EnvFileName, EnvPrefixes } from "../types/deploymentVariables";
 
-/**
- * Update an environment variable in the .env file
- * @param key The key of the environment variable to update
- * @param newValue The new value of the environment variable
- * @param envPath The path to the .env file
- * usage: // updateEnvVariable("CLF_DON_SECRETS_VERSION_SEPOLIA", "1712841283", "../../../.env.clf");
- */
-function updateEnvVariable(key: string, newValue: string, envPath: string = "../../../.env") {
-  const filePath = path.join(__dirname, envPath);
+export function updateEnvVariable(key: string, newValue: string, envFileName: EnvFileName) {
+  const filePath = path.join(__dirname, `../../../.env.${envFileName}`);
   if (!filePath) throw new Error(`File not found: ${filePath}`);
+
   const envContents = readFileSync(filePath, "utf8");
   let lines = envContents.split(/\r?\n/);
 
@@ -31,4 +28,16 @@ function updateEnvVariable(key: string, newValue: string, envPath: string = "../
   writeFileSync(filePath, newLines.join("\n"));
   process.env[key] = newValue;
 }
+
+export function updateEnvAddress(
+  prefix: keyof EnvPrefixes,
+  networkPostfix?: CNetworkNames | string,
+  newValue: string,
+  envFileName: EnvFileName,
+): void {
+  const searchKey = networkPostfix ? `${envPrefixes[prefix]}_${networkEnvKeys[networkPostfix]}` : envPrefixes[prefix];
+
+  updateEnvVariable(searchKey, newValue, envFileName);
+}
+
 export default updateEnvVariable;

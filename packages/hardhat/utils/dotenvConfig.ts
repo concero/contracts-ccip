@@ -1,7 +1,15 @@
 import * as dotenv from "dotenv";
 import fs from "fs";
 
-const ENV_FILES = [".env", ".env.clf", ".env.clccip", ".env.tokens", ".env.deployments", ".env.wallets"];
+const ENV_FILES = [
+  ".env",
+  ".env.clf",
+  ".env.clccip",
+  ".env.tokens",
+  ".env.deployments.mainnet",
+  ".env.deployments.testnet",
+  ".env.wallets",
+];
 
 /**
  * Configures the dotenv with paths relative to a base directory.
@@ -16,7 +24,7 @@ function configureDotEnv(basePath = "../../") {
 }
 configureDotEnv();
 
-export function reloadDotEnv(basePath = "../../") {
+function reloadDotEnv(basePath = "../../") {
   const normalizedBasePath = basePath.endsWith("/") ? basePath : `${basePath}/`;
 
   ENV_FILES.forEach(file => {

@@ -31,6 +31,7 @@ async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
     const ethersCode = await (await fetch(ethersV6CodeUrl)).text();
 
     const setHash = async (hash: string, functionName: string) => {
+      console.log("functionName:", functionName, hash);
       const setJsHashTxHash = await walletClient.writeContract({
         address: parentPoolProxy,
         abi,

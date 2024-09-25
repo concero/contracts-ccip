@@ -3,10 +3,10 @@ import chains from "../../../constants/cNetworks";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../../types/CNetwork";
-
 import log, { err, warn } from "../../../utils/log";
 import { Address } from "viem";
 import { shorten } from "../../../utils/formatting";
+import { getEthersV5FallbackSignerAndProvider } from "../../../utils";
 
 // run with: bunx hardhat clf-consumer-add --subid 5810 --contract 0x... --network avalancheFuji
 task("clf-sub-consumer-add", "Adds a consumer contract to the Functions billing subscription")
@@ -28,7 +28,13 @@ task("clf-sub-consumer-add", "Adds a consumer contract to the Functions billing 
 
 async function addCLFConsumer(chain: CNetwork, consumerAddresses: Address[], subscriptionId: number) {
   const { linkToken, functionsRouter, confirmations, name } = chain;
-  const signer = await hre.ethers.getSigner(process.env.DEPLOYER_ADDRESS);
+
+  if (!chain.name) {
+    throw new Error(`Chain ${chain.name} not found`);
+  }
+
+  const { signer } = getEthersV5FallbackSignerAndProvider(chain.name);
+
   for (const consumerAddress of consumerAddresses) {
     const txOptions = { confirmations };
     log(`Adding ${shorten(consumerAddress)} to sub ${subscriptionId}`, "addCLFConsumer", name);
@@ -38,15 +44,19 @@ async function addCLFConsumer(chain: CNetwork, consumerAddresses: Address[], sub
       linkTokenAddress: linkToken,
       functionsRouterAddress: functionsRouter,
     });
+
     await sm.initialize();
 
     try {
       const addConsumerTx = await sm.addConsumer({ subscriptionId, consumerAddress, txOptions });
+
       log(`Successfully added ${consumerAddress} to sub ${subscriptionId} on ${name}.`, "addCLFConsumer", name);
     } catch (error) {
-      if (error.message.includes("is already authorized to use subscription"))
+      if (error.message.includes("is already authorized to use subscription")) {
         err(error.message, "addCLFConsumer", name);
-      else console.error(error);
+      } else {
+        console.error(error);
+      }
     }
   }
 }

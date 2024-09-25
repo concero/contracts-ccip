@@ -6,6 +6,8 @@ import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
 import { zeroAddress } from "viem";
 import { poolMessengers } from "../constants/deploymentVariables";
+import { getFallbackClients } from "../utils";
+import chains from "../constants/cNetworks";
 
 interface ConstructorArgs {
   automationForwarder: string;
@@ -41,7 +43,11 @@ const deployParentPoolCLFCLA: (hre: HardhatRuntimeEnvironment, constructorArgs?:
 
     const args = { ...defaultArgs, ...constructorArgs };
 
+    const { publicClient: viemPublicClient } = getFallbackClients(chains[name]);
+    const gasPrice = await viemPublicClient.getGasPrice();
+
     console.log("Deploying parent pool clf cla...");
+
     const deployParentPoolCLFCLA = (await deploy("ParentPoolCLFCLA", {
       from: proxyDeployer,
       args: [
@@ -56,6 +62,7 @@ const deployParentPoolCLFCLA: (hre: HardhatRuntimeEnvironment, constructorArgs?:
       ],
       log: true,
       autoMine: true,
+      gasPrice,
     })) as Deployment;
 
     if (live) {

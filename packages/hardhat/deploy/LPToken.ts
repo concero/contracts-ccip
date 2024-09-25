@@ -3,7 +3,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import cNetworks, { networkEnvKeys } from "../constants/cNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
-import { getEnvVar } from "../utils";
+import { getEnvVar, getFallbackClients } from "../utils";
 
 interface ConstructorArgs {
   parentProxyAddress?: string;
@@ -24,12 +24,16 @@ const deployLPToken: (hre: HardhatRuntimeEnvironment, constructorArgs?: Construc
 
     const args = { ...defaultArgs, ...constructorArgs };
 
+    const publicClient = getFallbackClients(cNetworks[name]);
+    const gasPrice = (await publicClient.publicClient.getGasPrice()).toString();
+
     console.log("Deploying LpToken...");
     const deployLPToken = (await deploy("LPToken", {
       from: proxyDeployer,
       args: [args.owner, args.parentProxyAddress],
       log: true,
       autoMine: true,
+      gasPrice,
     })) as Deployment;
 
     if (live) {

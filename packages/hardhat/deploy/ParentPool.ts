@@ -4,7 +4,7 @@ import chains, { networkEnvKeys } from "../constants/cNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { zeroAddress } from "viem";
-import { getEnvVar } from "../utils";
+import { getEnvVar, getFallbackClients } from "../utils";
 import { poolMessengers } from "../constants";
 
 interface ConstructorArgs {
@@ -50,6 +50,9 @@ const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: Const
 
     log("Deploying...", `deployParentPool, ${deployer}`, name);
 
+    const { publicClient: viemPublicClient } = getFallbackClients(chains[name]);
+    const gasPrice = await viemPublicClient.getGasPrice();
+
     const deployParentPool = (await deploy("ParentPool", {
       from: deployer,
       args: [
@@ -67,6 +70,7 @@ const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: Const
       ],
       log: true,
       autoMine: true,
+      gasPrice,
     })) as Deployment;
 
     if (live) {

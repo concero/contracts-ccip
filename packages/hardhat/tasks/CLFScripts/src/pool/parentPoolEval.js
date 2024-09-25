@@ -1,5 +1,5 @@
 try {
-	const [b, o, f] = bytesArgs[2];
+	const [b, o, f] = bytesArgs;
 	const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';
 	const q =
 		'https://raw.githubusercontent.com/concero/contracts-ccip/' +

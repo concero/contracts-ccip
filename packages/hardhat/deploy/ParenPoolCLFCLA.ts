@@ -9,10 +9,6 @@ import { poolMessengers } from "../constants/deploymentVariables";
 import { getFallbackClients } from "../utils";
 import chains from "../constants/cNetworks";
 
-interface ConstructorArgs {
-  automationForwarder: string;
-}
-
 interface Args {
   parentProxyAddress: string;
   lpToken: string;
@@ -20,10 +16,11 @@ interface Args {
   clfRouter: string;
   clfSubId: string;
   clfDonId: string;
+  automationForwarder: string;
 }
 
 const deployParentPoolCLFCLA: (hre: HardhatRuntimeEnvironment, constructorArgs?: ConstructorArgs) => Promise<void> =
-  async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
+  async function (hre: HardhatRuntimeEnvironment, constructorArgs = {}) {
     const { proxyDeployer } = await hre.getNamedAccounts();
     const { deploy } = hre.deployments;
     const { name, live } = hre.network;
@@ -39,6 +36,7 @@ const deployParentPoolCLFCLA: (hre: HardhatRuntimeEnvironment, constructorArgs?:
       clfRouter: functionsRouter,
       clfSubId: functionsSubIds[0],
       clfDonId: functionsDonId,
+      automationForwarder: getEnvVar(`PARENT_POOL_AUTOMATION_FORWARDER_${networkEnvKeys[name]}`),
     };
 
     const args = { ...defaultArgs, ...constructorArgs };

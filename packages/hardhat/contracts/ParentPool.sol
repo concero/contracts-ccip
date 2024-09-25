@@ -186,15 +186,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             bytes("")
         );
 
-        (bool success, bytes memory delegateCallResponse) = IParentPoolCLFCLAViewDelegate(
-            address(this)
-        ).checkUpkeepViaDelegate();
+        (bool isTriggerNeeded, bytes memory data) = IParentPoolCLFCLAViewDelegate(address(this))
+            .checkUpkeepViaDelegate();
 
-        if (!success) {
-            revert UnableToCompleteDelegateCall(delegateCallArgs);
-        }
-
-        return abi.decode(delegateCallResponse, (bool, bytes));
+        return (isTriggerNeeded, data);
     }
 
     function checkUpkeepViaDelegate() external returns (bool, bytes memory) {
@@ -456,6 +451,15 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             address(i_USDC),
             amountToWithdraw
         );
+    }
+
+    function retryPerformWithdrawalRequest() external {
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            IParentPoolCLFCLA.retryPerformWithdrawalRequest.selector,
+            bytes("")
+        );
+
+        LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
     }
 
     /**

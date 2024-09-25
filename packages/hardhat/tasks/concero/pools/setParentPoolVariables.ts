@@ -15,7 +15,7 @@ import {
   testnetChains,
   viemReceiptConfig,
 } from "../../../constants";
-import { ethersV6CodeUrl, parentPoolJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
+import { collectLiquidityCodeUrl, ethersV6CodeUrl, parentPoolJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 import { Address } from "viem";
 import log, { err } from "../../../utils/log";
 import getHashSum from "../../../utils/getHashSum";
@@ -29,6 +29,7 @@ async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
     const [parentPoolProxy, parentPoolAlias] = getEnvAddress(ProxyEnum.parentPoolProxy, name);
     const parentPoolJsCode = await (await fetch(parentPoolJsCodeUrl)).text();
     const ethersCode = await (await fetch(ethersV6CodeUrl)).text();
+    const collectLiquidityCode = await (await fetch(collectLiquidityCodeUrl)).text();
 
     const setHash = async (hash: string, functionName: string) => {
       console.log("functionName:", functionName, hash);
@@ -50,6 +51,7 @@ async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
     };
 
     await setHash(getHashSum(parentPoolJsCode), "setGetBalanceJsCodeHashSum");
+    await setHash(getHashSum(collectLiquidityCode), "setCollectLiquidityJsCodeHashSum");
     await setHash(getHashSum(ethersCode), "setEthersHashSum");
   } catch (error) {
     err(`${error?.message}`, "setHashSum", name);

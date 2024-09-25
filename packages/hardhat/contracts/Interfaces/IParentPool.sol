@@ -11,7 +11,8 @@ interface IParentPool is IPool {
 
     enum FunctionsRequestType {
         getTotalPoolsBalance,
-        distributeLiquidity
+        distributeLiquidity,
+        collectLiquidity
     }
 
     enum DistributeLiquidityType {

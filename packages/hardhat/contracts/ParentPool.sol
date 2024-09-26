@@ -46,7 +46,7 @@ error DistributeLiquidityRequestAlreadyProceeded(bytes32 requestId);
 ///@notice error emitted when the caller is not the LP who opened the request
 error NotAllowedToCompleteDeposit();
 ///@notice error emitted when the request doesn't exist
-error WithdrawRequestDoesntExist();
+error WithdrawRequestDoesntExist(bytes32 withdrawId);
 error DepositsOnTheWayArrayFull();
 error UnableToCompleteDelegateCall(bytes data);
 error NotContractOwner(address);
@@ -418,7 +418,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      */
     function completeWithdrawal() external onlyProxyContext {
         bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
-        if (withdrawalId == bytes32(0)) revert WithdrawRequestDoesntExist();
+        if (withdrawalId == bytes32(0)) revert WithdrawRequestDoesntExist(withdrawalId);
 
         WithdrawRequest memory withdrawRequest = s_withdrawRequests[withdrawalId];
 
@@ -725,7 +725,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             bytes32 withdrawalId = abi.decode(any2EvmMessage.data, (bytes32));
 
             if (withdrawalId == bytes32(0)) {
-                revert WithdrawRequestDoesntExist();
+                revert WithdrawRequestDoesntExist(withdrawalId);
             }
 
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];

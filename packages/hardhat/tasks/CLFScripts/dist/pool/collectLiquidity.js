@@ -1,6 +1,6 @@
 (async () => {
 	try {
-		const [_, __, ___, liquidityProvider, liquidityRequestedFromEachPool, withdrawalId] = bytesArgs;
+		const [_, __, ___, liquidityRequestedFromEachPool, withdrawalId] = bytesArgs;
 		const chainSelectors = {
 			[`0x${BigInt('3478487238524512106').toString(16)}`]: {
 				urls: [
@@ -53,7 +53,7 @@
 				return res;
 			}
 		}
-		const poolAbi = ['function ccipSendToPool(uint64, address, uint256, bytes32) external'];
+		const poolAbi = ['function ccipSendToPool(uint64, uint256, bytes32) external'];
 		const promises = [];
 		for (const chainSelector in chainSelectors) {
 			const url =
@@ -62,9 +62,7 @@
 			const wallet = new ethers.Wallet('0x' + secrets.POOL_MESSENGER_0_PRIVATE_KEY, provider);
 			const signer = wallet.connect(provider);
 			const poolContract = new ethers.Contract(chainSelectors[chainSelector].poolAddress, poolAbi, signer);
-			promises.push(
-				poolContract.ccipSendToPool(baseChainSelector, liquidityProvider, liquidityRequestedFromEachPool, withdrawalId),
-			);
+			promises.push(poolContract.ccipSendToPool(baseChainSelector, liquidityRequestedFromEachPool, withdrawalId));
 		}
 		await Promise.all(promises);
 		return Functions.encodeUint256(1n);

@@ -16,12 +16,12 @@ export const conceroChains: ConceroChains = {
   testnet: {
     parentPool: [chains.baseSepolia],
     childPool: [chains.arbitrumSepolia, chains.avalancheFuji],
-    infra: [chains.polygonAmoy, chains.arbitrumSepolia, chains.avalancheFuji, chains.baseSepolia],
+    infra: [chains.arbitrumSepolia, chains.avalancheFuji, chains.baseSepolia],
   },
   mainnet: {
-    parentPool: [chains.base], // 12
-    childPool: [chains.polygon, chains.arbitrum, chains.avalanche], // 2
-    infra: [chains.polygon, chains.arbitrum, chains.avalanche, chains.base], // 4
+    parentPool: [chains.base],
+    childPool: [chains.polygon, chains.arbitrum, chains.avalanche],
+    infra: [chains.polygon, chains.arbitrum, chains.avalanche, chains.base],
   },
 };
 

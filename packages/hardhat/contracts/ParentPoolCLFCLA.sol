@@ -433,13 +433,12 @@ contract ParentPoolCLFCLA is
         bytes32 withdrawalId,
         uint256 liquidityRequestedFromEachPool
     ) internal returns (bytes32) {
-        bytes[] memory args = new bytes[](6);
+        bytes[] memory args = new bytes[](5);
         args[0] = abi.encodePacked(s_collectLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(IParentPool.FunctionsRequestType.collectLiquidity);
-        args[3] = abi.encodePacked(lpAddress);
-        args[4] = abi.encodePacked(liquidityRequestedFromEachPool);
-        args[5] = abi.encodePacked(withdrawalId);
+        args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
+        args[4] = abi.encodePacked(withdrawalId);
 
         bytes32 reqId = _sendRequest(args);
 

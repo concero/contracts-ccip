@@ -4,6 +4,7 @@ pragma solidity 0.8.20;
 import {IPool} from "./IPool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IStorage} from "./IStorage.sol";
+import {ICCIP} from "./ICCIP.sol";
 
 interface IParentPool is IPool {
     ///////////////////////
@@ -164,7 +165,7 @@ interface IParentPool is IPool {
         uint64 _chainSelector,
         uint256 _amountToSend,
         bytes32 distributeLiquidityRequestId,
-        IStorage.CcipTxType _ccipTxType
+        ICCIP.CcipTxType _ccipTxType
     ) external;
     function setPools(
         uint64 _chainSelector,

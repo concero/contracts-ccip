@@ -13,6 +13,7 @@ import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-sol
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ConceroFunctions} from "./ConceroFunctions.sol";
 import {IStorage} from "contracts/Interfaces/IStorage.sol";
+import {ICCIP} from "./Interfaces/ICCIP.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -90,8 +91,8 @@ contract ConceroCCIP is ConceroFunctions {
         uint256 _amount,
         BridgeTx[] memory _pendingCCIPTransactions
     ) internal onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
-        IStorage.CcipTxData memory ccipTxData = IStorage.CcipTxData({
-            ccipTxType: IStorage.CcipTxType.bridgeTx,
+        ICCIP.CcipTxData memory ccipTxData = ICCIP.CcipTxData({
+            ccipTxType: ICCIP.CcipTxType.bridge,
             data: abi.encode(_pendingCCIPTransactions)
         });
 
@@ -122,7 +123,7 @@ contract ConceroCCIP is ConceroFunctions {
         address _token,
         uint256 _amount,
         uint64 _destinationChainSelector,
-        IStorage.CcipTxData memory _ccipTxData
+        ICCIP.CcipTxData memory _ccipTxData
     ) internal view returns (Client.EVM2AnyMessage memory) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: _token, amount: _amount});

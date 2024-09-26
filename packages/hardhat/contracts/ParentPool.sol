@@ -21,6 +21,7 @@ import {ParentPoolCommon} from "./ParentPoolCommon.sol";
 import {IParentPoolCLFCLA, IParentPoolCLFCLAViewDelegate} from "./Interfaces/IParentPoolCLFCLA.sol";
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
+import {ICCIP} from "./Interfaces/ICCIP.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -348,7 +349,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
         i_lpToken.mint(msg.sender, lpTokensToMint);
 
-        _distributeLiquidityToChildPools(usdcAmountAfterFee, IStorage.CcipTxType.depositTx);
+        _distributeLiquidityToChildPools(usdcAmountAfterFee, ICCIP.CcipTxType.deposit);
 
         s_depositFeeAmount += DEPOSIT_FEE_USDC;
 
@@ -471,7 +472,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint64 _chainSelector,
         uint256 _amountToSend,
         bytes32 distributeLiquidityRequestId,
-        IStorage.CcipTxType _ccipTxType
+        ICCIP.CcipTxType _ccipTxType
     ) external onlyProxyContext onlyMessenger {
         if (s_childPools[_chainSelector] == address(0)) revert InvalidAddress();
         if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
@@ -694,12 +695,11 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             abi.decode(any2EvmMessage.sender, (address))
         )
     {
-        IStorage.CcipTxData memory ccipTxData = abi.decode(
-            any2EvmMessage.data,
-            (IStorage.CcipTxData)
-        );
+        ICCIP.CcipTxData memory ccipTxData = abi.decode(any2EvmMessage.data, (ICCIP.CcipTxData));
+        uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
+        address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
-        if (ccipTxData.ccipTxType == IStorage.CcipTxType.bridgeTx) {
+        if (ccipTxData.ccipTxType == ICCIP.CcipTxType.bridge) {
             IStorage.BridgeTx[] memory bridgeTxs = abi.decode(
                 ccipTxData.data,
                 (IStorage.BridgeTx[])
@@ -718,34 +718,36 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
                     // And the value is not added into the `s_loanInUse` variable.
                     i_USDC.safeTransfer(bridgeTxs[i].recipient, bridgeTxs[i].amount);
                 } else {
-                    s_loansInUse -= any2EvmMessage.destTokenAmounts[0].amount;
+                    s_loansInUse -= ccipReceivedAmount;
                 }
             }
-        } else if (ccipTxData.ccipTxType == IStorage.CcipTxType.withdrawTx) {
+        } else if (ccipTxData.ccipTxType == ICCIP.CcipTxType.withdraw) {
             bytes32 withdrawalId = abi.decode(any2EvmMessage.data, (bytes32));
-            if (withdrawalId == bytes32(0)) revert WithdrawRequestDoesntExist();
+
+            if (withdrawalId == bytes32(0)) {
+                revert WithdrawRequestDoesntExist();
+            }
+
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
 
             request.remainingLiquidityFromChildPools = request.remainingLiquidityFromChildPools >=
-                any2EvmMessage.destTokenAmounts[0].amount
-                ? request.remainingLiquidityFromChildPools -
-                    any2EvmMessage.destTokenAmounts[0].amount
+                ccipReceivedAmount
+                ? request.remainingLiquidityFromChildPools - ccipReceivedAmount
                 : 0;
 
-            s_withdrawalsOnTheWayAmount = s_withdrawalsOnTheWayAmount >=
-                any2EvmMessage.destTokenAmounts[0].amount
-                ? s_withdrawalsOnTheWayAmount - any2EvmMessage.destTokenAmounts[0].amount
+            s_withdrawalsOnTheWayAmount = s_withdrawalsOnTheWayAmount >= ccipReceivedAmount
+                ? s_withdrawalsOnTheWayAmount - ccipReceivedAmount
                 : 0;
 
-            s_withdrawAmountLocked += any2EvmMessage.destTokenAmounts[0].amount;
+            s_withdrawAmountLocked += ccipReceivedAmount;
         }
 
         emit ConceroParentPool_CCIPReceived(
             any2EvmMessage.messageId,
             any2EvmMessage.sourceChainSelector,
             abi.decode(any2EvmMessage.sender, (address)),
-            any2EvmMessage.destTokenAmounts[0].token,
-            any2EvmMessage.destTokenAmounts[0].amount
+            ccipReceivedToken,
+            ccipReceivedAmount
         );
     }
 
@@ -755,7 +757,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      */
     function _distributeLiquidityToChildPools(
         uint256 _usdcAmountToDeposit,
-        IStorage.CcipTxType _ccipTxType
+        ICCIP.CcipTxType _ccipTxType
     ) internal {
         uint256 childPoolsCount = s_poolChainSelectors.length;
         uint256 amountToDistribute = ((_usdcAmountToDeposit * PRECISION_HANDLER) /
@@ -783,10 +785,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     function _ccipSend(
         uint64 _chainSelector,
         uint256 _amountToDistribute,
-        IStorage.CcipTxType _ccipTxType
+        ICCIP.CcipTxType _ccipTxType
     ) internal returns (bytes32 messageId) {
         IStorage.BridgeTx[] memory emptyBridgeTxArray;
-        IStorage.CcipTxData memory ccipTxData = IStorage.CcipTxData({
+        ICCIP.CcipTxData memory ccipTxData = ICCIP.CcipTxData({
             ccipTxType: _ccipTxType,
             data: abi.encode(emptyBridgeTxArray)
         });
@@ -812,7 +814,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint64 _chainSelector,
         address _token,
         uint256 _amount,
-        IStorage.CcipTxData memory _ccipTxData
+        ICCIP.CcipTxData memory _ccipTxData
     ) internal view returns (Client.EVM2AnyMessage memory) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: _token, amount: _amount});

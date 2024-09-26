@@ -15,6 +15,7 @@ import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interface
 import {ChildPoolStorage} from "contracts/Libraries/ChildPoolStorage.sol";
 import {IStorage} from "./Interfaces/IStorage.sol";
 import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
+import {ICCIP} from "./Interfaces/ICCIP.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -168,12 +169,11 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     /**
      * @notice Function called by Messenger process withdraw calls
      * @param _chainSelector The destination chain selector will always be from Parent Pool
-     * @param _lpAddress the LP that requested withdraw.
      * @param _amountToSend the amount to redistribute between pools.
+     * @param _withdrawId the id of the withdraw request
      */
     function ccipSendToPool(
         uint64 _chainSelector,
-        address _lpAddress,
         uint256 _amountToSend,
         bytes32 _withdrawId
     ) external onlyProxyContext onlyMessenger {
@@ -184,7 +184,12 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
 
         s_withdrawRequests[_withdrawId] = true;
 
-        _ccipSend(_chainSelector, _lpAddress, _amountToSend, IStorage.CcipTxType.withdrawTx);
+        ICCIP.CcipTxData memory ccipTxData = ICCIP.CcipTxData({
+            ccipTxType: ICCIP.CcipTxType.withdraw,
+            data: abi.encode(_withdrawId)
+        });
+
+        _ccipSend(_chainSelector, _amountToSend, ccipTxData);
     }
 
     /**
@@ -195,15 +200,19 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     function distributeLiquidity(
         uint64 _chainSelector,
         uint256 _amountToSend,
-        bytes32 _requestId,
-        IStorage.CcipTxType _ccipTxType
+        bytes32 _requestId
     ) external onlyProxyContext onlyMessenger {
         if (s_poolToSendTo[_chainSelector] == address(0)) revert ConceroChildPool_InvalidAddress();
         if (s_distributeLiquidityRequestProcessed[_requestId] != false) {
             revert ConceroChildPool_RequestAlreadyProceeded(_requestId);
         }
         s_distributeLiquidityRequestProcessed[_requestId] = true;
-        _ccipSend(_chainSelector, address(0), _amountToSend, _ccipTxType);
+        ICCIP.CcipTxData memory _ccipTxData = ICCIP.CcipTxData({
+            ccipTxType: ICCIP.CcipTxType.liquidityRebalancing,
+            data: ""
+        });
+
+        _ccipSend(_chainSelector, _amountToSend, _ccipTxData);
     }
 
     /**
@@ -212,8 +221,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
      * @dev If Orchestrator took a loan and the money didn't rebalance yet, it will be left behind.
      */
     function liquidatePool(
-        bytes32 distributeLiquidityRequestId,
-        IStorage.CcipTxType _ccipTxType
+        bytes32 distributeLiquidityRequestId
     ) external onlyProxyContext onlyMessenger {
         if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
             revert ConceroChildPool_RequestAlreadyProceeded(distributeLiquidityRequestId);
@@ -224,10 +232,14 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         if (poolsCount == 0) revert ConceroChildPool_ThereIsNoPoolToDistribute();
 
         uint256 amountToSentToEachPool = (i_USDC.balanceOf(address(this)) / poolsCount) - 1;
+        ICCIP.CcipTxData memory ccipTxData = ICCIP.CcipTxData({
+            ccipTxType: ICCIP.CcipTxType.liquidityRebalancing,
+            data: ""
+        });
 
         for (uint256 i; i < poolsCount; ) {
             //This is a function to deal with adding&removing pools. So, the second param will always be address(0)
-            _ccipSend(s_poolChainSelectors[i], address(0), amountToSentToEachPool, _ccipTxType);
+            _ccipSend(s_poolChainSelectors[i], amountToSentToEachPool, ccipTxData);
             unchecked {
                 ++i;
             }
@@ -338,12 +350,9 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
             abi.decode(any2EvmMessage.sender, (address))
         )
     {
-        IStorage.CcipTxData memory ccipTxData = abi.decode(
-            any2EvmMessage.data,
-            (IStorage.CcipTxData)
-        );
+        ICCIP.CcipTxData memory ccipTxData = abi.decode(any2EvmMessage.data, (ICCIP.CcipTxData));
 
-        if (ccipTxData.ccipTxType == IStorage.CcipTxType.bridgeTx) {
+        if (ccipTxData.ccipTxType == ICCIP.CcipTxType.bridge) {
             IStorage.BridgeTx[] memory bridgeTxs = abi.decode(
                 ccipTxData.data,
                 (IStorage.BridgeTx[])
@@ -379,31 +388,19 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
 
     /**
      * @notice Function to Distribute Liquidity across Concero Pools and process withdrawals
-     * @param _lpAddress The liquidity provider that requested Withdraw. If it's a rebalance, it will be address(0)
+     * @param _chainSelector the chainSelector of the pool to send the USDC
      * @param _amount amount of the token to be sent
+     * @param ccipTxData the data to be sent to the pool
      * @dev This function will sent the address of the user as data. This address will be used to update the mapping on ParentPool.
      * @dev when processing withdrawals, the _chainSelector will always be the index 0 of s_poolChainSelectors
      */
-    //todo: rename _lpAddress
     function _ccipSend(
         uint64 _chainSelector,
-        address _lpAddress,
         uint256 _amount,
-        IStorage.CcipTxType _ccipTxType
+        ICCIP.CcipTxData memory ccipTxData
     ) internal onlyMessenger onlyProxyContext returns (bytes32) {
-        IStorage.CcipTxData memory ccipTxData = IStorage.CcipTxData({
-            ccipTxType: _ccipTxType,
-            data: ""
-        });
-
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
-
-        Client.EVMTokenAmount memory tokenAmount = Client.EVMTokenAmount({
-            token: address(i_USDC),
-            amount: _amount
-        });
-
-        tokenAmounts[0] = tokenAmount;
+        tokenAmounts[0] = Client.EVMTokenAmount({token: address(i_USDC), amount: _amount});
 
         Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
             receiver: abi.encode(s_poolToSendTo[_chainSelector]),

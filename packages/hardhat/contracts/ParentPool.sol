@@ -722,7 +722,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
                 }
             }
         } else if (ccipTxData.ccipTxType == ICCIP.CcipTxType.withdraw) {
-            bytes32 withdrawalId = abi.decode(any2EvmMessage.data, (bytes32));
+            bytes32 withdrawalId = abi.decode(ccipTxData.data, (bytes32));
 
             if (withdrawalId == bytes32(0)) {
                 revert WithdrawRequestDoesntExist(withdrawalId);

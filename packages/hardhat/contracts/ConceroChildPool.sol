@@ -401,9 +401,10 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
     ) internal onlyMessenger onlyProxyContext returns (bytes32) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: address(i_USDC), amount: _amount});
+        address poolToSendTo = s_poolToSendTo[_chainSelector];
 
         Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
-            receiver: abi.encode(s_poolToSendTo[_chainSelector]),
+            receiver: abi.encode(poolToSendTo),
             data: abi.encode(ccipTxData),
             tokenAmounts: tokenAmounts,
             extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
@@ -420,7 +421,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         emit ConceroChildPool_CCIPSent(
             messageId,
             _chainSelector,
-            s_poolToSendTo[_chainSelector],
+            poolToSendTo,
             address(i_linkToken),
             ccipFeeAmount
         );

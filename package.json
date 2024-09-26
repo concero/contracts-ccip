@@ -10,7 +10,6 @@
       "packages/nextjs"
     ]
   },
-
   "scripts": {
     "account": "yarn workspace @se-2/hardhat account",
     "chain": "yarn workspace @se-2/hardhat chain",
@@ -64,6 +63,8 @@
   },
   "dependencies": {
     "ethers": "^5.0.0",
-    "typescript": "~5.0.0"
+    "typescript": "~5.0.0",
+    "@tenderly/api-client": "^1.0.1",
+    "@tenderly/hardhat-tenderly": "^2.3.1"
   }
 }

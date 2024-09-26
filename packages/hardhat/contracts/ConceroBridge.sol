@@ -107,7 +107,15 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
 
         uint256 batchedTxAmount = s_pendingBatchedTxAmountByDstChain[bridgeData.dstChainSelector];
 
-        _sendUnconfirmedTX(conceroMessageId, msg.sender, bridgeData, amountToSend, dstSwapData);
+        _sendUnconfirmedTX(
+            conceroMessageId,
+            msg.sender,
+            bridgeData.dstChainSelector,
+            bridgeData.receiver,
+            bridgeData.tokenType,
+            amountToSend,
+            dstSwapData
+        );
 
         if (batchedTxAmount >= BATCHED_TX_THRESHOLD)
             _sendBatchViaSettlement(fromToken, batchedTxAmount, bridgeData.dstChainSelector);

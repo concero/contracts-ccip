@@ -299,18 +299,22 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
      * @notice Sends an unconfirmed TX to the destination chain
      * @param messageId the CCIP message to be checked
      * @param sender the address to query information
-     * @param bridgeData the bridge data to be sent
+     * @param dstChainSelector CCIP chain selector for destination chain
+     * @param receiver address of recipient on destination chain
+     * @param tokenType IStorage.CCIPToken (CCIP compatible tokens like USDC)
      * @param amount the amount to be transferred
      * @param dstSwapData the payload to be swapped if it exists
      */
     function _sendUnconfirmedTX(
         bytes32 messageId,
         address sender,
-        BridgeData memory bridgeData,
+        uint64 dstChainSelector,
+        address receiver,
+        CCIPToken tokenType,
         uint256 amount,
         IDexSwap.SwapData[] memory dstSwapData
     ) internal {
-        if (s_conceroContracts[bridgeData.dstChainSelector] == address(0)) {
+        if (s_conceroContracts[dstChainSelector] == address(0)) {
             revert ConceroFunctions_DstContractAddressNotSet();
         }
 
@@ -318,14 +322,14 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         args[0] = abi.encodePacked(s_srcJsHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(RequestType.addUnconfirmedTxDst);
-        args[3] = abi.encodePacked(s_conceroContracts[bridgeData.dstChainSelector]);
+        args[3] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
         args[4] = abi.encodePacked(messageId);
         args[5] = abi.encodePacked(sender);
-        args[6] = abi.encodePacked(bridgeData.receiver);
+        args[6] = abi.encodePacked(receiver);
         args[7] = abi.encodePacked(amount);
         args[8] = abi.encodePacked(CHAIN_SELECTOR);
-        args[9] = abi.encodePacked(bridgeData.dstChainSelector);
-        args[10] = abi.encodePacked(uint8(bridgeData.tokenType));
+        args[9] = abi.encodePacked(dstChainSelector);
+        args[10] = abi.encodePacked(uint8(tokenType));
         args[11] = abi.encodePacked(block.number);
         args[12] = _swapDataToBytes(dstSwapData);
 
@@ -334,14 +338,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         s_requests[reqId].isPending = true;
         s_requests[reqId].ccipMessageId = messageId;
 
-        emit UnconfirmedTXSent(
-            messageId,
-            sender,
-            bridgeData.receiver,
-            amount,
-            bridgeData.tokenType,
-            bridgeData.dstChainSelector
-        );
+        emit UnconfirmedTXSent(messageId, sender, receiver, amount, tokenType, dstChainSelector);
     }
 
     /**

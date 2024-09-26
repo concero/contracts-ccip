@@ -2,19 +2,11 @@ import { CNetwork } from "../../../types/CNetwork";
 import {
   formatGas,
   getEnvAddress,
-  getEnvVar,
   getEthersV5FallbackSignerAndProvider,
   getFallbackClients,
   shorten,
 } from "../../../utils";
-import {
-  mainnetChains,
-  networkEnvKeys,
-  networkTypes,
-  ProxyEnum,
-  testnetChains,
-  viemReceiptConfig,
-} from "../../../constants";
+import { mainnetChains, networkTypes, ProxyEnum, testnetChains, viemReceiptConfig } from "../../../constants";
 import { collectLiquidityCodeUrl, ethersV6CodeUrl, parentPoolJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 import { Address } from "viem";
 import log, { err } from "../../../utils/log";
@@ -243,74 +235,6 @@ async function setPools(chain: CNetwork, abi: any) {
       err(`Error ${error?.message}`, "setPools", name);
     }
   }
-}
-
-async function deletePendingRequest(chain: CNetwork, abi, reqId: string) {
-  const { name: chainName, viemChain, url } = chain;
-  const clients = getFallbackClients(chain);
-  const { publicClient, account, walletClient } = clients;
-  if (!chainName) throw new Error("Chain name not found");
-
-  const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}`);
-  const { request: deletePendingReq } = await publicClient.simulateContract({
-    address: conceroPoolAddress,
-    functionName: "deletePendingWithdrawRequest",
-    args: [reqId],
-    abi,
-    account,
-    viemChain,
-  });
-  const deletePendingHash = await walletClient.writeContract(deletePendingReq);
-  const { cumulativeGasUsed: deletePendingGasUsed } = await publicClient.waitForTransactionReceipt({
-    ...viemReceiptConfig,
-    hash: deletePendingHash,
-  });
-  log(`Delete pending requests. Gas used: ${deletePendingGasUsed.toString()}`, "deletePendingWithdrawRequest");
-}
-
-async function getPendingRequest(chain: CNetwork, abi: any) {
-  const { name: chainName, viemChain, url } = chain;
-  const clients = getFallbackClients(chain);
-  const { publicClient, account, walletClient } = clients;
-  if (!chainName) throw new Error("Chain name not found");
-  const conceroPoolAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chainName]}`);
-
-  const pendingRequest = await publicClient.readContract({
-    address: conceroPoolAddress,
-    abi,
-    functionName: "getPendingWithdrawRequest",
-    args: ["0x1637A2cafe89Ea6d8eCb7cC7378C023f25c892b6"],
-    chain: viemChain,
-  });
-
-  console.log(pendingRequest);
-}
-
-async function removePool(chain: CNetwork, abi: any, networkName: string) {
-  const { name: chainName, viemChain, url } = chain;
-  const clients = getFallbackClients(chain);
-  const { publicClient, account, walletClient } = clients;
-  if (!chainName) throw new Error("Chain name not found");
-
-  const parentPoolAddress = getEnvVar(`PARENT_POOL_PROXY_BASE_SEPOLIA`);
-  const chainSelectorToRemove = getEnvVar(`CL_CCIP_CHAIN_SELECTOR_${networkEnvKeys[networkName]}`);
-
-  const deletePoolHash = await walletClient.writeContract({
-    address: parentPoolAddress,
-    abi,
-    functionName: "removePools",
-    args: [chainSelectorToRemove],
-    account,
-    viemChain,
-    gas: 1_000_000n,
-  });
-
-  const { cumulativeGasUsed: deletePoolGasUsed } = await publicClient.waitForTransactionReceipt({
-    ...viemReceiptConfig,
-    hash: deletePoolHash,
-  });
-
-  log(`Remove pool ${networkName}. Gas used: ${deletePoolGasUsed.toString()}`, "removePool");
 }
 
 export async function setParentPoolVariables(chain: CNetwork, slotId: number) {

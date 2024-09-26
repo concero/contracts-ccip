@@ -1,5 +1,5 @@
 import { task, types } from "hardhat/config";
-import CNetworks, { conceroChains, networkTypes, ProxyEnum } from "../../../constants";
+import { conceroChains, networkTypes, ProxyEnum } from "../../../constants";
 import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
 import { CNetwork } from "../../../types/CNetwork";
 import uploadDonSecrets from "../../CLF/donSecrets/upload";
@@ -13,6 +13,7 @@ import deployTransparentProxy from "../../../deploy/TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import { DeployInfraParams } from "./types";
 import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecretsConfig";
+import CNetworks from "../../../constants/cNetworks";
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("deployproxy", "Deploy the proxy")
@@ -62,6 +63,7 @@ async function deployInfra(params: DeployInfraParams) {
 
     const [proxyAddress] = getEnvAddress(ProxyEnum.infraProxy, name);
     const { functionsSubIds } = CNetworks[name];
+    console.log(functionsSubIds);
     await addCLFConsumer(CNetworks[name], [proxyAddress], functionsSubIds[0]);
   }
 

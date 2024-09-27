@@ -78,15 +78,15 @@ task('clf-script-simulate', 'Executes the JavaScript source code locally')
 				'0x00', //dst swap data
 			]);
 		} else if (taskArgs.function === 'infra_dst') {
-			await simulate(path.join(__dirname, '../', './CLFScripts/dist/infra/eval.min.js'), [
-				'0x08b5c1a7f6dbbcb3ef5a9a7cdc9ab43621e3321b063099ad6bba945b0ce4bcf5',
+			await simulate(path.join(__dirname, '../', './CLFScripts/dist/infra/DST.min.js'), [
+				'0x03a10af5b94376dd622652937371b52b0df82f0a3f0e2ad68a0e6384911fd7bd',
 				'0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4', // ethers hash sum
 				'0x1',
 				process.env.CONCERO_INFRA_PROXY_ARBITRUM_SEPOLIA, // srcContractAddress
 				'0x' + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA).toString(16), // srcChainSelector, chain to get logs from
 				'0x6748AE', // blockNumber
 				// event params:
-				'0x29e43cd1df8c94012e2a65cc301e072cd7d20e78892e28de369f1583db1ad562', // conceroBridgeId
+				'0x2e36844a859b5802e47c2b5cd9ae5f2f424e83c13fc5919b8bf3d6e641e43c95', // conceroBridgeId
 				'0xdddddb8a8e41c194ac6542a0ad7ba663a72741e0', // sender
 				'0xdddddb8a8e41c194ac6542a0ad7ba663a72741e0', // recipient
 				'0x' + 1n.toString(16), // token

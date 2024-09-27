@@ -11,6 +11,7 @@ import {
 	parentPoolDistributeLiqJsCodeUrl,
 } from '../../constants/functionsJsCodeUrls';
 import {getEnvVar} from '../../utils';
+import {parseUnits} from 'viem';
 
 const {simulateScript} = require('@chainlink/functions-toolkit');
 
@@ -55,9 +56,7 @@ async function simulate(pathToFile, args) {
 	}
 }
 
-/* run with: bunx hardhat clf-simulate-script */
 task('clf-script-simulate', 'Executes the JavaScript source code locally')
-	// .addOptionalParam("path", "Path to script file", `${__dirn ame}/../Functions-request-config.js`, types.string)
 	.addParam('function', 'Path to script file', 'pool_get_total_balance', types.string)
 	.setAction(async (taskArgs, hre) => {
 		execSync(`bunx hardhat clf-script-build --all`, {stdio: 'inherit'});
@@ -79,20 +78,20 @@ task('clf-script-simulate', 'Executes the JavaScript source code locally')
 				'0x00', //dst swap data
 			]);
 		} else if (taskArgs.function === 'infra_dst') {
-			await simulate(path.join(__dirname, '../', './CLFScripts/dist/eval.min.js'), [
-				'0xada5df165da01ec1249e7ae55303f8587fd50170729ed2b33a8b53be71f8d8ab',
-				'0x05f8cc312ae3687e5581353da9c5889b92d232f7776c8b81dc234fb330fda265', // ethers hash sum
+			await simulate(path.join(__dirname, '../', './CLFScripts/dist/infra/eval.min.js'), [
+				'0x08b5c1a7f6dbbcb3ef5a9a7cdc9ab43621e3321b063099ad6bba945b0ce4bcf5',
+				'0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4', // ethers hash sum
 				'0x1',
-				process.env.CONCERO_BRIDGE_BASE_SEPOLIA, // srcContractAddress
-				'0x' + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA).toString(16), // srcChainSelector, chain to get logs from
-				'0x92DA49', // blockNumber
+				process.env.CONCERO_INFRA_PROXY_ARBITRUM_SEPOLIA, // srcContractAddress
+				'0x' + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA).toString(16), // srcChainSelector, chain to get logs from
+				'0x6748AE', // blockNumber
 				// event params:
-				'0xc957703fb298a67ab8077f691dbf4cdb137be8fd39bd4afab67ef847f99a74c8', // messageId
-				'0x70E73f067a1fC9FE6D53151bd271715811746d3a', // sender
-				'0x70E73f067a1fC9FE6D53151bd271715811746d3a', // recipient
-				'0x' + 0n.toString(16), // token
-				'0x' + 40000000000000000n.toString(16), // amount
-				'0x' + 5224473277236331295n.toString(16), // dstChainSelector
+				'0x29e43cd1df8c94012e2a65cc301e072cd7d20e78892e28de369f1583db1ad562', // conceroBridgeId
+				'0xdddddb8a8e41c194ac6542a0ad7ba663a72741e0', // sender
+				'0xdddddb8a8e41c194ac6542a0ad7ba663a72741e0', // recipient
+				'0x' + 1n.toString(16), // token
+				'0x' + parseUnits('1', 6), // amount
+				'0x' + process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA.toString(16), // dstChainSelector
 			]);
 		} else if (taskArgs.function === 'pool_get_total_balance') {
 			await simulate(path.join(__dirname, '../', './CLFScripts/dist/pool/getTotalBalance.min.js'), [

@@ -6,9 +6,8 @@ import { CNetwork } from "../../../types/CNetwork";
 import log, { err, warn } from "../../../utils/log";
 import { Address } from "viem";
 import { shorten } from "../../../utils/formatting";
-import { getEthersV5FallbackSignerAndProvider } from "../../../utils";
+import { getEthersSignerAndProvider } from "../../../utils";
 
-// run with: bunx hardhat clf-consumer-add --subid 5810 --contract 0x... --network avalancheFuji
 task("clf-sub-consumer-add", "Adds a consumer contract to the Functions billing subscription")
   .addOptionalParam("subid", "Subscription ID", undefined)
   .addParam("contract", "Address(es) of the Functions consumer contract to authorize for billing")
@@ -33,12 +32,11 @@ async function addCLFConsumer(chain: CNetwork, consumerAddresses: Address[], sub
     throw new Error(`Chain ${chain.name} not found`);
   }
 
-  const { signer } = getEthersV5FallbackSignerAndProvider(chain.name);
+  const { signer } = getEthersSignerAndProvider(chain.url);
 
   for (const consumerAddress of consumerAddresses) {
     const txOptions = { confirmations };
     log(`Adding ${shorten(consumerAddress)} to sub ${subscriptionId}`, "addCLFConsumer", name);
-
     const sm = new SubscriptionManager({
       signer,
       linkTokenAddress: linkToken,

@@ -53,21 +53,15 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
 async function deployInfra(params: DeployInfraParams) {
   const { hre, deployableChains, deployProxy, deployImplementation, setVars, uploadSecrets, slotId } = params;
   const { name } = hre.network;
-  // const { deployer, proxyDeployer } = await hre.getNamedAccounts();
   const isTestnet = deployableChains[0].type === "testnet";
 
   if (deployProxy) {
-    // await ensureWalletBalance(proxyDeployer, deployerTargetBalances, cNetworks[name]);
     await deployProxyAdmin(hre, ProxyEnum.infraProxy);
     await deployTransparentProxy(hre, ProxyEnum.infraProxy);
-
     const [proxyAddress] = getEnvAddress(ProxyEnum.infraProxy, name);
     const { functionsSubIds } = CNetworks[name];
-    console.log(functionsSubIds);
     await addCLFConsumer(CNetworks[name], [proxyAddress], functionsSubIds[0]);
   }
-
-  // await ensureWalletBalance(deployer, deployerTargetBalances, cNetworks[name]);
 
   if (deployImplementation) {
     await deployConceroDexSwap(hre);

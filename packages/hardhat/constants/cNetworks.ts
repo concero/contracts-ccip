@@ -133,6 +133,7 @@ export const cNetworks: Record<CNetworkNames, CNetwork> = {
     functionsGatewayUrls: functionsGatewayUrls.testnet,
     donHostedSecretsVersion: process.env.CLF_DON_SECRETS_VERSION_FUJI,
     chainSelector: process.env.CL_CCIP_CHAIN_SELECTOR_FUJI,
+    conceroChainIndex: "4",
     confirmations: DEFAULT_BLOCK_CONFIRMATIONS,
     linkToken: process.env.LINK_FUJI,
     linkPriceFeed: process.env.LINK_PRICEFEED_FUJI,

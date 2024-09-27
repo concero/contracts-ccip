@@ -5,7 +5,6 @@ import { formatEther } from "viem";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getEthersV5FallbackSignerAndProvider } from "../../../utils/getEthersSignerAndProvider";
 
-// run with: bunx hardhat clf-sub-info --subid 5810 --network avalancheFuji
 task(
   "clf-sub-info",
   "Gets the Functions billing subscription balance, owner, and list of authorized consumer contract addresses",
@@ -29,7 +28,6 @@ task(
     console.log(`Getting info for subscription ${subscriptionId}...`);
 
     const subInfo = await sm.getSubscriptionInfo(subscriptionId);
-    // subInfo.balance = formatEther(subInfo.balance) + " LINK";
     subInfo.blockedBalance = formatEther(subInfo.blockedBalance) + " LINK";
     console.log(BigInt(subInfo.balance));
     console.log(`\nInfo for subscription ${subscriptionId}:\n`, subInfo);

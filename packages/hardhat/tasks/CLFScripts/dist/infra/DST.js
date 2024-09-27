@@ -1,5 +1,4 @@
-const ethers = await import('npm:ethers@6.10.0');
-return (async () => {
+(async () => {
 	try {
 		const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 		const [_, __, ___, srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = bytesArgs;

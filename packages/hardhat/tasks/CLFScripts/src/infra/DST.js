@@ -1,4 +1,6 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+
+return (async () => {
 	try {
 		const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 		// todo: add dstSwapDataHashSum argument, compare with event from source
@@ -152,15 +154,15 @@
 		}
 
 		const log = logs[0];
-		const abi = ['event ConceroBridgeSent(bytes32 indexed, uint8, uint256, uin64, address)'];
+		const abi = ['event ConceroBridgeSent(bytes32 indexed, uint8, uint256, uint64, address)'];
 		const contract = new ethers.Interface(abi);
 		const logData = {
 			topics: [ethersId, log.topics[1]],
 			data: log.data,
 		};
-
 		const decodedLog = contract.parseLog(logData);
-		for (let i = 0; i < decodedLog.args.length; i++) {
+
+		for (let i = 0; i < decodedLog.length; i++) {
 			if (decodedLog.args[i].toString().toLowerCase() !== eventArgs[i].toString().toLowerCase()) {
 				throw new Error('Message ID does not match the event log');
 			}

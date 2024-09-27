@@ -60,7 +60,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     ///@notice Chainlink Functions Protocol Subscription ID
     uint64 private immutable i_subscriptionId;
     //@notice CCIP chainSelector
-    uint64 internal immutable CHAIN_SELECTOR; // todo: prefix with i
+    uint64 internal immutable i_chainSelector; // todo: prefix with i
     ///@notice variable to store the DexSwap address
     address internal immutable i_dexSwap;
     ///@notice variable to store the ConceroPool address
@@ -126,7 +126,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     ) FunctionsClient(_variables.functionsRouter) ConceroCommon(_messengers) {
         i_donId = _variables.donId;
         i_subscriptionId = _variables.subscriptionId;
-        CHAIN_SELECTOR = _chainSelector;
+        i_chainSelector = _chainSelector;
         i_chainIndex = Chain(_chainIndex);
         i_dexSwap = _dexSwap;
         i_poolProxy = _pool;
@@ -187,7 +187,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         args[8] = abi.encodePacked(recipient);
         args[9] = abi.encodePacked(uint8(token));
         args[10] = abi.encodePacked(amount);
-        args[11] = abi.encodePacked(CHAIN_SELECTOR);
+        args[11] = abi.encodePacked(i_chainSelector);
         //todo: generate dstSwapDataHashSum, add to args, send to CLF to compare sums
 
         bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT);
@@ -327,7 +327,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         args[5] = abi.encodePacked(sender);
         args[6] = abi.encodePacked(receiver);
         args[7] = abi.encodePacked(amount);
-        args[8] = abi.encodePacked(CHAIN_SELECTOR);
+        args[8] = abi.encodePacked(i_chainSelector);
         args[9] = abi.encodePacked(dstChainSelector);
         args[10] = abi.encodePacked(uint8(tokenType));
         args[11] = abi.encodePacked(block.number);
@@ -402,8 +402,8 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
             uint256 linkNativeRate
         ) = abi.decode(response, (uint256, uint256, uint64, uint256, uint256, uint256));
 
-        s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice == 0
-            ? s_lastGasPrices[CHAIN_SELECTOR]
+        s_lastGasPrices[i_chainSelector] = srcGasPrice == 0
+            ? s_lastGasPrices[i_chainSelector]
             : srcGasPrice;
         s_lastGasPrices[dstChainSelector] = dstGasPrice == 0
             ? s_lastGasPrices[dstChainSelector]

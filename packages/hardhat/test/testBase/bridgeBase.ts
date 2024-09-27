@@ -1,6 +1,5 @@
 import { approve } from "../utils/approve";
 import { abi as ConceroOrchestratorAbi } from "../../artifacts/contracts/Orchestrator.sol/Orchestrator.json";
-import { log } from "../../utils";
 
 export interface IBridgeBase {
   srcTokenAddress: string;
@@ -38,7 +37,11 @@ export async function bridgeBase({
     gas: 4_000_000n,
   });
 
-  log(`bridgeTxHash: ${bridgeTx}`, "bridge");
   const { status } = await publicClient.waitForTransactionReceipt({ hash: bridgeTx });
-  log(`bridge status: ${status}`, "bridge");
+
+  if (status === "success") {
+    console.log(`Bridge successful`, "bridge", "hash:", bridgeTx);
+  } else {
+    throw new Error(`Bridge failed. Hash: ${bridgeTx}`);
+  }
 }

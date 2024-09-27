@@ -142,9 +142,9 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
      * @param dstChainSelector the destination blockchain chain selector
      */
     function getFunctionsFeeInLink(uint64 dstChainSelector) public view returns (uint256) {
-        uint256 srcGasPrice = s_lastGasPrices[CHAIN_SELECTOR];
+        uint256 srcGasPrice = s_lastGasPrices[i_chainSelector];
         uint256 dstGasPrice = s_lastGasPrices[dstChainSelector];
-        uint256 srcClFeeInLink = clfPremiumFees[CHAIN_SELECTOR] +
+        uint256 srcClFeeInLink = clfPremiumFees[i_chainSelector] +
             (srcGasPrice *
                 (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT) *
                 s_latestLinkNativeRate) /
@@ -166,7 +166,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         //    uint256 functionsFeeInLink = getFunctionsFeeInLink(dstChainSelector);
         //    return (functionsFeeInLink * s_latestLinkUsdcRate) / STANDARD_TOKEN_DECIMALS;
 
-        return clfPremiumFees[dstChainSelector] + clfPremiumFees[CHAIN_SELECTOR];
+        return clfPremiumFees[dstChainSelector] + clfPremiumFees[i_chainSelector];
     }
 
     /**
@@ -247,7 +247,7 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
 
         // @notice gas fee
         uint256 messengerDstGasInNative = HALF_DST_GAS * s_lastGasPrices[dstChainSelector];
-        uint256 messengerSrcGasInNative = HALF_DST_GAS * s_lastGasPrices[CHAIN_SELECTOR];
+        uint256 messengerSrcGasInNative = HALF_DST_GAS * s_lastGasPrices[i_chainSelector];
         uint256 messengerGasFeeInUsdc = ((messengerDstGasInNative + messengerSrcGasInNative) *
             s_latestNativeUsdcRate) / STANDARD_TOKEN_DECIMALS;
 

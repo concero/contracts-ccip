@@ -93,11 +93,14 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
             _getSrcTotalFeeInUsdc(bridgeData.dstChainSelector, bridgeData.amount)
         );
 
-        if (bridgeData.amount < totalSrcFee) {
-            revert ConceroBridge_InsufficientFees(bridgeData.amount, totalSrcFee);
-        }
+        // TODO: rollback it in production!!!!
 
-        uint256 amountToSend = bridgeData.amount - totalSrcFee;
+        //        if (bridgeData.amount < totalSrcFee) {
+        //            revert ConceroBridge_InsufficientFees(bridgeData.amount, totalSrcFee);
+        //        }
+
+        //        uint256 amountToSend = bridgeData.amount - totalSrcFee;
+        uint256 amountToSend = bridgeData.amount;
         bytes32 conceroMessageId = keccak256(
             abi.encodePacked(msg.sender, bridgeData.receiver, amountToSend, block.timestamp)
         );

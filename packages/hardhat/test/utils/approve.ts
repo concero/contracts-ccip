@@ -8,8 +8,8 @@ import type { Account } from "viem/accounts/types";
 import { RpcSchema } from "viem/types/eip1193";
 
 export async function approve(
-  erc20TokenAddress: Address,
-  contractAddress: Address,
+  erc20TokenAddress: Address | string,
+  contractAddress: Address | string,
   amount: BigInt,
   walletClient: WalletClient,
   publicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema>,

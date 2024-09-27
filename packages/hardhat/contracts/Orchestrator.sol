@@ -199,7 +199,9 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         if (
             srcSwapData[srcSwapData.length - 1].toToken !=
             getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex)
-        ) revert Orchestrator_InvalidSwapData();
+        ) {
+            revert Orchestrator_InvalidSwapData();
+        }
 
         uint256 amountReceivedFromSwap = _swap(srcSwapData, 0, false, address(this));
         bridgeData.amount = amountReceivedFromSwap;
@@ -247,14 +249,6 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         // todo: this can be moved to the end of the function, after all potential reverts
         emit Orchestrator_StartBridge();
 
-        // todo: this may not be necessary, as we can simply attempt to transfer the token and revert if it fails
-        // todo: maybe move to modifier tokenAmountSufficiency
-        // todo: research if LIFI does this check
-        uint256 userBalance = IERC20(getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex))
-            .balanceOf(msg.sender);
-        if (userBalance < bridgeData.amount) revert Orchestrator_InvalidAmount();
-        // todo: the above can be removed
-
         address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
         LibConcero.transferFromERC20(fromToken, msg.sender, address(this), bridgeData.amount);
 
@@ -282,20 +276,19 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         uint256 blockNumber,
         bytes calldata dstSwapData
     ) external onlyMessenger {
-        (bool success, bytes memory error) = i_concero.delegatecall(
-            abi.encodeWithSelector(
-                IConceroFunctions.addUnconfirmedTX.selector,
-                ccipMessageId,
-                sender,
-                recipient,
-                amount,
-                srcChainSelector,
-                token,
-                blockNumber,
-                dstSwapData
-            )
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            IConceroFunctions.addUnconfirmedTX.selector,
+            ccipMessageId,
+            sender,
+            recipient,
+            amount,
+            srcChainSelector,
+            token,
+            blockNumber,
+            dstSwapData
         );
-        if (!success) revert Orchestrator_UnableToCompleteDelegateCall(error);
+
+        LibConcero.safeDelegateCall(i_concero, delegateCallArgs);
     }
 
     /**
@@ -315,17 +308,14 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
             revert Orchestrator_OnlyRouterCanFulfill();
         }
 
-        (bool success, bytes memory error) = i_concero.delegatecall(
-            abi.encodeWithSelector(
-                IConceroFunctions.fulfillRequestWrapper.selector,
-                requestId,
-                response,
-                err
-            )
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            IConceroFunctions.fulfillRequestWrapper.selector,
+            requestId,
+            response,
+            err
         );
 
-        if (!success) revert Orchestrator_UnableToCompleteDelegateCall(error);
-        emit Orchestrator_RequestFulfilled(requestId);
+        LibConcero.safeDelegateCall(i_concero, delegateCallArgs);
     }
 
     /**

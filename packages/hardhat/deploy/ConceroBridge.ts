@@ -3,8 +3,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import chains, { networkEnvKeys } from "../constants/cNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
-import path from "path";
-import fs from "fs";
 import { getEnvVar } from "../utils";
 import { messengers } from "../constants";
 
@@ -22,7 +20,6 @@ interface ConstructorArgs {
   messengers?: string[];
 }
 
-/* run with: yarn deploy --network avalancheFuji --tags Concero */
 const deployConceroBridge: (hre: HardhatRuntimeEnvironment, constructorArgs?: ConstructorArgs) => Promise<void> =
   async function (hre: HardhatRuntimeEnvironment, constructorArgs: ConstructorArgs = {}) {
     const { deployer } = await hre.getNamedAccounts();
@@ -30,7 +27,9 @@ const deployConceroBridge: (hre: HardhatRuntimeEnvironment, constructorArgs?: Co
     const { name, live } = hre.network;
     const networkType = chains[name].type;
 
-    if (!chains[name]) throw new Error(`Chain ${name} not supported`);
+    if (!chains[name]) {
+      throw new Error(`Chain ${name} not supported`);
+    }
 
     const {
       functionsRouter,
@@ -42,20 +41,6 @@ const deployConceroBridge: (hre: HardhatRuntimeEnvironment, constructorArgs?: Co
       linkToken,
       ccipRouter,
     } = chains[name];
-
-    const jsPath = "./tasks/CLFScripts";
-
-    function getJS(jsPath: string, type: string): string {
-      // const source = path.join(jsPath, "src", `${type}.js`);
-      const dist = path.join(jsPath, "dist", `${type}.min.js`);
-      //
-      // if (!fs.existsSync(dist)) {
-      //   log(`File not found: ${dist}, building...`, "getJS");
-      //   buildScript(source);
-      // }
-
-      return fs.readFileSync(dist, "utf8");
-    }
 
     const defaultArgs = {
       chainSelector: chainSelector,
@@ -78,7 +63,6 @@ const deployConceroBridge: (hre: HardhatRuntimeEnvironment, constructorArgs?: Co
       messengers,
     };
 
-    // Merge defaultArgs with constructorArgs
     const args = { ...defaultArgs, ...constructorArgs };
 
     const deployment = (await deploy("ConceroBridge", {

@@ -4,13 +4,11 @@ import chains, { networkEnvKeys } from "../../../constants/cNetworks";
 import secrets from "../../../constants/CLFSecrets";
 import updateEnvVariable from "../../../utils/updateEnvVariable";
 import { CNetwork } from "../../../types/CNetwork";
-import { getEthersV5FallbackSignerAndProvider } from "../../../utils";
+import { getEthersSignerAndProvider } from "../../../utils";
 import log, { err } from "../../../utils/log";
 import listSecrets from "./list";
 import { setDonHostedSecretsVersion } from "../../concero/deployInfra/setContractVariables";
 import { liveChains } from "../../../constants";
-
-// const path = require("path");
 
 async function upload(chains: CNetwork[], slotid: number, ttl: number) {
   const slotId = parseInt(slotid);
@@ -18,7 +16,7 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
 
   for (const chain of chains) {
     const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls, name } = chain;
-    const { signer } = getEthersV5FallbackSignerAndProvider(name);
+    const { signer } = getEthersSignerAndProvider(chain.url);
 
     const secretsManager = new SecretsManager({
       signer,
@@ -26,10 +24,6 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
       donId: functionsDonIdAlias,
     });
     await secretsManager.initialize();
-
-    // Dynamically import the config file if necessary
-    // const configPath = path.isAbsolute(taskArgs.configpath) ? taskArgs.configpath : path.join(process.cwd(), taskArgs.configpath);
-    // const requestConfig = await import(configPath);
 
     if (!secrets) {
       err("No secrets to upload.", "donSecrets/upload", name);
@@ -39,10 +33,7 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
     log("Uploading secrets to DON", "donSecrets/upload", name);
     const encryptedSecretsObj = await secretsManager.encryptSecrets(secrets);
 
-    const {
-      version, // Secrets version number (corresponds to timestamp when encrypted secrets were uploaded to DON)
-      success, // Boolean value indicating if encrypted secrets were successfully uploaded to all nodes connected to the gateway
-    } = await secretsManager.uploadEncryptedSecretsToDON({
+    const { version, success } = await secretsManager.uploadEncryptedSecretsToDON({
       encryptedSecretsHexstring: encryptedSecretsObj.encryptedSecrets,
       gatewayUrls: functionsGatewayUrls,
       slotId,
@@ -57,15 +48,10 @@ async function upload(chains: CNetwork[], slotid: number, ttl: number) {
 
     await listSecrets(chain);
 
-    // log(`Current DONSecrets for ${name}:`, "donSecrets/upload");
-    // log(checkSecretsRes, "donSecrets/upload");
-
     updateEnvVariable(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`, version, `clf`);
   }
 }
 
-// run with: yarn hardhat clf-donsecrets-upload --slotid 0 --ttl 4320 --network avalancheFuji
-// todo: add to deployedSecrets file with expiration time, and check if it's expired before using it
 task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")
   .addParam(
     "slotid",
@@ -74,21 +60,18 @@ task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")
   .addOptionalParam("ttl", "Time to live - minutes until the secrets hosted on the DON expire", 4320, types.int)
   .addFlag("all", "Upload secrets to all networks")
   .addFlag("updatecontracts", "Update the contracts with the new secrets")
-  // .addOptionalParam("configpath", "Path to Functions request config file", `${__dirname}/../../Functions-request-config.js`, types.string)
   .setAction(async taskArgs => {
     const hre = require("hardhat");
     const { slotid, ttl, all, updatecontracts } = taskArgs;
 
-    // Function to upload secrets and optionally update contracts
     const processNetwork = async (chain: CNetwork) => {
       await upload([chain], slotid, ttl);
       if (updatecontracts) {
-        const { abi } = await import("../artifacts/contracts/Concero.sol/Concero.json");
+        const { abi } = await import("../../../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
         await setDonHostedSecretsVersion(chain, parseInt(slotid), abi);
       }
     };
 
-    // Process all networks if 'all' flag is set
     if (all) {
       for (const liveChain of liveChains) {
         await processNetwork(liveChain);

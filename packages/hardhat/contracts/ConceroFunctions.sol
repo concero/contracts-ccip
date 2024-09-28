@@ -60,7 +60,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     ///@notice Chainlink Functions Protocol Subscription ID
     uint64 private immutable i_subscriptionId;
     //@notice CCIP chainSelector
-    uint64 internal immutable i_chainSelector; // todo: prefix with i
+    uint64 internal immutable i_chainSelector;
     ///@notice variable to store the DexSwap address
     address internal immutable i_dexSwap;
     ///@notice variable to store the ConceroPool address
@@ -175,7 +175,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
             dstSwapData
         );
 
-        bytes[] memory args = new bytes[](12);
+        bytes[] memory args = new bytes[](13);
         args[0] = abi.encodePacked(s_dstJsHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(RequestType.checkTxSrc);
@@ -188,7 +188,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         args[9] = abi.encodePacked(uint8(token));
         args[10] = abi.encodePacked(amount);
         args[11] = abi.encodePacked(i_chainSelector);
-        //todo: generate dstSwapDataHashSum, add to args, send to CLF to compare sums
+        args[12] = abi.encodePacked(keccak256(dstSwapData));
 
         bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT);
 
@@ -331,7 +331,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         args[9] = abi.encodePacked(dstChainSelector);
         args[10] = abi.encodePacked(uint8(tokenType));
         args[11] = abi.encodePacked(block.number);
-        args[12] = _swapDataToBytes(dstSwapData);
+        args[12] = _swapDataToBytes(_swapDataToBytes(dstSwapData));
 
         bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT);
         s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;

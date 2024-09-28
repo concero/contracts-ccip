@@ -129,7 +129,7 @@
 		if (latestBlockNumber - BigInt(txBlockNumber) < chainMap[srcChainSelector].confirmations) {
 			throw new Error('Not enough confirmations');
 		}
-		const ethersId = ethers.id('ConceroBridgeSent(bytes32,uint8,uint256,uint64,address)');
+		const ethersId = ethers.id('ConceroBridgeSent(bytes32,uint8,uint256,uint64,address,bytes32)');
 		const logs = await provider.getLogs({
 			address: srcContractAddress,
 			topics: [ethersId, messageId],
@@ -140,7 +140,7 @@
 			throw new Error('No logs found');
 		}
 		const log = logs[0];
-		const abi = ['event ConceroBridgeSent(bytes32 indexed, uint8, uint256, uint64, address)'];
+		const abi = ['event ConceroBridgeSent(bytes32 indexed, uint8, uint256, uint64, address, bytes32)'];
 		const contract = new ethers.Interface(abi);
 		const logData = {
 			topics: [ethersId, log.topics[1]],

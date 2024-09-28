@@ -43,7 +43,8 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
         CCIPToken tokenType,
         uint256 amount,
         uint64 dstChainSelector,
-        address receiver
+        address receiver,
+        bytes32 dstSwapDataHash
     );
 
     /// @notice event emitted when a batched CCIP message is sent
@@ -122,15 +123,19 @@ contract ConceroBridge is IConceroBridge, ConceroCCIP {
             dstSwapData
         );
 
-        if (batchedTxAmount >= BATCHED_TX_THRESHOLD)
+        if (batchedTxAmount >= BATCHED_TX_THRESHOLD) {
             _sendBatchViaSettlement(fromToken, batchedTxAmount, bridgeData.dstChainSelector);
+        }
+
+        bytes32 dstSwapDataHashSum = keccak256(_swapDataToBytes(dstSwapData));
 
         emit ConceroBridgeSent(
             conceroMessageId,
             bridgeData.tokenType,
             amountToSend,
             bridgeData.dstChainSelector,
-            bridgeData.receiver
+            bridgeData.receiver,
+            dstSwapDataHashSum
         );
     }
 

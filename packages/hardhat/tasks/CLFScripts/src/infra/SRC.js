@@ -266,47 +266,24 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		return result;
 	};
 	const getDstGasPriceInSrcCurrency = (_gasPrice, srcPriceFeeds) => {
-		const getGasPriceByPriceFeeds = (nativeUsdPriceFeed, dstAssetUsdPriceFeed, __gasPrice) => {
-			if (dstAssetUsdPriceFeed === undefined) return 0n;
-			const srcNativeDstNativeRate = (nativeUsdPriceFeed * 10n ** 10n) / dstAssetUsdPriceFeed;
-			const dstGasPriceInSrcCurrency = (__gasPrice * srcNativeDstNativeRate) / 10n ** 18n;
+		const getGasPriceByPriceFeeds = (nativeUsdPriceFeed, dstAssetUsdPriceFeed, gasPriceInDstCurrency) => {
+			if (dstAssetUsdPriceFeed === undefined) return 1n;
+
+			const srcNativeDstNativeRate = nativeUsdPriceFeed / dstAssetUsdPriceFeed;
+			const dstGasPriceInSrcCurrency = gasPriceInDstCurrency / srcNativeDstNativeRate;
+
 			return dstGasPriceInSrcCurrency < 1n ? 1n : dstGasPriceInSrcCurrency;
 		};
 
 		const srcNativeCurrency = chainSelectors[srcChainSelector].nativeCurrency;
 		const dstNativeCurrency = chainSelectors[dstChainSelector].nativeCurrency;
 
-		if (srcNativeCurrency === 'eth') {
-			if (dstNativeCurrency === 'matic') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.maticUsd, _gasPrice);
-			} else if (dstNativeCurrency === 'avax') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
-			}
-		} else if (srcNativeCurrency === 'matic') {
-			if (dstNativeCurrency === 'eth') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.ethUsd, _gasPrice);
-			} else if (dstNativeCurrency === 'avax') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
-			}
+		if (srcNativeCurrency !== dstNativeCurrency) {
+			return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds[`${dstNativeCurrency}Usd`], _gasPrice);
 		}
 
 		return _gasPrice;
 	};
-
-	// const getAverageSrcGasPrice = gasPrice => {
-	// 	let res = gasPrice;
-	// 	const bigIntSrcChainSelector = BigInt(srcChainSelector);
-	// 	if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}')) {
-	// 		res = gasPrice > 110000000000n ? 110000000000n : gasPrice;
-	// 	} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}')) {
-	// 		res = gasPrice > 64000000n ? 64000000n : gasPrice;
-	// 	} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}')) {
-	// 		res = gasPrice > 1300000000n ? 1300000000n : gasPrice;
-	// 	} else if (bigIntSrcChainSelector === BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}')) {
-	// 		res = gasPrice > 10713000000n ? 10713000000n : gasPrice;
-	// 	}
-	// 	return res;
-	// };
 
 	let nonce = 0;
 	let retries = 0;
@@ -386,7 +363,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
 		gasPrice = feeData.gasPrice;
-		// maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
+		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
 			nonce,
 			// maxPriorityFeePerGas: maxPriorityFeePerGas,

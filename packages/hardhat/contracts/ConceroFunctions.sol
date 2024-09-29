@@ -331,7 +331,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         args[9] = abi.encodePacked(dstChainSelector);
         args[10] = abi.encodePacked(uint8(tokenType));
         args[11] = abi.encodePacked(block.number);
-        args[12] = _swapDataToBytes(_swapDataToBytes(dstSwapData));
+        args[12] = abi.encodePacked(_swapDataToBytes(dstSwapData));
 
         bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT);
         s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;
@@ -423,7 +423,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
      */
     function _swapDataToBytes(
         IDexSwap.SwapData[] memory _swapData
-    ) private pure returns (bytes memory _encodedData) {
+    ) internal pure returns (bytes memory _encodedData) {
         if (_swapData.length == 0) {
             _encodedData = new bytes(1);
         } else {

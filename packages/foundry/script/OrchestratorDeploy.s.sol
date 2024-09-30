@@ -12,6 +12,7 @@ contract OrchestratorDeploy is Script {
         address _concero,
         address _pool,
         address _proxy,
+        address _usdc,
         uint8 _chainIndex,
         address[3] memory _messengers
     ) public returns (Orchestrator orch) {
@@ -22,6 +23,7 @@ contract OrchestratorDeploy is Script {
             _concero,
             _pool,
             _proxy,
+            _usdc,
             _chainIndex,
             _messengers
         );

@@ -5,7 +5,7 @@ pragma solidity 0.8.20;
 import {BaseTest, console, Vm} from "../BaseTest.t.sol";
 import {ConceroBridge} from "contracts/ConceroBridge.sol";
 import {IStorage} from "contracts/Interfaces/IStorage.sol";
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "contracts/transparentProxy/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/TransparentUpgradeableProxy.sol";
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -54,6 +54,7 @@ contract StartBridgeTest is BaseTest {
             address(baseBridgeImplementation),
             address(parentPoolProxy),
             address(baseOrchestratorProxy),
+            vm.envAddress("USDC_BASE"),
             1, // IStorage.Chain.base
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
@@ -163,6 +164,23 @@ contract StartBridgeTest is BaseTest {
             )
         );
         baseBridgeImplementation.startBridge(bridgeData, dstSwapData);
+    }
+
+    function test_withdraw_reserved_batches_reverts() public {
+        _dealUserFundsAndApprove();
+        _startBridge(user1, USER_FUNDS, arbitrumChainSelector);
+        _startBridge(user1, USER_FUNDS, avalancheChainSelector);
+
+        vm.prank(deployer);
+        vm.expectRevert(abi.encodeWithSignature("Orchestrator_AmountExceedsBatchedReserves()"));
+        (, bytes memory retData) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature(
+                "withdraw(address,address,uint256)",
+                msg.sender,
+                usdc,
+                USER_FUNDS
+            )
+        );
     }
 
     function _startBridge(address _caller, uint256 _amount, uint64 _dstChainSelector) internal {

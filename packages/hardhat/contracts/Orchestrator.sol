@@ -28,6 +28,8 @@ error Orchestrator_InvalidBridgeData();
 error Orchestrator_InvalidSwapData();
 ///@notice error emitted when the token to bridge is not USDC
 error Orchestrator_InvalidBridgeToken();
+///@notice error emitted when attempted withdraw amount by admin exceeds amount reserved for batched txs
+error Orchestrator_AmountExceedsBatchedReserves();
 
 contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, StorageSetters {
     using SafeERC20 for IERC20;
@@ -36,6 +38,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     ///CONSTANTS///
     ///////////////
     uint16 internal constant CONCERO_FEE_FACTOR = 1000;
+    uint8 internal constant COMPATIBLE_CHAINS = 5; // base, poly, arb, avax, opt
 
     ///////////////
     ///IMMUTABLE///
@@ -52,6 +55,8 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     address internal immutable i_proxy;
     ///@notice ID of the deployed chain on getChain() function
     Chain internal immutable i_chainIndex;
+    ///@notice usdc address
+    IERC20 internal immutable i_USDC;
 
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
@@ -70,6 +75,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         address _concero,
         address _pool,
         address _proxy,
+        address _usdc,
         uint8 _chainIndex,
         address[3] memory _messengers
     ) ConceroCommon(_messengers) StorageSetters(msg.sender) {
@@ -79,6 +85,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         i_pool = _pool;
         i_proxy = _proxy;
         i_chainIndex = Chain(_chainIndex);
+        i_USDC = IERC20(_usdc);
     }
 
     receive() external payable {}
@@ -337,6 +344,23 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
     function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
         uint256 balance = LibConcero.getBalance(token, address(this));
         if (balance < amount) revert Orchestrator_InvalidAmount();
+
+        if (token == address(i_USDC)) {
+            uint256 batchedReserves;
+            uint64[COMPATIBLE_CHAINS] memory chainSelectors = [
+                CHAIN_SELECTOR_ARBITRUM,
+                CHAIN_SELECTOR_BASE,
+                CHAIN_SELECTOR_OPTIMISM,
+                CHAIN_SELECTOR_POLYGON,
+                CHAIN_SELECTOR_AVALANCHE
+            ];
+            for (uint256 i; i < COMPATIBLE_CHAINS; ++i) {
+                uint64 chainSelector = chainSelectors[i];
+                batchedReserves += s_pendingBatchedTxAmountByDstChain[chainSelector];
+            }
+            if (amount > balance - batchedReserves)
+                revert Orchestrator_AmountExceedsBatchedReserves();
+        }
 
         if (token != address(0)) {
             LibConcero.transferERC20(token, amount, recipient);

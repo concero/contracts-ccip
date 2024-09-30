@@ -4,10 +4,10 @@ pragma solidity 0.8.20;
 import {Test, console, Vm} from "forge-std/Test.sol";
 import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
 import {ParentPoolProxyDeploy} from "../../../script/ParentPoolProxyDeploy.s.sol";
-import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
-import {ParentPoolProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/ParentPoolProxy.sol";
-import {TransparentUpgradeableProxy} from "contracts/transparentProxy/TransparentUpgradeableProxy.sol";
-import {ChildPoolProxy} from "contracts/Proxy/ChildPoolProxy.sol";
+import {ParentPool} from "contracts/ParentPool.sol";
+// import {ParentPoolProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/ParentPoolProxy.sol";
+import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/TransparentUpgradeableProxy.sol";
+// import {ChildPoolProxy} from "contracts/Proxy/ChildPoolProxy.sol";
 import {ConceroChildPool} from "contracts/ConceroChildPool.sol";
 import {LPToken} from "contracts/LPToken.sol";
 import {CCIPLocalSimulator} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulator.sol";
@@ -26,8 +26,8 @@ contract BaseTest is Test {
     //////////////////////////////////////////////////////////////*/
     uint256 internal constant CCIP_FEES = 100 * 1e18;
 
-    ConceroParentPool public parentPoolImplementation;
-    ParentPoolProxy public parentPoolProxy;
+    ParentPool public parentPoolImplementation;
+    TransparentUpgradeableProxy public parentPoolProxy;
     LPToken public lpToken;
     FunctionsSubscriptions public functionsSubscriptions;
     CCIPLocalSimulator public ccipLocalSimulator;
@@ -60,6 +60,8 @@ contract BaseTest is Test {
     address internal arbitrumOrchestratorProxy = address(1);
     address internal avalancheOrchestratorProxy = address(2);
 
+    address internal automationForwarder;
+
     /*//////////////////////////////////////////////////////////////
                                  SETUP
     //////////////////////////////////////////////////////////////*/
@@ -73,7 +75,10 @@ contract BaseTest is Test {
         deployPoolsInfra();
 
         _deployOrchestratorImplementation();
-        _setProxyImplementation(address(baseOrchestratorProxy), address(baseOrchestratorImplementation));
+        _setProxyImplementation(
+            address(baseOrchestratorProxy),
+            address(baseOrchestratorImplementation)
+        );
 
         /// @dev set destination chain selector and contracts on Base
         _setDstSelectorAndPool(arbitrumChainSelector, arbitrumChildProxy);
@@ -117,23 +122,26 @@ contract BaseTest is Test {
     //////////////////////////////////////////////////////////////*/
     function deployParentPoolProxy() public {
         vm.prank(proxyDeployer);
-        parentPoolProxy = new ParentPoolProxy(vm.envAddress("CONCERO_PAUSE_BASE"), proxyDeployer, bytes(""));
+        parentPoolProxy = new TransparentUpgradeableProxy(
+            vm.envAddress("CONCERO_PAUSE_BASE"),
+            proxyDeployer,
+            bytes("")
+        );
     }
 
     function _deployParentPool() private {
         // Deploy the default ConceroParentPool if no custom address is provided
         vm.prank(deployer);
-        parentPoolImplementation = new ConceroParentPool(
+        parentPoolImplementation = new ParentPool(
             address(parentPoolProxy),
+            address(0), // _parentPoolCLFCLA
+            automationForwarder,
             vm.envAddress("LINK_BASE"),
-            vm.envBytes32("CLF_DONID_BASE"),
-            uint64(vm.envUint("CLF_SUBID_BASE")),
-            vm.envAddress("CLF_ROUTER_BASE"),
             vm.envAddress("CL_CCIP_ROUTER_BASE"),
             vm.envAddress("USDC_BASE"),
             address(lpToken),
             address(baseOrchestratorProxy), // vm.envAddress("CONCERO_ORCHESTRATOR_BASE")
-            vm.envAddress("CONCERO_AUTOMATION_BASE"), // not in cla-parent merge
+            vm.envAddress("CLF_ROUTER_BASE"),
             address(deployer),
             // 0, // slotId
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
@@ -185,13 +193,15 @@ contract BaseTest is Test {
         vm.prank(deployer);
         // should probably update this from user1
         IParentPool(address(parentPoolProxy)).setConceroContractSender(
-            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), address(user1), 1
+            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
+            address(user1),
+            1
         );
     }
 
     function _setDstSelectorAndPool(uint64 _chainSelector, address _poolProxy) internal {
         vm.prank(deployer);
-        (bool success,) = address(baseOrchestratorProxy).call(
+        (bool success, ) = address(baseOrchestratorProxy).call(
             abi.encodeWithSignature("setDstConceroPool(uint64,address)", _chainSelector, _poolProxy)
         );
         require(success, "setDstConceroPool call failed");
@@ -199,8 +209,12 @@ contract BaseTest is Test {
 
     function _setDstSelectorAndBridge(uint64 _chainSelector, address _bridgeProxy) internal {
         vm.prank(deployer);
-        (bool success,) = address(baseOrchestratorProxy).call(
-            abi.encodeWithSignature("setConceroContract(uint64,address)", _chainSelector, _bridgeProxy)
+        (bool success, ) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature(
+                "setConceroContract(uint64,address)",
+                _chainSelector,
+                _bridgeProxy
+            )
         );
         require(success, "setConceroContract call failed");
     }
@@ -210,7 +224,9 @@ contract BaseTest is Test {
     //////////////////////////////////////////////////////////////*/
     function addFunctionsConsumer(address _consumer) public {
         vm.prank(vm.envAddress("DEPLOYER_ADDRESS"));
-        functionsSubscriptions = FunctionsSubscriptions(address(0xf9B8fc078197181C841c296C876945aaa425B278));
+        functionsSubscriptions = FunctionsSubscriptions(
+            address(0xf9B8fc078197181C841c296C876945aaa425B278)
+        );
         functionsSubscriptions.addConsumer(uint64(vm.envUint("CLF_SUBID_BASE")), _consumer);
     }
 
@@ -246,16 +262,26 @@ contract BaseTest is Test {
         address[3] memory _messengers
     ) internal returns (address) {
         vm.prank(deployer);
-        ConceroChildPool childPool =
-            new ConceroChildPool(_infraProxy, _proxy, _link, _ccipRouter, _usdc, deployer, _messengers);
+        ConceroChildPool childPool = new ConceroChildPool(
+            _infraProxy,
+            _proxy,
+            _link,
+            _ccipRouter,
+            _usdc,
+            deployer,
+            _messengers
+        );
 
         return address(childPool);
     }
 
     function _deployChildPoolProxy() internal returns (address) {
         vm.prank(proxyDeployer);
-        ChildPoolProxy childPoolProxy =
-            new ChildPoolProxy(vm.envAddress("CONCERO_PAUSE_BASE"), proxyDeployer, bytes(""));
+        TransparentUpgradeableProxy childPoolProxy = new TransparentUpgradeableProxy(
+            vm.envAddress("CONCERO_PAUSE_BASE"),
+            proxyDeployer,
+            bytes("")
+        );
         return address(childPoolProxy);
     }
 
@@ -268,18 +294,33 @@ contract BaseTest is Test {
         address _parentProxy
     ) internal returns (address, address) {
         address childProxy = _deployChildPoolProxy();
-        address[3] memory messengers = [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)];
+        address[3] memory messengers = [
+            vm.envAddress("POOL_MESSENGER_0_ADDRESS"),
+            address(0),
+            address(0)
+        ];
 
-        address childImplementation =
-            _deployChildPoolImplementation(_infraProxy, childProxy, _link, _ccipRouter, _usdc, deployer, messengers);
+        address childImplementation = _deployChildPoolImplementation(
+            _infraProxy,
+            childProxy,
+            _link,
+            _ccipRouter,
+            _usdc,
+            deployer,
+            messengers
+        );
 
         vm.prank(proxyDeployer);
         ITransparentUpgradeableProxy(childProxy).upgradeToAndCall(childImplementation, bytes(""));
 
         /// set the parentPool in childProxy.setPools();
         vm.prank(deployer);
-        (bool success,) = address(arbitrumChildProxy).call(
-            abi.encodeWithSignature("setPools(uint64,address)", _parentPoolChainSelector, _parentProxy)
+        (bool success, ) = address(arbitrumChildProxy).call(
+            abi.encodeWithSignature(
+                "setPools(uint64,address)",
+                _parentPoolChainSelector,
+                _parentProxy
+            )
         );
         require(success, "childProxy.setPools with parentPool failed");
 
@@ -301,9 +342,18 @@ contract BaseTest is Test {
         address[3] memory _messengers
     ) internal returns (ConceroBridge) {
         vm.prank(deployer);
-        return new ConceroBridge(
-            _variables, _chainSelector, _chainIndex, _link, _ccipRouter, _dexSwap, _pool, _proxy, _messengers
-        );
+        return
+            new ConceroBridge(
+                _variables,
+                _chainSelector,
+                _chainIndex,
+                _link,
+                _ccipRouter,
+                _dexSwap,
+                _pool,
+                _proxy,
+                _messengers
+            );
     }
 
     function _deployBaseBridgeImplementation() internal {
@@ -319,10 +369,22 @@ contract BaseTest is Test {
         address dexswap = vm.envAddress("CONCERO_DEX_SWAP_BASE");
         address pool = address(parentPoolProxy);
         address proxy = address(baseOrchestratorProxy);
-        address[3] memory messengers = [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)];
+        address[3] memory messengers = [
+            vm.envAddress("POOL_MESSENGER_0_ADDRESS"),
+            address(0),
+            address(0)
+        ];
 
         baseBridgeImplementation = _deployBridge(
-            functionsVariables, chainSelector, chainIndex, link, ccipRouter, dexswap, pool, proxy, messengers
+            functionsVariables,
+            chainSelector,
+            chainIndex,
+            link,
+            ccipRouter,
+            dexswap,
+            pool,
+            proxy,
+            messengers
         );
     }
 
@@ -339,10 +401,22 @@ contract BaseTest is Test {
         address dexswap = vm.envAddress("CONCERO_DEX_SWAP_ARBITRUM");
         address pool = address(parentPoolProxy);
         address proxy = address(0); // arbitrumOrchestratorProxy
-        address[3] memory messengers = [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)];
+        address[3] memory messengers = [
+            vm.envAddress("POOL_MESSENGER_0_ADDRESS"),
+            address(0),
+            address(0)
+        ];
 
         arbitrumBridgeImplementation = _deployBridge(
-            functionsVariables, chainSelector, chainIndex, link, ccipRouter, dexswap, pool, proxy, messengers
+            functionsVariables,
+            chainSelector,
+            chainIndex,
+            link,
+            ccipRouter,
+            dexswap,
+            pool,
+            proxy,
+            messengers
         );
     }
 
@@ -359,10 +433,22 @@ contract BaseTest is Test {
         address dexswap = vm.envAddress("CONCERO_DEX_SWAP_AVALANCHE");
         address pool = address(parentPoolProxy);
         address proxy = address(0); // arbitrumOrchestratorProxy
-        address[3] memory messengers = [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)];
+        address[3] memory messengers = [
+            vm.envAddress("POOL_MESSENGER_0_ADDRESS"),
+            address(0),
+            address(0)
+        ];
 
         avalancheBridgeImplementation = _deployBridge(
-            functionsVariables, chainSelector, chainIndex, link, ccipRouter, dexswap, pool, proxy, messengers
+            functionsVariables,
+            chainSelector,
+            chainIndex,
+            link,
+            ccipRouter,
+            dexswap,
+            pool,
+            proxy,
+            messengers
         );
     }
 
@@ -371,8 +457,11 @@ contract BaseTest is Test {
     //////////////////////////////////////////////////////////////*/
     function _deployOrchestratorProxy() internal {
         vm.prank(proxyDeployer);
-        baseOrchestratorProxy =
-            new TransparentUpgradeableProxy(vm.envAddress("CONCERO_PAUSE_BASE"), proxyDeployer, bytes(""));
+        baseOrchestratorProxy = new TransparentUpgradeableProxy(
+            vm.envAddress("CONCERO_PAUSE_BASE"),
+            proxyDeployer,
+            bytes("")
+        );
     }
 
     function _deployOrchestratorImplementation() internal {
@@ -383,6 +472,7 @@ contract BaseTest is Test {
             address(baseBridgeImplementation),
             address(parentPoolProxy),
             address(baseOrchestratorProxy),
+            vm.envAddress("USDC_BASE"),
             1, // IStorage.Chain.base
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );

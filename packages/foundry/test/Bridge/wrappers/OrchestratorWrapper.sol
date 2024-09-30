@@ -14,9 +14,21 @@ contract OrchestratorWrapper is Orchestrator {
         address _concero,
         address _pool,
         address _proxy,
+        address _usdc,
         uint8 _chainIndex,
         address[3] memory _messengers
-    ) Orchestrator(_functionsRouter, _dexSwap, _concero, _pool, _proxy, _chainIndex, _messengers) {}
+    )
+        Orchestrator(
+            _functionsRouter,
+            _dexSwap,
+            _concero,
+            _pool,
+            _proxy,
+            _usdc,
+            _chainIndex,
+            _messengers
+        )
+    {}
 
     /*//////////////////////////////////////////////////////////////
                                  SETTER

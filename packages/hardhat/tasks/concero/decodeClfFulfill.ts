@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import cNetworks from "../../constants/cNetworks";
-import { getFallbackClients } from "../../utils/getViemClients";
+import { getFallbackClients } from "../../utils";
 import { decodeAbiParameters, parseAbiParameters } from "viem";
 
 // Define the types for decoding

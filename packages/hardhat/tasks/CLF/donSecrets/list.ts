@@ -1,14 +1,14 @@
 import { SecretsManager } from "@chainlink/functions-toolkit";
-import chains from "../../../constants/cNetworks";
+import chains, { cNetworks } from "../../../constants/cNetworks";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { liveChains } from "../../concero/deployInfra/deployInfra";
 import { CNetwork } from "../../../types/CNetwork";
-import { getEthersV5FallbackSignerAndProvider } from "../../../utils/getEthersSignerAndProvider";
 import log, { err } from "../../../utils/log";
+import { getEthersSignerAndProvider } from "../../../utils";
 
 async function listSecrets(chain: CNetwork): Promise<{ [slotId: number]: { version: number; expiration: number } }> {
-  const { provider, signer } = getEthersV5FallbackSignerAndProvider(chain.name);
+  const { provider, signer } = getEthersSignerAndProvider(cNetworks[chain.name].url);
   const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls } = chain;
   if (!functionsGatewayUrls || functionsGatewayUrls.length === 0)
     throw Error(`No gatewayUrls found for ${chain.name}.`);

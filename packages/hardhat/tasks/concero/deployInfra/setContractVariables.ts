@@ -4,7 +4,7 @@ import {
   formatGas,
   getEnvAddress,
   getEnvVar,
-  getEthersV5FallbackSignerAndProvider,
+  getEthersSignerAndProvider,
   getFallbackClients,
   getHashSum,
   log,
@@ -53,7 +53,7 @@ const resetLastGasPrices = async (deployableChain: CNetwork, chains: CNetwork[],
 };
 
 export async function setConceroProxyDstContracts(deployableChains: CNetwork[]) {
-  const { abi } = await import("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
+  const { abi } = await import("../../../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
   for (const chain of deployableChains) {
     const chainsToBeSet =
@@ -119,7 +119,7 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
   try {
     const [conceroProxy, conceroProxyAlias] = getEnvAddress(ProxyEnum.infraProxy, dcName);
     const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
-    const { signer: dcSigner } = getEthersV5FallbackSignerAndProvider(dcName);
+    const { signer: dcSigner } = getEthersSignerAndProvider(cNetworks[dcName].url);
 
     const secretsManager = new SecretsManager({
       signer: dcSigner,
@@ -340,7 +340,7 @@ export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: an
 }
 
 export async function setContractVariables(deployableChains: CNetwork[], slotId: number, uploadsecrets: boolean) {
-  const { abi } = await import("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
+  const { abi } = await import("../../../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
 
   for (const deployableChain of deployableChains) {
     if (deployableChain.type === networkTypes.mainnet) await setDexSwapAllowedRouters(deployableChain, abi); // once

@@ -398,7 +398,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         uint64 _chainSelector,
         uint256 _amount,
         ICCIP.CcipTxData memory ccipTxData
-    ) internal onlyMessenger onlyProxyContext returns (bytes32) {
+    ) internal returns (bytes32) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: address(i_USDC), amount: _amount});
         address poolToSendTo = s_poolToSendTo[_chainSelector];

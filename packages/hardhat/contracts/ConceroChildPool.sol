@@ -303,7 +303,7 @@ contract ConceroChildPool is CCIPReceiver, ChildPoolStorage {
         uint64 _chainSelector,
         address _pool
     ) external payable onlyProxyContext onlyOwner {
-        if (_pool == address(0)) {
+        if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) {
             revert ConceroChildPool_InvalidAddress();
         }
 

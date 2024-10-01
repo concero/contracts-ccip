@@ -456,8 +456,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
     function retryPerformWithdrawalRequest() external {
         bytes memory delegateCallArgs = abi.encodeWithSelector(
-            IParentPoolCLFCLA.retryPerformWithdrawalRequest.selector,
-            bytes("")
+            IParentPoolCLFCLA.retryPerformWithdrawalRequest.selector
         );
 
         LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
@@ -582,7 +581,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         address _pool,
         bool isRebalancingNeeded
     ) external payable onlyProxyContext onlyOwner {
-        if (_pool == address(0)) {
+        if (s_childPools[_chainSelector] == _pool || _pool == address(0)) {
             revert InvalidAddress();
         }
 

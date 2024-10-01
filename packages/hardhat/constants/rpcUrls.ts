@@ -34,10 +34,10 @@ export const urls: Record<string, string[]> = {
     `https://avalanche-mainnet.infura.io/v3/${INFURA_API_KEY}`,
   ],
   avalancheFuji: [
+    "https://rpc.ankr.com/avalanche_fuji",
     `https://avalanche-fuji.infura.io/v3/${INFURA_API_KEY}`,
     `https://avalanche-fuji.core.chainstack.com/ext/bc/C/rpc/${CHAINSTACK_API_KEY}`,
     `https://ava-testnet.blastapi.io/${BLAST_API_KEY}`,
-    "https://rpc.ankr.com/avalanche_fuji",
   ],
   arbitrum: [
     `https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,

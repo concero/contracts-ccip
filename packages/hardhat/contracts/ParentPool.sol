@@ -416,48 +416,47 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * if the request received the total amount requested from other pools,
      * the withdraw will be finalize. If not, it must revert
      */
-    function completeWithdrawal() external onlyProxyContext {
-        bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
-        if (withdrawalId == bytes32(0)) revert WithdrawRequestDoesntExist(withdrawalId);
-
-        WithdrawRequest memory withdrawRequest = s_withdrawRequests[withdrawalId];
-
-        uint256 amountToWithdraw = withdrawRequest.amountToWithdraw;
-        uint256 lpAmountToBurn = withdrawRequest.lpAmountToBurn;
-        uint256 remainingLiquidityFromChildPools = withdrawRequest.remainingLiquidityFromChildPools;
-
-        if (amountToWithdraw == 0) revert ActiveRequestNotFulfilledYet();
-
-        if (remainingLiquidityFromChildPools > 10) {
-            revert WithdrawalAmountNotReady(remainingLiquidityFromChildPools);
-        }
-
-        s_withdrawAmountLocked = s_withdrawAmountLocked > amountToWithdraw
-            ? s_withdrawAmountLocked - amountToWithdraw
-            : 0;
-
-        // uint256 withdrawFees = _calculateWithdrawTransactionsFee(withdraw.amountToWithdraw);
-        // uint256 withdrawAmountMinusFees = withdraw.amountToWithdraw - _convertToUSDCTokenDecimals(withdrawFees);
-
-        delete s_withdrawalIdByLPAddress[msg.sender];
-        delete s_withdrawRequests[withdrawalId];
-
-        i_lpToken.burn(lpAmountToBurn);
-
-        i_USDC.safeTransfer(msg.sender, amountToWithdraw);
-
-        emit ConceroParentPool_Withdrawn(
-            withdrawalId,
-            msg.sender,
-            address(i_USDC),
-            amountToWithdraw
-        );
-    }
+    //    function completeWithdrawal() external onlyProxyContext {
+    //        bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
+    //        if (withdrawalId == bytes32(0)) revert WithdrawRequestDoesntExist(withdrawalId);
+    //
+    //        WithdrawRequest memory withdrawRequest = s_withdrawRequests[withdrawalId];
+    //
+    //        uint256 amountToWithdraw = withdrawRequest.amountToWithdraw;
+    //        uint256 lpAmountToBurn = withdrawRequest.lpAmountToBurn;
+    //        uint256 remainingLiquidityFromChildPools = withdrawRequest.remainingLiquidityFromChildPools;
+    //
+    //        if (amountToWithdraw == 0) revert ActiveRequestNotFulfilledYet();
+    //
+    //        if (remainingLiquidityFromChildPools > 10) {
+    //            revert WithdrawalAmountNotReady(remainingLiquidityFromChildPools);
+    //        }
+    //
+    //        s_withdrawAmountLocked = s_withdrawAmountLocked > amountToWithdraw
+    //            ? s_withdrawAmountLocked - amountToWithdraw
+    //            : 0;
+    //
+    //        // uint256 withdrawFees = _calculateWithdrawTransactionsFee(withdraw.amountToWithdraw);
+    //        // uint256 withdrawAmountMinusFees = withdraw.amountToWithdraw - _convertToUSDCTokenDecimals(withdrawFees);
+    //
+    //        delete s_withdrawalIdByLPAddress[msg.sender];
+    //        delete s_withdrawRequests[withdrawalId];
+    //
+    //        i_lpToken.burn(lpAmountToBurn);
+    //
+    //        i_USDC.safeTransfer(msg.sender, amountToWithdraw);
+    //
+    //        emit ConceroParentPool_Withdrawn(
+    //            withdrawalId,
+    //            msg.sender,
+    //            address(i_USDC),
+    //            amountToWithdraw
+    //        );
+    //    }
 
     function retryPerformWithdrawalRequest() external {
         bytes memory delegateCallArgs = abi.encodeWithSelector(
-            IParentPoolCLFCLA.retryPerformWithdrawalRequest.selector,
-            bytes("")
+            IParentPoolCLFCLA.retryPerformWithdrawalRequest.selector
         );
 
         LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
@@ -740,6 +739,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
                 : 0;
 
             s_withdrawAmountLocked += ccipReceivedAmount;
+
+            if (request.remainingLiquidityFromChildPools < 10) {
+                _completeWithdraw(withdrawalId);
+            }
         }
 
         emit ConceroParentPool_CCIPReceived(
@@ -748,6 +751,32 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             abi.decode(any2EvmMessage.sender, (address)),
             ccipReceivedToken,
             ccipReceivedAmount
+        );
+    }
+
+    /**
+     * @notice Function to process the withdraw request
+     * @param withdrawalId the id of the withdraw request
+     */
+    function _completeWithdraw(bytes32 withdrawalId) internal {
+        WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
+        uint256 amountToWithdraw = request.amountToWithdraw;
+
+        i_lpToken.burn(request.lpAmountToBurn);
+        i_USDC.safeTransfer(request.lpAddress, amountToWithdraw);
+
+        s_withdrawAmountLocked = s_withdrawAmountLocked > amountToWithdraw
+            ? s_withdrawAmountLocked - amountToWithdraw
+            : 0;
+
+        delete s_withdrawalIdByLPAddress[msg.sender];
+        delete s_withdrawRequests[withdrawalId];
+
+        emit ConceroParentPool_Withdrawn(
+            withdrawalId,
+            msg.sender,
+            address(i_USDC),
+            amountToWithdraw
         );
     }
 

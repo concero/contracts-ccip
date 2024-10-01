@@ -250,26 +250,16 @@
 		return result;
 	};
 	const getDstGasPriceInSrcCurrency = (_gasPrice, srcPriceFeeds) => {
-		const getGasPriceByPriceFeeds = (nativeUsdPriceFeed, dstAssetUsdPriceFeed, __gasPrice) => {
-			if (dstAssetUsdPriceFeed === undefined) return 0n;
-			const srcNativeDstNativeRate = (nativeUsdPriceFeed * 10n ** 10n) / dstAssetUsdPriceFeed;
-			const dstGasPriceInSrcCurrency = (__gasPrice * srcNativeDstNativeRate) / 10n ** 18n;
+		const getGasPriceByPriceFeeds = (nativeUsdPriceFeed, dstAssetUsdPriceFeed, gasPriceInDstCurrency) => {
+			if (dstAssetUsdPriceFeed === undefined) return 1n;
+			const srcNativeDstNativeRate = nativeUsdPriceFeed / dstAssetUsdPriceFeed;
+			const dstGasPriceInSrcCurrency = gasPriceInDstCurrency / srcNativeDstNativeRate;
 			return dstGasPriceInSrcCurrency < 1n ? 1n : dstGasPriceInSrcCurrency;
 		};
 		const srcNativeCurrency = chainSelectors[srcChainSelector].nativeCurrency;
 		const dstNativeCurrency = chainSelectors[dstChainSelector].nativeCurrency;
-		if (srcNativeCurrency === 'eth') {
-			if (dstNativeCurrency === 'matic') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.maticUsd, _gasPrice);
-			} else if (dstNativeCurrency === 'avax') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
-			}
-		} else if (srcNativeCurrency === 'matic') {
-			if (dstNativeCurrency === 'eth') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.ethUsd, _gasPrice);
-			} else if (dstNativeCurrency === 'avax') {
-				return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds.avaxUsd, _gasPrice);
-			}
+		if (srcNativeCurrency !== dstNativeCurrency) {
+			return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds[`${dstNativeCurrency}Usd`], _gasPrice);
 		}
 		return _gasPrice;
 	};
@@ -348,6 +338,7 @@
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
 		gasPrice = feeData.gasPrice;
+		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
 			nonce,
 			maxFeePerGas:

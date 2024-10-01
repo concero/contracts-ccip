@@ -50,7 +50,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     uint8 private constant CL_SRC_RESPONSE_LENGTH = 192;
     ///@notice JS Code for Chainlink Functions
     string private constant CL_JS_CODE =
-        "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'release' + `/packages/hardhat/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
+        "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'master' + `/packages/hardhat/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
     ////////////////
     ///IMMUTABLES///
@@ -60,7 +60,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     ///@notice Chainlink Functions Protocol Subscription ID
     uint64 private immutable i_subscriptionId;
     //@notice CCIP chainSelector
-    uint64 internal immutable CHAIN_SELECTOR; // todo: prefix with i
+    uint64 internal immutable i_chainSelector;
     ///@notice variable to store the DexSwap address
     address internal immutable i_dexSwap;
     ///@notice variable to store the ConceroPool address
@@ -126,7 +126,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
     ) FunctionsClient(_variables.functionsRouter) ConceroCommon(_messengers) {
         i_donId = _variables.donId;
         i_subscriptionId = _variables.subscriptionId;
-        CHAIN_SELECTOR = _chainSelector;
+        i_chainSelector = _chainSelector;
         i_chainIndex = Chain(_chainIndex);
         i_dexSwap = _dexSwap;
         i_poolProxy = _pool;
@@ -175,7 +175,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
             dstSwapData
         );
 
-        bytes[] memory args = new bytes[](12);
+        bytes[] memory args = new bytes[](13);
         args[0] = abi.encodePacked(s_dstJsHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(RequestType.checkTxSrc);
@@ -187,8 +187,8 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         args[8] = abi.encodePacked(recipient);
         args[9] = abi.encodePacked(uint8(token));
         args[10] = abi.encodePacked(amount);
-        args[11] = abi.encodePacked(CHAIN_SELECTOR);
-        //todo: generate dstSwapDataHashSum, add to args, send to CLF to compare sums
+        args[11] = abi.encodePacked(i_chainSelector);
+        args[12] = abi.encodePacked(keccak256(dstSwapData));
 
         bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT);
 
@@ -327,11 +327,11 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         args[5] = abi.encodePacked(sender);
         args[6] = abi.encodePacked(receiver);
         args[7] = abi.encodePacked(amount);
-        args[8] = abi.encodePacked(CHAIN_SELECTOR);
+        args[8] = abi.encodePacked(i_chainSelector);
         args[9] = abi.encodePacked(dstChainSelector);
         args[10] = abi.encodePacked(uint8(tokenType));
         args[11] = abi.encodePacked(block.number);
-        args[12] = _swapDataToBytes(dstSwapData);
+        args[12] = abi.encodePacked(_swapDataToBytes(dstSwapData));
 
         bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT);
         s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;
@@ -402,8 +402,8 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
             uint256 linkNativeRate
         ) = abi.decode(response, (uint256, uint256, uint64, uint256, uint256, uint256));
 
-        s_lastGasPrices[CHAIN_SELECTOR] = srcGasPrice == 0
-            ? s_lastGasPrices[CHAIN_SELECTOR]
+        s_lastGasPrices[i_chainSelector] = srcGasPrice == 0
+            ? s_lastGasPrices[i_chainSelector]
             : srcGasPrice;
         s_lastGasPrices[dstChainSelector] = dstGasPrice == 0
             ? s_lastGasPrices[dstChainSelector]
@@ -423,7 +423,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
      */
     function _swapDataToBytes(
         IDexSwap.SwapData[] memory _swapData
-    ) private pure returns (bytes memory _encodedData) {
+    ) internal pure returns (bytes memory _encodedData) {
         if (_swapData.length == 0) {
             _encodedData = new bytes(1);
         } else {

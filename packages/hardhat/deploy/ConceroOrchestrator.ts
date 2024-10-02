@@ -27,7 +27,7 @@ const deployConceroOrchestrator: (hre: HardhatRuntimeEnvironment) => Promise<voi
 
   log("Deploying...", "ConceroOrchestrator", name);
 
-  const conceroProxyDeployment = (await deploy("Orchestrator", {
+  const conceroProxyDeployment = (await deploy("InfraOrchestrator", {
     from: deployer,
     args: [
       functionsRouter,

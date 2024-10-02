@@ -7,7 +7,6 @@ import deployAllPools from "./pools/deployAllPools";
 import deployParentPool from "./pools/deployParentPool";
 import removePoolFromPool from "./pools/removePoolFromPool";
 import deployLpToken from "./deployLpToken/deployLpToken";
-import deployAutomations from "./deployAutomations/deployAutomations";
 import withdrawInfraProxy from "./withdraw/withdrawInfraProxy";
 import withdrawParentPoolDepositFee from "./withdraw/withdrawParentPoolDepositFee";
 import upgradeProxyImplementation from "./upgradeProxyImplementation";
@@ -32,7 +31,6 @@ export default {
   withdrawInfraProxy,
   deployParentPool,
   deployLpToken,
-  deployAutomations,
   deployChildPool,
   deployAllPools,
   upgradeProxyImplementation,

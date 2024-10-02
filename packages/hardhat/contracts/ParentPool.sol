@@ -318,7 +318,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         bytes32 clfRequestId = bytes32(delegateCallResponse);
         uint256 _deadline = block.timestamp + DEPOSIT_DEADLINE_SECONDS;
 
-        s_clfRequestTypes[clfRequestId] = RequestType.startDeposit_getChildPoolsLiquidity;
+        s_clfRequestTypes[clfRequestId] = CLFRequestType.startDeposit_getChildPoolsLiquidity;
         s_depositRequests[clfRequestId].lpAddress = msg.sender;
         s_depositRequests[clfRequestId].usdcAmountToDeposit = _usdcAmount;
         s_depositRequests[clfRequestId].deadline = _deadline;
@@ -394,7 +394,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         );
         bytes32 clfRequestId = bytes32(delegateCallResponse);
 
-        s_clfRequestTypes[clfRequestId] = RequestType.startWithdrawal_getChildPoolsLiquidity;
+        s_clfRequestTypes[clfRequestId] = CLFRequestType.startWithdrawal_getChildPoolsLiquidity;
         // partially initialise withdrawalRequest struct
         s_withdrawRequests[withdrawalId].lpAddress = msg.sender;
         s_withdrawRequests[withdrawalId].lpSupplySnapshot = i_lpToken.totalSupply();
@@ -595,7 +595,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
                 abi.encodePacked(
                     _pool,
                     _chainSelector,
-                    DistributeLiquidityType.addPool,
+                    RedistributeLiquidityType.addPool,
                     block.timestamp,
                     block.number,
                     block.prevrandao
@@ -605,10 +605,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             bytes[] memory args = new bytes[](6);
             args[0] = abi.encodePacked(s_distributeLiquidityJsCodeHashSum);
             args[1] = abi.encodePacked(s_ethersHashSum);
-            args[2] = abi.encodePacked(FunctionsRequestType.distributeLiquidity);
+            args[2] = abi.encodePacked(FunctionsRequestType.liquidityRedistribution);
             args[3] = abi.encodePacked(_chainSelector);
             args[4] = abi.encodePacked(distributeLiquidityRequestId);
-            args[5] = abi.encodePacked(DistributeLiquidityType.addPool);
+            args[5] = abi.encodePacked(RedistributeLiquidityType.addPool);
 
             bytes memory delegateCallArgs = abi.encodeWithSelector(
                 IParentPoolCLFCLA.sendCLFRequest.selector,
@@ -647,7 +647,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             abi.encodePacked(
                 removedPool,
                 _chainSelector,
-                DistributeLiquidityType.removePool,
+                RedistributeLiquidityType.removePool,
                 block.timestamp,
                 block.number,
                 block.prevrandao
@@ -657,10 +657,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         bytes[] memory args = new bytes[](6);
         args[0] = abi.encodePacked(s_distributeLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(FunctionsRequestType.distributeLiquidity);
+        args[2] = abi.encodePacked(FunctionsRequestType.liquidityRedistribution);
         args[3] = abi.encodePacked(_chainSelector);
         args[4] = abi.encodePacked(distributeLiquidityRequestId);
-        args[5] = abi.encodePacked(DistributeLiquidityType.removePool);
+        args[5] = abi.encodePacked(RedistributeLiquidityType.removePool);
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             IParentPoolCLFCLA.sendCLFRequest.selector,

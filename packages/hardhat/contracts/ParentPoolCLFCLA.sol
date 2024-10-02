@@ -53,7 +53,7 @@ contract ParentPoolCLFCLA is
     /// EVENTS ///
     //////////////
 
-    event CLFRequestError(bytes32 requestId, IParentPool.RequestType requestType, bytes err);
+    event CLFRequestError(bytes32 requestId, IParentPool.CLFRequestType requestType, bytes err);
     event RetryWithdrawPerformed(bytes32 id);
     event WithdrawUpkeepPerformed(bytes32 id);
     event WithdrawRequestUpdated(bytes32 id);
@@ -85,13 +85,13 @@ contract ParentPoolCLFCLA is
         bytes memory response,
         bytes memory err
     ) internal override {
-        IParentPool.RequestType requestType = s_clfRequestTypes[requestId];
+        IParentPool.CLFRequestType requestType = s_clfRequestTypes[requestId];
 
         if (err.length > 0) {
-            if (requestType == IParentPool.RequestType.startDeposit_getChildPoolsLiquidity) {
+            if (requestType == IParentPool.CLFRequestType.startDeposit_getChildPoolsLiquidity) {
                 delete s_depositRequests[requestId];
             } else if (
-                requestType == IParentPool.RequestType.startWithdrawal_getChildPoolsLiquidity
+                requestType == IParentPool.CLFRequestType.startWithdrawal_getChildPoolsLiquidity
             ) {
                 bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[requestId];
                 address lpAddress = s_withdrawRequests[withdrawalId].lpAddress;
@@ -106,15 +106,15 @@ contract ParentPoolCLFCLA is
 
             emit CLFRequestError(requestId, requestType, err);
         } else {
-            if (requestType == IParentPool.RequestType.startDeposit_getChildPoolsLiquidity) {
+            if (requestType == IParentPool.CLFRequestType.startDeposit_getChildPoolsLiquidity) {
                 _handleStartDepositCLFFulfill(requestId, response);
             } else if (
-                requestType == IParentPool.RequestType.startWithdrawal_getChildPoolsLiquidity
+                requestType == IParentPool.CLFRequestType.startWithdrawal_getChildPoolsLiquidity
             ) {
                 _handleStartWithdrawalCLFFulfill(requestId, response);
                 delete s_withdrawalIdByCLFRequestId[requestId];
             } else if (
-                requestType == IParentPool.RequestType.performUpkeep_requestLiquidityTransfer
+                requestType == IParentPool.CLFRequestType.performUpkeep_requestLiquidityTransfer
             ) {
                 _handleAutomationCLFFulfill(requestId, response);
             }
@@ -196,7 +196,9 @@ contract ParentPoolCLFCLA is
             liquidityRequestedFromEachPool
         );
 
-        s_clfRequestTypes[reqId] = IParentPool.RequestType.performUpkeep_requestLiquidityTransfer;
+        s_clfRequestTypes[reqId] = IParentPool
+            .CLFRequestType
+            .performUpkeep_requestLiquidityTransfer;
 
         _addWithdrawalOnTheWayAmountById(withdrawalId);
         emit WithdrawUpkeepPerformed(reqId);
@@ -436,7 +438,7 @@ contract ParentPoolCLFCLA is
         bytes[] memory args = new bytes[](5);
         args[0] = abi.encodePacked(s_collectLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(IParentPool.FunctionsRequestType.collectLiquidity);
+        args[2] = abi.encodePacked(IParentPool.FunctionsRequestType.withdrawalLiquidityCollection);
         args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
         args[4] = abi.encodePacked(withdrawalId);
 

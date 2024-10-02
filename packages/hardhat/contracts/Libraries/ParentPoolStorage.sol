@@ -51,7 +51,7 @@ contract ParentPoolStorage {
     ///@notice Mapping to keep track of Liquidity Providers withdraw requests
     mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;
 
-    mapping(bytes32 clfReqId => IParentPool.RequestType) public s_clfRequestTypes;
+    mapping(bytes32 clfReqId => IParentPool.CLFRequestType) public s_clfRequestTypes;
 
     mapping(bytes32 clfReqId => IParentPool.DepositRequest) public s_depositRequests;
 
@@ -66,9 +66,6 @@ contract ParentPoolStorage {
     ///////////////////////////
 
     IParentPool.DepositOnTheWay[150] internal s_depositsOnTheWayArray;
-
-    ///@notice variable to store the automation keeper address
-    address internal s_forwarderAddress;
 
     bytes32 internal s_collectLiquidityJsCodeHashSum;
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-interface IStorage {
+interface IInfraStorage {
     ///@notice Chainlink Functions Request Type
     enum RequestType {
         addUnconfirmedTxDst,
@@ -64,13 +64,13 @@ interface IStorage {
         address functionsRouter;
     }
 
-    struct BridgeTx {
-        address recipient;
+    struct SettlementTx {
+        bytes32 id;
         uint256 amount;
-        bytes32 conceroBridgeTxId;
+        address recipient;
     }
 
-    struct WithdrawTx {
+    struct WithdrawalTx {
         bytes32 withdrawalId;
     }
 }

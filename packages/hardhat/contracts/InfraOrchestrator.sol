@@ -6,12 +6,12 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IFunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsClient.sol";
 import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
-import {StorageSetters} from "./Libraries/StorageSetters.sol";
+import {InfraStorageSetters} from "./Libraries/InfraStorageSetters.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
-import {IOrchestrator, IOrchestratorViewDelegate} from "./Interfaces/IOrchestrator.sol";
-import {ConceroCommon} from "./ConceroCommon.sol";
+import {IInfraOrchestrator, IOrchestratorViewDelegate} from "./Interfaces/IInfraOrchestrator.sol";
+import {InfraCommon} from "./InfraCommon.sol";
 import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_AVALANCHE, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE} from "./Constants.sol";
-import {IConceroFunctions} from "./Interfaces/IConceroFunctions.sol";
+import {IInfraCLF} from "./Interfaces/IInfraCLF.sol";
 
 ///////////////////////////////
 /////////////ERROR/////////////
@@ -29,7 +29,12 @@ error Orchestrator_InvalidSwapData();
 ///@notice error emitted when the token to bridge is not USDC
 error Orchestrator_InvalidBridgeToken();
 
-contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, StorageSetters {
+contract InfraOrchestrator is
+    IFunctionsClient,
+    IInfraOrchestrator,
+    InfraCommon,
+    InfraStorageSetters
+{
     using SafeERC20 for IERC20;
 
     ///////////////
@@ -72,7 +77,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         address _proxy,
         uint8 _chainIndex,
         address[3] memory _messengers
-    ) ConceroCommon(_messengers) StorageSetters(msg.sender) {
+    ) InfraCommon(_messengers) InfraStorageSetters(msg.sender) {
         i_functionsRouter = _functionsRouter;
         i_dexSwap = _dexSwap;
         i_concero = _concero;
@@ -277,7 +282,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         bytes calldata dstSwapData
     ) external onlyMessenger {
         bytes memory delegateCallArgs = abi.encodeWithSelector(
-            IConceroFunctions.addUnconfirmedTX.selector,
+            IInfraCLF.addUnconfirmedTX.selector,
             ccipMessageId,
             sender,
             recipient,
@@ -309,7 +314,7 @@ contract Orchestrator is IFunctionsClient, IOrchestrator, ConceroCommon, Storage
         }
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
-            IConceroFunctions.fulfillRequestWrapper.selector,
+            IInfraCLF.fulfillRequestWrapper.selector,
             requestId,
             response,
             err

@@ -8,14 +8,14 @@ pragma solidity 0.8.20;
 
 import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_POLYGON_AMOY, USDC_ARBITRUM_SEPOLIA, USDC_BASE_SEPOLIA, USDC_OPTIMISM_SEPOLIA, USDC_AVALANCHE} from "./Constants.sol";
 import {CHAIN_ID_AVALANCHE, WRAPPED_NATIVE_AVALANCHE, CHAIN_ID_ETHEREUM, WRAPPED_NATIVE_ETHEREUM, CHAIN_ID_ARBITRUM, WRAPPED_NATIVE_ARBITRUM, CHAIN_ID_BASE, WRAPPED_NATIVE_BASE, CHAIN_ID_POLYGON, WRAPPED_NATIVE_POLYGON} from "./Constants.sol";
-import {IStorage} from "./Interfaces/IStorage.sol";
+import {IInfraStorage} from "./Interfaces/IInfraStorage.sol";
 
-error ConceroCommon_NotMessenger(address _messenger);
-error ConceroCommon_ChainIndexOutOfBounds();
-error ConceroCommon_TokenTypeOutOfBounds();
-error ConceroCommon_ChainNotSupported();
+error NotMessenger(address _messenger);
+error ChainIndexOutOfBounds();
+error TokenTypeOutOfBounds();
+error ChainNotSupported();
 
-contract ConceroCommon {
+contract InfraCommon {
     ///////////////
     ///CONSTANTS///
     ///////////////
@@ -40,7 +40,7 @@ contract ConceroCommon {
      * @notice modifier to check if the caller is the an approved messenger
      */
     modifier onlyMessenger() {
-        if (!_isMessenger(msg.sender)) revert ConceroCommon_NotMessenger(msg.sender);
+        if (!_isMessenger(msg.sender)) revert NotMessenger(msg.sender);
         _;
     }
 
@@ -53,45 +53,50 @@ contract ConceroCommon {
      * @param _chainIndex the index of the chain
      */
     function getUSDCAddressByChainIndex(
-        IStorage.CCIPToken tokenType,
-        IStorage.Chain _chainIndex
+        IInfraStorage.CCIPToken tokenType,
+        IInfraStorage.Chain _chainIndex
     ) internal view returns (address) {
         address[5][2] memory tokens;
 
         // REMOVE IN PRODUCTION Initialize BNM addresses
-        tokens[uint(IStorage.CCIPToken.bnm)][
-            uint(IStorage.Chain.arb)
+        tokens[uint(IInfraStorage.CCIPToken.bnm)][
+            uint(IInfraStorage.Chain.arb)
         ] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
-        tokens[uint(IStorage.CCIPToken.bnm)][
-            uint(IStorage.Chain.base)
+        tokens[uint(IInfraStorage.CCIPToken.bnm)][
+            uint(IInfraStorage.Chain.base)
         ] = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e; // base
-        tokens[uint(IStorage.CCIPToken.bnm)][
-            uint(IStorage.Chain.opt)
+        tokens[uint(IInfraStorage.CCIPToken.bnm)][
+            uint(IInfraStorage.Chain.opt)
         ] = 0x8aF4204e30565DF93352fE8E1De78925F6664dA7; // opt
-        tokens[uint(IStorage.CCIPToken.bnm)][
-            uint(IStorage.Chain.pol)
+        tokens[uint(IInfraStorage.CCIPToken.bnm)][
+            uint(IInfraStorage.Chain.pol)
         ] = 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4; // pol
 
         // Initialize USDC addresses
-        tokens[uint(IStorage.CCIPToken.usdc)][uint(IStorage.Chain.arb)] = block.chainid == 42161
+        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.arb)] = block.chainid ==
+            42161
             ? USDC_ARBITRUM
             : USDC_ARBITRUM_SEPOLIA;
-        tokens[uint(IStorage.CCIPToken.usdc)][uint(IStorage.Chain.base)] = block.chainid == 8453
+        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.base)] = block
+            .chainid == 8453
             ? USDC_BASE
             : USDC_BASE_SEPOLIA;
-        tokens[uint(IStorage.CCIPToken.usdc)][uint(IStorage.Chain.opt)] = block.chainid == 10
+        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.opt)] = block.chainid ==
+            10
             ? USDC_OPTIMISM
             : USDC_OPTIMISM_SEPOLIA;
-        tokens[uint(IStorage.CCIPToken.usdc)][uint(IStorage.Chain.pol)] = block.chainid == 137
+        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.pol)] = block.chainid ==
+            137
             ? USDC_POLYGON
             : USDC_POLYGON_AMOY;
-        tokens[uint(IStorage.CCIPToken.usdc)][uint(IStorage.Chain.avax)] = block.chainid == 43114
+        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.avax)] = block
+            .chainid == 43114
             ? USDC_AVALANCHE
             : USDC_AVALANCHE;
 
-        if (uint256(tokenType) > tokens.length) revert ConceroCommon_TokenTypeOutOfBounds();
+        if (uint256(tokenType) > tokens.length) revert TokenTypeOutOfBounds();
         if (uint256(_chainIndex) > tokens[uint256(tokenType)].length)
-            revert ConceroCommon_ChainIndexOutOfBounds();
+            revert ChainIndexOutOfBounds();
 
         return tokens[uint256(tokenType)][uint256(_chainIndex)];
     }
@@ -136,7 +141,7 @@ contract ConceroCommon {
         } else if (chainId == CHAIN_ID_POLYGON) {
             _wrappedAddress = WRAPPED_NATIVE_POLYGON;
         } else {
-            revert ConceroCommon_ChainNotSupported();
+            revert ChainNotSupported();
         }
     }
 

@@ -21,7 +21,7 @@
 //
 ////Interfaces
 //import {IConcero, IDexSwap} from "contracts/Interfaces/IConcero.sol";
-//import {IStorage} from "contracts/Interfaces/IStorage.sol";
+//import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 //
 ////Protocol Storage
 //import {Storage} from "contracts/Libraries/Storage.sol";
@@ -269,7 +269,7 @@
 //            dex = dexDeployBase.run(address(proxy));
 //
 //            concero = conceroDeployBase.run(
-//                IStorage.FunctionsVariables({
+//                IInfraStorage.FunctionsVariables({
 //                    subscriptionId: 14, //uint64 _subscriptionId,
 //                    donId: donIdBase,
 //                    functionsRouter: address(functionsRouterBase)
@@ -393,7 +393,7 @@
 //            dexDst = dexDeployArbitrum.run(address(proxyDst));
 //
 //            conceroDst = conceroDeployArbitrum.run(
-//                IStorage.FunctionsVariables({
+//                IInfraStorage.FunctionsVariables({
 //                    subscriptionId: 22, //uint64 _subscriptionId,
 //                    donId: donIdArb,
 //                    functionsRouter: address(functionsRouterArb)
@@ -1890,8 +1890,8 @@
 //        });
 //
 //        ///////////////////////// Bridge /////////////////////////
-//        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
-//            tokenType: IStorage.CCIPToken.usdc,
+//        IInfraStorage.BridgeData memory bridgeData = IInfraStorage.BridgeData({
+//            tokenType: IInfraStorage.CCIPToken.usdc,
 //            amount: amountOutSrc,
 //            dstChainSelector: arbChainSelector,
 //            receiver: User

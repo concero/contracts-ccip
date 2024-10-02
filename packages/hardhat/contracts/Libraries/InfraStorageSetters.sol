@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {Storage} from "./Storage.sol";
+import {InfraStorage} from "./InfraStorage.sol";
 
-contract StorageSetters is Storage {
+contract InfraStorageSetters is InfraStorage {
     ///////////////////////////////
     /////////////ERROR/////////////
     ///////////////////////////////

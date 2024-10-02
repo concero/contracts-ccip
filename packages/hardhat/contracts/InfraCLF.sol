@@ -10,11 +10,11 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-import {Storage} from "./Libraries/Storage.sol";
+import {InfraStorage} from "./Libraries/InfraStorage.sol";
 import {IPool} from "./Interfaces/IPool.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
-import {ConceroCommon} from "./ConceroCommon.sol";
-import {IConceroFunctions} from "./Interfaces/IConceroFunctions.sol";
+import {InfraCommon} from "./InfraCommon.sol";
+import {IInfraCLF} from "./Interfaces/IInfraCLF.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -34,7 +34,7 @@ error ConceroFunctions_OnlyProxyContext(address caller);
 ///@notice error emitted when the delegatecall to DexSwap fails
 error ConceroFunctions_FailedToReleaseTx(bytes error);
 
-contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, Storage {
+contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     ///////////////////////
     ///TYPE DECLARATIONS///
     ///////////////////////
@@ -123,7 +123,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         address _pool,
         address _proxy,
         address[3] memory _messengers
-    ) FunctionsClient(_variables.functionsRouter) ConceroCommon(_messengers) {
+    ) FunctionsClient(_variables.functionsRouter) InfraCommon(_messengers) {
         i_donId = _variables.donId;
         i_subscriptionId = _variables.subscriptionId;
         i_chainSelector = _chainSelector;
@@ -300,8 +300,8 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
      * @param messageId the CCIP message to be checked
      * @param sender the address to query information
      * @param dstChainSelector CCIP chain selector for destination chain
-     * @param receiver address of recipient on destination chain
-     * @param tokenType IStorage.CCIPToken (CCIP compatible tokens like USDC)
+     * @param recipient address of recipient on destination chain
+     * @param tokenType IInfraStorage.CCIPToken (CCIP compatible tokens like USDC)
      * @param amount the amount to be transferred
      * @param dstSwapData the payload to be swapped if it exists
      */
@@ -309,7 +309,7 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         bytes32 messageId,
         address sender,
         uint64 dstChainSelector,
-        address receiver,
+        address recipient,
         CCIPToken tokenType,
         uint256 amount,
         IDexSwap.SwapData[] memory dstSwapData
@@ -325,20 +325,20 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
         args[3] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
         args[4] = abi.encodePacked(messageId);
         args[5] = abi.encodePacked(sender);
-        args[6] = abi.encodePacked(receiver);
+        args[6] = abi.encodePacked(recipient);
         args[7] = abi.encodePacked(amount);
         args[8] = abi.encodePacked(i_chainSelector);
         args[9] = abi.encodePacked(dstChainSelector);
         args[10] = abi.encodePacked(uint8(tokenType));
         args[11] = abi.encodePacked(block.number);
-        args[12] = abi.encodePacked(_swapDataToBytes(dstSwapData));
+        args[12] = _swapDataToBytes(dstSwapData);
 
         bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT);
         s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;
         s_requests[reqId].isPending = true;
         s_requests[reqId].ccipMessageId = messageId;
 
-        emit UnconfirmedTXSent(messageId, sender, receiver, amount, tokenType, dstChainSelector);
+        emit UnconfirmedTXSent(messageId, sender, recipient, amount, tokenType, dstChainSelector);
     }
 
     /**
@@ -402,15 +402,25 @@ contract ConceroFunctions is IConceroFunctions, FunctionsClient, ConceroCommon, 
             uint256 linkNativeRate
         ) = abi.decode(response, (uint256, uint256, uint64, uint256, uint256, uint256));
 
-        s_lastGasPrices[i_chainSelector] = srcGasPrice == 0
-            ? s_lastGasPrices[i_chainSelector]
-            : srcGasPrice;
-        s_lastGasPrices[dstChainSelector] = dstGasPrice == 0
-            ? s_lastGasPrices[dstChainSelector]
-            : dstGasPrice;
-        s_latestLinkUsdcRate = linkUsdcRate == 0 ? s_latestLinkUsdcRate : linkUsdcRate;
-        s_latestNativeUsdcRate = nativeUsdcRate == 0 ? s_latestNativeUsdcRate : nativeUsdcRate;
-        s_latestLinkNativeRate = linkNativeRate == 0 ? s_latestLinkNativeRate : linkNativeRate;
+        if (srcGasPrice != 0) {
+            s_lastGasPrices[i_chainSelector] = srcGasPrice;
+        }
+
+        if (dstGasPrice != 0) {
+            s_lastGasPrices[dstChainSelector] = dstGasPrice;
+        }
+
+        if (linkUsdcRate != 0) {
+            s_latestLinkUsdcRate = linkUsdcRate;
+        }
+
+        if (nativeUsdcRate != 0) {
+            s_latestNativeUsdcRate = nativeUsdcRate;
+        }
+
+        if (linkNativeRate != 0) {
+            s_latestLinkNativeRate = linkNativeRate;
+        }
     }
 
     /////////////////////////////

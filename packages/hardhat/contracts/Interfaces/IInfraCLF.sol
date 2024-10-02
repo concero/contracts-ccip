@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {IStorage} from "./IStorage.sol";
+import {IInfraStorage} from "./IInfraStorage.sol";
 
-interface IConceroFunctions is IStorage {
+interface IInfraCLF is IInfraStorage {
     function fulfillRequestWrapper(
         bytes32 requestId,
         bytes memory response,

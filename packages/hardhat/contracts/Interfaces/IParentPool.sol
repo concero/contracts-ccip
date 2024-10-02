@@ -13,11 +13,11 @@ interface IParentPool is IPool {
 
     enum FunctionsRequestType {
         getTotalPoolsBalance,
-        distributeLiquidity,
-        collectLiquidity
+        liquidityRedistribution,
+        withdrawalLiquidityCollection
     }
 
-    enum DistributeLiquidityType {
+    enum RedistributeLiquidityType {
         addPool,
         removePool
     }
@@ -29,7 +29,7 @@ interface IParentPool is IPool {
     }
 
     ///@notice Struct to track Functions Requests Type
-    enum RequestType {
+    enum CLFRequestType {
         startDeposit_getChildPoolsLiquidity, //Deposits
         startWithdrawal_getChildPoolsLiquidity, //Start Withdrawals
         performUpkeep_requestLiquidityTransfer
@@ -125,7 +125,7 @@ interface IParentPool is IPool {
     ///@notice event emitted when the Functions request return error
     event ConceroParentPool_CLFRequestError(
         bytes32 indexed requestId,
-        RequestType requestType,
+        CLFRequestType requestType,
         bytes error
     );
     ///@notice event emitted when a Concero pool is added

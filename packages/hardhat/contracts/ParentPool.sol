@@ -729,6 +729,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
 
+            if (!s_withdrawRequests[withdrawalId].lpAddress) {
+                revert WithdrawRequestDoesntExist(withdrawalId);
+            }
+
             request.remainingLiquidityFromChildPools = request.remainingLiquidityFromChildPools >=
                 ccipReceivedAmount
                 ? request.remainingLiquidityFromChildPools - ccipReceivedAmount

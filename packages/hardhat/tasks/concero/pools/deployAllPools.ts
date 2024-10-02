@@ -1,6 +1,6 @@
 import { task, types } from "hardhat/config";
 import { execSync } from "child_process";
-import { liveChains } from "../../../constants/liveChains";
+import { liveChains } from "../../../constants";
 
 const executeCommand = (command: string) => {
   execSync(command, { stdio: "inherit" });

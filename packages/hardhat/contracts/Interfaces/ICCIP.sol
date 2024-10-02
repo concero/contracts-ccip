@@ -4,8 +4,8 @@ interface ICCIP {
     ///@notice CCIP transaction types
     enum CcipTxType {
         deposit,
-        bridge,
-        withdraw,
+        batchedSettlement,
+        withdrawal,
         liquidityRebalancing
     }
 

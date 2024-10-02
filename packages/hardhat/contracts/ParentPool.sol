@@ -14,9 +14,9 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {LPToken} from "./LPToken.sol";
 import {IParentPool} from "./Interfaces/IParentPool.sol";
-import {IStorage} from "./Interfaces/IStorage.sol";
+import {IInfraStorage} from "./Interfaces/IInfraStorage.sol";
 import {ParentPoolStorage} from "contracts/Libraries/ParentPoolStorage.sol";
-import {IOrchestrator} from "./Interfaces/IOrchestrator.sol";
+import {IInfraOrchestrator} from "./Interfaces/IInfraOrchestrator.sol";
 import {ParentPoolCommon} from "./ParentPoolCommon.sol";
 import {IParentPoolCLFCLA, IParentPoolCLFCLAViewDelegate} from "./Interfaces/IParentPoolCLFCLA.sol";
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
@@ -698,15 +698,15 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
-        if (ccipTxData.ccipTxType == ICCIP.CcipTxType.bridge) {
-            IStorage.BridgeTx[] memory bridgeTxs = abi.decode(
+        if (ccipTxData.ccipTxType == ICCIP.CcipTxType.batchedSettlement) {
+            IInfraStorage.SettlementTx[] memory settlementTx = abi.decode(
                 ccipTxData.data,
-                (IStorage.BridgeTx[])
+                (IInfraStorage.SettlementTx[])
             );
-            for (uint256 i; i < bridgeTxs.length; ++i) {
-                bytes32 txId = bridgeTxs[i].conceroBridgeTxId;
+            for (uint256 i; i < settlementTx.length; ++i) {
+                bytes32 txId = settlementTx[i].id;
 
-                IStorage.Transaction memory transaction = IOrchestrator(i_infraProxy)
+                IInfraStorage.Transaction memory transaction = IInfraOrchestrator(i_infraProxy)
                     .getTransaction(txId);
 
                 bool isExecutionLayerFailed = (transaction.isConfirmed == false ||
@@ -715,12 +715,12 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
                 if (isExecutionLayerFailed) {
                     // We don't subtract it here because the loan was not performed.
                     // And the value is not added into the `s_loanInUse` variable.
-                    i_USDC.safeTransfer(bridgeTxs[i].recipient, bridgeTxs[i].amount);
+                    i_USDC.safeTransfer(settlementTx[i].recipient, settlementTx[i].amount);
                 } else {
                     s_loansInUse -= ccipReceivedAmount;
                 }
             }
-        } else if (ccipTxData.ccipTxType == ICCIP.CcipTxType.withdraw) {
+        } else if (ccipTxData.ccipTxType == ICCIP.CcipTxType.withdrawal) {
             bytes32 withdrawalId = abi.decode(ccipTxData.data, (bytes32));
 
             if (withdrawalId == bytes32(0)) {
@@ -729,7 +729,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
 
-            if (!s_withdrawRequests[withdrawalId].lpAddress) {
+            if (s_withdrawRequests[withdrawalId].lpAddress != address(0)) {
                 revert WithdrawRequestDoesntExist(withdrawalId);
             }
 
@@ -820,7 +820,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint256 _amountToDistribute,
         ICCIP.CcipTxType _ccipTxType
     ) internal returns (bytes32 messageId) {
-        IStorage.BridgeTx[] memory emptyBridgeTxArray;
+        IInfraStorage.SettlementTx[] memory emptyBridgeTxArray;
         ICCIP.CcipTxData memory ccipTxData = ICCIP.CcipTxData({
             ccipTxType: _ccipTxType,
             data: abi.encode(emptyBridgeTxArray)

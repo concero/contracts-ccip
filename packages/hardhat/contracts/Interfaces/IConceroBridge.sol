@@ -2,9 +2,9 @@
 pragma solidity ^0.8.20;
 
 import {IDexSwap} from "./IDexSwap.sol";
-import {IStorage} from "./IStorage.sol";
+import {IInfraStorage} from "./IInfraStorage.sol";
 
-interface IConceroBridge is IStorage {
+interface IConceroBridge is IInfraStorage {
     /**
      * @notice Function responsible to trigger CCIP and start the bridging process
      * @param bridgeData The bytes data payload with transaction infos

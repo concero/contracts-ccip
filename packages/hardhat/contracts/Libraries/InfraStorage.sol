@@ -2,10 +2,9 @@
 pragma solidity 0.8.20;
 
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IInfraStorage} from "../Interfaces/IInfraStorage.sol";
 
-import {IStorage} from "../Interfaces/IStorage.sol";
-
-abstract contract Storage is ReentrancyGuard, IStorage {
+abstract contract InfraStorage is ReentrancyGuard, IInfraStorage {
     /////////////////////
     ///STATE VARIABLES///
     /////////////////////
@@ -47,12 +46,12 @@ abstract contract Storage is ReentrancyGuard, IStorage {
     mapping(uint64 chainSelector => uint256 lastGasPrice) public s_lastGasPrices;
 
     ///@notice Bridge: mapping to track pending batched CCIP tx amount per destination chain
-    mapping(uint64 dstChainSelector => uint256 amount) public s_pendingBatchedTxAmountByDstChain;
+    mapping(uint64 dstChainSelector => uint256 amount) public s_pendingSettlementTxAmountByDstChain;
     ///@notice Bridge: mapping to track pending CCIP txs for batched execution per destination chain
     mapping(uint64 dstChainSelector => bytes32[] bridgeTxIds)
         public s_pendingSettlementTxsByDstChain;
     ///@notice Bridge: mapping to track transaction details
-    mapping(bytes32 bridgeTxId => BridgeTx pendingTx) public s_pendingTxsBySettlementId;
+    mapping(bytes32 bridgeTxId => SettlementTx pendingTx) public s_pendingSettlementTxsById;
 
     ///@notice Bridge: mapping to track last CCIP tx fee in LINK for each destination chain
     mapping(uint64 dstChainSelector => uint256 lastCCIPFeeInLink) internal s_lastCCIPFeeInLink;

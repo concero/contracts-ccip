@@ -20,7 +20,7 @@
 //
 ////Interfaces
 //import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
-//import {IStorage} from "contracts/Interfaces/IStorage.sol";
+//import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 //
 ////Protocol Storage
 //import {Storage} from "contracts/Libraries/Storage.sol";
@@ -242,7 +242,7 @@
 //            dex = dexDeployBase.run(address(proxy));
 //
 //            concero = conceroDeployBase.run(
-//                IStorage.FunctionsVariables({
+//                IInfraStorage.FunctionsVariables({
 //                    subscriptionId: 15, //uint64 _subscriptionId,
 //                    donId: donIdBase,
 //                    functionsRouter: address(functionsRouterBase)
@@ -344,7 +344,7 @@
 //            dexDst = dexDeployArbitrum.run(address(proxyDst));
 //
 //            conceroDst = conceroDeployArbitrum.run(
-//                IStorage.FunctionsVariables({
+//                IInfraStorage.FunctionsVariables({
 //                    subscriptionId: 0, //uint64 _subscriptionId,
 //                    donId: donIdArb,
 //                    functionsRouter: functionsRouterArb
@@ -435,8 +435,8 @@
 //    //     vm.stopPrank();
 //
 //    //     //====== Mock the payload
-//    //     IStorage.BridgeData memory data = IStorage.BridgeData({
-//    //         tokenType: IStorage.CCIPToken.usdc,
+//    //     IInfraStorage.BridgeData memory data = IInfraStorage.BridgeData({
+//    //         tokenType: IInfraStorage.CCIPToken.usdc,
 //    //         amount: 10 *10**6,
 //    //         dstChainSelector: localChainSelector,
 //    //         receiver: CrossChainReceiver

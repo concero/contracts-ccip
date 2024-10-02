@@ -4,7 +4,7 @@ pragma solidity 0.8.20;
 
 import {BaseTest, console, Vm} from "../BaseTest.t.sol";
 import {ConceroBridge} from "contracts/ConceroBridge.sol";
-import {IStorage} from "contracts/Interfaces/IStorage.sol";
+import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "contracts/transparentProxy/TransparentUpgradeableProxy.sol";
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -54,7 +54,7 @@ contract StartBridgeTest is BaseTest {
             address(baseBridgeImplementation),
             address(parentPoolProxy),
             address(baseOrchestratorProxy),
-            1, // IStorage.Chain.base
+            1, // IInfraStorage.Chain.base
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
         _setProxyImplementation(
@@ -146,8 +146,8 @@ contract StartBridgeTest is BaseTest {
     }
 
     function test_startBridge_reverts_if_not_proxy(address _caller) public {
-        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
-            tokenType: IStorage.CCIPToken.usdc,
+        IInfraStorage.BridgeData memory bridgeData = IInfraStorage.BridgeData({
+            tokenType: IInfraStorage.CCIPToken.usdc,
             amount: USER_FUNDS,
             dstChainSelector: arbitrumChainSelector,
             receiver: msg.sender
@@ -166,8 +166,8 @@ contract StartBridgeTest is BaseTest {
     }
 
     function _startBridge(address _caller, uint256 _amount, uint64 _dstChainSelector) internal {
-        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
-            tokenType: IStorage.CCIPToken.usdc,
+        IInfraStorage.BridgeData memory bridgeData = IInfraStorage.BridgeData({
+            tokenType: IInfraStorage.CCIPToken.usdc,
             amount: _amount,
             dstChainSelector: _dstChainSelector,
             receiver: msg.sender

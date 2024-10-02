@@ -18,7 +18,7 @@ import {CCIPLocalSimulatorFork} from "../../../lib/chainlink-local/src/ccip/CCIP
 import {Register} from "../../../lib/chainlink-local/src/ccip/Register.sol";
 import {ConceroBridge} from "contracts/ConceroBridge.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
-import {IStorage} from "contracts/Interfaces/IStorage.sol";
+import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 
 contract BaseTest is Test {
     /*//////////////////////////////////////////////////////////////
@@ -290,7 +290,7 @@ contract BaseTest is Test {
                                 BRIDGES
     //////////////////////////////////////////////////////////////*/
     function _deployBridge(
-        IStorage.FunctionsVariables memory _variables,
+        IInfraStorage.FunctionsVariables memory _variables,
         uint64 _chainSelector,
         uint256 _chainIndex,
         address _link,
@@ -307,13 +307,13 @@ contract BaseTest is Test {
     }
 
     function _deployBaseBridgeImplementation() internal {
-        IStorage.FunctionsVariables memory functionsVariables = IStorage.FunctionsVariables({
+        IInfraStorage.FunctionsVariables memory functionsVariables = IInfraStorage.FunctionsVariables({
             subscriptionId: uint64(vm.envUint("CLF_SUBID_BASE")),
             donId: vm.envBytes32("CLF_DONID_BASE"),
             functionsRouter: vm.envAddress("CLF_ROUTER_BASE")
         });
         uint64 chainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_BASE"));
-        uint256 chainIndex = 1; // IStorage.Chain.base
+        uint256 chainIndex = 1; // IInfraStorage.Chain.base
         address link = vm.envAddress("LINK_BASE");
         address ccipRouter = vm.envAddress("CL_CCIP_ROUTER_BASE");
         address dexswap = vm.envAddress("CONCERO_DEX_SWAP_BASE");
@@ -327,13 +327,13 @@ contract BaseTest is Test {
     }
 
     function _deployArbitrumBridgeImplementation() internal {
-        IStorage.FunctionsVariables memory functionsVariables = IStorage.FunctionsVariables({
+        IInfraStorage.FunctionsVariables memory functionsVariables = IInfraStorage.FunctionsVariables({
             subscriptionId: uint64(vm.envUint("CLF_SUBID_ARBITRUM")),
             donId: vm.envBytes32("CLF_DONID_ARBITRUM"),
             functionsRouter: vm.envAddress("CLF_ROUTER_ARBITRUM")
         });
         uint64 chainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM"));
-        uint256 chainIndex = 0; // IStorage.Chain.arb
+        uint256 chainIndex = 0; // IInfraStorage.Chain.arb
         address link = vm.envAddress("LINK_ARBITRUM");
         address ccipRouter = vm.envAddress("CL_CCIP_ROUTER_ARBITRUM");
         address dexswap = vm.envAddress("CONCERO_DEX_SWAP_ARBITRUM");
@@ -347,13 +347,13 @@ contract BaseTest is Test {
     }
 
     function _deployAvalancheBridgeImplementation() internal {
-        IStorage.FunctionsVariables memory functionsVariables = IStorage.FunctionsVariables({
+        IInfraStorage.FunctionsVariables memory functionsVariables = IInfraStorage.FunctionsVariables({
             subscriptionId: uint64(vm.envUint("CLF_SUBID_AVALANCHE")),
             donId: vm.envBytes32("CLF_DONID_AVALANCHE"),
             functionsRouter: vm.envAddress("CLF_ROUTER_AVALANCHE")
         });
         uint64 chainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_AVALANCHE"));
-        uint256 chainIndex = 4; // IStorage.Chain.avax
+        uint256 chainIndex = 4; // IInfraStorage.Chain.avax
         address link = vm.envAddress("LINK_AVALANCHE");
         address ccipRouter = vm.envAddress("CL_CCIP_ROUTER_AVALANCHE");
         address dexswap = vm.envAddress("CONCERO_DEX_SWAP_AVALANCHE");
@@ -383,7 +383,7 @@ contract BaseTest is Test {
             address(baseBridgeImplementation),
             address(parentPoolProxy),
             address(baseOrchestratorProxy),
-            1, // IStorage.Chain.base
+            1, // IInfraStorage.Chain.base
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
     }

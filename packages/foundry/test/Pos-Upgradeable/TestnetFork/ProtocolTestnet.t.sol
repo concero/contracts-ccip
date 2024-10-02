@@ -21,7 +21,7 @@
 //
 ////Interfaces
 //import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
-//import {IStorage} from "contracts/Interfaces/IStorage.sol";
+//import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 //import {IConcero, IDexSwap} from "contracts/Interfaces/IConcero.sol";
 //import {IPool} from "contracts/Interfaces/IPool.sol";
 //
@@ -237,7 +237,7 @@
 //        dex = dexDeployBase.run(address(proxy));
 //
 //        concero = conceroDeployBase.run(
-//            IStorage.FunctionsVariables ({
+//            IInfraStorage.FunctionsVariables ({
 //                subscriptionId: subscriptionIdBase, //uint64 _subscriptionId,
 //                donId: donIdBase,
 //                functionsRouter: address(functionsRouterBase)
@@ -365,7 +365,7 @@
 //        );
 //
 //        conceroDst = conceroDeployArbitrum.run(
-//            IStorage.FunctionsVariables ({
+//            IInfraStorage.FunctionsVariables ({
 //                subscriptionId: subscriptionIdArb, //uint64 _subscriptionId,
 //                donId: donIdArb,
 //                functionsRouter: address(functionsRouterArb)
@@ -561,8 +561,8 @@
 //        });
 //
 //        /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-//        IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
-//            tokenType: IStorage.CCIPToken.usdc,
+//        IInfraStorage.BridgeData memory bridgeData = IInfraStorage.BridgeData({
+//            tokenType: IInfraStorage.CCIPToken.usdc,
 //            amount: amountOutMin,
 //            dstChainSelector: arbChainSelector,
 //            receiver: User
@@ -591,8 +591,8 @@
 //        vm.selectFork(baseTestFork);
 //
 //        //====== Mock the payload
-//        IStorage.BridgeData memory data = IStorage.BridgeData({
-//            tokenType: IStorage.CCIPToken.usdc,
+//        IInfraStorage.BridgeData memory data = IInfraStorage.BridgeData({
+//            tokenType: IInfraStorage.CCIPToken.usdc,
 //            amount: USDC_INITIAL_BALANCE + 1,
 //            dstChainSelector: arbChainSelector,
 //            receiver: User
@@ -671,8 +671,8 @@
 //        //==== Leg 1 - Amount 0 revert
 //
 //        //====== Mock the payload
-//        IStorage.BridgeData memory data = IStorage.BridgeData({
-//            tokenType: IStorage.CCIPToken.usdc,
+//        IInfraStorage.BridgeData memory data = IInfraStorage.BridgeData({
+//            tokenType: IInfraStorage.CCIPToken.usdc,
 //            amount: 0,
 //            dstChainSelector: arbChainSelector,
 //            receiver: User
@@ -689,8 +689,8 @@
 //        //==== Leg 2 - No ChainSelector
 //
 //        //====== Mock the payload
-//        IStorage.BridgeData memory dataTwo = IStorage.BridgeData({
-//            tokenType: IStorage.CCIPToken.usdc,
+//        IInfraStorage.BridgeData memory dataTwo = IInfraStorage.BridgeData({
+//            tokenType: IInfraStorage.CCIPToken.usdc,
 //            amount: 20*10**6,
 //            dstChainSelector: 0,
 //            receiver: User
@@ -706,8 +706,8 @@
 //
 //
 //        //====== Mock the payload
-//        IStorage.BridgeData memory dataThree = IStorage.BridgeData({
-//            tokenType: IStorage.CCIPToken.usdc,
+//        IInfraStorage.BridgeData memory dataThree = IInfraStorage.BridgeData({
+//            tokenType: IInfraStorage.CCIPToken.usdc,
 //            amount: 20*10**6,
 //            dstChainSelector: arbChainSelector,
 //            receiver: address(0)
@@ -1026,7 +1026,7 @@
 //    //     // });
 //
 //    //     // /////////////////////////// BRIDGE DATA MOCKED \\\\\\\\\\\\\\\\\\\\\\\\\\\\
-//    //     // IStorage.BridgeData memory bridgeData = IStorage.BridgeData({
+//    //     // IInfraStorage.BridgeData memory bridgeData = IStorage.BridgeData({
 //    //     //     tokenType: IStorage.CCIPToken.usdc,
 //    //     //     amount: 300 *10**6,
 //    //     //     dstChainSelector: arbChainSelector,

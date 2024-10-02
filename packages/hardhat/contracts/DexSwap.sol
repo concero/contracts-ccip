@@ -15,10 +15,10 @@ import {ISwapRouter as ISushiRouterV3} from "sushiswap-v3-periphery/contracts/in
 import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
 import {ISwapRouter02, IV3SwapRouter} from "./Interfaces/ISwapRouter02.sol";
 import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
-import {Storage} from "./Libraries/Storage.sol";
+import {InfraStorage} from "./Libraries/InfraStorage.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
-import {ConceroCommon} from "./ConceroCommon.sol";
+import {InfraCommon} from "./InfraCommon.sol";
 import {IPeripheryPayments} from "@uniswap/v3-periphery/contracts/interfaces/IPeripheryPayments.sol";
 import {IWETH} from "./Interfaces/IWETH.sol";
 
@@ -39,7 +39,7 @@ error DexSwap_SwapDataNotChained(address toToken, address fromToken);
 error DexSwap_InvalidDexData();
 error DexSwap_UnwrapWNativeFailed();
 
-contract DexSwap is IDexSwap, ConceroCommon, Storage {
+contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
     using SafeERC20 for IERC20;
     using BytesLib for bytes;
 
@@ -62,7 +62,7 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
     ///@notice event emitted when value locked in the contract is removed
     event DexSwap_RemovingDust(address receiver, uint256 amount);
 
-    constructor(address _proxy, address[3] memory _messengers) ConceroCommon(_messengers) {
+    constructor(address _proxy, address[3] memory _messengers) InfraCommon(_messengers) {
         i_proxy = _proxy;
     }
 

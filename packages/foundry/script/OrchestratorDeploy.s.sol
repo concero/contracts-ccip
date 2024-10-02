@@ -3,7 +3,7 @@ pragma solidity 0.8.20;
 
 import {Script, console} from "forge-std/Script.sol";
 import {Orchestrator} from "contracts/Orchestrator.sol";
-import {IStorage} from "contracts/Interfaces/IStorage.sol";
+import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 
 contract OrchestratorDeploy is Script {
     function run(

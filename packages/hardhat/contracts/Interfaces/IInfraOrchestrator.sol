@@ -1,31 +1,31 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {IStorage} from "./IStorage.sol";
+import {IInfraStorage} from "./IInfraStorage.sol";
 import "./IDexSwap.sol";
 
-interface IOrchestrator {
+interface IInfraOrchestrator {
     function swap(IDexSwap.SwapData[] calldata _swapData, address _receiver) external payable;
 
     function bridge(
-        IStorage.BridgeData memory bridgeData,
+        IInfraStorage.BridgeData memory bridgeData,
         IDexSwap.SwapData[] memory dstSwapData
     ) external payable;
 
     function swapAndBridge(
-        IStorage.BridgeData memory bridgeData,
+        IInfraStorage.BridgeData memory bridgeData,
         IDexSwap.SwapData[] calldata srcSwapData,
         IDexSwap.SwapData[] memory dstSwapData
     ) external payable;
 
     function getTransaction(
         bytes32 _conceroBridgeTxId
-    ) external view returns (IStorage.Transaction memory transaction);
+    ) external view returns (IInfraStorage.Transaction memory transaction);
 }
 
 interface IOrchestratorViewDelegate {
     function getSrcTotalFeeInUSDCViaDelegateCall(
-        IStorage.CCIPToken tokenType,
+        IInfraStorage.CCIPToken tokenType,
         uint64 dstChainSelector,
         uint256 amount
     ) external view returns (uint256);

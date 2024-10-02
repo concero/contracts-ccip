@@ -11,8 +11,8 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ConceroFunctions} from "./ConceroFunctions.sol";
-import {IStorage} from "contracts/Interfaces/IStorage.sol";
+import {InfraCLF} from "./InfraCLF.sol";
+import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 import {ICCIP} from "./Interfaces/ICCIP.sol";
 
 ////////////////////////////////////////////////////////
@@ -20,7 +20,7 @@ import {ICCIP} from "./Interfaces/ICCIP.sol";
 ////////////////////////////////////////////////////////
 error ConceroCCIP_ChainNotAllowed(uint64 chainSelector);
 
-contract ConceroCCIP is ConceroFunctions {
+contract InfraCCIP is InfraCLF {
     using SafeERC20 for IERC20;
 
     ///////////////////////////////////////////////////////////
@@ -59,17 +59,7 @@ contract ConceroCCIP is ConceroFunctions {
         address _pool,
         address _proxy,
         address[3] memory _messengers
-    )
-        ConceroFunctions(
-            _variables,
-            _chainSelector,
-            _chainIndex,
-            _dexSwap,
-            _pool,
-            _proxy,
-            _messengers
-        )
-    {
+    ) InfraCLF(_variables, _chainSelector, _chainIndex, _dexSwap, _pool, _proxy, _messengers) {
         i_linkToken = LinkTokenInterface(_link);
         i_ccipRouter = IRouterClient(_ccipRouter);
     }
@@ -89,10 +79,10 @@ contract ConceroCCIP is ConceroFunctions {
         uint64 _destinationChainSelector,
         address _token,
         uint256 _amount,
-        BridgeTx[] memory _pendingCCIPTransactions
+        SettlementTx[] memory _pendingCCIPTransactions
     ) internal onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
         ICCIP.CcipTxData memory ccipTxData = ICCIP.CcipTxData({
-            ccipTxType: ICCIP.CcipTxType.bridge,
+            ccipTxType: ICCIP.CcipTxType.batchedSettlement,
             data: abi.encode(_pendingCCIPTransactions)
         });
 

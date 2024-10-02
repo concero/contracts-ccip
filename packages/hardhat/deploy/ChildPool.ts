@@ -41,7 +41,7 @@ const deployChildPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: Constr
 
     log("Deploying...", "deployChildPool", name);
 
-    const deployChildPool = (await deploy("ConceroChildPool", {
+    const deployChildPool = (await deploy("ChildPool", {
       from: deployer,
       args: [
         args.conceroProxyAddress,

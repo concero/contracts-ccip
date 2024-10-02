@@ -13,7 +13,7 @@ async function setConceroProxySender(hre) {
   const { name: chainName, viemChain, url, type } = chain;
   const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
-  const { abi } = await import("../../../artifacts/contracts/ConceroChildPool.sol/ConceroChildPool.json");
+  const { abi } = await import("../../../artifacts/contracts/ChildPool.sol/ChildPool.json");
   if (!chainName) throw new Error("Chain name not found");
   const chains = type === networkTypes.mainnet ? mainnetChains : testnetChains;
 
@@ -85,7 +85,7 @@ async function addPoolsToAllChains(hre) {
   const { name: chainName, viemChain, type } = chain;
   const clients = getFallbackClients(chain);
   const { publicClient, account, walletClient } = clients;
-  const { abi } = await import("../../../artifacts/contracts/ConceroChildPool.sol/ConceroChildPool.json");
+  const { abi } = await import("../../../artifacts/contracts/ChildPool.sol/ChildPool.json");
   if (!chainName) throw new Error("Chain name not found");
   const chains = type === networkTypes.mainnet ? mainnetChains : testnetChains;
 

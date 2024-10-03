@@ -30,7 +30,8 @@ export interface env extends EnvCLA, EnvCLF, EnvCLCCIP, EnvTokens {
   BASESCAN_API_KEY: string;
   ARBISCAN_API_KEY: string;
   POLYGONSCAN_API_KEY: string;
-  OPTIMISM_API_KEY: string;
+  OPTIMISMSCAN_API_KEY: string;
+  CELOSCAN_API_KEY: string;
   BLAST_API_KEY: string;
   TENDERLY_API_KEY: string;
   CHAINSTACK_API_KEY: string;

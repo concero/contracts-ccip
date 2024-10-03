@@ -75,7 +75,7 @@ const config: HardhatUserConfig = {
       },
       {
         network: "optimism",
-        chainId: cNetworks.optimism.chainId,
+        chainId: 10,
         urls: {
           apiURL: "https://api-optimistic.etherscan.io/api",
           browserURL: "https://optimistic.etherscan.io/",

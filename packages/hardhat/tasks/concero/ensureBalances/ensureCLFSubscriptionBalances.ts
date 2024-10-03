@@ -61,7 +61,7 @@ async function topUpSubscription(chain: CNetwork, amount: bigint): Promise<void>
   }
 }
 
-async function ensureCLFSubscriptionBalances(isTestnet: boolean) {
+async function ensureCLFSubscriptionBalances(isTestnet: boolean, autoTopUp: boolean): Promise<void> {
   const chains = isTestnet ? testnetChains : mainnetChains;
 
   try {
@@ -82,18 +82,27 @@ async function ensureCLFSubscriptionBalances(isTestnet: boolean) {
     const totalDeficit = subscriptionInfos.reduce((sum, info) => sum + info.deficit, BigInt(0));
 
     if (totalDeficit > BigInt(0)) {
-      const answer = await prompt(
-        `Do you want to perform top-ups for a total of ${formatEther(totalDeficit)} LINK? (y/n): `,
-      );
-
-      if (answer.toLowerCase() === "y") {
+      if (autoTopUp) {
+        console.log(`Auto top-up enabled. Proceeding to top-up a total of ${formatEther(totalDeficit)} LINK.`);
         for (const info of subscriptionInfos) {
           if (info.deficit > BigInt(0)) {
             await topUpSubscription(info.chain, info.deficit);
           }
         }
       } else {
-        console.log("Top-ups cancelled.");
+        const answer = await prompt(
+          `Do you want to perform top-ups for a total of ${formatEther(totalDeficit)} LINK? (y/n): `,
+        );
+
+        if (answer.toLowerCase() === "y") {
+          for (const info of subscriptionInfos) {
+            if (info.deficit > BigInt(0)) {
+              await topUpSubscription(info.chain, info.deficit);
+            }
+          }
+        } else {
+          console.log("Top-ups cancelled.");
+        }
       }
     } else {
       console.log("No top-ups needed.");
@@ -105,8 +114,9 @@ async function ensureCLFSubscriptionBalances(isTestnet: boolean) {
 
 task("ensure-clf-subscription-balances", "Ensure CLF subscription balances")
   .addFlag("testnet")
+  .addFlag("y", "Auto top-up")
   .setAction(async taskArgs => {
-    await ensureCLFSubscriptionBalances(taskArgs.testnet);
+    await ensureCLFSubscriptionBalances(taskArgs.testnet, taskArgs.y);
   });
 
 export default ensureCLFSubscriptionBalances;

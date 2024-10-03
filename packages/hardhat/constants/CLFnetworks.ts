@@ -183,7 +183,7 @@ const CLFnetworks = {
     gasPrice: undefined,
     nonce: undefined,
     accounts,
-    verifyApiKey: process.env.OPTIMISM_API_KEY || "UNSET",
+    verifyApiKey: process.env.OPTIMISMSCAN_API_KEY || "UNSET",
     chainId: 11155420,
     confirmations: DEFAULT_VERIFICATION_BLOCK_CONFIRMATIONS,
     nativeCurrencySymbol: "ETH",

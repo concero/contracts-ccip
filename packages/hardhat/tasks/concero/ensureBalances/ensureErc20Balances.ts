@@ -16,8 +16,8 @@ const prompt = (question: string): Promise<string> => new Promise(resolve => rl.
 
 const minBalances: Record<ProxyEnum, bigint> = {
   parentPoolProxy: parseEther("7"),
-  childPoolProxy: parseEther("1.5"),
-  infraProxy: parseEther("7"),
+  childPoolProxy: parseEther("1"),
+  infraProxy: parseEther("5"),
 };
 
 async function checkChainBalance(chain: CNetwork, contractType: ProxyEnum): Promise<BalanceInfo> {
@@ -60,7 +60,7 @@ async function topUpERC20(chain: CNetwork, amount: bigint, contractAddress, cont
   }
 }
 
-async function ensureERC20Balances(isTestnet: boolean, autoTopUp: boolean): Promise<void> {
+async function ensureERC20Balances(isTestnet: boolean) {
   const networkType = isTestnet ? "testnet" : "mainnet";
   const chains = conceroChains[networkType];
   const balanceInfos: BalanceInfo[] = [];
@@ -85,27 +85,18 @@ async function ensureERC20Balances(isTestnet: boolean, autoTopUp: boolean): Prom
     const totalDeficit = balanceInfos.reduce((sum, info) => sum + info.deficit, BigInt(0));
 
     if (totalDeficit > BigInt(0)) {
-      if (autoTopUp) {
-        console.log(`Auto top-up enabled. Proceeding to top-up a total of ${formatEther(totalDeficit)} LINK.`);
+      const answer = await prompt(
+        `Do you want to perform top-ups for a total of ${formatEther(totalDeficit)} LINK? (y/n): `,
+      );
+
+      if (answer.toLowerCase() === "y") {
         for (const info of balanceInfos) {
           if (info.deficit > BigInt(0)) {
             await topUpERC20(info.chain, info.deficit, info.address, info.alias);
           }
         }
       } else {
-        const answer = await prompt(
-          `Do you want to perform top-ups for a total of ${formatEther(totalDeficit)} LINK? (y/n): `,
-        );
-
-        if (answer.toLowerCase() === "y") {
-          for (const info of balanceInfos) {
-            if (info.deficit > BigInt(0)) {
-              await topUpERC20(info.chain, info.deficit, info.address, info.alias);
-            }
-          }
-        } else {
-          console.log("Top-ups cancelled.");
-        }
+        console.log("Top-ups cancelled.");
       }
     } else {
       console.log("No top-ups needed.");
@@ -117,9 +108,8 @@ async function ensureERC20Balances(isTestnet: boolean, autoTopUp: boolean): Prom
 
 task("ensure-erc20-balances", "Ensure ERC20 (LINK) balances for Concero contracts")
   .addFlag("testnet")
-  .addFlag("y", "Automatically top up all deficits")
   .setAction(async taskArgs => {
-    await ensureERC20Balances(taskArgs.testnet, taskArgs.y);
+    await ensureERC20Balances(taskArgs.testnet);
   });
 
 export default ensureERC20Balances;

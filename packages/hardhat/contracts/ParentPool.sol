@@ -52,6 +52,7 @@ error UnableToCompleteDelegateCall(bytes data);
 error NotContractOwner(address);
 error OnlyRouterCanFulfill(address);
 error CallerNotAllowed(address);
+error MsgSigNotMatched(bytes4 sig);
 
 contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolStorage {
     ///////////////////////
@@ -194,6 +195,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     }
 
     function checkUpkeepViaDelegate() external returns (bool, bytes memory) {
+        if (msg.sig != AutomationCompatibleInterface.checkUpkeep.selector) {
+            revert MsgSigNotMatched(msg.sig);
+        }
+
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             AutomationCompatibleInterface.checkUpkeep.selector,
             bytes("")

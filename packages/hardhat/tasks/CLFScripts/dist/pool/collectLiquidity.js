@@ -10,7 +10,7 @@
 				],
 				chainId: '0x66eee',
 				usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-				poolAddress: '0xDaFc6386D536A354A9C1986D058D883EC8b1004f',
+				poolAddress: '0x769462BC176b5648330C67F7283a597ad2Ab1De2',
 			},
 			[`0x${BigInt('14767482510784806043').toString(16)}`]: {
 				urls: [
@@ -20,7 +20,7 @@
 				],
 				chainId: '0xa869',
 				usdcAddress: '0x5425890298aed601595a70ab815c96711a31bc65',
-				poolAddress: '0xF626382E5DB58Ba5B03047DD3EB9c32390Eb97d0',
+				poolAddress: '0x0AD128EDe0F2BEC195fB840A9ab061be4fF03bfE',
 			},
 		};
 		const getChainIdByUrl = url => {

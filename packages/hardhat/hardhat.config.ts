@@ -56,16 +56,26 @@ const config: HardhatUserConfig = {
   networks: cNetworks,
   etherscan: {
     apiKey: {
-      avalancheFuji: "snowtrace",
       arbitrum: getEnvVar("ARBISCAN_API_KEY"),
       mainnet: getEnvVar("ETHERSCAN_API_KEY"),
       polygon: getEnvVar("POLYGONSCAN_API_KEY"),
-      optimism: getEnvVar("OPTIMISM_API_KEY"),
+      optimism: getEnvVar("OPTIMISMSCAN_API_KEY"),
+      celo: getEnvVar("CELOSCAN_API_KEY"),
+      avalanche: "snowtrace",
+      avalancheFuji: "snowtrace",
     },
     customChains: [
       {
+        network: "celo",
+        chainId: 42220,
+        urls: {
+          apiURL: "https://api.celoscan.io/api",
+          browserURL: "https://celoscan.io/",
+        },
+      },
+      {
         network: "optimism",
-        chainId: 10,
+        chainId: cNetworks.optimism.chainId,
         urls: {
           apiURL: "https://api-optimistic.etherscan.io/api",
           browserURL: "https://optimistic.etherscan.io/",
@@ -73,7 +83,7 @@ const config: HardhatUserConfig = {
       },
       {
         network: "arbitrum",
-        chainId: 42161,
+        chainId: cNetworks.arbitrum.chainId,
         urls: {
           apiURL: "https://api.arbiscan.io/api",
           browserURL: "https://arbiscan.io/",
@@ -81,7 +91,7 @@ const config: HardhatUserConfig = {
       },
       {
         network: "avalancheFuji",
-        chainId: 43114,
+        chainId: cNetworks.avalancheFuji.chainId,
         urls: {
           apiURL: "https://api.routescan.io/v2/network/mainnet/evm/43114/etherscan",
           browserURL: "https://snowtrace.io",

@@ -9,7 +9,7 @@ contract ParentPoolStorage {
     /////////////////////
 
     ///@notice variable to store the max value that can be deposited on this pool
-    uint256 public s_maxDeposit;
+    uint256 public s_liquidityCap;
     ///@notice variable to store the amount that will be temporary used by Chainlink Functions
     uint256 public s_loansInUse;
     ///@notice variable to store the Chainlink Function DON Slot ID

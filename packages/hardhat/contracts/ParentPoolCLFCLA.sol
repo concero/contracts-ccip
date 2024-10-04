@@ -53,7 +53,11 @@ contract ParentPoolCLFCLA is
     /// EVENTS ///
     //////////////
 
-    event CLFRequestError(bytes32 requestId, IParentPool.CLFRequestType requestType, bytes err);
+    event CLFRequestError(
+        bytes32 indexed requestId,
+        IParentPool.CLFRequestType requestType,
+        bytes err
+    );
     event RetryWithdrawPerformed(bytes32 id);
     event WithdrawUpkeepPerformed(bytes32 id);
     event WithdrawRequestUpdated(bytes32 id);
@@ -204,6 +208,7 @@ contract ParentPoolCLFCLA is
         emit WithdrawUpkeepPerformed(reqId);
     }
 
+    //todo: may be a DOS attack vector if executed multiple times at once
     function retryPerformWithdrawalRequest() external onlyProxyContext {
         bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
         IParentPool.WithdrawRequest memory withdrawalRequest = _getWithdrawalRequestById(

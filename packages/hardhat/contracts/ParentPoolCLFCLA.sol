@@ -370,7 +370,7 @@ contract ParentPoolCLFCLA is
         _withdrawalRequest.remainingLiquidityFromChildPools =
             amountToWithdrawWithUsdcDecimals -
             withdrawalPortionPerPool;
-        _withdrawalRequest.triggeredAtTimestamp = block.timestamp + WITHDRAW_DEADLINE_SECONDS;
+        _withdrawalRequest.triggeredAtTimestamp = block.timestamp + WITHDRAWAL_COOLDOWN_SECONDS;
 
         _addPendingWithdrawalId(_withdrawalId);
         emit WithdrawRequestUpdated(_withdrawalId);

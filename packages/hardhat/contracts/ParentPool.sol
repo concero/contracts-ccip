@@ -400,7 +400,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             withdrawalId,
             msg.sender,
             i_USDC,
-            block.timestamp + WITHDRAW_DEADLINE_SECONDS
+            block.timestamp + WITHDRAWAL_COOLDOWN_SECONDS
         );
     }
 

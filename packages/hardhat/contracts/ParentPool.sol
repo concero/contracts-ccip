@@ -355,7 +355,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         emit DepositCompleted(_depositRequestId, msg.sender, usdcAmount, lpTokensToMint);
 
         delete s_depositRequests[_depositRequestId];
-        delete s_clfRequestTypes[_depositRequestId];
     }
 
     /**
@@ -849,7 +848,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * @dev _totalUSDCCrossChainBalance MUST have 10**6 decimals.
      */
     function _calculateLPTokensToMint(
-        uint256 _childPoolBalance,
+        uint256 _childPoolsTotalBalance,
         uint256 _amountToDeposit
     ) private view returns (uint256) {
         uint256 parentPoolLiquidity = i_USDC.balanceOf(address(this)) +
@@ -858,7 +857,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             s_depositFeeAmount;
         //todo: we must add withdrawalsOnTheWay
 
-        uint256 totalCrossChainLiquidity = _childPoolBalance + parentPoolLiquidity;
+        uint256 totalCrossChainLiquidity = _childPoolsTotalBalance + parentPoolLiquidity;
         uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(totalCrossChainLiquidity);
         uint256 amountDepositedConverted = _convertToLPTokenDecimals(_amountToDeposit);
         uint256 _totalLPSupply = i_lpToken.totalSupply();

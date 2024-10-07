@@ -32,7 +32,10 @@ error InvalidAddress();
 error SenderNotAllowed(address _sender);
 ///@notice error emitted when an attempt to create a new request is made while other is still active.
 error ActiveRequestNotFulfilledYet();
+error WithdrawalRequestAlreadyExists();
 error DepositAmountBelowMinimum(uint256 minAmount);
+error DepositRequestNotReady();
+error DepositsOnTheWayArrayFull();
 error WithdrawAmountBelowMinimum(uint256 minAmount);
 ///@notice emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
 error WithdrawalAmountNotReady(uint256 received);
@@ -45,7 +48,6 @@ error DistributeLiquidityRequestAlreadyProceeded(bytes32 requestId);
 error NotAllowedToCompleteDeposit();
 ///@notice error emitted when the request doesn't exist
 error WithdrawRequestDoesntExist(bytes32 withdrawId);
-error DepositsOnTheWayArrayFull();
 error UnableToCompleteDelegateCall(bytes data);
 error NotContractOwner(address);
 error OnlyRouterCanFulfill(address);
@@ -95,7 +97,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * @param _sender address of the sender contract
      */
     modifier onlyAllowlistedSenderOfChainSelector(uint64 _chainSelector, address _sender) {
-        if (s_contractsToReceiveFrom[_chainSelector][_sender] != ALLOWED) {
+        if (!s_contractsToReceiveFrom[_chainSelector][_sender]) {
             revert SenderNotAllowed(_sender);
         }
         _;
@@ -336,7 +338,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             revert NotAllowedToCompleteDeposit();
         }
         if (childPoolsLiquiditySnapshot == 0) {
-            revert ActiveRequestNotFulfilledYet();
+            revert DepositRequestNotReady();
         }
 
         uint256 lpTokensToMint = _calculateLPTokensToMint(
@@ -362,9 +364,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * @param _lpAmount the amount of lp token the user wants to burn to get USDC back.
      */
     function startWithdrawal(uint256 _lpAmount) external onlyProxyContext {
-        if (_lpAmount == 0) revert WithdrawAmountBelowMinimum(1);
+        if (_lpAmount < 1 ether) revert WithdrawAmountBelowMinimum(1 ether);
         if (s_withdrawalIdByLPAddress[msg.sender] != bytes32(0)) {
-            revert ActiveRequestNotFulfilledYet();
+            revert WithdrawalRequestAlreadyExists();
         }
 
         bytes[] memory args = new bytes[](2);
@@ -388,10 +390,11 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         bytes32 clfRequestId = bytes32(delegateCallResponse);
 
         s_clfRequestTypes[clfRequestId] = CLFRequestType.startWithdrawal_getChildPoolsLiquidity;
+
         // partially initialise withdrawalRequest struct
         s_withdrawRequests[withdrawalId].lpAddress = msg.sender;
-        s_withdrawRequests[withdrawalId].lpSupplySnapshot = i_lpToken.totalSupply();
         s_withdrawRequests[withdrawalId].lpAmountToBurn = _lpAmount;
+
         s_withdrawalIdByCLFRequestId[clfRequestId] = withdrawalId;
         s_withdrawalIdByLPAddress[msg.sender] = withdrawalId;
 
@@ -463,14 +466,14 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     function distributeLiquidity(
         uint64 _chainSelector,
         uint256 _amountToSend,
-        bytes32 distributeLiquidityRequestId,
+        bytes32 _requestId,
         ICCIP.CcipTxType _ccipTxType
     ) external onlyProxyContext onlyMessenger {
         if (s_childPools[_chainSelector] == address(0)) revert InvalidAddress();
-        if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
-            revert DistributeLiquidityRequestAlreadyProceeded(distributeLiquidityRequestId);
+        if (s_distributeLiquidityRequestProcessed[_requestId]) {
+            revert DistributeLiquidityRequestAlreadyProceeded(_requestId);
         }
-        s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
+        s_distributeLiquidityRequestProcessed[_requestId] = true;
         _ccipSend(_chainSelector, _amountToSend, _ccipTxType);
     }
 
@@ -486,15 +489,15 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * @notice function to manage the Cross-chains Concero contracts
      * @param _chainSelector chain identifications
      * @param _contractAddress address of the Cross-chains Concero contracts
-     * @param _isAllowed 1 == allowed | Any other value == not allowed
+     * @param _isAllowed bool to allow or disallow the contract
      * @dev only owner can call it
      * @dev it's payable to save some gas.
-     * @dev this functions is used on ConceroPool.sol
+     * @dev this functions is used in ConceroPool.sol
      */
     function setConceroContractSender(
         uint64 _chainSelector,
         address _contractAddress,
-        uint256 _isAllowed
+        bool _isAllowed
     ) external payable onlyProxyContext onlyOwner {
         if (_contractAddress == address(0)) revert InvalidAddress();
         s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;

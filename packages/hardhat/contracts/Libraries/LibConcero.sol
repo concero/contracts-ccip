@@ -11,7 +11,6 @@ library LibConcero {
 
     error TransferToNullAddress();
     error NativeTokenIsNotERC20();
-    // TODO: find way to reuse this error
     error InsufficientBalance(uint256 balance, uint256 amount);
 
     function getBalance(address _token, address _contract) internal view returns (uint256) {

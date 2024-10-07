@@ -17,15 +17,15 @@ import {IInfraCLF} from "./Interfaces/IInfraCLF.sol";
 /////////////ERROR/////////////
 ///////////////////////////////
 ///@notice error emitted when the balance input is smaller than the specified amount param
-error Orchestrator_InvalidAmount();
+error InvalidAmount();
 ///@notice error emitted when a address non-router calls the `handleOracleFulfillment` function
-error Orchestrator_OnlyRouterCanFulfill();
+error OnlyCLFRouter();
 ///@notice error emitted when some params of Bridge Data are empty
-error Orchestrator_InvalidBridgeData();
+error InvalidBridgeData();
 ///@notice error emitted when an empty swapData is the input
-error Orchestrator_InvalidSwapData();
+error InvalidSwapData();
 ///@notice error emitted when the token to bridge is not USDC
-error Orchestrator_InvalidBridgeToken();
+error UnsupportedBridgeToken();
 
 contract InfraOrchestrator is
     IFunctionsClient,
@@ -60,7 +60,7 @@ contract InfraOrchestrator is
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
 
-    event SwapSuccessful(
+    event LancaSwap(
         address fromToken,
         address toToken,
         uint256 fromAmount,
@@ -93,7 +93,7 @@ contract InfraOrchestrator is
 
     modifier validateBridgeData(BridgeData memory _bridgeData) {
         if (_bridgeData.amount == 0 || _bridgeData.receiver == address(0)) {
-            revert Orchestrator_InvalidBridgeData();
+            revert InvalidBridgeData();
         }
         _;
     }
@@ -108,7 +108,7 @@ contract InfraOrchestrator is
             _swapData[0].fromAmount == 0 ||
             _swapData[0].toAmountMin == 0
         ) {
-            revert Orchestrator_InvalidSwapData();
+            revert InvalidSwapData();
         }
         _;
     }
@@ -123,11 +123,11 @@ contract InfraOrchestrator is
             swapDataLength != 0 &&
             _swapData[0].fromToken != _getUSDCAddressByChainSelector(_bridgeData.dstChainSelector)
         ) {
-            revert Orchestrator_InvalidSwapData();
+            revert InvalidSwapData();
         }
 
         if (swapDataLength > 5 || (swapDataLength != 0 && _swapData[0].fromAmount == 0)) {
-            revert Orchestrator_InvalidSwapData();
+            revert InvalidSwapData();
         }
 
         _;
@@ -189,7 +189,7 @@ contract InfraOrchestrator is
             srcSwapData[srcSwapData.length - 1].toToken !=
             getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex)
         ) {
-            revert Orchestrator_InvalidSwapData();
+            revert InvalidSwapData();
         }
 
         uint256 amountReceivedFromSwap = _swap(srcSwapData, address(this), false);
@@ -281,7 +281,7 @@ contract InfraOrchestrator is
     ) external {
         //todo: research if this is worth moving to a modifier
         if (msg.sender != address(i_functionsRouter)) {
-            revert Orchestrator_OnlyRouterCanFulfill();
+            revert OnlyCLFRouter();
         }
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
@@ -302,7 +302,7 @@ contract InfraOrchestrator is
      */
     function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
         uint256 balance = LibConcero.getBalance(token, address(this));
-        if (balance < amount) revert Orchestrator_InvalidAmount();
+        if (balance < amount) revert InvalidAmount();
 
         if (token != address(0)) {
             LibConcero.transferERC20(token, amount, recipient);
@@ -334,7 +334,7 @@ contract InfraOrchestrator is
             LibConcero.transferFromERC20(srcToken, msg.sender, address(this), srcAmount);
             if (isTakingConceroFee) swapData[0].fromAmount -= (srcAmount / CONCERO_FEE_FACTOR);
         } else {
-            if (srcAmount != msg.value) revert Orchestrator_InvalidAmount();
+            if (srcAmount != msg.value) revert InvalidAmount();
 
             if (isTakingConceroFee) {
                 swapData[0].fromAmount = srcAmount - (srcAmount / CONCERO_FEE_FACTOR);
@@ -350,7 +350,7 @@ contract InfraOrchestrator is
         uint256 outputAmount = LibConcero.getBalance(dstToken, address(this)) -
             dstTokenBalanceBefore;
 
-        emit SwapSuccessful(
+        emit LancaSwap(
             swapData[0].fromToken,
             swapData[swapData.length - 1].toToken,
             swapData[0].fromAmount,
@@ -386,7 +386,7 @@ contract InfraOrchestrator is
         } else if (_chainSelector == CHAIN_SELECTOR_AVALANCHE) {
             _token = USDC_AVALANCHE;
         } else {
-            revert Orchestrator_InvalidBridgeToken();
+            revert UnsupportedBridgeToken();
         }
     }
 

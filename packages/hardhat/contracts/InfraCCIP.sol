@@ -18,7 +18,7 @@ import {ICCIP} from "./Interfaces/ICCIP.sol";
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
-error ConceroCCIP_ChainNotAllowed(uint64 chainSelector);
+error ChainNotAllowed(uint64 chainSelector);
 
 contract InfraCCIP is InfraCLF {
     using SafeERC20 for IERC20;
@@ -44,7 +44,7 @@ contract InfraCCIP is InfraCLF {
      */
     modifier onlyAllowListedChain(uint64 _chainSelector) {
         if (s_poolReceiver[_chainSelector] == address(0)) {
-            revert ConceroCCIP_ChainNotAllowed(_chainSelector);
+            revert ChainNotAllowed(_chainSelector);
         }
         _;
     }

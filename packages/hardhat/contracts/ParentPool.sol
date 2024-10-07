@@ -734,7 +734,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
 
-            if (s_withdrawRequests[withdrawalId].lpAddress != address(0)) {
+            if (s_withdrawRequests[withdrawalId].lpAddress == address(0)) {
                 revert WithdrawRequestDoesntExist(withdrawalId);
             }
 

@@ -28,6 +28,8 @@ error Orchestrator_InvalidBridgeData();
 error Orchestrator_InvalidSwapData();
 ///@notice error emitted when the token to bridge is not USDC
 error Orchestrator_InvalidBridgeToken();
+///@notice error emitted when no fees to withdraw for a token
+error Orchestrator_NoIntegratorFeesEarnedForToken(address token);
 
 contract InfraOrchestrator is
     IFunctionsClient,
@@ -68,6 +70,18 @@ contract InfraOrchestrator is
     event Orchestrator_StartBridge();
     event Orchestrator_StartSwapAndBridge();
     event Orchestrator_StartSwap();
+    ///@notice emitted when an integrator withdraws their fees
+    event InfraOrchestrator_IntegratorFeesWithdrawn(
+        address integrator,
+        address token,
+        uint256 feesWithdrawn
+    );
+    ///@notice emitted when integrator fees are collected
+    event InfraOrchestrator_IntegratorFeesCollected(
+        address integrator,
+        address token,
+        uint256 feesCollected
+    );
 
     constructor(
         address _functionsRouter,
@@ -208,7 +222,7 @@ contract InfraOrchestrator is
             revert Orchestrator_InvalidSwapData();
         }
 
-        uint256 amountReceivedFromSwap = _swap(srcSwapData, 0, false, address(this));
+        uint256 amountReceivedFromSwap = _swap(srcSwapData, 0, false, address(this), address(0), 0);
         bridgeData.amount = amountReceivedFromSwap;
 
         _startBridge(bridgeData, dstSwapData);
@@ -218,10 +232,14 @@ contract InfraOrchestrator is
      * @notice external function to start swap
      * @param _swapData the swap payload
      * @param _receiver the receiver of the swapped amount
+     * @param _integrator address of the integrator to receive fees (if any)
+     * @param _integratorFeePercent used to calculate the fees owed to the integrator (if any)
      */
     function swap(
         IDexSwap.SwapData[] calldata _swapData,
-        address _receiver
+        address _receiver,
+        address _integrator,
+        uint256 _integratorFeePercent
     )
         external
         payable
@@ -232,7 +250,7 @@ contract InfraOrchestrator is
         // todo: do not use events at the start of the function
         // todo: this can be moved to the end of the function, after all potential reverts
         emit Orchestrator_StartSwap();
-        _swap(_swapData, msg.value, true, _receiver);
+        _swap(_swapData, msg.value, true, _receiver, _integrator, _integratorFeePercent);
     }
 
     /**
@@ -331,13 +349,30 @@ contract InfraOrchestrator is
      */
     function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
         uint256 balance = LibConcero.getBalance(token, address(this));
-        if (balance < amount) revert Orchestrator_InvalidAmount();
+        uint256 reservedFees = s_totalIntegratorFeesEarnedPerToken[token];
+        if (balance < amount || amount > (balance - reservedFees))
+            revert Orchestrator_InvalidAmount();
 
         if (token != address(0)) {
             LibConcero.transferERC20(token, amount, recipient);
         } else {
             payable(recipient).transfer(amount);
         }
+    }
+
+    /// @dev Withdraw integrator fees owed to msg.sender
+    /// @param _token address of the token to withdraw
+    function withdrawIntegratorFees(address _token) external {
+        uint256 integratorFees = s_integratorFeesEarned[msg.sender][_token];
+        if (integratorFees == 0) revert Orchestrator_NoIntegratorFeesEarnedForToken(_token);
+
+        s_integratorFeesEarned[msg.sender][_token] = 0;
+        s_totalIntegratorFeesEarnedPerToken[_token] -= integratorFees;
+
+        emit InfraOrchestrator_IntegratorFeesWithdrawn(msg.sender, _token, integratorFees);
+
+        if (_token != address(0)) LibConcero.transferERC20(_token, integratorFees, msg.sender);
+        else payable(msg.sender).transfer(integratorFees);
     }
 
     //////////////////////////
@@ -349,12 +384,16 @@ contract InfraOrchestrator is
      * @param _nativeAmount the native amount entered on the external function
      * @param isTakingConceroFee flag to indicate when take fees
      * @param _receiver the address of the receiver of the swap
+     * @param _integrator the address of the integrator receiving an integratorFee
+     * @param _integratorFeePercent used to calculate the integratorFeeAmount
      */
     function _swap(
         IDexSwap.SwapData[] memory swapData,
         uint256 _nativeAmount,
         bool isTakingConceroFee,
-        address _receiver
+        address _receiver,
+        address _integrator,
+        uint256 _integratorFeePercent
     ) internal returns (uint256) {
         address srcToken = swapData[0].fromToken;
         uint256 srcAmount = swapData[0].fromAmount;
@@ -365,9 +404,28 @@ contract InfraOrchestrator is
         if (srcToken != address(0)) {
             LibConcero.transferFromERC20(srcToken, msg.sender, address(this), srcAmount);
             if (isTakingConceroFee) swapData[0].fromAmount -= (srcAmount / CONCERO_FEE_FACTOR);
+            if (_integrator != address(0)) {
+                uint256 integratorFeeAmount = _collectIntegratorFeeAmountSwap(
+                    _integrator,
+                    srcToken,
+                    _integratorFeePercent,
+                    srcAmount
+                );
+                swapData[0].fromAmount -= integratorFeeAmount;
+            }
         } else {
-            if (isTakingConceroFee)
+            if (isTakingConceroFee) {
                 swapData[0].fromAmount = _nativeAmount - (_nativeAmount / CONCERO_FEE_FACTOR);
+            }
+            if (_integrator != address(0)) {
+                uint256 integratorFeeAmount = _collectIntegratorFeeAmountSwap(
+                    _integrator,
+                    address(0),
+                    _integratorFeePercent,
+                    _nativeAmount
+                );
+                swapData[0].fromAmount -= integratorFeeAmount;
+            }
         }
 
         (bool success, bytes memory error) = i_dexSwap.delegatecall(
@@ -405,6 +463,29 @@ contract InfraOrchestrator is
         } else {
             revert Orchestrator_InvalidBridgeToken();
         }
+    }
+
+    /// @notice Collects fee for integrator
+    /// @param _integrator Integrator's address
+    /// @param _token Token the fee is in
+    /// @param _integratorFeePercent The integrator fee percent, used to calculate the fee amount they receive
+    /// @param _amount User's tx amount
+    /// @return Returns the integratorFeeAmount
+    function _collectIntegratorFeeAmountSwap(
+        address _integrator,
+        address _token,
+        uint256 _integratorFeePercent,
+        uint256 _amount
+    ) internal returns (uint256) {
+        uint256 integratorFeeAmount = LibConcero._calculateIntegratorFeeAmount(
+            _integratorFeePercent,
+            _amount
+        );
+        s_integratorFeesEarned[_integrator][_token] += integratorFeeAmount;
+        s_totalIntegratorFeesEarnedPerToken[_token] += integratorFeeAmount;
+
+        emit InfraOrchestrator_IntegratorFeesCollected(msg.sender, _token, integratorFeeAmount);
+        return integratorFeeAmount;
     }
 
     ///////////////////////////

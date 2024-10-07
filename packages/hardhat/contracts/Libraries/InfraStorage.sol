@@ -55,4 +55,10 @@ abstract contract InfraStorage is ReentrancyGuard, IInfraStorage {
 
     ///@notice Bridge: mapping to track last CCIP tx fee in LINK for each destination chain
     mapping(uint64 dstChainSelector => uint256 lastCCIPFeeInLink) internal s_lastCCIPFeeInLink;
+
+    ///@notice Orchestrator/Bridge: Tracks the fees earned in each token for integrators
+    mapping(address integrator => mapping(address token => uint256 feesEarned))
+        internal s_integratorFeesEarned;
+    ///@notice Orchestrator/Bridge: Tracks the total fees earned per token
+    mapping(address token => uint256 totalFeesEarned) internal s_totalIntegratorFeesEarnedPerToken;
 }

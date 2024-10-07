@@ -39,6 +39,7 @@ contract InfraCommon {
     /**
      * @notice modifier to check if the caller is the an approved messenger
      */
+
     modifier onlyMessenger() {
         if (!_isMessenger(msg.sender)) revert NotMessenger(msg.sender);
         _;
@@ -59,44 +60,45 @@ contract InfraCommon {
         address[5][2] memory tokens;
 
         // REMOVE IN PRODUCTION Initialize BNM addresses
-        tokens[uint(IInfraStorage.CCIPToken.bnm)][
-            uint(IInfraStorage.Chain.arb)
+        tokens[uint256(IInfraStorage.CCIPToken.bnm)][
+            uint256(IInfraStorage.Chain.arb)
         ] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
-        tokens[uint(IInfraStorage.CCIPToken.bnm)][
-            uint(IInfraStorage.Chain.base)
+        tokens[uint256(IInfraStorage.CCIPToken.bnm)][
+            uint256(IInfraStorage.Chain.base)
         ] = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e; // base
-        tokens[uint(IInfraStorage.CCIPToken.bnm)][
-            uint(IInfraStorage.Chain.opt)
+        tokens[uint256(IInfraStorage.CCIPToken.bnm)][
+            uint256(IInfraStorage.Chain.opt)
         ] = 0x8aF4204e30565DF93352fE8E1De78925F6664dA7; // opt
-        tokens[uint(IInfraStorage.CCIPToken.bnm)][
-            uint(IInfraStorage.Chain.pol)
+        tokens[uint256(IInfraStorage.CCIPToken.bnm)][
+            uint256(IInfraStorage.Chain.pol)
         ] = 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4; // pol
 
         // Initialize USDC addresses
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.arb)] = block.chainid ==
-            42161
+        tokens[uint256(IInfraStorage.CCIPToken.usdc)][uint256(IInfraStorage.Chain.arb)] = block
+            .chainid == 42161
             ? USDC_ARBITRUM
             : USDC_ARBITRUM_SEPOLIA;
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.base)] = block
+        tokens[uint256(IInfraStorage.CCIPToken.usdc)][uint256(IInfraStorage.Chain.base)] = block
             .chainid == 8453
             ? USDC_BASE
             : USDC_BASE_SEPOLIA;
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.opt)] = block.chainid ==
-            10
+        tokens[uint256(IInfraStorage.CCIPToken.usdc)][uint256(IInfraStorage.Chain.opt)] = block
+            .chainid == 10
             ? USDC_OPTIMISM
             : USDC_OPTIMISM_SEPOLIA;
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.pol)] = block.chainid ==
-            137
+        tokens[uint256(IInfraStorage.CCIPToken.usdc)][uint256(IInfraStorage.Chain.pol)] = block
+            .chainid == 137
             ? USDC_POLYGON
             : USDC_POLYGON_AMOY;
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.avax)] = block
+        tokens[uint256(IInfraStorage.CCIPToken.usdc)][uint256(IInfraStorage.Chain.avax)] = block
             .chainid == 43114
             ? USDC_AVALANCHE
             : USDC_AVALANCHE;
 
         if (uint256(tokenType) > tokens.length) revert TokenTypeOutOfBounds();
-        if (uint256(_chainIndex) > tokens[uint256(tokenType)].length)
+        if (uint256(_chainIndex) > tokens[uint256(tokenType)].length) {
             revert ChainIndexOutOfBounds();
+        }
 
         return tokens[uint256(tokenType)][uint256(_chainIndex)];
     }
@@ -156,5 +158,9 @@ contract InfraCommon {
      */
     function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256) {
         return (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
+    }
+
+    function _convertToStandardDecimals(uint256 _amount) internal pure returns (uint256) {
+        return (_amount * STANDARD_TOKEN_DECIMALS) / USDC_DECIMALS;
     }
 }

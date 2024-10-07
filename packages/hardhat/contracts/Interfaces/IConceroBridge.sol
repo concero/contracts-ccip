@@ -24,6 +24,7 @@ interface IConceroBridge is IInfraStorage {
      */
     function getSrcTotalFeeInUSDC(
         uint64 dstChainSelector,
-        uint256 amount
+        uint256 amount,
+        uint256 _integratorFeeAmount
     ) external view returns (uint256);
 }

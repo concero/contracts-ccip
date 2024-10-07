@@ -37,6 +37,8 @@ interface IInfraStorage {
         uint256 amount;
         uint64 dstChainSelector;
         address receiver;
+        address integrator;
+        uint256 integratorFeePercent;
     }
 
     ///@notice `ccipSend` to distribute liquidity

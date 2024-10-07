@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {INTEGRATOR_FEE_DIVISOR, MAX_INTEGRATOR_FEE_PERCENT} from "../Constants.sol";
 
 error UnableToCompleteDelegateCall(bytes data);
 
@@ -66,5 +67,19 @@ library LibConcero {
         }
 
         return response;
+    }
+
+    /// @notice calculates integrator fee amount
+    /// @param _integratorFeePercent fee percent provided by integrator/user
+    /// @param _amount user's tx amount
+    /// @return integratorFeeAmount the amount the integrator will receive
+    function _calculateIntegratorFeeAmount(
+        uint256 _integratorFeePercent,
+        uint256 _amount
+    ) internal pure returns (uint256) {
+        if (_integratorFeePercent == 0) return 0;
+        if (_integratorFeePercent > MAX_INTEGRATOR_FEE_PERCENT)
+            _integratorFeePercent = MAX_INTEGRATOR_FEE_PERCENT;
+        return (_amount * _integratorFeePercent) / INTEGRATOR_FEE_DIVISOR;
     }
 }

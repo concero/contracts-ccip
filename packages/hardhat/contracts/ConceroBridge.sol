@@ -13,6 +13,7 @@ import {InfraCCIP} from "./InfraCCIP.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
 import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
+import {LibConcero} from "./Libraries/LibConcero.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -50,6 +51,12 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
 
     /// @notice event emitted when a batched CCIP message is sent
     event ConceroSettlementSent(bytes32 indexed ccipMessageId, uint256 amount);
+    ///@notice emitted when integrator fees are collected
+    event ConceroBridge_IntegratorFeesCollected(
+        address integrator,
+        address token,
+        uint256 feesCollected
+    );
 
     constructor(
         FunctionsVariables memory _variables,
@@ -92,8 +99,20 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         if (address(this) != i_proxy) revert OnlyProxyContext(address(this));
         uint64 dstChainSelector = bridgeData.dstChainSelector;
         address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
+
+        uint256 integratorFeeAmount;
+        if (bridgeData.integrator != address(0)) {
+            integratorFeeAmount = _collectIntegratorFeeAmountBridge(
+                bridgeData.integrator,
+                fromToken,
+                bridgeData.integratorFeePercent,
+                bridgeData.amount
+            );
+            integratorFeeAmount = _convertToStandardDecimals(integratorFeeAmount);
+        }
+
         uint256 totalSrcFee = _convertToUSDCDecimals(
-            _getSrcTotalFeeInUsdc(dstChainSelector, bridgeData.amount)
+            _getSrcTotalFeeInUsdc(dstChainSelector, bridgeData.amount, integratorFeeAmount)
         );
 
         if (bridgeData.amount < totalSrcFee) {
@@ -200,9 +219,10 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
 
     function getSrcTotalFeeInUSDC(
         uint64 dstChainSelector,
-        uint256 amount
+        uint256 amount,
+        uint256 _integratorFeeAmount
     ) external view returns (uint256) {
-        return _getSrcTotalFeeInUsdc(dstChainSelector, amount);
+        return _getSrcTotalFeeInUsdc(dstChainSelector, amount, _integratorFeeAmount);
     }
 
     ////////////////////////////////
@@ -247,7 +267,8 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
      */
     function _getSrcTotalFeeInUsdc(
         uint64 dstChainSelector,
-        uint256 amount
+        uint256 amount,
+        uint256 _integratorFeeAmount
     ) internal view returns (uint256) {
         // @notice cl functions fee
         uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
@@ -268,7 +289,8 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         return (functionsFeeInUsdc +
             proportionalCCIPFeeInUSDC +
             conceroFee +
-            messengerGasFeeInUsdc);
+            messengerGasFeeInUsdc +
+            _integratorFeeAmount);
     }
 
     /**
@@ -282,5 +304,29 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
     ) internal pure returns (uint256) {
         if (amount >= BATCHED_TX_THRESHOLD) return ccipFeeInUsdc;
         return (ccipFeeInUsdc * amount) / BATCHED_TX_THRESHOLD;
+    }
+
+    /// @notice Collects fee for integrator
+    /// @param _integrator Integrator's address
+    /// @param _token Token the fee is in
+    /// @param _integratorFeePercent The integrator fee percent, used to calculate the fee amount they receive
+    /// @param _amount User's tx amount
+    /// @return Returns the integratorFeeAmount
+    function _collectIntegratorFeeAmountBridge(
+        address _integrator,
+        address _token,
+        uint256 _integratorFeePercent,
+        uint256 _amount
+    ) internal returns (uint256) {
+        uint256 integratorFeeAmount = LibConcero._calculateIntegratorFeeAmount(
+            _integratorFeePercent,
+            _amount
+        );
+        s_integratorFeesEarned[_integrator][_token] += integratorFeeAmount;
+        s_totalIntegratorFeesEarnedPerToken[_token] += integratorFeeAmount;
+
+        emit ConceroBridge_IntegratorFeesCollected(msg.sender, _token, integratorFeeAmount);
+
+        return integratorFeeAmount;
     }
 }

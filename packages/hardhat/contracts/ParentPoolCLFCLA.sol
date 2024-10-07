@@ -355,13 +355,12 @@ contract ParentPoolCLFCLA is
         uint256 _childPoolsLiquidity
     ) private {
         uint256 lpToBurn = _withdrawalRequest.lpAmountToBurn;
-        uint256 lpSupplySnapshot = _withdrawalRequest.lpSupplySnapshot;
         uint256 childPoolsCount = s_poolChainSelectors.length;
 
         uint256 amountToWithdrawWithUsdcDecimals = _calculateWithdrawableAmount(
             _childPoolsLiquidity,
             lpToBurn,
-            lpSupplySnapshot
+            i_lpToken.totalSupply()
         );
         uint256 withdrawalPortionPerPool = amountToWithdrawWithUsdcDecimals / (childPoolsCount + 1);
 

@@ -87,14 +87,6 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         address linkToken,
         uint256 fees
     );
-    ///@notice event emitted in takeLoan when a loan is taken
-    event LoanTaken(address receiver, uint256 amount);
-    ///@notice event emitted when a allowed Cross-chain contract is updated
-    event ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
-    ///@notice event emitted when a new pool is added
-    event PoolReceiverUpdated(uint64 chainSelector, address pool);
-    ///@notice event emitted when a pool is removed
-    event ChainAndAddressRemoved(uint64 chainSelector);
 
     ///////////////
     ///MODIFIERS///
@@ -127,8 +119,8 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
      * @param _chainSelector Id of the source chain of the message
      * @param _sender address of the sender contract
      */
-    modifier _onlyAllowlistedSenderOfChainSelector(uint64 _chainSelector, address _sender) {
-        if (s_contractsToReceiveFrom[_chainSelector][_sender] != ALLOWED) {
+    modifier onlyAllowlistedSenderOfChainSelector(uint64 _chainSelector, address _sender) {
+        if (!s_contractsToReceiveFrom[_chainSelector][_sender]) {
             revert SenderNotAllowed(_sender);
         }
         _;
@@ -261,8 +253,6 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         s_loansInUse = s_loansInUse + _amount;
 
         IERC20(_token).safeTransfer(_receiver, _amount);
-
-        emit LoanTaken(_receiver, _amount);
     }
 
     ///////////////////////
@@ -280,12 +270,10 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     function setConceroContractSender(
         uint64 _chainSelector,
         address _contractAddress,
-        uint256 _isAllowed
+        bool _isAllowed
     ) external payable onlyProxyContext onlyOwner {
         if (_contractAddress == address(0)) revert InvalidAddress();
         s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
-
-        emit ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
     }
 
     /**
@@ -305,8 +293,6 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
 
         s_poolChainSelectors.push(_chainSelector);
         s_poolToSendTo[_chainSelector] = _pool;
-
-        emit PoolReceiverUpdated(_chainSelector, _pool);
     }
 
     /**
@@ -324,8 +310,6 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
                 ++i;
             }
         }
-
-        emit ChainAndAddressRemoved(_chainSelector);
     }
 
     ////////////////
@@ -341,7 +325,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     )
         internal
         override
-        _onlyAllowlistedSenderOfChainSelector(
+        onlyAllowlistedSenderOfChainSelector(
             any2EvmMessage.sourceChainSelector,
             abi.decode(any2EvmMessage.sender, (address))
         )

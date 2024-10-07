@@ -17,7 +17,7 @@ contract ChildPoolStorage {
     uint64[] s_poolChainSelectors;
 
     ///@notice Mapping to keep track of allowed pool senders
-    mapping(uint64 chainSelector => mapping(address conceroContract => uint256))
+    mapping(uint64 chainSelector => mapping(address conceroContract => bool))
         public s_contractsToReceiveFrom;
     ///@notice Mapping to keep track of valid pools to transfer in case of liquidation or rebalance
     mapping(uint64 chainSelector => address pools) public s_poolToSendTo;

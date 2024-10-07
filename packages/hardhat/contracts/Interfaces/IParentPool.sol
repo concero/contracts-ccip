@@ -37,7 +37,7 @@ interface IParentPool is IPool {
 
     struct WithdrawRequest {
         address lpAddress;
-        uint256 lpSupplySnapshot;
+        uint256 lpSupplySnapshot_DEPRECATED;
         uint256 lpAmountToBurn;
         //
         uint256 totalCrossChainLiquiditySnapshot; //todo: we don't update this _updateWithdrawalRequest
@@ -144,7 +144,7 @@ interface IParentPool is IPool {
     function setConceroContractSender(
         uint64 _chainSelector,
         address _contractAddress,
-        uint256 _isAllowed
+        bool _isAllowed
     ) external payable;
 
     function calculateWithdrawableAmount(

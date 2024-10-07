@@ -12,7 +12,7 @@ import { getClients, getFallbackClients } from "./getViemClients";
 import { err, log, warn } from "./log";
 import { getEnvAddress, getEnvVar } from "./getEnvVar";
 import { updateEnvAddress, updateEnvVariable } from "./updateEnvVariable";
-
+import verifyVariables from "./verifyVariables";
 export {
   compileContracts,
   configureDotEnv,
@@ -32,4 +32,5 @@ export {
   err,
   updateEnvVariable,
   updateEnvAddress,
+  verifyVariables,
 };

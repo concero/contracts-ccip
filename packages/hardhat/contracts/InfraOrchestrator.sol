@@ -166,18 +166,16 @@ contract InfraOrchestrator is
         uint64 dstChainSelector,
         uint256 amount
     ) external returns (uint256) {
-        (bool success, bytes memory data) = i_concero.delegatecall(
-            abi.encodeWithSelector(
-                IConceroBridge.getSrcTotalFeeInUSDC.selector,
-                tokenType,
-                dstChainSelector,
-                amount
-            )
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            IConceroBridge.getSrcTotalFeeInUSDC.selector,
+            tokenType,
+            dstChainSelector,
+            amount
         );
 
-        if (!success) revert Orchestrator_UnableToCompleteDelegateCall(data);
-        // @audit potential precision loss bug
-        return _convertToUSDCDecimals(abi.decode(data, (uint256)));
+        bytes memory delegateCallRes = LibConcero.safeDelegateCall(i_concero, delegateCallArgs);
+
+        return _convertToUSDCDecimals(abi.decode(delegateCallRes, (uint256)));
     }
 
     /**
@@ -370,10 +368,13 @@ contract InfraOrchestrator is
                 swapData[0].fromAmount = _nativeAmount - (_nativeAmount / CONCERO_FEE_FACTOR);
         }
 
-        (bool success, bytes memory error) = i_dexSwap.delegatecall(
-            abi.encodeWithSelector(IDexSwap.entrypoint.selector, swapData, _receiver)
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            IDexSwap.entrypoint.selector,
+            swapData,
+            _receiver
         );
-        if (!success) revert Orchestrator_UnableToCompleteDelegateCall(error);
+
+        bytes memory delegateCallRes = LibConcero.safeDelegateCall(i_dexSwap, delegateCallArgs);
 
         emit Orchestrator_SwapSuccess();
 
@@ -385,10 +386,13 @@ contract InfraOrchestrator is
         BridgeData memory bridgeData,
         IDexSwap.SwapData[] memory _dstSwapData
     ) internal {
-        (bool success, bytes memory error) = i_concero.delegatecall(
-            abi.encodeWithSelector(IConceroBridge.startBridge.selector, bridgeData, _dstSwapData)
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            IConceroBridge.startBridge.selector,
+            bridgeData,
+            _dstSwapData
         );
-        if (!success) revert Orchestrator_UnableToCompleteDelegateCall(error);
+
+        bytes memory delegateCallRes = LibConcero.safeDelegateCall(i_concero, delegateCallArgs);
     }
 
     function _getUSDCAddressByChainSelector(

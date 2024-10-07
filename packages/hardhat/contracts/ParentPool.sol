@@ -842,7 +842,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
     /**
      * @notice Function called by Chainlink Functions fulfillRequest to update deposit information
-     * @param _childPoolBalance The total cross chain balance of child pools
+     * @param _childPoolsTotalBalance The total cross chain balance of child pools
      * @param _amountToDeposit the amount of USDC deposited
      * @dev This function must be called only by an allowed Messenger & must not revert
      * @dev _totalUSDCCrossChainBalance MUST have 10**6 decimals.

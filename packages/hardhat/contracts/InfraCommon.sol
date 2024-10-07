@@ -52,13 +52,14 @@ contract InfraCommon {
      * @param tokenType The enum flag of the token
      * @param _chainIndex the index of the chain
      */
+    //todo: change to if statements
     function getUSDCAddressByChainIndex(
         IInfraStorage.CCIPToken tokenType,
         IInfraStorage.Chain _chainIndex
     ) internal view returns (address) {
         address[5][2] memory tokens;
 
-        // REMOVE IN PRODUCTION Initialize BNM addresses
+        // Testnet CCIP BnM
         tokens[uint(IInfraStorage.CCIPToken.bnm)][
             uint(IInfraStorage.Chain.arb)
         ] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
@@ -72,7 +73,7 @@ contract InfraCommon {
             uint(IInfraStorage.Chain.pol)
         ] = 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4; // pol
 
-        // Initialize USDC addresses
+        // Mainnet USDC
         tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.arb)] = block.chainid ==
             42161
             ? USDC_ARBITRUM
@@ -109,37 +110,19 @@ contract InfraCommon {
         return (_messenger == i_msgr0 || _messenger == i_msgr1 || _messenger == i_msgr2);
     }
 
-    //    function _isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
-    //        address[] memory messengers = new address[](4);
-    //        messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
-    //        messengers[1] = address(0);
-    //        messengers[2] = address(0);
-    //        messengers[3] = address(0);
-    //
-    //        for (uint256 i; i < messengers.length; ) {
-    //            if (_messenger == messengers[i]) {
-    //                return true;
-    //            }
-    //            unchecked {
-    //                ++i;
-    //            }
-    //        }
-    //        return false;
-    //    }
-
     function getWrappedNative() internal view returns (address _wrappedAddress) {
         uint256 chainId = block.chainid;
 
-        if (chainId == CHAIN_ID_AVALANCHE) {
-            _wrappedAddress = WRAPPED_NATIVE_AVALANCHE;
-        } else if (chainId == CHAIN_ID_ETHEREUM) {
-            _wrappedAddress = WRAPPED_NATIVE_ETHEREUM;
-        } else if (chainId == CHAIN_ID_ARBITRUM) {
+        if (chainId == CHAIN_ID_ARBITRUM) {
             _wrappedAddress = WRAPPED_NATIVE_ARBITRUM;
         } else if (chainId == CHAIN_ID_BASE) {
             _wrappedAddress = WRAPPED_NATIVE_BASE;
         } else if (chainId == CHAIN_ID_POLYGON) {
             _wrappedAddress = WRAPPED_NATIVE_POLYGON;
+        } else if (chainId == CHAIN_ID_ETHEREUM) {
+            _wrappedAddress = WRAPPED_NATIVE_ETHEREUM;
+        } else if (chainId == CHAIN_ID_AVALANCHE) {
+            _wrappedAddress = WRAPPED_NATIVE_AVALANCHE;
         } else {
             revert ChainNotSupported();
         }

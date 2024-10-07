@@ -16,8 +16,6 @@ import {IInfraCLF} from "./Interfaces/IInfraCLF.sol";
 ///////////////////////////////
 /////////////ERROR/////////////
 ///////////////////////////////
-///@notice error emitted when a delegatecall fails
-error Orchestrator_UnableToCompleteDelegateCall(bytes delegateError);
 ///@notice error emitted when the balance input is smaller than the specified amount param
 error Orchestrator_InvalidAmount();
 ///@notice error emitted when a address non-router calls the `handleOracleFulfillment` function
@@ -61,13 +59,14 @@ contract InfraOrchestrator is
     ////////////////////////////////////////////////////////
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
-    ///@notice emitted when the Functions router fulfills a request
-    event Orchestrator_RequestFulfilled(bytes32 requestId);
-    ///@notice emitted if swap successed
-    event Orchestrator_SwapSuccess();
-    event Orchestrator_StartBridge();
-    event Orchestrator_StartSwapAndBridge();
-    event Orchestrator_StartSwap();
+
+    event SwapSuccessful(
+        address fromToken,
+        address toToken,
+        uint256 fromAmount,
+        uint256 toAmount,
+        address receiver
+    );
 
     constructor(
         address _functionsRouter,
@@ -91,16 +90,6 @@ contract InfraOrchestrator is
     ///////////////
     ///MODIFIERS///
     ///////////////
-    // todo: this modifier may be removed
-    modifier tokenAmountSufficiency(address token, uint256 amount) {
-        if (token != address(0)) {
-            uint256 balance = IERC20(token).balanceOf(msg.sender);
-            if (balance < amount) revert Orchestrator_InvalidAmount();
-        } else {
-            if (msg.value != amount) revert Orchestrator_InvalidAmount();
-        }
-        _;
-    }
 
     modifier validateBridgeData(BridgeData memory _bridgeData) {
         if (_bridgeData.amount == 0 || _bridgeData.receiver == address(0)) {
@@ -191,14 +180,11 @@ contract InfraOrchestrator is
     )
         external
         payable
-        tokenAmountSufficiency(srcSwapData[0].fromToken, srcSwapData[0].fromAmount)
         validateSrcSwapData(srcSwapData)
         validateBridgeData(bridgeData)
         validateDstSwapData(dstSwapData, bridgeData)
         nonReentrant
     {
-        // todo: do not use events at the start of the function, this can be moved to the end of the function, after all potential reverts
-        emit Orchestrator_StartSwapAndBridge();
         if (
             srcSwapData[srcSwapData.length - 1].toToken !=
             getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex)
@@ -206,10 +192,10 @@ contract InfraOrchestrator is
             revert Orchestrator_InvalidSwapData();
         }
 
-        uint256 amountReceivedFromSwap = _swap(srcSwapData, 0, false, address(this));
+        uint256 amountReceivedFromSwap = _swap(srcSwapData, address(this), false);
         bridgeData.amount = amountReceivedFromSwap;
 
-        _startBridge(bridgeData, dstSwapData);
+        _bridge(bridgeData, dstSwapData);
     }
 
     /**
@@ -220,17 +206,8 @@ contract InfraOrchestrator is
     function swap(
         IDexSwap.SwapData[] calldata _swapData,
         address _receiver
-    )
-        external
-        payable
-        validateSrcSwapData(_swapData)
-        tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount)
-        nonReentrant
-    {
-        // todo: do not use events at the start of the function
-        // todo: this can be moved to the end of the function, after all potential reverts
-        emit Orchestrator_StartSwap();
-        _swap(_swapData, msg.value, true, _receiver);
+    ) external payable validateSrcSwapData(_swapData) nonReentrant {
+        _swap(_swapData, _receiver, true);
     }
 
     /**
@@ -248,14 +225,10 @@ contract InfraOrchestrator is
         validateDstSwapData(dstSwapData, bridgeData)
         nonReentrant
     {
-        // todo: do not use events at the start of the function
-        // todo: this can be moved to the end of the function, after all potential reverts
-        emit Orchestrator_StartBridge();
-
         address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
         LibConcero.transferFromERC20(fromToken, msg.sender, address(this), bridgeData.amount);
 
-        _startBridge(bridgeData, dstSwapData);
+        _bridge(bridgeData, dstSwapData);
     }
 
     /**
@@ -344,45 +317,51 @@ contract InfraOrchestrator is
     /**
      * @notice Internal function to perform swaps. Delegate calls DexSwap.entrypoint
      * @param swapData the payload to be passed to swap functions
-     * @param _nativeAmount the native amount entered on the external function
+     * @param receiver the address of the receiver of the swap
      * @param isTakingConceroFee flag to indicate when take fees
-     * @param _receiver the address of the receiver of the swap
      */
     function _swap(
         IDexSwap.SwapData[] memory swapData,
-        uint256 _nativeAmount,
-        bool isTakingConceroFee,
-        address _receiver
+        address receiver,
+        bool isTakingConceroFee
     ) internal returns (uint256) {
         address srcToken = swapData[0].fromToken;
         uint256 srcAmount = swapData[0].fromAmount;
         address dstToken = swapData[swapData.length - 1].toToken;
-
         uint256 dstTokenBalanceBefore = LibConcero.getBalance(dstToken, address(this));
 
         if (srcToken != address(0)) {
             LibConcero.transferFromERC20(srcToken, msg.sender, address(this), srcAmount);
             if (isTakingConceroFee) swapData[0].fromAmount -= (srcAmount / CONCERO_FEE_FACTOR);
         } else {
-            if (isTakingConceroFee)
-                swapData[0].fromAmount = _nativeAmount - (_nativeAmount / CONCERO_FEE_FACTOR);
+            if (srcAmount != msg.value) revert Orchestrator_InvalidAmount();
+
+            if (isTakingConceroFee) {
+                swapData[0].fromAmount = srcAmount - (srcAmount / CONCERO_FEE_FACTOR);
+            }
         }
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             IDexSwap.entrypoint.selector,
             swapData,
-            _receiver
+            receiver
+        );
+        bytes memory delegateCallRes = LibConcero.safeDelegateCall(i_dexSwap, delegateCallArgs);
+        uint256 outputAmount = LibConcero.getBalance(dstToken, address(this)) -
+            dstTokenBalanceBefore;
+
+        emit SwapSuccessful(
+            swapData[0].fromToken,
+            swapData[swapData.length - 1].toToken,
+            swapData[0].fromAmount,
+            outputAmount,
+            receiver
         );
 
-        bytes memory delegateCallRes = LibConcero.safeDelegateCall(i_dexSwap, delegateCallArgs);
-
-        emit Orchestrator_SwapSuccess();
-
-        uint256 dstTokenBalanceAfter = LibConcero.getBalance(dstToken, address(this));
-        return dstTokenBalanceAfter - dstTokenBalanceBefore;
+        return outputAmount;
     }
 
-    function _startBridge(
+    function _bridge(
         BridgeData memory bridgeData,
         IDexSwap.SwapData[] memory _dstSwapData
     ) internal {

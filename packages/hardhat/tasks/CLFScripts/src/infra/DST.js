@@ -1,6 +1,4 @@
-const ethers = await import('npm:ethers@6.10.0');
-
-return (async () => {
+(async () => {
 	try {
 		const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 		// todo: add dstSwapDataHashSum argument, compare with event from source

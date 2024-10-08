@@ -22,7 +22,7 @@ interface IInfraOrchestrator {
         bytes32 _conceroBridgeTxId
     ) external view returns (IInfraStorage.Transaction memory transaction);
 
-    function isTxExecutionSuccessful(bytes32 _txId) external view returns (bool);
+    function isTxConfirmed(bytes32 _txId) external view returns (bool);
 }
 
 interface IOrchestratorViewDelegate {

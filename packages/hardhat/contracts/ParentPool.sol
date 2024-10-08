@@ -692,10 +692,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             for (uint256 i; i < settlementTx.length; ++i) {
                 bytes32 txId = settlementTx[i].id;
 
-                bool isTxExecutionSuccessful = IInfraOrchestrator(i_infraProxy)
-                    .isTxExecutionSuccessful(txId);
+                bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
 
-                if (isTxExecutionSuccessful) {
+                if (isTxConfirmed) {
                     s_loansInUse -= ccipReceivedAmount;
                 } else {
                     // We don't subtract it here because the loan was not performed.

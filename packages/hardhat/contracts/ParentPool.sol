@@ -551,7 +551,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     function setEthersHashSum(bytes32 _ethersHashSum) external payable onlyProxyContext onlyOwner {
         s_ethersHashSum = _ethersHashSum;
     }
-
+    //todo: rename to fetchBalanceJSCodeHashSum
     function setGetBalanceJsCodeHashSum(
         bytes32 _hashSum
     ) external payable onlyProxyContext onlyOwner {
@@ -602,12 +602,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
                 IParentPoolCLFCLA.sendCLFRequest.selector,
                 args
             );
-            bytes memory delegateCallResponse = LibConcero.safeDelegateCall(
-                address(i_parentPoolCLFCLA),
-                delegateCallArgs
-            );
-
-            emit LiquidityRedistributionStarted(abi.decode(delegateCallResponse, (bytes32)));
+            LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
         }
     }
 
@@ -652,13 +647,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             IParentPoolCLFCLA.sendCLFRequest.selector,
             args
         );
-        bytes memory delegateCallResponse = LibConcero.safeDelegateCall(
-            address(i_parentPoolCLFCLA),
-            delegateCallArgs
-        );
-        bytes32 requestId = abi.decode(delegateCallResponse, (bytes32));
-
-        emit LiquidityRedistributionStarted(requestId);
+        LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
     }
 
     ///////////////

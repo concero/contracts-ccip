@@ -37,6 +37,7 @@ contract ParentPoolCLFCLA is
 
     ///@notice JS Code for Chainlink Functions
 
+    uint256 internal constant CCIP_ESTIMATED_TIME_TO_COMPLETE = 30 minutes;
     uint32 internal constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 2_000_000;
     string internal constant JS_CODE =
         "try { const [b, o, f] = bytesArgs; const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'master' + `/packages/hardhat/tasks/CLFScripts/dist/pool/${f === '0x02' ? 'collectLiquidity' : f === '0x01' ? 'distributeLiquidity' : 'getTotalBalance'}.min.js`; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); if (r === b.toLowerCase() && x === o.toLowerCase()) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
@@ -150,9 +151,9 @@ contract ParentPoolCLFCLA is
         for (uint256 i; i < withdrawalRequestsCount; ++i) {
             bytes32 withdrawalId = s_withdrawalRequestIds[i];
 
-            IParentPool.WithdrawRequest memory withdrawalRequest = _getWithdrawalRequestById(
+            IParentPool.WithdrawRequest storage withdrawalRequest = s_withdrawRequests[
                 withdrawalId
-            );
+            ];
 
             address lpAddress = withdrawalRequest.lpAddress;
             uint256 amountToWithdraw = withdrawalRequest.amountToWithdraw;
@@ -194,7 +195,7 @@ contract ParentPoolCLFCLA is
             s_withdrawTriggered[withdrawalId] = true;
         }
 
-        bytes32 reqId = _sendCollectLiquidityRequest(
+        bytes32 reqId = _sendLiquidityCollectionRequest(
             lpAddress,
             withdrawalId,
             liquidityRequestedFromEachPool
@@ -211,26 +212,26 @@ contract ParentPoolCLFCLA is
     //todo: may be a DOS attack vector if executed multiple times at once
     function retryPerformWithdrawalRequest() external onlyProxyContext {
         bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
-        IParentPool.WithdrawRequest memory withdrawalRequest = _getWithdrawalRequestById(
-            withdrawalId
-        );
+        IParentPool.WithdrawRequest storage withdrawalRequest = s_withdrawRequests[withdrawalId];
 
         uint256 amountToWithdraw = withdrawalRequest.amountToWithdraw;
         address lpAddress = withdrawalRequest.lpAddress;
         uint256 liquidityRequestedFromEachPool = withdrawalRequest.liquidityRequestedFromEachPool;
         uint256 triggeredAtTimestamp = withdrawalRequest.triggeredAtTimestamp;
 
-        if (msg.sender != lpAddress) revert CallerNotAllowed(msg.sender);
+        if (msg.sender != lpAddress) {
+            revert CallerNotAllowed(msg.sender);
+        }
 
         if (amountToWithdraw == 0) {
             revert WithdrawRequestDoesntExist(withdrawalId);
         }
 
-        if (block.timestamp < triggeredAtTimestamp + 30 minutes) {
+        if (block.timestamp < triggeredAtTimestamp + CCIP_ESTIMATED_TIME_TO_COMPLETE) {
             revert WithdrawRequestNotReady(withdrawalId);
         }
 
-        bytes32 reqId = _sendCollectLiquidityRequest(
+        bytes32 reqId = _sendLiquidityCollectionRequest(
             lpAddress,
             withdrawalId,
             liquidityRequestedFromEachPool
@@ -434,7 +435,7 @@ contract ParentPoolCLFCLA is
         return _convertToUSDCTokenDecimals(amountUsdcToWithdraw);
     }
 
-    function _sendCollectLiquidityRequest(
+    function _sendLiquidityCollectionRequest(
         address lpAddress,
         bytes32 withdrawalId,
         uint256 liquidityRequestedFromEachPool

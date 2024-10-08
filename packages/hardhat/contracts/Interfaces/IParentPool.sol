@@ -121,8 +121,6 @@ interface IParentPool is IPool {
         uint256 usdcAmount,
         uint256 _lpTokensToMint
     );
-    ///@notice event emitted when a pool is removed and the redistribution process start
-    event LiquidityRedistributionStarted(bytes32 requestId);
 
     /////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////FUNCTIONS//////////////////////////////////

@@ -154,7 +154,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}').toString(16)}`]: {
-			urls: ['https://avalanche-c-chain-rpc.publicnode.com', 'https://rpc.ankr.com/avalanche-c'],
+			urls: ['https://avalanche-c-chain-rpc.publicnode.com', 'https://rpc.ankr.com/avalanche'],
 			chainId: '0xa86a',
 			nativeCurrency: 'avax',
 			priceFeed: {

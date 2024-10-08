@@ -1,4 +1,5 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+return (async () => {
 	try {
 		const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 		const [_, __, ___, srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = bytesArgs;
@@ -70,7 +71,7 @@
 				chainId: '0x2105',
 			},
 			[`0x${BigInt('6433500567565415381').toString(16)}`]: {
-				urls: ['https://avalanche-c-chain-rpc.publicnode.com', 'https://rpc.ankr.com/avalanche-c'],
+				urls: ['https://avalanche-c-chain-rpc.publicnode.com', 'https://rpc.ankr.com/avalanche'],
 				confirmations: 3n,
 				chainId: '0xa86a',
 			},

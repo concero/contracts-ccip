@@ -144,7 +144,7 @@
 			},
 		},
 		[`0x${BigInt('6433500567565415381').toString(16)}`]: {
-			urls: ['https://avalanche-c-chain-rpc.publicnode.com', 'https://rpc.ankr.com/avalanche-c'],
+			urls: ['https://avalanche-c-chain-rpc.publicnode.com', 'https://rpc.ankr.com/avalanche'],
 			chainId: '0xa86a',
 			nativeCurrency: 'avax',
 			priceFeed: {

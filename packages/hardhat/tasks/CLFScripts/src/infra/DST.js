@@ -1,4 +1,6 @@
-(async () => {
+const ethers = await import('npm:ethers@6.10.0');
+
+return (async () => {
 	try {
 		const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 		// todo: add dstSwapDataHashSum argument, compare with event from source
@@ -74,7 +76,7 @@
 				chainId: '0x2105',
 			},
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}').toString(16)}`]: {
-				urls: ['https://avalanche-c-chain-rpc.publicnode.com', 'https://rpc.ankr.com/avalanche-c'],
+				urls: ['https://avalanche-c-chain-rpc.publicnode.com', 'https://rpc.ankr.com/avalanche'],
 				confirmations: 3n,
 				chainId: '0xa86a',
 			},

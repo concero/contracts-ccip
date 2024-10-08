@@ -56,18 +56,6 @@ contract InfraOrchestrator is
     ///@notice ID of the deployed chain on getChain() function
     Chain internal immutable i_chainIndex;
 
-    ////////////////////////////////////////////////////////
-    //////////////////////// EVENTS ////////////////////////
-    ////////////////////////////////////////////////////////
-
-    event LancaSwap(
-        address fromToken,
-        address toToken,
-        uint256 fromAmount,
-        uint256 toAmount,
-        address receiver
-    );
-
     constructor(
         address _functionsRouter,
         address _dexSwap,
@@ -327,8 +315,6 @@ contract InfraOrchestrator is
     ) internal returns (uint256) {
         address srcToken = swapData[0].fromToken;
         uint256 srcAmount = swapData[0].fromAmount;
-        address dstToken = swapData[swapData.length - 1].toToken;
-        uint256 dstTokenBalanceBefore = LibConcero.getBalance(dstToken, address(this));
 
         if (srcToken != address(0)) {
             LibConcero.transferFromERC20(srcToken, msg.sender, address(this), srcAmount);
@@ -347,18 +333,8 @@ contract InfraOrchestrator is
             receiver
         );
         bytes memory delegateCallRes = LibConcero.safeDelegateCall(i_dexSwap, delegateCallArgs);
-        uint256 outputAmount = LibConcero.getBalance(dstToken, address(this)) -
-            dstTokenBalanceBefore;
 
-        emit LancaSwap(
-            swapData[0].fromToken,
-            swapData[swapData.length - 1].toToken,
-            swapData[0].fromAmount,
-            outputAmount,
-            receiver
-        );
-
-        return outputAmount;
+        return abi.decode(delegateCallRes, (uint256));
     }
 
     function _bridge(

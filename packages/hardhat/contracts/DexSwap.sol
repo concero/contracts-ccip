@@ -56,15 +56,28 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
     //////////////////////// EVENTS ////////////////////////
     ////////////////////////////////////////////////////////
 
+    event ConceroSwap(
+        address fromToken,
+        address toToken,
+        uint256 fromAmount,
+        uint256 toAmount,
+        address receiver
+    );
+
     constructor(address _proxy, address[3] memory _messengers) InfraCommon(_messengers) {
         i_proxy = _proxy;
     }
 
-    function entrypoint(IDexSwap.SwapData[] memory _swapData, address _recipient) external payable {
+    function entrypoint(
+        IDexSwap.SwapData[] memory _swapData,
+        address _recipient
+    ) external payable returns (uint256) {
         if (address(this) != i_proxy) revert OnlyProxyContext(address(this));
 
         uint256 swapDataLength = _swapData.length;
         address destinationAddress = address(this);
+        address dstToken = _swapData[swapDataLength - 1].toToken;
+        uint256 dstTokenBalanceBefore = LibConcero.getBalance(dstToken, address(this));
 
         for (uint256 i; i < swapDataLength; ) {
             uint256 previousBalance = LibConcero.getBalance(_swapData[i].toToken, address(this));
@@ -91,6 +104,19 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
                 ++i;
             }
         }
+
+        uint256 outputAmount = LibConcero.getBalance(dstToken, address(this)) -
+            dstTokenBalanceBefore;
+
+        emit ConceroSwap(
+            _swapData[0].fromToken,
+            _swapData[swapDataLength - 1].toToken,
+            _swapData[0].fromAmount,
+            outputAmount,
+            _recipient
+        );
+
+        return outputAmount;
     }
 
     function _performSwap(IDexSwap.SwapData memory _swapData, address destinationAddress) private {

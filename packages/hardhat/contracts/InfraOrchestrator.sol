@@ -398,4 +398,16 @@ contract InfraOrchestrator is
     ) external view returns (Transaction memory transaction) {
         transaction = s_transactions[_conceroBridgeTxId];
     }
+
+    function isTxExecutionSuccessful(bytes32 _txId) external view returns (bool) {
+        Transaction storage tx = s_transactions[_txId];
+
+        if (tx.messageId == bytes32(0)) {
+            return false;
+        }
+        if (!tx.isConfirmed) {
+            return false;
+        }
+        return true;
+    }
 }

@@ -318,13 +318,12 @@ contract InfraOrchestrator is
 
         if (srcToken != address(0)) {
             LibConcero.transferFromERC20(srcToken, msg.sender, address(this), srcAmount);
-            if (isTakingConceroFee) swapData[0].fromAmount -= (srcAmount / CONCERO_FEE_FACTOR);
         } else {
             if (srcAmount != msg.value) revert InvalidAmount();
+        }
 
-            if (isTakingConceroFee) {
-                swapData[0].fromAmount = srcAmount - (srcAmount / CONCERO_FEE_FACTOR);
-            }
+        if (isTakingConceroFee) {
+            swapData[0].fromAmount -= (srcAmount / CONCERO_FEE_FACTOR);
         }
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(

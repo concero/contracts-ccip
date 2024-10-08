@@ -8,7 +8,7 @@ import { formatUnits } from "viem";
 import { type BalanceInfo } from "./types";
 
 async function withdrawTokens(isTestnet: boolean) {
-  const { abi } = await import("../../../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
+  const { abi } = await import("../../../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json");
   // Step 1: Get balances
   const balances: BalanceInfo[] = await monitorTokenBalances(isTestnet);
 

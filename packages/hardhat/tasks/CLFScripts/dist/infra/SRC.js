@@ -107,7 +107,7 @@
 			},
 		},
 		[`0x${BigInt('15971525489660198786').toString(16)}`]: {
-			urls: ['https://base-rpc.publicnode.com', 'https://base.blockpi.network/v1/rpc/public', 'https://rpc.ankr.com/base'],
+			urls: ['https://base-rpc.publicnode.com', 'https://rpc.ankr.com/base'],
 			chainId: '0x2105',
 			nativeCurrency: 'eth',
 			priceFeed: {
@@ -120,11 +120,7 @@
 			},
 		},
 		[`0x${BigInt('4949039107694359620').toString(16)}`]: {
-			urls: [
-				'https://arbitrum-rpc.publicnode.com',
-				'https://arbitrum.blockpi.network/v1/rpc/public',
-				'https://rpc.ankr.com/arbitrum',
-			],
+			urls: ['https://arbitrum-rpc.publicnode.com', 'https://rpc.ankr.com/arbitrum'],
 			chainId: '0xa4b1',
 			nativeCurrency: 'eth',
 			priceFeed: {
@@ -135,11 +131,7 @@
 			},
 		},
 		[`0x${BigInt('4051577828743386545').toString(16)}`]: {
-			urls: [
-				'https://polygon-bor-rpc.publicnode.com',
-				'https://polygon.blockpi.network/v1/rpc/public',
-				'https://rpc.ankr.com/polygon',
-			],
+			urls: ['https://polygon-bor-rpc.publicnode.com', 'https://rpc.ankr.com/polygon'],
 			chainId: '0x89',
 			nativeCurrency: 'matic',
 			priceFeed: {
@@ -152,11 +144,7 @@
 			},
 		},
 		[`0x${BigInt('6433500567565415381').toString(16)}`]: {
-			urls: [
-				'https://avalanche-c-chain-rpc.publicnode.com',
-				'https://avalanche.blockpi.network/v1/rpc/public',
-				'https://rpc.ankr.com/avalanche-c',
-			],
+			urls: ['https://avalanche-c-chain-rpc.publicnode.com', 'https://rpc.ankr.com/avalanche-c'],
 			chainId: '0xa86a',
 			nativeCurrency: 'avax',
 			priceFeed: {

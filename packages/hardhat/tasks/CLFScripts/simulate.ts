@@ -62,17 +62,17 @@ task('clf-script-simulate', 'Executes the JavaScript source code locally')
 		execSync(`bunx hardhat clf-script-build --all`, {stdio: 'inherit'});
 
 		if (taskArgs.function === 'infra_src') {
-			await simulate(path.join(__dirname, '../', './CLFScripts/dist/infra/eval.min.js'), [
+			await simulate(path.join(__dirname, '../', './CLFScripts/dist/infra/SRC.min.js'), [
 				getHashSum(await (await fetch(infraSrcJsCodeUrl)).text()),
 				getHashSum(await (await fetch(ethersV6CodeUrl)).text()),
 				'0x0',
-				getEnvVar('CONCERO_INFRA_PROXY_POLYGON'), // dst contractAddress
+				getEnvVar('CONCERO_INFRA_PROXY_ARBITRUM'), // dst contractAddress
 				'0xf721b113e0a0401ba87f48aff9801c78f037cab36cb43c72bd115ccec7845d27', // ccipMessageId
 				'0x70E73f067a1fC9FE6D53151bd271715811746d3a', // sender
 				'0x70E73f067a1fC9FE6D53151bd271715811746d3a', // recipient
 				'0x' + 100000000000000000n.toString(16), // amount
 				'0x' + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_BASE).toString(16), // srcChainSelector
-				'0x' + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_POLYGON).toString(16), // dstChainSelector
+				'0x' + BigInt(process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM).toString(16), // dstChainSelector
 				'0x' + 1n.toString(16), // token
 				'0xA65233', // blockNumber
 				'0x00', //dst swap data

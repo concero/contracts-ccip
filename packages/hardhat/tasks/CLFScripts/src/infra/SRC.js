@@ -117,11 +117,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		// mainnets
 
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
-			urls: [
-				`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-				'https://base.blockpi.network/v1/rpc/public',
-				'https://base-rpc.publicnode.com',
-			],
+			urls: ['https://rpc.ankr.com/base', 'https://base.blockpi.network/v1/rpc/public', 'https://base-rpc.publicnode.com'],
 			chainId: '0x2105',
 			nativeCurrency: 'eth',
 			priceFeed: {
@@ -135,7 +131,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
 			urls: [
-				`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://rpc.ankr.com/arbitrum',
 				'https://arbitrum.blockpi.network/v1/rpc/public',
 				'https://arbitrum-rpc.publicnode.com',
 			],
@@ -150,7 +146,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
 			urls: [
-				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://rpc.ankr.com/polygon',
 				'https://polygon.blockpi.network/v1/rpc/public',
 				'https://polygon-bor-rpc.publicnode.com',
 			],
@@ -167,7 +163,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}').toString(16)}`]: {
 			urls: [
-				`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://rpc.ankr.com/avalanche-c',
 				'https://avalanche.blockpi.network/v1/rpc/public',
 				'https://avalanche-c-chain-rpc.publicnode.com',
 			],
@@ -363,7 +359,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
 		gasPrice = feeData.gasPrice;
-		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
+		// maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
 			nonce,
 			// maxPriorityFeePerGas: maxPriorityFeePerGas,

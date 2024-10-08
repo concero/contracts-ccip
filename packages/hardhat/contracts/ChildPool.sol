@@ -49,6 +49,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     ///@notice Magic Number Removal
     uint256 private constant ALLOWED = 1;
     uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
+    uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
 
     ////////////////
     ///IMMUTABLES///
@@ -384,7 +385,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
             receiver: abi.encode(poolToSendTo),
             data: abi.encode(ccipTxData),
             tokenAmounts: tokenAmounts,
-            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
+            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: CCIP_SEND_GAS_LIMIT})),
             feeToken: address(i_linkToken)
         });
 

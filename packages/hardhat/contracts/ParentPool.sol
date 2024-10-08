@@ -76,7 +76,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     ///@notice variable to store the costs of updating store on CLF callback
     uint256 private constant WRITE_FUNCTIONS_COST = 600_000;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * 10 ** 6;
-
+    uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
     ////////////////
     ///IMMUTABLES///
     ////////////////
@@ -748,24 +748,24 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
     /**
      * @notice helper function to distribute liquidity after LP deposits.
-     * @param _usdcAmountToDeposit amount of USDC should be distributed to the pools.
+     * @param _amountToDistributeUSDC amount of USDC should be distributed to the pools.
      */
     function _distributeLiquidityToChildPools(
-        uint256 _usdcAmountToDeposit,
+        uint256 _amountToDistributeUSDC,
         ICCIP.CcipTxType _ccipTxType
     ) internal {
         uint256 childPoolsCount = s_poolChainSelectors.length;
-        uint256 amountToDistribute = ((_usdcAmountToDeposit * PRECISION_HANDLER) /
+        uint256 amountToDistributePerPool = ((_amountToDistributeUSDC * PRECISION_HANDLER) /
             (childPoolsCount + 1)) / PRECISION_HANDLER;
 
         for (uint256 i; i < childPoolsCount; ) {
             bytes32 ccipMessageId = _ccipSend(
                 s_poolChainSelectors[i],
-                amountToDistribute,
+                amountToDistributePerPool,
                 _ccipTxType
             );
 
-            _addDepositOnTheWay(ccipMessageId, s_poolChainSelectors[i], amountToDistribute);
+            _addDepositOnTheWay(ccipMessageId, s_poolChainSelectors[i], amountToDistributePerPool);
 
             unchecked {
                 ++i;
@@ -819,7 +819,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
                 receiver: abi.encode(_recipient),
                 data: abi.encode(_ccipTxData),
                 tokenAmounts: tokenAmounts,
-                extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 350_000})),
+                extraArgs: Client._argsToBytes(
+                    Client.EVMExtraArgsV1({gasLimit: CCIP_SEND_GAS_LIMIT})
+                ),
                 feeToken: address(i_linkToken)
             });
     }

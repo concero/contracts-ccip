@@ -21,6 +21,8 @@ interface IInfraOrchestrator {
     function getTransaction(
         bytes32 _conceroBridgeTxId
     ) external view returns (IInfraStorage.Transaction memory transaction);
+
+    function isTxConfirmed(bytes32 _txId) external view returns (bool);
 }
 
 interface IOrchestratorViewDelegate {

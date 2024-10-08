@@ -681,30 +681,22 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             for (uint256 i; i < settlementTx.length; ++i) {
                 bytes32 txId = settlementTx[i].id;
 
-                IInfraStorage.Transaction memory transaction = IInfraOrchestrator(i_infraProxy)
-                    .getTransaction(txId);
+                bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
 
-                bool isExecutionLayerFailed = (transaction.isConfirmed == false ||
-                    transaction.messageId == 0);
-
-                if (isExecutionLayerFailed) {
+                if (isTxConfirmed) {
+                    s_loansInUse -= ccipReceivedAmount;
+                } else {
                     // We don't subtract it here because the loan was not performed.
                     // And the value is not added into the `s_loanInUse` variable.
                     i_USDC.safeTransfer(settlementTx[i].recipient, settlementTx[i].amount);
-                } else {
-                    s_loansInUse -= ccipReceivedAmount;
                 }
             }
         } else if (ccipTxData.ccipTxType == ICCIP.CcipTxType.withdrawal) {
             bytes32 withdrawalId = abi.decode(ccipTxData.data, (bytes32));
 
-            if (withdrawalId == bytes32(0)) {
-                revert WithdrawRequestDoesntExist(withdrawalId);
-            }
-
             WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
 
-            if (s_withdrawRequests[withdrawalId].lpAddress == address(0)) {
+            if (request.lpAddress == address(0)) {
                 revert WithdrawRequestDoesntExist(withdrawalId);
             }
 

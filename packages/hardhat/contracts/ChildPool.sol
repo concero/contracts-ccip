@@ -331,6 +331,8 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         )
     {
         ICCIP.CcipTxData memory ccipTxData = abi.decode(any2EvmMessage.data, (ICCIP.CcipTxData));
+        uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
+        address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
         if (ccipTxData.ccipTxType == ICCIP.CcipTxType.batchedSettlement) {
             IInfraStorage.SettlementTx[] memory settlementTx = abi.decode(
@@ -340,20 +342,14 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
             for (uint256 i; i < settlementTx.length; ++i) {
                 bytes32 txId = settlementTx[i].id;
 
-                // TODO replace this function with isTxSuccessful to avoid extra sloads
-                IInfraStorage.Transaction memory transaction = IInfraOrchestrator(i_infraProxy)
-                    .getTransaction(txId);
+                bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
 
-                bool isExecutionLayerFailed = (transaction.isConfirmed == false ||
-                    transaction.messageId == 0);
-
-                if (isExecutionLayerFailed) {
+                if (isTxConfirmed) {
+                    s_loansInUse -= ccipReceivedAmount;
+                } else {
                     // We don't subtract it here because the loan was not performed.
                     // And the value is not added into the `s_loanInUse` variable.
                     i_USDC.safeTransfer(settlementTx[i].recipient, settlementTx[i].amount);
-                } else {
-                    //subtract the amount from the committed total amount
-                    s_loansInUse -= any2EvmMessage.destTokenAmounts[0].amount;
                 }
             }
         }
@@ -362,8 +358,8 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
             any2EvmMessage.messageId,
             any2EvmMessage.sourceChainSelector,
             abi.decode(any2EvmMessage.sender, (address)),
-            any2EvmMessage.destTokenAmounts[0].token,
-            any2EvmMessage.destTokenAmounts[0].amount
+            ccipReceivedToken,
+            ccipReceivedAmount
         );
     }
 

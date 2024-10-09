@@ -62,7 +62,7 @@
 		return pool.getDepositsOnTheWay();
 	};
 	const getChildPoolsCcipLogs = async ccipLines => {
-		const ethersId = ethers.id('ConceroChildPool_CCIPReceived(bytes32,uint64,address,address,uint256)');
+		const ethersId = ethers.id('CCIPReceived(bytes32,uint64,address,address,uint256)');
 		const promises = [];
 		for (const chain in chainSelectors) {
 			const reqFromLines = ccipLines.filter(line => {

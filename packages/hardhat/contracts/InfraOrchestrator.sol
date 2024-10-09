@@ -50,7 +50,7 @@ contract InfraOrchestrator is
     ///@notice variable to store the DexSwap address
     address internal immutable i_dexSwap;
     ///@notice variable to store the Concero address
-    address internal immutable i_concero;
+    address internal immutable i_conceroBridge;
     ///@notice variable to store the ConceroPool address
     address internal immutable i_pool;
     ///@notice variable to store the immutable Proxy Address
@@ -61,7 +61,7 @@ contract InfraOrchestrator is
     constructor(
         address _functionsRouter,
         address _dexSwap,
-        address _concero,
+        address _conceroBridge,
         address _pool,
         address _proxy,
         uint8 _chainIndex,
@@ -69,7 +69,7 @@ contract InfraOrchestrator is
     ) InfraCommon(_messengers) InfraStorageSetters(msg.sender) {
         i_functionsRouter = _functionsRouter;
         i_dexSwap = _dexSwap;
-        i_concero = _concero;
+        i_conceroBridge = _conceroBridge;
         i_pool = _pool;
         i_proxy = _proxy;
         i_chainIndex = Chain(_chainIndex);
@@ -152,7 +152,10 @@ contract InfraOrchestrator is
             amount
         );
 
-        bytes memory delegateCallRes = LibConcero.safeDelegateCall(i_concero, delegateCallArgs);
+        bytes memory delegateCallRes = LibConcero.safeDelegateCall(
+            i_conceroBridge,
+            delegateCallArgs
+        );
 
         return _convertToUSDCDecimals(abi.decode(delegateCallRes, (uint256)));
     }
@@ -254,7 +257,7 @@ contract InfraOrchestrator is
             dstSwapData
         );
 
-        LibConcero.safeDelegateCall(i_concero, delegateCallArgs);
+        LibConcero.safeDelegateCall(i_conceroBridge, delegateCallArgs);
     }
 
     /**
@@ -281,7 +284,7 @@ contract InfraOrchestrator is
             err
         );
 
-        LibConcero.safeDelegateCall(i_concero, delegateCallArgs);
+        LibConcero.safeDelegateCall(i_conceroBridge, delegateCallArgs);
     }
 
     /**
@@ -336,17 +339,17 @@ contract InfraOrchestrator is
         address receiver,
         bool isTakingConceroFee
     ) internal returns (uint256) {
-        address srcToken = swapData[0].fromToken;
-        uint256 srcAmount = swapData[0].fromAmount;
+        address initialToken = swapData[0].fromToken;
+        uint256 initialAmount = swapData[0].fromAmount;
 
-        if (srcToken != address(0)) {
-            LibConcero.transferFromERC20(srcToken, msg.sender, address(this), srcAmount);
+        if (initialToken != address(0)) {
+            LibConcero.transferFromERC20(initialToken, msg.sender, address(this), initialAmount);
         } else {
-            if (srcAmount != msg.value) revert InvalidAmount();
+            if (initialAmount != msg.value) revert InvalidAmount();
         }
 
         if (isTakingConceroFee) {
-            swapData[0].fromAmount -= (srcAmount / CONCERO_FEE_FACTOR);
+            swapData[0].fromAmount -= (initialAmount / CONCERO_FEE_FACTOR);
         }
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
@@ -364,12 +367,12 @@ contract InfraOrchestrator is
         IDexSwap.SwapData[] memory _dstSwapData
     ) internal {
         bytes memory delegateCallArgs = abi.encodeWithSelector(
-            IConceroBridge.startBridge.selector,
+            IConceroBridge.bridge.selector,
             bridgeData,
             _dstSwapData
         );
 
-        LibConcero.safeDelegateCall(i_concero, delegateCallArgs);
+        LibConcero.safeDelegateCall(i_conceroBridge, delegateCallArgs);
     }
 
     function _getUSDCAddressByChainSelector(

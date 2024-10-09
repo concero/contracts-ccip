@@ -80,7 +80,7 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         uint256 dstTokenBalanceBefore = LibConcero.getBalance(dstToken, address(this));
 
         for (uint256 i; i < swapDataLength; ) {
-            uint256 previousBalance = LibConcero.getBalance(_swapData[i].toToken, address(this));
+            uint256 preSwapBalance = LibConcero.getBalance(_swapData[i].toToken, address(this));
 
             if (i == swapDataLength - 1) {
                 destinationAddress = _recipient;
@@ -92,9 +92,12 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
                 if (_swapData[i].toToken != _swapData[i + 1].fromToken) {
                     revert InvalidTokenPath();
                 }
-                uint256 postBalance = LibConcero.getBalance(_swapData[i].toToken, address(this));
-                uint256 newBalance = postBalance - previousBalance;
-                _swapData[i + 1].fromAmount = newBalance;
+                uint256 postSwapBalance = LibConcero.getBalance(
+                    _swapData[i].toToken,
+                    address(this)
+                );
+                uint256 remainingBalance = postSwapBalance - preSwapBalance;
+                _swapData[i + 1].fromAmount = remainingBalance;
             }
 
             unchecked {
@@ -103,18 +106,18 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         }
 
         //TODO: optimise this line in the future
-        uint256 outputAmount = LibConcero.getBalance(dstToken, address(this)) -
+        uint256 tokenAmountReceived = LibConcero.getBalance(dstToken, address(this)) -
             dstTokenBalanceBefore;
 
         emit ConceroSwap(
             _swapData[0].fromToken,
             _swapData[swapDataLength - 1].toToken,
             _swapData[0].fromAmount,
-            outputAmount,
+            tokenAmountReceived,
             _recipient
         );
 
-        return outputAmount;
+        return tokenAmountReceived;
     }
 
     function _performSwap(IDexSwap.SwapData memory _swapData, address destinationAddress) private {
@@ -131,7 +134,6 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         }
     }
 
-    // STOPPED REVIEWING HERE (24/07/24)
     function _wrapNative(IDexSwap.SwapData memory _swapData) private {
         address wrappedNative = getWrappedNative();
         IWETH(wrappedNative).deposit{value: _swapData.fromAmount}();

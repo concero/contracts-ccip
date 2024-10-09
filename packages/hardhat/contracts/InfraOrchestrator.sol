@@ -26,6 +26,7 @@ error InvalidBridgeData();
 error InvalidSwapData();
 ///@notice error emitted when the token to bridge is not USDC
 error UnsupportedBridgeToken();
+error AmountExceedsBatchedReserves();
 
 contract InfraOrchestrator is
     IFunctionsClient,
@@ -39,6 +40,7 @@ contract InfraOrchestrator is
     ///CONSTANTS///
     ///////////////
     uint16 internal constant CONCERO_FEE_FACTOR = 1000;
+    uint8 internal constant SUPPORTED_CHAINS_COUNT = 5;
 
     ///////////////
     ///IMMUTABLE///
@@ -291,6 +293,27 @@ contract InfraOrchestrator is
     function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
         uint256 balance = LibConcero.getBalance(token, address(this));
         if (balance < amount) revert InvalidAmount();
+
+        address usdc = getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
+
+        if (token == usdc) {
+            uint256 batchedReserves;
+            uint64[SUPPORTED_CHAINS_COUNT] memory chainSelectors = [
+                CHAIN_SELECTOR_ARBITRUM,
+                CHAIN_SELECTOR_BASE,
+                CHAIN_SELECTOR_OPTIMISM,
+                CHAIN_SELECTOR_POLYGON,
+                CHAIN_SELECTOR_AVALANCHE
+            ];
+
+            for (uint256 i; i < SUPPORTED_CHAINS_COUNT; ++i) {
+                batchedReserves += s_pendingSettlementTxAmountByDstChain[chainSelectors[i]];
+            }
+
+            if (amount > balance - batchedReserves) {
+                revert AmountExceedsBatchedReserves();
+            }
+        }
 
         if (token != address(0)) {
             LibConcero.transferERC20(token, amount, recipient);

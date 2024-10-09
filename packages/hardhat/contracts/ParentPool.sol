@@ -64,7 +64,8 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     ///CONSTANTS///
     ///////////////
 
-    //    uint256 internal constant MIN_DEPOSIT = 100_000_000;
+    // TODO: Change the value of MIN_DEPOSIT to 100_000_000 in production
+    //   uint256 internal constant MIN_DEPOSIT = 100_000_000;
     uint256 internal constant MIN_DEPOSIT = 1_000_000;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint256 private constant CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS = 2108;
@@ -77,6 +78,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     uint256 private constant WRITE_FUNCTIONS_COST = 600_000;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * 10 ** 6;
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
+
     ////////////////
     ///IMMUTABLES///
     ////////////////
@@ -573,7 +575,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         s_poolChainSelectors.push(_chainSelector);
         s_childPools[_chainSelector] = _pool;
 
-        if (isRebalancingNeeded == true) {
+        if (isRebalancingNeeded) {
             bytes32 distributeLiquidityRequestId = keccak256(
                 abi.encodePacked(
                     _pool,

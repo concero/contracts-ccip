@@ -88,13 +88,10 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
 
             _performSwap(_swapData[i], destinationAddress);
 
-            if (swapDataLength - 1 > i) {
+            if (i < swapDataLength - 1) {
                 if (_swapData[i].toToken != _swapData[i + 1].fromToken) {
                     revert InvalidTokenPath();
                 }
-            }
-
-            if (i + 1 <= swapDataLength - 1) {
                 uint256 postBalance = LibConcero.getBalance(_swapData[i].toToken, address(this));
                 uint256 newBalance = postBalance - previousBalance;
                 _swapData[i + 1].fromAmount = newBalance;
@@ -105,6 +102,7 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
             }
         }
 
+        //TODO: optimise this line in the future
         uint256 outputAmount = LibConcero.getBalance(dstToken, address(this)) -
             dstTokenBalanceBefore;
 

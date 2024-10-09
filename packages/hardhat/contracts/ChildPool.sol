@@ -43,11 +43,11 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     ///////////////////////////////////////////////////////////
     //////////////////////// VARIABLES ////////////////////////
     ///////////////////////////////////////////////////////////
+
     ///////////////
     ///CONSTANTS///
     ///////////////
-    ///@notice Magic Number Removal
-    uint256 private constant ALLOWED = 1;
+
     uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
 

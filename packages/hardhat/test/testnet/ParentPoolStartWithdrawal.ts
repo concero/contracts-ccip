@@ -6,7 +6,7 @@ import { getFallbackClients } from "../../utils";
 import { cNetworks } from "../../constants";
 
 const fromChain = cNetworks.baseSepolia;
-const lpAmount = parseUnits("0.64", 18);
+const lpAmount = parseUnits("1", 18);
 const lpTokenAddress = process.env.LPTOKEN_BASE_SEPOLIA;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA;
 

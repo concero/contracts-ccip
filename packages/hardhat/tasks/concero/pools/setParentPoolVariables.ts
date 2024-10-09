@@ -176,7 +176,7 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
       const { request: setSenderReq } = await publicClient.simulateContract({
         address: parentPoolProxy,
         functionName: "setConceroContractSender",
-        args: [dstChainSelector, sender, 1n],
+        args: [dstChainSelector, sender, true],
         abi,
         account,
       });

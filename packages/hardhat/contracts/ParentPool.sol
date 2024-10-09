@@ -64,7 +64,8 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     ///CONSTANTS///
     ///////////////
 
-    /*CHANGE-IN-PRODUCTION-TO-100_000_000*/
+    // TODO: Change the value of MIN_DEPOSIT to 100_000_000 in production
+    //   uint256 internal constant MIN_DEPOSIT = 100_000_000;
     uint256 internal constant MIN_DEPOSIT = 1_000_000;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint64 private constant BASE_CHAIN_SELECTOR = 15971525489660198786;
@@ -571,7 +572,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         s_poolChainSelectors.push(_chainSelector);
         s_childPools[_chainSelector] = _pool;
 
-        if (isRebalancingNeeded == true) {
+        if (isRebalancingNeeded) {
             bytes32 distributeLiquidityRequestId = keccak256(
                 abi.encodePacked(
                     _pool,

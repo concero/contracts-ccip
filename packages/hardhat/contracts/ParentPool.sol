@@ -64,19 +64,17 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     ///CONSTANTS///
     ///////////////
 
-    //    uint256 internal constant MIN_DEPOSIT = 100_000_000;
+    /*CHANGE-IN-PRODUCTION-TO-100_000_000*/
     uint256 internal constant MIN_DEPOSIT = 1_000_000;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
-    uint256 private constant CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS = 2108;
-    uint256 private constant ARRAY_MANIPULATION = 10_000;
-    uint256 private constant AUTOMATION_OVERHEARD = 80_000;
-    uint256 private constant NODE_PREMIUM = 150;
-    ///@notice variable to access parent pool costs
     uint64 private constant BASE_CHAIN_SELECTOR = 15971525489660198786;
-    ///@notice variable to store the costs of updating store on CLF callback
-    uint256 private constant WRITE_FUNCTIONS_COST = 600_000;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * 10 ** 6;
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
+    //    uint256 private constant CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS = 2108;
+    //    uint256 private constant ARRAY_MANIPULATION = 10_000;
+    //    uint256 private constant CLA_OVERHEAD = 80_000;
+    //    uint256 private constant NODE_PREMIUM = 150;
+    //    uint256 private constant WRITE_FUNCTIONS_COST = 600_000;
     ////////////////
     ///IMMUTABLES///
     ////////////////
@@ -277,7 +275,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     }
 
     /**
-     * @notice Function for user to deposit liquidity of allowed tokens
+     * @notice Function for user to deposit liquidity of ll tokens
      * @param _usdcAmount the amount to be deposited
      */
     function startDeposit(uint256 _usdcAmount) external onlyProxyContext {
@@ -958,7 +956,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     //   //    Nodes Premium - 50%
     //   uint256 arrayLength = i_automation.getPendingWithdrawRequestsLength();
 
-    //   uint256 automationCost = (((CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS * arrayLength) + ARRAY_MANIPULATION + AUTOMATION_OVERHEARD) * NODE_PREMIUM) / 100;
+    //   uint256 automationCost = (((CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS * arrayLength) + ARRAY_MANIPULATION + CLA_OVERHEAD) * NODE_PREMIUM) / 100;
     //   _totalUSDCCost = (((premiumFee * 2) + costOfLinkForLiquidityWithdraw + automationCost) * lastLinkUSDCRate) + ((WRITE_FUNCTIONS_COST * baseLastGasPrice) * lastNativeUSDCRate) + costOfCCIPSendToPoolExecution;
     // }
 }

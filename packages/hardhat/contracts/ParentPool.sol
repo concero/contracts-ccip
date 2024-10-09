@@ -732,6 +732,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     function _completeWithdraw(bytes32 withdrawalId) internal {
         WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
         uint256 amountToWithdraw = request.amountToWithdraw;
+        address lpAddress = request.lpAddress;
 
         i_lpToken.burn(request.lpAmountToBurn);
         i_USDC.safeTransfer(request.lpAddress, amountToWithdraw);
@@ -740,10 +741,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             ? s_withdrawAmountLocked - amountToWithdraw
             : 0;
 
-        delete s_withdrawalIdByLPAddress[msg.sender];
+        delete s_withdrawalIdByLPAddress[lpAddress];
         delete s_withdrawRequests[withdrawalId];
 
-        emit WithdrawalCompleted(withdrawalId, msg.sender, address(i_USDC), amountToWithdraw);
+        emit WithdrawalCompleted(withdrawalId, lpAddress, address(i_USDC), amountToWithdraw);
     }
 
     /**

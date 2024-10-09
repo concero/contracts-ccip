@@ -20,9 +20,9 @@ task("deploy-parent-pool", "Deploy the pool")
   .addFlag("setvars", "Set the contract variables")
   .addFlag("uploadsecrets", "Set the contract variables")
   .setAction(async taskArgs => {
+    const hre: HardhatRuntimeEnvironment = require("hardhat");
     compileContracts({ quiet: true });
 
-    const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
 
     const { name } = hre.network;

@@ -4,7 +4,6 @@ import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils/getEnvVar";
-import { zeroAddress } from "viem";
 import { poolMessengers } from "../constants/deploymentVariables";
 import { getFallbackClients } from "../utils";
 import chains from "../constants/cNetworks";
@@ -55,7 +54,6 @@ const deployParentPoolCLFCLA: (hre: HardhatRuntimeEnvironment, constructorArgs?:
         args.clfRouter,
         args.clfSubId,
         args.clfDonId,
-        args.automationForwarder ?? zeroAddress,
         poolMessengers,
       ],
       log: true,

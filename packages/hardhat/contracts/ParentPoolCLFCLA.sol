@@ -71,7 +71,6 @@ contract ParentPoolCLFCLA is
         address clfRouter,
         uint64 clfSubId,
         bytes32 clfDonId,
-        address automationForwarder,
         address[3] memory messengers
     ) ParentPoolCommon(parentPoolProxy, lpToken, USDC, messengers) FunctionsClient(clfRouter) {
         i_clfSubId = clfSubId;
@@ -186,8 +185,10 @@ contract ParentPoolCLFCLA is
      * @dev this function must be called only by the Chainlink Forwarder unique address
      */
     function performUpkeep(bytes calldata _performData) external override onlyProxyContext {
-        (address lpAddress, uint256 liquidityRequestedFromEachPool, bytes32 withdrawalId) = abi
-            .decode(_performData, (address, uint256, bytes32));
+        (, uint256 liquidityRequestedFromEachPool, bytes32 withdrawalId) = abi.decode(
+            _performData,
+            (address, uint256, bytes32)
+        );
 
         if (s_withdrawTriggered[withdrawalId] == true) {
             revert WithdrawAlreadyTriggered(withdrawalId);
@@ -196,7 +197,6 @@ contract ParentPoolCLFCLA is
         }
 
         bytes32 reqId = _sendLiquidityCollectionRequest(
-            lpAddress,
             withdrawalId,
             liquidityRequestedFromEachPool
         );
@@ -232,7 +232,6 @@ contract ParentPoolCLFCLA is
         }
 
         bytes32 reqId = _sendLiquidityCollectionRequest(
-            lpAddress,
             withdrawalId,
             liquidityRequestedFromEachPool
         );
@@ -436,7 +435,6 @@ contract ParentPoolCLFCLA is
     }
 
     function _sendLiquidityCollectionRequest(
-        address lpAddress,
         bytes32 withdrawalId,
         uint256 liquidityRequestedFromEachPool
     ) internal returns (bytes32) {

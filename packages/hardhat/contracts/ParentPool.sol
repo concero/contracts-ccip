@@ -183,11 +183,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     }
 
     function checkUpkeep(bytes calldata) external view returns (bool, bytes memory) {
-        bytes memory delegateCallArgs = abi.encodeWithSelector(
-            AutomationCompatibleInterface.checkUpkeep.selector,
-            bytes("")
-        );
-
         (bool isTriggerNeeded, bytes memory data) = IParentPoolCLFCLAViewDelegate(address(this))
             .checkUpkeepViaDelegate();
 

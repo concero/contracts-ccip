@@ -369,7 +369,7 @@ contract InfraOrchestrator is
             _dstSwapData
         );
 
-        bytes memory delegateCallRes = LibConcero.safeDelegateCall(i_concero, delegateCallArgs);
+        LibConcero.safeDelegateCall(i_concero, delegateCallArgs);
     }
 
     function _getUSDCAddressByChainSelector(
@@ -398,12 +398,12 @@ contract InfraOrchestrator is
     }
 
     function isTxConfirmed(bytes32 _txId) external view returns (bool) {
-        Transaction storage tx = s_transactions[_txId];
+        Transaction storage transaction = s_transactions[_txId];
 
-        if (tx.messageId == bytes32(0)) {
+        if (transaction.messageId == bytes32(0)) {
             return false;
         }
-        if (!tx.isConfirmed) {
+        if (!transaction.isConfirmed) {
             return false;
         }
         return true;

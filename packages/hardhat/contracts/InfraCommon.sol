@@ -19,8 +19,6 @@ contract InfraCommon {
     ///////////////
     ///CONSTANTS///
     ///////////////
-    ///@notice removing magic-numbers
-    uint256 internal constant APPROVED = 1;
     uint256 internal constant USDC_DECIMALS = 1_000_000; // 10 ** 6
     uint256 internal constant STANDARD_TOKEN_DECIMALS = 1 ether;
 

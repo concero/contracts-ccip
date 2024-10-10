@@ -33,7 +33,7 @@ abstract contract InfraStorage is ReentrancyGuard, IInfraStorage {
     ///@notice Concero: Mapping to keep track of CLF fees for different chains
     mapping(uint64 => uint256) public clfPremiumFees;
     ///@notice DexSwap: mapping to keep track of allowed routers to perform swaps. 1 == Allowed.
-    mapping(address router => uint256 isAllowed) public s_routerAllowed;
+    mapping(address router => bool isAllowed) public s_routerAllowed;
     ///@notice Mapping to keep track of allowed pool receiver
     mapping(uint64 chainSelector => address pool) public s_poolReceiver;
     ///@notice Functions: Mapping to keep track of Concero.sol contracts to send cross-chain Chainlink Functions messages

@@ -247,7 +247,6 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     ) internal override {
         Request storage request = s_requests[requestId];
 
-        //todo: look into this
         if (!request.isPending) {
             revert UnexpectedCLFRequestId(requestId);
         }
@@ -286,7 +285,6 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         );
     }
 
-    //todo: Internal function sendUnconfirmedTX is not prefixed with underscore
     /**
      * @notice Sends an unconfirmed TX to the destination chain
      * @param messageId the CCIP message to be checked
@@ -338,7 +336,6 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
      * @param request the CLF request to be used
      */
     function _handleDstFunctionsResponse(Request storage request) internal {
-        //todo: make references to transaction object to save on gas
         Transaction storage transaction = s_transactions[request.ccipMessageId];
 
         _confirmTX(request.ccipMessageId, transaction);

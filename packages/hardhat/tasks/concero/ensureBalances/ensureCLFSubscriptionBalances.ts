@@ -11,7 +11,7 @@ import linkTokenAbi from "@chainlink/contracts/abi/v0.8/LinkToken.json";
 import { BalanceInfo } from "./types";
 
 const donorAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`);
-const minBalance = parseEther("10");
+const minBalance = parseEther("16");
 
 const prompt = (question: string): Promise<string> => new Promise(resolve => rl.question(question, resolve));
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });

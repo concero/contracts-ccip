@@ -272,7 +272,6 @@ contract InfraOrchestrator is
         bytes memory response,
         bytes memory err
     ) external {
-        //todo: research if this is worth moving to a modifier
         if (msg.sender != address(i_functionsRouter)) {
             revert OnlyCLFRouter();
         }

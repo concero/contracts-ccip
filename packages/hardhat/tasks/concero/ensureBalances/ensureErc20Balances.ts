@@ -15,9 +15,9 @@ const rl = readline.createInterface({ input: process.stdin, output: process.stdo
 const prompt = (question: string): Promise<string> => new Promise(resolve => rl.question(question, resolve));
 
 const minBalances: Record<ProxyEnum, bigint> = {
-  parentPoolProxy: parseEther("10"),
+  parentPoolProxy: parseEther("16"),
   childPoolProxy: parseEther("1.5"),
-  infraProxy: parseEther("10"),
+  infraProxy: parseEther("16"),
 };
 
 async function checkChainBalance(chain: CNetwork, contractType: ProxyEnum): Promise<BalanceInfo> {

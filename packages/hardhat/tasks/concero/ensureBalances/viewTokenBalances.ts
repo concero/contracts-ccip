@@ -5,7 +5,8 @@ import { formatUnits } from "viem";
 import { type CNetwork } from "../../../types/CNetwork";
 
 const BASEURL = "https://api.concero.io/api";
-const IGNORE_SYMBOLS = ["LINK", "LINK.e"];
+const IGNORE_SYMBOLS = ["LINK", "LINK.e", "LINK(ERC677)"];
+const MIN_TOTAL_VALUE_USD = 1;
 
 interface TokenBalance {
   _id: string;
@@ -23,7 +24,8 @@ interface TokenBalance {
     _id: string;
   }>;
   symbol: string;
-  balance: string; // Assuming balance is a string representation of a number
+  balance: string;
+  totalValueUsd?: number;
 }
 
 async function fetchBalances(chain: CNetwork, contractAddress: string): Promise<TokenBalance[]> {
@@ -50,75 +52,71 @@ async function fetchBalances(chain: CNetwork, contractAddress: string): Promise<
   }
 }
 
-async function monitorTokenBalances(isTestnet: boolean): Promise<TokenBalance[]> {
+async function monitorTokenBalances(isTestnet: boolean): Promise<{ [chainName: string]: TokenBalance[] }> {
   const chains = isTestnet ? testnetChains : mainnetChains;
-  const allBalanceInfos: TokenBalance[] = [];
+  const balancesByChain: { [chainName: string]: TokenBalance[] } = {};
 
   const promises = Object.values(chains).map(async chain => {
     const [contractAddress, contractAlias] = getEnvAddress(ProxyEnum.infraProxy, chain.name);
 
     try {
-      const chainBalances = await fetchBalances(chain, contractAddress);
-      return { chainBalances, chain, contractAlias, contractAddress };
-    } catch (error) {
-      err(`Error processing balances for ${contractAlias} on ${chain.name}: ${error}`, "monitorTokenBalances");
-      return null; // Handle errors appropriately
-    }
-  });
+      let chainBalances = await fetchBalances(chain, contractAddress);
 
-  const results = await Promise.all(promises);
+      // Filter out ignored tokens
+      chainBalances = chainBalances.filter(token => !IGNORE_SYMBOLS.includes(token.symbol));
 
-  for (const result of results) {
-    if (result) {
-      const { chainBalances, chain, contractAlias } = result;
+      // Calculate totalValueUsd and append to each token
+      chainBalances = chainBalances.map(token => {
+        const balanceBigInt = BigInt(token.balance);
+        const balanceFormatted = Number(formatUnits(balanceBigInt, token.decimals));
+        const totalValueUsd = balanceFormatted * token.priceUsd;
+        return {
+          ...token,
+          totalValueUsd,
+        };
+      });
 
-      // Process chainBalances
-      const displayedBalances = chainBalances
-        .filter(token => !IGNORE_SYMBOLS.includes(token.symbol))
-        .map(token => {
-          const balanceBigInt = BigInt(token.balance);
-          const balanceFormatted = Number(formatUnits(balanceBigInt, token.decimals));
-          const valueUsd = balanceFormatted * token.priceUsd;
-          return {
-            Contract: contractAlias,
-            Chain: chain.name,
-            Symbol: token.symbol,
-            Balance: balanceFormatted.toString(),
-            ValueUSD: valueUsd,
-          };
-        })
-        .filter(token => token.ValueUSD >= 1)
-        .sort((a, b) => b.ValueUSD - a.ValueUSD)
-        .map(token => ({
-          Contract: token.Contract,
-          Chain: token.Chain,
-          Symbol: token.Symbol,
-          Balance: token.Balance,
-          ValueUSD: token.ValueUSD.toFixed(2),
-        }));
+      // Filter out tokens with totalValueUsd < 1
+      chainBalances = chainBalances.filter(token => token.totalValueUsd >= MIN_TOTAL_VALUE_USD);
+
+      // Sort chainBalances by totalValueUsd descending
+      chainBalances = chainBalances.sort((a, b) => b.totalValueUsd - a.totalValueUsd);
+
+      // Assign balances to the chain name
+      balancesByChain[chain.name] = chainBalances;
+
+      // Prepare data for display
+      const displayedBalances = chainBalances.map(token => ({
+        Contract: contractAlias,
+        Chain: chain.name,
+        Symbol: token.symbol,
+        Balance: Number(formatUnits(BigInt(token.balance), token.decimals)).toString(),
+        ValueUSD: token.totalValueUsd?.toFixed(2),
+      }));
 
       console.log(`\nToken Balances for ${chain.name}:`);
       console.table(displayedBalances);
-
-      allBalanceInfos.push(...chainBalances);
+    } catch (error) {
+      err(`Error processing balances for ${contractAlias} on ${chain.name}: ${error}`, "monitorTokenBalances");
     }
-  }
+  });
+
+  await Promise.all(promises);
 
   // Calculate and display total amounts per token across all chains
+  const allBalanceInfos = Object.values(balancesByChain).flat();
   const tokenTotals: { [symbol: string]: { totalBalance: bigint; totalValueUsd: number } } = {};
 
   for (const token of allBalanceInfos) {
-    if (IGNORE_SYMBOLS.includes(token.symbol)) continue;
-
     const balanceBigInt = BigInt(token.balance);
-    const balanceFormatted = Number(formatUnits(balanceBigInt, token.decimals));
-    const valueUsd = balanceFormatted * token.priceUsd;
-
     if (!tokenTotals[token.symbol]) {
-      tokenTotals[token.symbol] = { totalBalance: balanceBigInt, totalValueUsd: valueUsd };
+      tokenTotals[token.symbol] = {
+        totalBalance: balanceBigInt,
+        totalValueUsd: token.totalValueUsd || 0,
+      };
     } else {
       tokenTotals[token.symbol].totalBalance += balanceBigInt;
-      tokenTotals[token.symbol].totalValueUsd += valueUsd;
+      tokenTotals[token.symbol].totalValueUsd += token.totalValueUsd || 0;
     }
   }
 
@@ -136,7 +134,7 @@ async function monitorTokenBalances(isTestnet: boolean): Promise<TokenBalance[]>
     });
   console.table(totalTokensDisplay);
 
-  return allBalanceInfos;
+  return balancesByChain;
 }
 
 task("view-token-balances", "View token balances for infraProxy contracts")

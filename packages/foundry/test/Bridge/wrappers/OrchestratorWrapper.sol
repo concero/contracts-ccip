@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.20;
 
-import {Orchestrator} from "contracts/Orchestrator.sol";
+import {InfraOrchestrator} from "contracts/InfraOrchestrator.sol";
 
-contract OrchestratorWrapper is Orchestrator {
+contract OrchestratorWrapper is InfraOrchestrator {
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -16,7 +16,17 @@ contract OrchestratorWrapper is Orchestrator {
         address _proxy,
         uint8 _chainIndex,
         address[3] memory _messengers
-    ) Orchestrator(_functionsRouter, _dexSwap, _concero, _pool, _proxy, _chainIndex, _messengers) {}
+    )
+        InfraOrchestrator(
+            _functionsRouter,
+            _dexSwap,
+            _concero,
+            _pool,
+            _proxy,
+            _chainIndex,
+            _messengers
+        )
+    {}
 
     /*//////////////////////////////////////////////////////////////
                                  SETTER

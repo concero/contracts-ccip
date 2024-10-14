@@ -3,11 +3,11 @@ pragma solidity 0.8.20;
 
 import {Script, console} from "forge-std/Script.sol";
 import {ConceroBridge} from "contracts/ConceroBridge.sol";
-import {Storage} from "contracts/Libraries/Storage.sol";
+import {InfraStorage} from "contracts/Libraries/InfraStorage.sol";
 
 contract ConceroDeploy is Script {
     function run(
-        Storage.FunctionsVariables memory _variables,
+        InfraStorage.FunctionsVariables memory _variables,
         uint64 _chainSelector,
         uint _chainIndex,
         address _link,

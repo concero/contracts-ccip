@@ -6,6 +6,8 @@
  */
 pragma solidity ^0.8.20;
 
+import {console} from "forge-std/Test.sol";
+
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
@@ -15,6 +17,7 @@ import {IPool} from "./Interfaces/IPool.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {InfraCommon} from "./InfraCommon.sol";
 import {IInfraCLF} from "./Interfaces/IInfraCLF.sol";
+import {LibZip} from "solady/src/utils/LibZip.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -355,8 +358,10 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
         if (transaction.dstSwapData.length > 1) {
+            bytes memory decompressedSwapData = LibZip.cdDecompress(transaction.dstSwapData);
+
             IDexSwap.SwapData[] memory swapData = abi.decode(
-                transaction.dstSwapData,
+                decompressedSwapData,
                 (IDexSwap.SwapData[])
             );
             swapData[0].fromAmount = amount;

@@ -90,6 +90,7 @@
     "qrcode": "^1.5.1",
     "readline": "^1.3.0",
     "regenerator-runtime": "^0.14.1",
+    "solady": "file:../foundry/lib/solady",
     "solidity-bytes-utils": "0.8.0",
     "sushiswap-v3-periphery": "https://github.com/sushiswap/v3-periphery",
     "velodrome": "https://github.com/velodrome-finance/contracts",

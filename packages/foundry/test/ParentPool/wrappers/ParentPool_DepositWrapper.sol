@@ -9,7 +9,7 @@ interface IDepositParentPool is IParentPool {
         bytes32 requestId
     ) external view returns (ParentPool.DepositRequest memory);
 
-    function getRequestType(bytes32 requestId) external view returns (ParentPool.RequestType);
+    function getRequestType(bytes32 requestId) external view returns (IParentPool.CLFRequestType);
 
     function isMessenger(address _messenger) external view returns (bool);
 }
@@ -49,7 +49,7 @@ contract ParentPool_DepositWrapper is ParentPool {
         return s_depositRequests[requestId];
     }
 
-    function getRequestType(bytes32 requestId) external view returns (ParentPool.RequestType) {
+    function getRequestType(bytes32 requestId) external view returns (IParentPool.CLFRequestType) {
         return s_clfRequestTypes[requestId];
     }
 

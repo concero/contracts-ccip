@@ -16,7 +16,7 @@ const prompt = (question: string): Promise<string> => new Promise(resolve => rl.
 
 const minBalances: Record<ProxyEnum, bigint> = {
   parentPoolProxy: parseEther("24"),
-  childPoolProxy: parseEther("1.5"),
+  childPoolProxy: parseEther("3"),
   infraProxy: parseEther("20"),
 };
 

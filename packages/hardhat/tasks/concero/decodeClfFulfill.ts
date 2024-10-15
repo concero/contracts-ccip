@@ -5,6 +5,8 @@ import { decodeAbiParameters, parseAbiParameters } from "viem";
 import { ethers } from "ethers-v5";
 import { CNetwork } from "../../types/CNetwork";
 
+//bun hardhat decode-clf-fulfill --txhash 0x3018db9bf3525621578311b8ee09b5f735bc68dfbfd2142154b671ece68691a1 --network base
+
 const abiParameters = parseAbiParameters([
   "bytes32[3] reportContext",
   "bytes report",
@@ -124,6 +126,29 @@ function verifyReport(formattedData) {
   console.log("All signatures are valid and from authorized signers.");
 }
 
+/**
+ * Decodes the report results and logs the data.
+ * @param {string[]} results - The report results to decode.
+ */
+
+function decodeReportResult(results) {
+  //decodes addUnconfirmedTx fulfill
+  results.forEach((result, i) => {
+    const decodedResult = decodeAbiParameters(
+      [
+        { type: "uint256", name: "dstGasPrice" },
+        { type: "uint256", name: "srcGasPrice" },
+        { type: "uint64", name: "dstChainSelector" },
+        { type: "uint256", name: "linkUsdcRate" },
+        { type: "uint256", name: "nativeUsdcRate" },
+        { type: "uint256", name: "linkNativeRate" },
+      ],
+      result,
+    );
+    console.log(`Decoded Result ${i}:`, decodedResult);
+  });
+}
+
 task("decode-clf-fulfill", "Decodes CLF TX to get signers and fulfillment data")
   .addParam("txhash", "Transaction hash to decode")
   .setAction(async (taskArgs, hre) => {
@@ -131,6 +156,7 @@ task("decode-clf-fulfill", "Decodes CLF TX to get signers and fulfillment data")
 
     const formattedData = await decodeReport(taskArgs.txhash, chain);
     verifyReport(formattedData);
+    decodeReportResult(formattedData.report.results);
   });
 
 export default {};

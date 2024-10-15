@@ -5,8 +5,8 @@ import { formatUnits } from "viem";
 import { type CNetwork } from "../../../types/CNetwork";
 
 const BASEURL = "https://api.concero.io/api";
-const IGNORE_SYMBOLS = ["LINK", "LINK.e", "LINK(ERC677)"];
-const MIN_TOTAL_VALUE_USD = 1;
+const IGNORE_SYMBOLS = ["LINK", "LINK.e", "LINK(ERC677)", "TITAN"];
+const MIN_TOTAL_VALUE_USD = 10;
 
 interface TokenBalance {
   _id: string;

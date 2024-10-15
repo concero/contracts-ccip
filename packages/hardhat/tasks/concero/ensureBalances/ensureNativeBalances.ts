@@ -19,28 +19,6 @@ const wallets = [
 const prompt = (question: string): Promise<string> => new Promise(resolve => rl.question(question, resolve));
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-// export async function ensureWalletBalance(wallet: string, targetBalances: Record<string, bigint>, chain: CNetwork) {
-//   const balance = await checkNativeBalance(wallet, targetBalances, chain);
-//   const displayedWalletBalances = {
-//     chain: balance.chain.name,
-//     address: balance.address,
-//     balance: balance.balance,
-//     targetBalance: balance.targetBalance,
-//     deficit: balance.deficit,
-//   };
-//
-//   if (parseFloat(balance.deficit) > 0) {
-//     err(
-//       `Insufficient balance for ${wallet}. Balance: ${balance.balance}. Deficit: ${balance.deficit}`,
-//       "ensureWalletBalance",
-//       chain.name,
-//     );
-//     throw new Error();
-//   }
-//   console.table([displayedWalletBalances]);
-//   return balance;
-// }
-
 async function checkNativeBalance(
   address: string,
   alias: string,
@@ -89,15 +67,15 @@ async function getBalanceInfo(addresses: [string, string][], chain: CNetwork): P
 
 async function performTopUps(walletBalances: BalanceInfo[], donorAccount: any): Promise<void> {
   const topUpPromises = walletBalances.map(async walletInfo => {
-    const deficit = parseEther(walletInfo.deficit);
-    if (deficit > BigInt(0)) {
+    const deficitInWei = walletInfo.deficit; // Expecting string representation here
+    if (deficitInWei > BigInt(0)) {
       const { publicClient, walletClient } = getFallbackClients(walletInfo.chain, donorAccount);
-      await topUpWallet(walletInfo.address, publicClient, walletClient, deficit);
+      await topUpWallet(walletInfo.address, publicClient, walletClient, deficitInWei);
     }
   });
+
   await Promise.all(topUpPromises);
 }
-
 async function ensureNativeBalances(isTestnet: boolean) {
   const chains = isTestnet ? testnetChains : mainnetChains;
   const allBalances: Record<string, BalanceInfo[]> = {};
@@ -128,7 +106,11 @@ async function ensureNativeBalances(isTestnet: boolean) {
     console.log("\nWallet and Donor Balances:");
     console.table(displayedBalances);
 
-    const totalDeficit = displayedBalances.reduce((sum, info) => sum + parseFloat(info.deficit), 0);
+    // Calculate total deficit as BigInt (sum of deficits in wei)
+    const totalDeficit = displayedBalances.reduce((sum, info) => {
+      const deficitInWei = parseEther(info.deficit); // Convert each deficit back to wei for accurate summation
+      return sum + deficitInWei;
+    }, BigInt(0)); // Start from 0 wei
     if (totalDeficit > 0) {
       const answer = await prompt(
         `Do you want to perform top-ups for a total of ${formatEther(totalDeficit)} ETH? (y/n): `,

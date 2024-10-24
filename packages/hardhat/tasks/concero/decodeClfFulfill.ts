@@ -23,14 +23,6 @@ const reportAbiParameters = parseAbiParameters([
   "bytes[] offchainMetadata",
 ]);
 
-// Authorized node operator addresses
-const authorizedSigners = [
-  getEnvVar("CLF_DON_SIGNING_KEY_0_BASE"),
-  getEnvVar("CLF_DON_SIGNING_KEY_1_BASE"),
-  getEnvVar("CLF_DON_SIGNING_KEY_2_BASE"),
-  getEnvVar("CLF_DON_SIGNING_KEY_3_BASE"),
-];
-
 /**
  * Decodes the Chainlink Functions report from a transaction hash.
  * @param {string} hash - The transaction hash to decode.
@@ -68,7 +60,6 @@ async function decodeReport(hash: string, chain: CNetwork) {
   };
 
   console.log("Decoded Report:", JSON.stringify(formattedData, null, 2));
-
   return formattedData;
 }
 
@@ -77,7 +68,21 @@ async function decodeReport(hash: string, chain: CNetwork) {
  * @param {object} formattedData - The formatted report data from decodeReport.
  * @throws Will throw an error if verification fails.
  */
-function verifyReport(formattedData) {
+function verifyReport(formattedData, isTestnet) {
+  const authorizedSigners = isTestnet
+    ? [
+        getEnvVar("CLF_DON_SIGNING_KEY_0_BASE_SEPOLIA"),
+        getEnvVar("CLF_DON_SIGNING_KEY_1_BASE_SEPOLIA"),
+        getEnvVar("CLF_DON_SIGNING_KEY_2_BASE_SEPOLIA"),
+        getEnvVar("CLF_DON_SIGNING_KEY_3_BASE_SEPOLIA"),
+      ]
+    : [
+        getEnvVar("CLF_DON_SIGNING_KEY_0_BASE"),
+        getEnvVar("CLF_DON_SIGNING_KEY_1_BASE"),
+        getEnvVar("CLF_DON_SIGNING_KEY_2_BASE"),
+        getEnvVar("CLF_DON_SIGNING_KEY_3_BASE"),
+      ];
+
   const { reportContext, reportBytes, rs, ss, rawVs } = formattedData;
 
   // Step 1: Recompute 'h'
@@ -117,6 +122,7 @@ function verifyReport(formattedData) {
 
     uniqueSigners.add(signerAddress);
 
+    console.log("signer:", signerAddress);
     // Verify if the signer is authorized
     if (!authorizedSigners.includes(signerAddress)) {
       throw new Error(`Unauthorized signer: ${signerAddress}`);
@@ -153,9 +159,10 @@ task("decode-clf-fulfill", "Decodes CLF TX to get signers and fulfillment data")
   .addParam("txhash", "Transaction hash to decode")
   .setAction(async (taskArgs, hre) => {
     const chain = cNetworks[hre.network.name];
-
     const formattedData = await decodeReport(taskArgs.txhash, chain);
-    verifyReport(formattedData);
+
+    const isTestnet = chain.type === "testnet";
+    verifyReport(formattedData, isTestnet);
     decodeReportResult(formattedData.report.results);
   });
 

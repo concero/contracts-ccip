@@ -1,7 +1,7 @@
 // Purpose: To have a single source of truth for networks across the project
-import { NetworkUserConfig } from "hardhat/types";
-import { HttpNetworkUserConfig } from "hardhat/src/types/config";
-import { Chain } from "viem";
+import {NetworkUserConfig} from "hardhat/types";
+import {HttpNetworkUserConfig} from "hardhat/src/types/config";
+import {Chain} from "viem";
 
 export type envString = string | undefined;
 
@@ -13,6 +13,7 @@ export type NetworkType = "mainnet" | "testnet";
 export type CLFNetwork = {
   saveDeployments: boolean;
   functionsRouter: envString;
+  functionsCoordinator: envString;
   functionsDonId: envString;
   functionsDonIdAlias: envString;
   functionsSubIds: envString[];

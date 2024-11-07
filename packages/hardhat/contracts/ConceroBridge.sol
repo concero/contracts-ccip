@@ -101,6 +101,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         }
 
         uint256 amountToSendAfterFees = bridgeData.amount - totalSrcFee;
+        //TODO: keccak should ensure that the message id is unique, dstChainSelector should be included
         bytes32 conceroMessageId = keccak256(
             abi.encodePacked(
                 msg.sender,

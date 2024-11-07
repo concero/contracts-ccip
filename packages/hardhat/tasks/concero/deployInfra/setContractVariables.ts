@@ -277,7 +277,7 @@ export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: a
       abi,
       functionName: "setDexRouterAddress",
       account,
-      args: [allowedRouter, 1n],
+      args: [allowedRouter, true],
       chain: dcViemChain,
     });
     const setDexRouterHash = await walletClient.writeContract(setDexRouterReq);

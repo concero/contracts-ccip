@@ -1,71 +1,90 @@
-import { task } from "hardhat/config";
+import { cNetworks, ProxyEnum, viemReceiptConfig } from "../../../constants";
 import monitorTokenBalances from "./viewTokenBalances";
-import { getEnvVar, getFallbackClients } from "../../../utils";
-import cNetworks, { networkEnvKeys } from "../../../constants/cNetworks";
-import { viemReceiptConfig } from "../../../constants";
-import log from "../../../utils/log";
 import { formatUnits } from "viem";
-import { type BalanceInfo } from "./types";
+import { getEnvAddress, getFallbackClients, log } from "../../../utils";
 
 async function withdrawTokens(isTestnet: boolean) {
   const { abi } = await import("../../../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json");
-  // Step 1: Get balances
-  const balances: BalanceInfo[] = await monitorTokenBalances(isTestnet);
 
-  // Step 2: Filter out tokens with a balance greater than zero
-  const tokensWithBalance = balances.filter(info => Number(info.balance) > 0);
+  const balancesByChain = await monitorTokenBalances(isTestnet);
 
-  if (tokensWithBalance.length === 0) {
-    console.log("No tokens available to withdraw.");
-    return;
-  }
-
-  // Step 3: Prompt the user to confirm the withdrawal
-  console.log("\nTokens available for withdrawal:");
-  console.table(tokensWithBalance);
-
-  const proceed = await new Promise(resolve => {
-    const rl = require("readline").createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-    rl.question("Do you want to proceed with the withdrawal? (y/n) ", (answer: string) => {
-      rl.close();
-      resolve(answer.trim().toLowerCase() === "y");
-    });
-  });
-
-  if (!proceed) {
-    console.log("Withdrawal cancelled.");
-    return;
-  }
-
-  // Step 4: Withdraw the tokens
-  for (const token of tokensWithBalance) {
-    const { chainName, contractAddress, symbol, balance } = token;
+  for (const chainName in balancesByChain) {
+    const chainBalances = balancesByChain[chainName];
     const chain = cNetworks[chainName];
+
+    // Initialize contractAddress and viem clients once per chain
+    const [contractAddress, contractAlias] = getEnvAddress(ProxyEnum.infraProxy, chainName);
     const viemChain = chain.viemChain;
-
-    const tokenAddress = getEnvVar(`${symbol}_${networkEnvKeys[chainName]}`);
-    const amountToWithdraw = balance; // Assuming we're withdrawing the full balance
-
     const { publicClient, walletClient, account } = getFallbackClients(chain);
-    const { request: withdrawReq } = await publicClient.simulateContract({
-      address: contractAddress,
-      abi,
-      functionName: "withdraw",
-      account,
-      args: [account.address, tokenAddress, amountToWithdraw],
-      chain: viemChain,
+
+    // Filter tokens with balance > 0
+    const tokensWithBalance = chainBalances.filter(info => BigInt(info.balance) > BigInt(0));
+
+    if (tokensWithBalance.length === 0) {
+      console.log(`No tokens available to withdraw on ${chainName}.`);
+      continue;
+    }
+
+    // Step 3: Prompt the user to confirm the withdrawal per chain
+    console.log(`\nTokens available for withdrawal on ${chainName}:`);
+    const displayedTokensWithBalance = tokensWithBalance.map(token => {
+      const balanceBigInt = BigInt(token.balance);
+      const balanceFormatted = formatUnits(balanceBigInt, token.decimals);
+      const valueUsd = Number(balanceFormatted) * token.priceUsd;
+      return {
+        Chain: chainName,
+        Contract: contractAlias,
+        Symbol: token.symbol,
+        tokenAddress: token.address,
+        Balance: balanceFormatted,
+        ValueUSD: valueUsd.toFixed(2),
+      };
+    });
+    console.table(displayedTokensWithBalance);
+
+    const proceed = await new Promise(resolve => {
+      const rl = require("readline").createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      rl.question(`Do you want to proceed with the withdrawal on ${chainName}? (y/n) `, (answer: string) => {
+        rl.close();
+        resolve(answer.trim().toLowerCase() === "y");
+      });
     });
 
-    const hash = await walletClient.writeContract(withdrawReq);
-    const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({
-      ...viemReceiptConfig,
-      hash,
-    });
+    if (!proceed) {
+      console.log(`Withdrawal cancelled on ${chainName}.`);
+      continue;
+    }
 
-    log(`Withdrawn ${formatUnits(balance, 6)} ${symbol}(Gas Used: ${cumulativeGasUsed})`, "withdrawToken", chain.name);
+    // Step 4: Withdraw the tokens
+    for (const token of tokensWithBalance) {
+      const { address, symbol, balance, decimals } = token;
+
+      const amountToWithdraw = BigInt(balance); // Withdrawing the full balance
+
+      const { request: withdrawReq } = await publicClient.simulateContract({
+        address: contractAddress,
+        abi,
+        functionName: "withdraw",
+        account,
+        args: [account.address, address, amountToWithdraw],
+        chain: viemChain,
+      });
+
+      const hash = await walletClient.writeContract(withdrawReq);
+      const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({
+        ...viemReceiptConfig,
+        hash,
+      });
+
+      log(
+        `Withdrawn ${formatUnits(amountToWithdraw, decimals)} ${symbol} on ${chainName} (Gas Used: ${cumulativeGasUsed})`,
+        "withdrawToken",
+        chain.name,
+      );
+    }
   }
 }
 
@@ -74,5 +93,4 @@ task("withdraw-tokens", "Withdraw tokens from infraProxy contracts")
   .setAction(async taskArgs => {
     await withdrawTokens(taskArgs.testnet);
   });
-
 export default withdrawTokens;

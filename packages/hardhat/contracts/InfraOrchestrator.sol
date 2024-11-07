@@ -26,7 +26,7 @@ error InvalidBridgeData();
 error InvalidSwapData();
 ///@notice error emitted when the token to bridge is not USDC
 error UnsupportedBridgeToken();
-error AmountExceedsBatchedReserves();
+error WithdrawableAmountExceedsBatchedReserves();
 
 contract InfraOrchestrator is
     IFunctionsClient,
@@ -272,7 +272,6 @@ contract InfraOrchestrator is
         bytes memory response,
         bytes memory err
     ) external {
-        //todo: research if this is worth moving to a modifier
         if (msg.sender != address(i_functionsRouter)) {
             revert OnlyCLFRouter();
         }
@@ -314,14 +313,14 @@ contract InfraOrchestrator is
             }
 
             if (amount > balance - batchedReserves) {
-                revert AmountExceedsBatchedReserves();
+                revert WithdrawableAmountExceedsBatchedReserves();
             }
         }
 
-        if (token != address(0)) {
-            LibConcero.transferERC20(token, amount, recipient);
-        } else {
+        if (token == address(0)) {
             payable(recipient).transfer(amount);
+        } else {
+            LibConcero.transferERC20(token, amount, recipient);
         }
     }
 

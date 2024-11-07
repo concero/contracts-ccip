@@ -19,8 +19,6 @@ contract InfraCommon {
     ///////////////
     ///CONSTANTS///
     ///////////////
-    ///@notice removing magic-numbers
-    uint256 internal constant APPROVED = 1;
     uint256 internal constant USDC_DECIMALS = 1_000_000; // 10 ** 6
     uint256 internal constant STANDARD_TOKEN_DECIMALS = 1 ether;
 
@@ -52,54 +50,37 @@ contract InfraCommon {
      * @param tokenType The enum flag of the token
      * @param _chainIndex the index of the chain
      */
-    //todo: change to if statements
+
     function getUSDCAddressByChainIndex(
         IInfraStorage.CCIPToken tokenType,
         IInfraStorage.Chain _chainIndex
     ) internal view returns (address) {
-        address[5][2] memory tokens;
+        //mainnet
+        if (tokenType == IInfraStorage.CCIPToken.usdc) {
+            if (_chainIndex == IInfraStorage.Chain.arb) {
+                return block.chainid == 42161 ? USDC_ARBITRUM : USDC_ARBITRUM_SEPOLIA;
+            } else if (_chainIndex == IInfraStorage.Chain.base) {
+                return block.chainid == 8453 ? USDC_BASE : USDC_BASE_SEPOLIA;
+            } else if (_chainIndex == IInfraStorage.Chain.opt) {
+                return block.chainid == 10 ? USDC_OPTIMISM : USDC_OPTIMISM_SEPOLIA;
+            } else if (_chainIndex == IInfraStorage.Chain.pol) {
+                return block.chainid == 137 ? USDC_POLYGON : USDC_POLYGON_AMOY;
+            } else if (_chainIndex == IInfraStorage.Chain.avax) {
+                return USDC_AVALANCHE;
+            } else revert ChainIndexOutOfBounds();
 
-        // Testnet CCIP BnM
-        tokens[uint(IInfraStorage.CCIPToken.bnm)][
-            uint(IInfraStorage.Chain.arb)
-        ] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
-        tokens[uint(IInfraStorage.CCIPToken.bnm)][
-            uint(IInfraStorage.Chain.base)
-        ] = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e; // base
-        tokens[uint(IInfraStorage.CCIPToken.bnm)][
-            uint(IInfraStorage.Chain.opt)
-        ] = 0x8aF4204e30565DF93352fE8E1De78925F6664dA7; // opt
-        tokens[uint(IInfraStorage.CCIPToken.bnm)][
-            uint(IInfraStorage.Chain.pol)
-        ] = 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4; // pol
-
-        // Mainnet USDC
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.arb)] = block.chainid ==
-            42161
-            ? USDC_ARBITRUM
-            : USDC_ARBITRUM_SEPOLIA;
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.base)] = block
-            .chainid == 8453
-            ? USDC_BASE
-            : USDC_BASE_SEPOLIA;
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.opt)] = block.chainid ==
-            10
-            ? USDC_OPTIMISM
-            : USDC_OPTIMISM_SEPOLIA;
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.pol)] = block.chainid ==
-            137
-            ? USDC_POLYGON
-            : USDC_POLYGON_AMOY;
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.avax)] = block
-            .chainid == 43114
-            ? USDC_AVALANCHE
-            : USDC_AVALANCHE;
-
-        if (uint256(tokenType) > tokens.length) revert TokenTypeOutOfBounds();
-        if (uint256(_chainIndex) > tokens[uint256(tokenType)].length)
-            revert ChainIndexOutOfBounds();
-
-        return tokens[uint256(tokenType)][uint256(_chainIndex)];
+            //testnet
+        } else if (tokenType == IInfraStorage.CCIPToken.bnm) {
+            if (_chainIndex == IInfraStorage.Chain.arb)
+                return 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D;
+            else if (_chainIndex == IInfraStorage.Chain.base)
+                return 0x88A2d74F47a237a62e7A51cdDa67270CE381555e;
+            else if (_chainIndex == IInfraStorage.Chain.opt)
+                return 0x8aF4204e30565DF93352fE8E1De78925F6664dA7;
+            else if (_chainIndex == IInfraStorage.Chain.pol)
+                return 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4;
+            else revert ChainIndexOutOfBounds();
+        } else revert TokenTypeOutOfBounds();
     }
 
     /**

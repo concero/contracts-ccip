@@ -6,15 +6,16 @@
  */
 pragma solidity ^0.8.20;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {InfraCommon} from "./InfraCommon.sol";
+import {IDexSwap} from "./Interfaces/IDexSwap.sol";
+import {IInfraCLF} from "./Interfaces/IInfraCLF.sol";
+import {IInfraStorage} from "./Interfaces/IInfraStorage.sol";
+import {IPool} from "./Interfaces/IPool.sol";
+import {InfraStorage} from "./Libraries/InfraStorage.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-import {InfraStorage} from "./Libraries/InfraStorage.sol";
-import {IPool} from "./Interfaces/IPool.sol";
-import {IDexSwap} from "./Interfaces/IDexSwap.sol";
-import {InfraCommon} from "./InfraCommon.sol";
-import {IInfraCLF} from "./Interfaces/IInfraCLF.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -192,6 +193,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         s_requests[reqId].isPending = true;
         s_requests[reqId].ccipMessageId = messageId;
 
+        // TODO: remove this log
         emit UnconfirmedTXAdded(messageId, sender, recipient, amount, token, srcChainSelector);
     }
 

@@ -12,7 +12,7 @@ import { abi as conceroBridgeAbi } from "../../../artifacts/contracts/ConceroBri
 import { DecodeEventLogReturnType } from "viem/utils/abi/decodeEventLog";
 import { getCLFFeesTaken } from "./getCLFFeesTaken";
 import { displayResults } from "./displayResults";
-
+import { fetchPriceFeeds } from "./fetchPriceFeeds";
 /*
 Todos:
 1. Find src CLF callback to get CLF LINK final cost on src
@@ -26,9 +26,9 @@ const requestProcessedEventAbi = getAbiItem({ abi: functionsRouterAbi, name: "Re
 const unconfirmedTXAddedEventAbi = getAbiItem({ abi: conceroBridgeAbi, name: "UnconfirmedTXAdded" });
 
 export async function getSwapAndBridgeCost(srctx: Hash, dsttx: Hash, srcChain: CNetwork) {
-  const { publicClient } = getFallbackClients(srcChain);
-  const srcTx = await publicClient.getTransaction({ hash: srctx });
-  const srcTxReceipt = await publicClient.getTransactionReceipt({ hash: srctx });
+  const { publicClient: srcPublicClient } = getFallbackClients(srcChain);
+  const srcTx = await srcPublicClient.getTransaction({ hash: srctx });
+  const srcTxReceipt = await srcPublicClient.getTransactionReceipt({ hash: srctx });
 
   // STEP 1: Get the total cost of the SRC CLF Callback in LINK
   const oracleRequestEvent = await getDecodedEventByTxReceipt(srcTxReceipt, [oracleRequestEventABI], "OracleRequest");
@@ -53,9 +53,9 @@ export async function getSwapAndBridgeCost(srctx: Hash, dsttx: Hash, srcChain: C
     srcTx.blockNumber,
     srcTx.blockNumber + BigInt(100),
     srcChain.functionsRouter,
-    publicClient,
+    srcPublicClient,
   );
-  const { totalCostJuels } = clfRequestProcessedEvent.args;
+  const { totalCostJuels: srcClfFeePaid } = clfRequestProcessedEvent.args;
   // console.log(`Total Cost of SRC CLF: ${totalCostJuels.toString()}`);
 
   // STEP 2: Get the total cost of the DST CLF Callback in LINK
@@ -108,26 +108,32 @@ export async function getSwapAndBridgeCost(srctx: Hash, dsttx: Hash, srcChain: C
   const dstUnconfirmedTxReceipt = await dstPublicClient.getTransactionReceipt({
     hash: dstUnconfirmedTXLog.transactionHash,
   });
-  const gasPaid = dstUnconfirmedTx.gasPrice * dstUnconfirmedTxReceipt.gasUsed;
-  // console.log(`Gas paid for the matching UnconfirmedTXAdded transaction: ${gasPaid.toString()}`);
+  const dstGasPaid = dstUnconfirmedTx.gasPrice * dstUnconfirmedTxReceipt.gasUsed;
 
   // Step 4: get CLFFees in contracts
-  const { srcClfFee, dstClfFee, srcMessengerGasFee, dstMessengerGasFee } = await getCLFFeesTaken(
-    publicClient,
+  const { srcClfFeeTaken, dstClfFeeTaken, srcMessengerGasFeeTaken, dstMessengerGasFeeTaken } = await getCLFFeesTaken(
+    srcPublicClient,
     srcInfraProxy,
     srcChain.chainSelector,
     dstChainSelector,
     srcTx.blockNumber,
   );
 
+  // Step 5: Get LINKUSD and USDCUSD price feeds by block number
+  const { LINKUSDPrice, USDCUSDPrice } = await fetchPriceFeeds(srcChain, srcPublicClient, srcTx.blockNumber);
+  const convertLinkToUSDC = linkAmount => {
+    const linkInUSD = BigInt(linkAmount) * BigInt(LINKUSDPrice);
+    return linkInUSD / BigInt(USDCUSDPrice);
+  };
+
   displayResults({
-    srcClfFee,
-    dstClfFee,
-    totalCostJuels,
-    dstRequestProcessedArgs,
-    srcMessengerGasFee,
-    dstMessengerGasFee,
-    gasPaid,
+    srcClfFeeTaken,
+    dstClfFeeTaken,
+    srcClfFeePaid: convertLinkToUSDC(srcClfFeePaid),
+    dstClfFeePaid: convertLinkToUSDC(dstRequestProcessedArgs.totalCostJuels),
+    srcMessengerGasFeeTaken,
+    dstMessengerGasFeeTaken,
+    dstGasPaid,
   });
 }
 

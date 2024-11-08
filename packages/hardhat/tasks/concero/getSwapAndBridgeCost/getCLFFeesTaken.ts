@@ -11,7 +11,7 @@ export async function getCLFFeesTaken(
   const clfFeeAbi = parseAbi(["function clfPremiumFees(uint64) external view returns(uint256)"]);
   const gasFeeAbi = parseAbi(["function s_lastGasPrices(uint64) external view returns(uint256)"]);
 
-  const srcClfFee = await publicClient.readContract({
+  const srcClfFeeTaken = await publicClient.readContract({
     address: infraProxyAddress,
     abi: clfFeeAbi,
     functionName: "clfPremiumFees",
@@ -19,7 +19,7 @@ export async function getCLFFeesTaken(
     blockNumber,
   });
 
-  const dstClfFee = await publicClient.readContract({
+  const dstClfFeeTaken = await publicClient.readContract({
     address: infraProxyAddress,
     abi: clfFeeAbi,
     functionName: "clfPremiumFees",
@@ -27,7 +27,7 @@ export async function getCLFFeesTaken(
     blockNumber,
   });
 
-  const srcMessengerGasFee = await publicClient.readContract({
+  const srcMessengerGasFeeTaken = await publicClient.readContract({
     address: infraProxyAddress,
     abi: gasFeeAbi,
     functionName: "s_lastGasPrices",
@@ -35,7 +35,7 @@ export async function getCLFFeesTaken(
     blockNumber,
   });
 
-  const dstMessengerGasFee = await publicClient.readContract({
+  const dstMessengerGasFeeTaken = await publicClient.readContract({
     address: infraProxyAddress,
     abi: gasFeeAbi,
     functionName: "s_lastGasPrices",
@@ -44,9 +44,9 @@ export async function getCLFFeesTaken(
   });
 
   return {
-    srcClfFee,
-    dstClfFee,
-    srcMessengerGasFee,
-    dstMessengerGasFee,
+    srcClfFeeTaken,
+    dstClfFeeTaken,
+    srcMessengerGasFeeTaken,
+    dstMessengerGasFeeTaken,
   };
 }

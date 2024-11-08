@@ -1,36 +1,36 @@
 import { formatEther } from "viem";
 
 export function displayResults({
-  srcClfFee,
-  dstClfFee,
-  totalCostJuels,
-  dstRequestProcessedArgs,
-  srcMessengerGasFee,
-  dstMessengerGasFee,
-  gasPaid,
+  srcClfFeeTaken,
+  dstClfFeeTaken,
+  srcClfFeePaid,
+  dstClfFeePaid,
+  srcMessengerGasFeeTaken,
+  dstMessengerGasFeeTaken,
+  dstGasPaid,
 }) {
   const fees = [
     {
       feeType: "clfFee_src",
-      feeTaken: formatEther(srcClfFee),
-      feePaid: formatEther(totalCostJuels),
-      feeDifference: formatEther(BigInt(srcClfFee) - BigInt(totalCostJuels)),
+      feeTaken: formatEther(srcClfFeeTaken),
+      feePaid: formatEther(srcClfFeePaid),
+      feeDifference: formatEther(BigInt(srcClfFeeTaken) - BigInt(srcClfFeePaid)),
     },
     {
       feeType: "clfFee_dst",
-      feeTaken: formatEther(dstClfFee),
-      feePaid: formatEther(dstRequestProcessedArgs.totalCostJuels),
-      feeDifference: formatEther(BigInt(dstClfFee) - BigInt(dstRequestProcessedArgs.totalCostJuels)),
+      feeTaken: formatEther(dstClfFeeTaken),
+      feePaid: formatEther(dstClfFeePaid),
+      feeDifference: formatEther(BigInt(dstClfFeeTaken) - BigInt(dstClfFeePaid)),
     },
     {
       feeType: "messageGas_dst",
-      feeTaken: formatEther(dstMessengerGasFee),
-      feePaid: formatEther(gasPaid),
-      feeDifference: formatEther(BigInt(dstMessengerGasFee) - BigInt(gasPaid)),
+      feeTaken: formatEther(dstMessengerGasFeeTaken),
+      feePaid: formatEther(dstGasPaid),
+      feeDifference: formatEther(BigInt(dstMessengerGasFeeTaken) - BigInt(dstGasPaid)),
     },
     {
       feeType: "messageGas_src",
-      feeTaken: formatEther(srcMessengerGasFee),
+      feeTaken: formatEther(srcMessengerGasFeeTaken),
       feePaid: "N/A",
       feeDifference: "N/A",
     },

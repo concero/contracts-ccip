@@ -13,6 +13,7 @@ import { displayResults } from "./displayResults";
 import { fetchPriceFeeds } from "./fetchPriceFeeds";
 import fs from "fs";
 import { getChainById } from "../../../utils/getChainBySelector";
+import { analyseTxOutputFile } from "./analyseTxOutputFile";
 /*
 Todos:
 1. Find src CLF callback to get CLF LINK final cost on src
@@ -173,10 +174,16 @@ function appendToJSONFile(filePath, entry) {
 task("get-swap-and-bridge-cost")
   .addOptionalParam("srctx", "The source chain transaction hash")
   .addOptionalParam("dsttx", "The destination chain transaction hash")
-  .addParam("txsfilepath", "The path to the file containing the transaction hashes")
-  .addParam("outputfilepath", "The path to the output file")
+  .addOptionalParam("txsfilepath", "The path to the file containing the transaction hashes")
+  .addOptionalParam("outputfilepath", "The path to the output file")
+  .addOptionalParam("analysetxoutputfile", "The path to the file containing the processed tx output")
   .setAction(async taskArgs => {
-    const { txsfilepath, outputfilepath } = taskArgs;
+    const { txsfilepath, outputfilepath, analysetxoutputfile } = taskArgs;
+
+    if (analysetxoutputfile) {
+      analyseTxOutputFile(analysetxoutputfile);
+      return;
+    }
     const errorFilePath = outputfilepath.replace(".json", "_errors.json");
 
     const txData = JSON.parse(fs.readFileSync(txsfilepath, "utf-8"));

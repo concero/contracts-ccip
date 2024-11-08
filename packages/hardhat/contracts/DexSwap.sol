@@ -392,6 +392,11 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
         );
     }
 
+    /**
+     * @notice Function to execute swaps on Odos
+     * @param _swapData the encoded swap data
+     * @dev This function accepts Fee on Transfer tokens
+     */
     function _swapOdosV2(IDexSwap.SwapData memory _swapData, address _recipient) private {
         if (_swapData.dexData.length < APPROVED) revert DexSwap_EmptyDexData();
         (

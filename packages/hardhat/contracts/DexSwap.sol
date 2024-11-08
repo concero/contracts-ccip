@@ -117,6 +117,8 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
             _unwrapWNative(_swapData, destinationAddress);
         } else if (dexType == DexType.OdosRouterV2) {
             _swapOdosV2(_swapData, destinationAddress);
+        } else if (dexType == DexType.ParaSwapV6) {
+            _swapParaSwapV6(_swapData, destinationAddress);
         }
     }
 

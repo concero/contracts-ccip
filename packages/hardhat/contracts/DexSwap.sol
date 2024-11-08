@@ -21,6 +21,7 @@ import {LibConcero} from "./Libraries/LibConcero.sol";
 import {ConceroCommon} from "./ConceroCommon.sol";
 import {IPeripheryPayments} from "@uniswap/v3-periphery/contracts/interfaces/IPeripheryPayments.sol";
 import {IWETH} from "./Interfaces/IWETH.sol";
+import {IOdosRouterV2} from "./Interfaces/Odos/IOdosRouterV2.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -389,6 +390,30 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
             _recipient,
             deadline
         );
+    }
+
+    function _swapOdosV2(IDexSwap.SwapData memory _swapData, address _recipient) private {
+        if (_swapData.dexData.length < APPROVED) revert DexSwap_EmptyDexData();
+        (
+            address routerAddress,
+            IOdosRouterV2.swapTokenInfo memory swapTokenInfo,
+            bytes calldata pathDefinition,
+            address executor,
+            uint32 referralCode
+        ) = abi.decode(
+                _swapData.dexData,
+                (address, IOdosRouterV2.swapTokenInfo, bytes, address, uint32)
+            );
+
+        if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
+        if (
+            _swapData.fromToken != swapTokenInfo.inputToken ||
+            _swapData.toToken != swapTokenInfo.outputToken
+        ) revert DexSwap_InvalidPath();
+
+        IERC20(_swapData.fromToken).safeIncreaseAllowance(routerAddress, _swapData.fromAmount);
+
+        IOdosRouterV2(routerAddress).swap(swapTokenInfo, pathDefinition, executor, referralCode);
     }
 
     ///////////////////////

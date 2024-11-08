@@ -1,22 +1,25 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
+import {IDexSwap} from "./IDexSwap.sol";
 import {IInfraStorage} from "./IInfraStorage.sol";
-import "./IDexSwap.sol";
 
 interface IInfraOrchestrator {
-    function swap(IDexSwap.SwapData[] calldata _swapData, address _receiver) external payable;
+    struct Integration {
+        address integrator;
+        uint256 integratorFeePercent;
+    }
 
-    function bridge(
-        IInfraStorage.BridgeData memory bridgeData,
-        IDexSwap.SwapData[] memory dstSwapData
-    ) external payable;
-
-    function swapAndBridge(
-        IInfraStorage.BridgeData memory bridgeData,
-        IDexSwap.SwapData[] calldata srcSwapData,
-        IDexSwap.SwapData[] memory dstSwapData
-    ) external payable;
+    event IntegratorFeesWithdrawn(
+        address indexed integrator,
+        address token,
+        uint256 amountWithdrawn
+    );
+    event IntegratorFeesCollected(
+        address indexed integrator,
+        address token,
+        uint256 amountCollected
+    );
 
     function getTransaction(
         bytes32 _conceroBridgeTxId

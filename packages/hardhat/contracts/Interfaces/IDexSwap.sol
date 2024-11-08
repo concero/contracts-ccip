@@ -14,7 +14,8 @@ interface IDexSwap {
         AerodromeFoT,
         UniswapV2Ether,
         WrapNative,
-        UnwrapWNative
+        UnwrapWNative,
+        OdosRouterV2
     }
 
     ///@notice Concero Struct to track DEX Data

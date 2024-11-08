@@ -10,3 +10,13 @@ export function getChainBySelector(selector: string): CNetwork {
 
   throw new Error(`Chain with selector ${selector} not found`);
 }
+
+export function getChainById(chainId: number): CNetwork {
+  for (const chain in cNetworks) {
+    if (cNetworks[chain].chainId === chainId) {
+      return cNetworks[chain];
+    }
+  }
+
+  throw new Error(`Chain with id ${chainId} not found`);
+}

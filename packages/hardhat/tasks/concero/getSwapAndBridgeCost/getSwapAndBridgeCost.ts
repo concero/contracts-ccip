@@ -1,8 +1,6 @@
 import { task } from "hardhat/config";
-import { decodeEventLog, encodeEventTopics, getAbiItem, Hash } from "viem";
-import { cNetworks } from "../../../constants";
+import { decodeEventLog, encodeEventTopics, formatEther, getAbiItem, Hash } from "viem";
 import { CNetwork } from "../../../types/CNetwork";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getChainBySelector, getEnvAddress, getFallbackClients } from "../../../utils";
 import { findEventLog } from "./findCLFRequestProcessedLog";
 import functionsRouterAbi from "@chainlink/contracts/abi/v0.8/FunctionsRouter.json";
@@ -13,6 +11,8 @@ import { DecodeEventLogReturnType } from "viem/utils/abi/decodeEventLog";
 import { getCLFFeesTaken } from "./getCLFFeesTaken";
 import { displayResults } from "./displayResults";
 import { fetchPriceFeeds } from "./fetchPriceFeeds";
+import fs from "fs";
+import { getChainById } from "../../../utils/getChainBySelector";
 /*
 Todos:
 1. Find src CLF callback to get CLF LINK final cost on src
@@ -27,9 +27,10 @@ const unconfirmedTXAddedEventAbi = getAbiItem({ abi: conceroBridgeAbi, name: "Un
 
 export async function getSwapAndBridgeCost(srctx: Hash, dsttx: Hash, srcChain: CNetwork) {
   const { publicClient: srcPublicClient } = getFallbackClients(srcChain);
-  const srcTx = await srcPublicClient.getTransaction({ hash: srctx });
-  const srcTxReceipt = await srcPublicClient.getTransactionReceipt({ hash: srctx });
-
+  const [srcTx, srcTxReceipt] = await Promise.all([
+    srcPublicClient.getTransaction({ hash: srctx }),
+    srcPublicClient.getTransactionReceipt({ hash: srctx }),
+  ]);
   // STEP 1: Get the total cost of the SRC CLF Callback in LINK
   const oracleRequestEvent = await getDecodedEventByTxReceipt(srcTxReceipt, [oracleRequestEventABI], "OracleRequest");
 
@@ -102,12 +103,14 @@ export async function getSwapAndBridgeCost(srctx: Hash, dsttx: Hash, srcChain: C
     } catch (err) {}
   }
 
-  const dstUnconfirmedTx = await dstPublicClient.getTransaction({
-    hash: dstUnconfirmedTXLog.transactionHash,
-  });
-  const dstUnconfirmedTxReceipt = await dstPublicClient.getTransactionReceipt({
-    hash: dstUnconfirmedTXLog.transactionHash,
-  });
+  const [dstUnconfirmedTx, dstUnconfirmedTxReceipt] = await Promise.all([
+    dstPublicClient.getTransaction({
+      hash: dstUnconfirmedTXLog.transactionHash,
+    }),
+    dstPublicClient.getTransactionReceipt({
+      hash: dstUnconfirmedTXLog.transactionHash,
+    }),
+  ]);
   const dstGasPaid = dstUnconfirmedTx.gasPrice * dstUnconfirmedTxReceipt.gasUsed;
 
   // Step 4: get CLFFees in contracts
@@ -126,23 +129,90 @@ export async function getSwapAndBridgeCost(srctx: Hash, dsttx: Hash, srcChain: C
     return linkInUSD / BigInt(USDCUSDPrice);
   };
 
+  const srcClfFeePaidUSDC = convertLinkToUSDC(srcClfFeePaid);
+  const dstClfFeePaidUSDC = convertLinkToUSDC(dstRequestProcessedArgs.totalCostJuels);
+  const srcClfFeeDifference = BigInt(srcClfFeeTaken) - BigInt(srcClfFeePaidUSDC);
+  const dstClfFeeDifference = BigInt(dstClfFeeTaken) - BigInt(dstClfFeePaidUSDC);
+  const totalClfFeeDifference = srcClfFeeDifference + dstClfFeeDifference;
+
+  const totalFeeDifference = totalClfFeeDifference; // adding msgr gas paid later
   displayResults({
     srcClfFeeTaken,
     dstClfFeeTaken,
-    srcClfFeePaid: convertLinkToUSDC(srcClfFeePaid),
-    dstClfFeePaid: convertLinkToUSDC(dstRequestProcessedArgs.totalCostJuels),
+    srcClfFeePaid: srcClfFeePaidUSDC,
+    dstClfFeePaid: dstClfFeePaidUSDC,
     srcMessengerGasFeeTaken,
     dstMessengerGasFeeTaken,
     dstGasPaid,
   });
+  console.log(`Total CLF Fee Difference: ${formatEther(totalFeeDifference)}`);
+
+  return {
+    srcClfFeeTaken,
+    dstClfFeeTaken,
+    srcClfFeePaid: srcClfFeePaidUSDC,
+    dstClfFeePaid: dstClfFeePaidUSDC,
+    srcMessengerGasFeeTaken,
+    dstMessengerGasFeeTaken,
+    dstGasPaid,
+    totalFeeDifference,
+  };
+}
+
+function appendToJSONFile(filePath, entry) {
+  const fileData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  fileData.push(entry);
+
+  fs.writeFileSync(
+    filePath,
+    JSON.stringify(fileData, (key, value) => (typeof value === "bigint" ? value.toString() : value), 2),
+    "utf-8",
+  );
 }
 
 task("get-swap-and-bridge-cost")
-  .addParam("srctx", "The source chain transaction hash")
-  .addParam("dsttx", "The destination chain transaction hash")
+  .addOptionalParam("srctx", "The source chain transaction hash")
+  .addOptionalParam("dsttx", "The destination chain transaction hash")
+  .addParam("txsfilepath", "The path to the file containing the transaction hashes")
+  .addParam("outputfilepath", "The path to the output file")
   .setAction(async taskArgs => {
-    const hre: HardhatRuntimeEnvironment = require("hardhat");
-    const { srctx, dsttx } = taskArgs;
-    const srcChain = cNetworks[hre.network.name];
-    await getSwapAndBridgeCost(srctx, dsttx, srcChain);
+    const { txsfilepath, outputfilepath } = taskArgs;
+    const errorFilePath = outputfilepath.replace(".json", "_errors.json");
+
+    const txData = JSON.parse(fs.readFileSync(txsfilepath, "utf-8"));
+    if (!fs.existsSync(outputfilepath)) {
+      fs.writeFileSync(outputfilepath, JSON.stringify([]), "utf-8");
+    }
+    if (!fs.existsSync(errorFilePath)) {
+      fs.writeFileSync(errorFilePath, JSON.stringify([]), "utf-8");
+    }
+    const outputData = [];
+
+    for (const entity of txData) {
+      const srcTxHash = entity.from?.txHash;
+      const dstTxHash = entity.to?.txHash;
+      const srcChain = getChainById(entity.from?.chainId);
+
+      if (srcTxHash && dstTxHash && srcChain) {
+        try {
+          console.log(`Processing srcTxHash: ${srcTxHash}, dstTxHash: ${dstTxHash}`);
+          const result = await getSwapAndBridgeCost(srcTxHash, dstTxHash, srcChain);
+          const successEntry = {
+            srcTxHash,
+            dstTxHash,
+            srcChainName: srcChain.name,
+            ...result,
+          };
+          appendToJSONFile(outputfilepath, successEntry);
+        } catch (err) {
+          console.error(`Error processing tx ${srcTxHash} -> ${dstTxHash}:`, err);
+          const errorEntry = {
+            srcTxHash,
+            dstTxHash,
+            error: err.message || "Unknown error",
+          };
+          appendToJSONFile(errorFilePath, errorEntry); // Log error to separate file
+        }
+      }
+    }
   });

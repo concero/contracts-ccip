@@ -10,21 +10,22 @@ export async function fetchPriceFeeds(chain: CNetwork, publicClient: PublicClien
     USDCUSD: getEnvVar(`USDC_USD_PRICEFEED_${networkEnvKeys[chain.name]}`),
   };
 
-  const LINKUSDPrice = await publicClient.readContract({
-    address: priceFeeds.LINKUSD,
-    abi: priceFeedAbi,
-    functionName: "latestAnswer",
-    args: [],
-    ...(blockNumber && { blockNumber }),
-  });
-
-  const USDCUSDPrice = await publicClient.readContract({
-    address: priceFeeds.USDCUSD,
-    abi: priceFeedAbi,
-    functionName: "latestAnswer",
-    args: [],
-    ...(blockNumber && { blockNumber }),
-  });
+  const [LINKUSDPrice, USDCUSDPrice] = await Promise.all([
+    publicClient.readContract({
+      address: priceFeeds.LINKUSD,
+      abi: priceFeedAbi,
+      functionName: "latestAnswer",
+      args: [],
+      ...(blockNumber && { blockNumber }),
+    }),
+    publicClient.readContract({
+      address: priceFeeds.USDCUSD,
+      abi: priceFeedAbi,
+      functionName: "latestAnswer",
+      args: [],
+      ...(blockNumber && { blockNumber }),
+    }),
+  ]);
 
   return {
     LINKUSDPrice,

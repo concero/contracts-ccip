@@ -22,6 +22,7 @@ import {ConceroCommon} from "./ConceroCommon.sol";
 import {IPeripheryPayments} from "@uniswap/v3-periphery/contracts/interfaces/IPeripheryPayments.sol";
 import {IWETH} from "./Interfaces/IWETH.sol";
 import {IOdosRouterV2} from "./Interfaces/Odos/IOdosRouterV2.sol";
+import {IParaSwapV6Router} from "./Interfaces/ParaSwap/IParaSwapV6Router.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
@@ -421,6 +422,35 @@ contract DexSwap is IDexSwap, ConceroCommon, Storage {
         IERC20(_swapData.fromToken).safeIncreaseAllowance(routerAddress, _swapData.fromAmount);
 
         IOdosRouterV2(routerAddress).swap(swapTokenInfo, pathDefinition, executor, referralCode);
+    }
+
+    /**
+     * @notice Function to execute swaps on ParaSwap
+     * @param _swapData the encoded swap data
+     * @dev This function accepts Fee on Transfer tokens
+     */
+    function _swapParaSwapV6(IDexSwap.SwapData memory _swapData, address _recipient) private {
+        if (_swapData.dexData.length < APPROVED) revert DexSwap_EmptyDexData();
+        (
+            address routerAddress,
+            IParaSwapV6Router.GenericData memory swapData,
+            uint256 partnerAndFee,
+            bytes calldata permit,
+            bytes calldata executorData
+        ) = abi.decode(
+                _swapData.dexData,
+                (address, IParaSwapV6Router.GenericData, uint256, bytes, bytes)
+            );
+
+        if (s_routerAllowed[routerAddress] != APPROVED) revert DexSwap_RouterNotAllowed();
+        if (
+            _swapData.fromToken != address(swapData.srcToken) ||
+            _swapData.toToken != address(swapData.destToken)
+        ) revert DexSwap_InvalidPath();
+
+        IERC20(_swapData.fromToken).safeIncreaseAllowance(routerAddress, _swapData.fromAmount);
+
+        IParaSwapV6Router(routerAddress).swap(swapData, partnerAndFee, permit, executorData);
     }
 
     ///////////////////////

@@ -15,7 +15,8 @@ interface IDexSwap {
         UniswapV2Ether,
         WrapNative,
         UnwrapWNative,
-        OdosRouterV2
+        OdosRouterV2,
+        ParaSwapV6
     }
 
     ///@notice Concero Struct to track DEX Data

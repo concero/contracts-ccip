@@ -23,6 +23,7 @@ contract IsMessengerTest is BaseTest {
             address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
             address(vm.envAddress("USDC_BASE")),
             address(lpToken),
+            vm.envAddress("CONCERO_AUTOMATION_BASE"),
             address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
             address(vm.envAddress("CLF_ROUTER_BASE")),
             address(deployer),

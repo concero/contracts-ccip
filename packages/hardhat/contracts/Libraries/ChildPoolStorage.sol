@@ -24,6 +24,6 @@ contract ChildPoolStorage {
 
     mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;
 
-    //@notice Prevents CLF from triggerring the same withdrawal request more than once
+    //@notice Prevents CLF from triggering the same withdrawal request more than once
     mapping(bytes32 => bool) public s_withdrawRequests;
 }

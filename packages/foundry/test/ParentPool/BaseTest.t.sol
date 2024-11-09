@@ -2,8 +2,6 @@
 pragma solidity 0.8.20;
 
 import {Test, console, Vm} from "forge-std/Test.sol";
-import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
-import {ParentPoolProxyDeploy} from "../../../script/ParentPoolProxyDeploy.s.sol";
 import {ParentPool} from "contracts/ParentPool.sol";
 import {ParentPoolCLFCLA} from "contracts/ParentPoolCLFCLA.sol";
 import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/TransparentUpgradeableProxy.sol";

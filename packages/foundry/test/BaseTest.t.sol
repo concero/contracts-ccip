@@ -2,13 +2,11 @@
 pragma solidity 0.8.20;
 
 import {Test, console, Vm} from "forge-std/Test.sol";
-import {ParentPoolDeploy} from "../../../script/ParentPoolDeploy.s.sol";
-import {ParentPoolProxyDeploy} from "../../../script/ParentPoolProxyDeploy.s.sol";
-import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
-import {ParentPoolProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/ParentPoolProxy.sol";
+import {ParentPool} from "contracts/ParentPool.sol";
+import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/TransparentUpgradeableProxy.sol";
 import {TransparentUpgradeableProxy} from "contracts/transparentProxy/TransparentUpgradeableProxy.sol";
 import {ChildPoolProxy} from "contracts/Proxy/ChildPoolProxy.sol";
-import {ConceroChildPool} from "contracts/ConceroChildPool.sol";
+import {ChildPool} from "contracts/ChildPool.sol";
 import {LPToken} from "contracts/LPToken.sol";
 import {CCIPLocalSimulator} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulator.sol";
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
@@ -27,7 +25,7 @@ contract BaseTest is Test {
     uint256 internal constant CCIP_FEES = 100 * 1e18;
 
     ConceroParentPool public parentPoolImplementation;
-    ParentPoolProxy public parentPoolProxy;
+	TransparentUpgradeableProxy public parentPoolProxy;
     LPToken public lpToken;
     FunctionsSubscriptions public functionsSubscriptions;
     CCIPLocalSimulator public ccipLocalSimulator;

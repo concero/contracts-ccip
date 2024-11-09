@@ -83,6 +83,7 @@ contract BaseTest is Test {
             vm.envAddress("CL_CCIP_ROUTER_BASE"),
             vm.envAddress("USDC_BASE"),
             address(lpToken),
+            vm.envAddress("CONCERO_AUTOMATION_BASE"),
             vm.envAddress("CONCERO_ORCHESTRATOR_BASE"),
             vm.envAddress("CLF_ROUTER_BASE"),
             address(deployer),

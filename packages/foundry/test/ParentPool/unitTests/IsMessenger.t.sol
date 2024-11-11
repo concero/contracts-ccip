@@ -17,23 +17,22 @@ contract IsMessengerTest is BaseTest {
         deployParentPoolProxy();
         parentPoolImplementation = new ParentPoolDepositWrapper(
             address(parentPoolProxy),
-            address(0x0),
-            address(0x0),
+            address(parentPoolCLFCLA),
+            address(0),
             vm.envAddress("LINK_BASE"),
-            address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
-            address(vm.envAddress("USDC_BASE")),
+            vm.envAddress("CL_CCIP_ROUTER_BASE"),
+            vm.envAddress("USDC_BASE"),
             address(lpToken),
-            vm.envAddress("CONCERO_AUTOMATION_BASE"),
-            address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
-            address(vm.envAddress("CLF_ROUTER_BASE")),
+            address(baseOrchestratorProxy),
+            vm.envAddress("CLF_ROUTER_BASE"),
             address(deployer),
-            [messenger1, address(0), address(0)]
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
 
-        _setProxyImplementation(address(parentPoolImplementation));
+        _setProxyImplementation(address(parentPoolProxy), address(parentPoolImplementation));
         setParentPoolVars();
         deployLpToken();
-        addFunctionsConsumer();
+        addFunctionsConsumer(address(parentPoolProxy));
     }
 
     function test_isMessenger_Success() public {

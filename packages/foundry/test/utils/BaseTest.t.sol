@@ -97,7 +97,7 @@ contract BaseTest is Test {
             optimismChainSelector,
             address(parentPoolProxy)
         );
-        setParentPoolVars(arbitrumChainSelector, arbitrumChildProxy);
+        //        setParentPoolVars(arbitrumChainSelector, arbitrumChildProxy);
 
         _deployCcipLocalSimulation();
         addFunctionsConsumer(address(parentPoolProxy));
@@ -197,9 +197,9 @@ contract BaseTest is Test {
     }
 
     /// @notice might need to update this to pass _parentPoolImplementation like above
-    function setParentPoolVars(uint64 _chainSelector, address _childProxy) public {
+    function setParentPoolVars() public {
         vm.prank(deployer);
-        IParentPool(address(parentPoolProxy)).setPools(_chainSelector, _childProxy, false);
+        //        IParentPool(address(parentPoolProxy)).setPools(_chainSelector, _childProxy, false);
 
         vm.prank(deployer);
         // should probably update this from user1

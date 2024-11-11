@@ -51,9 +51,7 @@ contract ParentPoolDepositWrapper is ParentPool {
         return s_depositRequests[requestId];
     }
 
-    function getRequestType(
-        bytes32 requestId
-    ) external view returns (ParentPool.FunctionsRequestType) {
+    function getRequestType(bytes32 requestId) external view returns (ParentPool.CLFRequestType) {
         return s_clfRequestTypes[requestId];
     }
 

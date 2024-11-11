@@ -49,9 +49,9 @@ contract Deposit is BaseTest {
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
 
-        _setProxyImplementation(address(parentPoolImplementation));
+        _setProxyImplementation(address(parentPoolProxy), address(parentPoolImplementation));
         setParentPoolVars();
-        addFunctionsConsumer();
+        addFunctionsConsumer(address(parentPoolProxy));
     }
 
     /*//////////////////////////////////////////////////////////////

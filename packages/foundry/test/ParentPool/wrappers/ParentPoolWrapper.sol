@@ -69,6 +69,10 @@ contract ParentPoolWrapper is ParentPool {
         return s_depositsOnTheWayAmount;
     }
 
+    function addDepositOnTheWay(bytes32 requestId, uint64 childPoolIndex, uint256 amount) external {
+        _addDepositOnTheWay(requestId, childPoolIndex, amount);
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 WITHDRAW
     //////////////////////////////////////////////////////////////*/

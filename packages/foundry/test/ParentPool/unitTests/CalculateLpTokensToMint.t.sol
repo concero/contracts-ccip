@@ -24,22 +24,21 @@ contract CalculateLpTokensToMintTest is BaseTest {
 
         parentPoolImplementation = new ParentPoolWrapper(
             address(parentPoolProxy),
+            address(parentPoolCLFCLA),
+            address(0),
             vm.envAddress("LINK_BASE"),
-            vm.envBytes32("CLF_DONID_BASE"),
-            uint64(vm.envUint("CLF_SUBID_BASE")),
-            address(vm.envAddress("CLF_ROUTER_BASE")),
-            address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
-            address(vm.envAddress("USDC_BASE")),
+            vm.envAddress("CL_CCIP_ROUTER_BASE"),
+            vm.envAddress("USDC_BASE"),
             address(lpToken),
-            vm.envAddress("CONCERO_AUTOMATION_BASE"),
-            address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
+            address(baseOrchestratorProxy),
+            vm.envAddress("CLF_ROUTER_BASE"),
             address(deployer),
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
 
-        _setProxyImplementation(address(parentPoolImplementation));
+        _setProxyImplementation(address(parentPoolProxy), address(parentPoolImplementation));
         setParentPoolVars();
-        addFunctionsConsumer();
+        addFunctionsConsumer(address(parentPoolProxy));
     }
 
     /*/////////////////////////////////////////////////////////////
@@ -52,7 +51,7 @@ contract CalculateLpTokensToMintTest is BaseTest {
         uint256 amountToDepositUSDC = 200_000_000;
         uint256 expectedLpAmountToMint = 200 ether;
 
-        uint256 lpAmountToMint = ParentPool(payable(parentPoolProxy)).calculateLpAmount(
+        uint256 lpAmountToMint = ParentPool(payable(parentPoolProxy)).calculateLPTokensToMint(
             childPoolBalanceUSDC,
             amountToDepositUSDC
         );
@@ -74,7 +73,7 @@ contract CalculateLpTokensToMintTest is BaseTest {
             prevDepositAmountUSDC
         );
 
-        uint256 lpAmountToMint = ParentPool(payable(parentPoolProxy)).calculateLpAmount(
+        uint256 lpAmountToMint = ParentPool(payable(parentPoolProxy)).calculateLPTokensToMint(
             childPoolsBalanceUSDC,
             amountToDepositUSDC
         );
@@ -97,7 +96,7 @@ contract CalculateLpTokensToMintTest is BaseTest {
             0
         );
 
-        uint256 lpAmountToMint = ParentPool(payable(parentPoolProxy)).calculateLpAmount(
+        uint256 lpAmountToMint = ParentPool(payable(parentPoolProxy)).calculateLPTokensToMint(
             childPoolsBalanceUSDC,
             amountToDepositUSDC
         );

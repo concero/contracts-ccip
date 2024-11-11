@@ -3,9 +3,8 @@ pragma solidity 0.8.20;
 
 import {Test, console, Vm} from "forge-std/Test.sol";
 import {ParentPool} from "contracts/ParentPool.sol";
+import {ParentPoolCLFCLA} from "contracts/ParentPoolCLFCLA.sol";
 import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/TransparentUpgradeableProxy.sol";
-import {TransparentUpgradeableProxy} from "contracts/transparentProxy/TransparentUpgradeableProxy.sol";
-import {ChildPoolProxy} from "contracts/Proxy/ChildPoolProxy.sol";
 import {ChildPool} from "contracts/ChildPool.sol";
 import {LPToken} from "contracts/LPToken.sol";
 import {CCIPLocalSimulator} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulator.sol";
@@ -15,17 +14,19 @@ import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interface
 import {CCIPLocalSimulatorFork} from "../../../lib/chainlink-local/src/ccip/CCIPLocalSimulatorFork.sol";
 import {Register} from "../../../lib/chainlink-local/src/ccip/Register.sol";
 import {ConceroBridge} from "contracts/ConceroBridge.sol";
-import {Orchestrator} from "contracts/Orchestrator.sol";
+import {InfraOrchestrator} from "contracts/InfraOrchestrator.sol";
 import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
+import {IOwner} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IOwner.sol";
 
 contract BaseTest is Test {
     /*//////////////////////////////////////////////////////////////
                                VARIABLES
     //////////////////////////////////////////////////////////////*/
-    uint256 internal constant CCIP_FEES = 100 * 1e18;
+    uint256 internal constant LINK_INIT_BALANCE = 100 * 1e18;
 
-    ConceroParentPool public parentPoolImplementation;
-	TransparentUpgradeableProxy public parentPoolProxy;
+    ParentPoolCLFCLA public parentPoolCLFCLA;
+    ParentPool public parentPoolImplementation;
+    TransparentUpgradeableProxy public parentPoolProxy;
     LPToken public lpToken;
     FunctionsSubscriptions public functionsSubscriptions;
     CCIPLocalSimulator public ccipLocalSimulator;
@@ -54,7 +55,7 @@ contract BaseTest is Test {
     ConceroBridge internal avalancheBridgeImplementation;
 
     TransparentUpgradeableProxy internal baseOrchestratorProxy;
-    Orchestrator internal baseOrchestratorImplementation;
+    InfraOrchestrator internal baseOrchestratorImplementation;
     address internal arbitrumOrchestratorProxy = address(1);
     address internal avalancheOrchestratorProxy = address(2);
 
@@ -71,7 +72,10 @@ contract BaseTest is Test {
         deployPoolsInfra();
 
         _deployOrchestratorImplementation();
-        _setProxyImplementation(address(baseOrchestratorProxy), address(baseOrchestratorImplementation));
+        _setProxyImplementation(
+            address(baseOrchestratorProxy),
+            address(baseOrchestratorImplementation)
+        );
 
         /// @dev set destination chain selector and contracts on Base
         _setDstSelectorAndPool(arbitrumChainSelector, arbitrumChildProxy);
@@ -97,7 +101,7 @@ contract BaseTest is Test {
 
         _deployCcipLocalSimulation();
         addFunctionsConsumer(address(parentPoolProxy));
-        _fundLinkParentProxy(CCIP_FEES);
+        _fundLinkParentProxy(LINK_INIT_BALANCE);
     }
 
     function deployBridgesInfra() public {
@@ -115,25 +119,38 @@ contract BaseTest is Test {
     //////////////////////////////////////////////////////////////*/
     function deployParentPoolProxy() public {
         vm.prank(proxyDeployer);
-        parentPoolProxy = new ParentPoolProxy(vm.envAddress("CONCERO_PAUSE_BASE"), proxyDeployer, bytes(""));
+        parentPoolProxy = new TransparentUpgradeableProxy(
+            vm.envAddress("CONCERO_PAUSE_BASE"),
+            proxyDeployer,
+            bytes("")
+        );
     }
 
     function _deployParentPool() private {
-        // Deploy the default ConceroParentPool if no custom address is provided
+        // Deploy the default ParentPool if no custom address is provided
         vm.prank(deployer);
-        parentPoolImplementation = new ConceroParentPool(
+
+        parentPoolCLFCLA = new ParentPoolCLFCLA(
             address(parentPoolProxy),
-            vm.envAddress("LINK_BASE"),
-            vm.envBytes32("CLF_DONID_BASE"),
-            uint64(vm.envUint("CLF_SUBID_BASE")),
+            address(lpToken),
+            vm.envAddress("USDC_BASE"),
             vm.envAddress("CLF_ROUTER_BASE"),
+            uint64(vm.envUint("CLF_SUBID_BASE")),
+            vm.envBytes32("CLF_DONID_BASE"),
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
+        );
+
+        parentPoolImplementation = new ParentPool(
+            address(parentPoolProxy),
+            address(parentPoolCLFCLA),
+            address(0),
+            vm.envAddress("LINK_BASE"),
             vm.envAddress("CL_CCIP_ROUTER_BASE"),
             vm.envAddress("USDC_BASE"),
             address(lpToken),
-            address(baseOrchestratorProxy), // vm.envAddress("CONCERO_ORCHESTRATOR_BASE")
-            vm.envAddress("CONCERO_AUTOMATION_BASE"), // not in cla-parent merge
+            address(baseOrchestratorProxy),
+            vm.envAddress("CLF_ROUTER_BASE"),
             address(deployer),
-            // 0, // slotId
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
     }
@@ -155,7 +172,10 @@ contract BaseTest is Test {
             linkAddress: vm.envAddress("LINK_BASE"),
             wrappedNativeAddress: 0x4200000000000000000000000000000000000006,
             ccipBnMAddress: address(0),
-            ccipLnMAddress: address(0)
+            ccipLnMAddress: address(0),
+            rmnProxyAddress: address(0),
+            registryModuleOwnerCustomAddress: address(0),
+            tokenAdminRegistryAddress: address(0)
         });
 
         ccipLocalSimulatorFork.setNetworkDetails(BASE_CHAIN_ID, baseDetails);
@@ -164,7 +184,8 @@ contract BaseTest is Test {
     function _deployCcipLocalSimulation() private {
         ccipLocalSimulator = new CCIPLocalSimulator();
         ccipLocalSimulator.configuration();
-        ccipLocalSimulator.supportNewToken(vm.envAddress("USDC_BASE"));
+        vm.prank(IOwner(vm.envAddress("USDC_BASE")).owner());
+        ccipLocalSimulator.supportNewTokenViaOwner(vm.envAddress("USDC_BASE"));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -183,13 +204,15 @@ contract BaseTest is Test {
         vm.prank(deployer);
         // should probably update this from user1
         IParentPool(address(parentPoolProxy)).setConceroContractSender(
-            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")), address(user1), 1
+            uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
+            address(user1),
+            true
         );
     }
 
     function _setDstSelectorAndPool(uint64 _chainSelector, address _poolProxy) internal {
         vm.prank(deployer);
-        (bool success,) = address(baseOrchestratorProxy).call(
+        (bool success, ) = address(baseOrchestratorProxy).call(
             abi.encodeWithSignature("setDstConceroPool(uint64,address)", _chainSelector, _poolProxy)
         );
         require(success, "setDstConceroPool call failed");
@@ -197,8 +220,12 @@ contract BaseTest is Test {
 
     function _setDstSelectorAndBridge(uint64 _chainSelector, address _bridgeProxy) internal {
         vm.prank(deployer);
-        (bool success,) = address(baseOrchestratorProxy).call(
-            abi.encodeWithSignature("setConceroContract(uint64,address)", _chainSelector, _bridgeProxy)
+        (bool success, ) = address(baseOrchestratorProxy).call(
+            abi.encodeWithSignature(
+                "setConceroContract(uint64,address)",
+                _chainSelector,
+                _bridgeProxy
+            )
         );
         require(success, "setConceroContract call failed");
     }
@@ -208,7 +235,9 @@ contract BaseTest is Test {
     //////////////////////////////////////////////////////////////*/
     function addFunctionsConsumer(address _consumer) public {
         vm.prank(vm.envAddress("DEPLOYER_ADDRESS"));
-        functionsSubscriptions = FunctionsSubscriptions(address(0xf9B8fc078197181C841c296C876945aaa425B278));
+        functionsSubscriptions = FunctionsSubscriptions(
+            address(0xf9B8fc078197181C841c296C876945aaa425B278)
+        );
         functionsSubscriptions.addConsumer(uint64(vm.envUint("CLF_SUBID_BASE")), _consumer);
     }
 
@@ -244,16 +273,26 @@ contract BaseTest is Test {
         address[3] memory _messengers
     ) internal returns (address) {
         vm.prank(deployer);
-        ConceroChildPool childPool =
-            new ConceroChildPool(_infraProxy, _proxy, _link, _ccipRouter, _usdc, deployer, _messengers);
+        ChildPool childPool = new ChildPool(
+            _infraProxy,
+            _proxy,
+            _link,
+            _ccipRouter,
+            _usdc,
+            deployer,
+            _messengers
+        );
 
         return address(childPool);
     }
 
     function _deployChildPoolProxy() internal returns (address) {
         vm.prank(proxyDeployer);
-        ChildPoolProxy childPoolProxy =
-            new ChildPoolProxy(vm.envAddress("CONCERO_PAUSE_BASE"), proxyDeployer, bytes(""));
+        TransparentUpgradeableProxy childPoolProxy = new TransparentUpgradeableProxy(
+            vm.envAddress("CONCERO_PAUSE_BASE"),
+            proxyDeployer,
+            bytes("")
+        );
         return address(childPoolProxy);
     }
 
@@ -266,18 +305,33 @@ contract BaseTest is Test {
         address _parentProxy
     ) internal returns (address, address) {
         address childProxy = _deployChildPoolProxy();
-        address[3] memory messengers = [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)];
+        address[3] memory messengers = [
+            vm.envAddress("POOL_MESSENGER_0_ADDRESS"),
+            address(0),
+            address(0)
+        ];
 
-        address childImplementation =
-            _deployChildPoolImplementation(_infraProxy, childProxy, _link, _ccipRouter, _usdc, deployer, messengers);
+        address childImplementation = _deployChildPoolImplementation(
+            _infraProxy,
+            childProxy,
+            _link,
+            _ccipRouter,
+            _usdc,
+            deployer,
+            messengers
+        );
 
         vm.prank(proxyDeployer);
         ITransparentUpgradeableProxy(childProxy).upgradeToAndCall(childImplementation, bytes(""));
 
         /// set the parentPool in childProxy.setPools();
         vm.prank(deployer);
-        (bool success,) = address(arbitrumChildProxy).call(
-            abi.encodeWithSignature("setPools(uint64,address)", _parentPoolChainSelector, _parentProxy)
+        (bool success, ) = address(arbitrumChildProxy).call(
+            abi.encodeWithSignature(
+                "setPools(uint64,address)",
+                _parentPoolChainSelector,
+                _parentProxy
+            )
         );
         require(success, "childProxy.setPools with parentPool failed");
 
@@ -299,17 +353,27 @@ contract BaseTest is Test {
         address[3] memory _messengers
     ) internal returns (ConceroBridge) {
         vm.prank(deployer);
-        return new ConceroBridge(
-            _variables, _chainSelector, _chainIndex, _link, _ccipRouter, _dexSwap, _pool, _proxy, _messengers
-        );
+        return
+            new ConceroBridge(
+                _variables,
+                _chainSelector,
+                _chainIndex,
+                _link,
+                _ccipRouter,
+                _dexSwap,
+                _pool,
+                _proxy,
+                _messengers
+            );
     }
 
     function _deployBaseBridgeImplementation() internal {
-        IInfraStorage.FunctionsVariables memory functionsVariables = IInfraStorage.FunctionsVariables({
-            subscriptionId: uint64(vm.envUint("CLF_SUBID_BASE")),
-            donId: vm.envBytes32("CLF_DONID_BASE"),
-            functionsRouter: vm.envAddress("CLF_ROUTER_BASE")
-        });
+        IInfraStorage.FunctionsVariables memory functionsVariables = IInfraStorage
+            .FunctionsVariables({
+                subscriptionId: uint64(vm.envUint("CLF_SUBID_BASE")),
+                donId: vm.envBytes32("CLF_DONID_BASE"),
+                functionsRouter: vm.envAddress("CLF_ROUTER_BASE")
+            });
         uint64 chainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_BASE"));
         uint256 chainIndex = 1; // IInfraStorage.Chain.base
         address link = vm.envAddress("LINK_BASE");
@@ -317,19 +381,32 @@ contract BaseTest is Test {
         address dexswap = vm.envAddress("CONCERO_DEX_SWAP_BASE");
         address pool = address(parentPoolProxy);
         address proxy = address(baseOrchestratorProxy);
-        address[3] memory messengers = [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)];
+        address[3] memory messengers = [
+            vm.envAddress("POOL_MESSENGER_0_ADDRESS"),
+            address(0),
+            address(0)
+        ];
 
         baseBridgeImplementation = _deployBridge(
-            functionsVariables, chainSelector, chainIndex, link, ccipRouter, dexswap, pool, proxy, messengers
+            functionsVariables,
+            chainSelector,
+            chainIndex,
+            link,
+            ccipRouter,
+            dexswap,
+            pool,
+            proxy,
+            messengers
         );
     }
 
     function _deployArbitrumBridgeImplementation() internal {
-        IInfraStorage.FunctionsVariables memory functionsVariables = IInfraStorage.FunctionsVariables({
-            subscriptionId: uint64(vm.envUint("CLF_SUBID_ARBITRUM")),
-            donId: vm.envBytes32("CLF_DONID_ARBITRUM"),
-            functionsRouter: vm.envAddress("CLF_ROUTER_ARBITRUM")
-        });
+        IInfraStorage.FunctionsVariables memory functionsVariables = IInfraStorage
+            .FunctionsVariables({
+                subscriptionId: uint64(vm.envUint("CLF_SUBID_ARBITRUM")),
+                donId: vm.envBytes32("CLF_DONID_ARBITRUM"),
+                functionsRouter: vm.envAddress("CLF_ROUTER_ARBITRUM")
+            });
         uint64 chainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM"));
         uint256 chainIndex = 0; // IInfraStorage.Chain.arb
         address link = vm.envAddress("LINK_ARBITRUM");
@@ -337,19 +414,32 @@ contract BaseTest is Test {
         address dexswap = vm.envAddress("CONCERO_DEX_SWAP_ARBITRUM");
         address pool = address(parentPoolProxy);
         address proxy = address(0); // arbitrumOrchestratorProxy
-        address[3] memory messengers = [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)];
+        address[3] memory messengers = [
+            vm.envAddress("POOL_MESSENGER_0_ADDRESS"),
+            address(0),
+            address(0)
+        ];
 
         arbitrumBridgeImplementation = _deployBridge(
-            functionsVariables, chainSelector, chainIndex, link, ccipRouter, dexswap, pool, proxy, messengers
+            functionsVariables,
+            chainSelector,
+            chainIndex,
+            link,
+            ccipRouter,
+            dexswap,
+            pool,
+            proxy,
+            messengers
         );
     }
 
     function _deployAvalancheBridgeImplementation() internal {
-        IInfraStorage.FunctionsVariables memory functionsVariables = IInfraStorage.FunctionsVariables({
-            subscriptionId: uint64(vm.envUint("CLF_SUBID_AVALANCHE")),
-            donId: vm.envBytes32("CLF_DONID_AVALANCHE"),
-            functionsRouter: vm.envAddress("CLF_ROUTER_AVALANCHE")
-        });
+        IInfraStorage.FunctionsVariables memory functionsVariables = IInfraStorage
+            .FunctionsVariables({
+                subscriptionId: uint64(vm.envUint("CLF_SUBID_AVALANCHE")),
+                donId: vm.envBytes32("CLF_DONID_AVALANCHE"),
+                functionsRouter: vm.envAddress("CLF_ROUTER_AVALANCHE")
+            });
         uint64 chainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_AVALANCHE"));
         uint256 chainIndex = 4; // IInfraStorage.Chain.avax
         address link = vm.envAddress("LINK_AVALANCHE");
@@ -357,10 +447,22 @@ contract BaseTest is Test {
         address dexswap = vm.envAddress("CONCERO_DEX_SWAP_AVALANCHE");
         address pool = address(parentPoolProxy);
         address proxy = address(0); // arbitrumOrchestratorProxy
-        address[3] memory messengers = [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)];
+        address[3] memory messengers = [
+            vm.envAddress("POOL_MESSENGER_0_ADDRESS"),
+            address(0),
+            address(0)
+        ];
 
         avalancheBridgeImplementation = _deployBridge(
-            functionsVariables, chainSelector, chainIndex, link, ccipRouter, dexswap, pool, proxy, messengers
+            functionsVariables,
+            chainSelector,
+            chainIndex,
+            link,
+            ccipRouter,
+            dexswap,
+            pool,
+            proxy,
+            messengers
         );
     }
 
@@ -369,13 +471,16 @@ contract BaseTest is Test {
     //////////////////////////////////////////////////////////////*/
     function _deployOrchestratorProxy() internal {
         vm.prank(proxyDeployer);
-        baseOrchestratorProxy =
-            new TransparentUpgradeableProxy(vm.envAddress("CONCERO_PAUSE_BASE"), proxyDeployer, bytes(""));
+        baseOrchestratorProxy = new TransparentUpgradeableProxy(
+            vm.envAddress("CONCERO_PAUSE_BASE"),
+            proxyDeployer,
+            bytes("")
+        );
     }
 
     function _deployOrchestratorImplementation() internal {
         vm.prank(deployer);
-        baseOrchestratorImplementation = new Orchestrator(
+        baseOrchestratorImplementation = new InfraOrchestrator(
             vm.envAddress("CLF_ROUTER_BASE"),
             vm.envAddress("CONCERO_DEX_SWAP_BASE"),
             address(baseBridgeImplementation),
@@ -384,5 +489,17 @@ contract BaseTest is Test {
             1, // IInfraStorage.Chain.base
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
+    }
+
+    /*//////////////////////////////////////////////////////////////
+								 UTILS
+	   //////////////////////////////////////////////////////////////*/
+    function mintLpToken(address to, uint256 amount) internal {
+        vm.prank(address(parentPoolProxy));
+        lpToken.mint(to, amount);
+    }
+
+    function mintUSDC(address to, uint256 amount) internal {
+        deal(address(vm.envAddress("USDC_BASE")), to, amount);
     }
 }

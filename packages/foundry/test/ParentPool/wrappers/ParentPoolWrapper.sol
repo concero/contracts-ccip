@@ -9,12 +9,14 @@ interface IParentPoolWrapper is IParentPool {
     function getDepositRequest(
         bytes32 requestId
     ) external view returns (ParentPool.DepositRequest memory);
-    function getRequestType(bytes32 requestId) external view returns (ParentPool.RequestType);
+    function getRequestType(
+        bytes32 requestId
+    ) external view returns (ParentPool.FunctionsRequestType);
     function isMessenger(address _messenger) external view returns (bool);
     function getDepositsOnTheWayAmount() external view returns (uint256);
 }
 
-contract ParentPool_Wrapper is ParentPool {
+contract ParentPoolWrapper is ParentPool {
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -55,7 +57,7 @@ contract ParentPool_Wrapper is ParentPool {
         return s_depositRequests[requestId];
     }
 
-    function getRequestType(bytes32 requestId) external view returns (ParentPool.RequestType) {
+    function getRequestType(bytes32 requestId) external view returns (ParentPool.CLFRequestType) {
         return s_clfRequestTypes[requestId];
     }
 
@@ -73,19 +75,9 @@ contract ParentPool_Wrapper is ParentPool {
     /// @dev getter for returning withdraw request params
     function getWithdrawRequestParams(
         bytes32 _withdrawalRequestId
-    )
-        external
-        view
-        returns (
-            address lpAddress,
-            uint256 lpSupplySnapshot,
-            uint256 lpAmountToBurn,
-            uint256 amountToWithdraw
-        )
-    {
+    ) external view returns (address lpAddress, uint256 lpAmountToBurn, uint256 amountToWithdraw) {
         WithdrawRequest memory request = s_withdrawRequests[_withdrawalRequestId];
         lpAddress = request.lpAddress;
-        lpSupplySnapshot = request.lpSupplySnapshot;
         lpAmountToBurn = request.lpAmountToBurn;
         amountToWithdraw = request.amountToWithdraw;
     }

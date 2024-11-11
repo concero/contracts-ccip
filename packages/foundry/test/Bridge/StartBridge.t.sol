@@ -2,15 +2,15 @@
 
 pragma solidity 0.8.20;
 
-import {BaseTest, console, Vm} from "../BaseTest.t.sol";
+import {BaseTest, console, Vm} from "../utils/BaseTest.t.sol";
 import {ConceroBridge} from "contracts/ConceroBridge.sol";
 import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "contracts/transparentProxy/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/TransparentUpgradeableProxy.sol";
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {Internal} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Internal.sol";
-import {OrchestratorWrapper} from "./wrappers/OrchestratorWrapper.sol";
+import {InfraOrchestratorWrapper} from "./wrappers/InfraOrchestratorWrapper.sol";
 
 contract StartBridgeTest is BaseTest {
     /*//////////////////////////////////////////////////////////////
@@ -48,7 +48,7 @@ contract StartBridgeTest is BaseTest {
         deployPoolsInfra();
 
         vm.prank(deployer);
-        baseOrchestratorImplementation = new OrchestratorWrapper(
+        baseOrchestratorImplementation = new InfraOrchestratorWrapper(
             vm.envAddress("CLF_ROUTER_BASE"),
             vm.envAddress("CONCERO_DEX_SWAP_BASE"),
             address(baseBridgeImplementation),
@@ -68,7 +68,7 @@ contract StartBridgeTest is BaseTest {
         _setDstSelectorAndPool(avalancheChainSelector, avalancheChildProxy);
         _setDstSelectorAndBridge(avalancheChainSelector, avalancheOrchestratorProxy);
 
-        deal(link, address(baseOrchestratorProxy), CCIP_FEES);
+        deal(link, address(baseOrchestratorProxy), LINK_INIT_BALANCE);
 
         users.push(user1);
         users.push(user2);
@@ -162,7 +162,7 @@ contract StartBridgeTest is BaseTest {
                 address(baseBridgeImplementation)
             )
         );
-        baseBridgeImplementation.startBridge(bridgeData, dstSwapData);
+        baseBridgeImplementation.bridge(bridgeData, dstSwapData);
     }
 
     function _startBridge(address _caller, uint256 _amount, uint64 _dstChainSelector) internal {

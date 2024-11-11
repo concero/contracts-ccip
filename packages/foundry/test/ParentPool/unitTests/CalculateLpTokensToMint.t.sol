@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {BaseTest} from "../BaseTest.t.sol";
+import {BaseTest} from "../../utils/BaseTest.t.sol";
 import {Test, console, Vm} from "forge-std/Test.sol";
-import {ParentPool_Wrapper} from "../wrappers/ParentPool_Wrapper.sol";
-import {ConceroParentPool} from "contracts/ConceroParentPool.sol";
+import {ParentPoolWrapper} from "../wrappers/ParentPoolWrapper.sol";
+import {ParentPool} from "contracts/ParentPool.sol";
 
 interface IERC20 {
     function balanceOf(address account) external view returns (uint256);
@@ -22,7 +22,7 @@ contract CalculateLpTokensToMintTest is BaseTest {
         deployParentPoolProxy();
         deployLpToken();
 
-        parentPoolImplementation = new ParentPool_Wrapper(
+        parentPoolImplementation = new ParentPoolWrapper(
             address(parentPoolProxy),
             vm.envAddress("LINK_BASE"),
             vm.envBytes32("CLF_DONID_BASE"),
@@ -37,7 +37,7 @@ contract CalculateLpTokensToMintTest is BaseTest {
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
 
-        setProxyImplementation(address(parentPoolImplementation));
+        _setProxyImplementation(address(parentPoolImplementation));
         setParentPoolVars();
         addFunctionsConsumer();
     }
@@ -52,7 +52,7 @@ contract CalculateLpTokensToMintTest is BaseTest {
         uint256 amountToDepositUSDC = 200_000_000;
         uint256 expectedLpAmountToMint = 200 ether;
 
-        uint256 lpAmountToMint = ConceroParentPool(payable(parentPoolProxy)).calculateLpAmount(
+        uint256 lpAmountToMint = ParentPool(payable(parentPoolProxy)).calculateLpAmount(
             childPoolBalanceUSDC,
             amountToDepositUSDC
         );
@@ -74,7 +74,7 @@ contract CalculateLpTokensToMintTest is BaseTest {
             prevDepositAmountUSDC
         );
 
-        uint256 lpAmountToMint = ConceroParentPool(payable(parentPoolProxy)).calculateLpAmount(
+        uint256 lpAmountToMint = ParentPool(payable(parentPoolProxy)).calculateLpAmount(
             childPoolsBalanceUSDC,
             amountToDepositUSDC
         );
@@ -97,7 +97,7 @@ contract CalculateLpTokensToMintTest is BaseTest {
             0
         );
 
-        uint256 lpAmountToMint = ConceroParentPool(payable(parentPoolProxy)).calculateLpAmount(
+        uint256 lpAmountToMint = ParentPool(payable(parentPoolProxy)).calculateLpAmount(
             childPoolsBalanceUSDC,
             amountToDepositUSDC
         );
@@ -120,7 +120,7 @@ contract CalculateLpTokensToMintTest is BaseTest {
 
     function _simulateParentPoolDepositOnTheWay(uint256 amount, uint256 childPoolsCount) internal {
         for (uint256 i = 0; i < childPoolsCount; i++) {
-            ParentPool_Wrapper(payable(parentPoolProxy)).addDepositOnTheWay(
+            ParentPoolWrapper(payable(parentPoolProxy)).addDepositOnTheWay(
                 bytes32(uint256(1)),
                 uint64(i),
                 amount / (childPoolsCount + 1)
@@ -132,7 +132,7 @@ contract CalculateLpTokensToMintTest is BaseTest {
         uint256 totalCrossChainBalanceUSDC,
         uint256 depositOnTheWayAmountUSDC
     ) internal returns (uint256) {
-        uint256 depositsOnTheWayAmount = ConceroParentPool(payable(parentPoolProxy))
+        uint256 depositsOnTheWayAmount = ParentPool(payable(parentPoolProxy))
             .s_depositsOnTheWayAmount();
         uint256 childPoolsBalanceUSDC = ((totalCrossChainBalanceUSDC - depositOnTheWayAmountUSDC) *
             3) / 4;

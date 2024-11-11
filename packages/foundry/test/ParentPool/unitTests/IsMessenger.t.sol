@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {BaseTest} from "../BaseTest.t.sol";
-import {ParentPool_DepositWrapper, IDepositParentPool} from "../wrappers/ParentPool_DepositWrapper.sol";
+import {BaseTest} from "../../utils/BaseTest.t.sol";
+import {ParentPoolDepositWrapper, IDepositParentPool} from "../wrappers/ParentPoolDepositWrapper.sol";
 import {Test, console, Vm} from "forge-std/Test.sol";
 
 contract IsMessengerTest is BaseTest {
@@ -15,7 +15,7 @@ contract IsMessengerTest is BaseTest {
     function setUp() public override {
         vm.selectFork(forkId);
         deployParentPoolProxy();
-        parentPoolImplementation = new ParentPool_DepositWrapper(
+        parentPoolImplementation = new ParentPoolDepositWrapper(
             address(parentPoolProxy),
             address(0x0),
             address(0x0),
@@ -30,7 +30,7 @@ contract IsMessengerTest is BaseTest {
             [messenger1, address(0), address(0)]
         );
 
-        setProxyImplementation(address(parentPoolImplementation));
+        _setProxyImplementation(address(parentPoolImplementation));
         setParentPoolVars();
         deployLpToken();
         addFunctionsConsumer();
@@ -39,8 +39,4 @@ contract IsMessengerTest is BaseTest {
     function test_isMessenger_Success() public {
         assertTrue(IDepositParentPool(address(parentPoolProxy)).isMessenger(messenger1));
     }
-
-    //    function test_isMessenger_Fail() public {
-    //        assertFalse(parentPoolImplementation.isMessenger(notMessenger));
-    //    }
 }

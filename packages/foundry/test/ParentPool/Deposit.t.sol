@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {BaseTest, console, Vm} from "./BaseTest.t.sol";
-import {ParentPool_Wrapper, IParentPoolWrapper} from "./wrappers/ParentPool_Wrapper.sol";
+import {BaseTest, console, Vm} from "../utils/BaseTest.t.sol";
+import {ParentPoolWrapper, IParentPoolWrapper} from "./wrappers/ParentPoolWrapper.sol";
 import {Client} from "../../lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/libraries/Client.sol";
 import {IAny2EVMMessageReceiver} from "../../lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -35,7 +35,7 @@ contract Deposit is BaseTest {
         deployParentPoolProxy();
         deployLpToken();
 
-        parentPoolImplementation = new ParentPool_Wrapper(
+        parentPoolImplementation = new ParentPoolWrapper(
             address(parentPoolProxy),
             address(0x0),
             address(0x0),
@@ -49,7 +49,7 @@ contract Deposit is BaseTest {
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
 
-        setProxyImplementation(address(parentPoolImplementation));
+        _setProxyImplementation(address(parentPoolImplementation));
         setParentPoolVars();
         addFunctionsConsumer();
     }
@@ -61,7 +61,7 @@ contract Deposit is BaseTest {
         (bytes32 requestId, , ) = _startDepositAndMonitorLogs(user1, DEPOSIT_AMOUNT_USDC);
 
         // Verify storage changes using the requestId
-        ParentPool_Wrapper.DepositRequest memory depositRequest = IParentPoolWrapper(
+        ParentPoolWrapper.DepositRequest memory depositRequest = IParentPoolWrapper(
             address(parentPoolProxy)
         ).getDepositRequest(requestId);
 
@@ -161,7 +161,7 @@ contract Deposit is BaseTest {
         assertEq(expectedLpTokensMinted, actualLptokensMinted);
 
         /// @dev assert storage has been deleted
-        ParentPool_Wrapper.DepositRequest memory depositRequest = IParentPoolWrapper(
+        ParentPoolWrapper.DepositRequest memory depositRequest = IParentPoolWrapper(
             address(parentPoolProxy)
         ).getDepositRequest(depositRequestId);
         assertEq(depositRequest.lpAddress, address(0));

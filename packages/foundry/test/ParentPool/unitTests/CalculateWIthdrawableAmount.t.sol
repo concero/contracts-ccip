@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {BaseTest} from "../BaseTest.t.sol";
-import {ParentPool_DepositWrapper, IDepositParentPool} from "../wrappers/ParentPool_DepositWrapper.sol";
+import {BaseTest} from "../../utils/BaseTest.t.sol";
+import {ParentPoolDepositWrapper, IDepositParentPool} from "../wrappers/ParentPoolDepositWrapper.sol";
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 
 contract CalculateWithdrawableAmount is BaseTest {

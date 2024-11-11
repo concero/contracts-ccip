@@ -23,6 +23,7 @@ contract BaseTest is Test {
                                VARIABLES
     //////////////////////////////////////////////////////////////*/
     uint256 internal constant LINK_INIT_BALANCE = 100 * 1e18;
+    uint256 internal constant PARENT_POOL_CAP = 100_000_000 * 1e6;
 
     ParentPoolCLFCLA public parentPoolCLFCLA;
     ParentPool public parentPoolImplementation;
@@ -124,6 +125,7 @@ contract BaseTest is Test {
             proxyDeployer,
             bytes("")
         );
+        vm.stopPrank();
     }
 
     function _deployParentPool() private {
@@ -158,6 +160,7 @@ contract BaseTest is Test {
     function deployLpToken() public {
         vm.prank(deployer);
         lpToken = new LPToken(deployer, address(parentPoolProxy));
+        vm.stopPrank();
     }
 
     function _deployCCIPLocalSimulatorFork() internal {
@@ -194,6 +197,7 @@ contract BaseTest is Test {
     function _setProxyImplementation(address _proxy, address _implementation) internal {
         vm.prank(proxyDeployer);
         ITransparentUpgradeableProxy(address(_proxy)).upgradeToAndCall(_implementation, bytes(""));
+        vm.stopPrank();
     }
 
     /// @notice might need to update this to pass _parentPoolImplementation like above
@@ -201,13 +205,16 @@ contract BaseTest is Test {
         vm.prank(deployer);
         //        IParentPool(address(parentPoolProxy)).setPools(_chainSelector, _childProxy, false);
 
-        vm.prank(deployer);
-        // should probably update this from user1
         IParentPool(address(parentPoolProxy)).setConceroContractSender(
             uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
             address(user1),
             true
         );
+
+        vm.prank(deployer);
+        IParentPool(address(parentPoolProxy)).setPoolCap(PARENT_POOL_CAP);
+
+        vm.stopPrank();
     }
 
     function _setDstSelectorAndPool(uint64 _chainSelector, address _poolProxy) internal {
@@ -235,10 +242,9 @@ contract BaseTest is Test {
     //////////////////////////////////////////////////////////////*/
     function addFunctionsConsumer(address _consumer) public {
         vm.prank(vm.envAddress("DEPLOYER_ADDRESS"));
-        functionsSubscriptions = FunctionsSubscriptions(
-            address(0xf9B8fc078197181C841c296C876945aaa425B278)
-        );
+        functionsSubscriptions = FunctionsSubscriptions(address(vm.envAddress("CLF_ROUTER_BASE")));
         functionsSubscriptions.addConsumer(uint64(vm.envUint("CLF_SUBID_BASE")), _consumer);
+        vm.stopPrank();
     }
 
     function _fundLinkParentProxy(uint256 amount) internal {
@@ -476,6 +482,7 @@ contract BaseTest is Test {
             proxyDeployer,
             bytes("")
         );
+        vm.stopPrank();
     }
 
     function _deployOrchestratorImplementation() internal {

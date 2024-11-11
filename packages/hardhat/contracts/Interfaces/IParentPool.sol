@@ -149,4 +149,6 @@ interface IParentPool is IPool {
         uint256 childPoolsBalance,
         uint256 clpAmount
     ) external view returns (uint256);
+
+    function setPoolCap(uint256 _newCap) external payable;
 }

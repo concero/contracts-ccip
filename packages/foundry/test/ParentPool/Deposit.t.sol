@@ -25,7 +25,7 @@ contract Deposit is BaseTest {
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * 10 ** 6;
     uint256 internal constant MAX_INDIVIDUAL_DEPOSIT = 100_000 * 1e6; // 100k usdc
 
-    FunctionsRouter functionsRouter = FunctionsRouter(vm.envAddress("CLF_ROUTER_BASE"));
+    FunctionsRouter internal functionsRouter = FunctionsRouter(vm.envAddress("CLF_ROUTER_BASE"));
 
     /*//////////////////////////////////////////////////////////////
                                  SETUP

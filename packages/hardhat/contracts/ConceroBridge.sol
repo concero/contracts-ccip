@@ -30,7 +30,6 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
     ///////////////
     uint16 internal constant CONCERO_FEE_FACTOR = 1000;
     uint64 private constant HALF_DST_GAS = 600_000;
-    //    uint256 internal constant BATCHED_TX_THRESHOLD = 5_000_000_000; // 5,000 USDC
     /*CHANGE-IN-PRODUCTION-TO-5_000_000_000*/
     uint256 internal constant BATCHED_TX_THRESHOLD = 5_000_000;
     uint8 internal constant MAX_PENDING_SETTLEMENT_TXS_BY_LANE = 200;

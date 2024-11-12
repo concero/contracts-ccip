@@ -18,10 +18,13 @@ interface IConceroBridge is IInfraStorage {
         IDexSwap.SwapData[] memory dstSwapData
     ) external payable;
 
+    //todo: rename this function to getTotalBridgeFeeUSDC
     /**
-     * @notice Function to get the total amount of fees on the source
-     * @param dstChainSelector the destination blockchain chain selector
-     * @param amount the amount of value the fees will calculated over.
+     * @notice Function to get the total bridge fee in USDC
+     * @param tokenType the token type
+     * @param dstChainSelector the destination chain selector
+     * @param amount the amount to be bridged
+     * @return the total fee in USDC
      */
     function getSrcTotalFeeInUSDC(
         uint64 dstChainSelector,

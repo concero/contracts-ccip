@@ -167,10 +167,10 @@ contract InfraOrchestrator is
     }
 
     /**
-     * @notice Function To swap a token into a bridgeable one and start bridging
-     * @param bridgeData the payload to bridge token
-     * @param srcSwapData the payload to swap on src
-     * @param dstSwapData the payload to swap on dst, if it's not empty.
+     * @notice Performs a bridge coupled with the source chain swap and an optional destination chain swap.
+     * @param bridgeData bridge payload of type BridgeData
+     * @param srcSwapData swap payload for the source chain of type IDexSwap.SwapData[]
+     * @param dstSwapData swap payload for the destination chain of type IDexSwap.SwapData[]. May be empty
      */
     function swapAndBridge(
         BridgeData memory bridgeData,
@@ -202,10 +202,9 @@ contract InfraOrchestrator is
     }
 
     /**
-     * @notice external function to start swap
-     * @param swapData the swap payload
-     * @param receiver the receiver of the swapped amount
-     * @param integration the info of the integrator
+     * @notice Performs a swap on a single chain.
+     * @param _swapData the swap payload of type IDexSwap.SwapData[]
+     * @param _receiver the recipient of the swap
      */
     function swap(
         IDexSwap.SwapData[] memory swapData,
@@ -218,10 +217,9 @@ contract InfraOrchestrator is
     }
 
     /**
-     * @notice function to start a bridge transaction
-     * @param bridgeData the bridge payload
-     * @param dstSwapData the destination swap payload, if not empty.
-     * @param integration the info of the integrator
+     * @notice Performs a bridge from the source chain to the destination chain.
+     * @param bridgeData bridge payload of type BridgeData
+     * @param dstSwapData destination swap payload. May be empty
      */
     function bridge(
         BridgeData memory bridgeData,
@@ -304,7 +302,7 @@ contract InfraOrchestrator is
     }
 
     /**
-     * @notice Function to allow Concero Team to withdraw
+     * @notice Function to allow Concero Team to withdraw fees
      * @param recipient the recipient address
      * @param token the token to withdraw
      * @param amount the amount to withdraw

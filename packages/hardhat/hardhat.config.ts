@@ -13,6 +13,7 @@ import "hardhat-contract-sizer";
 import "@tenderly/hardhat-tenderly";
 import "solidity-coverage";
 import "@chainlink/hardhat-chainlink";
+import "hardhat-docgen";
 
 import cNetworks from "./constants/cNetworks";
 import { HardhatUserConfig } from "hardhat/config";
@@ -27,6 +28,10 @@ const config: HardhatUserConfig = {
   tenderly: {
     username: "olegkron",
     project: "own",
+  },
+  docgen: {
+    pages: "files",
+    pageExtension: ".mdx",
   },
   paths: {
     artifacts: "artifacts",

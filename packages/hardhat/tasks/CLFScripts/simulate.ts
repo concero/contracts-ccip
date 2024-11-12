@@ -19,7 +19,7 @@ async function simulateCLFScript(scriptPath: string, args: string[]): Promise<vo
 		return;
 	}
 
-	console.log(`Simulating ${scriptPath}`, 'simulateCLFScript');
+	log(`Simulating ${scriptPath}`, 'simulateCLFScript');
 	try {
 		const result = await simulateScript({
 			source: fs.readFileSync(scriptPath, 'utf8'),

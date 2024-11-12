@@ -339,7 +339,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     }
 
     /*
-     * @notice Allows liquidity providers to initiate the withdrawal which can then be completed via completeWithdrawal()
+     * @notice Allows liquidity providers to initiate the withdrawal
      * @notice A cooldown period of WITHDRAW_DEADLINE_SECONDS needs to pass before the withdrawal can be completed.
      * @param _lpAmount the amount of LP tokens to be burnt
      */
@@ -690,7 +690,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             s_withdrawAmountLocked += ccipReceivedAmount;
 
             if (request.remainingLiquidityFromChildPools < 10) {
-                _completeWithdraw(withdrawalId);
+                _completeWithdrawal(withdrawalId);
             }
         }
 
@@ -707,7 +707,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * @notice Function to process the withdraw request
      * @param withdrawalId the id of the withdraw request
      */
-    function _completeWithdraw(bytes32 withdrawalId) internal {
+    function _completeWithdrawal(bytes32 withdrawalId) internal {
         WithdrawRequest storage request = s_withdrawRequests[withdrawalId];
         uint256 amountToWithdraw = request.amountToWithdraw;
         address lpAddress = request.lpAddress;

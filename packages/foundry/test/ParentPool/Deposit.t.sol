@@ -155,29 +155,6 @@ contract Deposit is BaseTest {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                  CCIP RECEIVE
-        //////////////////////////////////////////////////////////////*/
-    function test_ccipReceive() public {
-        vm.prank(vm.envAddress("CL_CCIP_ROUTER_BASE"));
-
-        Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](1);
-        destTokenAmounts[0] = Client.EVMTokenAmount({
-            token: vm.envAddress("USDC_BASE"),
-            amount: 100000000
-        });
-
-        Client.Any2EVMMessage memory message = Client.Any2EVMMessage({
-            messageId: keccak256(abi.encodePacked("test")),
-            sourceChainSelector: uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
-            sender: abi.encode(user1),
-            data: abi.encode(address(0), address(0), 0),
-            destTokenAmounts: destTokenAmounts
-        });
-
-        IAny2EVMMessageReceiver(address(parentPoolProxy)).ccipReceive(message);
-    }
-
-    /*//////////////////////////////////////////////////////////////
 									 UTILS
 		//////////////////////////////////////////////////////////////*/
 

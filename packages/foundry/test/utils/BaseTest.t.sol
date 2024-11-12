@@ -47,10 +47,10 @@ contract BaseTest is Test {
     uint64 internal arbitrumChainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM"));
     uint64 internal avalancheChainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_AVALANCHE"));
 
-    address arbitrumChildProxy;
-    address arbitrumChildImplementation;
-    address avalancheChildProxy;
-    address avalancheChildImplementation;
+    address internal arbitrumChildProxy;
+    address internal arbitrumChildImplementation;
+    address internal avalancheChildProxy;
+    address internal avalancheChildImplementation;
 
     ConceroBridge internal baseBridgeImplementation;
     ConceroBridge internal arbitrumBridgeImplementation;
@@ -144,7 +144,6 @@ contract BaseTest is Test {
     }
 
     function _deployParentPool() private {
-        // Deploy the default ParentPool if no custom address is provided
         vm.prank(deployer);
 
         parentPoolCLFCLA = new ParentPoolCLFCLA(
@@ -340,7 +339,7 @@ contract BaseTest is Test {
         vm.prank(proxyDeployer);
         ITransparentUpgradeableProxy(childProxy).upgradeToAndCall(childImplementation, bytes(""));
 
-        _setChildPoolForInfra(address(arbitrumChildProxy), _parentPoolChainSelector, _parentProxy);
+        //        _setChildPoolForInfra(address(arbitrumChildProxy), _parentPoolChainSelector, _parentProxy);
 
         return (childProxy, childImplementation);
     }

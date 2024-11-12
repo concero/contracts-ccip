@@ -48,6 +48,7 @@ async function simulateCLFScript(scriptPath: string, args: string[]): Promise<vo
 
 task('clf-script-simulate', 'Executes the JavaScript source code locally')
 	.addParam('name', 'Name of the function to simulate', 'pool_get_total_balance', types.string)
+	.addOptionalParam('concurrency', 'Number of concurrent requests', 1, types.int)
 	.setAction(async taskArgs => {
 		await buildScript(true, undefined, true);
 
@@ -77,7 +78,11 @@ task('clf-script-simulate', 'Executes the JavaScript source code locally')
 		}
 
 		const bytesArgs = await getSimulationArgs[scriptName]();
-		await simulateCLFScript(scriptPath, bytesArgs);
+
+		const concurrency = taskArgs.concurrency;
+		const promises = Array.from({length: concurrency}, () => simulateCLFScript(scriptPath, bytesArgs));
+		await Promise.all(promises);
+		return;
 	});
 
 export default simulateCLFScript;

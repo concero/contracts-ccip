@@ -12,7 +12,7 @@ import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.s
 import {Internal} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Internal.sol";
 import {InfraOrchestratorWrapper} from "./wrappers/InfraOrchestratorWrapper.sol";
 
-contract StartBridgeTest is BaseTest {
+contract StartBridge is BaseTest {
     /*//////////////////////////////////////////////////////////////
                                VARIABLES
     //////////////////////////////////////////////////////////////*/
@@ -25,10 +25,7 @@ contract StartBridgeTest is BaseTest {
     uint64 private constant HALF_DST_GAS = 600_000;
     uint256 internal constant STANDARD_TOKEN_DECIMALS = 1 ether;
 
-    address[] users;
-    address user3 = makeAddr("user3");
-    address user4 = makeAddr("user4");
-    address user5 = makeAddr("user5");
+    address[] internal users;
 
     /// @dev using this struct to get around stack too deep errors for ccipFee calculation test
     struct FeeData {
@@ -63,18 +60,26 @@ contract StartBridgeTest is BaseTest {
         );
 
         /// @dev set destination chain selector and contracts on Base
-        _setChildPool(arbitrumChainSelector, arbitrumChildProxy);
-        _setDstSelectorAndBridge(arbitrumChainSelector, arbitrumOrchestratorProxy);
-        _setChildPool(avalancheChainSelector, avalancheChildProxy);
-        _setDstSelectorAndBridge(avalancheChainSelector, avalancheOrchestratorProxy);
+        _setChildPoolForInfra(address(baseOrchestratorProxy), arbitrumChainSelector, address(0x1));
+        _setDstInfraContractsForInfra(
+            address(baseOrchestratorProxy),
+            arbitrumChainSelector,
+            address(0x15)
+        );
+        _setChildPoolForInfra(address(baseOrchestratorProxy), avalancheChainSelector, address(0x2));
+        _setDstInfraContractsForInfra(
+            address(baseOrchestratorProxy),
+            avalancheChainSelector,
+            address(0x25)
+        );
 
-        deal(link, address(baseOrchestratorProxy), LINK_INIT_BALANCE);
+        deal(vm.envAddress("LINK_BASE"), address(baseOrchestratorProxy), LINK_INIT_BALANCE);
 
         users.push(user1);
         users.push(user2);
-        users.push(user3);
-        users.push(user4);
-        users.push(user5);
+        users.push(makeAddr("user3"));
+        users.push(makeAddr("user4"));
+        users.push(makeAddr("user5"));
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -33,9 +33,9 @@ contract BaseTest is Test {
     CCIPLocalSimulator public ccipLocalSimulator;
     CCIPLocalSimulatorFork public ccipLocalSimulatorFork;
 
-    address user1 = makeAddr("user1");
-    address user2 = makeAddr("user2");
-    address messenger = vm.envAddress("POOL_MESSENGER_0_ADDRESS");
+    address internal user1 = makeAddr("user1");
+    address internal user2 = makeAddr("user2");
+    address internal messenger = vm.envAddress("POOL_MESSENGER_0_ADDRESS");
 
     address internal deployer = vm.envAddress("FORGE_DEPLOYER_ADDRESS");
     address internal proxyDeployer = vm.envAddress("FORGE_PROXY_DEPLOYER_ADDRESS");
@@ -79,7 +79,11 @@ contract BaseTest is Test {
             address(baseOrchestratorImplementation)
         );
 
-        _setDstSelectorAndBridge(arbitrumChainSelector, arbitrumOrchestratorProxy);
+        _setDstInfraContractsForInfra(
+            address(baseOrchestratorProxy),
+            arbitrumChainSelector,
+            arbitrumOrchestratorProxy
+        );
     }
 
     function deployPoolsInfra() public {
@@ -125,7 +129,7 @@ contract BaseTest is Test {
             optimismChainSelector,
             address(parentPoolProxy)
         );
-        _setChildPool(arbitrumChainSelector, arbitrumChildProxy);
+        _setChildPoolForParentPool(arbitrumChainSelector, arbitrumChildProxy);
 
         (avalancheChildProxy, avalancheChildImplementation) = _deployChildPool(
             vm.envAddress("CONCERO_INFRA_PROXY_AVALANCHE"),
@@ -136,7 +140,7 @@ contract BaseTest is Test {
             address(parentPoolProxy)
         );
 
-        _setChildPool(avalancheChainSelector, avalancheChildProxy);
+        _setChildPoolForParentPool(avalancheChainSelector, avalancheChildProxy);
     }
 
     function _deployParentPool() private {
@@ -215,10 +219,9 @@ contract BaseTest is Test {
         _deployChildPools();
 
         vm.prank(deployer);
-
         IParentPool(address(parentPoolProxy)).setConceroContractSender(
             uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
-            address(user1),
+            address(arbitrumChildProxy),
             true
         );
 
@@ -228,9 +231,13 @@ contract BaseTest is Test {
         vm.stopPrank();
     }
 
-    function _setDstSelectorAndBridge(uint64 _chainSelector, address _bridgeProxy) internal {
+    function _setDstInfraContractsForInfra(
+        address infra,
+        uint64 _chainSelector,
+        address _bridgeProxy
+    ) internal {
         vm.prank(deployer);
-        (bool success, ) = address(baseOrchestratorProxy).call(
+        (bool success, ) = infra.call(
             abi.encodeWithSignature(
                 "setConceroContract(uint64,address)",
                 _chainSelector,
@@ -333,16 +340,7 @@ contract BaseTest is Test {
         vm.prank(proxyDeployer);
         ITransparentUpgradeableProxy(childProxy).upgradeToAndCall(childImplementation, bytes(""));
 
-        /// set the parentPool in childProxy.setPools();
-        vm.prank(deployer);
-        (bool success, ) = address(arbitrumChildProxy).call(
-            abi.encodeWithSignature(
-                "setPools(uint64,address)",
-                _parentPoolChainSelector,
-                _parentProxy
-            )
-        );
-        require(success, "childProxy.setPools with parentPool failed");
+        _setChildPoolForInfra(address(arbitrumChildProxy), _parentPoolChainSelector, _parentProxy);
 
         return (childProxy, childImplementation);
     }
@@ -517,9 +515,9 @@ contract BaseTest is Test {
 								PARENT POOL UTILS
 	   //////////////////////////////////////////////////////////////*/
 
-    function _setChildPool(uint64 chainSelector, address childPool) internal {
+    function _setChildPoolForParentPool(uint64 chainSelector, address childPool) internal {
         vm.prank(deployer);
-        (bool success, ) = address(parentPoolProxy).call(
+        (bool success, bytes memory data) = address(parentPoolProxy).call(
             abi.encodeWithSignature(
                 "setPools(uint64,address,bool)",
                 chainSelector,
@@ -527,6 +525,27 @@ contract BaseTest is Test {
                 false
             )
         );
-        require(success, "setPools call failed");
+        require(success, string(data));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+							 CONCERO INFRA UTILS
+	//////////////////////////////////////////////////////////////*/
+
+    function _setChildPoolForInfra(
+        address infra,
+        uint64 chainSelector,
+        address childPool
+    ) internal {
+        vm.prank(deployer);
+        (bool success, bytes memory data) = infra.call(
+            abi.encodeWithSignature(
+                "setDstConceroPool(uint64,address)",
+                chainSelector,
+                childPool,
+                false
+            )
+        );
+        require(success, string(data));
     }
 }

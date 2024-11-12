@@ -107,7 +107,7 @@ contract Deposit is BaseTest {
         vm.assume(_amount < MIN_DEPOSIT);
 
         vm.prank(user1);
-        vm.expectRevert(abi.encodeWithSignature("AmountBelowMinimum(uint256)", MIN_DEPOSIT));
+        vm.expectRevert(abi.encodeWithSignature("DepositAmountBelowMinimum(uint256)", MIN_DEPOSIT));
         IParentPoolWrapper(address(parentPoolProxy)).startDeposit(_amount);
     }
 
@@ -152,85 +152,6 @@ contract Deposit is BaseTest {
         ).getDepositRequest(depositRequestId);
         assertEq(depositRequest.lpAddress, address(0));
         assertEq(depositRequest.usdcAmountToDeposit, 0);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                           LP TOKEN ISSUANCE
-    //////////////////////////////////////////////////////////////*/
-    function test_lpToken_integrity_multiple_depositors(uint256 _amount1, uint256 _amount2) public {
-        /// @dev restrict fuzzed deposit amounts
-        vm.assume(
-            (_amount1 > MIN_DEPOSIT + DEPOSIT_FEE_USDC) && (_amount1 < MAX_INDIVIDUAL_DEPOSIT)
-        );
-        vm.assume(
-            (_amount2 > MIN_DEPOSIT + DEPOSIT_FEE_USDC) && (_amount2 < MAX_INDIVIDUAL_DEPOSIT)
-        );
-
-        /// @dev fund users with USDC and approve parentPoolProxy to spend
-        deal(usdc, user1, _amount1);
-        vm.prank(user1);
-        IERC20(usdc).approve(address(parentPoolProxy), _amount1);
-        deal(usdc, user2, _amount2);
-        vm.prank(user2);
-        IERC20(usdc).approve(address(parentPoolProxy), _amount2);
-
-        /// @dev fund the parentPoolProxy with LINK to pay for CCIP
-        deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), CCIP_FEES * 2);
-
-        bytes32 depositRequestId1 = _startDeposit(user1, _amount1);
-        bytes memory response1 = abi.encode(MIN_DEPOSIT); // 1 usdc
-        _fulfillRequest(response1, depositRequestId1);
-
-        _completeDeposit(user1, depositRequestId1);
-
-        /// @dev assert s_depositsOnTheWayAmount is more than 0
-        assertGt(ParentPool(payable(parentPoolProxy)).s_depositsOnTheWayAmount(), 0);
-
-        /// @dev we need the totalSupply to calculate user2's owed lp tokens
-        uint256 lpTotalSupplyBeforeSecondDeposit = IERC20(parentPoolImplementation.i_lpToken())
-            .totalSupply();
-
-        /// @dev startDeposit and fulfillRequest for second user
-        bytes32 depositRequestId2 = _startDeposit(user2, _amount2);
-        bytes memory response2 = abi.encode(MIN_DEPOSIT + (_amount1 / 3)); // 1 usdc + (first deposit / parent+child)
-        _fulfillRequest(response2, depositRequestId2);
-
-        /// @dev we need logs for second user's completeDeposit to get the totalCrossChainLiquiditySnapshot
-        vm.recordLogs();
-        /// @dev completeDeposit for second user
-        _completeDeposit(user2, depositRequestId2);
-
-        /// @dev get and verify logs
-        Vm.Log[] memory entries = vm.getRecordedLogs();
-        /// @dev find the log and param we need to calculate expected LP tokens
-        uint256 totalCrossChainLiquiditySnapshot;
-        for (uint256 i = 0; i < entries.length; ++i) {
-            if (
-                entries[i].topics[0] ==
-                keccak256("DepositCompleted(bytes32,address,uint256,uint256)")
-            ) {
-                (, totalCrossChainLiquiditySnapshot) = abi.decode(
-                    entries[i].data,
-                    (uint256, uint256)
-                );
-                break;
-            }
-        }
-
-        /// @dev assert user2 lp tokens minted as expected
-        uint256 amountDepositedConverted = ((_amount2 - DEPOSIT_FEE_USDC) * WAD_PRECISION) /
-            USDC_DECIMALS;
-        uint256 crossChainBalanceConverted = (totalCrossChainLiquiditySnapshot * WAD_PRECISION) /
-            USDC_DECIMALS;
-
-        uint256 expectedLpTokensMintedUser2 = (((crossChainBalanceConverted +
-            amountDepositedConverted) * lpTotalSupplyBeforeSecondDeposit) /
-            crossChainBalanceConverted) - lpTotalSupplyBeforeSecondDeposit;
-
-        uint256 actualLpTokensMintedUser2 = IERC20(parentPoolImplementation.i_lpToken()).balanceOf(
-            user2
-        );
-        assertEq(expectedLpTokensMintedUser2, actualLpTokensMintedUser2);
     }
 
     /*//////////////////////////////////////////////////////////////

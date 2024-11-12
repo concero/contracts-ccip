@@ -49,7 +49,8 @@ contract BaseTest is Test {
 
     address arbitrumChildProxy;
     address arbitrumChildImplementation;
-    address avalancheChildProxy = address(3);
+    address avalancheChildProxy;
+    address avalancheChildImplementation;
 
     ConceroBridge internal baseBridgeImplementation;
     ConceroBridge internal arbitrumBridgeImplementation;
@@ -78,8 +79,6 @@ contract BaseTest is Test {
             address(baseOrchestratorImplementation)
         );
 
-        /// @dev set destination chain selector and contracts on Base
-        _setDstSelectorAndPool(arbitrumChainSelector, arbitrumChildProxy);
         _setDstSelectorAndBridge(arbitrumChainSelector, arbitrumOrchestratorProxy);
     }
 
@@ -88,17 +87,6 @@ contract BaseTest is Test {
         deployLpToken();
         _deployParentPool();
         _setProxyImplementation(address(parentPoolProxy), address(parentPoolImplementation));
-
-        /// @dev set initial child pool
-        (arbitrumChildProxy, arbitrumChildImplementation) = _deployChildPool(
-            vm.envAddress("CONCERO_PROXY_ARBITRUM"),
-            vm.envAddress("LINK_ARBITRUM"),
-            vm.envAddress("CL_CCIP_ROUTER_ARBITRUM"),
-            vm.envAddress("USDC_ARBITRUM"),
-            optimismChainSelector,
-            address(parentPoolProxy)
-        );
-        //        setParentPoolVars(arbitrumChainSelector, arbitrumChildProxy);
 
         _deployCcipLocalSimulation();
         addFunctionsConsumer(address(parentPoolProxy));
@@ -126,6 +114,29 @@ contract BaseTest is Test {
             bytes("")
         );
         vm.stopPrank();
+    }
+
+    function _deployChildPools() public {
+        (arbitrumChildProxy, arbitrumChildImplementation) = _deployChildPool(
+            vm.envAddress("CONCERO_INFRA_PROXY_ARBITRUM"),
+            vm.envAddress("LINK_ARBITRUM"),
+            vm.envAddress("CL_CCIP_ROUTER_ARBITRUM"),
+            vm.envAddress("USDC_ARBITRUM"),
+            optimismChainSelector,
+            address(parentPoolProxy)
+        );
+        _setChildPool(arbitrumChainSelector, arbitrumChildProxy);
+
+        (avalancheChildProxy, avalancheChildImplementation) = _deployChildPool(
+            vm.envAddress("CONCERO_INFRA_PROXY_AVALANCHE"),
+            vm.envAddress("LINK_AVALANCHE"),
+            vm.envAddress("CL_CCIP_ROUTER_AVALANCHE"),
+            vm.envAddress("USDC_AVALANCHE"),
+            avalancheChainSelector,
+            address(parentPoolProxy)
+        );
+
+        _setChildPool(avalancheChainSelector, avalancheChildProxy);
     }
 
     function _deployParentPool() private {
@@ -200,10 +211,10 @@ contract BaseTest is Test {
         vm.stopPrank();
     }
 
-    /// @notice might need to update this to pass _parentPoolImplementation like above
-    function setParentPoolVars() public {
+    function _setParentPoolVars() public {
+        _deployChildPools();
+
         vm.prank(deployer);
-        //        IParentPool(address(parentPoolProxy)).setPools(_chainSelector, _childProxy, false);
 
         IParentPool(address(parentPoolProxy)).setConceroContractSender(
             uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM")),
@@ -215,14 +226,6 @@ contract BaseTest is Test {
         IParentPool(address(parentPoolProxy)).setPoolCap(PARENT_POOL_CAP);
 
         vm.stopPrank();
-    }
-
-    function _setDstSelectorAndPool(uint64 _chainSelector, address _poolProxy) internal {
-        vm.prank(deployer);
-        (bool success, ) = address(baseOrchestratorProxy).call(
-            abi.encodeWithSignature("setDstConceroPool(uint64,address)", _chainSelector, _poolProxy)
-        );
-        require(success, "setDstConceroPool call failed");
     }
 
     function _setDstSelectorAndBridge(uint64 _chainSelector, address _bridgeProxy) internal {
@@ -253,7 +256,7 @@ contract BaseTest is Test {
 
     function _fundFunctionsSubscription() internal {
         address linkAddress = vm.envAddress("LINK_BASE");
-        LinkTokenInterface link = LinkTokenInterface(vm.envAddress("LINK_BASE"));
+        link = (vm.envAddress("LINK_BASE"));
         address router = vm.envAddress("CLF_ROUTER_BASE");
         bytes memory data = abi.encode(uint64(vm.envUint("CLF_SUBID_BASE")));
 
@@ -263,7 +266,7 @@ contract BaseTest is Test {
         deal(linkAddress, subFunder, funds);
 
         vm.prank(subFunder);
-        link.transferAndCall(router, funds, data);
+        LinkTokenInterface(link).transferAndCall(router, funds, data);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -285,7 +288,7 @@ contract BaseTest is Test {
             _link,
             _ccipRouter,
             _usdc,
-            deployer,
+            _owner,
             _messengers
         );
 
@@ -382,7 +385,7 @@ contract BaseTest is Test {
             });
         uint64 chainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_BASE"));
         uint256 chainIndex = 1; // IInfraStorage.Chain.base
-        address link = vm.envAddress("LINK_BASE");
+        link = vm.envAddress("LINK_BASE");
         address ccipRouter = vm.envAddress("CL_CCIP_ROUTER_BASE");
         address dexswap = vm.envAddress("CONCERO_DEX_SWAP_BASE");
         address pool = address(parentPoolProxy);
@@ -415,7 +418,7 @@ contract BaseTest is Test {
             });
         uint64 chainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM"));
         uint256 chainIndex = 0; // IInfraStorage.Chain.arb
-        address link = vm.envAddress("LINK_ARBITRUM");
+        link = vm.envAddress("LINK_ARBITRUM");
         address ccipRouter = vm.envAddress("CL_CCIP_ROUTER_ARBITRUM");
         address dexswap = vm.envAddress("CONCERO_DEX_SWAP_ARBITRUM");
         address pool = address(parentPoolProxy);
@@ -448,7 +451,7 @@ contract BaseTest is Test {
             });
         uint64 chainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_AVALANCHE"));
         uint256 chainIndex = 4; // IInfraStorage.Chain.avax
-        address link = vm.envAddress("LINK_AVALANCHE");
+        link = vm.envAddress("LINK_AVALANCHE");
         address ccipRouter = vm.envAddress("CL_CCIP_ROUTER_AVALANCHE");
         address dexswap = vm.envAddress("CONCERO_DEX_SWAP_AVALANCHE");
         address pool = address(parentPoolProxy);
@@ -508,5 +511,22 @@ contract BaseTest is Test {
 
     function mintUSDC(address to, uint256 amount) internal {
         deal(address(vm.envAddress("USDC_BASE")), to, amount);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+								PARENT POOL UTILS
+	   //////////////////////////////////////////////////////////////*/
+
+    function _setChildPool(uint64 chainSelector, address childPool) internal {
+        vm.prank(deployer);
+        (bool success, ) = address(parentPoolProxy).call(
+            abi.encodeWithSignature(
+                "setPools(uint64,address,bool)",
+                chainSelector,
+                childPool,
+                false
+            )
+        );
+        require(success, "setPools call failed");
     }
 }

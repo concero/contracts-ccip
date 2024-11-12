@@ -63,9 +63,9 @@ contract StartBridgeTest is BaseTest {
         );
 
         /// @dev set destination chain selector and contracts on Base
-        _setDstSelectorAndPool(arbitrumChainSelector, arbitrumChildProxy);
+        _setChildPool(arbitrumChainSelector, arbitrumChildProxy);
         _setDstSelectorAndBridge(arbitrumChainSelector, arbitrumOrchestratorProxy);
-        _setDstSelectorAndPool(avalancheChainSelector, avalancheChildProxy);
+        _setChildPool(avalancheChainSelector, avalancheChildProxy);
         _setDstSelectorAndBridge(avalancheChainSelector, avalancheOrchestratorProxy);
 
         deal(link, address(baseOrchestratorProxy), LINK_INIT_BALANCE);

@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+import "contracts/Interfaces/IParentPool.sol";
+import "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {BaseTest, console, Vm} from "../utils/BaseTest.t.sol";
-import {ParentPoolWrapper, IParentPoolWrapper} from "./wrappers/ParentPoolWrapper.sol";
 import {Client} from "../../lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/libraries/Client.sol";
+import {FunctionsCoordinator, FunctionsBillingConfig} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsCoordinator.sol";
+import {FunctionsResponse} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/libraries/FunctionsResponse.sol";
+import {FunctionsRouter} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsRouter.sol";
 import {IAny2EVMMessageReceiver} from "../../lib/chainlink-local/lib/ccip/contracts/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {FunctionsRouter} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsRouter.sol";
-import {FunctionsResponse} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/libraries/FunctionsResponse.sol";
-import {FunctionsCoordinator, FunctionsBillingConfig} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsCoordinator.sol";
+import {ParentPoolWrapper, IParentPoolWrapper} from "./wrappers/ParentPoolWrapper.sol";
+import {ParentPoolCLFCLA} from "contracts/ParentPoolCLFCLA.sol";
+import {ParentPool} from "contracts/ParentPool.sol";
 
 contract Deposit is BaseTest {
     /*//////////////////////////////////////////////////////////////
@@ -20,7 +24,7 @@ contract Deposit is BaseTest {
     address internal constant BASE_FUNCTIONS_TRANSMITTER =
         0xAdE50D64476177aAe4505DFEA094B1a0ffa49332;
     uint256 internal constant CCIP_FEES = 10 * 1e18;
-    uint256 internal constant USDC_PRECISION = 1e6;
+    uint256 internal constant USDC_DECIMALS = 1e6;
     uint256 internal constant WAD_PRECISION = 1e18;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * 10 ** 6;
     uint256 internal constant MAX_INDIVIDUAL_DEPOSIT = 100_000 * 1e6; // 100k usdc
@@ -35,30 +39,40 @@ contract Deposit is BaseTest {
         deployParentPoolProxy();
         deployLpToken();
 
+        parentPoolCLFCLA = new ParentPoolCLFCLA(
+            address(parentPoolProxy),
+            address(lpToken),
+            vm.envAddress("USDC_BASE"),
+            vm.envAddress("CLF_ROUTER_BASE"),
+            uint64(vm.envUint("CLF_SUBID_BASE")),
+            vm.envBytes32("CLF_DONID_BASE"),
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
+        );
+
         parentPoolImplementation = new ParentPoolWrapper(
             address(parentPoolProxy),
-            address(0x0),
-            address(0x0),
+            address(parentPoolCLFCLA),
+            address(0),
             vm.envAddress("LINK_BASE"),
-            address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
-            address(vm.envAddress("USDC_BASE")),
+            vm.envAddress("CL_CCIP_ROUTER_BASE"),
+            vm.envAddress("USDC_BASE"),
             address(lpToken),
-            address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
-            address(vm.envAddress("CLF_ROUTER_BASE")),
+            address(baseOrchestratorProxy),
+            vm.envAddress("CLF_ROUTER_BASE"),
             address(deployer),
             [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
 
         _setProxyImplementation(address(parentPoolProxy), address(parentPoolImplementation));
-        setParentPoolVars();
+        _setParentPoolVars();
         addFunctionsConsumer(address(parentPoolProxy));
     }
 
     /*//////////////////////////////////////////////////////////////
                              START DEPOSIT
     //////////////////////////////////////////////////////////////*/
-    function test_startDeposit_Success() public {
-        (bytes32 requestId, , ) = _startDepositAndMonitorLogs(user1, DEPOSIT_AMOUNT_USDC);
+    function test_startDeposit_success() public {
+        bytes32 requestId = _startDeposit(user1, DEPOSIT_AMOUNT_USDC);
 
         // Verify storage changes using the requestId
         ParentPoolWrapper.DepositRequest memory depositRequest = IParentPoolWrapper(
@@ -69,49 +83,31 @@ contract Deposit is BaseTest {
         assertEq(depositRequest.usdcAmountToDeposit, DEPOSIT_AMOUNT_USDC);
     }
 
-    function _startDepositAndMonitorLogs(
-        address _caller,
-        uint256 _amount
-    )
-        internal
-        returns (bytes32 requestId, uint32 callbackGasLimit, uint96 estimatedTotalCostJuels)
-    {
+    function _startDeposit(address lp, uint256 amount) internal returns (bytes32) {
+        vm.prank(lp);
         vm.recordLogs();
 
-        vm.prank(_caller);
-        IParentPoolWrapper(address(parentPoolProxy)).startDeposit(_amount);
+        IParentPoolWrapper(address(parentPoolProxy)).startDeposit(amount);
 
-        /// @dev get and verify logs
         Vm.Log[] memory entries = vm.getRecordedLogs();
-        assertEq(entries.length, 4);
-        /// @dev find the RequestStart log and params we need for commitment
+
         for (uint256 i = 0; i < entries.length; ++i) {
             if (
                 entries[i].topics[0] ==
-                keccak256(
-                    "RequestStart(bytes32,bytes32,uint64,address,address,address,bytes,uint16,uint32,uint96)"
-                )
+                keccak256("DepositInitiated(bytes32,address,uint256,uint256)")
             ) {
-                /// @dev get the values we need
-                requestId = entries[i].topics[1];
-                (, , , , , callbackGasLimit, estimatedTotalCostJuels) = abi.decode(
-                    entries[i].data,
-                    (address, address, address, bytes, uint16, uint32, uint96)
-                );
-                break;
+                return entries[i].topics[1];
             }
         }
 
-        return (requestId, callbackGasLimit, estimatedTotalCostJuels);
+        revert("DepositInitiated log not found");
     }
 
     function test_startDeposit_RevertOnMinDeposit(uint256 _amount) public {
         vm.assume(_amount < MIN_DEPOSIT);
 
         vm.prank(user1);
-        vm.expectRevert(
-            abi.encodeWithSignature("ConceroParentPool_AmountBelowMinimum(uint256)", MIN_DEPOSIT)
-        );
+        vm.expectRevert(abi.encodeWithSignature("AmountBelowMinimum(uint256)", MIN_DEPOSIT));
         IParentPoolWrapper(address(parentPoolProxy)).startDeposit(_amount);
     }
 
@@ -119,7 +115,7 @@ contract Deposit is BaseTest {
         vm.prank(_caller);
         vm.expectRevert(
             abi.encodeWithSignature(
-                "ConceroParentPool_NotParentPoolProxy(address)",
+                "NotParentPoolProxy(address)",
                 address(parentPoolImplementation)
             )
         );
@@ -129,36 +125,26 @@ contract Deposit is BaseTest {
     /*//////////////////////////////////////////////////////////////
                             COMPLETE DEPOSIT
     //////////////////////////////////////////////////////////////*/
-    function test_completeWithdrawal_success() public {
-        /// @dev fund user with USDC and approve parentPoolProxy to spend
+    function test_completeDeposit_success() public {
         deal(usdc, user1, DEPOSIT_AMOUNT_USDC);
         vm.prank(user1);
         IERC20(usdc).approve(address(parentPoolProxy), DEPOSIT_AMOUNT_USDC);
 
-        /// @dev fund the parentPoolProxy with LINK to pay for CCIP
         deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), CCIP_FEES);
 
-        /// @dev startDeposit
-        (
-            bytes32 depositRequestId,
-            uint32 callbackGasLimit,
-            uint96 estimatedTotalCostJuels
-        ) = _startDepositAndMonitorLogs(user1, DEPOSIT_AMOUNT_USDC);
+        bytes32 depositRequestId = _startDeposit(user1, DEPOSIT_AMOUNT_USDC);
 
-        /// @dev fulfill active request
-        bytes memory response = abi.encode(MIN_DEPOSIT); // 1 usdc
-        _fulfillRequest(response, depositRequestId, callbackGasLimit, estimatedTotalCostJuels);
+        _fulfillRequest(abi.encode(MIN_DEPOSIT), depositRequestId);
 
-        /// @dev completeDeposit
         _completeDeposit(user1, depositRequestId);
 
         /// @dev assert lp tokens minted as expected
         uint256 expectedLpTokensMinted = ((DEPOSIT_AMOUNT_USDC - DEPOSIT_FEE_USDC) *
-            WAD_PRECISION) / USDC_PRECISION;
-        uint256 actualLptokensMinted = IERC20(parentPoolImplementation.i_lpToken()).balanceOf(
+            WAD_PRECISION) / USDC_DECIMALS;
+        uint256 actualLpTokensMinted = IERC20(parentPoolImplementation.i_lpToken()).balanceOf(
             user1
         );
-        assertEq(expectedLpTokensMinted, actualLptokensMinted);
+        assertEq(expectedLpTokensMinted, actualLpTokensMinted);
 
         /// @dev assert storage has been deleted
         ParentPoolWrapper.DepositRequest memory depositRequest = IParentPoolWrapper(
@@ -166,58 +152,6 @@ contract Deposit is BaseTest {
         ).getDepositRequest(depositRequestId);
         assertEq(depositRequest.lpAddress, address(0));
         assertEq(depositRequest.usdcAmountToDeposit, 0);
-    }
-
-    function _completeDeposit(address _caller, bytes32 _requestId) internal {
-        /// @dev call completeDeposit via proxy
-        vm.prank(_caller);
-        (bool success, ) = address(parentPoolProxy).call(
-            abi.encodeWithSignature("completeDeposit(bytes32)", _requestId)
-        );
-        require(success, "completeDeposit call failed");
-    }
-
-    function _fulfillRequest(
-        bytes memory _response,
-        bytes32 _requestId,
-        uint32 _callbackGasLimit,
-        uint96 _estimatedTotalCostJuels
-    ) internal {
-        /// @dev get coordinator to call functions router
-        address coordinator = functionsRouter.getContractById(vm.envBytes32("CLF_DONID_BASE"));
-
-        /// @dev create fulfill params
-        bytes memory err = "";
-        uint96 juelsPerGas = 1_000_000_000; // current rate of juels/gas
-        uint96 costWithoutFulfillment = 0; // The cost of processing the request (in Juels of LINK ), without fulfillment
-        address transmitter = BASE_FUNCTIONS_TRANSMITTER;
-
-        /// @dev get timeoutTimestamp from billing config
-        FunctionsBillingConfig memory billingConfig = FunctionsCoordinator(coordinator).getConfig();
-        uint32 timeoutTimestamp = uint32(block.timestamp + billingConfig.requestTimeoutSeconds);
-
-        /// @dev create the commitment params
-        FunctionsResponse.Commitment memory commitment = FunctionsResponse.Commitment(
-            _requestId,
-            coordinator,
-            _estimatedTotalCostJuels,
-            address(parentPoolProxy), // client
-            uint64(vm.envUint("CLF_SUBID_BASE")), // subscriptionId
-            _callbackGasLimit,
-            0, // adminFee
-            0, // donFee
-            163500, // gasOverheadBeforeCallback
-            57000, // gasOverheadAfterCallback
-            timeoutTimestamp // timeoutTimestamp
-        );
-
-        /// @dev prank the coordinator to call fulfill on functionsRouter
-        vm.prank(coordinator);
-        (FunctionsResponse.FulfillResult resultCode, uint96 callbackGasCostJuels) = functionsRouter
-            .fulfill(_response, err, juelsPerGas, costWithoutFulfillment, transmitter, commitment);
-
-        console.log("Result Code:", uint8(resultCode));
-        console.log("Callback Gas Cost Juels:", callbackGasCostJuels);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -241,35 +175,25 @@ contract Deposit is BaseTest {
         IERC20(usdc).approve(address(parentPoolProxy), _amount2);
 
         /// @dev fund the parentPoolProxy with LINK to pay for CCIP
-        deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), CCIP_FEES);
+        deal(vm.envAddress("LINK_BASE"), address(parentPoolProxy), CCIP_FEES * 2);
 
-        /// @dev startDeposit and fulfillRequest for first user
-        (
-            bytes32 depositRequestId1,
-            uint32 callbackGasLimit1,
-            uint96 estimatedTotalCostJuels1
-        ) = _startDepositAndMonitorLogs(user1, _amount1);
+        bytes32 depositRequestId1 = _startDeposit(user1, _amount1);
         bytes memory response1 = abi.encode(MIN_DEPOSIT); // 1 usdc
-        _fulfillRequest(response1, depositRequestId1, callbackGasLimit1, estimatedTotalCostJuels1);
+        _fulfillRequest(response1, depositRequestId1);
 
-        /// @dev completeDeposit for first user
         _completeDeposit(user1, depositRequestId1);
 
         /// @dev assert s_depositsOnTheWayAmount is more than 0
-        assertGt(IParentPoolWrapper(address(parentPoolProxy)).getDepositsOnTheWayAmount(), 0);
+        assertGt(ParentPool(payable(parentPoolProxy)).s_depositsOnTheWayAmount(), 0);
 
         /// @dev we need the totalSupply to calculate user2's owed lp tokens
         uint256 lpTotalSupplyBeforeSecondDeposit = IERC20(parentPoolImplementation.i_lpToken())
             .totalSupply();
 
         /// @dev startDeposit and fulfillRequest for second user
-        (
-            bytes32 depositRequestId2,
-            uint32 callbackGasLimit2,
-            uint96 estimatedTotalCostJuels2
-        ) = _startDepositAndMonitorLogs(user2, _amount2);
-        bytes memory response2 = abi.encode(MIN_DEPOSIT + (_amount1 / 2)); // 1 usdc + (first deposit / parent+child)
-        _fulfillRequest(response2, depositRequestId2, callbackGasLimit2, estimatedTotalCostJuels2);
+        bytes32 depositRequestId2 = _startDeposit(user2, _amount2);
+        bytes memory response2 = abi.encode(MIN_DEPOSIT + (_amount1 / 3)); // 1 usdc + (first deposit / parent+child)
+        _fulfillRequest(response2, depositRequestId2);
 
         /// @dev we need logs for second user's completeDeposit to get the totalCrossChainLiquiditySnapshot
         vm.recordLogs();
@@ -283,13 +207,11 @@ contract Deposit is BaseTest {
         for (uint256 i = 0; i < entries.length; ++i) {
             if (
                 entries[i].topics[0] ==
-                keccak256(
-                    "ConceroParentPool_DepositCompleted(bytes32,address,uint256,uint256,uint256)"
-                )
+                keccak256("DepositCompleted(bytes32,address,uint256,uint256)")
             ) {
-                (, , totalCrossChainLiquiditySnapshot) = abi.decode(
+                (, totalCrossChainLiquiditySnapshot) = abi.decode(
                     entries[i].data,
-                    (uint256, uint256, uint256)
+                    (uint256, uint256)
                 );
                 break;
             }
@@ -297,23 +219,23 @@ contract Deposit is BaseTest {
 
         /// @dev assert user2 lp tokens minted as expected
         uint256 amountDepositedConverted = ((_amount2 - DEPOSIT_FEE_USDC) * WAD_PRECISION) /
-            USDC_PRECISION;
+            USDC_DECIMALS;
         uint256 crossChainBalanceConverted = (totalCrossChainLiquiditySnapshot * WAD_PRECISION) /
-            USDC_PRECISION;
+            USDC_DECIMALS;
 
         uint256 expectedLpTokensMintedUser2 = (((crossChainBalanceConverted +
             amountDepositedConverted) * lpTotalSupplyBeforeSecondDeposit) /
             crossChainBalanceConverted) - lpTotalSupplyBeforeSecondDeposit;
 
-        uint256 actualLptokensMintedUser2 = IERC20(parentPoolImplementation.i_lpToken()).balanceOf(
+        uint256 actualLpTokensMintedUser2 = IERC20(parentPoolImplementation.i_lpToken()).balanceOf(
             user2
         );
-        assertEq(expectedLpTokensMintedUser2, actualLptokensMintedUser2);
+        assertEq(expectedLpTokensMintedUser2, actualLpTokensMintedUser2);
     }
 
     /*//////////////////////////////////////////////////////////////
-                              CCIP RECEIVE
-    //////////////////////////////////////////////////////////////*/
+                                  CCIP RECEIVE
+        //////////////////////////////////////////////////////////////*/
     function test_ccipReceive() public {
         vm.prank(vm.envAddress("CL_CCIP_ROUTER_BASE"));
 
@@ -332,5 +254,24 @@ contract Deposit is BaseTest {
         });
 
         IAny2EVMMessageReceiver(address(parentPoolProxy)).ccipReceive(message);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+									 UTILS
+		//////////////////////////////////////////////////////////////*/
+
+    function _completeDeposit(address lp, bytes32 requestId) internal {
+        /// @dev call completeDeposit via proxy
+        vm.prank(lp);
+        (bool success, ) = address(parentPoolProxy).call(
+            abi.encodeWithSignature("completeDeposit(bytes32)", requestId)
+        );
+        require(success, "completeDeposit call failed");
+    }
+
+    function _fulfillRequest(bytes memory response, bytes32 requestId) internal {
+        vm.prank(vm.envAddress("CLF_ROUTER_BASE"));
+        FunctionsClient(address(parentPoolProxy)).handleOracleFulfillment(requestId, response, "");
+        vm.stopPrank();
     }
 }

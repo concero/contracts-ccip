@@ -30,7 +30,7 @@ contract IsMessengerTest is BaseTest {
         );
 
         _setProxyImplementation(address(parentPoolProxy), address(parentPoolImplementation));
-        setParentPoolVars();
+        _setParentPoolVars();
         deployLpToken();
         addFunctionsConsumer(address(parentPoolProxy));
     }

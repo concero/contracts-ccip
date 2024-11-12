@@ -6,15 +6,15 @@
  */
 pragma solidity ^0.8.0;
 
+import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ParentPoolStorage} from "./Libraries/ParentPoolStorage.sol";
-import {ParentPoolCommon} from "./ParentPoolCommon.sol";
 import {IParentPoolCLFCLA} from "./Interfaces/IParentPoolCLFCLA.sol";
 import {IParentPool} from "./Interfaces/IParentPool.sol";
+import {ParentPoolCommon} from "./ParentPoolCommon.sol";
+import {ParentPoolStorage} from "./Libraries/ParentPoolStorage.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 error CallerNotAllowed(address caller);
 error WithdrawAlreadyTriggered(bytes32);
@@ -120,7 +120,7 @@ contract ParentPoolCLFCLA is
             } else if (
                 requestType == IParentPool.CLFRequestType.performUpkeep_requestLiquidityTransfer
             ) {
-                _handleAutomationCLFFulfill(requestId, response);
+                _handleAutomationCLFFulfill(requestId);
             }
         }
 
@@ -285,7 +285,7 @@ contract ParentPoolCLFCLA is
     }
 
     /// @dev taken from the ConceroAutomation::fulfillRequest logic
-    function _handleAutomationCLFFulfill(bytes32 _requestId, bytes memory _response) internal {
+    function _handleAutomationCLFFulfill(bytes32 _requestId) internal {
         bytes32 withdrawalId = s_withdrawalIdByCLFRequestId[_requestId];
 
         for (uint256 i; i < s_withdrawalRequestIds.length; ++i) {

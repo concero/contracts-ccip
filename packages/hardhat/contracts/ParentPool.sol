@@ -6,7 +6,6 @@
  */
 pragma solidity 0.8.20;
 
-import "../../foundry/lib/chainlink/contracts/foundry-lib/forge-std/src/console.sol";
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";

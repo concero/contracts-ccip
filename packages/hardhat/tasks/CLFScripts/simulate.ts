@@ -78,7 +78,6 @@ task('clf-script-simulate', 'Executes the JavaScript source code locally')
 		}
 
 		const bytesArgs = await getSimulationArgs[scriptName]();
-
 		const concurrency = taskArgs.concurrency;
 		const promises = Array.from({length: concurrency}, () => simulateCLFScript(scriptPath, bytesArgs));
 		await Promise.all(promises);

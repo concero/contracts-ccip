@@ -70,7 +70,7 @@ const getSimulationArgs: {[functionName: string]: ArgBuilder} = {
 			dstChainSelector,
 		];
 	},
-	automation: async () => {
+	collect_liq: async () => {
 		const srcJsHashSum = getHashSum(await (await fetch(collectLiquidityCodeUrl)).text());
 		const ethersHashSum = getHashSum(await (await fetch(ethersV6CodeUrl)).text());
 		const placeholder = '0xDddDDb8a8E41C194ac6542a0Ad7bA663A72741E0';

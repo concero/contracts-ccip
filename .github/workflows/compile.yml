@@ -20,6 +20,12 @@ jobs:
       POOL_MESSENGER_0_ADDRESS:   '0xdddd5f804b9d293dce8819d232e8d76381605a62'
       POOL_MESSENGER_1_ADDRESS:   '0xdddd5f804b9d293dce8819d232e8d76381605a62'
       POOL_MESSENGER_2_ADDRESS:   '0xdddd5f804b9d293dce8819d232e8d76381605a62'
+      ARBISCAN_API_KEY:           ${{ secrets.ARBISCAN_API_KEY }}
+      ETHERSCAN_API_KEY:          ${{ secrets.ETHERSCAN_API_KEY }}
+      OPTIMISMSCAN_API_KEY:       ${{ secrets.OPTIMISMSCAN_API_KEY }}
+      CELOSCAN_API_KEY:           ${{ secrets.CELOSCAN_API_KEY }}
+      BASESCAN_API_KEY:           ${{ secrets.BASESCAN_API_KEY }}
+      POLYGONSCAN_API_KEY:        ${{ secrets.POLYGONSCAN_API_KEY }}
     steps:
       - uses: actions/checkout@v3
       - name: Install Node.js

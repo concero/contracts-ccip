@@ -5,7 +5,65 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
-const { LibZip } = require('solady');
+/* SOLADY BEGIN */
+function hexString(data) {
+	if (typeof data === 'string' || data instanceof String) {
+		if ((data = data.match(/^[\s\uFEFF\xA0]*(0[Xx])?([0-9A-Fa-f]*)[\s\uFEFF\xA0]*$/))) {
+			if (data[2].length % 2) {
+				throw new Error('Hex string length must be a multiple of 2.');
+			}
+			return data[2];
+		}
+	}
+	throw new Error('Data must be a hex string.');
+}
+
+function byteToString(b) {
+	return (b | 0x100).toString(16).slice(1);
+}
+
+function parseByte(data, i) {
+	return parseInt(data.substr(i, 2), 16);
+}
+
+function cdCompress(data) {
+	data = hexString(data);
+	var o = '0x',
+		z = 0,
+		y = 0,
+		i = 0,
+		c;
+
+	function pushByte(b) {
+		o += byteToString(((o.length < 4 * 2 + 2) * 0xff) ^ b);
+	}
+
+	function rle(v, d) {
+		pushByte(0x00);
+		pushByte(d - 1 + v * 0x80);
+	}
+
+	for (; i < data.length; i += 2) {
+		c = parseByte(data, i);
+		if (!c) {
+			if (y) rle(1, y), (y = 0);
+			if (++z === 0x80) rle(0, 0x80), (z = 0);
+			continue;
+		}
+		if (c === 0xff) {
+			if (z) rle(0, z), (z = 0);
+			if (++y === 0x20) rle(1, 0x20), (y = 0);
+			continue;
+		}
+		if (y) rle(1, y), (y = 0);
+		if (z) rle(0, z), (z = 0);
+		pushByte(c);
+	}
+	if (y) rle(1, y), (y = 0);
+	if (z) rle(0, z), (z = 0);
+	return o;
+}
+/* SOLADY END */
 
 (async () => {
 	const [
@@ -276,7 +334,7 @@ const { LibZip } = require('solady');
 	let gasPrice;
 	// let maxPriorityFeePerGas;
 
-	const compressedDstSwapData = LibZip.cdCompress(dstSwapData);
+	const compressedDstSwapData = cdCompress(dstSwapData);
 
 	const sendTransaction = async (contract, signer, txOptions) => {
 		try {

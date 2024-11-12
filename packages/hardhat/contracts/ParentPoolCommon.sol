@@ -20,7 +20,7 @@ contract ParentPoolCommon {
     uint256 internal constant LP_TOKEN_DECIMALS = 1 ether;
     uint256 internal constant PRECISION_HANDLER = 10_000_000_000; // 10 ** 10
     uint8 internal constant MAX_DEPOSITS_ON_THE_WAY_COUNT = 150;
-    // TODO: change in production
+    /*CHANGE-IN-PRODUCTION-TO-597_600*/
     //    uint256 private constant WITHDRAWAL_COOLDOWN_SECONDS = 597_600;
     uint256 internal constant WITHDRAWAL_COOLDOWN_SECONDS = 60;
 

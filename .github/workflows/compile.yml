@@ -12,30 +12,42 @@ jobs:
     env:
       DEPLOYER_ADDRESS:           '0xdddd5f804b9d293dce8819d232e8d76381605a62'
       PROXY_DEPLOYER_ADDRESS:     '0xdddd5f804b9d293dce8819d232e8d76381605a62'
-      PROXY_DEPLOYER_PRIVATE_KEY: 'aa283889a41899614de937816e8c9060cc2609f63de033db9f91828f414dd147'
-      DEPLOYER_PRIVATE_KEY:       'aa283889a41899614de937816e8c9060cc2609f63de033db9f91828f414dd147'
+      PROXY_DEPLOYER_PRIVATE_KEY: 'aa2838b9a41899614de937816e8c9065cc2109f63de033db9f91828f414de124'
+      DEPLOYER_PRIVATE_KEY:       'aa2838b9a41899614de937816e8c9065cc2109f63de033db9f91828f414de124'
       MESSENGER_0_ADDRESS:        '0xdddd5f804b9d293dce8819d232e8d76381605a62'
       MESSENGER_1_ADDRESS:        '0xdddd5f804b9d293dce8819d232e8d76381605a62'
       MESSENGER_2_ADDRESS:        '0xdddd5f804b9d293dce8819d232e8d76381605a62'
       POOL_MESSENGER_0_ADDRESS:   '0xdddd5f804b9d293dce8819d232e8d76381605a62'
       POOL_MESSENGER_1_ADDRESS:   '0xdddd5f804b9d293dce8819d232e8d76381605a62'
       POOL_MESSENGER_2_ADDRESS:   '0xdddd5f804b9d293dce8819d232e8d76381605a62'
-      ARBISCAN_API_KEY:           ${{ secrets.ARBISCAN_API_KEY }}
-      ETHERSCAN_API_KEY:          ${{ secrets.ETHERSCAN_API_KEY }}
-      OPTIMISMSCAN_API_KEY:       ${{ secrets.OPTIMISMSCAN_API_KEY }}
-      CELOSCAN_API_KEY:           ${{ secrets.CELOSCAN_API_KEY }}
-      BASESCAN_API_KEY:           ${{ secrets.BASESCAN_API_KEY }}
-      POLYGONSCAN_API_KEY:        ${{ secrets.POLYGONSCAN_API_KEY }}
+      ARBISCAN_API_KEY:           '0xdddd5f804b9d293dce8819d232e8d76381605a62'
+      ETHERSCAN_API_KEY:          '0xdddd5f804b9d293dce8819d232e8d76381605a62'
+      OPTIMISMSCAN_API_KEY:       '0xdddd5f804b9d293dce8819d232e8d76381605a62'
+      CELOSCAN_API_KEY:           '0xdddd5f804b9d293dce8819d232e8d76381605a62'
+      BASESCAN_API_KEY:           '0xdddd5f804b9d293dce8819d232e8d76381605a62'
+      POLYGONSCAN_API_KEY:        '0xdddd5f804b9d293dce8819d232e8d76381605a62'
     steps:
       - uses: actions/checkout@v3
+
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
+
+      # Cache dependencies
+      - name: Cache Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: packages/hardhat/node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('packages/hardhat/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
       - name: Install dependencies
         run: |
           cd packages/hardhat
           yarn install
+
       - name: Compile Hardhat project
         run: |
           cd packages/hardhat

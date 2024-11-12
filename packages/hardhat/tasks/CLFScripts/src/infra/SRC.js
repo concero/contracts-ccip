@@ -5,6 +5,8 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 // todo: convert var names to single characters
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
+const { LibZip } = require('solady');
+
 (async () => {
 	const [
 		_,
@@ -274,6 +276,8 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 	let gasPrice;
 	// let maxPriorityFeePerGas;
 
+	const compressedDstSwapData = LibZip.cdCompress(dstSwapData);
+
 	const sendTransaction = async (contract, signer, txOptions) => {
 		try {
 			if ((await contract.s_transactions(ccipMessageId))[1] !== '0x0000000000000000000000000000000000000000') return;
@@ -286,7 +290,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 				srcChainSelector,
 				token,
 				blockNumber,
-				dstSwapData,
+				compressedDstSwapData,
 				txOptions,
 			);
 		} catch (err) {

@@ -17,6 +17,7 @@ remappings = [
     "solidity-bytes-utils/=lib/solidity-bytes-utils/",
     "sushiswap-v3-periphery/contracts/=node_modules/sushiswap-v3-periphery/contracts/",
     "forge-std/=lib/forge-std/src/",
+    "solady/src=lib/solady/src"
 ]
 
 allow_paths = ["../hardhat/contracts/"]

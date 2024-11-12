@@ -3,10 +3,10 @@ import { getFallbackClients } from "../../utils/getViemClients";
 import { getEnvAddress } from "../../utils/getEnvVar";
 import log from "../../utils/log";
 import { task } from "hardhat/config";
-import cNetworks from "../../constants/cNetworks";
+import conceroNetworks from "../../constants/conceroNetworks";
 
 export async function deleteDepositsOTWIds() {
-  const chain = cNetworks.base;
+  const chain = conceroNetworks.base;
 
   const { walletClient, publicClient, account } = getFallbackClients(chain);
   const gasPrice = await publicClient.getGasPrice();

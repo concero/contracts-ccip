@@ -1,6 +1,6 @@
 import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import cNetworks from "../constants/cNetworks";
+import conceroNetworks from "../constants/conceroNetworks";
 import { getEnvVar, updateEnvAddress } from "../utils";
 import log from "../utils/log";
 
@@ -13,7 +13,7 @@ const deployProxyAdmin: (hre: HardhatRuntimeEnvironment, proxyType: IProxyType) 
   const { proxyDeployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
-  const networkType = cNetworks[name].type;
+  const networkType = conceroNetworks[name].type;
 
   const initialOwner = getEnvVar(`PROXY_DEPLOYER_ADDRESS`);
 

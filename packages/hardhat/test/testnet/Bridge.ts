@@ -2,10 +2,10 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import { parseUnits } from "viem";
 import { bridgeBase } from "../testBase/bridgeBase";
 import { getFallbackClients } from "../../utils";
-import { cNetworks } from "../../constants";
+import { conceroNetworks } from "../../constants";
 
 describe("bridge", () => {
-  const { walletClient, publicClient } = getFallbackClients(cNetworks.arbitrumSepolia);
+  const { walletClient, publicClient } = getFallbackClients(conceroNetworks.arbitrumSepolia);
   const senderAddress = process.env.DEPLOYER_ADDRESS;
   const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
   const srcTokenAddress = process.env.USDC_ARBITRUM_SEPOLIA;

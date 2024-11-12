@@ -1,6 +1,6 @@
 import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import cNetworks, { networkEnvKeys } from "../constants/cNetworks";
+import conceroNetworks, { networkEnvKeys } from "../constants/conceroNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils";
@@ -12,7 +12,7 @@ const deployConceroDexSwap: (hre: HardhatRuntimeEnvironment) => Promise<void> = 
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
-  const networkType = cNetworks[name].type;
+  const networkType = conceroNetworks[name].type;
 
   const conceroProxyAddress = getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`);
 

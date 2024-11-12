@@ -1,8 +1,7 @@
 import { task } from "hardhat/config";
-import chains, { networkEnvKeys } from "../../../constants/cNetworks";
+import { conceroNetworks, networkEnvKeys } from "../../../constants";
 import { CNetwork } from "../../../types/CNetwork";
-import { getClients, getEnvVar } from "../../../utils";
-import log, { err } from "../../../utils/log";
+import { err, getClients, getEnvVar, log } from "../../../utils";
 
 const withdrawToken = async (chain: CNetwork) => {
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = chain;
@@ -35,7 +34,7 @@ task("withdraw-parent-pool-fee", "Withdraws the token from the proxy contract").
   const { name, live } = hre.network;
 
   if (live) {
-    await withdrawToken(chains[name]);
+    await withdrawToken(conceroNetworks[name]);
   }
 });
 

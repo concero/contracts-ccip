@@ -1,5 +1,5 @@
 import { compileContracts, getClients, getEnvAddress, getEnvVar } from "../../../utils";
-import { cNetworks, networkEnvKeys, ProxyEnum } from "../../../constants";
+import { conceroNetworks, networkEnvKeys, ProxyEnum } from "../../../constants";
 import { task } from "hardhat/config";
 
 task("remove-pool-from-pool", "Deploy the CCIP infrastructure")
@@ -11,7 +11,7 @@ task("remove-pool-from-pool", "Deploy the CCIP infrastructure")
     const { live, name } = hre.network;
     const poolToRemoveNetworkName = taskArgs.pooltoremovechain;
     const [poolToRemoveFromAddress] = getEnvAddress(ProxyEnum.parentPoolProxy, name);
-    const cNetwork = cNetworks[name];
+    const cNetwork = conceroNetworks[name];
     const poolToRemoveChainSelector = getEnvVar(`CL_CCIP_CHAIN_SELECTOR_${networkEnvKeys[poolToRemoveNetworkName]}`);
     const { walletClient, publicClient, account } = getClients(cNetwork.viemChain);
     const { abi: ParentPoolAbi } = await import("../../../artifacts/contracts/ParentPool.sol/ParentPool.json");

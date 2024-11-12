@@ -15,7 +15,7 @@ import "solidity-coverage";
 import "@chainlink/hardhat-chainlink";
 import "hardhat-docgen";
 
-import cNetworks from "./constants/cNetworks";
+import conceroNetworks from "./constants/conceroNetworks";
 import { HardhatUserConfig } from "hardhat/config";
 import "./tasks";
 import { getEnvVar } from "./utils";
@@ -58,7 +58,7 @@ const config: HardhatUserConfig = {
       default: 1,
     },
   },
-  networks: cNetworks,
+  networks: conceroNetworks,
   etherscan: {
     apiKey: {
       arbitrum: getEnvVar("ARBISCAN_API_KEY"),
@@ -88,7 +88,7 @@ const config: HardhatUserConfig = {
       },
       {
         network: "arbitrum",
-        chainId: cNetworks.arbitrum.chainId,
+        chainId: conceroNetworks.arbitrum.chainId,
         urls: {
           apiURL: "https://api.arbiscan.io/api",
           browserURL: "https://arbiscan.io/",
@@ -96,7 +96,7 @@ const config: HardhatUserConfig = {
       },
       {
         network: "avalancheFuji",
-        chainId: cNetworks.avalancheFuji.chainId,
+        chainId: conceroNetworks.avalancheFuji.chainId,
         urls: {
           apiURL: "https://api.routescan.io/v2/network/mainnet/evm/43114/etherscan",
           browserURL: "https://snowtrace.io",

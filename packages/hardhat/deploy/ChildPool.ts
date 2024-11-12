@@ -1,6 +1,6 @@
 import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import chains, { networkEnvKeys } from "../constants/cNetworks";
+import { conceroNetworks, networkEnvKeys } from "../constants/conceroNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils";
@@ -24,7 +24,7 @@ const deployChildPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: Constr
     const { deploy } = hre.deployments;
     const { name, live } = hre.network;
 
-    const { linkToken, ccipRouter, type } = chains[name];
+    const { linkToken, ccipRouter, type } = conceroNetworks[name];
 
     const defaultArgs = {
       conceroProxyAddress: getEnvVar(`CONCERO_INFRA_PROXY_${networkEnvKeys[name]}`),

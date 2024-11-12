@@ -1,10 +1,8 @@
 import { task } from "hardhat/config";
-import chains, { networkEnvKeys } from "../../../constants/cNetworks";
+import { conceroNetworks, networkEnvKeys, viemReceiptConfig } from "../../../constants";
 import { CNetwork } from "../../../types/CNetwork";
-import { getEnvVar, getFallbackClients } from "../../../utils";
+import { err, getEnvVar, getFallbackClients, log } from "../../../utils";
 import { Address, erc20Abi } from "viem";
-import log, { err } from "../../../utils/log";
-import { viemReceiptConfig } from "../../../constants";
 
 const getBalance = async (tokenAddress: Address, account: Address, chain: CNetwork) => {
   const { publicClient } = getFallbackClients(chain);
@@ -111,7 +109,7 @@ task("deposit-infra-proxy", "Deposits the token to the proxy contract")
     const { name, live } = hre.network;
     const { contracttype, tokenaddress, amount } = taskArgs;
     if (live) {
-      await depositToken(chains[name], tokenaddress, contracttype, amount);
+      await depositToken(conceroNetworks[name], tokenaddress, contracttype, amount);
     }
   });
 
@@ -124,7 +122,7 @@ task("withdraw-infra-proxy", "Withdraws the token from the proxy contract")
     const { name, live } = hre.network;
     const { contracttype, tokenaddress, amount } = taskArgs;
     if (live) {
-      await withdrawToken(chains[name], tokenaddress, contracttype, amount);
+      await withdrawToken(conceroNetworks[name], tokenaddress, contracttype, amount);
     }
   });
 

@@ -1,6 +1,6 @@
 import { task, types } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { cNetworks, networkTypes, ProxyEnum } from "../../../constants";
+import { conceroNetworks, networkTypes, ProxyEnum } from "../../../constants";
 import { compileContracts, getEnvAddress, verifyVariables } from "../../../utils";
 import addCLFConsumer from "../../CLF/subscriptions/add";
 import uploadDonSecrets from "../../CLF/donSecrets/upload";
@@ -26,8 +26,8 @@ task("deploy-parent-pool", "Deploy the pool")
     const slotId = parseInt(taskArgs.slotid);
 
     const { name } = hre.network;
-    const deployableChains: CNetwork[] = [cNetworks[name]];
-    const networkType = cNetworks[name].type;
+    const deployableChains: CNetwork[] = [conceroNetworks[name]];
+    const networkType = conceroNetworks[name].type;
     let clfSecretsExpiration;
 
     if (networkType == networkTypes.mainnet) {
@@ -41,8 +41,8 @@ task("deploy-parent-pool", "Deploy the pool")
       await deployProxyAdmin(hre, ProxyEnum.parentPoolProxy);
       await deployTransparentProxy(hre, ProxyEnum.parentPoolProxy);
       const [proxyAddress, _] = getEnvAddress(ProxyEnum.parentPoolProxy, name);
-      const { functionsSubIds } = cNetworks[name];
-      await addCLFConsumer(cNetworks[name], [proxyAddress], functionsSubIds[0]);
+      const { functionsSubIds } = conceroNetworks[name];
+      await addCLFConsumer(conceroNetworks[name], [proxyAddress], functionsSubIds[0]);
     }
 
     if (taskArgs.deployimplementation) {

@@ -13,7 +13,7 @@ import {
 import { SecretsManager } from "@chainlink/functions-toolkit";
 
 import {
-  cNetworks,
+  conceroNetworks,
   conceroChains,
   mainnetChains,
   networkEnvKeys,
@@ -119,7 +119,7 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
   try {
     const [conceroProxy, conceroProxyAlias] = getEnvAddress(ProxyEnum.infraProxy, dcName);
     const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
-    const { signer: dcSigner } = getEthersSignerAndProvider(cNetworks[dcName].url);
+    const { signer: dcSigner } = getEthersSignerAndProvider(conceroNetworks[dcName].url);
 
     const secretsManager = new SecretsManager({
       signer: dcSigner,
@@ -209,7 +209,7 @@ export async function setDstConceroPools(deployableChain: CNetwork, abi: any) {
     for (const chain of chainsToSet) {
       const { name: dstChainName, chainSelector: dstChainSelector } = chain;
       const [dstConceroPool, dstConceroPoolAlias] =
-        chain === cNetworks.base || chain === cNetworks.baseSepolia
+        chain === conceroNetworks.base || chain === conceroNetworks.baseSepolia
           ? getEnvAddress(ProxyEnum.parentPoolProxy, dstChainName)
           : getEnvAddress(ProxyEnum.childPoolProxy, dstChainName);
       const { request: setDstConceroPoolReq } = await publicClient.simulateContract({

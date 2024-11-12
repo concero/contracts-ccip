@@ -1,13 +1,11 @@
 import { task } from "hardhat/config";
-import { getEnvVar } from "../../utils/getEnvVar";
-import log from "../../utils/log";
-import CNetworks, { networkEnvKeys } from "../../constants/CNetworks";
+import log, { getClients, getEnvVar } from "../../utils";
+import { conceroNetworks, networkEnvKeys } from "../../constants";
 import fs from "fs";
-import { getClients } from "../utils/getViemClients";
 
 task("populate-withdrawal-requests", "Reads withdrawal statuses from JSON and updates the contract").setAction(
   async (taskArgs, hre) => {
-    const chain = CNetworks.base;
+    const chain = conceroNetworks.base;
     try {
       const { publicClient, walletClient, account } = getClients(chain.name, chain.url);
       const contractAddress = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);

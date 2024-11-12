@@ -1,6 +1,6 @@
 import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import cNetworks, { networkEnvKeys } from "../constants/cNetworks";
+import conceroNetworks, { networkEnvKeys } from "../constants/conceroNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar, getFallbackClients } from "../utils";
@@ -15,7 +15,7 @@ const deployLPToken: (hre: HardhatRuntimeEnvironment, constructorArgs?: Construc
     const { proxyDeployer } = await hre.getNamedAccounts();
     const { deploy } = hre.deployments;
     const { name, live } = hre.network;
-    const networkType = cNetworks[name].type;
+    const networkType = conceroNetworks[name].type;
 
     const defaultArgs = {
       parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`),
@@ -24,7 +24,7 @@ const deployLPToken: (hre: HardhatRuntimeEnvironment, constructorArgs?: Construc
 
     const args = { ...defaultArgs, ...constructorArgs };
 
-    const publicClient = getFallbackClients(cNetworks[name]);
+    const publicClient = getFallbackClients(conceroNetworks[name]);
     const gasPrice = (await publicClient.publicClient.getGasPrice()).toString();
 
     console.log("Deploying LpToken...");

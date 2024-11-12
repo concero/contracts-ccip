@@ -1,27 +1,27 @@
 import { CNetwork } from "../types/CNetwork";
-import chains from "./cNetworks";
+import { conceroNetworks } from "./conceroNetworks";
 import { ConceroChains } from "../types/chains";
 
 export const liveChains: CNetwork[] = [
-  chains.baseSepolia,
-  chains.arbitrumSepolia,
-  chains.avalancheFuji,
-  // chains.optimismSepolia,
-  // chains.polygonAmoy,
+  conceroNetworks.baseSepolia,
+  conceroNetworks.arbitrumSepolia,
+  conceroNetworks.avalancheFuji,
+  // conceroNetworks.optimismSepolia,
+  // conceroNetworks.polygonAmoy,
 ];
 
-// export const liveChains: CNetwork[] = [chains.polygon, chains.base, chains.arbitrum, chains.avalanche];
+// export const liveChains: CNetwork[] = [conceroNetworks.polygon, conceroNetworks.base, conceroNetworks.arbitrum, conceroNetworks.avalanche];
 
 export const conceroChains: ConceroChains = {
   testnet: {
-    parentPool: [chains.baseSepolia],
-    childPool: [chains.arbitrumSepolia, chains.avalancheFuji],
-    infra: [chains.arbitrumSepolia, chains.avalancheFuji, chains.baseSepolia],
+    parentPool: [conceroNetworks.baseSepolia],
+    childPool: [conceroNetworks.arbitrumSepolia, conceroNetworks.avalancheFuji],
+    infra: [conceroNetworks.arbitrumSepolia, conceroNetworks.avalancheFuji, conceroNetworks.baseSepolia],
   },
   mainnet: {
-    parentPool: [chains.base],
-    childPool: [chains.polygon, chains.arbitrum, chains.avalanche],
-    infra: [chains.polygon, chains.arbitrum, chains.avalanche, chains.base],
+    parentPool: [conceroNetworks.base],
+    childPool: [conceroNetworks.polygon, conceroNetworks.arbitrum, conceroNetworks.avalanche],
+    infra: [conceroNetworks.polygon, conceroNetworks.arbitrum, conceroNetworks.avalanche, conceroNetworks.base],
   },
 };
 

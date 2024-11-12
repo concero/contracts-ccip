@@ -1,6 +1,6 @@
 import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import chains, { networkEnvKeys } from "../constants/cNetworks";
+import { conceroNetworks, networkEnvKeys } from "../constants/conceroNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils";
@@ -12,7 +12,7 @@ const deployConceroOrchestrator: (hre: HardhatRuntimeEnvironment) => Promise<voi
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
   const { name, live } = hre.network;
-  const { functionsRouter, conceroChainIndex, type } = chains[name];
+  const { functionsRouter, conceroChainIndex, type } = conceroNetworks[name];
 
   const conceroDexSwapAddress = getEnvVar(`CONCERO_DEX_SWAP_${networkEnvKeys[name]}`);
   const conceroAddress = getEnvVar(`CONCERO_BRIDGE_${networkEnvKeys[name]}`);

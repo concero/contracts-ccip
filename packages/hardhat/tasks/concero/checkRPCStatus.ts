@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import axios from "axios";
-import { cNetworks } from "../../constants";
+import { conceroNetworks } from "../../constants";
 import { log } from "../../utils";
 
 const request = {
@@ -21,8 +21,8 @@ const request = {
 };
 
 export async function checkRpcStatus() {
-  for (const [name, chain] of Object.entries(cNetworks)) {
-    const urls = chain.rpcs;
+  for (const [name, chain] of Object.entries(conceroNetworks)) {
+    const urls = chain.urls;
 
     if (!urls || urls.length === 0) {
       log(`\nRPCs healthcheck for network:`, "checkRPCStatus", name);

@@ -1,6 +1,6 @@
 import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import chains, { networkEnvKeys } from "../constants/cNetworks";
+import { conceroNetworks, networkEnvKeys } from "../constants/conceroNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { zeroAddress } from "viem";
@@ -26,8 +26,8 @@ const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: Const
     const { deployer } = await hre.getNamedAccounts();
     const { deploy } = hre.deployments;
     const { name, live } = hre.network;
-    const networkType = chains[name].type;
-    const { linkToken, ccipRouter, functionsRouter, functionsDonId, functionsSubIds } = chains[name];
+    const networkType = conceroNetworks[name].type;
+    const { linkToken, ccipRouter, functionsRouter, functionsDonId, functionsSubIds } = conceroNetworks[name];
 
     const defaultArgs: Args = {
       parentProxyAddress: getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[name]}`),
@@ -48,7 +48,7 @@ const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: Const
 
     log("Deploying...", `deployParentPool, ${deployer}`, name);
 
-    const { publicClient: viemPublicClient } = getFallbackClients(chains[name]);
+    const { publicClient: viemPublicClient } = getFallbackClients(conceroNetworks[name]);
     const gasPrice = await viemPublicClient.getGasPrice();
 
     const deployParentPool = (await deploy("ParentPool", {

@@ -2,9 +2,8 @@ import { encodeAbiParameters, formatUnits, getContract } from "viem";
 import functionsRouterAbi from "@chainlink/contracts/abi/v0.8/FunctionsRouter.json";
 import linkTokenAbi from "@chainlink/contracts/abi/v0.8/LinkToken.json";
 import { CNetwork } from "../../types/CNetwork";
-import log from "../../utils/log";
+import log, { getFallbackClients } from "../../utils";
 import { viemReceiptConfig } from "../../constants";
-import { getFallbackClients } from "../../utils";
 
 export async function fundSubscription(selectedChains: CNetwork[]) {
   for (const chain of selectedChains) {

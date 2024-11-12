@@ -2,27 +2,27 @@ import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { decodeEventLog, getAbiItem } from "viem";
 import { err, getFallbackClients, log } from "../../utils";
-import chains from "../../constants/cNetworks";
+import { conceroNetworks } from "../../constants/conceroNetworks";
 import functionsRouterAbi from "@chainlink/contracts/abi/v0.8/FunctionsRouter.json";
 import functionsCoordinatorAbi from "@chainlink/contracts/abi/v0.8/FunctionsCoordinator.json";
 
 //todo: base throws max block range 5000 error. find a better RPC to fetch signers for base.
 const mainnetNetworks = [
-  // chains.mainnet, // no mainnet & opt object in conceroNetworks yet
-  chains.base,
-  chains.arbitrum,
-  // chains.optimism,
-  chains.avalanche,
-  chains.polygon,
+  // conceroNetworks.mainnet, // no mainnet & opt object in conceroNetworks yet
+  conceroNetworks.base,
+  conceroNetworks.arbitrum,
+  // conceroNetworks.optimism,
+  conceroNetworks.avalanche,
+  conceroNetworks.polygon,
 ];
 
 const testnetNetworks = [
-  chains.sepolia,
-  chains.baseSepolia,
-  chains.arbitrumSepolia,
-  chains.optimismSepolia,
-  chains.avalancheFuji,
-  chains.polygonAmoy,
+  conceroNetworks.sepolia,
+  conceroNetworks.baseSepolia,
+  conceroNetworks.arbitrumSepolia,
+  conceroNetworks.optimismSepolia,
+  conceroNetworks.avalancheFuji,
+  conceroNetworks.polygonAmoy,
 ];
 
 const clfCoordinatorCreationBlock = {

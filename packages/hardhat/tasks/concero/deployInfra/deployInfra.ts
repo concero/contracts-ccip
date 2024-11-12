@@ -1,5 +1,5 @@
 import { task, types } from "hardhat/config";
-import { conceroChains, networkTypes, ProxyEnum, cNetworks } from "../../../constants";
+import { conceroChains, networkTypes, ProxyEnum, conceroNetworks } from "../../../constants";
 import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
 import { CNetwork } from "../../../types/CNetwork";
 import uploadDonSecrets from "../../CLF/donSecrets/upload";
@@ -25,9 +25,9 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
 
     const hre = require("hardhat");
     const { live, name } = hre.network;
-    const networkType = cNetworks[name].type;
+    const networkType = conceroNetworks[name].type;
     let deployableChains: CNetwork[] = [];
-    if (live) deployableChains = [cNetworks[hre.network.name]];
+    if (live) deployableChains = [conceroNetworks[hre.network.name]];
 
     let liveChains: CNetwork[] = [];
     if (networkType == networkTypes.mainnet) {
@@ -59,8 +59,8 @@ async function deployInfra(params: DeployInfraParams) {
     await deployProxyAdmin(hre, ProxyEnum.infraProxy);
     await deployTransparentProxy(hre, ProxyEnum.infraProxy);
     const [proxyAddress] = getEnvAddress(ProxyEnum.infraProxy, name);
-    const { functionsSubIds } = cNetworks[name];
-    await addCLFConsumer(cNetworks[name], [proxyAddress], functionsSubIds[0]);
+    const { functionsSubIds } = conceroNetworks[name];
+    await addCLFConsumer(conceroNetworks[name], [proxyAddress], functionsSubIds[0]);
   }
 
   if (deployImplementation) {

@@ -1,5 +1,5 @@
 import { SubscriptionManager } from "@chainlink/functions-toolkit";
-import chains from "../../../constants/cNetworks";
+import { conceroNetworks } from "../../../constants/conceroNetworks";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { CNetwork } from "../../../types/CNetwork";
@@ -14,15 +14,19 @@ task("clf-sub-consumer-add", "Adds a consumer contract to the Functions billing 
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const { name, live } = hre.network;
-    if (!chains[name]) throw new Error(`Chain ${name} not supported`);
+    if (!conceroNetworks[name]) throw new Error(`Chain ${name} not supported`);
     let subscriptionId;
     if (!taskArgs.subid) {
-      warn(`No subscription ID provided, defaulting to ${chains[name].functionsSubIds[0]}`, "addCLFConsumer", name);
-      subscriptionId = chains[name].functionsSubIds[0];
+      warn(
+        `No subscription ID provided, defaulting to ${conceroNetworks[name].functionsSubIds[0]}`,
+        "addCLFConsumer",
+        name,
+      );
+      subscriptionId = conceroNetworks[name].functionsSubIds[0];
     } else subscriptionId = parseInt(taskArgs.subId);
 
     const consumerAddresses = taskArgs.contract.split(",");
-    await addCLFConsumer(chains[name], consumerAddresses, subscriptionId);
+    await addCLFConsumer(conceroNetworks[name], consumerAddresses, subscriptionId);
   });
 
 async function addCLFConsumer(chain: CNetwork, consumerAddresses: Address[], subscriptionId: number) {

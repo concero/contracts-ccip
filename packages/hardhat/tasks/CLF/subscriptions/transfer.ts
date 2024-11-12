@@ -1,6 +1,5 @@
 import { task } from "hardhat/config";
 import { SubscriptionManager, TransactionOptions } from "@chainlink/functions-toolkit";
-import chains from "../../../constants/cNetworks";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -11,11 +10,11 @@ task("clf-sub-transfer", "Request ownership of an Functions subscription be tran
     const hre: HardhatRuntimeEnvironment = require("hardhat");
 
     const { name, live } = hre.network;
-    if (!chains[name]) throw new Error(`Chain ${name} not supported`);
+    if (!conceroNetworks[name]) throw new Error(`Chain ${name} not supported`);
 
     const subscriptionId = parseInt(taskArgs.subid);
     const newOwner = taskArgs.newowner;
-    const { linkToken, functionsRouter, confirmations } = chains[name];
+    const { linkToken, functionsRouter, confirmations } = conceroNetworks[name];
     const txOptions: TransactionOptions = { confirmations, overrides: { gasLimit: 500000n } };
 
     const signer = await hre.ethers.getSigner(process.env.DEPLOYER_ADDRESS);

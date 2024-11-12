@@ -1,6 +1,6 @@
 import { task, types } from "hardhat/config";
 import { SecretsManager } from "@chainlink/functions-toolkit";
-import chains, { networkEnvKeys } from "../../../constants/cNetworks";
+import { networkEnvKeys } from "../../../constants/conceroNetworks";
 import secrets from "../../../constants/CLFSecrets";
 import updateEnvVariable from "../../../utils/updateEnvVariable";
 import { CNetwork } from "../../../types/CNetwork";
@@ -77,7 +77,7 @@ task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")
         await processNetwork(liveChain);
       }
     } else {
-      await processNetwork(chains[hre.network.name]);
+      await processNetwork(conceroNetworks[hre.network.name]);
     }
   });
 

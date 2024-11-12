@@ -1,5 +1,5 @@
 import { task } from "hardhat/config";
-import cNetworks from "../../constants/cNetworks";
+import conceroNetworks from "../../constants/conceroNetworks";
 
 function getHashSum(sourceCode: string) {
   const hash = require("crypto").createHash("sha256");
@@ -9,7 +9,7 @@ function getHashSum(sourceCode: string) {
 
 task("test-script", "A test script").setAction(async taskArgs => {
   console.log(hre.network.name);
-  const chain = cNetworks[hre.network.name];
+  const chain = conceroNetworks[hre.network.name];
 
   console.log("Running test-script");
   // const [conceroProxy, conceroProxyAlias] = getEnvAddress("infraProxy", chain.name);

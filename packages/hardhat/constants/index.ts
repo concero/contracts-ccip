@@ -1,7 +1,7 @@
 import secrets from "./CLFSecrets";
 import CLFnetworks from "./CLFnetworks";
 import CLFSimulationConfig from "./CLFSimulationConfig";
-import { cNetworks, functionsGatewayUrls, networkEnvKeys, networkTypes } from "./cNetworks";
+import { conceroNetworks, functionsGatewayUrls, networkEnvKeys, networkTypes } from "./conceroNetworks";
 import {
   envPrefixes,
   messengers,
@@ -18,7 +18,7 @@ export {
   secrets,
   CLFnetworks,
   CLFSimulationConfig,
-  cNetworks,
+  conceroNetworks,
   networkTypes,
   networkEnvKeys,
   functionsGatewayUrls,

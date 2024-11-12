@@ -1,12 +1,11 @@
 import { CNetwork } from "../../types/CNetwork";
 import ierc20Abi from "@chainlink/contracts/abi/v0.8/IERC20.json";
-import chains, { networkEnvKeys } from "../../constants/cNetworks";
+import { conceroNetworks, networkEnvKeys, viemReceiptConfig } from "../../constants";
 import { dripBnm } from "./dripBnm";
 import { task } from "hardhat/config";
 import { liveChains } from "./deployInfra/deployInfra";
-import { getEnvVar } from "../../utils";
+import { getEnvVar, getFallbackClients } from "../../utils";
 import log, { err } from "../../utils/log";
-import { viemReceiptConfig } from "../../constants";
 
 export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
   //checks balance of CCIPBnm of deployer
@@ -62,7 +61,7 @@ task("fund-contracts", "Funds the contract with CCIPBNM tokens")
     const { name, live } = hre.network;
     const amount = parseInt(taskArgs.amount, 10);
     if (live) {
-      await fundContract([chains[name]], amount);
+      await fundContract([conceroNetworks[name]], amount);
     } else {
       for (const chain of liveChains) {
         await fundContract([chain], amount);

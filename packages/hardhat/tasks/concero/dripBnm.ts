@@ -1,8 +1,8 @@
 import { CNetwork } from "../../types/CNetwork";
-import chains from "../../constants/cNetworks";
+import { conceroNetworks, viemReceiptConfig } from "../../constants";
 import liveChains from "./deployInfra/deployInfra";
 import { task } from "hardhat/config";
-import { viemReceiptConfig } from "../../constants/deploymentVariables";
+import { getFallbackClients } from "../../utils";
 
 export async function dripBnm(chains: CNetwork[], amount: number = 20) {
   for (const chain of chains) {
@@ -44,7 +44,7 @@ task("drip-bnm", "Drips CCIPBNM tokens to the deployer")
     const { name, live } = hre.network;
     const amount = parseInt(taskArgs.amount, 10);
     if (live) {
-      await dripBnm([chains[name]], amount);
+      await dripBnm([conceroNetworks[name]], amount);
     } else {
       for (const chain of liveChains) {
         await dripBnm([chain], amount);

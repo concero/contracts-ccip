@@ -1,15 +1,14 @@
-import cNetworks from "../../constants/cNetworks";
+import { conceroNetworks, viemReceiptConfig } from "../../constants";
 import { privateKeyToAccount } from "viem/accounts";
-import log from "../../utils/log";
+import { getFallbackClients, log } from "../../utils";
 import { task } from "hardhat/config";
 import { abi as ownableAbi } from "@openzeppelin/contracts/build/contracts/Ownable.json";
-import { viemReceiptConfig } from "../../constants/deploymentVariables";
-import { getFallbackClients } from "../../utils/getViemClients";
 
 export async function changeOwnership(hre, targetContract, newOwner: string) {
   const { name: chainName } = hre.network;
+  const chain = conceroNetworks[chainName];
   const chainId = hre.network.config.chainId;
-  const { viemChain, url } = cNetworks[chainName];
+  const { viemChain, url } = conceroNetworks[chainName];
 
   if (!viemChain) {
     log(`Chain ${chainId} not found in live chains`, "changeOwnership");

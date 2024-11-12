@@ -1,10 +1,10 @@
-import { cNetworks } from "../constants";
+import { conceroNetworks } from "../constants";
 import { CNetwork } from "../types/CNetwork";
 
 export function getChainBySelector(selector: string): CNetwork {
-  for (const chain in cNetworks) {
-    if (cNetworks[chain].chainSelector === selector) {
-      return cNetworks[chain];
+  for (const chain in conceroNetworks) {
+    if (conceroNetworks[chain].chainSelector === selector) {
+      return conceroNetworks[chain];
     }
   }
 
@@ -12,9 +12,9 @@ export function getChainBySelector(selector: string): CNetwork {
 }
 
 export function getChainById(chainId: number): CNetwork {
-  for (const chain in cNetworks) {
-    if (cNetworks[chain].chainId === chainId) {
-      return cNetworks[chain];
+  for (const chain in conceroNetworks) {
+    if (conceroNetworks[chain].chainId === chainId) {
+      return conceroNetworks[chain];
     }
   }
 

@@ -1,5 +1,5 @@
 import { task } from "hardhat/config";
-import cNetworks from "../../constants/cNetworks";
+import conceroNetworks from "../../constants/conceroNetworks";
 import { getEnvVar, getFallbackClients } from "../../utils";
 import { decodeAbiParameters, parseAbiParameters } from "viem";
 import { ethers } from "ethers-v5";
@@ -158,7 +158,7 @@ function decodeReportResult(results) {
 task("decode-clf-fulfill", "Decodes CLF TX to get signers and fulfillment data")
   .addParam("txhash", "Transaction hash to decode")
   .setAction(async (taskArgs, hre) => {
-    const chain = cNetworks[hre.network.name];
+    const chain = conceroNetworks[hre.network.name];
     const formattedData = await decodeReport(taskArgs.txhash, chain);
 
     const isTestnet = chain.type === "testnet";

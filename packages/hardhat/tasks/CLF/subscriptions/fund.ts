@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import { SubscriptionManager } from "@chainlink/functions-toolkit";
-import chains from "../../../constants/cNetworks";
+import { conceroNetworks } from "../../../constants/conceroNetworks";
 import { formatEther } from "viem";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import log from "../../../utils/log";
@@ -14,10 +14,10 @@ task("clf-sub-fund", "Funds a billing subscription for Functions consumer contra
 
     const { name, live } = hre.network;
     const subId = parseInt(taskArgs.subid, 10);
-    if (!chains[name]) throw new Error(`Network ${name} not supported`);
+    if (!conceroNetworks[name]) throw new Error(`Network ${name} not supported`);
 
     const signer = await hre.ethers.getSigner();
-    const { linkToken, functionsRouter, confirmations, functionsSubIds } = chains[name];
+    const { linkToken, functionsRouter, confirmations, functionsSubIds } = conceroNetworks[name];
     if (!functionsSubIds.includes(subId.toString()))
       throw new Error(`Subscription ID ${taskArgs.subid} not present on network ${name}`);
     const txOptions = { confirmations };

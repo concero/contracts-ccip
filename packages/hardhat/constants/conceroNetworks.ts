@@ -49,7 +49,7 @@ export const functionsGatewayUrls = {
   testnet: ["https://01.functions-gateway.testnet.chain.link/", "https://02.functions-gateway.testnet.chain.link/"],
 };
 
-export const cNetworks: Record<CNetworkNames, CNetwork> = {
+export const conceroNetworks: Record<CNetworkNames, CNetwork> = {
   localhost: {
     accounts: [deployerPK, proxyDeployerPK],
     // mock CLF data
@@ -389,4 +389,4 @@ export const cNetworks: Record<CNetworkNames, CNetwork> = {
     name: "avalanche",
   },
 };
-export default cNetworks;
+export default conceroNetworks;

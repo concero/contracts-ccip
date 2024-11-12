@@ -1,4 +1,4 @@
-import chains, { networkEnvKeys } from "../../../constants/cNetworks";
+import { conceroNetworks, networkEnvKeys } from "../../../constants/conceroNetworks";
 import { task, types } from "hardhat/config";
 import { SubscriptionManager, TransactionOptions } from "@chainlink/functions-toolkit";
 import { getEnvVar, getFallbackClients, log } from "../../../utils";
@@ -14,7 +14,7 @@ task("clf-sub-consumer-rm", "Removes consumer contracts from a Functions billing
   .addOptionalParam("keepcontracts", "If specified, removes all except this address", undefined, types.string)
   .setAction(async ({ subid, contract, keepcontracts }, hre) => {
     const signer = await hre.ethers.getSigner();
-    const chain = chains[hre.network.name];
+    const chain = conceroNetworks[hre.network.name];
     const { functionsSubIds, linkToken, functionsRouter, confirmations } = chain;
     const subscriptionId = subid || functionsSubIds[0];
     const txOptions: TransactionOptions = { confirmations, overrides: { gasLimit: 1000000n } };

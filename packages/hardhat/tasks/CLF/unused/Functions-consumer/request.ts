@@ -13,7 +13,7 @@
 // import networks from "../../../constants/CLFnetworks";
 // import { HardhatRuntimeEnvironment } from "hardhat/types";
 //
-// import chains from "../../../constants/cNetworks";
+// import { conceroNetworks } from "../../../constants/conceroNetworks";
 //
 // const utils = require("../../utils");
 // const chalk = require("chalk");
@@ -84,7 +84,7 @@
 //
 //     // Initialize the subscription manager
 //     const signer = await hre.ethers.getSigner();
-//     const { linkToken: linkTokenAddress, functionsRouter: functionsRouterAddress } = chains[name];
+//     const { linkToken: linkTokenAddress, functionsRouter: functionsRouterAddress } = conceroNetworks[name];
 //
 //     const subManager = new SubscriptionManager({ signer, linkTokenAddress, functionsRouterAddress });
 //     await subManager.initialize();

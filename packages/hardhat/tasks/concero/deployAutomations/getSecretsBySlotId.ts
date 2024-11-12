@@ -1,10 +1,10 @@
 import { getEthersV5FallbackSignerAndProvider } from "../../../utils/getEthersSignerAndProvider";
 import { SecretsManager } from "@chainlink/functions-toolkit";
 import log from "../../../utils/log";
-import cNetworks from "../../../constants/cNetworks";
+import conceroNetworks from "../../../constants/conceroNetworks";
 
 export async function getSecretsBySlotId(chainName: string, slotId: number) {
-  const chain = cNetworks[chainName];
+  const chain = conceroNetworks[chainName];
   const {
     functionsRouter: dcFunctionsRouter,
     functionsDonIdAlias: dcFunctionsDonIdAlias,

@@ -1,6 +1,6 @@
 import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import chains, { networkEnvKeys } from "../constants/cNetworks";
+import { conceroNetworks, networkEnvKeys } from "../constants/conceroNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
 import { getEnvVar } from "../utils";
@@ -25,9 +25,9 @@ const deployConceroBridge: (hre: HardhatRuntimeEnvironment, constructorArgs?: Co
     const { deployer } = await hre.getNamedAccounts();
     const { deploy } = hre.deployments;
     const { name, live } = hre.network;
-    const networkType = chains[name].type;
+    const networkType = conceroNetworks[name].type;
 
-    if (!chains[name]) {
+    if (!conceroNetworks[name]) {
       throw new Error(`Chain ${name} not supported`);
     }
 
@@ -40,7 +40,7 @@ const deployConceroBridge: (hre: HardhatRuntimeEnvironment, constructorArgs?: Co
       conceroChainIndex,
       linkToken,
       ccipRouter,
-    } = chains[name];
+    } = conceroNetworks[name];
 
     const defaultArgs = {
       chainSelector: chainSelector,

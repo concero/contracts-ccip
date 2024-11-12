@@ -1,10 +1,9 @@
-import { getEnvVar, getFallbackClients } from "../../utils";
-import log from "../../utils/log";
+import log, { getEnvVar, getFallbackClients } from "../../utils";
 import { task } from "hardhat/config";
-import cNetworks, { networkEnvKeys } from "../../constants/cNetworks";
+import conceroNetworks, { networkEnvKeys } from "../../constants/conceroNetworks";
 
 export async function callContractFunction() {
-  const chain = cNetworks.base;
+  const chain = conceroNetworks.base;
 
   const { walletClient, publicClient, account } = getFallbackClients(chain);
   const gasPrice = await publicClient.getGasPrice();

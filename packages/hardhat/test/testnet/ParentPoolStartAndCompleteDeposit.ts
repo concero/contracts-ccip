@@ -3,14 +3,14 @@ import { Address, decodeEventLog, parseUnits } from "viem";
 import { abi as ParentPoolAbi } from "../../artifacts/contracts/ParentPool.sol/ParentPool.json";
 import { approve } from "../utils/approve";
 import { getFallbackClients } from "../../utils";
-import { cNetworks } from "../../constants";
+import { conceroNetworks } from "../../constants";
 
 const usdcAmount = parseUnits("4", 6);
 const usdcTokenAddress = process.env.USDC_BASE_SEPOLIA as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 
 describe("start deposit usdc to parent pool\n", () => {
-  const { walletClient, publicClient } = getFallbackClients(cNetworks.baseSepolia);
+  const { walletClient, publicClient } = getFallbackClients(conceroNetworks.baseSepolia);
 
   it("should deposit usdc to pool", async () => {
     const startDepositHash = await walletClient.writeContract({

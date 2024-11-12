@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import { SubscriptionManager } from "@chainlink/functions-toolkit";
-import chains from "../../../constants/cNetworks";
+import { conceroNetworks } from "../../../constants/conceroNetworks";
 import { formatEther } from "viem";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getEthersV5FallbackSignerAndProvider } from "../../../utils/getEthersSignerAndProvider";
@@ -14,7 +14,7 @@ task(
     const hre: HardhatRuntimeEnvironment = require("hardhat");
 
     const { name, live } = hre.network;
-    const { linkToken, functionsRouter, functionsSubIds } = chains[name];
+    const { linkToken, functionsRouter, functionsSubIds } = conceroNetworks[name];
 
     const subscriptionId = taskArgs.subid ? parseInt(taskArgs.subid) : functionsSubIds[0];
 

@@ -2,8 +2,8 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import { encodeAbiParameters, formatUnits } from "viem";
 import ERC20ABI from "../abi/ERC20.json";
 import { abi as ConceroOrchestratorAbi } from "../artifacts/contracts/Orchestrator.sol/Orchestrator.json";
-import { getFallbackClients } from "../utils/getViemClients";
-import chains from "../constants/cNetworks";
+import { getFallbackClients } from "../utils";
+import { conceroNetworks } from "../constants/conceroNetworks";
 import log from "../utils/log";
 import { PublicClient } from "viem/clients/createPublicClient";
 import { WalletClient } from "viem/clients/createWalletClient";
@@ -64,8 +64,8 @@ async function approveToken(
 }
 
 describe("swap", () => {
-  const { viemChain, url } = chains.polygon;
-  const { walletClient, publicClient, account } = getFallbackClients(chains.polygon);
+  const { viemChain, url } = conceroNetworks.polygon;
+  const { walletClient, publicClient, account } = getFallbackClients(conceroNetworks.polygon);
 
   it("should swap", async () => {
     try {

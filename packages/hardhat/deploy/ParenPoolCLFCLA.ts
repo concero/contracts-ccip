@@ -1,12 +1,10 @@
 import { Deployment } from "hardhat-deploy/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import CNetworks, { networkEnvKeys } from "../constants/CNetworks";
+import { conceroNetworks, networkEnvKeys } from "../constants/conceroNetworks";
 import updateEnvVariable from "../utils/updateEnvVariable";
 import log from "../utils/log";
-import { getEnvVar } from "../utils/getEnvVar";
-import { poolMessengers } from "../constants/deploymentVariables";
-import { getFallbackClients } from "../utils";
-import chains from "../constants/cNetworks";
+import { getEnvVar, getFallbackClients } from "../utils";
+import { poolMessengers } from "../constants";
 
 interface Args {
   parentProxyAddress: string;
@@ -23,7 +21,7 @@ const deployParentPoolCLFCLA: (hre: HardhatRuntimeEnvironment, constructorArgs?:
     const { proxyDeployer } = await hre.getNamedAccounts();
     const { deploy } = hre.deployments;
     const { name, live } = hre.network;
-    const cNetwork = CNetworks[name];
+    const cNetwork = conceroNetworks[name];
     const networkType = cNetwork.type;
 
     const { functionsRouter, functionsSubIds, functionsDonId } = cNetwork;
@@ -40,7 +38,7 @@ const deployParentPoolCLFCLA: (hre: HardhatRuntimeEnvironment, constructorArgs?:
 
     const args = { ...defaultArgs, ...constructorArgs };
 
-    const { publicClient: viemPublicClient } = getFallbackClients(chains[name]);
+    const { publicClient: viemPublicClient } = getFallbackClients(conceroNetworks[name]);
     const gasPrice = await viemPublicClient.getGasPrice();
 
     console.log("Deploying parent pool clf cla...");

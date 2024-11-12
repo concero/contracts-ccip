@@ -1,6 +1,6 @@
 import { task, types } from "hardhat/config";
 import { fetchRequestCommitment, SubscriptionManager, TransactionOptions } from "@chainlink/functions-toolkit";
-import chains from "../../../constants/cNetworks";
+import { conceroNetworks } from "../../../constants/conceroNetworks";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getEthersV6FallbackSignerAndProvider } from "../../../utils/getEthersSignerAndProvider";
 
@@ -11,14 +11,14 @@ task("clf-sub-timeout", "Times out expired Functions requests which have not bee
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     const { name, live } = hre.network;
-    if (!chains[name]) throw new Error(`Chain ${name} not supported`);
+    if (!conceroNetworks[name]) throw new Error(`Chain ${name} not supported`);
 
     const requestIdsToTimeout = taskArgs.requestids.split(",");
     console.log(`Timing out requests ${requestIdsToTimeout} on ${name}`);
     const toBlock = taskArgs.toblock ? Number(taskArgs.toblock) : "latest";
     const pastBlocksToSearch = parseInt(taskArgs.pastblockstosearch);
     const { signer, provider } = getEthersV6FallbackSignerAndProvider(name);
-    const { linkToken, functionsRouter, functionsDonIdAlias, confirmations } = chains[name];
+    const { linkToken, functionsRouter, functionsDonIdAlias, confirmations } = conceroNetworks[name];
     const txOptions: TransactionOptions = { confirmations, overrides: { gasLimit: 500000n } };
 
     const sm = new SubscriptionManager({

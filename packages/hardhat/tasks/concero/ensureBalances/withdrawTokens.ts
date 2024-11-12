@@ -1,4 +1,4 @@
-import { cNetworks, ProxyEnum, viemReceiptConfig } from "../../../constants";
+import { conceroNetworks, ProxyEnum, viemReceiptConfig } from "../../../constants";
 import monitorTokenBalances from "./viewTokenBalances";
 import { formatUnits } from "viem";
 import { getEnvAddress, getFallbackClients, log } from "../../../utils";
@@ -10,7 +10,7 @@ async function withdrawTokens(isTestnet: boolean) {
 
   for (const chainName in balancesByChain) {
     const chainBalances = balancesByChain[chainName];
-    const chain = cNetworks[chainName];
+    const chain = conceroNetworks[chainName];
 
     // Initialize contractAddress and viem clients once per chain
     const [contractAddress, contractAlias] = getEnvAddress(ProxyEnum.infraProxy, chainName);

@@ -1,5 +1,4 @@
 import { task } from "hardhat/config";
-import chains from "../../../constants/cNetworks";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import log from "../../../utils/log";
 import { formatEther } from "viem";
@@ -13,7 +12,7 @@ task("clf-sub-accept", "Accepts ownership of an Functions subscription after a t
   .addParam("subid", "Subscription ID")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
-    const { linkToken, functionsRouter, confirmations, name, url } = chains[hre.network.name];
+    const { linkToken, functionsRouter, confirmations, name, url } = conceroNetworks[hre.network.name];
     const { signer } = getEthersV6FallbackSignerAndProvider(name);
     // const { signer: v6Signer, provider: v6Provider } = getEthersV6SignerAndProvider(url);
     // const { gasPrice } = await v6Provider.getFeeData();

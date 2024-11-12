@@ -3,9 +3,9 @@ import { Address, parseUnits } from "viem";
 import { abi as ParentPoolAbi } from "../../artifacts/contracts/ParentPool.sol/ParentPool.json";
 import { approve } from "../utils/approve";
 import { getFallbackClients } from "../../utils";
-import { cNetworks } from "../../constants";
+import { conceroNetworks } from "../../constants";
 
-const fromChain = cNetworks.baseSepolia;
+const fromChain = conceroNetworks.baseSepolia;
 const lpAmount = parseUnits("1", 18);
 const lpTokenAddress = process.env.LPTOKEN_BASE_SEPOLIA;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA;

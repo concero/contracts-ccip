@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.20;
 
-import {Orchestrator} from "contracts/Orchestrator.sol";
+import {InfraOrchestrator} from "contracts/InfraOrchestrator.sol";
 
-contract OrchestratorWrapper is Orchestrator {
+contract InfraOrchestratorWrapper is InfraOrchestrator {
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -16,7 +16,17 @@ contract OrchestratorWrapper is Orchestrator {
         address _proxy,
         uint8 _chainIndex,
         address[3] memory _messengers
-    ) Orchestrator(_functionsRouter, _dexSwap, _concero, _pool, _proxy, _chainIndex, _messengers) {}
+    )
+        InfraOrchestrator(
+            _functionsRouter,
+            _dexSwap,
+            _concero,
+            _pool,
+            _proxy,
+            _chainIndex,
+            _messengers
+        )
+    {}
 
     /*//////////////////////////////////////////////////////////////
                                  SETTER
@@ -53,7 +63,7 @@ contract OrchestratorWrapper is Orchestrator {
     function getFunctionsFeeInUsdcDelegateCall(
         uint64 _dstChainSelector
     ) external returns (uint256) {
-        (bool success, bytes memory returnData) = i_concero.delegatecall(
+        (bool success, bytes memory returnData) = i_conceroBridge.delegatecall(
             abi.encodeWithSelector(
                 bytes4(keccak256("getFunctionsFeeInUsdc(uint64)")),
                 _dstChainSelector
@@ -65,7 +75,7 @@ contract OrchestratorWrapper is Orchestrator {
     }
 
     function getCcipFeeInUsdcDelegateCall(uint64 _dstChainSelector) external returns (uint256) {
-        (bool success, bytes memory returnData) = i_concero.delegatecall(
+        (bool success, bytes memory returnData) = i_conceroBridge.delegatecall(
             abi.encodeWithSignature("getCCIPFeeInUsdc(uint64)", _dstChainSelector)
         );
         require(success, "getCCIPFeeInUsdc delegate call failed");
@@ -77,7 +87,7 @@ contract OrchestratorWrapper is Orchestrator {
         uint64 _dstChainSelector,
         uint256 _amount
     ) external returns (uint256) {
-        (bool success, bytes memory returnData) = i_concero.delegatecall(
+        (bool success, bytes memory returnData) = i_conceroBridge.delegatecall(
             abi.encodeWithSelector(
                 bytes4(keccak256("getSrcTotalFeeInUSDC(uint64,uint256)")),
                 _dstChainSelector,

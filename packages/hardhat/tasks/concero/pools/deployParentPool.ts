@@ -1,7 +1,7 @@
 import { task, types } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { cNetworks, ProxyEnum } from "../../../constants";
-import { compileContracts, getEnvAddress } from "../../../utils";
+import { cNetworks, networkTypes, ProxyEnum } from "../../../constants";
+import { compileContracts, getEnvAddress, verifyVariables } from "../../../utils";
 import addCLFConsumer from "../../CLF/subscriptions/add";
 import uploadDonSecrets from "../../CLF/donSecrets/upload";
 import { CNetwork } from "../../../types/CNetwork";
@@ -20,13 +20,22 @@ task("deploy-parent-pool", "Deploy the pool")
   .addFlag("setvars", "Set the contract variables")
   .addFlag("uploadsecrets", "Set the contract variables")
   .setAction(async taskArgs => {
+    const hre: HardhatRuntimeEnvironment = require("hardhat");
     compileContracts({ quiet: true });
 
-    const hre: HardhatRuntimeEnvironment = require("hardhat");
     const slotId = parseInt(taskArgs.slotid);
+
     const { name } = hre.network;
-    const deployableChains: CNetwork[] = [cNetworks[hre.network.name]];
-    const isTestnet = deployableChains[0].type === "testnet";
+    const deployableChains: CNetwork[] = [cNetworks[name]];
+    const networkType = cNetworks[name].type;
+    let clfSecretsExpiration;
+
+    if (networkType == networkTypes.mainnet) {
+      await verifyVariables();
+      clfSecretsExpiration = CLF_SECRETS_MAINNET_EXPIRATION;
+    } else {
+      clfSecretsExpiration = CLF_SECRETS_TESTNET_EXPIRATION;
+    }
 
     if (taskArgs.deployproxy) {
       await deployProxyAdmin(hre, ProxyEnum.parentPoolProxy);
@@ -43,11 +52,7 @@ task("deploy-parent-pool", "Deploy the pool")
     }
 
     if (taskArgs.uploadsecrets) {
-      await uploadDonSecrets(
-        deployableChains,
-        slotId,
-        isTestnet ? CLF_SECRETS_TESTNET_EXPIRATION : CLF_SECRETS_MAINNET_EXPIRATION,
-      );
+      await uploadDonSecrets(deployableChains, slotId, clfSecretsExpiration);
     }
 
     if (taskArgs.setvars) {

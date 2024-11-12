@@ -43,12 +43,13 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     ///////////////////////////////////////////////////////////
     //////////////////////// VARIABLES ////////////////////////
     ///////////////////////////////////////////////////////////
+
     ///////////////
     ///CONSTANTS///
     ///////////////
-    ///@notice Magic Number Removal
-    uint256 private constant ALLOWED = 1;
+
     uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
+    uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
 
     ////////////////
     ///IMMUTABLES///
@@ -87,14 +88,6 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         address linkToken,
         uint256 fees
     );
-    ///@notice event emitted in takeLoan when a loan is taken
-    event LoanTaken(address receiver, uint256 amount);
-    ///@notice event emitted when a allowed Cross-chain contract is updated
-    event ConceroSendersUpdated(uint64 chainSelector, address conceroContract, uint256 isAllowed);
-    ///@notice event emitted when a new pool is added
-    event PoolReceiverUpdated(uint64 chainSelector, address pool);
-    ///@notice event emitted when a pool is removed
-    event ChainAndAddressRemoved(uint64 chainSelector);
 
     ///////////////
     ///MODIFIERS///
@@ -127,8 +120,8 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
      * @param _chainSelector Id of the source chain of the message
      * @param _sender address of the sender contract
      */
-    modifier _onlyAllowlistedSenderOfChainSelector(uint64 _chainSelector, address _sender) {
-        if (s_contractsToReceiveFrom[_chainSelector][_sender] != ALLOWED) {
+    modifier onlyAllowlistedSenderOfChainSelector(uint64 _chainSelector, address _sender) {
+        if (!s_contractsToReceiveFrom[_chainSelector][_sender]) {
             revert SenderNotAllowed(_sender);
         }
         _;
@@ -261,8 +254,6 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         s_loansInUse = s_loansInUse + _amount;
 
         IERC20(_token).safeTransfer(_receiver, _amount);
-
-        emit LoanTaken(_receiver, _amount);
     }
 
     ///////////////////////
@@ -280,12 +271,10 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     function setConceroContractSender(
         uint64 _chainSelector,
         address _contractAddress,
-        uint256 _isAllowed
+        bool _isAllowed
     ) external payable onlyProxyContext onlyOwner {
         if (_contractAddress == address(0)) revert InvalidAddress();
         s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
-
-        emit ConceroSendersUpdated(_chainSelector, _contractAddress, _isAllowed);
     }
 
     /**
@@ -305,8 +294,6 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
 
         s_poolChainSelectors.push(_chainSelector);
         s_poolToSendTo[_chainSelector] = _pool;
-
-        emit PoolReceiverUpdated(_chainSelector, _pool);
     }
 
     /**
@@ -324,8 +311,6 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
                 ++i;
             }
         }
-
-        emit ChainAndAddressRemoved(_chainSelector);
     }
 
     ////////////////
@@ -341,12 +326,14 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     )
         internal
         override
-        _onlyAllowlistedSenderOfChainSelector(
+        onlyAllowlistedSenderOfChainSelector(
             any2EvmMessage.sourceChainSelector,
             abi.decode(any2EvmMessage.sender, (address))
         )
     {
         ICCIP.CcipTxData memory ccipTxData = abi.decode(any2EvmMessage.data, (ICCIP.CcipTxData));
+        uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
+        address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
         if (ccipTxData.ccipTxType == ICCIP.CcipTxType.batchedSettlement) {
             IInfraStorage.SettlementTx[] memory settlementTx = abi.decode(
@@ -356,20 +343,14 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
             for (uint256 i; i < settlementTx.length; ++i) {
                 bytes32 txId = settlementTx[i].id;
 
-                // TODO replace this function with isTxSuccessful to avoid extra sloads
-                IInfraStorage.Transaction memory transaction = IInfraOrchestrator(i_infraProxy)
-                    .getTransaction(txId);
+                bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
 
-                bool isExecutionLayerFailed = (transaction.isConfirmed == false ||
-                    transaction.messageId == 0);
-
-                if (isExecutionLayerFailed) {
+                if (isTxConfirmed) {
+                    s_loansInUse -= ccipReceivedAmount;
+                } else {
                     // We don't subtract it here because the loan was not performed.
                     // And the value is not added into the `s_loanInUse` variable.
                     i_USDC.safeTransfer(settlementTx[i].recipient, settlementTx[i].amount);
-                } else {
-                    //subtract the amount from the committed total amount
-                    s_loansInUse -= any2EvmMessage.destTokenAmounts[0].amount;
                 }
             }
         }
@@ -378,8 +359,8 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
             any2EvmMessage.messageId,
             any2EvmMessage.sourceChainSelector,
             abi.decode(any2EvmMessage.sender, (address)),
-            any2EvmMessage.destTokenAmounts[0].token,
-            any2EvmMessage.destTokenAmounts[0].amount
+            ccipReceivedToken,
+            ccipReceivedAmount
         );
     }
 
@@ -404,7 +385,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
             receiver: abi.encode(poolToSendTo),
             data: abi.encode(ccipTxData),
             tokenAmounts: tokenAmounts,
-            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 300_000})),
+            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: CCIP_SEND_GAS_LIMIT})),
             feeToken: address(i_linkToken)
         });
 

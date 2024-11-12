@@ -1,5 +1,5 @@
 import { task, types } from "hardhat/config";
-import { conceroChains, networkTypes, ProxyEnum } from "../../../constants";
+import { conceroChains, networkTypes, ProxyEnum, cNetworks } from "../../../constants";
 import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
 import { CNetwork } from "../../../types/CNetwork";
 import uploadDonSecrets from "../../CLF/donSecrets/upload";
@@ -7,13 +7,12 @@ import deployConcero from "../../../deploy/ConceroBridge";
 import deployConceroDexSwap from "../../../deploy/ConceroDexSwap";
 import deployConceroOrchestrator from "../../../deploy/ConceroOrchestrator";
 import addCLFConsumer from "../../CLF/subscriptions/add";
-import { compileContracts, getEnvAddress } from "../../../utils";
+import { compileContracts, getEnvAddress, verifyVariables } from "../../../utils";
 import deployProxyAdmin from "../../../deploy/ConceroProxyAdmin";
 import deployTransparentProxy from "../../../deploy/TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import { DeployInfraParams } from "./types";
 import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecretsConfig";
-import CNetworks from "../../../constants/cNetworks";
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("deployproxy", "Deploy the proxy")
@@ -26,13 +25,14 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
 
     const hre = require("hardhat");
     const { live, name } = hre.network;
-    const networkType = CNetworks[name].type;
+    const networkType = cNetworks[name].type;
     let deployableChains: CNetwork[] = [];
-    if (live) deployableChains = [CNetworks[hre.network.name]];
+    if (live) deployableChains = [cNetworks[hre.network.name]];
 
     let liveChains: CNetwork[] = [];
     if (networkType == networkTypes.mainnet) {
       liveChains = conceroChains.mainnet.infra;
+      await verifyVariables();
     } else {
       liveChains = conceroChains.testnet.infra;
     }
@@ -59,8 +59,8 @@ async function deployInfra(params: DeployInfraParams) {
     await deployProxyAdmin(hre, ProxyEnum.infraProxy);
     await deployTransparentProxy(hre, ProxyEnum.infraProxy);
     const [proxyAddress] = getEnvAddress(ProxyEnum.infraProxy, name);
-    const { functionsSubIds } = CNetworks[name];
-    await addCLFConsumer(CNetworks[name], [proxyAddress], functionsSubIds[0]);
+    const { functionsSubIds } = cNetworks[name];
+    await addCLFConsumer(cNetworks[name], [proxyAddress], functionsSubIds[0]);
   }
 
   if (deployImplementation) {

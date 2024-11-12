@@ -47,8 +47,7 @@ describe("start deposit usdc to parent pool\n", () => {
     await sleep(30000);
     await approve(usdcTokenAddress, poolAddress, usdcAmount, walletClient, publicClient);
 
-    const depositRequestId = decodedLogs.find(log => log?.eventName === "ConceroParentPool_DepositInitiated")?.args
-      .requestId;
+    const depositRequestId = decodedLogs.find(log => log?.eventName === "DepositInitiated")?.args.requestId;
 
     console.log("depositRequestId: ", depositRequestId);
 

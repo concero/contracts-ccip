@@ -84,6 +84,7 @@
     "@uniswap/swap-router-contracts": "https://github.com/Uniswap/swap-router-contracts",
     "@uniswap/v2-periphery": "https://github.com/Uniswap/v2-periphery",
     "@uniswap/v3-periphery": "https://github.com/sushiswap/v3-periphery",
+    "asciichart": "^1.5.25",
     "dotenv": "^16.4.5",
     "envfile": "^7.1.0",
     "ethers": "6.12.1",

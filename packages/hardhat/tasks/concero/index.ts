@@ -24,6 +24,8 @@ import transferTokens from "./transferTokens";
 import callContractFunction from "./callFunction";
 import decodeCLFFulfill from "./decodeClfFulfill";
 import testScript from "./test";
+import checkRPCStatus from "./checkRPCStatus";
+import { getSwapAndBridgeCost } from "./getSwapAndBridgeCost/getSwapAndBridgeCost";
 
 export default {
   deployConceroDexSwap,
@@ -49,4 +51,6 @@ export default {
   callContractFunction,
   decodeCLFFulfill,
   removePoolFromPool,
+  checkRPCStatus,
+  getSwapAndBridgeCost,
 };

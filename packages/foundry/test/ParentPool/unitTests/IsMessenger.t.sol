@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {BaseTest} from "../BaseTest.t.sol";
-import {ParentPool_DepositWrapper, IDepositParentPool} from "../wrappers/ParentPool_DepositWrapper.sol";
+import {BaseTest} from "../../utils/BaseTest.t.sol";
+import {ParentPoolDepositWrapper, IDepositParentPool} from "../wrappers/ParentPoolDepositWrapper.sol";
 import {Test, console, Vm} from "forge-std/Test.sol";
 
 contract IsMessengerTest is BaseTest {
@@ -15,31 +15,27 @@ contract IsMessengerTest is BaseTest {
     function setUp() public override {
         vm.selectFork(forkId);
         deployParentPoolProxy();
-        parentPoolImplementation = new ParentPool_DepositWrapper(
+        parentPoolImplementation = new ParentPoolDepositWrapper(
             address(parentPoolProxy),
-            address(0x0),
-            address(0x0),
+            address(parentPoolCLFCLA),
+            address(0),
             vm.envAddress("LINK_BASE"),
-            address(vm.envAddress("CL_CCIP_ROUTER_BASE")),
-            address(vm.envAddress("USDC_BASE")),
+            vm.envAddress("CL_CCIP_ROUTER_BASE"),
+            vm.envAddress("USDC_BASE"),
             address(lpToken),
-            address(vm.envAddress("CONCERO_ORCHESTRATOR_BASE")),
-            address(vm.envAddress("CLF_ROUTER_BASE")),
+            address(baseOrchestratorProxy),
+            vm.envAddress("CLF_ROUTER_BASE"),
             address(deployer),
-            [messenger1, address(0), address(0)]
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
         );
 
-        setProxyImplementation(address(parentPoolImplementation));
-        setParentPoolVars();
+        _setProxyImplementation(address(parentPoolProxy), address(parentPoolImplementation));
+        _setParentPoolVars();
         deployLpToken();
-        addFunctionsConsumer();
+        addFunctionsConsumer(address(parentPoolProxy));
     }
 
     function test_isMessenger_Success() public {
         assertTrue(IDepositParentPool(address(parentPoolProxy)).isMessenger(messenger1));
     }
-
-    //    function test_isMessenger_Fail() public {
-    //        assertFalse(parentPoolImplementation.isMessenger(notMessenger));
-    //    }
 }

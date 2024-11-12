@@ -117,11 +117,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		// mainnets
 
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
-			urls: [
-				`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-				'https://base.blockpi.network/v1/rpc/public',
-				'https://base-rpc.publicnode.com',
-			],
+			urls: ['https://base-rpc.publicnode.com', 'https://rpc.ankr.com/base'],
 			chainId: '0x2105',
 			nativeCurrency: 'eth',
 			priceFeed: {
@@ -134,11 +130,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
-			urls: [
-				`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://arbitrum.blockpi.network/v1/rpc/public',
-				'https://arbitrum-rpc.publicnode.com',
-			],
+			urls: ['https://arbitrum-rpc.publicnode.com', 'https://rpc.ankr.com/arbitrum'],
 			chainId: '0xa4b1',
 			nativeCurrency: 'eth',
 			priceFeed: {
@@ -149,11 +141,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
-			urls: [
-				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://polygon.blockpi.network/v1/rpc/public',
-				'https://polygon-bor-rpc.publicnode.com',
-			],
+			urls: ['https://polygon-bor-rpc.publicnode.com', 'https://rpc.ankr.com/polygon'],
 			chainId: '0x89',
 			nativeCurrency: 'matic',
 			priceFeed: {
@@ -166,11 +154,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}').toString(16)}`]: {
-			urls: [
-				`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://avalanche.blockpi.network/v1/rpc/public',
-				'https://avalanche-c-chain-rpc.publicnode.com',
-			],
+			urls: ['https://avalanche-c-chain-rpc.publicnode.com', 'https://rpc.ankr.com/avalanche'],
 			chainId: '0xa86a',
 			nativeCurrency: 'avax',
 			priceFeed: {
@@ -363,7 +347,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
 		gasPrice = feeData.gasPrice;
-		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
+		// maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
 			nonce,
 			// maxPriorityFeePerGas: maxPriorityFeePerGas,

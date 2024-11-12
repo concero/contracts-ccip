@@ -107,11 +107,7 @@
 			},
 		},
 		[`0x${BigInt('15971525489660198786').toString(16)}`]: {
-			urls: [
-				`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-				'https://base.blockpi.network/v1/rpc/public',
-				'https://base-rpc.publicnode.com',
-			],
+			urls: ['https://rpc.ankr.com/base', 'https://base.blockpi.network/v1/rpc/public', 'https://base-rpc.publicnode.com'],
 			chainId: '0x2105',
 			nativeCurrency: 'eth',
 			priceFeed: {
@@ -125,7 +121,7 @@
 		},
 		[`0x${BigInt('4949039107694359620').toString(16)}`]: {
 			urls: [
-				`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://rpc.ankr.com/arbitrum',
 				'https://arbitrum.blockpi.network/v1/rpc/public',
 				'https://arbitrum-rpc.publicnode.com',
 			],
@@ -140,7 +136,7 @@
 		},
 		[`0x${BigInt('4051577828743386545').toString(16)}`]: {
 			urls: [
-				`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://rpc.ankr.com/polygon',
 				'https://polygon.blockpi.network/v1/rpc/public',
 				'https://polygon-bor-rpc.publicnode.com',
 			],
@@ -157,7 +153,7 @@
 		},
 		[`0x${BigInt('6433500567565415381').toString(16)}`]: {
 			urls: [
-				`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://rpc.ankr.com/avalanche-c',
 				'https://avalanche.blockpi.network/v1/rpc/public',
 				'https://avalanche-c-chain-rpc.publicnode.com',
 			],
@@ -338,7 +334,6 @@
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
 		gasPrice = feeData.gasPrice;
-		maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
 		await sendTransaction(contract, signer, {
 			nonce,
 			maxFeePerGas:

@@ -67,7 +67,7 @@ task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")
     const processNetwork = async (chain: CNetwork) => {
       await upload([chain], slotid, ttl);
       if (updatecontracts) {
-        const { abi } = await import("../../../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
+        const { abi } = await import("../../../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json");
         await setDonHostedSecretsVersion(chain, parseInt(slotid), abi);
       }
     };

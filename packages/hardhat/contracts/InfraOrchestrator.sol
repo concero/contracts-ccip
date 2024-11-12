@@ -1,33 +1,36 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IFunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsClient.sol";
+import {CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE, USDC_ARBITRUM, USDC_BASE, USDC_POLYGON, USDC_AVALANCHE} from "./Constants.sol";
+import {InfraCommon} from "./InfraCommon.sol";
 import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
+import {IInfraCLF} from "./Interfaces/IInfraCLF.sol";
+import {IInfraOrchestrator, IOrchestratorViewDelegate} from "./Interfaces/IInfraOrchestrator.sol";
+import {IInfraStorage} from "./Interfaces/IInfraStorage.sol";
+import {InfraStorage} from "./Libraries/InfraStorage.sol";
 import {InfraStorageSetters} from "./Libraries/InfraStorageSetters.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
-import {IInfraOrchestrator, IOrchestratorViewDelegate} from "./Interfaces/IInfraOrchestrator.sol";
-import {InfraCommon} from "./InfraCommon.sol";
-import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_AVALANCHE, CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE} from "./Constants.sol";
-import {IInfraCLF} from "./Interfaces/IInfraCLF.sol";
+import {IFunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsClient.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 ///////////////////////////////
 /////////////ERROR/////////////
 ///////////////////////////////
-///@notice error emitted when a delegatecall fails
-error Orchestrator_UnableToCompleteDelegateCall(bytes delegateError);
 ///@notice error emitted when the balance input is smaller than the specified amount param
-error Orchestrator_InvalidAmount();
+error InvalidAmount();
 ///@notice error emitted when a address non-router calls the `handleOracleFulfillment` function
-error Orchestrator_OnlyRouterCanFulfill();
+error OnlyCLFRouter();
 ///@notice error emitted when some params of Bridge Data are empty
-error Orchestrator_InvalidBridgeData();
+error InvalidBridgeData();
 ///@notice error emitted when an empty swapData is the input
-error Orchestrator_InvalidSwapData();
+error InvalidSwapData();
 ///@notice error emitted when the token to bridge is not USDC
-error Orchestrator_InvalidBridgeToken();
+error UnsupportedBridgeToken();
+error WithdrawableAmountExceedsBatchedReserves();
+error InvalidIntegratorFeePercent();
 
 contract InfraOrchestrator is
     IFunctionsClient,
@@ -41,6 +44,9 @@ contract InfraOrchestrator is
     ///CONSTANTS///
     ///////////////
     uint16 internal constant CONCERO_FEE_FACTOR = 1000;
+    uint8 internal constant SUPPORTED_CHAINS_COUNT = 5;
+    uint256 internal constant INTEGRATOR_FEE_DIVISOR = 100;
+    uint256 internal constant MAX_INTEGRATOR_FEE_PERCENT = 3;
 
     ///////////////
     ///IMMUTABLE///
@@ -50,7 +56,7 @@ contract InfraOrchestrator is
     ///@notice variable to store the DexSwap address
     address internal immutable i_dexSwap;
     ///@notice variable to store the Concero address
-    address internal immutable i_concero;
+    address internal immutable i_conceroBridge;
     ///@notice variable to store the ConceroPool address
     address internal immutable i_pool;
     ///@notice variable to store the immutable Proxy Address
@@ -58,21 +64,10 @@ contract InfraOrchestrator is
     ///@notice ID of the deployed chain on getChain() function
     Chain internal immutable i_chainIndex;
 
-    ////////////////////////////////////////////////////////
-    //////////////////////// EVENTS ////////////////////////
-    ////////////////////////////////////////////////////////
-    ///@notice emitted when the Functions router fulfills a request
-    event Orchestrator_RequestFulfilled(bytes32 requestId);
-    ///@notice emitted if swap successed
-    event Orchestrator_SwapSuccess();
-    event Orchestrator_StartBridge();
-    event Orchestrator_StartSwapAndBridge();
-    event Orchestrator_StartSwap();
-
     constructor(
         address _functionsRouter,
         address _dexSwap,
-        address _concero,
+        address _conceroBridge,
         address _pool,
         address _proxy,
         uint8 _chainIndex,
@@ -80,7 +75,7 @@ contract InfraOrchestrator is
     ) InfraCommon(_messengers) InfraStorageSetters(msg.sender) {
         i_functionsRouter = _functionsRouter;
         i_dexSwap = _dexSwap;
-        i_concero = _concero;
+        i_conceroBridge = _conceroBridge;
         i_pool = _pool;
         i_proxy = _proxy;
         i_chainIndex = Chain(_chainIndex);
@@ -91,25 +86,15 @@ contract InfraOrchestrator is
     ///////////////
     ///MODIFIERS///
     ///////////////
-    // todo: this modifier may be removed
-    modifier tokenAmountSufficiency(address token, uint256 amount) {
-        if (token != address(0)) {
-            uint256 balance = IERC20(token).balanceOf(msg.sender);
-            if (balance < amount) revert Orchestrator_InvalidAmount();
-        } else {
-            if (msg.value != amount) revert Orchestrator_InvalidAmount();
-        }
-        _;
-    }
 
     modifier validateBridgeData(BridgeData memory _bridgeData) {
         if (_bridgeData.amount == 0 || _bridgeData.receiver == address(0)) {
-            revert Orchestrator_InvalidBridgeData();
+            revert InvalidBridgeData();
         }
         _;
     }
 
-    modifier validateSrcSwapData(IDexSwap.SwapData[] calldata _swapData) {
+    modifier validateSrcSwapData(IDexSwap.SwapData[] memory _swapData) {
         uint256 swapDataLength = _swapData.length;
 
         // todo: _swapData[0].toAmountMin == 0 may not be needed. We're only checking the first item
@@ -119,7 +104,7 @@ contract InfraOrchestrator is
             _swapData[0].fromAmount == 0 ||
             _swapData[0].toAmountMin == 0
         ) {
-            revert Orchestrator_InvalidSwapData();
+            revert InvalidSwapData();
         }
         _;
     }
@@ -134,11 +119,11 @@ contract InfraOrchestrator is
             swapDataLength != 0 &&
             _swapData[0].fromToken != _getUSDCAddressByChainSelector(_bridgeData.dstChainSelector)
         ) {
-            revert Orchestrator_InvalidSwapData();
+            revert InvalidSwapData();
         }
 
         if (swapDataLength > 5 || (swapDataLength != 0 && _swapData[0].fromAmount == 0)) {
-            revert Orchestrator_InvalidSwapData();
+            revert InvalidSwapData();
         }
 
         _;
@@ -166,18 +151,19 @@ contract InfraOrchestrator is
         uint64 dstChainSelector,
         uint256 amount
     ) external returns (uint256) {
-        (bool success, bytes memory data) = i_concero.delegatecall(
-            abi.encodeWithSelector(
-                IConceroBridge.getSrcTotalFeeInUSDC.selector,
-                tokenType,
-                dstChainSelector,
-                amount
-            )
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            IConceroBridge.getSrcTotalFeeInUSDC.selector,
+            tokenType,
+            dstChainSelector,
+            amount
         );
 
-        if (!success) revert Orchestrator_UnableToCompleteDelegateCall(data);
-        // @audit potential precision loss bug
-        return _convertToUSDCDecimals(abi.decode(data, (uint256)));
+        bytes memory delegateCallRes = LibConcero.safeDelegateCall(
+            i_conceroBridge,
+            delegateCallArgs
+        );
+
+        return _convertToUSDCDecimals(abi.decode(delegateCallRes, (uint256)));
     }
 
     /**
@@ -189,60 +175,58 @@ contract InfraOrchestrator is
     function swapAndBridge(
         BridgeData memory bridgeData,
         IDexSwap.SwapData[] calldata srcSwapData,
-        IDexSwap.SwapData[] memory dstSwapData
+        IDexSwap.SwapData[] memory dstSwapData,
+        Integration memory integration
     )
         external
         payable
-        tokenAmountSufficiency(srcSwapData[0].fromToken, srcSwapData[0].fromAmount)
         validateSrcSwapData(srcSwapData)
         validateBridgeData(bridgeData)
         validateDstSwapData(dstSwapData, bridgeData)
         nonReentrant
     {
-        // todo: do not use events at the start of the function, this can be moved to the end of the function, after all potential reverts
-        emit Orchestrator_StartSwapAndBridge();
-        if (
-            srcSwapData[srcSwapData.length - 1].toToken !=
-            getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex)
-        ) {
-            revert Orchestrator_InvalidSwapData();
+        address usdc = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
+
+        if (srcSwapData[srcSwapData.length - 1].toToken != usdc) {
+            revert InvalidSwapData();
         }
 
-        uint256 amountReceivedFromSwap = _swap(srcSwapData, 0, false, address(this));
-        bridgeData.amount = amountReceivedFromSwap;
+        _transferTokenFromUser(srcSwapData);
 
-        _startBridge(bridgeData, dstSwapData);
+        uint256 amountReceivedFromSwap = _swap(srcSwapData, address(this));
+        bridgeData.amount =
+            amountReceivedFromSwap -
+            _collectIntegratorFee(usdc, amountReceivedFromSwap, integration);
+
+        _bridge(bridgeData, dstSwapData);
     }
 
     /**
      * @notice external function to start swap
-     * @param _swapData the swap payload
-     * @param _receiver the receiver of the swapped amount
+     * @param swapData the swap payload
+     * @param receiver the receiver of the swapped amount
+     * @param integration the info of the integrator
      */
     function swap(
-        IDexSwap.SwapData[] calldata _swapData,
-        address _receiver
-    )
-        external
-        payable
-        validateSrcSwapData(_swapData)
-        tokenAmountSufficiency(_swapData[0].fromToken, _swapData[0].fromAmount)
-        nonReentrant
-    {
-        // todo: do not use events at the start of the function
-        // todo: this can be moved to the end of the function, after all potential reverts
-        emit Orchestrator_StartSwap();
-        _swap(_swapData, msg.value, true, _receiver);
+        IDexSwap.SwapData[] memory swapData,
+        address receiver,
+        Integration memory integration
+    ) external payable validateSrcSwapData(swapData) nonReentrant {
+        _transferTokenFromUser(swapData);
+        swapData = _collectSwapFee(swapData, integration);
+        _swap(swapData, receiver);
     }
 
     /**
      * @notice function to start a bridge transaction
      * @param bridgeData the bridge payload
      * @param dstSwapData the destination swap payload, if not empty.
+     * @param integration the info of the integrator
      */
     function bridge(
         BridgeData memory bridgeData,
-        IDexSwap.SwapData[] memory dstSwapData
+        IDexSwap.SwapData[] memory dstSwapData,
+        Integration memory integration
     )
         external
         payable
@@ -250,14 +234,11 @@ contract InfraOrchestrator is
         validateDstSwapData(dstSwapData, bridgeData)
         nonReentrant
     {
-        // todo: do not use events at the start of the function
-        // todo: this can be moved to the end of the function, after all potential reverts
-        emit Orchestrator_StartBridge();
-
         address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
         LibConcero.transferFromERC20(fromToken, msg.sender, address(this), bridgeData.amount);
+        bridgeData.amount -= _collectIntegratorFee(fromToken, bridgeData.amount, integration);
 
-        _startBridge(bridgeData, dstSwapData);
+        _bridge(bridgeData, dstSwapData);
     }
 
     /**
@@ -293,7 +274,7 @@ contract InfraOrchestrator is
             dstSwapData
         );
 
-        LibConcero.safeDelegateCall(i_concero, delegateCallArgs);
+        LibConcero.safeDelegateCall(i_conceroBridge, delegateCallArgs);
     }
 
     /**
@@ -308,9 +289,8 @@ contract InfraOrchestrator is
         bytes memory response,
         bytes memory err
     ) external {
-        //todo: research if this is worth moving to a modifier
         if (msg.sender != address(i_functionsRouter)) {
-            revert Orchestrator_OnlyRouterCanFulfill();
+            revert OnlyCLFRouter();
         }
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
@@ -320,7 +300,7 @@ contract InfraOrchestrator is
             err
         );
 
-        LibConcero.safeDelegateCall(i_concero, delegateCallArgs);
+        LibConcero.safeDelegateCall(i_conceroBridge, delegateCallArgs);
     }
 
     /**
@@ -331,64 +311,99 @@ contract InfraOrchestrator is
      */
     function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
         uint256 balance = LibConcero.getBalance(token, address(this));
-        if (balance < amount) revert Orchestrator_InvalidAmount();
+        if (balance < amount) revert InvalidAmount();
 
-        if (token != address(0)) {
-            LibConcero.transferERC20(token, amount, recipient);
-        } else {
-            payable(recipient).transfer(amount);
+        address usdc = getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
+
+        if (token == usdc) {
+            uint256 batchedReserves;
+            uint64[SUPPORTED_CHAINS_COUNT] memory chainSelectors = [
+                CHAIN_SELECTOR_ARBITRUM,
+                CHAIN_SELECTOR_BASE,
+                CHAIN_SELECTOR_OPTIMISM,
+                CHAIN_SELECTOR_POLYGON,
+                CHAIN_SELECTOR_AVALANCHE
+            ];
+
+            for (uint256 i; i < SUPPORTED_CHAINS_COUNT; ++i) {
+                batchedReserves += s_pendingSettlementTxAmountByDstChain[chainSelectors[i]];
+            }
+
+            if (amount > balance - batchedReserves) {
+                revert WithdrawableAmountExceedsBatchedReserves();
+            }
         }
+
+        if (token == address(0)) {
+            payable(recipient).transfer(amount);
+        } else {
+            LibConcero.transferERC20(token, amount, recipient);
+        }
+    }
+
+    function getTransaction(
+        bytes32 _conceroBridgeTxId
+    ) external view returns (Transaction memory transaction) {
+        transaction = s_transactions[_conceroBridgeTxId];
+    }
+
+    function isTxConfirmed(bytes32 _txId) external view returns (bool) {
+        Transaction storage transaction = s_transactions[_txId];
+
+        if (transaction.messageId == bytes32(0)) {
+            return false;
+        }
+        if (!transaction.isConfirmed) {
+            return false;
+        }
+        return true;
     }
 
     //////////////////////////
     /// INTERNAL FUNCTIONS ///
     //////////////////////////
+
+    function _transferTokenFromUser(IDexSwap.SwapData[] memory swapData) internal {
+        address initialToken = swapData[0].fromToken;
+        uint256 initialAmount = swapData[0].fromAmount;
+
+        if (initialToken != address(0)) {
+            LibConcero.transferFromERC20(initialToken, msg.sender, address(this), initialAmount);
+        } else {
+            if (initialAmount != msg.value) revert InvalidAmount();
+        }
+    }
+
     /**
      * @notice Internal function to perform swaps. Delegate calls DexSwap.entrypoint
      * @param swapData the payload to be passed to swap functions
-     * @param _nativeAmount the native amount entered on the external function
-     * @param isTakingConceroFee flag to indicate when take fees
-     * @param _receiver the address of the receiver of the swap
+     * @param receiver the address of the receiver of the swap
      */
     function _swap(
         IDexSwap.SwapData[] memory swapData,
-        uint256 _nativeAmount,
-        bool isTakingConceroFee,
-        address _receiver
+        address receiver
     ) internal returns (uint256) {
-        address srcToken = swapData[0].fromToken;
-        uint256 srcAmount = swapData[0].fromAmount;
-        address dstToken = swapData[swapData.length - 1].toToken;
-
-        uint256 dstTokenBalanceBefore = LibConcero.getBalance(dstToken, address(this));
-
-        if (srcToken != address(0)) {
-            LibConcero.transferFromERC20(srcToken, msg.sender, address(this), srcAmount);
-            if (isTakingConceroFee) swapData[0].fromAmount -= (srcAmount / CONCERO_FEE_FACTOR);
-        } else {
-            if (isTakingConceroFee)
-                swapData[0].fromAmount = _nativeAmount - (_nativeAmount / CONCERO_FEE_FACTOR);
-        }
-
-        (bool success, bytes memory error) = i_dexSwap.delegatecall(
-            abi.encodeWithSelector(IDexSwap.entrypoint.selector, swapData, _receiver)
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            IDexSwap.entrypoint.selector,
+            swapData,
+            receiver
         );
-        if (!success) revert Orchestrator_UnableToCompleteDelegateCall(error);
+        bytes memory delegateCallRes = LibConcero.safeDelegateCall(i_dexSwap, delegateCallArgs);
 
-        emit Orchestrator_SwapSuccess();
-
-        uint256 dstTokenBalanceAfter = LibConcero.getBalance(dstToken, address(this));
-        return dstTokenBalanceAfter - dstTokenBalanceBefore;
+        return abi.decode(delegateCallRes, (uint256));
     }
 
-    function _startBridge(
+    function _bridge(
         BridgeData memory bridgeData,
         IDexSwap.SwapData[] memory _dstSwapData
     ) internal {
-        (bool success, bytes memory error) = i_concero.delegatecall(
-            abi.encodeWithSelector(IConceroBridge.startBridge.selector, bridgeData, _dstSwapData)
+        bytes memory delegateCallArgs = abi.encodeWithSelector(
+            IConceroBridge.bridge.selector,
+            bridgeData,
+            _dstSwapData
         );
-        if (!success) revert Orchestrator_UnableToCompleteDelegateCall(error);
+
+        LibConcero.safeDelegateCall(i_conceroBridge, delegateCallArgs);
     }
 
     function _getUSDCAddressByChainSelector(
@@ -403,16 +418,62 @@ contract InfraOrchestrator is
         } else if (_chainSelector == CHAIN_SELECTOR_AVALANCHE) {
             _token = USDC_AVALANCHE;
         } else {
-            revert Orchestrator_InvalidBridgeToken();
+            revert UnsupportedBridgeToken();
         }
+    }
+
+    function _collectSwapFee(
+        IDexSwap.SwapData[] memory swapData,
+        Integration memory integration
+    ) internal returns (IDexSwap.SwapData[] memory) {
+        swapData[0].fromAmount -= (swapData[0].fromAmount / CONCERO_FEE_FACTOR);
+
+        if (integration.integrator != address(0)) {
+            swapData[0].fromAmount -= _collectIntegratorFee(
+                swapData[0].fromToken,
+                swapData[0].fromAmount,
+                integration
+            );
+        }
+
+        return swapData;
+    }
+
+    function _collectIntegratorFee(
+        address token,
+        uint256 amount,
+        Integration memory integration
+    ) internal returns (uint256) {
+        uint256 integratorFeeAmount = _calculateIntegratorFeeAmount(
+            integration.integratorFeePercent,
+            amount
+        );
+
+        if (integratorFeeAmount == 0) return 0;
+
+        s_integratorFeesAmountByToken[integration.integrator][token] += integratorFeeAmount;
+        s_totalIntegratorFeesAmountByToken[token] += integratorFeeAmount;
+
+        emit IntegratorFeesCollected(integration.integrator, token, integratorFeeAmount);
+        return integratorFeeAmount;
     }
 
     ///////////////////////////
     ///VIEW & PURE FUNCTIONS///
     ///////////////////////////
-    function getTransaction(
-        bytes32 _conceroBridgeTxId
-    ) external view returns (Transaction memory transaction) {
-        transaction = s_transactions[_conceroBridgeTxId];
+
+    /// @notice calculates integrator fee amount
+    /// @param _integratorFeePercent fee percent provided by integrator/user
+    /// @param _amount user's tx amount
+    /// @return integratorFeeAmount the amount the integrator will receive
+    function _calculateIntegratorFeeAmount(
+        uint256 _integratorFeePercent,
+        uint256 _amount
+    ) internal pure returns (uint256) {
+        if (_integratorFeePercent == 0) return 0;
+        if (_integratorFeePercent > MAX_INTEGRATOR_FEE_PERCENT) {
+            revert InvalidIntegratorFeePercent();
+        }
+        return (_amount * _integratorFeePercent) / INTEGRATOR_FEE_DIVISOR;
     }
 }

@@ -11,7 +11,7 @@ import timeout from "./subscriptions/timeout";
 
 import consumer from "./unused/Functions-consumer";
 import clfRequest from "./unused/Functions-consumer";
-
+import fetchDONSigners from "./fetchDONSigners";
 // import getHashSum from "./CLFScripts/listHashes";
 
 export default {
@@ -26,4 +26,5 @@ export default {
   timeout,
   donSecretsList,
   donSecretsUpload,
-}
+  fetchDONSigners,
+};

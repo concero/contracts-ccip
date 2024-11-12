@@ -37,7 +37,7 @@ interface IParentPool is IPool {
 
     struct WithdrawRequest {
         address lpAddress;
-        uint256 lpSupplySnapshot;
+        uint256 lpSupplySnapshot_DEPRECATED;
         uint256 lpAmountToBurn;
         //
         uint256 totalCrossChainLiquiditySnapshot; //todo: we don't update this _updateWithdrawalRequest
@@ -121,8 +121,6 @@ interface IParentPool is IPool {
         uint256 usdcAmount,
         uint256 _lpTokensToMint
     );
-    ///@notice event emitted when a pool is removed and the redistribution process start
-    event LiquidityRedistributionStarted(bytes32 requestId);
 
     /////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////FUNCTIONS//////////////////////////////////
@@ -144,11 +142,13 @@ interface IParentPool is IPool {
     function setConceroContractSender(
         uint64 _chainSelector,
         address _contractAddress,
-        uint256 _isAllowed
+        bool _isAllowed
     ) external payable;
 
     function calculateWithdrawableAmount(
         uint256 childPoolsBalance,
         uint256 clpAmount
     ) external view returns (uint256);
+
+    function setPoolCap(uint256 _newCap) external payable;
 }

@@ -58,38 +58,22 @@
 			// mainnets
 
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
-				urls: [
-					`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://polygon.blockpi.network/v1/rpc/public',
-					'https://polygon-bor-rpc.publicnode.com',
-				],
+				urls: ['https://polygon-bor-rpc.publicnode.com', 'https://rpc.ankr.com/polygon'],
 				confirmations: 3n,
 				chainId: '0x89',
 			},
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
-				urls: [
-					`https://arbitrum.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://arbitrum.blockpi.network/v1/rpc/public',
-					'https://arbitrum-rpc.publicnode.com',
-				],
+				urls: ['https://arbitrum-rpc.publicnode.com', 'https://rpc.ankr.com/arbitrum'],
 				confirmations: 3n,
 				chainId: '0xa4b1',
 			},
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
-				urls: [
-					`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-					'https://base.blockpi.network/v1/rpc/public',
-					'https://base-rpc.publicnode.com',
-				],
+				urls: ['https://base-rpc.publicnode.com', 'https://rpc.ankr.com/base'],
 				confirmations: 3n,
 				chainId: '0x2105',
 			},
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}').toString(16)}`]: {
-				urls: [
-					`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://avalanche.blockpi.network/v1/rpc/public',
-					'https://avalanche-c-chain-rpc.publicnode.com',
-				],
+				urls: ['https://avalanche-c-chain-rpc.publicnode.com', 'https://rpc.ankr.com/avalanche'],
 				confirmations: 3n,
 				chainId: '0xa86a',
 			},

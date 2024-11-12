@@ -30,8 +30,8 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
     ///////////////
     uint16 internal constant CONCERO_FEE_FACTOR = 1000;
     uint64 private constant HALF_DST_GAS = 600_000;
-    // TODO: change this to 5_000_000_000 in production!!!!!!!
     //    uint256 internal constant BATCHED_TX_THRESHOLD = 5_000_000_000; // 5,000 USDC
+    /*CHANGE-IN-PRODUCTION-TO-5_000_000_000*/
     uint256 internal constant BATCHED_TX_THRESHOLD = 5_000_000;
     uint8 internal constant MAX_PENDING_SETTLEMENT_TXS_BY_LANE = 200;
 
@@ -85,7 +85,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
      * @dev dstSwapData can be empty if there is no swap on destination
      * @dev this function should only be able to called thought infra Proxy
      */
-    function startBridge(
+    function bridge(
         BridgeData memory bridgeData,
         IDexSwap.SwapData[] memory dstSwapData
     ) external payable {
@@ -96,23 +96,29 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
             _getSrcTotalFeeInUsdc(dstChainSelector, bridgeData.amount)
         );
 
-        if (bridgeData.amount < totalSrcFee) {
+        if (bridgeData.amount <= totalSrcFee) {
             revert InsufficientFees(bridgeData.amount, totalSrcFee);
         }
 
-        uint256 amountToSend = bridgeData.amount - totalSrcFee;
+        uint256 amountToSendAfterFees = bridgeData.amount - totalSrcFee;
+        //TODO: keccak should ensure that the message id is unique, dstChainSelector should be included
         bytes32 conceroMessageId = keccak256(
-            abi.encodePacked(msg.sender, bridgeData.receiver, amountToSend, block.timestamp)
+            abi.encodePacked(
+                msg.sender,
+                bridgeData.receiver,
+                amountToSendAfterFees,
+                block.timestamp
+            )
         );
         SettlementTx memory bridgeTx = SettlementTx(
             conceroMessageId,
-            amountToSend,
+            amountToSendAfterFees,
             bridgeData.receiver
         );
 
         s_pendingSettlementTxsByDstChain[dstChainSelector].push(conceroMessageId);
         s_pendingSettlementTxsById[conceroMessageId] = bridgeTx;
-        s_pendingSettlementTxAmountByDstChain[dstChainSelector] += amountToSend;
+        s_pendingSettlementTxAmountByDstChain[dstChainSelector] += amountToSendAfterFees;
 
         uint256 batchedTxAmount = s_pendingSettlementTxAmountByDstChain[dstChainSelector];
 
@@ -122,7 +128,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
             dstChainSelector,
             bridgeData.receiver,
             bridgeData.tokenType,
-            amountToSend,
+            amountToSendAfterFees,
             dstSwapData
         );
 
@@ -139,7 +145,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         emit ConceroBridgeSent(
             conceroMessageId,
             bridgeData.tokenType,
-            amountToSend,
+            amountToSendAfterFees,
             dstChainSelector,
             bridgeData.receiver,
             dstSwapDataHashSum

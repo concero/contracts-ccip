@@ -29,7 +29,7 @@ const withdrawToken = async (chain: CNetwork, tokenAddress: Address, contractTyp
   const { url: dcUrl, viemChain: dcViemChain, name: dcName } = chain;
   const { walletClient, publicClient, account } = getFallbackClients(chain);
   const conceroProxy = getEnvVar(`${contractKeys[contractType]}_${networkEnvKeys[dcName]}`);
-  const { abi } = await import("../artifacts/contracts/Orchestrator.sol/Orchestrator.json");
+  const { abi } = await import("../../../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json");
   const amountToWithdraw = BigInt(amount);
   try {
     const usdBalance = await getBalance(tokenAddress, conceroProxy, chain);

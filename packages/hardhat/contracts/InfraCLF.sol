@@ -6,33 +6,34 @@
  */
 pragma solidity ^0.8.20;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {InfraCommon} from "./InfraCommon.sol";
+import {IDexSwap} from "./Interfaces/IDexSwap.sol";
+import {IInfraCLF} from "./Interfaces/IInfraCLF.sol";
+import {IInfraStorage} from "./Interfaces/IInfraStorage.sol";
+import {IPool} from "./Interfaces/IPool.sol";
+import {InfraStorage} from "./Libraries/InfraStorage.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
-import {InfraStorage} from "./Libraries/InfraStorage.sol";
-import {IPool} from "./Interfaces/IPool.sol";
-import {IDexSwap} from "./Interfaces/IDexSwap.sol";
-import {InfraCommon} from "./InfraCommon.sol";
-import {IInfraCLF} from "./Interfaces/IInfraCLF.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 ////////////////////////////////////////////////////////
 //////////////////////// ERRORS ////////////////////////
 ////////////////////////////////////////////////////////
 ///@notice error emitted when a TX was already added
-error ConceroFunctions_TxAlreadyExists(bytes32 txHash, bool isConfirmed);
+error TxAlreadyExists(bytes32 txHash, bool isConfirmed);
 ///@notice error emitted when a unexpected ID is added
-error ConceroFunctions_UnexpectedRequestId(bytes32 requestId);
+error UnexpectedCLFRequestId(bytes32 requestId);
 ///@notice error emitted when a transaction does not exist
-error ConceroFunctions_TxDoesntExist();
+error TxDoesntExist();
 ///@notice error emitted when a transaction was already confirmed
-error ConceroFunctions_TxAlreadyConfirmed();
+error TxAlreadyConfirmed();
 ///@notice error emitted when function receive a call from a not allowed address
-error ConceroFunctions_DstContractAddressNotSet();
+error DstContractAddressNotSet();
 ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
-error ConceroFunctions_OnlyProxyContext(address caller);
+error OnlyProxyContext(address caller);
 ///@notice error emitted when the delegatecall to DexSwap fails
-error ConceroFunctions_FailedToReleaseTx(bytes error);
+error FailedToReleaseTx(bytes error);
 
 contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     ///////////////////////
@@ -107,11 +108,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         CCIPToken token
     );
     ///@notice emitted when a Function Request returns an error
-    event FunctionsRequestError(
-        bytes32 indexed ccipMessageId,
-        bytes32 requestId,
-        uint8 requestType
-    );
+    event CLFRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
     ///@notice emitted when the concero pool address is updated
     event ConceroPoolAddressUpdated(address previousAddress, address pool);
 
@@ -161,7 +158,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     ) external onlyMessenger {
         Transaction memory transaction = s_transactions[messageId];
         if (transaction.sender != address(0)) {
-            revert ConceroFunctions_TxAlreadyExists(messageId, transaction.isConfirmed);
+            revert TxAlreadyExists(messageId, transaction.isConfirmed);
         }
 
         s_transactions[messageId] = Transaction(
@@ -196,6 +193,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         s_requests[reqId].isPending = true;
         s_requests[reqId].ccipMessageId = messageId;
 
+        // TODO: remove this log
         emit UnconfirmedTXAdded(messageId, sender, recipient, amount, token, srcChainSelector);
     }
 
@@ -228,7 +226,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         bytes memory response,
         bytes memory err
     ) external {
-        if (address(this) != i_proxy) revert ConceroFunctions_OnlyProxyContext(address(this));
+        if (address(this) != i_proxy) revert OnlyProxyContext(address(this));
 
         fulfillRequest(requestId, response, err);
     }
@@ -251,19 +249,14 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     ) internal override {
         Request storage request = s_requests[requestId];
 
-        //todo: look into this
         if (!request.isPending) {
-            revert ConceroFunctions_UnexpectedRequestId(requestId);
+            revert UnexpectedCLFRequestId(requestId);
         }
 
         request.isPending = false;
 
         if (err.length > 0) {
-            emit FunctionsRequestError(
-                request.ccipMessageId,
-                requestId,
-                uint8(request.requestType)
-            );
+            emit CLFRequestError(request.ccipMessageId, requestId, uint8(request.requestType));
             return;
         }
 
@@ -280,8 +273,8 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
      * @param transaction the storage to be updated.
      */
     function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
-        if (transaction.sender == address(0)) revert ConceroFunctions_TxDoesntExist();
-        if (transaction.isConfirmed == true) revert ConceroFunctions_TxAlreadyConfirmed();
+        if (transaction.sender == address(0)) revert TxDoesntExist();
+        if (transaction.isConfirmed == true) revert TxAlreadyConfirmed();
 
         transaction.isConfirmed = true;
 
@@ -294,7 +287,6 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         );
     }
 
-    //todo: Internal function sendUnconfirmedTX is not prefixed with underscore
     /**
      * @notice Sends an unconfirmed TX to the destination chain
      * @param messageId the CCIP message to be checked
@@ -315,7 +307,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         IDexSwap.SwapData[] memory dstSwapData
     ) internal {
         if (s_conceroContracts[dstChainSelector] == address(0)) {
-            revert ConceroFunctions_DstContractAddressNotSet();
+            revert DstContractAddressNotSet();
         }
 
         bytes[] memory args = new bytes[](13);
@@ -346,7 +338,6 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
      * @param request the CLF request to be used
      */
     function _handleDstFunctionsResponse(Request storage request) internal {
-        //todo: make references to transaction object to save on gas
         Transaction storage transaction = s_transactions[request.ccipMessageId];
 
         _confirmTX(request.ccipMessageId, transaction);
@@ -370,7 +361,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
                     transaction.recipient
                 )
             );
-            if (!swapSuccess) revert ConceroFunctions_FailedToReleaseTx(swapError);
+            if (!swapSuccess) revert FailedToReleaseTx(swapError);
         } else {
             IPool(i_poolProxy).takeLoan(tokenReceived, amount, transaction.recipient);
         }

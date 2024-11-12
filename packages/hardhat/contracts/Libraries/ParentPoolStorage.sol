@@ -45,7 +45,7 @@ contract ParentPoolStorage {
     mapping(uint64 chainSelector => address pool) public s_childPools;
 
     ///@notice Mapping to keep track of allowed pool senders
-    mapping(uint64 chainSelector => mapping(address poolAddress => uint256))
+    mapping(uint64 chainSelector => mapping(address poolAddress => bool))
         public s_contractsToReceiveFrom;
 
     ///@notice Mapping to keep track of Liquidity Providers withdraw requests

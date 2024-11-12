@@ -9,38 +9,21 @@ contract InfraStorageSetters is InfraStorage {
     ///////////////////////////////
 
     ///@notice error emitted when the input is the address(0)
-    error StorageSetters_InvalidAddress();
+    error InvalidAddress();
     ///@notice error emitted when a non-owner address call access controlled functions
-    error StorageSetters_CallableOnlyByOwner(address msgSender, address owner);
+    error CallableOnlyByOwner(address msgSender, address owner);
 
     ///////////////
     ///IMMUTABLE///
     ///////////////
     address internal immutable i_owner;
 
-    ///@notice event emitted when the CLF Premium fee is updated
-    event CLFPremiumFeeUpdated(uint64 chainSelector, uint256 previousValue, uint256 feeAmount);
-    ///@notice event emitted when a new Concero Contract is added or updated
-    event ConceroContractUpdated(uint64 chainSelector, address conceroContract);
-    ///@notice event emitted when the CLF secret is updated
-    event DonSecretVersionUpdated(uint64 previousDonSecretVersion, uint64 newDonSecretVersion);
-    ///@notice event emitted when the CLF slot id is updated
-    event DonSlotIdUpdated(uint8 previousDonSlot, uint8 newDonSlot);
-    ///@notice event emitted when the Destination JS Hash Sum is updated
-    event DestinationJsHashSumUpdated(bytes32 previousDstHashSum, bytes32 newDstHashSum);
-    ///@notice event emitted when the Source JS Hash Sum is updated
-    event SourceJsHashSumUpdated(bytes32 previousSrcHashSum, bytes32 newSrcHashSum);
-    ///@notice event emitted when the Ethers hash sum is updated
-    event EthersHashSumUpdated(bytes32 previousValue, bytes32 hashSum);
-    ///@notice event emitted when a new router address is added
-    event Storage_NewRouterAdded(address router, uint256 isApproved);
-
     constructor(address _initialOwner) {
         i_owner = _initialOwner;
     }
 
     modifier onlyOwner() {
-        if (msg.sender != i_owner) revert StorageSetters_CallableOnlyByOwner(msg.sender, i_owner);
+        if (msg.sender != i_owner) revert CallableOnlyByOwner(msg.sender, i_owner);
         _;
     }
 
@@ -60,10 +43,7 @@ contract InfraStorageSetters is InfraStorage {
         uint64 _chainSelector,
         uint256 feeAmount
     ) external payable onlyOwner {
-        //@audit we must limit this amount. If we don't, it Will trigger red flags in audits.
-        uint256 previousValue = clfPremiumFees[_chainSelector];
         clfPremiumFees[_chainSelector] = feeAmount;
-        emit CLFPremiumFeeUpdated(_chainSelector, previousValue, feeAmount);
     }
 
     /**
@@ -71,9 +51,7 @@ contract InfraStorageSetters is InfraStorage {
      * @param _version the new Secret Version
      */
     function setDonHostedSecretsVersion(uint64 _version) external onlyOwner {
-        uint64 previousValue = s_donHostedSecretsVersion;
         s_donHostedSecretsVersion = _version;
-        emit DonSecretVersionUpdated(previousValue, _version);
     }
 
     /**
@@ -81,9 +59,7 @@ contract InfraStorageSetters is InfraStorage {
      * @param _donHostedSecretsSlotId the new slot id
      */
     function setDonHostedSecretsSlotID(uint8 _donHostedSecretsSlotId) external onlyOwner {
-        uint8 previousValue = s_donHostedSecretsSlotId;
         s_donHostedSecretsSlotId = _donHostedSecretsSlotId;
-        emit DonSlotIdUpdated(previousValue, _donHostedSecretsSlotId);
     }
 
     /**
@@ -91,9 +67,7 @@ contract InfraStorageSetters is InfraStorage {
      * @param _hashSum the new hash sum
      */
     function setDstJsHashSum(bytes32 _hashSum) external onlyOwner {
-        bytes32 previousValue = s_dstJsHashSum;
         s_dstJsHashSum = _hashSum;
-        emit DestinationJsHashSumUpdated(previousValue, _hashSum);
     }
 
     /**
@@ -101,9 +75,7 @@ contract InfraStorageSetters is InfraStorage {
      * @param _hashSum the new hash sum
      */
     function setSrcJsHashSum(bytes32 _hashSum) external onlyOwner {
-        bytes32 previousValue = s_srcJsHashSum;
         s_srcJsHashSum = _hashSum;
-        emit SourceJsHashSumUpdated(previousValue, _hashSum);
     }
 
     /**
@@ -111,9 +83,7 @@ contract InfraStorageSetters is InfraStorage {
      * @param _hashSum the new hash sum
      */
     function setEthersHashSum(bytes32 _hashSum) external payable onlyOwner {
-        bytes32 previousValue = s_ethersHashSum;
         s_ethersHashSum = _hashSum;
-        emit EthersHashSumUpdated(previousValue, _hashSum);
     }
 
     /////////////////////////
@@ -128,9 +98,8 @@ contract InfraStorageSetters is InfraStorage {
         uint64 _chainSelector,
         address _conceroContract
     ) external onlyOwner {
-        if (_conceroContract == address(0)) revert StorageSetters_InvalidAddress();
+        if (_conceroContract == address(0)) revert InvalidAddress();
         s_conceroContracts[_chainSelector] = _conceroContract;
-        emit ConceroContractUpdated(_chainSelector, _conceroContract);
     }
 
     /**
@@ -139,7 +108,7 @@ contract InfraStorageSetters is InfraStorage {
      * @param _pool the address of the Pool
      */
     function setDstConceroPool(uint64 _chainSelector, address _pool) external payable onlyOwner {
-        if (_pool == address(0)) revert StorageSetters_InvalidAddress();
+        if (_pool == address(0)) revert InvalidAddress();
         s_poolReceiver[_chainSelector] = _pool;
     }
 
@@ -148,9 +117,8 @@ contract InfraStorageSetters is InfraStorage {
      * @param _router the address of the router
      * @param _isApproved 1 == Approved | Any other value is not Approved.
      */
-    function setDexRouterAddress(address _router, uint256 _isApproved) external payable onlyOwner {
-        if (_router == address(0)) revert StorageSetters_InvalidAddress();
+    function setDexRouterAddress(address _router, bool _isApproved) external payable onlyOwner {
+        if (_router == address(0)) revert InvalidAddress();
         s_routerAllowed[_router] = _isApproved;
-        emit Storage_NewRouterAdded(_router, _isApproved);
     }
 }

@@ -13,6 +13,8 @@ import { err, log, warn } from "./log";
 import { getEnvAddress, getEnvVar } from "./getEnvVar";
 import { updateEnvAddress, updateEnvVariable } from "./updateEnvVariable";
 import verifyVariables from "./verifyVariables";
+import { getChainBySelector } from "./getChainBySelector";
+
 export {
   compileContracts,
   configureDotEnv,
@@ -33,4 +35,5 @@ export {
   updateEnvVariable,
   updateEnvAddress,
   verifyVariables,
+  getChainBySelector,
 };

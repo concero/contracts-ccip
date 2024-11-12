@@ -29,7 +29,7 @@ export const urls: Record<string, string[]> = {
     "https://rpc.ankr.com/eth_sepolia",
   ],
   avalanche: [
-    `https://ava-mainnet.blastapi.io/${BLAST_API_KEY}`,
+    `https://ava-mainnet.public.blastapi.io/ext/bc/C/rpc/${BLAST_API_KEY}`,
     "https://rpc.ankr.com/avalanche",
     `https://avalanche-mainnet.infura.io/v3/${INFURA_API_KEY}`,
   ],
@@ -63,7 +63,7 @@ export const urls: Record<string, string[]> = {
     `https://polygon.gateway.tenderly.co/${TENDERLY_API_KEY}`,
     `https://polygon-mainnet.blastapi.io/${BLAST_API_KEY}`,
     "https://rpc.ankr.com/polygon",
-    "https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}",
+    `https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}`,
     "https://polygon-bor-rpc.publicnode.com",
   ],
   polygonAmoy: [
@@ -72,11 +72,13 @@ export const urls: Record<string, string[]> = {
     `https://polygon-amoy.infura.io/v3/${INFURA_API_KEY}`,
   ],
   base: [
-    "https://rpc.ankr.com/base",
-    `https://base-rpc.publicnode.com`,
-    `https://base-mainnet.blastapi.io/${BLAST_API_KEY}`,
+    `https://base-mainnet.infura.io/v3/${INFURA_API_KEY}`,
+    // "https://rpc.ankr.com/base",
+    // `https://base-rpc.publicnode.com`,
+    // `https://base-mainnet.blastapi.io/${BLAST_API_KEY}`,
   ],
   baseSepolia: [
+    `https://base-sepolia.infura.io/v3/${INFURA_API_KEY}`,
     `https://base-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     "https://rpc.ankr.com/base_sepolia",
     `https://base-sepolia.blastapi.io/${BLAST_API_KEY}`,

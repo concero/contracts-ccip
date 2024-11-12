@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
+import {IInfraOrchestrator} from "./IInfraOrchestrator.sol";
 import {IDexSwap} from "./IDexSwap.sol";
 import {IInfraStorage} from "./IInfraStorage.sol";
 
@@ -12,7 +13,7 @@ interface IConceroBridge is IInfraStorage {
      * @dev dstSwapData can be empty if there is no swap on destination
      * @dev this function should only be able to called thought infra Proxy
      */
-    function startBridge(
+    function bridge(
         BridgeData memory bridgeData,
         IDexSwap.SwapData[] memory dstSwapData
     ) external payable;

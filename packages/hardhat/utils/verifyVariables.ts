@@ -119,7 +119,7 @@ const compareValues = (variableName, currentValue, expectedValue) => {
 /**
  * Main function to initiate the script.
  */
-const verifyVariables = async contractsDir => {
+const verifyVariables = async (contractsDir: string = "./contracts") => {
   try {
     const solFiles = await getSolFiles(contractsDir);
     for (const file of solFiles) {

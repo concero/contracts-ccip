@@ -19,8 +19,6 @@ contract InfraCommon {
     ///////////////
     ///CONSTANTS///
     ///////////////
-    ///@notice removing magic-numbers
-    uint256 internal constant APPROVED = 1;
     uint256 internal constant USDC_DECIMALS = 1_000_000; // 10 ** 6
     uint256 internal constant STANDARD_TOKEN_DECIMALS = 1 ether;
 
@@ -52,53 +50,37 @@ contract InfraCommon {
      * @param tokenType The enum flag of the token
      * @param _chainIndex the index of the chain
      */
+
     function getUSDCAddressByChainIndex(
         IInfraStorage.CCIPToken tokenType,
         IInfraStorage.Chain _chainIndex
     ) internal view returns (address) {
-        address[5][2] memory tokens;
+        //mainnet
+        if (tokenType == IInfraStorage.CCIPToken.usdc) {
+            if (_chainIndex == IInfraStorage.Chain.arb) {
+                return block.chainid == 42161 ? USDC_ARBITRUM : USDC_ARBITRUM_SEPOLIA;
+            } else if (_chainIndex == IInfraStorage.Chain.base) {
+                return block.chainid == 8453 ? USDC_BASE : USDC_BASE_SEPOLIA;
+            } else if (_chainIndex == IInfraStorage.Chain.opt) {
+                return block.chainid == 10 ? USDC_OPTIMISM : USDC_OPTIMISM_SEPOLIA;
+            } else if (_chainIndex == IInfraStorage.Chain.pol) {
+                return block.chainid == 137 ? USDC_POLYGON : USDC_POLYGON_AMOY;
+            } else if (_chainIndex == IInfraStorage.Chain.avax) {
+                return USDC_AVALANCHE;
+            } else revert ChainIndexOutOfBounds();
 
-        // REMOVE IN PRODUCTION Initialize BNM addresses
-        tokens[uint(IInfraStorage.CCIPToken.bnm)][
-            uint(IInfraStorage.Chain.arb)
-        ] = 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D; // arb
-        tokens[uint(IInfraStorage.CCIPToken.bnm)][
-            uint(IInfraStorage.Chain.base)
-        ] = 0x88A2d74F47a237a62e7A51cdDa67270CE381555e; // base
-        tokens[uint(IInfraStorage.CCIPToken.bnm)][
-            uint(IInfraStorage.Chain.opt)
-        ] = 0x8aF4204e30565DF93352fE8E1De78925F6664dA7; // opt
-        tokens[uint(IInfraStorage.CCIPToken.bnm)][
-            uint(IInfraStorage.Chain.pol)
-        ] = 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4; // pol
-
-        // Initialize USDC addresses
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.arb)] = block.chainid ==
-            42161
-            ? USDC_ARBITRUM
-            : USDC_ARBITRUM_SEPOLIA;
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.base)] = block
-            .chainid == 8453
-            ? USDC_BASE
-            : USDC_BASE_SEPOLIA;
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.opt)] = block.chainid ==
-            10
-            ? USDC_OPTIMISM
-            : USDC_OPTIMISM_SEPOLIA;
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.pol)] = block.chainid ==
-            137
-            ? USDC_POLYGON
-            : USDC_POLYGON_AMOY;
-        tokens[uint(IInfraStorage.CCIPToken.usdc)][uint(IInfraStorage.Chain.avax)] = block
-            .chainid == 43114
-            ? USDC_AVALANCHE
-            : USDC_AVALANCHE;
-
-        if (uint256(tokenType) > tokens.length) revert TokenTypeOutOfBounds();
-        if (uint256(_chainIndex) > tokens[uint256(tokenType)].length)
-            revert ChainIndexOutOfBounds();
-
-        return tokens[uint256(tokenType)][uint256(_chainIndex)];
+            //testnet
+        } else if (tokenType == IInfraStorage.CCIPToken.bnm) {
+            if (_chainIndex == IInfraStorage.Chain.arb)
+                return 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D;
+            else if (_chainIndex == IInfraStorage.Chain.base)
+                return 0x88A2d74F47a237a62e7A51cdDa67270CE381555e;
+            else if (_chainIndex == IInfraStorage.Chain.opt)
+                return 0x8aF4204e30565DF93352fE8E1De78925F6664dA7;
+            else if (_chainIndex == IInfraStorage.Chain.pol)
+                return 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4;
+            else revert ChainIndexOutOfBounds();
+        } else revert TokenTypeOutOfBounds();
     }
 
     /**
@@ -109,37 +91,19 @@ contract InfraCommon {
         return (_messenger == i_msgr0 || _messenger == i_msgr1 || _messenger == i_msgr2);
     }
 
-    //    function _isMessenger(address _messenger) internal pure returns (bool _isMessenger) {
-    //        address[] memory messengers = new address[](4);
-    //        messengers[0] = 0x11111003F38DfB073C6FeE2F5B35A0e57dAc4715;
-    //        messengers[1] = address(0);
-    //        messengers[2] = address(0);
-    //        messengers[3] = address(0);
-    //
-    //        for (uint256 i; i < messengers.length; ) {
-    //            if (_messenger == messengers[i]) {
-    //                return true;
-    //            }
-    //            unchecked {
-    //                ++i;
-    //            }
-    //        }
-    //        return false;
-    //    }
-
     function getWrappedNative() internal view returns (address _wrappedAddress) {
         uint256 chainId = block.chainid;
 
-        if (chainId == CHAIN_ID_AVALANCHE) {
-            _wrappedAddress = WRAPPED_NATIVE_AVALANCHE;
-        } else if (chainId == CHAIN_ID_ETHEREUM) {
-            _wrappedAddress = WRAPPED_NATIVE_ETHEREUM;
-        } else if (chainId == CHAIN_ID_ARBITRUM) {
+        if (chainId == CHAIN_ID_ARBITRUM) {
             _wrappedAddress = WRAPPED_NATIVE_ARBITRUM;
         } else if (chainId == CHAIN_ID_BASE) {
             _wrappedAddress = WRAPPED_NATIVE_BASE;
         } else if (chainId == CHAIN_ID_POLYGON) {
             _wrappedAddress = WRAPPED_NATIVE_POLYGON;
+        } else if (chainId == CHAIN_ID_ETHEREUM) {
+            _wrappedAddress = WRAPPED_NATIVE_ETHEREUM;
+        } else if (chainId == CHAIN_ID_AVALANCHE) {
+            _wrappedAddress = WRAPPED_NATIVE_AVALANCHE;
         } else {
             revert ChainNotSupported();
         }

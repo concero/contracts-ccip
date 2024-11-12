@@ -34,7 +34,7 @@ async function setConceroProxySender(hre) {
       const setSenderHash = await walletClient.writeContract({
         address: conceroPoolAddress,
         functionName: "setConceroContractSender",
-        args: [dstChainSelector, dstConceroAddress, 1n],
+        args: [dstChainSelector, dstConceroAddress, true],
         abi,
         account,
         viemChain,
@@ -53,7 +53,7 @@ async function setConceroProxySender(hre) {
       const setPoolHash = await walletClient.writeContract({
         address: conceroPoolAddress,
         functionName: "setConceroContractSender",
-        args: [dstChainSelector, dstConceroPoolAddress, 1n],
+        args: [dstChainSelector, dstConceroPoolAddress, true],
         abi,
         account,
         viemChain,

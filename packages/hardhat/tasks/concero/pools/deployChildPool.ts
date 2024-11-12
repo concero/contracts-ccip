@@ -5,8 +5,8 @@ import { setChildProxyVariables } from "./setChildProxyVariables";
 import deployProxyAdmin from "../../../deploy/ConceroProxyAdmin";
 import deployTransparentProxy from "../../../deploy/TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
-import { compileContracts } from "../../../utils";
-import { ProxyEnum } from "../../../constants";
+import { compileContracts, verifyVariables } from "../../../utils";
+import { cNetworks, networkTypes, ProxyEnum } from "../../../constants";
 
 task("deploy-child-pool", "Deploy the pool")
   .addFlag("deployproxy", "Deploy the proxy")
@@ -15,6 +15,11 @@ task("deploy-child-pool", "Deploy the pool")
   .setAction(async taskArgs => {
     const hre: HardhatRuntimeEnvironment = require("hardhat");
     compileContracts({ quiet: true });
+
+    const networkType = cNetworks[hre.network.name].type;
+    if (networkType == networkTypes.mainnet) {
+      await verifyVariables();
+    }
 
     if (taskArgs.deployproxy) {
       await deployProxyAdmin(hre, ProxyEnum.childPoolProxy);

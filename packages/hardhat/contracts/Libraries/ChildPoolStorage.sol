@@ -2,17 +2,13 @@
 pragma solidity 0.8.20;
 
 contract ChildPoolStorage {
-    /////////////////////
-    ///STATE VARIABLES///
-    /////////////////////
+    /* STATE VARIABLES */
     ///@notice variable to store the value that will be temporary used by Chainlink Functions
     uint256 public s_loansInUse;
     ///@notice gap to reserve storage in the contract for future variable additions
     uint256[50] __gap;
 
-    /////////////
-    ///STORAGE///
-    /////////////
+    /* MAPPINGS & ARRAYS */
     ///@notice array of chain IDS of Pools to receive Liquidity through `ccipSend` function
     uint64[] s_poolChainSelectors;
 

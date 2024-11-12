@@ -23,9 +23,7 @@ import {ParentPoolCommon} from "./ParentPoolCommon.sol";
 import {ParentPoolStorage} from "contracts/Libraries/ParentPoolStorage.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-////////////////////////////////////////////////////////
-//////////////////////// ERRORS ////////////////////////
-////////////////////////////////////////////////////////
+/* ERRORS */
 ///@notice error emitted when the receiver is the address(0)
 error InvalidAddress();
 ///@notice error emitted when the CCIP message sender is not allowed.
@@ -55,31 +53,18 @@ error CallerNotAllowed(address);
 error MsgSigNotMatched(bytes4 sig);
 
 contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolStorage {
-    ///////////////////////
-    ///TYPE DECLARATIONS///
-    ///////////////////////
+    /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
 
-    ///////////////
-    ///CONSTANTS///
-    ///////////////
-
-    // TODO: Change the value of MIN_DEPOSIT to 100_000_000 in production
-    //   uint256 internal constant MIN_DEPOSIT = 100_000_000;
+    /* CONSTANT VARIABLES */
+    /*CHANGE-IN-PRODUCTION-TO-100_000_000*/
     uint256 internal constant MIN_DEPOSIT = 1_000_000;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint64 private constant BASE_CHAIN_SELECTOR = 15971525489660198786;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * 10 ** 6;
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
-    //    uint256 private constant CLA_PERFORMUPKEEP_ITERATION_GAS_COSTS = 2108;
-    //    uint256 private constant ARRAY_MANIPULATION = 10_000;
-    //    uint256 private constant CLA_OVERHEAD = 80_000;
-    //    uint256 private constant NODE_PREMIUM = 150;
-    //    uint256 private constant WRITE_FUNCTIONS_COST = 600_000;
-    ////////////////
-    ///IMMUTABLES///
-    ////////////////
 
+    /* IMMUTABLE VARIABLES */
     address private immutable i_infraProxy;
     LinkTokenInterface private immutable i_linkToken;
     IParentPoolCLFCLA internal immutable i_parentPoolCLFCLA;
@@ -87,9 +72,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     address internal immutable i_clfRouter;
     address internal immutable i_automationForwarder;
 
-    ///////////////
-    ///MODIFIERS///
-    ///////////////
+    /* MODIFIERS */
     /**
      * @notice CCIP Modifier to check Chains And senders
      * @param _chainSelector Id of the source chain of the message
@@ -128,10 +111,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         i_automationForwarder = _automationForwarder;
     }
 
-    ////////////////////////
-    ///EXTERNAL FUNCTIONS///
-    ////////////////////////
-
+    /* EXTERNAL FUNCTIONS */
     receive() external payable {}
 
     function getWithdrawalIdByLPAddress(address _lpAddress) external view returns (bytes32) {
@@ -276,8 +256,8 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     }
 
     /**
-     * @notice Function for user to deposit liquidity of ll tokens
-     * @param _usdcAmount the amount to be deposited
+     * @notice Allows a user to initiate the deposit. Currently supports USDC only.
+     * @param _usdcAmount amount to be deposited
      */
     function startDeposit(uint256 _usdcAmount) external onlyProxyContext {
         if (_usdcAmount < MIN_DEPOSIT) {
@@ -321,6 +301,11 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         emit DepositInitiated(clfRequestId, msg.sender, _usdcAmount, _deadline);
     }
 
+    /**
+     * @notice Completes the deposit process initiated via startDeposit().
+     * @notice This function needs to be called within the deadline of DEPOSIT_DEADLINE_SECONDS, set in startDeposit().
+     * @param _depositRequestId the ID of the deposit request
+     */
     function completeDeposit(bytes32 _depositRequestId) external onlyProxyContext {
         DepositRequest storage request = s_depositRequests[_depositRequestId];
         address lpAddress = request.lpAddress;
@@ -353,9 +338,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         delete s_depositRequests[_depositRequestId];
     }
 
-    /**
-     * @notice Function to allow Liquidity Providers to start the Withdraw of their USDC deposited
-     * @param _lpAmount the amount of lp token the user wants to burn to get USDC back.
+    /*
+     * @notice Allows liquidity providers to initiate the withdrawal which can then be completed via completeWithdrawal()
+     * @notice A cooldown period of WITHDRAW_DEADLINE_SECONDS needs to pass before the withdrawal can be completed.
+     * @param _lpAmount the amount of LP tokens to be burnt
      */
     function startWithdrawal(uint256 _lpAmount) external onlyProxyContext {
         if (_lpAmount < 1 ether) revert WithdrawAmountBelowMinimum(1 ether);
@@ -444,6 +430,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     //        );
     //    }
 
+    /**
+     * @notice Allows the LP to retry the withdrawal request if the Chainlink Functions failed to execute it
+     */
     function retryPerformWithdrawalRequest() external {
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             IParentPoolCLFCLA.retryPerformWithdrawalRequest.selector
@@ -476,9 +465,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         s_depositFeeAmount = 0;
     }
 
-    ///////////////////////
-    ///SETTERS FUNCTIONS///
-    ///////////////////////
+    /* SETTER FUNCTIONS */
     /**
      * @notice function to manage the Cross-chains Concero contracts
      * @param _chainSelector chain identifications
@@ -644,10 +631,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
     }
 
-    ///////////////
-    /// INTERNAL //
-    ///////////////
-
+    /* INTERNAL FUNCTIONS */
     /**
      * @notice CCIP function to receive bridged values
      * @param any2EvmMessage the CCIP message

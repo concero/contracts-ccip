@@ -14,9 +14,7 @@ import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
 import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 
-////////////////////////////////////////////////////////
-//////////////////////// ERRORS ////////////////////////
-////////////////////////////////////////////////////////
+/* ERRORS */
 ///@notice error emitted when the input amount is less than the fees
 error InsufficientFees(uint256 amount, uint256 fee);
 ///@notice error emitted when a non orchestrator address call startBridge
@@ -25,18 +23,14 @@ error OnlyProxyContext(address caller);
 contract ConceroBridge is IConceroBridge, InfraCCIP {
     using SafeERC20 for IERC20;
 
-    ///////////////
-    ///CONSTANTS///
-    ///////////////
+    /* CONSTANT VARIABLES */
     uint16 internal constant CONCERO_FEE_FACTOR = 1000;
     uint64 private constant HALF_DST_GAS = 600_000;
     /*CHANGE-IN-PRODUCTION-TO-5_000_000_000*/
     uint256 internal constant BATCHED_TX_THRESHOLD = 5_000_000;
     uint8 internal constant MAX_PENDING_SETTLEMENT_TXS_BY_LANE = 200;
 
-    ////////////////////////////////////////////////////////
-    //////////////////////// EVENTS ////////////////////////
-    ////////////////////////////////////////////////////////
+    /* EVENTS */
     /// @notice event emitted when an individual tx is sent through CLF
     event ConceroBridgeSent(
         bytes32 indexed conceroMessageId,
@@ -74,9 +68,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         )
     {}
 
-    ///////////////////////////////////////////////////////////////
-    ///////////////////////////Functions///////////////////////////
-    ///////////////////////////////////////////////////////////////
+    /* FUNCTIONS */
     /**
      * @notice Function responsible to trigger CCIP and start the bridging process
      * @param bridgeData The bytes data payload with transaction infos
@@ -151,9 +143,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         );
     }
 
-    /////////////////
-    ///VIEW & PURE///
-    /////////////////
+    /* VIEW & PURE FUNCTIONS */
     /**
      * @notice Function to get the total amount of fees charged by Chainlink functions in Link
      * @param dstChainSelector the destination blockchain chain selector
@@ -210,9 +200,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         return _getSrcTotalFeeInUsdc(dstChainSelector, amount);
     }
 
-    ////////////////////////////////
-    ///// INTERNAl FUNCTIONS ///////
-    ////////////////////////////////
+    /* INTERNAL FUNCTIONS */
 
     function _sendBatchViaSettlement(
         address fromToken,

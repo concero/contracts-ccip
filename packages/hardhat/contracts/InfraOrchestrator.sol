@@ -16,9 +16,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-///////////////////////////////
-/////////////ERROR/////////////
-///////////////////////////////
+/* ERRORS */
 ///@notice error emitted when the balance input is smaller than the specified amount param
 error InvalidAmount();
 ///@notice error emitted when a address non-router calls the `handleOracleFulfillment` function
@@ -40,17 +38,13 @@ contract InfraOrchestrator is
 {
     using SafeERC20 for IERC20;
 
-    ///////////////
-    ///CONSTANTS///
-    ///////////////
+    /* CONSTANT VARIABLES */
     uint16 internal constant CONCERO_FEE_FACTOR = 1000;
     uint8 internal constant SUPPORTED_CHAINS_COUNT = 5;
     uint256 internal constant INTEGRATOR_FEE_DIVISOR = 100;
     uint256 internal constant MAX_INTEGRATOR_FEE_PERCENT = 3;
 
-    ///////////////
-    ///IMMUTABLE///
-    ///////////////
+    /* IMMUTABLE VARIABLES */
     ///@notice the address of Functions router
     address internal immutable i_functionsRouter;
     ///@notice variable to store the DexSwap address
@@ -83,10 +77,7 @@ contract InfraOrchestrator is
 
     receive() external payable {}
 
-    ///////////////
-    ///MODIFIERS///
-    ///////////////
-
+    /* MODIFIERS */
     modifier validateBridgeData(BridgeData memory _bridgeData) {
         if (_bridgeData.amount == 0 || _bridgeData.receiver == address(0)) {
             revert InvalidBridgeData();
@@ -129,10 +120,7 @@ contract InfraOrchestrator is
         _;
     }
 
-    ////////////////////////
-    /////VIEW FUNCTIONS/////
-    ////////////////////////
-
+    /* VIEW FUNCTIONS */
     function getSrcTotalFeeInUSDC(
         CCIPToken tokenType,
         uint64 dstChainSelector,
@@ -203,8 +191,9 @@ contract InfraOrchestrator is
 
     /**
      * @notice Performs a swap on a single chain.
-     * @param _swapData the swap payload of type IDexSwap.SwapData[]
-     * @param _receiver the recipient of the swap
+     * @param swapData the swap payload of type IDexSwap.SwapData[]
+     * @param receiver the recipient of the swap
+     * @param integration the integrator fee data
      */
     function swap(
         IDexSwap.SwapData[] memory swapData,
@@ -357,9 +346,7 @@ contract InfraOrchestrator is
         return true;
     }
 
-    //////////////////////////
-    /// INTERNAL FUNCTIONS ///
-    //////////////////////////
+    /* INTERNAL FUNCTIONS */
 
     function _transferTokenFromUser(IDexSwap.SwapData[] memory swapData) internal {
         address initialToken = swapData[0].fromToken;
@@ -456,9 +443,7 @@ contract InfraOrchestrator is
         return integratorFeeAmount;
     }
 
-    ///////////////////////////
-    ///VIEW & PURE FUNCTIONS///
-    ///////////////////////////
+    /* VIEW & PURE FUNCTIONS */
 
     /// @notice calculates integrator fee amount
     /// @param _integratorFeePercent fee percent provided by integrator/user

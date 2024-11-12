@@ -15,29 +15,20 @@ import {InfraCLF} from "./InfraCLF.sol";
 import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 import {ICCIP} from "./Interfaces/ICCIP.sol";
 
-////////////////////////////////////////////////////////
-//////////////////////// ERRORS ////////////////////////
-////////////////////////////////////////////////////////
+/* ERRORS */
 error ChainNotAllowed(uint64 chainSelector);
 
 contract InfraCCIP is InfraCLF {
     using SafeERC20 for IERC20;
 
-    ///////////////////////////////////////////////////////////
-    //////////////////////// VARIABLES ////////////////////////
-    ///////////////////////////////////////////////////////////
-
+    /* CONSTANT VARIABLES */
     uint64 private constant CCIP_CALLBACK_GAS_LIMIT = 150_000;
 
-    ////////////////
-    ///IMMUTABLES///
-    ////////////////
+    /* IMMUTABLE VARIABLES */
     LinkTokenInterface internal immutable i_linkToken;
     IRouterClient internal immutable i_ccipRouter;
 
-    ///////////////
-    ///MODIFIERS///
-    ///////////////
+    /* MODIFIERS */
     /**
      * @notice CCIP Modifier to check receivers for a specific chain
      * @param _chainSelector Id of the destination chain
@@ -64,10 +55,7 @@ contract InfraCCIP is InfraCLF {
         i_ccipRouter = IRouterClient(_ccipRouter);
     }
 
-    ///////////////////////////////////////////////////////////////
-    ///////////////////////////Functions///////////////////////////
-    ///////////////////////////////////////////////////////////////
-
+    /* FUNCTIONS */
     /**
      * @notice Sends USDC to the destination chain using CCIP
      * @param _destinationChainSelector The destination chain selector

@@ -31,29 +31,19 @@ contract ParentPoolCLFCLA is
     using FunctionsRequest for FunctionsRequest.Request;
     using SafeERC20 for IERC20;
 
-    ///////////////
-    ///CONSTANTS///
-    ///////////////
-
+    /* CONSTANT VARIABLES */
     ///@notice JS Code for Chainlink Functions
-
     uint256 internal constant CCIP_ESTIMATED_TIME_TO_COMPLETE = 30 minutes;
     uint32 internal constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 2_000_000;
     string internal constant JS_CODE =
         "try { const [b, o, f] = bytesArgs; const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const q = 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'master' + `/packages/hardhat/tasks/CLFScripts/dist/pool/${f === '0x02' ? 'collectLiquidity' : f === '0x01' ? 'distributeLiquidity' : 'getTotalBalance'}.min.js`; const [t, p] = await Promise.all([fetch(u), fetch(q)]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); if (r === b.toLowerCase() && x === o.toLowerCase()) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
-    /////////////////
-    ////IMMUTABLES///
-    /////////////////
-
+    /* IMMUTABLE VARIABLES */
     ///@notice Chainlink Function Don ID
     bytes32 private immutable i_clfDonId;
     uint64 private immutable i_clfSubId;
 
-    //////////////
-    /// EVENTS ///
-    //////////////
-
+    /* EVENTS */
     event CLFRequestError(
         bytes32 indexed requestId,
         IParentPool.CLFRequestType requestType,
@@ -131,9 +121,7 @@ contract ParentPoolCLFCLA is
         return _sendRequest(args);
     }
 
-    /*//////////////////////////////////////////////////////////////
-						 AUTOMATION EXTERNAL
-   //////////////////////////////////////////////////////////////*/
+    /* AUTOMATION EXTERNAL */
 
     /**
      * @notice Chainlink Automation Function to check for requests with fulfilled conditions
@@ -254,10 +242,7 @@ contract ParentPoolCLFCLA is
         fulfillRequest(requestId, response, err);
     }
 
-    ///////////////
-    /// INTERNAL ///
-    ///////////////
-
+    /* INTERNAL FUNCTIONS */
     function _handleStartDepositCLFFulfill(bytes32 requestId, bytes memory response) internal {
         IParentPool.DepositRequest storage request = s_depositRequests[requestId];
 

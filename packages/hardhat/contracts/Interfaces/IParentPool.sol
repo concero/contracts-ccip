@@ -7,9 +7,7 @@ import {IInfraStorage} from "./IInfraStorage.sol";
 import {ICCIP} from "./ICCIP.sol";
 
 interface IParentPool is IPool {
-    ///////////////////////
-    ///TYPE DECLARATIONS///
-    ///////////////////////
+    /* TYPE DECLARATIONS */
 
     enum FunctionsRequestType {
         getTotalPoolsBalance,
@@ -74,9 +72,7 @@ interface IParentPool is IPool {
         bool failed;
     }
 
-    ////////////////////////////////////////////////////////
-    //////////////////////// EVENTS ////////////////////////
-    ////////////////////////////////////////////////////////
+    /* EVENTS */
 
     ///@notice event emitted when a new withdraw request is made
     event WithdrawalRequestInitiated(
@@ -122,9 +118,7 @@ interface IParentPool is IPool {
         uint256 _lpTokensToMint
     );
 
-    /////////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////FUNCTIONS//////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////
+    /* FUNCTIONS */
     function getWithdrawalIdByLPAddress(address lpAddress) external view returns (bytes32);
     function startDeposit(uint256 _usdcAmount) external;
     function distributeLiquidity(

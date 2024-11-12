@@ -16,9 +16,7 @@ error TokenTypeOutOfBounds();
 error ChainNotSupported();
 
 contract InfraCommon {
-    ///////////////
-    ///CONSTANTS///
-    ///////////////
+    /* CONSTANT VARIABLES */
     uint256 internal constant USDC_DECIMALS = 1_000_000; // 10 ** 6
     uint256 internal constant STANDARD_TOKEN_DECIMALS = 1 ether;
 
@@ -31,9 +29,7 @@ contract InfraCommon {
         i_msgr1 = _messengers[1];
         i_msgr2 = _messengers[2];
     }
-    ///////////////
-    ///MODIFIERS///
-    ///////////////
+    /* MODIFIERS */
     /**
      * @notice modifier to check if the caller is the an approved messenger
      */
@@ -42,9 +38,7 @@ contract InfraCommon {
         _;
     }
 
-    ///////////////////////////
-    ///VIEW & PURE FUNCTIONS///
-    ///////////////////////////
+    /* VIEW & PURE FUNCTIONS */
     /**
      * @notice Function to check for allowed tokens on specific networks
      * @param tokenType The enum flag of the token
@@ -109,10 +103,7 @@ contract InfraCommon {
         }
     }
 
-    ///////////////////////////
-    /////INTERNAL FUNCTIONS////
-    ///////////////////////////
-
+    /* INTERNAL FUNCTIONS */
     /**
      * @notice Internal function to convert USDC Decimals to LP Decimals
      * @param _amount the amount of USDC

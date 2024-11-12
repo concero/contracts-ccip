@@ -4,9 +4,7 @@ pragma solidity 0.8.20;
 import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
 
 contract ParentPoolStorage {
-    /////////////////////
-    ///STATE VARIABLES///
-    /////////////////////
+    /* STATE VARIABLES */
 
     ///@notice variable to store the max value that can be deposited on this pool
     uint256 public s_liquidityCap;
@@ -34,9 +32,7 @@ contract ParentPoolStorage {
     ///@notice gap to reserve storage in the contract for future variable additions
     uint256[50] private __gap;
 
-    /////////////
-    ///STORAGE///
-    /////////////
+    /* MAPPINGS & ARRAYS */
     ///@notice array of Pools to receive Liquidity through `ccipSend` function
     uint64[] internal s_poolChainSelectors;
     IParentPool.DepositOnTheWay_DEPRECATED[] internal s_depositsOnTheWayArray_DEPRECATED;
@@ -61,9 +57,7 @@ contract ParentPoolStorage {
 
     mapping(bytes32 withdrawalId => IParentPool.WithdrawRequest) public s_withdrawRequests;
 
-    ///////////////////////////
-    //// NEW STORAGE SLOTS/////
-    ///////////////////////////
+    /* NEW STORAGE SLOTS */
 
     IParentPool.DepositOnTheWay[150] internal s_depositsOnTheWayArray;
 

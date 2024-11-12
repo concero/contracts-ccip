@@ -5,9 +5,7 @@ import {IInfraStorage} from "../Interfaces/IInfraStorage.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 abstract contract InfraStorage is ReentrancyGuard, IInfraStorage {
-    /////////////////////
-    ///STATE VARIABLES///
-    /////////////////////
+    /* STATE VARIABLES */
     ///@notice variable to store the Chainlink Function DON Slot ID
     uint8 public s_donHostedSecretsSlotId;
     ///@notice variable to store the Chainlink Function DON Secret Version
@@ -27,9 +25,7 @@ abstract contract InfraStorage is ReentrancyGuard, IInfraStorage {
     ///@notice gap to reserve storage in the contract for future variable additions
     uint256[50] __gap;
 
-    /////////////
-    ///STORAGE///
-    /////////////
+    /* MAPPINGS & ARRAYS */
     ///@notice Concero: Mapping to keep track of CLF fees for different chains
     mapping(uint64 => uint256) public clfPremiumFees;
     ///@notice DexSwap: mapping to keep track of allowed routers to perform swaps. 1 == Allowed.

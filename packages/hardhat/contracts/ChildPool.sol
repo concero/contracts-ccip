@@ -17,9 +17,7 @@ import {IInfraStorage} from "./Interfaces/IInfraStorage.sol";
 import {IInfraOrchestrator} from "./Interfaces/IInfraOrchestrator.sol";
 import {ICCIP} from "./Interfaces/ICCIP.sol";
 
-////////////////////////////////////////////////////////
-//////////////////////// ERRORS ////////////////////////
-////////////////////////////////////////////////////////
+/* ERRORS */
 ///@notice error emitted when the caller is not the Orchestrator
 error CallerIsNotTheProxy(address delegatedCaller);
 ///@notice error emitted when a not-concero address call takeLoan
@@ -40,20 +38,11 @@ error WithdrawAlreadyPerformed();
 contract ChildPool is CCIPReceiver, ChildPoolStorage {
     using SafeERC20 for IERC20;
 
-    ///////////////////////////////////////////////////////////
-    //////////////////////// VARIABLES ////////////////////////
-    ///////////////////////////////////////////////////////////
-
-    ///////////////
-    ///CONSTANTS///
-    ///////////////
-
+    /* CONSTANT VARIABLES */
     uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
 
-    ////////////////
-    ///IMMUTABLES///
-    ////////////////
+    /* IMMUTABLE VARIABLES */
     ///@notice immutable variable to store Orchestrator Proxy
     address private immutable i_infraProxy;
     ///@notice Child Pool proxy address
@@ -68,11 +57,9 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     address private immutable i_msgr0;
     address private immutable i_msgr1;
     address private immutable i_msgr2;
-    ////////////////////////////////////////////////////////
-    //////////////////////// EVENTS ////////////////////////
-    ////////////////////////////////////////////////////////
-    ///@notice event emitted when a Cross-chain tx is received.
 
+    /* EVENTS */
+    ///@notice event emitted when a Cross-chain tx is received.
     event CCIPReceived(
         bytes32 indexed ccipMessageId,
         uint64 srcChainSelector,
@@ -89,9 +76,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         uint256 fees
     );
 
-    ///////////////
-    ///MODIFIERS///
-    ///////////////
+    /* MODIFIERS */
     /**
      * @notice modifier to ensure if the function is being executed in the proxy context.
      */
@@ -127,9 +112,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         _;
     }
 
-    /////////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////FUNCTIONS//////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////
+    /* FUNCTIONS */
     receive() external payable {}
 
     constructor(
@@ -151,9 +134,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         i_msgr2 = _messengers[2];
     }
 
-    ////////////////////////
-    ///EXTERNAL FUNCTIONS///
-    ////////////////////////
+    /* EXTERNAL FUNCTIONS */
 
     /**
      * @notice Function called by Messenger process withdraw calls
@@ -256,9 +237,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         IERC20(_token).safeTransfer(_receiver, _amount);
     }
 
-    ///////////////////////
-    ///SETTERS FUNCTIONS///
-    ///////////////////////
+    /* SETTER FUNCTIONS */
     /**
      * @notice function to manage the Cross-chains Concero contracts
      * @param _chainSelector chain identifications
@@ -313,9 +292,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         }
     }
 
-    ////////////////
-    /// INTERNAL ///
-    ////////////////
+    /* INTERNAL FUNCTIONS */
     /**
      * @notice CCIP function to receive bridged values
      * @param any2EvmMessage the CCIP message
@@ -401,10 +378,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         return messageId;
     }
 
-    ///////////////////////////
-    ///VIEW & PURE FUNCTIONS///
-    ///////////////////////////
-
+    /* VIEW & PURE FUNCTIONS */
     /**
      * @notice Function to check if a caller address is an allowed messenger
      * @param _messenger the address of the caller

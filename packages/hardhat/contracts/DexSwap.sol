@@ -22,9 +22,7 @@ import {InfraCommon} from "./InfraCommon.sol";
 import {IPeripheryPayments} from "@uniswap/v3-periphery/contracts/interfaces/IPeripheryPayments.sol";
 import {IWETH} from "./Interfaces/IWETH.sol";
 
-////////////////////////////////////////////////////////
-//////////////////////// ERRORS ////////////////////////
-////////////////////////////////////////////////////////
+/* ERRORS */
 ///@notice error emitted when the caller is not allowed
 error OnlyProxyContext(address caller);
 ///@notice error emitted when the swap data is empty
@@ -41,21 +39,14 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
     using SafeERC20 for IERC20;
     using BytesLib for bytes;
 
-    ///////////////
-    ///CONSTANTS///
-    ///////////////
+    /* CONSTANT VARIABLES */
     uint256 private constant BASE_CHAIN_ID = 8453;
     uint256 private constant AVAX_CHAIN_ID = 43114;
 
-    ///////////////
-    ///IMMUTABLE///
-    ///////////////
+    /* IMMUTABLE VARIABLES */
     address private immutable i_proxy;
 
-    ////////////////////////////////////////////////////////
-    //////////////////////// EVENTS ////////////////////////
-    ////////////////////////////////////////////////////////
-
+    /* EVENTS */
     event ConceroSwap(
         address fromToken,
         address toToken,
@@ -413,9 +404,7 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         );
     }
 
-    ///////////////////////
-    /// Helper Functions ///
-    ///////////////////////
+    /* HELPER FUNCTIONS */
     function _extractTokens(
         bytes memory _path
     ) private pure returns (address _firstToken, address _lastToken) {

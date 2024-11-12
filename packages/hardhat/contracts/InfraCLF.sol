@@ -17,9 +17,7 @@ import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/l
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-////////////////////////////////////////////////////////
-//////////////////////// ERRORS ////////////////////////
-////////////////////////////////////////////////////////
+/* ERRORS */
 ///@notice error emitted when a TX was already added
 error TxAlreadyExists(bytes32 txHash, bool isConfirmed);
 ///@notice error emitted when a unexpected ID is added
@@ -36,15 +34,11 @@ error OnlyProxyContext(address caller);
 error FailedToReleaseTx(bytes error);
 
 contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
-    ///////////////////////
-    ///TYPE DECLARATIONS///
-    ///////////////////////
+    /* TYPE DECLARATIONS */
     using SafeERC20 for IERC20;
     using FunctionsRequest for FunctionsRequest.Request;
 
-    ///////////////////////////////////////////////////////////
-    //////////////////////// VARIABLES ////////////////////////
-    ///////////////////////////////////////////////////////////
+    /* CONSTANT VARIABLES */
     uint32 public constant CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT = 150_000;
     uint32 public constant CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT = 2_000_000;
     uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 220_500;
@@ -53,9 +47,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     string private constant CL_JS_CODE =
         "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'master' + `/packages/hardhat/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
 
-    ////////////////
-    ///IMMUTABLES///
-    ////////////////
+    /* IMMUTABLE VARIABLES */
     ///@notice Chainlink Function Don ID
     bytes32 private immutable i_donId;
     ///@notice Chainlink Functions Protocol Subscription ID
@@ -71,9 +63,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     ///@notice ID of the deployed chain on getChain() function
     Chain internal immutable i_chainIndex;
 
-    ////////////////////////////////////////////////////////
-    //////////////////////// EVENTS ////////////////////////
-    ////////////////////////////////////////////////////////
+    /* EVENTS */
     ///@notice emitted on source when a Unconfirmed TX is sent
     event UnconfirmedTXSent(
         bytes32 indexed ccipMessageId,
@@ -130,9 +120,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         i_proxy = _proxy;
     }
 
-    ///////////////////////////////////////////////////////////////
-    ///////////////////////////Functions///////////////////////////
-    ///////////////////////////////////////////////////////////////
+    /* FUNCTIONS */
 
     /**
      * @notice Receives an unconfirmed TX from the source chain and validates it through Chainlink Functions
@@ -231,10 +219,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         fulfillRequest(requestId, response, err);
     }
 
-    ////////////////////////
-    ///INTERNAL FUNCTIONS///
-    ////////////////////////
-
+    /* INTERNAL FUNCTIONS */
     /**
      * @notice CLF internal function to fulfill requests
      * @param requestId the initiate request ID
@@ -414,10 +399,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         }
     }
 
-    /////////////////////////////
-    /// VIEW & PURE FUNCTIONS ///
-    /////////////////////////////
-
+    /* VIEW & PURE FUNCTIONS */
     /**
      * @notice Helper function to convert swapData into bytes payload to be sent through functions
      * @param _swapData The array of swap data

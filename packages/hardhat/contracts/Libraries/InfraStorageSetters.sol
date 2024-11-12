@@ -4,18 +4,13 @@ pragma solidity 0.8.20;
 import {InfraStorage} from "./InfraStorage.sol";
 
 contract InfraStorageSetters is InfraStorage {
-    ///////////////////////////////
-    /////////////ERROR/////////////
-    ///////////////////////////////
-
+    /* ERRORS */
     ///@notice error emitted when the input is the address(0)
     error InvalidAddress();
     ///@notice error emitted when a non-owner address call access controlled functions
     error CallableOnlyByOwner(address msgSender, address owner);
 
-    ///////////////
-    ///IMMUTABLE///
-    ///////////////
+    /* IMMUTABLE VARIABLES */
     address internal immutable i_owner;
 
     constructor(address _initialOwner) {
@@ -27,10 +22,7 @@ contract InfraStorageSetters is InfraStorage {
         _;
     }
 
-    ///////////////////////////
-    /// FUNCTIONS VARIABLES ///
-    ///////////////////////////
-
+    /* SETTER FUNCTIONS */
     /**
      * @notice Function to update Chainlink Functions fees
      * @param _chainSelector Chain Identifier
@@ -86,9 +78,6 @@ contract InfraStorageSetters is InfraStorage {
         s_ethersHashSum = _hashSum;
     }
 
-    /////////////////////////
-    /// CONTRACT ADDRESSES///
-    /////////////////////////
     /**
      * @notice Function to set a Cross-chain Concero contract
      * @param _chainSelector The chain selector of the chain

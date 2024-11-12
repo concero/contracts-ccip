@@ -21,7 +21,6 @@ interface IConceroBridge is IInfraStorage {
     //todo: rename this function to getTotalBridgeFeeUSDC
     /**
      * @notice Function to get the total bridge fee in USDC
-     * @param tokenType the token type
      * @param dstChainSelector the destination chain selector
      * @param amount the amount to be bridged
      * @return the total fee in USDC

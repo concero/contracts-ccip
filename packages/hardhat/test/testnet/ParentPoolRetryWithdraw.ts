@@ -1,12 +1,13 @@
 import "@nomicfoundation/hardhat-chai-matchers";
 import { Address } from "viem";
-import { abi as ParentPoolAbi } from "../../artifacts/contracts/ParentPool.sol/ParentPool.json";
 import { getFallbackClients } from "../../utils";
 import { conceroNetworks } from "../../constants";
 
 const parentPoolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 
-describe("start deposit usdc to parent pool\n", () => {
+describe("start deposit usdc to parent pool\n", async () => {
+  const { abi: ParentPoolAbi } = await import("../../artifacts/contracts/ParentPool.sol/ParentPool.json");
+
   const { walletClient, publicClient } = getFallbackClients(conceroNetworks.baseSepolia);
 
   it("should retry withdraw from automation", async () => {

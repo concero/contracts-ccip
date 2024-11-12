@@ -5,13 +5,14 @@ import type { Account } from "viem/accounts/types";
 import { RpcSchema } from "viem/types/eip1193";
 import { Address, createPublicClient } from "viem";
 import { PublicClient } from "viem/clients/createPublicClient";
-import { abi as ParentPoolAbi } from "../artifacts/contracts/ParentPool.sol/ParentPool.json";
 import { chainsMap } from "./utils/chainsMap";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 
-describe("calculate withdrawable amount from pools\n", () => {
+describe("calculate withdrawable amount from pools\n", async () => {
+  const { abi: ParentPoolAbi } = await import("../artifacts/contracts/ParentPool.sol/ParentPool.json");
+
   const publicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
     chain: chainsMap[srcChainSelector].viemChain,
     transport: chainsMap[srcChainSelector].viemTransport,

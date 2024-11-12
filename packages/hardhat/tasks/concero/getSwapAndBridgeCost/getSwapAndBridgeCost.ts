@@ -6,7 +6,6 @@ import { findEventLog } from "./findCLFRequestProcessedLog";
 import functionsRouterAbi from "@chainlink/contracts/abi/v0.8/FunctionsRouter.json";
 import functionsCoordinatorAbi from "@chainlink/contracts/abi/v0.8/FunctionsCoordinator.json";
 import { getDecodedEventByTxReceipt } from "./getDecodedEventByTxReceipt";
-import { abi as conceroBridgeAbi } from "../../../artifacts/contracts/ConceroBridge.sol/ConceroBridge.json";
 import { DecodeEventLogReturnType } from "viem/utils/abi/decodeEventLog";
 import { getCLFFeesTaken } from "./getCLFFeesTaken";
 import { displayResults } from "./displayResults";
@@ -14,6 +13,7 @@ import { fetchPriceFeeds } from "./fetchPriceFeeds";
 import fs from "fs";
 import { getChainById } from "../../../utils/getChainBySelector";
 import { analyseTxOutputFile } from "./analyseTxOutputFile";
+
 /*
 Todos:
 1. Find src CLF callback to get CLF LINK final cost on src
@@ -21,12 +21,14 @@ Todos:
 3. Find dst CLF callback to get CLF LINK final cost and gas used on dst
 */
 
-const oracleRequestEventABI = getAbiItem({ abi: functionsCoordinatorAbi, name: "OracleRequest" });
-const unconfirmedTXSentEventABI = getAbiItem({ abi: conceroBridgeAbi, name: "UnconfirmedTXSent" });
-const requestProcessedEventAbi = getAbiItem({ abi: functionsRouterAbi, name: "RequestProcessed" });
-const unconfirmedTXAddedEventAbi = getAbiItem({ abi: conceroBridgeAbi, name: "UnconfirmedTXAdded" });
-
 export async function getSwapAndBridgeCost(srctx: Hash, dsttx: Hash, srcChain: CNetwork) {
+  const { abi: conceroBridgeAbi } = await import("../../../artifacts/contracts/ConceroBridge.sol/ConceroBridge.json");
+
+  const oracleRequestEventABI = getAbiItem({ abi: functionsCoordinatorAbi, name: "OracleRequest" });
+  const unconfirmedTXSentEventABI = getAbiItem({ abi: conceroBridgeAbi, name: "UnconfirmedTXSent" });
+  const requestProcessedEventAbi = getAbiItem({ abi: functionsRouterAbi, name: "RequestProcessed" });
+  const unconfirmedTXAddedEventAbi = getAbiItem({ abi: conceroBridgeAbi, name: "UnconfirmedTXAdded" });
+
   const { publicClient: srcPublicClient } = getFallbackClients(srcChain);
   const [srcTx, srcTxReceipt] = await Promise.all([
     srcPublicClient.getTransaction({ hash: srctx }),

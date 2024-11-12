@@ -7,7 +7,6 @@ import { RpcSchema } from "viem/types/eip1193";
 import { privateKeyToAccount } from "viem/accounts";
 import { Address, createPublicClient, createWalletClient, PrivateKeyAccount } from "viem";
 import { PublicClient } from "viem/clients/createPublicClient";
-import { abi as ParentPoolAbi } from "../artifacts/contracts/ParentPool.sol/ParentPool.json";
 import { chainsMap } from "./utils/chainsMap";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE;

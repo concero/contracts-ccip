@@ -8,7 +8,6 @@ import { privateKeyToAccount } from "viem/accounts";
 import { Address, createPublicClient, createWalletClient, PrivateKeyAccount } from "viem";
 import { PublicClient } from "viem/clients/createPublicClient";
 import { approve } from "./utils/approve";
-import { abi as ParentPoolAbi } from "../artifacts/contracts/ParentPool.sol/ParentPool.json";
 import { chainsMap } from "./utils/chainsMap";
 
 const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE;
@@ -16,7 +15,9 @@ const usdcAmount = "1900000000"; // 1900 USDC
 const usdcTokenAddress = process.env.USDC_BASE as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE as Address;
 
-describe("deposit usdc to pool\n", () => {
+describe("deposit usdc to pool\n", async () => {
+  const { abi: ParentPoolAbi } = await import("../artifacts/contracts/ParentPool.sol/ParentPool.json");
+
   let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
     chain: chainsMap[srcChainSelector].viemChain,
     transport: chainsMap[srcChainSelector].viemTransport,

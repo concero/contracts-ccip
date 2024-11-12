@@ -1,6 +1,5 @@
 import "@nomicfoundation/hardhat-chai-matchers";
 import { Address, parseUnits } from "viem";
-import { abi as ParentPoolAbi } from "../../artifacts/contracts/ParentPool.sol/ParentPool.json";
 import { approve } from "../utils/approve";
 import { getFallbackClients } from "../../utils";
 import { conceroNetworks } from "../../constants";
@@ -10,7 +9,9 @@ const lpAmount = parseUnits("1", 18);
 const lpTokenAddress = process.env.LPTOKEN_BASE_SEPOLIA;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA;
 
-describe("start withdrawal usdc from parent pool\n", () => {
+describe("start withdrawal usdc from parent pool\n", async () => {
+  const { abi: ParentPoolAbi } = await import("../../artifacts/contracts/ParentPool.sol/ParentPool.json");
+
   const { walletClient, publicClient } = getFallbackClients(fromChain);
 
   it("should start withdraw usdc from pool", async () => {

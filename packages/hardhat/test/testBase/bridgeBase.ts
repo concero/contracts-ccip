@@ -1,5 +1,4 @@
 import { approve } from "../utils/approve";
-import { abi as ConceroOrchestratorAbi } from "../../artifacts/contracts/Orchestrator.sol/Orchestrator.json";
 
 export interface IBridgeBase {
   srcTokenAddress: string;
@@ -20,6 +19,10 @@ export async function bridgeBase({
   walletClient,
   publicClient,
 }: IBridgeBase) {
+  const { abi: ConceroOrchestratorAbi } = await import(
+    "../../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json"
+  );
+
   await approve(srcTokenAddress, srcContractAddress, srcTokenAmount, walletClient, publicClient);
 
   const bridgeData = {

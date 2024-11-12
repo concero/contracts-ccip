@@ -1,7 +1,6 @@
 import "@nomicfoundation/hardhat-chai-matchers";
 import { encodeAbiParameters, formatUnits } from "viem";
 import ERC20ABI from "../abi/ERC20.json";
-import { abi as ConceroOrchestratorAbi } from "../artifacts/contracts/Orchestrator.sol/Orchestrator.json";
 import { getFallbackClients } from "../utils";
 import { conceroNetworks } from "../constants/conceroNetworks";
 import log from "../utils/log";
@@ -69,6 +68,10 @@ describe("swap", () => {
 
   it("should swap", async () => {
     try {
+      const { abi: ConceroOrchestratorAbi } = await import(
+        "../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json"
+      );
+
       await approveToken(publicClient, walletClient, srcTokenAddress, srcTokenAmount);
 
       const dexData = encodeAbiParameters(

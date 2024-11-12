@@ -10,8 +10,6 @@ import { Address, createPublicClient, createWalletClient, decodeEventLog, http, 
 import { arbitrumSepolia, base, baseSepolia, optimismSepolia, polygon, polygonAmoy } from "viem/chains";
 import ERC20ABI from "../abi/ERC20.json";
 import { PublicClient } from "viem/clients/createPublicClient";
-import { abi as ConceroAbi } from "../artifacts/contracts/Concero.sol/Concero.json";
-import { abi as ConceroOrchestratorAbi } from "../artifacts/contracts/Orchestrator.sol/Orchestrator.json";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -54,7 +52,12 @@ const transactionsCount = 1;
 const srcContractAddress = process.env.CONCERO_PROXY_POLYGON;
 const dstContractAddress = process.env.CONCERO_PROXY_BASE;
 
-describe("startBatchTransactions\n", () => {
+describe("startBatchTransactions\n", async () => {
+  const { abi: ConceroAbi } = await import("../artifacts/contracts/ConceroBridge.sol/ConceroBridge.json");
+  const { abi: ConceroOrchestratorAbi } = await import(
+    "../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json"
+  );
+
   let Concero: Concero;
   let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
     chain: chainsMap[srcChainSelector].viemChain,

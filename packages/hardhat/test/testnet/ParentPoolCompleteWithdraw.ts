@@ -1,11 +1,13 @@
 import "@nomicfoundation/hardhat-chai-matchers";
-import { abi as ParentPoolAbi } from "../../artifacts/contracts/ParentPool.sol/ParentPool.json";
+
 import { getFallbackClients } from "../../utils";
 import { conceroNetworks } from "../../constants";
 
 const parentPool = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA;
 
-describe("complete withdraw from parent pool\n", () => {
+describe("complete withdraw from parent pool\n", async () => {
+  const { abi: ParentPoolAbi } = await import("../../artifacts/contracts/ParentPool.sol/ParentPool.json");
+
   const { walletClient, publicClient } = getFallbackClients(conceroNetworks.baseSepolia);
 
   it("should retry withdraw from automation", async () => {

@@ -250,7 +250,7 @@ contract ParentPoolCLFCLA is
             uint256 childPoolsLiquidity,
             bytes1[] memory depositsOnTheWayIdsToDelete
         ) = _decodeCLFResponse(response);
-
+5
         request.childPoolsLiquiditySnapshot = childPoolsLiquidity;
 
         _deleteDepositsOnTheWayByIndexes(depositsOnTheWayIdsToDelete);

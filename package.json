@@ -55,7 +55,8 @@
     "clf-sub-fund": "yarn workspace @se-2/hardhat clf-sub-fund",
     "clf-sub-consumer-add": "yarn workspace @se-2/hardhat clf-sub-consumer-add",
     "clf-sub-consumer-rm": "yarn workspace @se-2/hardhat clf-sub-consumer-rm",
-    "clf-sub-timeout-requests": "yarn workspace @se-2/hardhat clf-sub-timeout-requests"
+    "clf-sub-timeout-requests": "yarn workspace @se-2/hardhat clf-sub-timeout-requests",
+    "prepare": "husky"
   },
   "devDependencies": {
     "husky": "^8.0.1",

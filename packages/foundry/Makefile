@@ -9,7 +9,7 @@
 #   - `make run_fork`        : Run an anvil fork on the BASE_LOCAL_FORK_PORT using the base RPC URL.
 #   - `make run_arb_fork`    : Run an anvil fork on the ARB_LOCAL_FORK_PORT using the ARB RPC URL.
 #   - `make test`            : Run all tests using forge with any optional arguments specified in --args.
-#                              For example: `make test --args="--match-test Deposit"`
+#                              For example: `make test args="--match-test Deposit"`
 
 include .env.foundry
 include ../../.env

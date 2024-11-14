@@ -19,7 +19,7 @@ interface IDexSwap {
 
     ///@notice Concero Struct to track DEX Data
     struct SwapData {
-        DexType dexType;
+        address dexRouter;
         address fromToken;
         uint256 fromAmount;
         address toToken;

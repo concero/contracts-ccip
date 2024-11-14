@@ -106,6 +106,13 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         uint256 tokenAmountReceived = LibConcero.getBalance(dstToken, address(this)) -
             dstTokenBalanceBefore;
 
+        // if dstToken is native, send native
+        if (dstToken == address(0)) {
+            (bool sent, ) = _recipient.call{value: tokenAmountReceived}("");
+        } else {
+            IERC20(dstToken).safeTransfer(_recipient, tokenAmountReceived);
+        }
+
         emit ConceroSwap(
             _swapData[0].fromToken,
             _swapData[swapDataLength - 1].toToken,

@@ -9,12 +9,6 @@ import {ICCIP} from "./ICCIP.sol";
 interface IParentPool is IPool {
     /* TYPE DECLARATIONS */
 
-    enum FunctionsRequestType {
-        getTotalPoolsBalance,
-        liquidityRedistribution,
-        withdrawalLiquidityCollection
-    }
-
     enum RedistributeLiquidityType {
         addPool,
         removePool
@@ -28,9 +22,10 @@ interface IParentPool is IPool {
 
     ///@notice Struct to track Functions Requests Type
     enum CLFRequestType {
-        startDeposit_getChildPoolsLiquidity, //Deposits
-        startWithdrawal_getChildPoolsLiquidity, //Start Withdrawals
-        performUpkeep_requestLiquidityTransfer
+        startDeposit_getChildPoolsLiquidity,
+        startWithdrawal_getChildPoolsLiquidity,
+        withdrawal_requestLiquidityCollection,
+        liquidityRedistribution
     }
 
     struct WithdrawRequest {

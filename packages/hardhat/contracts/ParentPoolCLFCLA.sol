@@ -108,7 +108,7 @@ contract ParentPoolCLFCLA is
                 _handleStartWithdrawalCLFFulfill(requestId, response);
                 delete s_withdrawalIdByCLFRequestId[requestId];
             } else if (
-                requestType == IParentPool.CLFRequestType.performUpkeep_requestLiquidityTransfer
+                requestType == IParentPool.CLFRequestType.withdrawal_requestLiquidityCollection
             ) {
                 _handleAutomationCLFFulfill(requestId);
             }
@@ -189,9 +189,7 @@ contract ParentPoolCLFCLA is
             liquidityRequestedFromEachPool
         );
 
-        s_clfRequestTypes[reqId] = IParentPool
-            .CLFRequestType
-            .performUpkeep_requestLiquidityTransfer;
+        s_clfRequestTypes[reqId] = IParentPool.CLFRequestType.withdrawal_requestLiquidityCollection;
 
         _addWithdrawalOnTheWayAmountById(withdrawalId);
         emit WithdrawUpkeepPerformed(reqId);
@@ -426,7 +424,9 @@ contract ParentPoolCLFCLA is
         bytes[] memory args = new bytes[](5);
         args[0] = abi.encodePacked(s_collectLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(IParentPool.FunctionsRequestType.withdrawalLiquidityCollection);
+        args[2] = abi.encodePacked(
+            IParentPool.CLFRequestType.withdrawal_requestLiquidityCollection
+        );
         args[3] = abi.encodePacked(liquidityRequestedFromEachPool);
         args[4] = abi.encodePacked(withdrawalId);
 

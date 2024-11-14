@@ -278,9 +278,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         }
 
         bytes[] memory args = new bytes[](3);
-        args[0] = abi.encodePacked(s_getBalanceJsCodeHashSum);
+        args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(FunctionsRequestType.getTotalPoolsBalance);
+        args[2] = abi.encodePacked(CLFRequestType.startDeposit_getChildPoolsLiquidity);
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             IParentPoolCLFCLA.sendCLFRequest.selector,
@@ -350,7 +350,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         }
 
         bytes[] memory args = new bytes[](2);
-        args[0] = abi.encodePacked(s_getBalanceJsCodeHashSum);
+        args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
 
         bytes32 withdrawalId = keccak256(
@@ -536,7 +536,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     function setGetBalanceJsCodeHashSum(
         bytes32 _hashSum
     ) external payable onlyProxyContext onlyOwner {
-        s_getBalanceJsCodeHashSum = _hashSum;
+        s_getChildPoolsLiquidityJsCodeHashSum = _hashSum;
     }
 
     /**
@@ -574,7 +574,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             bytes[] memory args = new bytes[](6);
             args[0] = abi.encodePacked(s_distributeLiquidityJsCodeHashSum);
             args[1] = abi.encodePacked(s_ethersHashSum);
-            args[2] = abi.encodePacked(FunctionsRequestType.liquidityRedistribution);
+            args[2] = abi.encodePacked(CLFRequestType.liquidityRedistribution);
             args[3] = abi.encodePacked(_chainSelector);
             args[4] = abi.encodePacked(distributeLiquidityRequestId);
             args[5] = abi.encodePacked(RedistributeLiquidityType.addPool);
@@ -619,7 +619,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         bytes[] memory args = new bytes[](6);
         args[0] = abi.encodePacked(s_distributeLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(FunctionsRequestType.liquidityRedistribution);
+        args[2] = abi.encodePacked(CLFRequestType.liquidityRedistribution);
         args[3] = abi.encodePacked(_chainSelector);
         args[4] = abi.encodePacked(distributeLiquidityRequestId);
         args[5] = abi.encodePacked(RedistributeLiquidityType.removePool);

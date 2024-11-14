@@ -2,7 +2,14 @@
 pragma solidity 0.8.20;
 
 interface IDexSwap {
-    ///@notice Concero Struct to track DEX Data
+    /// @notice Concero Struct to track DEX Data
+    /// @param dexRouter address of the DEX Router
+    /// @param fromToken address of the token to be swapped
+    /// @param fromAmount amount of token to be swapped
+    /// @param toToken address of the token to be received
+    /// @param toAmount amount of token to be received
+    /// @param toAmountMin minimum amount of token to be received
+    /// @param dexData encoded data for the DEX
     struct SwapData {
         address dexRouter;
         address fromToken;

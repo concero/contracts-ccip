@@ -7,13 +7,15 @@ import getSimulationArgs from './simulationArgs';
 import {simulateScript} from '@chainlink/functions-toolkit';
 import {log} from '../../utils';
 import buildScript from './build';
+import {decodeCLFResponse} from './decodeCLFResponse';
 
 /**
  * Simulates the execution of a script with the given arguments.
  * @param scriptPath - The path to the script file to simulate.
+ * @param scriptName - The name of the script to simulate.
  * @param args - The array of arguments to pass to the simulation.
  */
-async function simulateCLFScript(scriptPath: string, args: string[]): Promise<void> {
+async function simulateCLFScript(scriptPath: string, scriptName: string, args: string[]): Promise<void> {
 	if (!fs.existsSync(scriptPath)) {
 		console.error(`File not found: ${scriptPath}`);
 		return;
@@ -22,7 +24,7 @@ async function simulateCLFScript(scriptPath: string, args: string[]): Promise<vo
 	log(`Simulating ${scriptPath}`, 'simulateCLFScript');
 	try {
 		const result = await simulateScript({
-			source: fs.readFileSync(scriptPath, 'utf8'),
+			source: 'const ethers = await import("npm:ethers@6.10.0"); return' + fs.readFileSync(scriptPath, 'utf8'),
 			bytesArgs: args,
 			secrets,
 			...CLFSimulationConfig,
@@ -40,6 +42,10 @@ async function simulateCLFScript(scriptPath: string, args: string[]): Promise<vo
 
 		if (responseBytesHexstring) {
 			log(responseBytesHexstring, 'simulateCLFScript – Response Bytes:');
+			const decodedResponse = decodeCLFResponse(scriptName, responseBytesHexstring);
+			if (decodedResponse) {
+				log(decodedResponse, 'simulateCLFScript – Decoded Response:');
+			}
 		}
 	} catch (error) {
 		console.error('Simulation failed:', error);
@@ -63,14 +69,14 @@ task('clf-script-simulate', 'Executes the JavaScript source code locally')
 			case 'infra_dst':
 				scriptPath = path.join(basePath, './infra/DST.min.js');
 				break;
-			case 'pool_get_total_balance':
-				scriptPath = path.join(basePath, './pool/getTotalBalance.min.js');
+			case 'pool_get_child_pools_liquidity':
+				scriptPath = path.join(basePath, './pool/getChildPoolsLiquidity.min.js');
 				break;
-			case 'collect_liq':
-				scriptPath = path.join(basePath, './pool/collectLiquidity.min.js');
+			case 'pool_collect_liq':
+				scriptPath = path.join(basePath, './pool/withdrawalLiquidityCollection.min.js');
 				break;
 			case 'pool_distribute_liq':
-				scriptPath = path.join(basePath, './pool/distributeLiquidity.min.js');
+				scriptPath = path.join(basePath, './pool/redistributePoolsLiquidity.min.js');
 				break;
 			default:
 				console.error(`Unknown function: ${scriptName}`);
@@ -79,7 +85,7 @@ task('clf-script-simulate', 'Executes the JavaScript source code locally')
 
 		const bytesArgs = await getSimulationArgs[scriptName]();
 		const concurrency = taskArgs.concurrency;
-		const promises = Array.from({length: concurrency}, () => simulateCLFScript(scriptPath, bytesArgs));
+		const promises = Array.from({length: concurrency}, () => simulateCLFScript(scriptPath, scriptName, bytesArgs));
 		await Promise.all(promises);
 	});
 

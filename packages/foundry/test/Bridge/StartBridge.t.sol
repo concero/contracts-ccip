@@ -85,7 +85,7 @@ contract StartBridge is BaseTest {
         // @dev step1: collect integrator fee
         IInfraOrchestrator.Integration memory integration = IInfraOrchestrator.Integration({
             integrator: integrator,
-            integratorFeeBps: integratorFeeBps
+            feeBps: integratorFeeBps
         });
 
         IInfraStorage.BridgeData memory bridgeData = IInfraStorage.BridgeData({
@@ -134,4 +134,6 @@ contract StartBridge is BaseTest {
 
         assertEq(integratorFeeCollected, 0);
     }
+
+    function test_tx_batching_trigger() public {}
 }

@@ -9,9 +9,7 @@ interface IDepositParentPool is IParentPool {
         bytes32 requestId
     ) external view returns (ParentPool.DepositRequest memory);
 
-    function getRequestType(
-        bytes32 requestId
-    ) external view returns (ParentPool.FunctionsRequestType);
+    function getRequestType(bytes32 requestId) external view returns (ParentPool.CLFRequestType);
 
     function isMessenger(address _messenger) external view returns (bool);
 }

@@ -7,7 +7,7 @@ import {IInfraStorage} from "./IInfraStorage.sol";
 interface IInfraOrchestrator {
     struct Integration {
         address integrator;
-        uint256 integratorFeeBps;
+        uint256 feeBps;
     }
 
     event IntegratorFeesCollected(address indexed integrator, address token, uint256 amount);

@@ -41,7 +41,7 @@ contract InfraOrchestrator is
 
     /* CONSTANT VARIABLES */
     uint8 internal constant SUPPORTED_CHAINS_COUNT = 5;
-    uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 300;
+    uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 1000;
     uint16 internal constant CONCERO_FEE_FACTOR = 1000;
     uint16 internal constant INTEGRATOR_FEE_DIVISOR = 10000;
 
@@ -440,13 +440,11 @@ contract InfraOrchestrator is
     ) internal returns (IDexSwap.SwapData[] memory) {
         swapData[0].fromAmount -= (swapData[0].fromAmount / CONCERO_FEE_FACTOR);
 
-        if (integration.integrator != address(0)) {
-            swapData[0].fromAmount -= _collectIntegratorFee(
-                swapData[0].fromToken,
-                swapData[0].fromAmount,
-                integration
-            );
-        }
+        swapData[0].fromAmount -= _collectIntegratorFee(
+            swapData[0].fromToken,
+            swapData[0].fromAmount,
+            integration
+        );
 
         return swapData;
     }
@@ -456,10 +454,9 @@ contract InfraOrchestrator is
         uint256 amount,
         Integration memory integration
     ) internal returns (uint256) {
-        uint256 integratorFeeAmount = _calculateIntegratorFeeAmount(
-            integration.integratorFeeBps,
-            amount
-        );
+        if (integration.integrator == address(0)) return 0;
+
+        uint256 integratorFeeAmount = _calculateIntegratorFeeAmount(integration.feeBps, amount);
 
         if (integratorFeeAmount == 0) return 0;
 

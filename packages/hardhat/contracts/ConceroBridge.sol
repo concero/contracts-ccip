@@ -91,25 +91,19 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
             revert InsufficientFees(bridgeData.amount, totalSrcFee);
         }
 
+        bytes32 dstSwapDataHashSum = keccak256(_swapDataToBytes(dstSwapData));
         uint256 amountToSendAfterFees = bridgeData.amount - totalSrcFee;
-        //TODO: keccak should ensure that the message id is unique, dstChainSelector should be included
+        bytes32 bridgeDataHash = keccak256(abi.encode(bridgeData));
         bytes32 conceroMessageId = keccak256(
-            abi.encodePacked(
-                msg.sender,
-                bridgeData.receiver,
-                amountToSendAfterFees,
-                block.timestamp
-            )
-        );
-        SettlementTx memory bridgeTx = SettlementTx(
-            conceroMessageId,
-            amountToSendAfterFees,
-            bridgeData.receiver
+            abi.encode(bridgeDataHash, dstSwapDataHashSum, block.number)
         );
 
-        s_pendingSettlementTxsByDstChain[dstChainSelector].push(conceroMessageId);
-        s_pendingSettlementTxsById[conceroMessageId] = bridgeTx;
-        s_pendingSettlementTxAmountByDstChain[dstChainSelector] += amountToSendAfterFees;
+        _addPendingSettlementTx(
+            conceroMessageId,
+            amountToSendAfterFees,
+            bridgeData.receiver,
+            dstChainSelector
+        );
 
         uint256 batchedTxAmount = s_pendingSettlementTxAmountByDstChain[dstChainSelector];
 
@@ -131,8 +125,6 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
             _sendBatchViaSettlement(fromToken, batchedTxAmount, dstChainSelector);
         }
 
-        bytes32 dstSwapDataHashSum = keccak256(_swapDataToBytes(dstSwapData));
-
         emit ConceroBridgeSent(
             conceroMessageId,
             bridgeData.tokenType,
@@ -141,6 +133,23 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
             bridgeData.receiver,
             dstSwapDataHashSum
         );
+    }
+
+    function _addPendingSettlementTx(
+        bytes32 conceroMessageId,
+        uint256 amountToSendAfterFees,
+        address receiver,
+        uint64 dstChainSelector
+    ) internal {
+        SettlementTx memory bridgeTx = SettlementTx(
+            conceroMessageId,
+            amountToSendAfterFees,
+            receiver
+        );
+
+        s_pendingSettlementTxsByDstChain[dstChainSelector].push(conceroMessageId);
+        s_pendingSettlementTxsById[conceroMessageId] = bridgeTx;
+        s_pendingSettlementTxAmountByDstChain[dstChainSelector] += amountToSendAfterFees;
     }
 
     /* VIEW & PURE FUNCTIONS */

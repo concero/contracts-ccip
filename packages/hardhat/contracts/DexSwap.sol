@@ -124,7 +124,7 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         return tokenAmountReceived;
     }
 
-    function _performSwap(IDexSwap.SwapData memory _swapData, address destinationAddress) private {
+    function _performSwap(IDexSwap.SwapData memory _swapData) private {
         if (_swapData.dexData.length == 0) revert EmptyDexData();
         address routerAddress = _swapData.dexRouter;
         uint256 fromAmount = _swapData.fromAmount;

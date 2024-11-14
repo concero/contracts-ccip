@@ -125,13 +125,12 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         if (!s_routerAllowed[routerAddress]) revert DexRouterNotAllowed();
 
         bool isFromNative = _swapData == address(0);
-        bool success;
         if (!isFromNative) {
             IERC20(_swapData.fromToken).safeIncreaseAllowance(routerAddress, fromAmount);
             fromAmount = 0;
         }
 
-        (success, ) = routerAddress.call{value: fromAmount}(_swapData.dexData);
+        (bool success, ) = routerAddress.call{value: fromAmount}(_swapData.dexData);
         if (!success) revert InvalidDexData();
     }
 

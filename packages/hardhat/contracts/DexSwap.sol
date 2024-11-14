@@ -33,7 +33,8 @@ error DexRouterNotAllowed();
 error InvalidTokenPath();
 ///@notice error emitted when the DexData is not valid
 error InvalidDexData();
-error UnwrapWNativeFailed();
+///@notice error emitted when the amount is not sufficient
+error InsufficientAmount(uint256 amount);
 
 contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
     using SafeERC20 for IERC20;
@@ -88,6 +89,11 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
                     address(this)
                 );
                 uint256 remainingBalance = postSwapBalance - preSwapBalance;
+
+                if (remainingBalance < _swapData[i].toAmountMin) {
+                    revert InsufficientAmount(remainingBalance);
+                }
+
                 _swapData[i + 1].fromAmount = remainingBalance;
             }
 
@@ -112,17 +118,21 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
     }
 
     function _performSwap(IDexSwap.SwapData memory _swapData, address destinationAddress) private {
-        DexType dexType = _swapData.dexType;
+        if (_swapData.dexData.length == 0) revert EmptyDexData();
+        address routerAddress = _swapData.dexRouter;
+        uint256 fromAmount = _swapData.fromAmount;
 
-        if (dexType == DexType.UniswapV3Single) {
-            _swapUniV3Single(_swapData, destinationAddress);
-        } else if (dexType == DexType.UniswapV3Multi) {
-            _swapUniV3Multi(_swapData, destinationAddress);
-        } else if (dexType == DexType.WrapNative) {
-            _wrapNative(_swapData);
-        } else if (dexType == DexType.UnwrapWNative) {
-            _unwrapWNative(_swapData, destinationAddress);
+        if (!s_routerAllowed[routerAddress]) revert DexRouterNotAllowed();
+
+        bool isFromNative = _swapData == address(0);
+        bool success;
+        if (!isFromNative) {
+            IERC20(_swapData.fromToken).safeIncreaseAllowance(routerAddress, fromAmount);
+            fromAmount = 0;
         }
+
+        (success, ) = routerAddress.call{value: fromAmount}(_swapData.dexData);
+        if (!success) revert InvalidDexData();
     }
 
     function _wrapNative(IDexSwap.SwapData memory _swapData) private {

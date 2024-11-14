@@ -488,16 +488,16 @@ contract BaseTest is Test {
 								 UTILS
 	   //////////////////////////////////////////////////////////////*/
 
-    function mintLpToken(address to, uint256 amount) internal {
+    function _mintLpToken(address to, uint256 amount) internal {
         vm.prank(address(parentPoolProxy));
         lpToken.mint(to, amount);
     }
 
-    function mintUSDC(address to, uint256 amount) internal {
+    function _mintUSDC(address to, uint256 amount) internal {
         deal(address(vm.envAddress("USDC_BASE")), to, amount);
     }
 
-    function mintLink(address to, uint256 amount) internal {
+    function _mintLink(address to, uint256 amount) internal {
         deal(vm.envAddress("LINK_BASE"), to, amount);
     }
 

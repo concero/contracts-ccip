@@ -26,7 +26,7 @@ contract StartBridge is BaseTest {
             address[3] memory messengers
         ) = _getBaseInfraImplementationConstructorArgs();
 
-        mintLink(address(baseOrchestratorProxy), LINK_INIT_BALANCE);
+        _mintLink(address(baseOrchestratorProxy), LINK_INIT_BALANCE);
 
         vm.prank(deployer);
         baseOrchestratorImplementation = new InfraOrchestratorWrapper(
@@ -57,7 +57,7 @@ contract StartBridge is BaseTest {
         );
     }
 
-    function test_calculate_integrator_fee(uint256 bridgeAmountBase) public {
+    function test_calculateIntegratorFee(uint256 bridgeAmountBase) public {
         vm.assume(bridgeAmountBase > 1);
         vm.assume(bridgeAmountBase < 100000);
 
@@ -73,7 +73,7 @@ contract StartBridge is BaseTest {
         assertEq(fee, expectedFee);
     }
 
-    function test_collect_and_withdraw_integrator_fee(uint256 bridgeAmountBase) public {
+    function test_collectAndWithdrawIntegratorFee(uint256 bridgeAmountBase) public {
         vm.assume(bridgeAmountBase > 1);
         vm.assume(bridgeAmountBase < 100000);
 
@@ -97,7 +97,7 @@ contract StartBridge is BaseTest {
 
         IDexSwap.SwapData[] memory dstSwapData = new IDexSwap.SwapData[](0);
 
-        mintUSDC(user1, bridgeAmount);
+        _mintUSDC(user1, bridgeAmount);
         _approve(user1, vm.envAddress("USDC_BASE"), address(baseOrchestratorProxy), bridgeAmount);
 
         vm.prank(user1);
@@ -135,5 +135,40 @@ contract StartBridge is BaseTest {
         assertEq(integratorFeeCollected, 0);
     }
 
-    function test_tx_batching_trigger() public {}
+    function test_txBatchingTrigger() public {
+        uint256 bridgeAmount = 150 * USDC_DECIMALS;
+        address user_1 = makeAddr("user_1");
+        address receiver = makeAddr("receiver_1");
+
+        IInfraStorage.BridgeData memory bridgeData = IInfraStorage.BridgeData({
+            tokenType: IInfraStorage.CCIPToken.usdc,
+            amount: bridgeAmount,
+            dstChainSelector: arbitrumChainSelector,
+            receiver: receiver
+        });
+
+        _mintUSDC(user_1, bridgeAmount);
+        _approve(user_1, vm.envAddress("USDC_BASE"), address(baseOrchestratorProxy), bridgeAmount);
+
+        uint256 userBalanceBefore = IERC20(vm.envAddress("USDC_BASE")).balanceOf(user_1);
+        uint256 infraBalanceBefore = IERC20(vm.envAddress("USDC_BASE")).balanceOf(
+            address(baseOrchestratorProxy)
+        );
+
+        vm.prank(user_1);
+
+        InfraOrchestratorWrapper(payable(baseOrchestratorProxy)).bridge(
+            bridgeData,
+            new IDexSwap.SwapData[](0),
+            IInfraOrchestrator.Integration({integrator: address(0), feeBps: 0})
+        );
+
+        uint256 userBalanceAfter = IERC20(vm.envAddress("USDC_BASE")).balanceOf(user_1);
+        uint256 infraBalanceAfter = IERC20(vm.envAddress("USDC_BASE")).balanceOf(
+            address(baseOrchestratorProxy)
+        );
+
+        assertEq(userBalanceAfter, userBalanceBefore - bridgeAmount);
+        assertEq(infraBalanceAfter, infraBalanceBefore + bridgeAmount);
+    }
 }

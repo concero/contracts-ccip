@@ -9,8 +9,8 @@ contract CalculateWithdrawableAmount is BaseTest {
     address private users = makeAddr("users");
 
     function test_CalculateWithdrawableAmount() public {
-        mintLpToken(address(parentPoolProxy), 100000000000);
-        mintUSDC(address(parentPoolProxy), 100000000000);
+        _mintLpToken(address(parentPoolProxy), 100000000000);
+        _mintUSDC(address(parentPoolProxy), 100000000000);
 
         IParentPool(address(parentPoolProxy)).calculateWithdrawableAmount(1000, 1000);
     }

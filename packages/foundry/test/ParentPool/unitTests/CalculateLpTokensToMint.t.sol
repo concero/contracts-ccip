@@ -11,7 +11,6 @@ interface IERC20 {
 }
 
 contract CalculateLpTokensToMintTest is BaseTest {
-    uint256 internal constant USDC_DECIMALS = 10 ** 6;
     uint256 internal constant LP_DECIMALS = 10 ** 18;
 
     /*//////////////////////////////////////////////////////////////

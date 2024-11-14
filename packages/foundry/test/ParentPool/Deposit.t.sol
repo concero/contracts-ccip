@@ -24,7 +24,6 @@ contract Deposit is BaseTest {
     address internal constant BASE_FUNCTIONS_TRANSMITTER =
         0xAdE50D64476177aAe4505DFEA094B1a0ffa49332;
     uint256 internal constant CCIP_FEES = 10 * 1e18;
-    uint256 internal constant USDC_DECIMALS = 1e6;
     uint256 internal constant WAD_PRECISION = 1e18;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * 10 ** 6;
     uint256 internal constant MAX_INDIVIDUAL_DEPOSIT = 100_000 * 1e6; // 100k usdc

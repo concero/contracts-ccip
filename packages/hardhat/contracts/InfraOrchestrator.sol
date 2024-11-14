@@ -28,7 +28,8 @@ error InvalidSwapData();
 ///@notice error emitted when the token to bridge is not USDC
 error UnsupportedBridgeToken();
 error WithdrawableAmountExceedsBatchedReserves();
-error InvalidIntegratorFeePercent();
+error InvalidIntegratorFeeBps();
+error FailedToWithdrawIntegratorFees();
 
 contract InfraOrchestrator is
     IFunctionsClient,
@@ -39,10 +40,10 @@ contract InfraOrchestrator is
     using SafeERC20 for IERC20;
 
     /* CONSTANT VARIABLES */
-    uint16 internal constant CONCERO_FEE_FACTOR = 1000;
     uint8 internal constant SUPPORTED_CHAINS_COUNT = 5;
-    uint256 internal constant INTEGRATOR_FEE_DIVISOR = 100;
-    uint256 internal constant MAX_INTEGRATOR_FEE_PERCENT = 3;
+    uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 300;
+    uint16 internal constant CONCERO_FEE_FACTOR = 1000;
+    uint16 internal constant INTEGRATOR_FEE_DIVISOR = 10000;
 
     /* IMMUTABLE VARIABLES */
     ///@notice the address of Functions router
@@ -290,13 +291,39 @@ contract InfraOrchestrator is
         LibConcero.safeDelegateCall(i_conceroBridge, delegateCallArgs);
     }
 
+    function withdrawIntegratorFees(address token) external nonReentrant {
+        uint256 amount = s_integratorFeesAmountByToken[msg.sender][token];
+        if (amount == 0) {
+            revert FailedToWithdrawIntegratorFees();
+        }
+
+        s_integratorFeesAmountByToken[msg.sender][token] = 0;
+        s_totalIntegratorFeesAmountByToken[token] -= amount;
+
+        if (token != address(0)) {
+            IERC20(token).safeTransfer(msg.sender, amount);
+        } else {
+            (bool success, ) = msg.sender.call{value: amount}("");
+
+            if (!success) {
+                revert FailedToWithdrawIntegratorFees();
+            }
+        }
+
+        emit IntegratorFeesWithdrawn(msg.sender, token, amount);
+    }
+
     /**
      * @notice Function to allow Concero Team to withdraw fees
      * @param recipient the recipient address
      * @param token the token to withdraw
      * @param amount the amount to withdraw
      */
-    function withdraw(address recipient, address token, uint256 amount) external payable onlyOwner {
+    function withdrawConceroFees(
+        address recipient,
+        address token,
+        uint256 amount
+    ) external payable onlyOwner {
         uint256 balance = LibConcero.getBalance(token, address(this));
         if (balance < amount) revert InvalidAmount();
 
@@ -430,7 +457,7 @@ contract InfraOrchestrator is
         Integration memory integration
     ) internal returns (uint256) {
         uint256 integratorFeeAmount = _calculateIntegratorFeeAmount(
-            integration.integratorFeePercent,
+            integration.integratorFeeBps,
             amount
         );
 
@@ -446,17 +473,17 @@ contract InfraOrchestrator is
     /* VIEW & PURE FUNCTIONS */
 
     /// @notice calculates integrator fee amount
-    /// @param _integratorFeePercent fee percent provided by integrator/user
-    /// @param _amount user's tx amount
+    /// @param integratorFeeBps fee percent provided by integrator/user
+    /// @param amount user's tx amount
     /// @return integratorFeeAmount the amount the integrator will receive
     function _calculateIntegratorFeeAmount(
-        uint256 _integratorFeePercent,
-        uint256 _amount
+        uint256 integratorFeeBps,
+        uint256 amount
     ) internal pure returns (uint256) {
-        if (_integratorFeePercent == 0) return 0;
-        if (_integratorFeePercent > MAX_INTEGRATOR_FEE_PERCENT) {
-            revert InvalidIntegratorFeePercent();
+        if (integratorFeeBps == 0) return 0;
+        if (integratorFeeBps > MAX_INTEGRATOR_FEE_BPS) {
+            revert InvalidIntegratorFeeBps();
         }
-        return (_amount * _integratorFeePercent) / INTEGRATOR_FEE_DIVISOR;
+        return (amount * integratorFeeBps) / INTEGRATOR_FEE_DIVISOR;
     }
 }

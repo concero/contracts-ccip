@@ -98,4 +98,22 @@ contract InfraOrchestratorWrapper is InfraOrchestrator {
         uint256 srcTotalFeeInUsdc = abi.decode(returnData, (uint256));
         return srcTotalFeeInUsdc;
     }
+
+    function calculateIntegratorFee(
+        uint256 integratorFeePercent,
+        uint256 amount
+    ) external returns (uint256) {
+        return _calculateIntegratorFeeAmount(integratorFeePercent, amount);
+    }
+
+    function getCollectedIntegratorFeeByToken(
+        address integrator,
+        address token
+    ) external returns (uint256) {
+        return s_integratorFeesAmountByToken[integrator][token];
+    }
+
+    function getTotalIntegratorFeeAmountByToken(address token) external returns (uint256) {
+        return s_totalIntegratorFeesAmountByToken[token];
+    }
 }

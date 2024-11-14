@@ -7,19 +7,11 @@ import {IInfraStorage} from "./IInfraStorage.sol";
 interface IInfraOrchestrator {
     struct Integration {
         address integrator;
-        uint256 integratorFeePercent;
+        uint256 integratorFeeBps;
     }
 
-    event IntegratorFeesWithdrawn(
-        address indexed integrator,
-        address token,
-        uint256 amountWithdrawn
-    );
-    event IntegratorFeesCollected(
-        address indexed integrator,
-        address token,
-        uint256 amountCollected
-    );
+    event IntegratorFeesCollected(address indexed integrator, address token, uint256 amount);
+    event IntegratorFeesWithdrawn(address indexed integrator, address token, uint256 amount);
 
     function getTransaction(
         bytes32 _conceroBridgeTxId

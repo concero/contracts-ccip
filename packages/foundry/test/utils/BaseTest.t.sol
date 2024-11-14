@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Test, console, Vm} from "forge-std/Test.sol";
 import {ParentPool} from "contracts/ParentPool.sol";
 import {ParentPoolCLFCLA} from "contracts/ParentPoolCLFCLA.sol";
@@ -23,7 +24,8 @@ contract BaseTest is Test {
                                VARIABLES
     //////////////////////////////////////////////////////////////*/
     uint256 internal constant LINK_INIT_BALANCE = 100 * 1e18;
-    uint256 internal constant PARENT_POOL_CAP = 100_000_000 * 1e6;
+    uint256 internal constant USDC_DECIMALS = 1e6;
+    uint256 internal constant PARENT_POOL_CAP = 100_000_000 * USDC_DECIMALS;
 
     ParentPoolCLFCLA public parentPoolCLFCLA;
     ParentPool public parentPoolImplementation;
@@ -47,7 +49,7 @@ contract BaseTest is Test {
     uint64 internal arbitrumChainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_ARBITRUM"));
     uint64 internal avalancheChainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_AVALANCHE"));
 
-    address internal arbitrumChildProxy;
+    address internal arbitrumChildProxy = makeAddr("arbChildPool");
     address internal arbitrumChildImplementation;
     address internal avalancheChildProxy;
     address internal avalancheChildImplementation;
@@ -228,22 +230,6 @@ contract BaseTest is Test {
         IParentPool(address(parentPoolProxy)).setPoolCap(PARENT_POOL_CAP);
 
         vm.stopPrank();
-    }
-
-    function _setDstInfraContractsForInfra(
-        address infra,
-        uint64 _chainSelector,
-        address _bridgeProxy
-    ) internal {
-        vm.prank(deployer);
-        (bool success, ) = infra.call(
-            abi.encodeWithSignature(
-                "setConceroContract(uint64,address)",
-                _chainSelector,
-                _bridgeProxy
-            )
-        );
-        require(success, "setConceroContract call failed");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -501,6 +487,7 @@ contract BaseTest is Test {
     /*//////////////////////////////////////////////////////////////
 								 UTILS
 	   //////////////////////////////////////////////////////////////*/
+
     function mintLpToken(address to, uint256 amount) internal {
         vm.prank(address(parentPoolProxy));
         lpToken.mint(to, amount);
@@ -508,6 +495,15 @@ contract BaseTest is Test {
 
     function mintUSDC(address to, uint256 amount) internal {
         deal(address(vm.envAddress("USDC_BASE")), to, amount);
+    }
+
+    function mintLink(address to, uint256 amount) internal {
+        deal(vm.envAddress("LINK_BASE"), to, amount);
+    }
+
+    function _approve(address from, address token, address spender, uint256 amount) internal {
+        vm.prank(from);
+        IERC20(token).approve(spender, amount);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -531,11 +527,7 @@ contract BaseTest is Test {
 							 CONCERO INFRA UTILS
 	//////////////////////////////////////////////////////////////*/
 
-    function _setChildPoolForInfra(
-        address infra,
-        uint64 chainSelector,
-        address childPool
-    ) internal {
+    function _setDstPoolForInfra(address infra, uint64 chainSelector, address childPool) internal {
         vm.prank(deployer);
         (bool success, bytes memory data) = infra.call(
             abi.encodeWithSignature(
@@ -546,5 +538,37 @@ contract BaseTest is Test {
             )
         );
         require(success, string(data));
+    }
+
+    function _getBaseInfraImplementationConstructorArgs()
+        internal
+        returns (address, address, address, address, address, uint8, address[3] memory)
+    {
+        return (
+            vm.envAddress("CLF_ROUTER_BASE"),
+            vm.envAddress("CONCERO_DEX_SWAP_BASE"),
+            address(baseBridgeImplementation),
+            address(parentPoolProxy),
+            address(baseOrchestratorProxy),
+            1, // IInfraStorage.Chain.base
+            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
+        );
+    }
+
+    function _setDstInfraContractsForInfra(
+        address infra,
+        uint64 _chainSelector,
+        address _bridgeProxy
+    ) internal {
+        vm.prank(deployer);
+
+        (bool success, ) = infra.call(
+            abi.encodeWithSignature(
+                "setConceroContract(uint64,address)",
+                _chainSelector,
+                _bridgeProxy
+            )
+        );
+        require(success, "setConceroContract call failed");
     }
 }

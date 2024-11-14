@@ -28,18 +28,6 @@ contract InfraCCIP is InfraCLF {
     LinkTokenInterface internal immutable i_linkToken;
     IRouterClient internal immutable i_ccipRouter;
 
-    /* MODIFIERS */
-    /**
-     * @notice CCIP Modifier to check receivers for a specific chain
-     * @param _chainSelector Id of the destination chain
-     */
-    modifier onlyAllowListedChain(uint64 _chainSelector) {
-        if (s_poolReceiver[_chainSelector] == address(0)) {
-            revert ChainNotAllowed(_chainSelector);
-        }
-        _;
-    }
-
     constructor(
         FunctionsVariables memory _variables,
         uint64 _chainSelector,
@@ -68,7 +56,7 @@ contract InfraCCIP is InfraCLF {
         address _token,
         uint256 _amount,
         SettlementTx[] memory _pendingCCIPTransactions
-    ) internal onlyAllowListedChain(_destinationChainSelector) returns (bytes32 messageId) {
+    ) internal returns (bytes32 messageId) {
         ICCIP.CcipTxData memory ccipTxData = ICCIP.CcipTxData({
             ccipTxType: ICCIP.CcipTxType.batchedSettlement,
             data: abi.encode(_pendingCCIPTransactions)
@@ -103,12 +91,17 @@ contract InfraCCIP is InfraCLF {
         uint64 _destinationChainSelector,
         ICCIP.CcipTxData memory _ccipTxData
     ) internal view returns (Client.EVM2AnyMessage memory) {
+        address receiver = s_poolReceiver[_destinationChainSelector];
+        if (receiver == address(0)) {
+            revert ChainNotAllowed(_destinationChainSelector);
+        }
+
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: _token, amount: _amount});
 
         return
             Client.EVM2AnyMessage({
-                receiver: abi.encode(s_poolReceiver[_destinationChainSelector]),
+                receiver: abi.encode(receiver),
                 data: abi.encode(_ccipTxData),
                 tokenAmounts: tokenAmounts,
                 extraArgs: Client._argsToBytes(

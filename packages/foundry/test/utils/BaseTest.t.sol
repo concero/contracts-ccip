@@ -71,7 +71,7 @@ contract BaseTest is Test {
 
         _deployOrchestratorProxy();
 
-        deployBridgesInfra();
+        deployInfra();
 
         deployPoolsInfra();
 
@@ -99,7 +99,7 @@ contract BaseTest is Test {
         _fundLinkParentProxy(LINK_INIT_BALANCE);
     }
 
-    function deployBridgesInfra() public {
+    function deployInfra() public {
         _deployBaseBridgeImplementation();
 
         _deployArbitrumBridgeImplementation();

@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.20;
 
+import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 import {InfraOrchestrator} from "contracts/InfraOrchestrator.sol";
 
 contract InfraOrchestratorWrapper is InfraOrchestrator {
@@ -115,5 +116,15 @@ contract InfraOrchestratorWrapper is InfraOrchestrator {
 
     function getTotalIntegratorFeeAmountByToken(address token) external returns (uint256) {
         return s_totalIntegratorFeesAmountByToken[token];
+    }
+
+    function swapDataToBytes(
+        IDexSwap.SwapData[] memory _swapData
+    ) external pure returns (bytes memory) {
+        if (_swapData.length == 0) {
+            return new bytes(1);
+        } else {
+            return abi.encode(_swapData);
+        }
     }
 }

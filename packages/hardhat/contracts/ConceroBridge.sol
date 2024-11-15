@@ -29,20 +29,6 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
     uint256 internal constant BATCHED_TX_THRESHOLD = 5_000_000_000;
     uint8 internal constant MAX_PENDING_SETTLEMENT_TXS_BY_LANE = 200;
 
-    /* EVENTS */
-    /// @notice event emitted when an individual tx is sent through CLF
-    event ConceroBridgeSent(
-        bytes32 indexed conceroMessageId,
-        CCIPToken tokenType,
-        uint256 amount,
-        uint64 dstChainSelector,
-        address receiver,
-        bytes32 dstSwapDataHash
-    );
-
-    /// @notice event emitted when a batched CCIP message is sent
-    event ConceroSettlementSent(bytes32 indexed ccipMessageId, uint256 amount);
-
     constructor(
         FunctionsVariables memory _variables,
         uint64 _chainSelector,

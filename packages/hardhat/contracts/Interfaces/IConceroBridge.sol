@@ -6,6 +6,19 @@ import {IDexSwap} from "./IDexSwap.sol";
 import {IInfraStorage} from "./IInfraStorage.sol";
 
 interface IConceroBridge is IInfraStorage {
+    /// @notice event emitted when an individual tx is sent through CLF
+    event ConceroBridgeSent(
+        bytes32 indexed conceroMessageId,
+        CCIPToken tokenType,
+        uint256 amount,
+        uint64 dstChainSelector,
+        address receiver,
+        bytes32 dstSwapDataHash
+    );
+
+    /// @notice event emitted when a batched CCIP message is sent
+    event ConceroSettlementSent(bytes32 indexed ccipMessageId, uint256 amount);
+
     /**
      * @notice Function responsible to trigger CCIP and start the bridging process
      * @param bridgeData The bytes data payload with transaction infos

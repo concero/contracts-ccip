@@ -6,6 +6,7 @@
  */
 pragma solidity 0.8.20;
 
+import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
@@ -652,9 +653,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
         if (ccipTxData.ccipTxType == ICCIP.CcipTxType.batchedSettlement) {
-            IInfraStorage.SettlementTx[] memory settlementTx = abi.decode(
+            IConceroBridge.CcipSettlementTx[] memory settlementTx = abi.decode(
                 ccipTxData.data,
-                (IInfraStorage.SettlementTx[])
+                (IConceroBridge.CcipSettlementTx[])
             );
             for (uint256 i; i < settlementTx.length; ++i) {
                 bytes32 txId = settlementTx[i].id;

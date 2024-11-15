@@ -6,14 +6,15 @@
  */
 pragma solidity 0.8.20;
 
-import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
-import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
+import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {InfraCLF} from "./InfraCLF.sol";
-import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 import {ICCIP} from "./Interfaces/ICCIP.sol";
+import {IERC20} from "@chainlink/contracts-ccip/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contracts/token/ERC20/IERC20.sol";
+import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
+import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
+import {InfraCLF} from "./InfraCLF.sol";
+import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /* ERRORS */
 error ChainNotAllowed(uint64 chainSelector);
@@ -55,7 +56,7 @@ contract InfraCCIP is InfraCLF {
         uint64 _destinationChainSelector,
         address _token,
         uint256 _amount,
-        SettlementTx[] memory _pendingCCIPTransactions
+        IConceroBridge.CcipSettlementTx[] memory _pendingCCIPTransactions
     ) internal returns (bytes32 messageId) {
         ICCIP.CcipTxData memory ccipTxData = ICCIP.CcipTxData({
             ccipTxType: ICCIP.CcipTxType.batchedSettlement,

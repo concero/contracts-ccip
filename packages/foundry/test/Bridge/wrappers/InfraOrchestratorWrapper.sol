@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.20;
 
+import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 import {InfraOrchestrator} from "contracts/InfraOrchestrator.sol";
 
@@ -58,7 +59,7 @@ contract InfraOrchestratorWrapper is InfraOrchestrator {
     function getBridgeTxIdsPerChain(
         uint64 _dstChainSelector
     ) external view returns (bytes32[] memory) {
-        return s_pendingSettlementTxsByDstChain[_dstChainSelector];
+        return s_pendingSettlementIdsByDstChain[_dstChainSelector];
     }
 
     function getFunctionsFeeInUsdcDelegateCall(
@@ -126,5 +127,23 @@ contract InfraOrchestratorWrapper is InfraOrchestrator {
         } else {
             return abi.encode(_swapData);
         }
+    }
+
+    function getPendingSettlementIdsByChain(
+        uint64 dstChainSelector
+    ) external returns (bytes32[] memory) {
+        return s_pendingSettlementIdsByDstChain[dstChainSelector];
+    }
+
+    function getPendingSettlementTxById(
+        bytes32 conceroId
+    ) external returns (IInfraStorage.SettlementTx memory) {
+        return s_pendingSettlementTxsById[conceroId];
+    }
+
+    function getPendingSettlementTxAmountByDstChain(
+        uint64 dstChainSelector
+    ) external returns (uint256) {
+        return s_pendingSettlementTxAmountByDstChain[dstChainSelector];
     }
 }

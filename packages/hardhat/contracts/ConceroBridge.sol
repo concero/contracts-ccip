@@ -104,7 +104,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
 
         if (
             batchedTxAmount >= BATCHED_TX_THRESHOLD ||
-            s_pendingSettlementTxsByDstChain[dstChainSelector].length >=
+            s_pendingSettlementIdsByDstChain[dstChainSelector].length >=
             MAX_PENDING_SETTLEMENT_TXS_BY_LANE
         ) {
             _sendBatchViaSettlement(fromToken, batchedTxAmount, dstChainSelector);
@@ -126,13 +126,9 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         address receiver,
         uint64 dstChainSelector
     ) internal {
-        SettlementTx memory bridgeTx = SettlementTx(
-            conceroMessageId,
-            amountToSendAfterFees,
-            receiver
-        );
+        SettlementTx memory bridgeTx = SettlementTx(amountToSendAfterFees, receiver);
 
-        s_pendingSettlementTxsByDstChain[dstChainSelector].push(conceroMessageId);
+        s_pendingSettlementIdsByDstChain[dstChainSelector].push(conceroMessageId);
         s_pendingSettlementTxsById[conceroMessageId] = bridgeTx;
         s_pendingSettlementTxAmountByDstChain[dstChainSelector] += amountToSendAfterFees;
     }
@@ -201,28 +197,32 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         uint256 batchedTxAmount,
         uint64 dstChainSelector
     ) internal {
-        bytes32[] memory pendingCCIPTransactionsByDstChain = s_pendingSettlementTxsByDstChain[
+        bytes32[] memory pendingCCIPTransactionsByDstChain = s_pendingSettlementIdsByDstChain[
             dstChainSelector
         ];
 
-        SettlementTx[] memory bridgeTxs = new SettlementTx[](
+        CcipSettlementTx[] memory ccipSettlementTxs = new CcipSettlementTx[](
             pendingCCIPTransactionsByDstChain.length
         );
 
         for (uint256 i; i < pendingCCIPTransactionsByDstChain.length; ++i) {
             bytes32 txId = pendingCCIPTransactionsByDstChain[i];
-            SettlementTx memory bridgeTx = s_pendingSettlementTxsById[txId];
-            bridgeTxs[i] = bridgeTx;
+            SettlementTx memory pendingSettlementTx = s_pendingSettlementTxsById[txId];
+            ccipSettlementTxs[i] = CcipSettlementTx(
+                txId,
+                pendingSettlementTx.amount,
+                pendingSettlementTx.recipient
+            );
         }
 
-        delete s_pendingSettlementTxsByDstChain[dstChainSelector];
+        delete s_pendingSettlementIdsByDstChain[dstChainSelector];
         s_pendingSettlementTxAmountByDstChain[dstChainSelector] = 0;
 
         bytes32 ccipMessageId = _sendTokenPayLink(
             dstChainSelector,
             fromToken,
             batchedTxAmount,
-            bridgeTxs
+            ccipSettlementTxs
         );
         emit ConceroSettlementSent(ccipMessageId, batchedTxAmount);
     }

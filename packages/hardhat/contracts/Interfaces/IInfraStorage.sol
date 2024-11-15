@@ -65,7 +65,6 @@ interface IInfraStorage {
     }
 
     struct SettlementTx {
-        bytes32 id;
         uint256 amount;
         address recipient;
     }

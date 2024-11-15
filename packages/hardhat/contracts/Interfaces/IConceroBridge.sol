@@ -6,6 +6,12 @@ import {IDexSwap} from "./IDexSwap.sol";
 import {IInfraStorage} from "./IInfraStorage.sol";
 
 interface IConceroBridge is IInfraStorage {
+    struct CcipSettlementTx {
+        bytes32 id;
+        uint256 amount;
+        address recipient;
+    }
+
     /// @notice event emitted when an individual tx is sent through CLF
     event ConceroBridgeSent(
         bytes32 indexed conceroMessageId,

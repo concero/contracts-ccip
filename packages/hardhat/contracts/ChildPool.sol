@@ -6,16 +6,17 @@
  */
 pragma solidity 0.8.20;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
+import {ChildPoolStorage} from "contracts/Libraries/ChildPoolStorage.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import {ICCIP} from "./Interfaces/ICCIP.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IInfraOrchestrator} from "./Interfaces/IInfraOrchestrator.sol";
+import {IInfraStorage} from "./Interfaces/IInfraStorage.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
-import {ChildPoolStorage} from "contracts/Libraries/ChildPoolStorage.sol";
-import {IInfraStorage} from "./Interfaces/IInfraStorage.sol";
-import {IInfraOrchestrator} from "./Interfaces/IInfraOrchestrator.sol";
-import {ICCIP} from "./Interfaces/ICCIP.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /* ERRORS */
 ///@notice error emitted when the caller is not the Orchestrator
@@ -313,9 +314,9 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
         if (ccipTxData.ccipTxType == ICCIP.CcipTxType.batchedSettlement) {
-            IInfraStorage.SettlementTx[] memory settlementTx = abi.decode(
+            IConceroBridge.CcipSettlementTx[] memory settlementTx = abi.decode(
                 ccipTxData.data,
-                (IInfraStorage.SettlementTx[])
+                (IConceroBridge.CcipSettlementTx[])
             );
             for (uint256 i; i < settlementTx.length; ++i) {
                 bytes32 txId = settlementTx[i].id;

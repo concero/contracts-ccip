@@ -194,4 +194,6 @@ contract StartBridge is BaseTest {
         assertEq(userBalanceAfter, userBalanceBefore - bridgeAmount);
         assertEq(infraBalanceAfter, infraBalanceBefore + bridgeAmount);
     }
+
+    function test_txBatchingStorage() public {}
 }

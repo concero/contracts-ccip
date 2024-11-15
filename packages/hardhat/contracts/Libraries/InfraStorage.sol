@@ -45,7 +45,7 @@ abstract contract InfraStorage is ReentrancyGuard, IInfraStorage {
     mapping(uint64 dstChainSelector => uint256 amount) public s_pendingSettlementTxAmountByDstChain;
     ///@notice Bridge: mapping to track pending CCIP txs for batched execution per destination chain
     mapping(uint64 dstChainSelector => bytes32[] bridgeTxIds)
-        public s_pendingSettlementTxsByDstChain;
+        public s_pendingSettlementIdsByDstChain;
     ///@notice Bridge: mapping to track transaction details
     mapping(bytes32 bridgeTxId => SettlementTx pendingTx) public s_pendingSettlementTxsById;
 

@@ -1,0 +1,556 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="17a1e357-0723-4aa3-a435-5113e1cadbf2" name="Changes" comment="upd naming in contracts">
+      <change beforePath="$PROJECT_DIR$/packages/foundry/lib/solady" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/foundry/lib/solady/js/solady.d.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/foundry/lib/solady/js/solady.d.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/foundry/test/Bridge/BridgeBaseTest.t.sol" beforeDir="false" afterPath="$PROJECT_DIR$/packages/foundry/test/Bridge/BridgeBaseTest.t.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/foundry/test/Bridge/BridgeCompression.t.sol" beforeDir="false" afterPath="$PROJECT_DIR$/packages/foundry/test/Bridge/BridgeCompression.t.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/foundry/test/ParentPool/Deposit.t.sol" beforeDir="false" afterPath="$PROJECT_DIR$/packages/foundry/test/ParentPool/Deposit.t.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/foundry/test/ParentPool/unitTests/CalculateLpTokensToMint.t.sol" beforeDir="false" afterPath="$PROJECT_DIR$/packages/foundry/test/ParentPool/unitTests/CalculateLpTokensToMint.t.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/foundry/test/ParentPool/unitTests/IsMessenger.t.sol" beforeDir="false" afterPath="$PROJECT_DIR$/packages/foundry/test/ParentPool/unitTests/IsMessenger.t.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/foundry/test/utils/BaseTest.t.sol" beforeDir="false" afterPath="$PROJECT_DIR$/packages/foundry/test/utils/BaseTest.t.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/hardhat/tasks/CLFScripts/simulate.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/hardhat/tasks/CLFScripts/simulate.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/yarn.lock" beforeDir="false" afterPath="$PROJECT_DIR$/yarn.lock" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ChangesViewManager">
+    <option name="groupingKeys">
+      <option value="directory" />
+    </option>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="TypeScript File" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="feat/calldata-compression" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="ROOT_SYNC" value="DONT_SYNC" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;olegkron&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/concero/contracts-ccip.git&quot;,
+    &quot;accountId&quot;: &quot;2c49606c-a442-49ac-ba3c-d35fd2bee574&quot;
+  }
+}</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/node_modules/@chainlink/contracts/src/v0.8/interfaces/FeedRegistryInterface.sol" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/node_modules/viem/utils/abi/decodeAbiParameters.ts" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="OptimizeOnSaveOptions">
+    <option name="myRunOnSave" value="true" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="2mwTQ6AXqAwqs9FQTHdR0s5XXYD" />
+  <component name="ProjectLevelVcsManager">
+    <OptionsSetting value="false" id="Update" />
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showScratchesAndConsoles" value="false" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/oleg/Documents/Code/concero.io/contracts-ccip/packages/hardhat/utils&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.standard&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.stylelint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.standard&quot;: &quot;&quot;,
+    &quot;node.js.selected.package.stylelint&quot;: &quot;&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;yarn&quot;,
+    &quot;prettierjs.PrettierConfiguration.Package&quot;: &quot;/Users/oleg/Documents/Code/concero.io/contracts-ccip/node_modules/prettier&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/Users/oleg/Documents/Code/concero.io/contracts-ccip/node_modules/typescript/lib&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/packages/hardhat/utils" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/packages/foundry/lib" />
+      <recent name="$PROJECT_DIR$/packages/hardhat/tasks/concero/getSwapAndBridgeCost" />
+    </key>
+    <key name="es6.move.members.recent.items">
+      <recent name="$PROJECT_DIR$/packages/hardhat/tasks/CLFScripts/decodeCLFResponse.ts" />
+      <recent name="$PROJECT_DIR$/packages/hardhat/tasks/concero/getSwapAndBridgeCost/getCLFFeesTaken.ts" />
+      <recent name="$PROJECT_DIR$/packages/hardhat/tasks/concero/getSwapAndBridgeCost/getDecodedEventByTxReceipt.ts" />
+      <recent name="$PROJECT_DIR$/packages/hardhat/tasks/concero/getSwapAndBridgeCost/getRequestIdAndDstChainSelector.ts" />
+      <recent name="$PROJECT_DIR$/packages/hardhat/tasks/concero/getSwapAndBridgeCost/findProcessedEvent.ts" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-WS-241.18034.50" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="17a1e357-0723-4aa3-a435-5113e1cadbf2" name="Changes" comment="" />
+      <created>1727986619633</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1727986619633</updated>
+    </task>
+    <task id="LOCAL-00001" summary="rm next.js">
+      <option name="closed" value="true" />
+      <created>1727992505598</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1727992505598</updated>
+    </task>
+    <task id="LOCAL-00002" summary="rm packages/next">
+      <option name="closed" value="true" />
+      <created>1727993690320</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1727993690320</updated>
+    </task>
+    <task id="LOCAL-00003" summary="rm unnecessary events">
+      <option name="closed" value="true" />
+      <created>1728064811871</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1728064811871</updated>
+    </task>
+    <task id="LOCAL-00004" summary="add verifyVariables.ts">
+      <option name="closed" value="true" />
+      <created>1728207794971</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1728207794971</updated>
+    </task>
+    <task id="LOCAL-00005" summary="upd minifier">
+      <option name="closed" value="true" />
+      <created>1728209303555</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1728209303555</updated>
+    </task>
+    <task id="LOCAL-00006" summary="add">
+      <option name="closed" value="true" />
+      <created>1728294420564</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1728294420564</updated>
+    </task>
+    <task id="LOCAL-00007" summary="rm s_clfRequestTypes">
+      <option name="closed" value="true" />
+      <created>1728296818275</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1728296818275</updated>
+    </task>
+    <task id="LOCAL-00008" summary="s_contractsToReceiveFrom to bool">
+      <option name="closed" value="true" />
+      <created>1728314487529</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1728314487529</updated>
+    </task>
+    <task id="LOCAL-00009" summary="isTxExecutionSuccessful">
+      <option name="closed" value="true" />
+      <created>1728392335143</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1728392335143</updated>
+    </task>
+    <task id="LOCAL-00010" summary="add SPDX">
+      <option name="closed" value="true" />
+      <created>1728392500676</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1728392500676</updated>
+    </task>
+    <task id="LOCAL-00011" summary="isTxConfirmed">
+      <option name="closed" value="true" />
+      <created>1728393766315</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1728393766315</updated>
+    </task>
+    <task id="LOCAL-00012" summary="CCIP_ESTIMATED_TIME_TO_COMPLETE">
+      <option name="closed" value="true" />
+      <created>1728397895310</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1728397895310</updated>
+    </task>
+    <task id="LOCAL-00013" summary="CCIP_SEND_GAS_LIMIT">
+      <option name="closed" value="true" />
+      <created>1728399427455</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1728399427455</updated>
+    </task>
+    <task id="LOCAL-00014" summary="isTakingConceroFee refactor">
+      <option name="closed" value="true" />
+      <created>1728405829720</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1728405829720</updated>
+    </task>
+    <task id="LOCAL-00015" summary="isTakingConceroFee refactor">
+      <option name="closed" value="true" />
+      <created>1728467320563</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1728467320563</updated>
+    </task>
+    <task id="LOCAL-00016" summary="comment out unused variables">
+      <option name="closed" value="true" />
+      <created>1728484188668</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1728484188668</updated>
+    </task>
+    <task id="LOCAL-00017" summary="upd verifyVariables">
+      <option name="closed" value="true" />
+      <created>1728484907063</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1728484907063</updated>
+    </task>
+    <task id="LOCAL-00018" summary="upd verifyVariables">
+      <option name="closed" value="true" />
+      <created>1728485019746</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1728485019746</updated>
+    </task>
+    <task id="LOCAL-00019" summary="renaming">
+      <option name="closed" value="true" />
+      <created>1728494509327</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1728494509327</updated>
+    </task>
+    <task id="LOCAL-00020" summary="rm APPROVED magic var">
+      <option name="closed" value="true" />
+      <created>1728583277905</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1728583277905</updated>
+    </task>
+    <task id="LOCAL-00021" summary="getUSDCAddressByChainIndex + multiple tokens support for viewTokenBalances.ts">
+      <option name="closed" value="true" />
+      <created>1728663506937</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1728663506937</updated>
+    </task>
+    <task id="LOCAL-00022" summary="upd viewTokenBalances.ts">
+      <option name="closed" value="true" />
+      <created>1728749412422</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1728749412422</updated>
+    </task>
+    <task id="LOCAL-00023" summary="upd viewTokenBalances.ts">
+      <option name="closed" value="true" />
+      <created>1728892432260</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1728892432260</updated>
+    </task>
+    <task id="LOCAL-00024" summary="upd viewTokenBalances.ts">
+      <option name="closed" value="true" />
+      <created>1728893523639</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1728893523639</updated>
+    </task>
+    <task id="LOCAL-00025" summary="rm licence">
+      <option name="closed" value="true" />
+      <created>1728896777786</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1728896777786</updated>
+    </task>
+    <task id="LOCAL-00026" summary="upd ensureNativeBalances.ts">
+      <option name="closed" value="true" />
+      <created>1729001800091</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1729001800091</updated>
+    </task>
+    <task id="LOCAL-00027" summary="upd decodeReport">
+      <option name="closed" value="true" />
+      <created>1729011525335</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1729011525335</updated>
+    </task>
+    <task id="LOCAL-00028" summary="upd decodeReport">
+      <option name="closed" value="true" />
+      <created>1729025231395</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1729025231395</updated>
+    </task>
+    <task id="LOCAL-00029" summary="fetchDONSigners">
+      <option name="closed" value="true" />
+      <created>1729728293875</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1729728293875</updated>
+    </task>
+    <task id="LOCAL-00030" summary="add checkRpcStatus task">
+      <option name="closed" value="true" />
+      <created>1729994533941</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1729994533941</updated>
+    </task>
+    <task id="LOCAL-00031" summary="add getSwapAndBridge task">
+      <option name="closed" value="true" />
+      <created>1731012859147</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1731012859147</updated>
+    </task>
+    <task id="LOCAL-00032" summary="add getSwapAndBridge task">
+      <option name="closed" value="true" />
+      <created>1731057273755</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1731057273755</updated>
+    </task>
+    <task id="LOCAL-00033" summary="add getSwapAndBridge task">
+      <option name="closed" value="true" />
+      <created>1731069024804</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1731069024804</updated>
+    </task>
+    <task id="LOCAL-00034" summary="add getSwapAndBridge task">
+      <option name="closed" value="true" />
+      <created>1731096994386</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1731096994386</updated>
+    </task>
+    <task id="LOCAL-00035" summary="add getSwapAndBridge task">
+      <option name="closed" value="true" />
+      <created>1731152323495</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1731152323495</updated>
+    </task>
+    <task id="LOCAL-00036" summary="makefile upd">
+      <option name="closed" value="true" />
+      <created>1731426232425</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1731426232425</updated>
+    </task>
+    <task id="LOCAL-00037" summary="docs upd">
+      <option name="closed" value="true" />
+      <created>1731427524836</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1731427524836</updated>
+    </task>
+    <task id="LOCAL-00038" summary="docs upd">
+      <option name="closed" value="true" />
+      <created>1731429677787</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1731429677787</updated>
+    </task>
+    <task id="LOCAL-00039" summary="docs upd">
+      <option name="closed" value="true" />
+      <created>1731429874286</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1731429874286</updated>
+    </task>
+    <task id="LOCAL-00040" summary="conceroNetworks upd">
+      <option name="closed" value="true" />
+      <created>1731431167983</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1731431167983</updated>
+    </task>
+    <task id="LOCAL-00041" summary="async abi imports">
+      <option name="closed" value="true" />
+      <created>1731432612095</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1731432612095</updated>
+    </task>
+    <task id="LOCAL-00042" summary="async abi imports">
+      <option name="closed" value="true" />
+      <created>1731432886646</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1731432886646</updated>
+    </task>
+    <task id="LOCAL-00043" summary="async abi imports">
+      <option name="closed" value="true" />
+      <created>1731433363396</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1731433363396</updated>
+    </task>
+    <task id="LOCAL-00044" summary="simulate script">
+      <option name="closed" value="true" />
+      <created>1731445305329</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1731445305329</updated>
+    </task>
+    <task id="LOCAL-00045" summary="simulate script">
+      <option name="closed" value="true" />
+      <created>1731445815951</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1731445815951</updated>
+    </task>
+    <task id="LOCAL-00046" summary="simulate script">
+      <option name="closed" value="true" />
+      <created>1731446210642</created>
+      <option name="number" value="00046" />
+      <option name="presentableId" value="LOCAL-00046" />
+      <option name="project" value="LOCAL" />
+      <updated>1731446210642</updated>
+    </task>
+    <task id="LOCAL-00047" summary="simulate script">
+      <option name="closed" value="true" />
+      <created>1731446245523</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1731446245523</updated>
+    </task>
+    <task id="LOCAL-00048" summary="simulate script">
+      <option name="closed" value="true" />
+      <created>1731447493241</created>
+      <option name="number" value="00048" />
+      <option name="presentableId" value="LOCAL-00048" />
+      <option name="project" value="LOCAL" />
+      <updated>1731447493241</updated>
+    </task>
+    <task id="LOCAL-00049" summary="add husky pre-commit, clf simulate decoding">
+      <option name="closed" value="true" />
+      <created>1731514202965</created>
+      <option name="number" value="00049" />
+      <option name="presentableId" value="LOCAL-00049" />
+      <option name="project" value="LOCAL" />
+      <updated>1731514202965</updated>
+    </task>
+    <option name="localTasksCounter" value="50" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="false" />
+    <option name="CHECK_NEW_TODO" value="false" />
+    <MESSAGE value="isTxExecutionSuccessful" />
+    <MESSAGE value="add SPDX" />
+    <MESSAGE value="isTxConfirmed" />
+    <MESSAGE value="CCIP_ESTIMATED_TIME_TO_COMPLETE" />
+    <MESSAGE value="CCIP_SEND_GAS_LIMIT" />
+    <MESSAGE value="isTakingConceroFee refactor" />
+    <MESSAGE value="comment out unused variables" />
+    <MESSAGE value="upd verifyVariables" />
+    <MESSAGE value="renaming" />
+    <MESSAGE value="rm APPROVED magic var" />
+    <MESSAGE value="getUSDCAddressByChainIndex + multiple tokens support for viewTokenBalances.ts" />
+    <MESSAGE value="upd viewTokenBalances.ts" />
+    <MESSAGE value="rm licence" />
+    <MESSAGE value="upd ensureNativeBalances.ts" />
+    <MESSAGE value="upd decodeReport" />
+    <MESSAGE value="fetchDONSigners" />
+    <MESSAGE value="add checkRpcStatus task" />
+    <MESSAGE value="add getSwapAndBridge task" />
+    <MESSAGE value="makefile upd" />
+    <MESSAGE value="docs upd" />
+    <MESSAGE value="conceroNetworks upd" />
+    <MESSAGE value="async abi imports" />
+    <MESSAGE value="simulate script" />
+    <MESSAGE value="add husky pre-commit, clf simulate decoding" />
+    <MESSAGE value="upd naming in contracts" />
+    <option name="LAST_COMMIT_MESSAGE" value="upd naming in contracts" />
+  </component>
+</project>

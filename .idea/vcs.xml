@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/chainlink" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/chainlink-brownie-contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/chainlink-local" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/chainlink-local/lib/ccip" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/chainlink-local/lib/chainlink-brownie-contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/chainlink-local/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/chainlink-local/lib/forge-std/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/chainlink/contracts/foundry-lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/contracts/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/contracts/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/contracts/lib/forge-std/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/contracts/lib/gsn" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/contracts/lib/openzeppelin-contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/contracts/lib/openzeppelin-contracts/lib/erc4626-tests" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/contracts/lib/openzeppelin-contracts/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/contracts/lib/openzeppelin-contracts/lib/forge-std/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/foundry-starter-kit" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/foundry-starter-kit/lib/chainlink-brownie-contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/foundry-starter-kit/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/foundry-starter-kit/lib/foundry-chainlink-toolkit" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/foundry-starter-kit/lib/foundry-chainlink-toolkit/lib/chainlink-brownie-contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/foundry-starter-kit/lib/foundry-chainlink-toolkit/lib/chainlink-testing-framework" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/foundry-starter-kit/lib/foundry-chainlink-toolkit/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/foundry-starter-kit/lib/foundry-chainlink-toolkit/lib/forge-std/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/foundry-starter-kit/lib/foundry-chainlink-toolkit/lib/openzeppelin-contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/foundry-starter-kit/lib/foundry-chainlink-toolkit/lib/openzeppelin-contracts/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/foundry-starter-kit/lib/foundry-chainlink-toolkit/lib/openzeppelin-contracts/lib/forge-std/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/foundry-starter-kit/lib/solmate" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/foundry-starter-kit/lib/solmate/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/openzeppelin-contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/openzeppelin-contracts-upgradeable" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/openzeppelin-contracts-upgradeable/lib/erc4626-tests" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/openzeppelin-contracts-upgradeable/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/openzeppelin-contracts-upgradeable/lib/halmos-cheatcodes" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/lib/erc4626-tests" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/lib/halmos-cheatcodes" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/openzeppelin-contracts/lib/erc4626-tests" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/openzeppelin-contracts/lib/forge-std" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/openzeppelin-contracts/lib/forge-std/lib/ds-test" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/solady" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/solidity-bytes-utils" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/swap-router-contracts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/v2-periphery" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/v3-core" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/packages/foundry/lib/v3-periphery" vcs="Git" />
+  </component>
+</project>

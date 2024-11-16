@@ -27,6 +27,8 @@ deployments/localhost
 
 # other
 temp
+.idea
+.DS_Store
 
 
 packages/foundry/out

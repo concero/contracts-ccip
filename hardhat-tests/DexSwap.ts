@@ -1,6 +1,6 @@
 import "@nomicfoundation/hardhat-chai-matchers";
 import { encodeAbiParameters, formatUnits } from "viem";
-import ERC20ABI from "../abi/ERC20.json";
+import ierc20Abi from "@chainlink/contracts/abi/v0.8/IERC20.json";
 import { getFallbackClients } from "../utils";
 import { conceroNetworks } from "../constants/conceroNetworks";
 import log from "../utils/log";
@@ -28,7 +28,7 @@ async function approveToken(
   amount: string,
 ) {
   const tokenAlowance = await publicClient.readContract({
-    abi: ERC20ABI,
+    abi: ierc20Abi,
     functionName: "allowance",
     address: tokenAddress as `0x${string}`,
     args: [senderAddress, srcContractAddress],
@@ -42,7 +42,7 @@ async function approveToken(
   }
 
   const senderTokenBalance = await publicClient.readContract({
-    abi: ERC20ABI,
+    abi: ierc20Abi,
     functionName: "balanceOf",
     address: tokenAddress,
     args: [senderAddress],
@@ -51,7 +51,7 @@ async function approveToken(
   log(`senderTokenBalance: ${senderTokenBalance}`, "swap");
 
   const tokenApprovalTxHash = await walletClient.writeContract({
-    abi: ERC20ABI,
+    abi: ierc20Abi,
     functionName: "approve",
     address: tokenAddress,
     args: [srcContractAddress, BigInt(senderTokenBalance)],

@@ -4,15 +4,12 @@ out = "foundry-artifacts"
 cache_path = "foundry-cache"
 
 libs = ["node_modules", "./contracts/"]
+allow_paths = ["node_modules", "./contracts/"]
 
 remappings = [
     "@chainlink/=node_modules/@chainlink/",
     "@uniswap/=node_modules/@uniswap/",
-    "velodrome/contracts/=node_modules/contracts/contracts/",
-    "contracts/=./contracts/",
-    "solidity-bytes-utils/=node_modules/solidity-bytes-utils/",
     "sushiswap-v3-periphery/contracts/=node_modules/sushiswap-v3-periphery/contracts/",
     "forge-std/=node_modules/forge-std/src/",
 ]
 
-allow_paths = ["./contracts/", "./node_modules/"]

@@ -1,5 +1,0 @@
-CREATE DATABASE chainlink1;
-CREATE DATABASE chainlink2;
-CREATE DATABASE chainlink3;
-CREATE DATABASE chainlink4;
-CREATE DATABASE chainlink5;

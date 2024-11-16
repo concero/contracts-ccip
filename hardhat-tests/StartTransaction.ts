@@ -8,8 +8,9 @@ import { RpcSchema } from "viem/types/eip1193";
 import { privateKeyToAccount } from "viem/accounts";
 import { Address, createPublicClient, createWalletClient, decodeEventLog, http, PrivateKeyAccount } from "viem";
 import { arbitrumSepolia, base, baseSepolia, optimismSepolia, polygon, polygonAmoy } from "viem/chains";
-import ERC20ABI from "../abi/ERC20.json";
+
 import { PublicClient } from "viem/clients/createPublicClient";
+import ierc20Abi from "@chainlink/contracts/abi/v0.8/IERC20.json";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -87,7 +88,7 @@ describe("startBatchTransactions\n", async () => {
   const approveBnmAndLink = async () => {
     const approveToken = async (tokenAddress: string) => {
       const tokenAllowance = await srcPublicClient.readContract({
-        abi: ERC20ABI,
+        abi: ierc20Abi,
         functionName: "allowance",
         address: tokenAddress as `0x${string}`,
         args: [senderAddress, srcContractAddress],
@@ -98,14 +99,14 @@ describe("startBatchTransactions\n", async () => {
       }
 
       const tokenAmount = await srcPublicClient.readContract({
-        abi: ERC20ABI,
+        abi: ierc20Abi,
         functionName: "balanceOf",
         address: tokenAddress as `0x${string}`,
         args: [senderAddress],
       });
 
       const tokenHash = await walletClient.writeContract({
-        abi: ERC20ABI,
+        abi: ierc20Abi,
         functionName: "approve",
         address: tokenAddress as `0x${string}`,
         args: [srcContractAddress, BigInt(tokenAmount)],

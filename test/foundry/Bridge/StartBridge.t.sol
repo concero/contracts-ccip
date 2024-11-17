@@ -119,9 +119,9 @@ contract StartBridge is BaseTest {
         );
         vm.prank(integrator);
 
-        InfraOrchestratorWrapper(payable(baseOrchestratorProxy)).withdrawIntegratorFees(
-            vm.envAddress("USDC_BASE")
-        );
+        address[] memory tokens = new address[](1);
+        tokens[0] = vm.envAddress("USDC_BASE");
+        InfraOrchestratorWrapper(payable(baseOrchestratorProxy)).withdrawIntegratorFees(tokens);
 
         uint256 usdcIntegratorBalanceAfter = IERC20(vm.envAddress("USDC_BASE")).balanceOf(
             integrator

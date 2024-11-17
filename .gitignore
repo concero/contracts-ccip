@@ -29,13 +29,11 @@ deployments/localhost
 temp
 .idea
 .DS_Store
-
+.vscode
 
 packages/foundry/out
 packages/foundry/node_modules
 packages/foundry/cache
-
-
 
 # Foundry
 # Compiler files

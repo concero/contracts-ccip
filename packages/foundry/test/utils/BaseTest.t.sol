@@ -239,7 +239,30 @@ contract BaseTest is Test {
         vm.prank(vm.envAddress("DEPLOYER_ADDRESS"));
         functionsSubscriptions = FunctionsSubscriptions(address(vm.envAddress("CLF_ROUTER_BASE")));
         functionsSubscriptions.addConsumer(uint64(vm.envUint("CLF_SUBID_BASE")), _consumer);
+        _fundClfSubscription(
+            vm.envAddress("CLF_ROUTER_BASE"),
+            vm.envAddress("LINK_BASE"),
+            5000 * 1e18,
+            uint64(vm.envUint("CLF_SUBID_BASE"))
+        );
+
         vm.stopPrank();
+    }
+
+    function _fundClfSubscription(
+        address clfRouter,
+        address link,
+        uint256 amount,
+        uint64 clfSubId
+    ) internal {
+        _mintLink(deployer, amount);
+        vm.prank(deployer);
+
+        LinkTokenInterface(vm.envAddress("LINK_BASE")).transferAndCall(
+            clfRouter,
+            amount,
+            abi.encode(clfSubId)
+        );
     }
 
     function _fundLinkParentProxy(uint256 amount) internal {

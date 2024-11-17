@@ -73,14 +73,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         uint64 dstChainSelector
     );
     ///@notice emitted when a Unconfirmed TX is added by a cross-chain TX
-    event UnconfirmedTXAdded(
-        bytes32 indexed ccipMessageId,
-        address sender,
-        address recipient,
-        uint256 amount,
-        CCIPToken token,
-        uint64 srcChainSelector
-    );
+    event UnconfirmedTXAdded(bytes32 indexed ccipMessageId);
     event TXReleased(
         bytes32 indexed ccipMessageId,
         address indexed sender,
@@ -88,14 +81,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         address token,
         uint256 amount
     );
-    ///@notice emitted when on destination when a TX is validated.
-    event TXConfirmed(
-        bytes32 indexed ccipMessageId,
-        address indexed sender,
-        address indexed recipient,
-        uint256 amount,
-        CCIPToken token
-    );
+
     ///@notice emitted when a Function Request returns an error
     event CLFRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
     ///@notice emitted when the concero pool address is updated
@@ -180,8 +166,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         s_requests[reqId].isPending = true;
         s_requests[reqId].ccipMessageId = messageId;
 
-        //todo: we only need messageId and srcChainSelector. remove the rest
-        emit UnconfirmedTXAdded(messageId, sender, recipient, amount, token, srcChainSelector);
+        emit UnconfirmedTXAdded(messageId);
     }
 
     /**

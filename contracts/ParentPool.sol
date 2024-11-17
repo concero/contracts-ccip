@@ -738,14 +738,16 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint256 amountToDistributePerPool = ((_amountToDistributeUSDC * PRECISION_HANDLER) /
             (childPoolsCount + 1)) / PRECISION_HANDLER;
 
+        uint64[] memory poolChainSelectors = s_poolChainSelectors;
+
         for (uint256 i; i < childPoolsCount; ) {
             bytes32 ccipMessageId = _ccipSend(
-                s_poolChainSelectors[i],
+                poolChainSelectors[i],
                 amountToDistributePerPool,
                 _ccipTxType
             );
 
-            _addDepositOnTheWay(ccipMessageId, s_poolChainSelectors[i], amountToDistributePerPool);
+            _addDepositOnTheWay(ccipMessageId, poolChainSelectors[i], amountToDistributePerPool);
 
             unchecked {
                 ++i;

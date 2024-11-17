@@ -46,17 +46,11 @@ contract InfraOrchestrator is
     uint16 internal constant INTEGRATOR_FEE_DIVISOR = 10000;
 
     /* IMMUTABLE VARIABLES */
-    ///@notice the address of Functions router
     address internal immutable i_functionsRouter;
-    ///@notice variable to store the DexSwap address
     address internal immutable i_dexSwap;
-    ///@notice variable to store the Concero address
     address internal immutable i_conceroBridge;
-    ///@notice variable to store the ConceroPool address
     address internal immutable i_pool;
-    ///@notice variable to store the immutable Proxy Address
     address internal immutable i_proxy;
-    ///@notice ID of the deployed chain on getChain() function
     Chain internal immutable i_chainIndex;
 
     constructor(

@@ -44,17 +44,11 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
 
     /* IMMUTABLE VARIABLES */
-    ///@notice immutable variable to store Orchestrator Proxy
     address private immutable i_infraProxy;
-    ///@notice Child Pool proxy address
     address private immutable i_childProxy;
-    ///@notice Chainlink Link Token interface
     LinkTokenInterface private immutable i_linkToken;
-    ///@notice immutable variable to store the USDC address.
     IERC20 private immutable i_USDC;
-    ///@notice Contract Owner
     address private immutable i_owner;
-    //@@notice messenger addresses
     address private immutable i_msgr0;
     address private immutable i_msgr1;
     address private immutable i_msgr2;

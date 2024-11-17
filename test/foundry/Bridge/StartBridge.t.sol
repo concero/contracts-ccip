@@ -195,5 +195,61 @@ contract StartBridge is BaseTest {
         assertEq(infraBalanceAfter, infraBalanceBefore + bridgeAmount);
     }
 
-    function test_txBatchingStorage() public {}
+    function test_sendTxBatch_gas() public {
+        uint256[199] memory amounts;
+        for (uint256 i; i < amounts.length; i++) {
+            amounts[i] = 2 * USDC_DECIMALS;
+        }
+
+        address[] memory users = new address[](amounts.length);
+
+        for (uint256 i; i < users.length; i++) {
+            string memory name = string(abi.encodePacked("user_", i));
+            users[i] = makeAddr(name);
+            vm.prank(users[i]);
+            _mintUSDC(users[i], amounts[i]);
+            _sendBridgeByUser(users[i], amounts[i], arbitrumChainSelector);
+        }
+
+        address user_1 = makeAddr("user_1");
+        uint256 bridgeAmount = 2 * USDC_DECIMALS;
+        _mintUSDC(user_1, bridgeAmount);
+
+        uint256 startGas = gasleft();
+        _sendBridgeByUser(user_1, bridgeAmount, arbitrumChainSelector);
+        uint256 gasUsedForSendCcipBatch = startGas - gasleft();
+
+        console.log("Gas used for send ccip batch: %d", gasUsedForSendCcipBatch);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                               UTILS
+    //////////////////////////////////////////////////////////////*/
+
+    function _sendBridgeByUser(
+        address user,
+        uint256 bridgeAmount,
+        uint64 dstChainSelector
+    ) internal {
+        IDexSwap.SwapData[] memory dstSwapData = new IDexSwap.SwapData[](0);
+        IInfraOrchestrator.Integration memory integration = IInfraOrchestrator.Integration({
+            integrator: address(0),
+            feeBps: 0
+        });
+        IInfraStorage.BridgeData memory bridgeData = IInfraStorage.BridgeData({
+            tokenType: IInfraStorage.CCIPToken.usdc,
+            amount: bridgeAmount,
+            dstChainSelector: dstChainSelector,
+            receiver: user
+        });
+
+        _approve(user, vm.envAddress("USDC_BASE"), address(baseOrchestratorProxy), bridgeAmount);
+
+        vm.prank(user);
+        InfraOrchestratorWrapper(payable(baseOrchestratorProxy)).bridge(
+            bridgeData,
+            dstSwapData,
+            integration
+        );
+    }
 }

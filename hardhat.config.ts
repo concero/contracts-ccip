@@ -35,9 +35,9 @@ const config: HardhatUserConfig = {
   },
   paths: {
     artifacts: "artifacts",
-    cache: "cache",
+    cache: "cache/hardhat",
     sources: "contracts",
-    tests: "test",
+    tests: "test/hardhat",
   },
   solidity: {
     version: "0.8.20",

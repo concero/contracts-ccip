@@ -45,107 +45,136 @@ contract BridgeCompressionTest is BridgeBaseTest {
         encodedDstSwapData = _swapDataToBytes(originalSwapData);
         compressedDstSwapData = LibZip.cdCompress(encodedDstSwapData);
         bytes memory decompressedData = LibZip.cdDecompress(compressedDstSwapData);
-        IDexSwap.SwapData[] memory decompressedSwapData = abi.decode(decompressedData, (IDexSwap.SwapData[]));
-        assertEq(decompressedSwapData.length, originalSwapData.length, "Decompressed length mismatch");
+        IDexSwap.SwapData[] memory decompressedSwapData = abi.decode(
+            decompressedData,
+            (IDexSwap.SwapData[])
+        );
+        assertEq(
+            decompressedSwapData.length,
+            originalSwapData.length,
+            "Decompressed length mismatch"
+        );
 
         for (uint256 i = 0; i < originalSwapData.length; i++) {
-            assertEq(decompressedSwapData[i].fromToken, originalSwapData[i].fromToken, "FromToken mismatch");
-            assertEq(decompressedSwapData[i].toToken, originalSwapData[i].toToken, "ToToken mismatch");
-            assertEq(decompressedSwapData[i].fromAmount, originalSwapData[i].fromAmount, "FromAmount mismatch");
-            assertEq(decompressedSwapData[i].toAmount, originalSwapData[i].toAmount, "ToAmount mismatch");
-            assertEq(decompressedSwapData[i].toAmountMin, originalSwapData[i].toAmountMin, "ToAmountMin mismatch");
-            assertEq(decompressedSwapData[i].dexData, originalSwapData[i].dexData, "DexData mismatch");
+            assertEq(
+                decompressedSwapData[i].fromToken,
+                originalSwapData[i].fromToken,
+                "FromToken mismatch"
+            );
+            assertEq(
+                decompressedSwapData[i].toToken,
+                originalSwapData[i].toToken,
+                "ToToken mismatch"
+            );
+            assertEq(
+                decompressedSwapData[i].fromAmount,
+                originalSwapData[i].fromAmount,
+                "FromAmount mismatch"
+            );
+            assertEq(
+                decompressedSwapData[i].toAmount,
+                originalSwapData[i].toAmount,
+                "ToAmount mismatch"
+            );
+            assertEq(
+                decompressedSwapData[i].toAmountMin,
+                originalSwapData[i].toAmountMin,
+                "ToAmountMin mismatch"
+            );
+            assertEq(
+                decompressedSwapData[i].dexData,
+                originalSwapData[i].dexData,
+                "DexData mismatch"
+            );
         }
     }
 
+    //    /*//////////////////////////////////////////////////////////////
+    //                             DECOMPRESSION
+    //    //////////////////////////////////////////////////////////////*/
+    //    /// @dev fromToken needs to be usdc address on dst chain!
+    //    /// anvil --fork-url https://rpc.ankr.com/avalanche --port 8546
+    //    function test_calldataCompression_dstSwap_decompression() public {
+    //        /// @dev create dstSwapData
+    //        IDexSwap.SwapData[] memory dstSwapData = _createDstSwapData();
+    //
+    //        /// @dev encode and compress dstSwapData (simulating what happens before and during CLF)
+    //        encodedDstSwapData = _swapDataToBytes(dstSwapData);
+    //        compressedDstSwapData = LibZip.cdCompress(encodedDstSwapData);
+    //
+    //        bytes32 conceroMessageId = keccak256(
+    //            abi.encodePacked(user1, user1, USER_FUNDS, block.timestamp)
+    //        );
+    //
+    //        //        /// @dev fork avalanche mainnet and deploy infra contracts
+    //        //        vm.selectFork(avalancheFork);
+    //        //        _deployAvalancheInfra();
+    //
+    //        /// @dev prank messenger to call addUnconfirmedTX
+    //        vm.recordLogs();
+    //        vm.prank(messenger);
+    //        (bool success, ) = address(baseOrchestratorProxy).call(
+    //            abi.encodeWithSignature(
+    //                "addUnconfirmedTX(bytes32,address,address,uint256,uint64,uint8,uint256,bytes)",
+    //                conceroMessageId,
+    //                user1,
+    //                user1,
+    //                USER_FUNDS,
+    //                baseChainSelector,
+    //                IInfraStorage.CCIPToken.usdc,
+    //                block.timestamp,
+    //                compressedDstSwapData
+    //            )
+    //        );
+    //        require(success, "addUnconfirmedTX delegate call failed");
+    //
+    //                /// @dev get the clfRequestId, callbackGasLimit and estimatedTotalCostJuels
+    //                bytes32 clfRequestId;
+    //                uint32 callbackGasLimit;
+    //                uint96 estimatedTotalCostJuels;
+    //                Vm.Log[] memory logs = vm.getRecordedLogs();
+    //                bytes32 eventSignature = keccak256(
+    //                    "RequestStart(bytes32,bytes32,uint64,address,address,address,bytes,uint16,uint32,uint96)"
+    //                );
+    //                for (uint256 i = 0; i < logs.length; i++) {
+    //                    if (logs[i].topics[0] == eventSignature) {
+    //                        clfRequestId = logs[i].topics[1];
+    //
+    //                        (, , , , , callbackGasLimit, estimatedTotalCostJuels) = abi.decode(
+    //                            logs[i].data,
+    //                            (address, address, address, bytes, uint16, uint32, uint96)
+    //                        );
+    //                    }
+    //                }
 
-
-//    /*//////////////////////////////////////////////////////////////
-//                             DECOMPRESSION
-//    //////////////////////////////////////////////////////////////*/
-//    /// @dev fromToken needs to be usdc address on dst chain!
-//    /// anvil --fork-url https://rpc.ankr.com/avalanche --port 8546
-//    function test_calldataCompression_dstSwap_decompression() public {
-//        /// @dev create dstSwapData
-//        IDexSwap.SwapData[] memory dstSwapData = _createDstSwapData();
-//
-//        /// @dev encode and compress dstSwapData (simulating what happens before and during CLF)
-//        encodedDstSwapData = _swapDataToBytes(dstSwapData);
-//        compressedDstSwapData = LibZip.cdCompress(encodedDstSwapData);
-//
-//        bytes32 conceroMessageId = keccak256(
-//            abi.encodePacked(user1, user1, USER_FUNDS, block.timestamp)
-//        );
-//
-//        //        /// @dev fork avalanche mainnet and deploy infra contracts
-//        //        vm.selectFork(avalancheFork);
-//        //        _deployAvalancheInfra();
-//
-//        /// @dev prank messenger to call addUnconfirmedTX
-//        vm.recordLogs();
-//        vm.prank(messenger);
-//        (bool success, ) = address(baseOrchestratorProxy).call(
-//            abi.encodeWithSignature(
-//                "addUnconfirmedTX(bytes32,address,address,uint256,uint64,uint8,uint256,bytes)",
-//                conceroMessageId,
-//                user1,
-//                user1,
-//                USER_FUNDS,
-//                baseChainSelector,
-//                IInfraStorage.CCIPToken.usdc,
-//                block.timestamp,
-//                compressedDstSwapData
-//            )
-//        );
-//        require(success, "addUnconfirmedTX delegate call failed");
-//
-//                /// @dev get the clfRequestId, callbackGasLimit and estimatedTotalCostJuels
-//                bytes32 clfRequestId;
-//                uint32 callbackGasLimit;
-//                uint96 estimatedTotalCostJuels;
-//                Vm.Log[] memory logs = vm.getRecordedLogs();
-//                bytes32 eventSignature = keccak256(
-//                    "RequestStart(bytes32,bytes32,uint64,address,address,address,bytes,uint16,uint32,uint96)"
-//                );
-//                for (uint256 i = 0; i < logs.length; i++) {
-//                    if (logs[i].topics[0] == eventSignature) {
-//                        clfRequestId = logs[i].topics[1];
-//
-//                        (, , , , , callbackGasLimit, estimatedTotalCostJuels) = abi.decode(
-//                            logs[i].data,
-//                            (address, address, address, bytes, uint16, uint32, uint96)
-//                        );
-//                    }
-//                }
-
-        //        /// @dev check storage has updated with the correctly compressed data
-        //        (, bytes memory retData) = address(avalancheOrchestratorProxy).call(
-        //            abi.encodeWithSignature("getTransaction(bytes32)", conceroMessageId)
-        //        );
-        //        IInfraStorage.Transaction memory transaction = abi.decode(
-        //            retData,
-        //            (IInfraStorage.Transaction)
-        //        );
-        //        bytes memory dstSwapDataInStorage = transaction.dstSwapData;
-        //        bytes memory decompressedDstSwapData = LibZip.cdDecompress(dstSwapDataInStorage);
-        //        assertEq(dstSwapDataInStorage, compressedDstSwapData);
-        //        assertEq(encodedDstSwapData, decompressedDstSwapData);
-        //
-        //        /// @dev make sure the child pool has funds to facilitate tx and allow the uni router on avalanche
-        //        deal(usdcAvalanche, address(avalancheChildProxy), USER_FUNDS * 10);
-        //        _allowUniV3Avalanche();
-        //
-        //        uint256 toBalanceBefore = IERC20(DAI_AVALANCHE).balanceOf(user1);
-        //
-        //        /// @dev prank CLF fulfillRequest
-        //        _fulfillRequest(clfRequestId, callbackGasLimit, estimatedTotalCostJuels);
-        //
-        //        /// @dev assert swap successful
-        //        uint256 toTokenBalance = IERC20(DAI_AVALANCHE).balanceOf(user1);
-        //        assertGe(toTokenBalance, TO_AMOUNT);
-        //        assertEq(toBalanceBefore, 0);
-        //        vm.stopPrank();
-//    }
+    //        /// @dev check storage has updated with the correctly compressed data
+    //        (, bytes memory retData) = address(avalancheOrchestratorProxy).call(
+    //            abi.encodeWithSignature("getTransaction(bytes32)", conceroMessageId)
+    //        );
+    //        IInfraStorage.Transaction memory transaction = abi.decode(
+    //            retData,
+    //            (IInfraStorage.Transaction)
+    //        );
+    //        bytes memory dstSwapDataInStorage = transaction.dstSwapData;
+    //        bytes memory decompressedDstSwapData = LibZip.cdDecompress(dstSwapDataInStorage);
+    //        assertEq(dstSwapDataInStorage, compressedDstSwapData);
+    //        assertEq(encodedDstSwapData, decompressedDstSwapData);
+    //
+    //        /// @dev make sure the child pool has funds to facilitate tx and allow the uni router on avalanche
+    //        deal(usdcAvalanche, address(avalancheChildProxy), USER_FUNDS * 10);
+    //        _allowUniV3Avalanche();
+    //
+    //        uint256 toBalanceBefore = IERC20(DAI_AVALANCHE).balanceOf(user1);
+    //
+    //        /// @dev prank CLF fulfillRequest
+    //        _fulfillRequest(clfRequestId, callbackGasLimit, estimatedTotalCostJuels);
+    //
+    //        /// @dev assert swap successful
+    //        uint256 toTokenBalance = IERC20(DAI_AVALANCHE).balanceOf(user1);
+    //        assertGe(toTokenBalance, TO_AMOUNT);
+    //        assertEq(toBalanceBefore, 0);
+    //        vm.stopPrank();
+    //    }
 
     /*//////////////////////////////////////////////////////////////
                                 UTILITY

@@ -251,7 +251,8 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     ) external payable onlyProxyContext {
         if (msg.sender != i_infraProxy) revert NotConceroInfraProxy(msg.sender);
         if (_receiver == address(0)) revert InvalidAddress();
-
+        //todo: enforce receiver to be i_infraProxy
+        //todo: check if token is allowed, i.e. USDC
         IERC20(_token).safeTransfer(_receiver, _amount);
         s_loansInUse += _amount;
     }

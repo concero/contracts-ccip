@@ -305,6 +305,11 @@
     "@chainlink/contracts" "^1.1.1"
     "@chainlink/contracts-ccip" "^1.5.0"
 
+"@chainlink/solhint-plugin-chainlink-solidity@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@chainlink/solhint-plugin-chainlink-solidity/-/solhint-plugin-chainlink-solidity-1.0.1.tgz#bc4c417fe068ed3b13c239e071f550cc130f6bee"
+  integrity sha512-ld0eHzKJZjs/iNKfZtwbR4yP/0YdkBiB+GASYCUz89V+hEn6nCaRoRywgIONRERhHIv5DEDOhcKjo2u2zYHIUA==
+
 "@changesets/apply-release-plan@^7.0.5":
   version "7.0.5"
   resolved "https://registry.yarnpkg.com/@changesets/apply-release-plan/-/apply-release-plan-7.0.5.tgz#3323c97afc08abc15e5136488f9c7cf1a864832e"
@@ -9305,6 +9310,11 @@ solhint-community@^4.0.0:
   optionalDependencies:
     prettier "^2.8.3"
 
+"solhint-plugin-chainlink-solidity@npm:@chainlink/solhint-plugin-chainlink-solidity":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@chainlink/solhint-plugin-chainlink-solidity/-/solhint-plugin-chainlink-solidity-1.0.1.tgz#bc4c417fe068ed3b13c239e071f550cc130f6bee"
+  integrity sha512-ld0eHzKJZjs/iNKfZtwbR4yP/0YdkBiB+GASYCUz89V+hEn6nCaRoRywgIONRERhHIv5DEDOhcKjo2u2zYHIUA==
+
 solhint-plugin-prettier@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/solhint-plugin-prettier/-/solhint-plugin-prettier-0.1.0.tgz#2f46999e26d6c6bc80281c22a7a21e381175bef7"
@@ -9313,7 +9323,7 @@ solhint-plugin-prettier@^0.1.0:
     "@prettier/sync" "^0.3.0"
     prettier-linter-helpers "^1.0.0"
 
-solhint@^5.0.1:
+solhint@^5.0.3:
   version "5.0.3"
   resolved "https://registry.yarnpkg.com/solhint/-/solhint-5.0.3.tgz#b57f6d2534fe09a60f9db1b92e834363edd1cbde"
   integrity sha512-OLCH6qm/mZTCpplTXzXTJGId1zrtNuDYP5c2e6snIv/hdRVxPfBBz/bAlL91bY/Accavkayp2Zp2BaDSrLVXTQ==

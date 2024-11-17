@@ -9,7 +9,6 @@ pragma solidity ^0.8.20;
 import {InfraCommon} from "./InfraCommon.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {IInfraCLF} from "./Interfaces/IInfraCLF.sol";
-import {IInfraStorage} from "./Interfaces/IInfraStorage.sol";
 import {IPool} from "./Interfaces/IPool.sol";
 import {InfraStorage} from "./Libraries/InfraStorage.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
@@ -181,7 +180,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         s_requests[reqId].isPending = true;
         s_requests[reqId].ccipMessageId = messageId;
 
-        // TODO: remove this log
+        //todo: we only need messageId and srcChainSelector. remove the rest
         emit UnconfirmedTXAdded(messageId, sender, recipient, amount, token, srcChainSelector);
     }
 
@@ -254,22 +253,12 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
 
     /**
      * @notice Internal helper function to check if the TX is valid
-     * @param ccipMessageId The CCIP message ID to be checked
      * @param transaction the storage to be updated.
      */
-    function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
+    function _confirmTX(Transaction storage transaction) internal {
         if (transaction.sender == address(0)) revert TxDoesntExist();
         if (transaction.isConfirmed == true) revert TxAlreadyConfirmed();
-
         transaction.isConfirmed = true;
-
-        emit TXConfirmed(
-            ccipMessageId,
-            transaction.sender,
-            transaction.recipient,
-            transaction.amount,
-            transaction.token
-        );
     }
 
     /**
@@ -325,9 +314,9 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     function _handleDstFunctionsResponse(Request storage request) internal {
         Transaction storage transaction = s_transactions[request.ccipMessageId];
 
-        _confirmTX(request.ccipMessageId, transaction);
+        _confirmTX(transaction);
 
-        address tokenReceived = getUSDCAddressByChainIndex(transaction.token, i_chainIndex);
+        address tokenReceived = _getUSDCAddressByChainIndex(transaction.token, i_chainIndex);
         uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
         if (transaction.dstSwapData.length > 1) {

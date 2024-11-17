@@ -8,11 +8,9 @@ pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {InfraCCIP} from "./InfraCCIP.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
-import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 
 /* ERRORS */
 ///@notice error emitted when the input amount is less than the fees
@@ -67,7 +65,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
     ) external payable {
         if (address(this) != i_proxy) revert OnlyProxyContext(address(this));
         uint64 dstChainSelector = bridgeData.dstChainSelector;
-        address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
+        address fromToken = _getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
         uint256 totalSrcFee = _convertToUSDCDecimals(
             _getSrcTotalFeeInUsdc(dstChainSelector, bridgeData.amount)
         );
@@ -239,7 +237,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
         uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(dstChainSelector);
         uint256 proportionalCCIPFeeInUSDC = _calculateProportionalCCIPFee(ccipFeeInUsdc, amount);
-        
+
         uint256 conceroFee = amount / CONCERO_FEE_FACTOR;
 
         uint256 messengerDstGasInNative = HALF_DST_GAS * s_lastGasPrices[dstChainSelector];

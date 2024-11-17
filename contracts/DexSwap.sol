@@ -12,14 +12,12 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {ISwapRouter as ISushiRouterV3} from "sushiswap-v3-periphery/contracts/interfaces/ISwapRouter.sol";
-//import {IRouter} from "velodrome/contracts/interfaces/IRouter.sol";
 import {ISwapRouter02, IV3SwapRouter} from "./Interfaces/ISwapRouter02.sol";
 import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
 import {InfraStorage} from "./Libraries/InfraStorage.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 import {InfraCommon} from "./InfraCommon.sol";
-import {IPeripheryPayments} from "@uniswap/v3-periphery/contracts/interfaces/IPeripheryPayments.sol";
 import {IWETH} from "./Interfaces/IWETH.sol";
 
 /* ERRORS */
@@ -126,12 +124,12 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
     }
 
     function _wrapNative(IDexSwap.SwapData memory _swapData) private {
-        address wrappedNative = getWrappedNative();
+        address wrappedNative = _getWrappedNative();
         IWETH(wrappedNative).deposit{value: _swapData.fromAmount}();
     }
 
     function _unwrapWNative(IDexSwap.SwapData memory _swapData, address _recipient) private {
-        if (_swapData.fromToken != getWrappedNative()) revert InvalidDexData();
+        if (_swapData.fromToken != _getWrappedNative()) revert InvalidDexData();
 
         IWETH(_swapData.fromToken).withdraw(_swapData.fromAmount);
 

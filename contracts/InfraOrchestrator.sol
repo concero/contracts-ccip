@@ -50,7 +50,7 @@ contract InfraOrchestrator is
     address internal immutable i_dexSwap;
     address internal immutable i_conceroBridge;
     address internal immutable i_pool;
-    address internal immutable i_proxy;
+    address internal immutable i_proxy; //todo: unused
     Chain internal immutable i_chainIndex;
 
     constructor(
@@ -168,7 +168,7 @@ contract InfraOrchestrator is
         validateDstSwapData(dstSwapData, bridgeData)
         nonReentrant
     {
-        address usdc = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
+        address usdc = _getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
 
         if (srcSwapData[srcSwapData.length - 1].toToken != usdc) {
             revert InvalidSwapData();
@@ -216,7 +216,7 @@ contract InfraOrchestrator is
         validateDstSwapData(dstSwapData, bridgeData)
         nonReentrant
     {
-        address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
+        address fromToken = _getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
         LibConcero.transferFromERC20(fromToken, msg.sender, address(this), bridgeData.amount);
         bridgeData.amount -= _collectIntegratorFee(fromToken, bridgeData.amount, integration);
 
@@ -290,25 +290,25 @@ contract InfraOrchestrator is
      * @param tokens array of token addresses to withdraw
      */
     function withdrawIntegratorFees(address[] memory tokens) external nonReentrant {
-    for (uint256 i = 0; i < tokens.length; i++) {
-        address token = tokens[i];
-        uint256 amount = s_integratorFeesAmountByToken[msg.sender][token];
+        for (uint256 i = 0; i < tokens.length; i++) {
+            address token = tokens[i];
+            uint256 amount = s_integratorFeesAmountByToken[msg.sender][token];
 
-        if (amount > 0) {
-            s_integratorFeesAmountByToken[msg.sender][token] = 0;
-            s_totalIntegratorFeesAmountByToken[token] -= amount;
+            if (amount > 0) {
+                s_integratorFeesAmountByToken[msg.sender][token] = 0;
+                s_totalIntegratorFeesAmountByToken[token] -= amount;
 
-            if (token == address(0)) {
-                (bool success, ) = msg.sender.call{value: amount}("");
-                if (!success) revert FailedToWithdrawIntegratorFees(token, amount);
-            } else {
-                IERC20(token).safeTransfer(msg.sender, amount);
+                if (token == address(0)) {
+                    (bool success, ) = msg.sender.call{value: amount}("");
+                    if (!success) revert FailedToWithdrawIntegratorFees(token, amount);
+                } else {
+                    IERC20(token).safeTransfer(msg.sender, amount);
+                }
+
+                emit IntegratorFeesWithdrawn(msg.sender, token, amount);
             }
-
-            emit IntegratorFeesWithdrawn(msg.sender, token, amount);
         }
     }
-}
 
     /**
      * @notice Function to allow Concero Team to withdraw fees
@@ -324,7 +324,7 @@ contract InfraOrchestrator is
         uint256 balance = LibConcero.getBalance(token, address(this));
         if (balance < amount) revert InvalidAmount();
 
-        address usdc = getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
+        address usdc = _getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
 
         if (token == usdc) {
             uint256 batchedReserves;

@@ -13,7 +13,7 @@ contract IsMessengerTest is BaseTest {
     uint8 slotId = 0;
 
     function setUp() public override {
-        vm.selectFork(forkId);
+        vm.selectFork(baseAnvilForkId);
         deployParentPoolProxy();
         parentPoolImplementation = new ParentPoolDepositWrapper(
             address(parentPoolProxy),

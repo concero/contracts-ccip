@@ -34,7 +34,7 @@ contract Deposit is BaseTest {
                                  SETUP
     //////////////////////////////////////////////////////////////*/
     function setUp() public virtual override {
-        vm.selectFork(forkId);
+        vm.selectFork(baseAnvilForkId);
         deployParentPoolProxy();
         deployLpToken();
 
@@ -125,6 +125,7 @@ contract Deposit is BaseTest {
                             COMPLETE DEPOSIT
     //////////////////////////////////////////////////////////////*/
     function test_completeDeposit_success() public {
+        address usdc = vm.envAddress("USDC_BASE");
         deal(usdc, user1, DEPOSIT_AMOUNT_USDC);
         vm.prank(user1);
         IERC20(usdc).approve(address(parentPoolProxy), DEPOSIT_AMOUNT_USDC);

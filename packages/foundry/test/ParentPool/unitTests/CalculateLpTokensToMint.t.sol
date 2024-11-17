@@ -17,7 +17,7 @@ contract CalculateLpTokensToMintTest is BaseTest {
 								SETUP
    //////////////////////////////////////////////////////////////*/
     function setUp() public virtual override {
-        vm.selectFork(forkId);
+        vm.selectFork(baseAnvilForkId);
         deployParentPoolProxy();
         deployLpToken();
 
@@ -130,6 +130,7 @@ contract CalculateLpTokensToMintTest is BaseTest {
         uint256 totalCrossChainBalanceUSDC,
         uint256 depositOnTheWayAmountUSDC
     ) internal returns (uint256) {
+        address usdc = vm.envAddress("USDC_BASE");
         uint256 depositsOnTheWayAmount = ParentPool(payable(parentPoolProxy))
             .s_depositsOnTheWayAmount();
         uint256 childPoolsBalanceUSDC = ((totalCrossChainBalanceUSDC - depositOnTheWayAmountUSDC) *

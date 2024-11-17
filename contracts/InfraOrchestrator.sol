@@ -29,7 +29,7 @@ error InvalidSwapData();
 error UnsupportedBridgeToken();
 error WithdrawableAmountExceedsBatchedReserves();
 error InvalidIntegratorFeeBps();
-error FailedToWithdrawIntegratorFees();
+error FailedToWithdrawIntegratorFees(address token, uint256 amount);
 
 contract InfraOrchestrator is
     IFunctionsClient,
@@ -285,27 +285,30 @@ contract InfraOrchestrator is
         LibConcero.safeDelegateCall(i_conceroBridge, delegateCallArgs);
     }
 
-    function withdrawIntegratorFees(address token) external nonReentrant {
+    /**
+     * @notice Function to withdraw integrator fees
+     * @param tokens array of token addresses to withdraw
+     */
+    function withdrawIntegratorFees(address[] memory tokens) external nonReentrant {
+    for (uint256 i = 0; i < tokens.length; i++) {
+        address token = tokens[i];
         uint256 amount = s_integratorFeesAmountByToken[msg.sender][token];
-        if (amount == 0) {
-            revert FailedToWithdrawIntegratorFees();
-        }
 
-        s_integratorFeesAmountByToken[msg.sender][token] = 0;
-        s_totalIntegratorFeesAmountByToken[token] -= amount;
+        if (amount > 0) {
+            s_integratorFeesAmountByToken[msg.sender][token] = 0;
+            s_totalIntegratorFeesAmountByToken[token] -= amount;
 
-        if (token != address(0)) {
-            IERC20(token).safeTransfer(msg.sender, amount);
-        } else {
-            (bool success, ) = msg.sender.call{value: amount}("");
-
-            if (!success) {
-                revert FailedToWithdrawIntegratorFees();
+            if (token == address(0)) {
+                (bool success, ) = msg.sender.call{value: amount}("");
+                if (!success) revert FailedToWithdrawIntegratorFees(token, amount);
+            } else {
+                IERC20(token).safeTransfer(msg.sender, amount);
             }
-        }
 
-        emit IntegratorFeesWithdrawn(msg.sender, token, amount);
+            emit IntegratorFeesWithdrawn(msg.sender, token, amount);
+        }
     }
+}
 
     /**
      * @notice Function to allow Concero Team to withdraw fees

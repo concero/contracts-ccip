@@ -20,6 +20,7 @@ contract InfraCommon {
     uint256 internal constant USDC_DECIMALS = 1_000_000; // 10 ** 6
     uint256 internal constant STANDARD_TOKEN_DECIMALS = 1 ether;
 
+    /* IMMUTABLE VARIABLES */
     address private immutable i_msgr0;
     address private immutable i_msgr1;
     address private immutable i_msgr2;

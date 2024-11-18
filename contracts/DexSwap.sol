@@ -116,7 +116,23 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         return tokenAmountReceived;
     }
 
-    function _performSwap(IDexSwap.SwapData memory _swapData, address destinationAddress) private {}
+    function _performSwap(IDexSwap.SwapData memory _swapData, address destinationAddress) private {
+        if (_swapData.dexData.length == 0) revert EmptyDexData();
+
+        address routerAddress = _swapData.dexRouter;
+        uint256 fromAmount = _swapData.fromAmount;
+
+        if (!s_routerAllowed[routerAddress]) revert DexRouterNotAllowed();
+        bool isFromNative = _swapData.fromToken == address(0);
+
+        if (!isFromNative) {
+            IERC20(_swapData.fromToken).safeIncreaseAllowance(routerAddress, fromAmount);
+            fromAmount = 0;
+        }
+
+        (bool success, ) = routerAddress.call{value: fromAmount}(_swapData.dexData);
+        if (!success) revert InvalidDexData();
+    }
 
     // function _wrapNative(IDexSwap.SwapData memory _swapData) private {
     //     address wrappedNative = _getWrappedNative();

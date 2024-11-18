@@ -113,17 +113,8 @@ contract WithdrawTest is BaseTest {
     }
 
     /*//////////////////////////////////////////////////////////////
-                           COMPLETE WITHDRAWAL
+		                         UTILS
      //////////////////////////////////////////////////////////////*/
-    //    function test_completeWithdrawal_works() public {
-    //        (
-    //            bytes32 requestId,
-    //            uint32 callbackGasLimit,
-    //            uint96 estimatedTotalCostJuels
-    //        ) = _startWithdrawalAndMonitorLogs();
-    //        _fulfillRequest(requestId, CHILD_POOLS_LIQUIDITY_USDC);
-    //        _completeWithdrawal();
-    //    }
 
     function _startWithdrawalAndMonitorLogs()
         internal
@@ -169,26 +160,4 @@ contract WithdrawTest is BaseTest {
         vm.prank(vm.envAddress("CLF_ROUTER_BASE"));
         FunctionsClient(address(parentPoolProxy)).handleOracleFulfillment(requestId, response, "");
     }
-
-    //    function _completeWithdrawal() internal {
-    // /// @dev get withdrawalId
-    // (, bytes memory returnData) = address(parentPoolProxy).call(
-    //     abi.encodeWithSignature("getWithdrawalIdByLPAddress(address)", liquidityProvider)
-    // );
-    // bytes32 withdrawalId = abi.decode(returnData, (bytes32));
-    // assert(withdrawalId != 0);
-    // /// @dev skip time to after the withdrawal cool-off period
-    // vm.warp(block.timestamp + 8 days + 1);
-    // // checkUpkeep should evaluate to true for
-    // /// @dev use withdrawalId to get request params
-    // (, bytes memory returnParams) =
-    //     address(parentPoolProxy).call(abi.encodeWithSignature("getWithdrawRequestParams(bytes32)", withdrawalId));
-    // (,,, uint256 amountToWithdraw) = abi.decode(returnParams, (address, uint256, uint256, uint256));
-    // console.log("amountToWithdraw:", amountToWithdraw);
-    // assertGt(amountToWithdraw, 0);
-    // /// @dev call the completeWithdrawal
-    // vm.prank(liquidityProvider);
-    // (bool success,) = address(parentPoolProxy).call(abi.encodeWithSignature("completeWithdrawal()"));
-    // require(success, "Function call failed");
-    //    }
 }

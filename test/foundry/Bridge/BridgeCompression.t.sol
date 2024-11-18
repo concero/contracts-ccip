@@ -198,7 +198,7 @@ contract BridgeCompressionTest is BridgeBaseTest {
 
         IDexSwap.SwapData[] memory _dstSwapData = new IDexSwap.SwapData[](1);
         IDexSwap.SwapData memory singleSwap = IDexSwap.SwapData({
-            dexType: IDexSwap.DexType.UniswapV3Single,
+            dexRouter: routerAddress,
             fromToken: usdcAvalanche,
             fromAmount: USER_FUNDS / 2,
             toToken: DAI_AVALANCHE,

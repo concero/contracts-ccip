@@ -30,7 +30,7 @@
       160
     ],
     "not-rely-on-time": "off",
-    "no-empty-blocks": "off",
+    "no-empty-blocks": "warn",
     "quotes": [
       "error",
       "double"
@@ -41,14 +41,11 @@
         "maxLength": 64
       }
     ],
+    "named-return-values": "off",
     "chainlink-solidity/prefix-internal-functions-with-underscore": "warn",
     "chainlink-solidity/prefix-private-functions-with-underscore": "warn",
-    "chainlink-solidity/prefix-storage-variables-with-s-underscore": "warn",
-    "chainlink-solidity/prefix-immutable-variables-with-i": "warn",
-    "chainlink-solidity/all-caps-constant-storage-variables": "warn",
-    "chainlink-solidity/no-hardhat-imports": "warn",
     "chainlink-solidity/inherited-constructor-args-not-in-contract-definition": "warn",
-    "chainlink-solidity/no-block-single-if-reverts": "warn",
+    "chainlink-solidity/no-block-single-if-reverts": "off",
     "chainlink-solidity/explicit-returns": "warn"
   }
 }

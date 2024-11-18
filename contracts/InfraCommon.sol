@@ -20,6 +20,7 @@ contract InfraCommon {
     uint256 internal constant USDC_DECIMALS = 1_000_000;
     uint256 internal constant STANDARD_TOKEN_DECIMALS = 1 ether;
 
+    /* IMMUTABLE VARIABLES */
     address private immutable i_msgr0;
     address private immutable i_msgr1;
     address private immutable i_msgr2;
@@ -45,7 +46,7 @@ contract InfraCommon {
      * @param _chainIndex the index of the chain
      */
 
-    function getUSDCAddressByChainIndex(
+    function _getUSDCAddressByChainIndex(
         IInfraStorage.CCIPToken tokenType,
         IInfraStorage.Chain _chainIndex
     ) internal view returns (address) {
@@ -61,20 +62,12 @@ contract InfraCommon {
                 return block.chainid == 137 ? USDC_POLYGON : USDC_POLYGON_AMOY;
             } else if (_chainIndex == IInfraStorage.Chain.avax) {
                 return USDC_AVALANCHE;
-            } else revert ChainIndexOutOfBounds();
-
-            //testnet
-        } else if (tokenType == IInfraStorage.CCIPToken.bnm) {
-            if (_chainIndex == IInfraStorage.Chain.arb)
-                return 0xA8C0c11bf64AF62CDCA6f93D3769B88BdD7cb93D;
-            else if (_chainIndex == IInfraStorage.Chain.base)
-                return 0x88A2d74F47a237a62e7A51cdDa67270CE381555e;
-            else if (_chainIndex == IInfraStorage.Chain.opt)
-                return 0x8aF4204e30565DF93352fE8E1De78925F6664dA7;
-            else if (_chainIndex == IInfraStorage.Chain.pol)
-                return 0xcab0EF91Bee323d1A617c0a027eE753aFd6997E4;
-            else revert ChainIndexOutOfBounds();
-        } else revert TokenTypeOutOfBounds();
+            } else {
+                revert ChainIndexOutOfBounds();
+            }
+        } else {
+            revert TokenTypeOutOfBounds();
+        }
     }
 
     /**
@@ -85,7 +78,7 @@ contract InfraCommon {
         return (_messenger == i_msgr0 || _messenger == i_msgr1 || _messenger == i_msgr2);
     }
 
-    function getWrappedNative() internal view returns (address _wrappedAddress) {
+    function _getWrappedNative() internal view returns (address _wrappedAddress) {
         uint256 chainId = block.chainid;
 
         if (chainId == CHAIN_ID_ARBITRUM) {

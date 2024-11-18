@@ -42,14 +42,7 @@ library LibConcero {
             revert TransferToNullAddress();
         }
 
-        //todo: this MAY be redundant, but need to check
-        uint256 balanceBefore = getBalance(token, to);
         IERC20(token).safeTransferFrom(from, to, amount);
-        uint256 balanceAfter = getBalance(token, to);
-
-        if (balanceAfter - balanceBefore != amount) {
-            revert InsufficientBalance(balanceAfter, amount);
-        }
     }
 
     // @dev Safe delegate call to target contract

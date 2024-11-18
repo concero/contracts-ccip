@@ -6,14 +6,12 @@
  */
 pragma solidity 0.8.20;
 
-import "@chainlink/contracts/src/v0.8/vendor/forge-std/src/console.sol";
-import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
-import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
-import {InfraCCIP} from "./InfraCCIP.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {InfraCCIP} from "./InfraCCIP.sol";
+import {IDexSwap} from "./Interfaces/IDexSwap.sol";
+import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
+import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 
 /* ERRORS */
 ///@notice error emitted when the input amount is less than the fees
@@ -68,17 +66,10 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
     ) external payable {
         if (address(this) != i_proxy) revert OnlyProxyContext(address(this));
         uint64 dstChainSelector = bridgeData.dstChainSelector;
-        address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
+        address fromToken = _getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
         uint256 totalSrcFee = _convertToUSDCDecimals(
             _getSrcTotalFeeInUsdc(dstChainSelector, bridgeData.amount)
         );
-
-        {
-            uint256 fee = _getSrcTotalFeeInUsdc(dstChainSelector, bridgeData.amount);
-
-            console.log("Fee", fee);
-            console.log("Total Src Fee", totalSrcFee);
-        }
 
         if (bridgeData.amount <= totalSrcFee) {
             revert InsufficientFees(bridgeData.amount, totalSrcFee);
@@ -249,7 +240,6 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         uint256 proportionalCCIPFeeInUSDC = _calculateProportionalCCIPFee(ccipFeeInUsdc, amount);
 
         uint256 conceroFee = amount / CONCERO_FEE_FACTOR;
-        console.log("Concero Fee", conceroFee);
 
         uint256 messengerDstGasInNative = HALF_DST_GAS * s_lastGasPrices[dstChainSelector];
         uint256 messengerSrcGasInNative = HALF_DST_GAS * s_lastGasPrices[i_chainSelector];

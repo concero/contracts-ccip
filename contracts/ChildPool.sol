@@ -13,7 +13,6 @@ import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.s
 import {ICCIP} from "./Interfaces/ICCIP.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IInfraOrchestrator} from "./Interfaces/IInfraOrchestrator.sol";
-import {IInfraStorage} from "./Interfaces/IInfraStorage.sol";
 import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -44,17 +43,11 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
 
     /* IMMUTABLE VARIABLES */
-    ///@notice immutable variable to store Orchestrator Proxy
     address private immutable i_infraProxy;
-    ///@notice Child Pool proxy address
     address private immutable i_childProxy;
-    ///@notice Chainlink Link Token interface
     LinkTokenInterface private immutable i_linkToken;
-    ///@notice immutable variable to store the USDC address.
     IERC20 private immutable i_USDC;
-    ///@notice Contract Owner
     address private immutable i_owner;
-    //@@notice messenger addresses
     address private immutable i_msgr0;
     address private immutable i_msgr1;
     address private immutable i_msgr2;

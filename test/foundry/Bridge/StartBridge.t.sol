@@ -7,7 +7,6 @@ import {BaseTest, console, Vm} from "../utils/BaseTest.t.sol";
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IInfraOrchestrator} from "contracts/Interfaces/IInfraOrchestrator.sol";
-import {IInfraOrchestrator} from "contracts/Interfaces/IInfraOrchestrator.sol";
 import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 import {InfraOrchestratorWrapper} from "./wrappers/InfraOrchestratorWrapper.sol";
 import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/TransparentUpgradeableProxy.sol";
@@ -119,9 +118,9 @@ contract StartBridge is BaseTest {
         );
         vm.prank(integrator);
 
-        InfraOrchestratorWrapper(payable(baseOrchestratorProxy)).withdrawIntegratorFees(
-            vm.envAddress("USDC_BASE")
-        );
+        address[] memory tokens = new address[](1);
+        tokens[0] = vm.envAddress("USDC_BASE");
+        InfraOrchestratorWrapper(payable(baseOrchestratorProxy)).withdrawIntegratorFees(tokens);
 
         uint256 usdcIntegratorBalanceAfter = IERC20(vm.envAddress("USDC_BASE")).balanceOf(
             integrator

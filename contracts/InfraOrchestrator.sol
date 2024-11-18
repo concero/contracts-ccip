@@ -29,7 +29,7 @@ error InvalidSwapData();
 error UnsupportedBridgeToken();
 error WithdrawableAmountExceedsBatchedReserves();
 error InvalidIntegratorFeeBps();
-error FailedToWithdrawIntegratorFees();
+error FailedToWithdrawIntegratorFees(address token, uint256 amount);
 
 contract InfraOrchestrator is
     IFunctionsClient,
@@ -46,17 +46,11 @@ contract InfraOrchestrator is
     uint16 internal constant INTEGRATOR_FEE_DIVISOR = 10000;
 
     /* IMMUTABLE VARIABLES */
-    ///@notice the address of Functions router
     address internal immutable i_functionsRouter;
-    ///@notice variable to store the DexSwap address
     address internal immutable i_dexSwap;
-    ///@notice variable to store the Concero address
     address internal immutable i_conceroBridge;
-    ///@notice variable to store the ConceroPool address
     address internal immutable i_pool;
-    ///@notice variable to store the immutable Proxy Address
-    address internal immutable i_proxy;
-    ///@notice ID of the deployed chain on getChain() function
+    address internal immutable i_proxy; //todo: unused
     Chain internal immutable i_chainIndex;
 
     constructor(
@@ -174,7 +168,7 @@ contract InfraOrchestrator is
         validateDstSwapData(dstSwapData, bridgeData)
         nonReentrant
     {
-        address usdc = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
+        address usdc = _getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
 
         if (srcSwapData[srcSwapData.length - 1].toToken != usdc) {
             revert InvalidSwapData();
@@ -222,7 +216,7 @@ contract InfraOrchestrator is
         validateDstSwapData(dstSwapData, bridgeData)
         nonReentrant
     {
-        address fromToken = getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
+        address fromToken = _getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
         LibConcero.transferFromERC20(fromToken, msg.sender, address(this), bridgeData.amount);
         bridgeData.amount -= _collectIntegratorFee(fromToken, bridgeData.amount, integration);
 
@@ -291,26 +285,29 @@ contract InfraOrchestrator is
         LibConcero.safeDelegateCall(i_conceroBridge, delegateCallArgs);
     }
 
-    function withdrawIntegratorFees(address token) external nonReentrant {
-        uint256 amount = s_integratorFeesAmountByToken[msg.sender][token];
-        if (amount == 0) {
-            revert FailedToWithdrawIntegratorFees();
-        }
+    /**
+     * @notice Function to withdraw integrator fees
+     * @param tokens array of token addresses to withdraw
+     */
+    function withdrawIntegratorFees(address[] memory tokens) external nonReentrant {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            address token = tokens[i];
+            uint256 amount = s_integratorFeesAmountByToken[msg.sender][token];
 
-        s_integratorFeesAmountByToken[msg.sender][token] = 0;
-        s_totalIntegratorFeesAmountByToken[token] -= amount;
+            if (amount > 0) {
+                s_integratorFeesAmountByToken[msg.sender][token] = 0;
+                s_totalIntegratorFeesAmountByToken[token] -= amount;
 
-        if (token != address(0)) {
-            IERC20(token).safeTransfer(msg.sender, amount);
-        } else {
-            (bool success, ) = msg.sender.call{value: amount}("");
+                if (token == address(0)) {
+                    (bool success, ) = msg.sender.call{value: amount}("");
+                    if (!success) revert FailedToWithdrawIntegratorFees(token, amount);
+                } else {
+                    IERC20(token).safeTransfer(msg.sender, amount);
+                }
 
-            if (!success) {
-                revert FailedToWithdrawIntegratorFees();
+                emit IntegratorFeesWithdrawn(msg.sender, token, amount);
             }
         }
-
-        emit IntegratorFeesWithdrawn(msg.sender, token, amount);
     }
 
     /**
@@ -327,7 +324,7 @@ contract InfraOrchestrator is
         uint256 balance = LibConcero.getBalance(token, address(this));
         if (balance < amount) revert InvalidAmount();
 
-        address usdc = getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
+        address usdc = _getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
 
         if (token == usdc) {
             uint256 batchedReserves;

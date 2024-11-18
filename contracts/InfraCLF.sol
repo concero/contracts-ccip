@@ -9,7 +9,6 @@ pragma solidity ^0.8.20;
 import {InfraCommon} from "./InfraCommon.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {IInfraCLF} from "./Interfaces/IInfraCLF.sol";
-import {IInfraStorage} from "./Interfaces/IInfraStorage.sol";
 import {IPool} from "./Interfaces/IPool.sol";
 import {InfraStorage} from "./Libraries/InfraStorage.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
@@ -66,14 +65,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     /* EVENTS */
 
     ///@notice emitted when a Unconfirmed TX is added by a cross-chain TX
-    event UnconfirmedTXAdded(
-        bytes32 indexed ccipMessageId,
-        address sender,
-        address recipient,
-        uint256 amount,
-        CCIPToken token,
-        uint64 srcChainSelector
-    );
+    event UnconfirmedTXAdded(bytes32 indexed ccipMessageId);
     event TXReleased(
         bytes32 indexed ccipMessageId,
         address indexed sender,
@@ -81,14 +73,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         address token,
         uint256 amount
     );
-    ///@notice emitted when on destination when a TX is validated.
-    event TXConfirmed(
-        bytes32 indexed ccipMessageId,
-        address indexed sender,
-        address indexed recipient,
-        uint256 amount,
-        CCIPToken token
-    );
+
     ///@notice emitted when a Function Request returns an error
     event CLFRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
     ///@notice emitted when the concero pool address is updated
@@ -173,8 +158,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         s_requests[reqId].isPending = true;
         s_requests[reqId].ccipMessageId = messageId;
 
-        // TODO: remove this log
-        emit UnconfirmedTXAdded(messageId, sender, recipient, amount, token, srcChainSelector);
+        emit UnconfirmedTXAdded(messageId);
     }
 
     /**
@@ -246,22 +230,12 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
 
     /**
      * @notice Internal helper function to check if the TX is valid
-     * @param ccipMessageId The CCIP message ID to be checked
      * @param transaction the storage to be updated.
      */
-    function _confirmTX(bytes32 ccipMessageId, Transaction storage transaction) internal {
+    function _confirmTX(Transaction storage transaction) internal {
         if (transaction.sender == address(0)) revert TxDoesntExist();
         if (transaction.isConfirmed == true) revert TxAlreadyConfirmed();
-
         transaction.isConfirmed = true;
-
-        emit TXConfirmed(
-            ccipMessageId,
-            transaction.sender,
-            transaction.recipient,
-            transaction.amount,
-            transaction.token
-        );
     }
 
     /**
@@ -315,9 +289,9 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     function _handleDstFunctionsResponse(Request storage request) internal {
         Transaction storage transaction = s_transactions[request.ccipMessageId];
 
-        _confirmTX(request.ccipMessageId, transaction);
+        _confirmTX(transaction);
 
-        address tokenReceived = getUSDCAddressByChainIndex(transaction.token, i_chainIndex);
+        address tokenReceived = _getUSDCAddressByChainIndex(transaction.token, i_chainIndex);
         uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
 
         if (transaction.dstSwapData.length > 1) {

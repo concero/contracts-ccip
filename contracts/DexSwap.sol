@@ -32,6 +32,8 @@ error InvalidTokenPath();
 ///@notice error emitted when the DexData is not valid
 error InvalidDexData();
 error UnwrapWNativeFailed();
+///@notice error emitted when the amount is not sufficient
+error InsufficientAmount(uint256 amount);
 
 contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
     using SafeERC20 for IERC20;

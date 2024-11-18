@@ -222,6 +222,32 @@ contract StartBridge is BaseTest {
         console.log("Gas used for send ccip batch: %d", gasUsedForSendCcipBatch);
     }
 
+    function test_bridgeFee() public {
+        uint256 bridgeAmount = 300 * USDC_DECIMALS;
+        uint256 bridgeAmountToTriggerBatch = 10000 * USDC_DECIMALS;
+
+        _setInfraClfPremiumFeeByChainSelector(
+            address(baseOrchestratorProxy),
+            arbitrumChainSelector,
+            8 * 1e16
+        );
+        _setInfraClfPremiumFeeByChainSelector(
+            address(baseOrchestratorProxy),
+            baseChainSelector,
+            7 * 1e16
+        );
+        InfraOrchestratorWrapper(payable(baseOrchestratorProxy)).setLatestLinkUsdcRate(13 * 1e18);
+
+        address user_1 = makeAddr("user_1");
+
+        // @dev send some tx for populating s_lastCcipFeeInLink variable
+        _mintUSDC(user_1, bridgeAmountToTriggerBatch);
+        _sendBridgeByUser(user_1, bridgeAmountToTriggerBatch, arbitrumChainSelector);
+
+        _mintUSDC(user_1, bridgeAmount);
+        _sendBridgeByUser(user_1, bridgeAmount, arbitrumChainSelector);
+    }
+
     /*//////////////////////////////////////////////////////////////
                                UTILS
     //////////////////////////////////////////////////////////////*/

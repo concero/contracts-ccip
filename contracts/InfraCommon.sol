@@ -17,7 +17,7 @@ error ChainNotSupported();
 
 contract InfraCommon {
     /* CONSTANT VARIABLES */
-    uint256 internal constant USDC_DECIMALS = 1_000_000; // 10 ** 6
+    uint256 internal constant USDC_DECIMALS = 1_000_000;
     uint256 internal constant STANDARD_TOKEN_DECIMALS = 1 ether;
 
     address private immutable i_msgr0;
@@ -106,10 +106,10 @@ contract InfraCommon {
     /* INTERNAL FUNCTIONS */
     /**
      * @notice Internal function to convert USDC Decimals to LP Decimals
-     * @param _amount the amount of USDC
-     * @return _adjustedAmount the adjusted amount
+     * @param amount the amount of USDC
+     * @return adjustedAmount the adjusted amount
      */
-    function _convertToUSDCDecimals(uint256 _amount) internal pure returns (uint256) {
-        return (_amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
+    function _convertToUSDCDecimals(uint256 amount) internal pure returns (uint256) {
+        return (amount * USDC_DECIMALS) / STANDARD_TOKEN_DECIMALS;
     }
 }

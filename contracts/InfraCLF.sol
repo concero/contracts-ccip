@@ -64,15 +64,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     Chain internal immutable i_chainIndex;
 
     /* EVENTS */
-    ///@notice emitted on source when a Unconfirmed TX is sent
-    event UnconfirmedTXSent(
-        bytes32 indexed ccipMessageId,
-        address sender,
-        address recipient,
-        uint256 amount,
-        CCIPToken token,
-        uint64 dstChainSelector
-    );
+
     ///@notice emitted when a Unconfirmed TX is added by a cross-chain TX
     event UnconfirmedTXAdded(
         bytes32 indexed ccipMessageId,
@@ -314,8 +306,6 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;
         s_requests[reqId].isPending = true;
         s_requests[reqId].ccipMessageId = messageId;
-
-        emit UnconfirmedTXSent(messageId, sender, recipient, amount, tokenType, dstChainSelector);
     }
 
     /**

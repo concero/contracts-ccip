@@ -16,6 +16,7 @@ import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interface
 //import {Register} from "../../../lib/chainlink-local/src/ccip/Register.sol";
 import {ConceroBridge} from "contracts/ConceroBridge.sol";
 import {InfraOrchestrator} from "contracts/InfraOrchestrator.sol";
+import {InfraStorageSetters} from "contracts/Libraries/InfraStorageSetters.sol";
 import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 //import {IOwner} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IOwner.sol";
 import {DexSwap} from "contracts/DexSwap.sol";
@@ -556,6 +557,16 @@ contract BaseTest is Test {
         );
         require(success, string(data));
     }
+
+    function _setInfraClfPremiumFeeByChainSelector(
+        address target,
+        uint64 chainSelector,
+        uint256 feeAmount
+    ) internal {
+        vm.prank(deployer);
+        InfraStorageSetters(target).setClfPremiumFees(chainSelector, feeAmount);
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 DEXSWAP
     //////////////////////////////////////////////////////////////*/

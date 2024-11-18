@@ -77,7 +77,7 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
                 destinationAddress = _recipient;
             }
 
-            _performSwap(_swapData[i], destinationAddress);
+            _performSwap(_swapData[i]);
 
             if (i < swapDataLength - 1) {
                 if (_swapData[i].toToken != _swapData[i + 1].fromToken) {
@@ -116,7 +116,7 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         return tokenAmountReceived;
     }
 
-    function _performSwap(IDexSwap.SwapData memory _swapData, address destinationAddress) private {
+    function _performSwap(IDexSwap.SwapData memory _swapData) private {
         if (_swapData.dexData.length == 0) revert EmptyDexData();
 
         address routerAddress = _swapData.dexRouter;

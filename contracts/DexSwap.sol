@@ -68,16 +68,11 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         if (address(this) != i_proxy) revert OnlyProxyContext(address(this));
 
         uint256 swapDataLength = _swapData.length;
-        address destinationAddress = address(this);
         address dstToken = _swapData[swapDataLength - 1].toToken;
         uint256 dstTokenBalanceBefore = LibConcero.getBalance(dstToken, address(this));
 
         for (uint256 i; i < swapDataLength; ) {
             uint256 preSwapBalance = LibConcero.getBalance(_swapData[i].toToken, address(this));
-
-            if (i == swapDataLength - 1) {
-                destinationAddress = _recipient;
-            }
 
             _performSwap(_swapData[i]);
 

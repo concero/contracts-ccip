@@ -88,6 +88,11 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
                     address(this)
                 );
                 uint256 remainingBalance = postSwapBalance - preSwapBalance;
+
+                if (remainingBalance < _swapData[i].toAmountMin) {
+                    revert InsufficientAmount(remainingBalance);
+                }
+
                 _swapData[i + 1].fromAmount = remainingBalance;
             }
 

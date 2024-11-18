@@ -34,6 +34,8 @@ error InvalidDexData();
 error UnwrapWNativeFailed();
 ///@notice error emitted when the amount is not sufficient
 error InsufficientAmount(uint256 amount);
+///@notice error emitted when the transfer failed
+error TransferFailed();
 
 contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
     using SafeERC20 for IERC20;
@@ -104,6 +106,14 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         //TODO: optimise this line in the future
         uint256 tokenAmountReceived = LibConcero.getBalance(dstToken, address(this)) -
             dstTokenBalanceBefore;
+
+        // if dstToken is native, send native
+        if (dstToken == address(0)) {
+            (bool sent, ) = _recipient.call{value: tokenAmountReceived}("");
+            if (!sent) revert TransferFailed();
+        } else {
+            IERC20(dstToken).safeTransfer(_recipient, tokenAmountReceived);
+        }
 
         emit ConceroSwap(
             _swapData[0].fromToken,

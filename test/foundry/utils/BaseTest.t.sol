@@ -119,7 +119,7 @@ contract BaseTest is Test {
         vm.stopPrank();
     }
 
-    function _deployChildPools() public {
+    function _deployChildPoolsAndSetToParentPool() public {
         (arbitrumChildProxy, arbitrumChildImplementation) = _deployChildPool(
             vm.envAddress("CONCERO_INFRA_PROXY_ARBITRUM"),
             vm.envAddress("LINK_ARBITRUM"),
@@ -215,7 +215,7 @@ contract BaseTest is Test {
     }
 
     function _setParentPoolVars() public {
-        _deployChildPools();
+        _deployChildPoolsAndSetToParentPool();
 
         vm.prank(deployer);
         IParentPool(address(parentPoolProxy)).setConceroContractSender(
@@ -529,16 +529,14 @@ contract BaseTest is Test {
 	   //////////////////////////////////////////////////////////////*/
 
     function _setChildPoolForParentPool(uint64 chainSelector, address childPool) internal {
-        vm.prank(deployer);
-        (bool success, bytes memory data) = address(parentPoolProxy).call(
-            abi.encodeWithSignature(
-                "setPools(uint64,address,bool)",
-                chainSelector,
-                childPool,
-                false
-            )
+        vm.startPrank(deployer);
+        ParentPool(payable(parentPoolProxy)).setPools(chainSelector, childPool, true);
+        ParentPool(payable(parentPoolProxy)).setConceroContractSender(
+            chainSelector,
+            childPool,
+            true
         );
-        require(success, string(data));
+        vm.stopPrank();
     }
 
     /*//////////////////////////////////////////////////////////////

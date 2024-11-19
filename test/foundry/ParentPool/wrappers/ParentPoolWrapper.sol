@@ -71,6 +71,12 @@ contract ParentPoolWrapper is ParentPool {
         _addDepositOnTheWay(requestId, childPoolIndex, amount);
     }
 
+    function getWithdrawalRequest(
+        bytes32 withdrawalId
+    ) external view returns (IParentPool.WithdrawRequest memory) {
+        return s_withdrawRequests[withdrawalId];
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 WITHDRAW
     //////////////////////////////////////////////////////////////*/

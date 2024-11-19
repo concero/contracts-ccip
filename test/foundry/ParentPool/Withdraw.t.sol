@@ -2,32 +2,34 @@
 
 pragma solidity 0.8.20;
 
-import {WithdrawAmountBelowMinimum} from "contracts/ParentPool.sol";
-import {BaseTest, console, Vm} from "../utils/BaseTest.t.sol";
-import {ParentPoolWrapper} from "./wrappers/ParentPoolWrapper.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {WithdrawAmountBelowMinimum} from "contracts/ParentPool.sol";
-import {FunctionsRouter, IFunctionsRouter} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsRouter.sol";
-import {FunctionsResponse} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/libraries/FunctionsResponse.sol";
-import {FunctionsCoordinator, FunctionsBillingConfig} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsCoordinator.sol";
-import {LPToken} from "contracts/LPToken.sol";
-import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
-import {ParentPool} from "contracts/ParentPool.sol";
+import {VmSafe} from "forge-std/Vm.sol";
+import {BaseTest, console} from "../utils/BaseTest.t.sol";
+import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
+import {FunctionsCoordinator, FunctionsBillingConfig} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsCoordinator.sol";
+import {FunctionsResponse} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/libraries/FunctionsResponse.sol";
+import {FunctionsRouter, IFunctionsRouter} from "@chainlink/contracts/src/v0.8/functions/dev/v1_X/FunctionsRouter.sol";
+import {IAny2EVMMessageReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol";
+import {ICCIP} from "contracts/Interfaces/ICCIP.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
+import {LPToken} from "contracts/LPToken.sol";
+import {ParentPoolWrapper} from "./wrappers/ParentPoolWrapper.sol";
+import {ParentPool} from "contracts/ParentPool.sol";
+import {ParentPoolCLFCLA} from "contracts/ParentPoolCLFCLA.sol";
 
 contract WithdrawTest is BaseTest {
     /*//////////////////////////////////////////////////////////////
                                 VARIABLES
      //////////////////////////////////////////////////////////////*/
-    address liquidityProvider = makeAddr("liquidityProvider");
-    IERC20 usdc = IERC20(address(vm.envAddress("USDC_BASE")));
-    ParentPoolWrapper parentPoolImplementationWrapper;
-    FunctionsRouter functionsRouter = FunctionsRouter(vm.envAddress("CLF_ROUTER_BASE"));
+    address internal liquidityProvider = makeAddr("liquidityProvider");
+    ParentPoolWrapper internal parentPoolImplementationWrapper;
 
-    uint256 constant LP_BALANCE_USDC = 10 * USDC_DECIMALS;
-    uint256 constant LP_BALANCE_LPT = 10 ether;
-    uint256 constant CHILD_POOLS_LIQUIDITY_USDC = 300_000 * USDC_DECIMALS;
-    uint256 constant PARENT_POOL_LIQUIDITY_USDC = 100_000 * USDC_DECIMALS;
+    uint256 internal constant LP_BALANCE_USDC = 100 * USDC_DECIMALS;
+    uint256 internal constant LP_BALANCE_LPT = 100 ether;
+    uint256 internal constant CHILD_POOLS_LIQUIDITY_USDC = 200_000 * USDC_DECIMALS;
+    uint256 internal constant PARENT_POOL_LIQUIDITY_USDC = 100_000 * USDC_DECIMALS;
+    uint256 internal constant TOTAL_LPT_MINTED = 300_000 ether;
 
     /*//////////////////////////////////////////////////////////////
                                   SETUP
@@ -37,8 +39,24 @@ contract WithdrawTest is BaseTest {
         deployParentPoolProxy();
         deployLpToken();
 
-        /// @dev deploy parentPool with withdrawWrapper
-        vm.prank(deployer);
+        address[3] memory messengers = [
+            vm.envAddress("POOL_MESSENGER_0_ADDRESS"),
+            address(0),
+            address(0)
+        ];
+
+        vm.startPrank(deployer);
+
+        parentPoolCLFCLA = new ParentPoolCLFCLA(
+            address(parentPoolProxy),
+            address(lpToken),
+            vm.envAddress("USDC_BASE"),
+            vm.envAddress("CLF_ROUTER_BASE"),
+            uint64(vm.envUint("CLF_SUBID_BASE")),
+            vm.envBytes32("CLF_DONID_BASE"),
+            messengers
+        );
+
         parentPoolImplementationWrapper = new ParentPoolWrapper(
             address(parentPoolProxy),
             address(parentPoolCLFCLA),
@@ -50,15 +68,18 @@ contract WithdrawTest is BaseTest {
             address(baseOrchestratorProxy),
             vm.envAddress("CLF_ROUTER_BASE"),
             address(deployer),
-            [vm.envAddress("POOL_MESSENGER_0_ADDRESS"), address(0), address(0)]
+            messengers
         );
 
-        _setProxyImplementation(address(parentPoolProxy), address(parentPoolImplementationWrapper));
+        vm.stopPrank();
 
-        vm.prank(address(parentPoolProxy));
-        LPToken(address(lpToken)).mint(liquidityProvider, LP_BALANCE_LPT);
-        assertEq(IERC20(lpToken).balanceOf(liquidityProvider), LP_BALANCE_LPT);
-        assertEq(IERC20(lpToken).totalSupply(), LP_BALANCE_LPT);
+        addFunctionsConsumer(address(parentPoolProxy));
+
+        _setProxyImplementation(address(parentPoolProxy), address(parentPoolImplementationWrapper));
+        _mintLpToken(liquidityProvider, LP_BALANCE_LPT);
+        _mintLpToken(makeAddr("0x0001"), TOTAL_LPT_MINTED - LP_BALANCE_LPT);
+
+        _deployChildPoolsAndSetToParentPool();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -68,9 +89,9 @@ contract WithdrawTest is BaseTest {
         uint256 lptAmountToBurn = 2 ether;
 
         vm.startPrank(liquidityProvider);
-
         IERC20(lpToken).approve(address(parentPoolProxy), lptAmountToBurn);
         ParentPool(payable(parentPoolProxy)).startWithdrawal(lptAmountToBurn);
+        vm.stopPrank();
 
         // Assert remaining balance
         uint256 expectedRemainingBalance = LP_BALANCE_LPT - lptAmountToBurn;
@@ -112,52 +133,102 @@ contract WithdrawTest is BaseTest {
         ParentPool(payable(parentPoolProxy)).startWithdrawal(LP_BALANCE_LPT);
     }
 
+    function test_completeWithdrawal() public {
+        _mintUSDC(address(parentPoolProxy), PARENT_POOL_LIQUIDITY_USDC);
+
+        bytes32 withdrawRequestId = _startWithdrawal(LP_BALANCE_LPT, liquidityProvider);
+
+        IParentPool.WithdrawRequest memory withdrawalRequest = ParentPoolWrapper(
+            payable(parentPoolProxy)
+        ).getWithdrawalRequest(withdrawRequestId);
+
+        ICCIP.CcipTxData memory ccipTxData = ICCIP.CcipTxData({
+            ccipTxType: ICCIP.CcipTxType.withdrawal,
+            data: abi.encode(withdrawRequestId)
+        });
+        Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](1);
+        destTokenAmounts[0] = Client.EVMTokenAmount({
+            token: vm.envAddress("USDC_BASE"),
+            amount: withdrawalRequest.remainingLiquidityFromChildPools / 2
+        });
+        Client.Any2EVMMessage memory message = Client.Any2EVMMessage({
+            messageId: keccak256(abi.encodePacked(withdrawRequestId, arbitrumChainSelector)),
+            sourceChainSelector: arbitrumChainSelector,
+            sender: abi.encode(address(arbitrumChildProxy)),
+            data: abi.encode(ccipTxData),
+            destTokenAmounts: destTokenAmounts
+        });
+
+        uint256 lpUsdcBalanceBefore = IERC20(vm.envAddress("USDC_BASE")).balanceOf(
+            liquidityProvider
+        );
+        _prankCcipReceive(address(parentPoolProxy), message);
+
+        message.sourceChainSelector = avalancheChainSelector;
+        message.sender = abi.encode(address(avalancheChildProxy));
+        message.messageId = keccak256(abi.encodePacked(withdrawRequestId, avalancheChainSelector));
+
+        _prankCcipReceive(address(parentPoolProxy), message);
+
+        uint256 lpUsdcBalanceAfter = IERC20(vm.envAddress("USDC_BASE")).balanceOf(
+            liquidityProvider
+        );
+
+        IParentPool.WithdrawRequest memory request = ParentPoolWrapper(payable(parentPoolProxy))
+            .getWithdrawalRequest(withdrawRequestId);
+
+        assertEq(lpUsdcBalanceAfter - lpUsdcBalanceBefore, LP_BALANCE_USDC);
+    }
+
     /*//////////////////////////////////////////////////////////////
 		                         UTILS
      //////////////////////////////////////////////////////////////*/
 
-    function _startWithdrawalAndMonitorLogs()
-        internal
-        returns (bytes32 requestId, uint32 callbackGasLimit, uint96 estimatedTotalCostJuels)
-    {
-        uint256 lptAmountToBurn = 2 ether;
-        /// @dev record the logs so we can find the CLF request ID
+    function _startWithdrawal(uint256 lpAmountToWithdraw, address lp) internal returns (bytes32) {
         vm.recordLogs();
 
-        /// @dev approve the pool to spend LP tokens
-        vm.startPrank(liquidityProvider);
-        IERC20(lpToken).approve(address(parentPoolProxy), lptAmountToBurn);
+        vm.startPrank(lp);
+        IERC20(lpToken).approve(address(parentPoolProxy), LP_BALANCE_LPT);
+        ParentPool(payable(parentPoolProxy)).startWithdrawal(lpAmountToWithdraw);
+        vm.stopPrank();
 
-        /// @dev call startWithdrawal via proxy
-        vm.startPrank(liquidityProvider);
-        ParentPool(payable(parentPoolProxy)).startWithdrawal(lptAmountToBurn);
+        VmSafe.Log[] memory logs = vm.getRecordedLogs();
 
-        /// @dev get and verify logs
-        Vm.Log[] memory entries = vm.getRecordedLogs();
-        assertEq(entries.length, 6);
-        /// @dev find the RequestStart log and params we need for commitment
-        for (uint256 i = 0; i < entries.length; ++i) {
-            if (
-                entries[i].topics[0] ==
+        bytes32 withdrawRequestId;
+        bytes32 clfRequestId;
+
+        // 100_000,_000_000
+
+        for (uint256 i; i < logs.length; i++) {
+            bytes32 topic = logs[i].topics[0];
+            if (topic == keccak256("WithdrawalRequestInitiated(bytes32,address,uint256)")) {
+                withdrawRequestId = logs[i].topics[1];
+            } else if (
+                topic ==
                 keccak256(
                     "RequestStart(bytes32,bytes32,uint64,address,address,address,bytes,uint16,uint32,uint96)"
                 )
             ) {
-                /// @dev get the values we need
-                requestId = entries[i].topics[1];
-                (, , , , , callbackGasLimit, estimatedTotalCostJuels) = abi.decode(
-                    entries[i].data,
-                    (address, address, address, bytes, uint16, uint32, uint96)
-                );
-                break;
+                clfRequestId = logs[i].topics[1];
             }
         }
 
-        return (requestId, callbackGasLimit, estimatedTotalCostJuels);
+        if (withdrawRequestId == bytes32(0)) {
+            revert("Withdrawal request not initiated");
+        }
+
+        _fulfillRequest(clfRequestId, abi.encode(CHILD_POOLS_LIQUIDITY_USDC));
+
+        return withdrawRequestId;
     }
 
     function _fulfillRequest(bytes32 requestId, bytes memory response) internal {
         vm.prank(vm.envAddress("CLF_ROUTER_BASE"));
         FunctionsClient(address(parentPoolProxy)).handleOracleFulfillment(requestId, response, "");
+    }
+
+    function _prankCcipReceive(address receiver, Client.Any2EVMMessage memory message) internal {
+        vm.prank(vm.envAddress("CL_CCIP_ROUTER_BASE"));
+        IAny2EVMMessageReceiver(receiver).ccipReceive(message);
     }
 }

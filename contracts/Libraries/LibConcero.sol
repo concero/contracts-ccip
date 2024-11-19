@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 error UnableToCompleteDelegateCall(bytes data);
+error InvalidAddress();
 
 library LibConcero {
     using SafeERC20 for IERC20;
@@ -52,6 +53,10 @@ library LibConcero {
     // @param args The data to send to the target contract
 
     function safeDelegateCall(address target, bytes memory args) internal returns (bytes memory) {
+        if (target == address(0)) {
+            revert InvalidAddress();
+        }
+
         (bool success, bytes memory response) = target.delegatecall(args);
         if (!success) {
             revert UnableToCompleteDelegateCall(args);

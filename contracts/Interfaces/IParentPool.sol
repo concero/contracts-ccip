@@ -70,12 +70,7 @@ interface IParentPool is IPool {
     /* EVENTS */
 
     ///@notice event emitted when a new withdraw request is made
-    event WithdrawalRequestInitiated(
-        bytes32 indexed requestId,
-        address caller,
-        IERC20 token,
-        uint256 deadline
-    );
+    event WithdrawalRequestInitiated(bytes32 indexed requestId, address caller, uint256 deadline);
     ///@notice event emitted when a value is withdraw from the contract
     event WithdrawalCompleted(
         bytes32 indexed requestId,

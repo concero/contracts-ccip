@@ -52,6 +52,7 @@ error NotContractOwner(address);
 error OnlyRouterCanFulfill(address);
 error CallerNotAllowed(address);
 error MsgSigNotMatched(bytes4 sig);
+error NotUsdcToken();
 
 contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolStorage {
     /* TYPE DECLARATIONS */
@@ -383,7 +384,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         emit WithdrawalRequestInitiated(
             withdrawalId,
             msg.sender,
-            i_USDC,
             block.timestamp + WITHDRAWAL_COOLDOWN_SECONDS
         );
     }
@@ -653,6 +653,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
+        if (ccipReceivedToken != address(i_USDC)) {
+            revert NotUsdcToken();
+        }
+
         if (ccipTxData.ccipTxType == ICCIP.CcipTxType.batchedSettlement) {
             IConceroBridge.CcipSettlementTx[] memory settlementTx = abi.decode(
                 ccipTxData.data,
@@ -666,7 +670,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
                 if (isTxConfirmed) {
                     s_loansInUse -= ccipReceivedAmount;
                 } else {
-                    // We don't subtract it here because the loan was not performed.
+                    // @notice We don't subtract it here because the loan was not performed.
                     // And the value is not added into the `s_loanInUse` variable.
                     i_USDC.safeTransfer(settlementTx[i].recipient, settlementTx[i].amount);
                 }

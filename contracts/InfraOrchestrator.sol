@@ -168,7 +168,7 @@ contract InfraOrchestrator is
         validateDstSwapData(dstSwapData, bridgeData)
         nonReentrant
     {
-        address usdc = _getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
+        address usdc = _getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
 
         if (srcSwapData[srcSwapData.length - 1].toToken != usdc) {
             revert InvalidSwapData();
@@ -216,7 +216,7 @@ contract InfraOrchestrator is
         validateDstSwapData(dstSwapData, bridgeData)
         nonReentrant
     {
-        address fromToken = _getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
+        address fromToken = _getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
         LibConcero.transferFromERC20(fromToken, msg.sender, address(this), bridgeData.amount);
         bridgeData.amount -= _collectIntegratorFee(fromToken, bridgeData.amount, integration);
 
@@ -352,19 +352,13 @@ contract InfraOrchestrator is
         }
     }
 
-    function getTransaction(
-        bytes32 _conceroBridgeTxId
-    ) external view returns (Transaction memory transaction) {
-        transaction = s_transactions[_conceroBridgeTxId];
-    }
-
-    function isTxConfirmed(bytes32 _txId) external view returns (bool) {
-        Transaction storage transaction = s_transactions[_txId];
-
-        if (transaction.messageId == bytes32(0)) {
+    function isTxConfirmed(bytes32 _conceroMessageId) external view returns (bool) {
+        bytes32 txDataHash = s_transactions[_conceroMessageId].txDataHash;
+        if (txDataHash == bytes32(0)) {
             return false;
         }
-        if (!transaction.isConfirmed) {
+        bool isConfirmed = s_transactions[_conceroMessageId].isConfirmed;
+        if (!isConfirmed) {
             return false;
         }
         return true;

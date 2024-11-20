@@ -13,10 +13,6 @@ interface IInfraOrchestrator {
     event IntegratorFeesCollected(address indexed integrator, address token, uint256 amount);
     event IntegratorFeesWithdrawn(address indexed integrator, address token, uint256 amount);
 
-    function getTransaction(
-        bytes32 _conceroBridgeTxId
-    ) external view returns (IInfraStorage.Transaction memory transaction);
-
     function isTxConfirmed(bytes32 _txId) external view returns (bool);
 }
 

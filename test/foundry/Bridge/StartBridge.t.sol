@@ -89,10 +89,9 @@ contract StartBridge is BaseTest {
         });
 
         IInfraStorage.BridgeData memory bridgeData = IInfraStorage.BridgeData({
-            tokenType: IInfraStorage.CCIPToken.usdc,
-            amount: bridgeAmount,
             dstChainSelector: arbitrumChainSelector,
-            receiver: makeAddr("receiver1")
+            receiver: makeAddr("receiver1"),
+            amount: bridgeAmount
         });
 
         IDexSwap.SwapData[] memory dstSwapData = new IDexSwap.SwapData[](0);
@@ -153,10 +152,9 @@ contract StartBridge is BaseTest {
             InfraOrchestratorWrapper(payable(baseOrchestratorProxy)).swapDataToBytes(dstSwapData)
         );
         IInfraStorage.BridgeData memory bridgeData = IInfraStorage.BridgeData({
-            tokenType: IInfraStorage.CCIPToken.usdc,
-            amount: bridgeAmount,
             dstChainSelector: arbitrumChainSelector,
-            receiver: receiver
+            receiver: receiver,
+            amount: bridgeAmount
         });
 
         _mintUSDC(user_1, bridgeAmount);
@@ -262,10 +260,9 @@ contract StartBridge is BaseTest {
             feeBps: 0
         });
         IInfraStorage.BridgeData memory bridgeData = IInfraStorage.BridgeData({
-            tokenType: IInfraStorage.CCIPToken.usdc,
-            amount: bridgeAmount,
             dstChainSelector: dstChainSelector,
-            receiver: user
+            receiver: user,
+            amount: bridgeAmount
         });
 
         _approve(user, vm.envAddress("USDC_BASE"), address(baseOrchestratorProxy), bridgeAmount);

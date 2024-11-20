@@ -29,14 +29,13 @@ interface IInfraStorage {
     struct Request {
         RequestType requestType;
         bool isPending;
-        bytes32 ccipMessageId;
+        bytes32 conceroMessageId;
     }
 
     struct BridgeData {
-        CCIPToken tokenType;
-        uint256 amount;
         uint64 dstChainSelector;
         address receiver;
+        uint256 amount;
     }
 
     ///@notice `ccipSend` to distribute liquidity
@@ -45,16 +44,15 @@ interface IInfraStorage {
         address poolAddress;
     }
 
-    ///@notice Chainlink Functions Transaction
     struct Transaction {
-        bytes32 messageId;
-        address sender;
-        address recipient;
-        uint256 amount;
-        CCIPToken token;
-        uint64 srcChainSelector;
+        bytes32 txDataHash;
+        address sender_DEPRECATED;
+        address recipient_DEPRECATED;
+        uint256 amount_DEPRECATED;
+        CCIPToken token_DEPRECATED;
+        uint64 srcChainSelector_DEPRECATED;
         bool isConfirmed;
-        bytes dstSwapData;
+        bytes dstSwapData_DEPRECATED;
     }
 
     ///@notice Chainlink Functions Variables

@@ -35,9 +35,9 @@ abstract contract InfraStorage is ReentrancyGuard, IInfraStorage {
     ///@notice Functions: Mapping to keep track of Concero.sol contracts to send cross-chain Chainlink Functions messages
     mapping(uint64 chainSelector => address conceroContract) public s_conceroContracts;
     ///@notice Functions: Mapping to keep track of cross-chain transactions
-    mapping(bytes32 => Transaction) public s_transactions;
+    mapping(bytes32 conceroMessageId => Transaction) public s_transactions;
     ///@notice Functions: Mapping to keep track of Chainlink Functions requests
-    mapping(bytes32 => Request) public s_requests;
+    mapping(bytes32 clfRequestId => Request) public s_requests;
     ///@notice Functions: Mapping to keep track of cross-chain gas prices
     mapping(uint64 chainSelector => uint256 lastGasPrice) public s_lastGasPrices;
 

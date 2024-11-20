@@ -11,13 +11,8 @@ interface IInfraCLF is IInfraStorage {
     ) external;
 
     function addUnconfirmedTX(
-        bytes32 ccipMessageId,
-        address sender,
-        address recipient,
-        uint256 amount,
+        bytes32 conceroMessageId,
         uint64 srcChainSelector,
-        CCIPToken token,
-        uint256 blockNumber,
-        bytes calldata dstSwapData
+        bytes32 txDataHash
     ) external;
 }

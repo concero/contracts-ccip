@@ -69,9 +69,10 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
 
         uint256 swapDataLength = _swapData.length;
         address dstToken = _swapData[swapDataLength - 1].toToken;
-        uint256 dstTokenBalanceBefore = LibConcero.getBalance(dstToken, address(this));
+        uint256 recipientBalanceBefore = LibConcero.getBalance(dstToken, _recipient);
 
         for (uint256 i; i < swapDataLength; ) {
+            //seems to be useless
             uint256 preSwapBalance = LibConcero.getBalance(_swapData[i].toToken, address(this));
 
             _performSwap(_swapData[i]);
@@ -80,6 +81,7 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
                 if (_swapData[i].toToken != _swapData[i + 1].fromToken) {
                     revert InvalidTokenPath();
                 }
+                //seems to be useless
                 uint256 postSwapBalance = LibConcero.getBalance(
                     _swapData[i].toToken,
                     address(this)
@@ -98,44 +100,37 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
             }
         }
 
-        //TODO: optimise this line in the future
-        uint256 tokenAmountReceived = LibConcero.getBalance(dstToken, address(this)) -
-            dstTokenBalanceBefore;
-
-        // if dstToken is native, send native
-        if (dstToken == address(0)) {
-            (bool sent, ) = _recipient.call{value: tokenAmountReceived}("");
-            if (!sent) revert TransferFailed();
-        } else {
-            IERC20(dstToken).safeTransfer(_recipient, tokenAmountReceived);
-        }
+        uint256 recipientBalanceAfter = LibConcero.getBalance(dstToken, _recipient);
+        uint256 dstTokenRecieved = recipientBalanceAfter - recipientBalanceBefore;
 
         emit ConceroSwap(
             _swapData[0].fromToken,
-            _swapData[swapDataLength - 1].toToken,
+            dstToken,
             _swapData[0].fromAmount,
-            tokenAmountReceived,
+            dstTokenRecieved,
             _recipient
         );
 
-        return tokenAmountReceived;
+        return dstTokenRecieved;
     }
 
     function _performSwap(IDexSwap.SwapData memory _swapData) private {
         if (_swapData.dexData.length == 0) revert EmptyDexData();
 
         address routerAddress = _swapData.dexRouter;
-        uint256 fromAmount = _swapData.fromAmount;
-
         if (!s_routerAllowed[routerAddress]) revert DexRouterNotAllowed();
+
+        uint256 fromAmount = _swapData.fromAmount;
         bool isFromNative = _swapData.fromToken == address(0);
 
-        if (!isFromNative) {
+        bool success;
+        if (isFromNative) {
+            (success, ) = routerAddress.call{value: fromAmount}(_swapData.dexData);
+        } else {
             IERC20(_swapData.fromToken).safeIncreaseAllowance(routerAddress, fromAmount);
-            fromAmount = 0;
+            (success, ) = routerAddress.call(_swapData.dexData);
         }
 
-        (bool success, ) = routerAddress.call{value: fromAmount}(_swapData.dexData);
         if (!success) revert InvalidDexData();
     }
 

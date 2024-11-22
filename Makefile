@@ -38,6 +38,9 @@ run_arb_fork:
 run_polygon_fork:
 	anvil --fork-url ${POLYGON_RPC_URL} -p ${POLYGON_LOCAL_FORK_PORT} $(args)
 
+run_avalanche_fork:
+	anvil --fork-url ${AVALANCHE_RPC_URL} -p ${AVALANCHE_LOCAL_FORK_PORT} $(args)
+
 test:
 	forge test $(args)
 

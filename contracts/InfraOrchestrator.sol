@@ -27,11 +27,9 @@ error InvalidBridgeData();
 error InvalidSwapData();
 ///@notice error emitted when the token to bridge is not USDC
 error UnsupportedBridgeToken();
-error WithdrawableAmountExceedsBatchedReserves();
 error InvalidIntegratorFeeBps();
-error FailedToWithdrawIntegratorFees(address token, uint256 amount);
-error TxAlreadyConfirmed();
-error OnlyPool();
+error InvalidRecipient();
+error TransferFailed();
 
 contract InfraOrchestrator is
     IFunctionsClient,
@@ -276,7 +274,7 @@ contract InfraOrchestrator is
 
                 if (token == address(0)) {
                     (bool success, ) = msg.sender.call{value: amount}("");
-                    if (!success) revert FailedToWithdrawIntegratorFees(token, amount);
+                    if (!success) revert TransferFailed();
                 } else {
                     IERC20(token).safeTransfer(msg.sender, amount);
                 }
@@ -289,48 +287,67 @@ contract InfraOrchestrator is
     /**
      * @notice Function to allow Concero Team to withdraw fees
      * @param recipient the recipient address
-     * @param token the token to withdraw
-     * @param amount the amount to withdraw
+     * @param tokens array of token addresses to withdraw
      */
     function withdrawConceroFees(
         address recipient,
-        address token,
-        uint256 amount
-    ) external payable onlyOwner {
-        uint256 balance = LibConcero.getBalance(token, address(this));
-        if (balance < amount) revert InvalidAmount();
-
+        address[] calldata tokens
+    ) external payable onlyOwner nonReentrant {
+        if (recipient == address(0)) {
+            revert InvalidRecipient();
+        }
         address usdc = _getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
 
-        if (token == usdc) {
-            uint256 batchedReserves;
-            uint64[SUPPORTED_CHAINS_COUNT] memory chainSelectors = [
-                CHAIN_SELECTOR_ARBITRUM,
-                CHAIN_SELECTOR_BASE,
-                CHAIN_SELECTOR_OPTIMISM,
-                CHAIN_SELECTOR_POLYGON,
-                CHAIN_SELECTOR_AVALANCHE
-            ];
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            address token = tokens[i];
+            uint256 balance = LibConcero.getBalance(token, address(this));
+            uint256 integratorFees = s_totalIntegratorFeesAmountByToken[token];
+            uint256 availableBalance = balance - integratorFees;
 
-            for (uint256 i; i < SUPPORTED_CHAINS_COUNT; ++i) {
-                batchedReserves += s_pendingSettlementTxAmountByDstChain[chainSelectors[i]];
+            if (token == usdc) {
+                uint256 batchedReserves;
+                uint64[SUPPORTED_CHAINS_COUNT] memory chainSelectors = [
+                    CHAIN_SELECTOR_ARBITRUM,
+                    CHAIN_SELECTOR_BASE,
+                    CHAIN_SELECTOR_OPTIMISM,
+                    CHAIN_SELECTOR_POLYGON,
+                    CHAIN_SELECTOR_AVALANCHE
+                ];
+                for (uint256 j = 0; j < SUPPORTED_CHAINS_COUNT; ++j) {
+                    batchedReserves += s_pendingSettlementTxAmountByDstChain[chainSelectors[j]];
+                }
+                availableBalance -= batchedReserves;
+                if (availableBalance <= 0) {
+                    revert InvalidAmount();
+                }
+                LibConcero.transferERC20(usdc, availableBalance, recipient);
+            } else {
+                if (availableBalance <= 0) {
+                    revert InvalidAmount();
+                }
+
+                if (token == address(0)) {
+                    (bool success, ) = payable(recipient).call{value: availableBalance}("");
+                    if (!success) {
+                        revert TransferFailed();
+                    }
+                } else {
+                    LibConcero.transferERC20(token, availableBalance, recipient);
+                }
             }
-
-            if (amount > balance - batchedReserves) {
-                revert WithdrawableAmountExceedsBatchedReserves();
-            }
-        }
-
-        if (token == address(0)) {
-            payable(recipient).transfer(amount);
-        } else {
-            LibConcero.transferERC20(token, amount, recipient);
         }
     }
 
-    function isTxConfirmed(bytes32 _conceroMessageId) external view returns (bool) {
-        bytes32 txDataHash = s_transactions[_conceroMessageId].txDataHash;
-        if (txDataHash == bytes32(0)) {
+    function getTransaction(
+        bytes32 _conceroBridgeTxId
+    ) external view returns (Transaction memory transaction) {
+        transaction = s_transactions[_conceroBridgeTxId];
+    }
+
+    function isTxConfirmed(bytes32 _txId) external view returns (bool) {
+        Transaction storage transaction = s_transactions[_txId];
+
+        if (transaction.messageId == bytes32(0)) {
             return false;
         }
         bool isConfirmed = s_transactions[_conceroMessageId].isConfirmed;

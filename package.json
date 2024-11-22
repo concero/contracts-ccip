@@ -17,7 +17,7 @@
     "format:sol": "prettier --write ./*.sol ./contracts/**/*.sol ./test/**/*.sol",
     "clean:hardhat": "rm -rf ./artifacts ./cache ./coverage ./typechain-types ./deployments",
     "clean:forge": "forge clean",
-    "clean": "npm run clean:hardhat && npm run clean:foundry",
+    "clean": "npm run clean:hardhat && npm run clean:forge",
     "prepare": "husky"
   },
 
@@ -62,7 +62,7 @@
     "@chainlink/solhint-plugin-chainlink-solidity": "^1.0.1",
     "@nomicfoundation/hardhat-viem": "^2.0.3",
     "@openzeppelin/contracts": "5.0.2",
-    "@tenderly/hardhat-tenderly": "^2.4.0",
+    "@tenderly/hardhat-tenderly": "^2.5.1",
     "@typechain/ethers-v6": "^0.5.1",
     "@uniswap/swap-router-contracts": "https://github.com/Uniswap/swap-router-contracts",
     "@uniswap/v2-periphery": "https://github.com/Uniswap/v2-periphery",

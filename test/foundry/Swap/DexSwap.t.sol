@@ -9,8 +9,8 @@ import {IInfraOrchestrator} from "../../../contracts/Interfaces/IInfraOrchestrat
 import {InfraOrchestrator} from "../../../contracts/InfraOrchestrator.sol";
 
 contract DexSwapTest is BaseTest {
-    uint256 internal constant WETH_DECIMALS = 18;
     address internal constant ETH_TOKEN = address(0);
+    address internal constant POL_TOKEN = address(0);
 
     // Base tokens
     address internal usdcTokenBase = vm.envAddress("USDC_BASE");
@@ -23,6 +23,14 @@ contract DexSwapTest is BaseTest {
     address internal usdcTokenArbitrum = vm.envAddress("USDC_ARBITRUM");
     address internal usdtTokenArbitrum = vm.envAddress("USDT_ARBITRUM");
     address internal wethTokenArbitrum = vm.envAddress("WETH_ARBITRUM");
+
+    //Polygon tokens
+    address internal usdcTokenPolygon = vm.envAddress("USDC_POLYGON");
+    address internal wethTokenPolygon = vm.envAddress("WETH_POLYGON");
+
+    //Avalanche tokens
+    address internal usdcTokenAvalanche = vm.envAddress("USDC_AVALANCHE");
+    address internal wavaxTokenAvalanche = vm.envAddress("WAVAX_AVALANCHE");
 
     //Arbitrum Routers
     address internal sushiRouterArbitrum = vm.envAddress("SUSHISWAP_ROUTER_ARBITRUM_ADDRESS");
@@ -38,19 +46,21 @@ contract DexSwapTest is BaseTest {
     address internal curveRouterBase = vm.envAddress("CURVE_ROUTER_BASE_ADDRESS");
     address internal alienbaseRouterBase = vm.envAddress("ALIENBASE_ROUTER_BASE_ADDRESS");
 
+    //Polygon Routers
+    address internal quickSwapRouterPolygon = vm.envAddress("QUICKSWAP_ROUTER_POLYGON_ADDRESS");
+
+    //Avalanche Routers
+    address internal pangolinRouterAvalanche = vm.envAddress("PANGOLIN_ROUTER_AVALANCHE_ADDRESS");
+
     address payable internal sender = payable(makeAddr("sender"));
-    address internal recipient = makeAddr("recipient");
     address internal integrator = makeAddr("integrator");
 
-    uint256 internal constant USDC_INITIAL_BALANCE = 10 * USDC_DECIMALS;
-    uint256 internal constant ETH_INITIAL_BALANCE = 0.01 ether;
-
-    modifier addRouterInWL(address router, address proxy) {
+    modifier addRouterInWhiteList(address router, address proxy) {
         _allowRouter(router, address(proxy));
         _;
     }
 
-    function setUp() public override setFork(arbitrumAnvilForkId) {
+    function setUp() public override setFork(polygonAnvilForkId) {
         super.setUp();
     }
 
@@ -62,9 +72,11 @@ contract DexSwapTest is BaseTest {
     //////////////////////////////////////////////////////////
 
     //passed
-    function test_dexSwapAlienbaseRouterETHToUSDCBase() public setFork(baseAnvilForkId) {
-        _allowRouter(alienbaseRouterBase, address(baseOrchestratorProxy));
-
+    function test_dexSwapAlienbaseRouterETHToUSDCBase()
+        public
+        setFork(baseAnvilForkId)
+        addRouterInWhiteList(alienbaseRouterBase, address(baseOrchestratorProxy))
+    {
         uint256 fromAmount = 0.1 ether;
         uint256 toAmount = 267.528449e6;
         uint256 toAmountMin = 266.190806e6;
@@ -87,10 +99,12 @@ contract DexSwapTest is BaseTest {
     }
 
     //passed
-    function test_dexSwapAlienbaseRouterUSDCToWETHBase() public setFork(baseAnvilForkId) {
-        _allowRouter(alienbaseRouterBase, address(baseOrchestratorProxy));
-
-        uint256 fromAmount = 10e6; //1 usdc
+    function test_dexSwapAlienbaseRouterUSDCToWETHBase()
+        public
+        setFork(baseAnvilForkId)
+        addRouterInWhiteList(alienbaseRouterBase, address(baseOrchestratorProxy))
+    {
+        uint256 fromAmount = 10e6; //10 usdc
         uint256 toAmount = 0.002945698049459263e18;
         uint256 toAmountMin = 0.002930969559211966e18;
 
@@ -112,9 +126,11 @@ contract DexSwapTest is BaseTest {
     }
 
     //passed
-    function test_dexSwapAlienbaseRouterUSDCToETHBase() public setFork(baseAnvilForkId) {
-        _allowRouter(alienbaseRouterBase, address(baseOrchestratorProxy));
-
+    function test_dexSwapAlienbaseRouterUSDCToETHBase()
+        public
+        setFork(baseAnvilForkId)
+        addRouterInWhiteList(alienbaseRouterBase, address(baseOrchestratorProxy))
+    {
         uint256 fromAmount = 10e6;
         uint256 toAmount = 0.002945698049459263 ether;
         uint256 toAmountMin = 0.002930969559211966 ether;
@@ -141,9 +157,11 @@ contract DexSwapTest is BaseTest {
     //////////////////////////////////////////////////////////
 
     //passed
-    function test_dexSwapCurveRouterUSDCToWETHBase() public setFork(baseAnvilForkId) {
-        _allowRouter(curveRouterBase, address(baseOrchestratorProxy));
-
+    function test_dexSwapCurveRouterUSDCToWETHBase()
+        public
+        setFork(baseAnvilForkId)
+        addRouterInWhiteList(curveRouterBase, address(baseOrchestratorProxy))
+    {
         uint256 fromAmount = 10e6; //1 usdc
         uint256 toAmount = 0.002950528095025959e18;
         uint256 toAmountMin = 0.002935775454550829e18;
@@ -166,9 +184,11 @@ contract DexSwapTest is BaseTest {
     }
 
     //not working
-    function test_dexSwapCurveRouterETHToUSDCBase() public setFork(baseAnvilForkId) {
-        _allowRouter(curveRouterBase, address(baseOrchestratorProxy));
-
+    function test_dexSwapCurveRouterETHToUSDCBase()
+        public
+        setFork(baseAnvilForkId)
+        addRouterInWhiteList(curveRouterBase, address(baseOrchestratorProxy))
+    {
         uint256 fromAmount = 0.0003 ether;
         uint256 toAmount = 0.993336e6;
         uint256 toAmountMin = 0.988369e6;
@@ -191,10 +211,11 @@ contract DexSwapTest is BaseTest {
     }
 
     //passed
-    function test_dexSwapCurveRouterUSDCToETHBase() public setFork(baseAnvilForkId) {
-        _allowRouter(curveRouterBase, address(baseOrchestratorProxy));
-        address vyperEth = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
-
+    function test_dexSwapCurveRouterUSDCToETHBase()
+        public
+        setFork(baseAnvilForkId)
+        addRouterInWhiteList(curveRouterBase, address(baseOrchestratorProxy))
+    {
         uint256 fromAmount = 1e6;
         uint256 toAmount = 0.00029502055232845 ether;
         uint256 toAmountMin = 0.000293545449566807 ether;
@@ -221,9 +242,11 @@ contract DexSwapTest is BaseTest {
     //////////////////////////////////////////////////////////
 
     //passed
-    function test_dexSwapOdosRouterV2USDCToWETHBase() public setFork(baseAnvilForkId) {
-        _allowRouter(odosRouterV2Base, address(baseOrchestratorProxy));
-
+    function test_dexSwapOdosRouterV2USDCToWETHBase()
+        public
+        setFork(baseAnvilForkId)
+        addRouterInWhiteList(odosRouterV2Base, address(baseOrchestratorProxy))
+    {
         uint256 fromAmount = 1e6; //1 usdc
         uint256 toAmount = 0.000295473686245412e18;
         uint256 toAmountMin = 0.000293996317814184e18;
@@ -245,10 +268,12 @@ contract DexSwapTest is BaseTest {
         _callTestWithRouter(swapData, address(baseOrchestratorProxy));
     }
 
-    //dont work with native
-    function test_dexSwapOdosRouterV2ETHToUSDCBase() public setFork(baseAnvilForkId) {
-        _allowRouter(odosRouterV2Base, address(baseOrchestratorProxy));
-
+    //doesnt work with native
+    function test_dexSwapOdosRouterV2ETHToUSDCBase()
+        public
+        setFork(baseAnvilForkId)
+        addRouterInWhiteList(odosRouterV2Base, address(baseOrchestratorProxy))
+    {
         uint256 fromAmount = 0.001 ether;
         uint256 toAmount = 3.355603e6;
         uint256 toAmountMin = 3.338824e6;
@@ -274,9 +299,11 @@ contract DexSwapTest is BaseTest {
     //////////////////  1Inch ////////////////////////
     //////////////////////////////////////////////////////////
 
-    function test_dexSwap1InchV5USDCTo1InchTokenBase() public setFork(baseAnvilForkId) {
-        _allowRouter(oneInchRouterV5Base, address(baseOrchestratorProxy));
-
+    function test_dexSwap1InchV5USDCTo1InchTokenBase()
+        public
+        setFork(baseAnvilForkId)
+        addRouterInWhiteList(oneInchRouterV5Base, address(baseOrchestratorProxy))
+    {
         uint256 fromAmount = 10e6; //10 usdc
         uint256 toAmount = 29.186618652079786377e18;
         uint256 toAmountMin = 29.040685558819387445e18;
@@ -306,9 +333,11 @@ contract DexSwapTest is BaseTest {
     //////////////////////////////////////////////////////////
 
     //passed
-    function test_dexSwapSushiSwapRouterUSDCToUSDT() public setFork(arbitrumAnvilForkId) {
-        _allowRouter(sushiRouterArbitrum, address(arbitrumOrchestratorProxy));
-
+    function test_dexSwapSushiSwapRouterUSDCToUSDT()
+        public
+        setFork(arbitrumAnvilForkId)
+        addRouterInWhiteList(sushiRouterArbitrum, address(arbitrumOrchestratorProxy))
+    {
         uint256 fromAmount = 1e6; //1 usdc
         uint256 toAmount = 0.993041e6;
         uint256 toAmountMin = 0.988075e6;
@@ -331,12 +360,14 @@ contract DexSwapTest is BaseTest {
     }
 
     //passed
-    function test_dexSwapSushiSwapRouterUSDCToWETH() public setFork(arbitrumAnvilForkId) {
-        _allowRouter(sushiRouterArbitrum, address(arbitrumOrchestratorProxy));
-
+    function test_dexSwapSushiSwapRouterUSDCToWETH()
+        public
+        setFork(arbitrumAnvilForkId)
+        addRouterInWhiteList(sushiRouterArbitrum, address(arbitrumOrchestratorProxy))
+    {
         uint256 fromAmount = 1e6; //1 usdc
-        uint256 toAmount = 0.00029991786617675 ether;
-        uint256 toAmountMin = 0.000298418276845866 ether;
+        uint256 toAmount = 0.00029991786617675e18;
+        uint256 toAmountMin = 0.000298418276845866e18;
 
         bytes
             memory dexData = hex"38ed173900000000000000000000000000000000000000000000000000000000000f381a00000000000000000000000000000000000000000000000000010f68f44ac36b00000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000cd1722f3947def4cf144679da39c4c32bdc3568100000000000000000000000000000000000000000000000000000000673f697d0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000af88d065e77c8cc2239327c5edb3a432268e583100000000000000000000000082af49447d8a07e3bd95bd0d56f35241523fbab1";
@@ -356,10 +387,11 @@ contract DexSwapTest is BaseTest {
     }
 
     //passed
-    function test_dexSwapSushiSwapRouterUSDCToETH() public setFork(arbitrumAnvilForkId) {
-        _allowRouter(sushiRouterArbitrum, address(arbitrumOrchestratorProxy));
-
-        //only for block number of 21234930
+    function test_dexSwapSushiSwapRouterUSDCToETH()
+        public
+        setFork(arbitrumAnvilForkId)
+        addRouterInWhiteList(sushiRouterArbitrum, address(arbitrumOrchestratorProxy))
+    {
         uint256 fromAmount = 1e6; //usdc
         uint256 toAmount = 0.00029991786617675 ether;
         uint256 toAmountMin = 0.000298418276845866 ether;
@@ -382,10 +414,11 @@ contract DexSwapTest is BaseTest {
     }
 
     //passed
-    function test_dexSwapSushiSwapRouterETHToUSDC() public setFork(arbitrumAnvilForkId) {
-        _allowRouter(sushiRouterArbitrum, address(arbitrumOrchestratorProxy));
-
-        //only for block number of 21234930
+    function test_dexSwapSushiSwapRouterETHToUSDC()
+        public
+        setFork(arbitrumAnvilForkId)
+        addRouterInWhiteList(sushiRouterArbitrum, address(arbitrumOrchestratorProxy))
+    {
         uint256 fromAmount = 0.0001 ether; //ETH
         uint256 toAmount = 0.33059e6; //usdc
         uint256 toAmountMin = 0.328937e6; //usdc
@@ -412,9 +445,11 @@ contract DexSwapTest is BaseTest {
     //////////////////////////////////////////////////////////
 
     //passed
-    function test_dexSwapUniSwapRouterUSDCToUSDT() public setFork(arbitrumAnvilForkId) {
-        _allowRouter(uniV3RouterArbitrum, address(arbitrumOrchestratorProxy));
-
+    function test_dexSwapUniSwapRouterUSDCToUSDT()
+        public
+        setFork(arbitrumAnvilForkId)
+        addRouterInWhiteList(uniV3RouterArbitrum, address(arbitrumOrchestratorProxy))
+    {
         uint256 fromAmount = 1e6; //1 usdc
         uint256 toAmount = 0.996903e6;
         uint256 toAmountMin = 0.991918e6;
@@ -437,12 +472,14 @@ contract DexSwapTest is BaseTest {
     }
 
     //passed
-    function test_dexSwapUniSwapRouterUSDCToWETH() public setFork(arbitrumAnvilForkId) {
-        _allowRouter(uniV3RouterArbitrum, address(arbitrumOrchestratorProxy));
-
+    function test_dexSwapUniSwapRouterUSDCToWETH()
+        public
+        setFork(arbitrumAnvilForkId)
+        addRouterInWhiteList(uniV3RouterArbitrum, address(arbitrumOrchestratorProxy))
+    {
         uint256 fromAmount = 1e6; //1 usdc
-        uint256 toAmount = 0.000299377182115898 ether;
-        uint256 toAmountMin = 0.000297880296205318 ether;
+        uint256 toAmount = 0.000299377182115898e18;
+        uint256 toAmountMin = 0.000297880296205318e18;
 
         bytes
             memory dexData = hex"ac9650d80000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000124c04b8d59000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000cd1722f3947def4cf144679da39c4c32bdc35681000000000000000000000000000000000000000000000000000001934fbd59aa00000000000000000000000000000000000000000000000000000000000f387e00000000000000000000000000000000000000000000000000010eebbb0ca1e0000000000000000000000000000000000000000000000000000000000000002baf88d065e77c8cc2239327c5edb3a432268e58310001f482af49447d8a07e3bd95bd0d56f35241523fbab100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
@@ -462,10 +499,11 @@ contract DexSwapTest is BaseTest {
     }
 
     //passed
-    function test_dexSwapUniSwapRouterUSDCToETH() public setFork(arbitrumAnvilForkId) {
-        _allowRouter(uniV3RouterArbitrum, address(arbitrumOrchestratorProxy));
-
-        //only for block number of
+    function test_dexSwapUniSwapRouterUSDCToETH()
+        public
+        setFork(arbitrumAnvilForkId)
+        addRouterInWhiteList(uniV3RouterArbitrum, address(arbitrumOrchestratorProxy))
+    {
         uint256 fromAmount = 1e6; //usdc
         uint256 toAmount = 0.000300419724797236 ether;
         uint256 toAmountMin = 0.000298917626173249 ether;
@@ -488,10 +526,11 @@ contract DexSwapTest is BaseTest {
     }
 
     //passed
-    function test_dexSwapUniSwapRouterETHToUSDC() public setFork(arbitrumAnvilForkId) {
-        _allowRouter(uniV3RouterArbitrum, address(arbitrumOrchestratorProxy));
-
-        //only for block number of 21234930
+    function test_dexSwapUniSwapRouterETHToUSDC()
+        public
+        setFork(arbitrumAnvilForkId)
+        addRouterInWhiteList(uniV3RouterArbitrum, address(arbitrumOrchestratorProxy))
+    {
         uint256 fromAmount = 0.0001 ether; //ETH
         uint256 toAmount = 0.331996e6; //usdc
         uint256 toAmountMin = 0.330336e6; //usdc
@@ -518,9 +557,11 @@ contract DexSwapTest is BaseTest {
     //////////////////////////////////////////////////////////
 
     //does not work
-    function test_dexSwapParaSwapRouterUSDCToUSDT() public setFork(arbitrumAnvilForkId) {
-        _allowRouter(paraSwapV5RouterArbitrum, address(arbitrumOrchestratorProxy));
-
+    function test_dexSwapParaSwapRouterUSDCToUSDT()
+        public
+        setFork(arbitrumAnvilForkId)
+        addRouterInWhiteList(paraSwapV5RouterArbitrum, address(arbitrumOrchestratorProxy))
+    {
         uint256 fromAmount = 1e6; //1 usdc
         uint256 toAmount = 0.996903e6;
         uint256 toAmountMin = 0.991918e6;
@@ -568,10 +609,11 @@ contract DexSwapTest is BaseTest {
     }
 
     //does not work
-    function test_dexSwapParaSwapRouterUSDCToETH() public setFork(arbitrumAnvilForkId) {
-        _allowRouter(paraSwapV5RouterArbitrum, address(arbitrumOrchestratorProxy));
-
-        //only for block number of
+    function test_dexSwapParaSwapRouterUSDCToETH()
+        public
+        setFork(arbitrumAnvilForkId)
+        addRouterInWhiteList(paraSwapV5RouterArbitrum, address(arbitrumOrchestratorProxy))
+    {
         uint256 fromAmount = 1e6; //usdc
         uint256 toAmount = 0.000300419724797236 ether;
         uint256 toAmountMin = 0.000298917626173249 ether;
@@ -594,10 +636,11 @@ contract DexSwapTest is BaseTest {
     }
 
     //does not work
-    function test_dexSwapParaSwapRouterETHToUSDC() public setFork(arbitrumAnvilForkId) {
-        _allowRouter(paraSwapV5RouterArbitrum, address(arbitrumOrchestratorProxy));
-
-        //only for block number of 21234930
+    function test_dexSwapParaSwapRouterETHToUSDC()
+        public
+        setFork(arbitrumAnvilForkId)
+        addRouterInWhiteList(paraSwapV5RouterArbitrum, address(arbitrumOrchestratorProxy))
+    {
         uint256 fromAmount = 0.001 ether; //ETH
         uint256 toAmount = 3.334998e6; //usdc
         uint256 toAmountMin = 3.318323e6; //usdc
@@ -619,13 +662,131 @@ contract DexSwapTest is BaseTest {
         _callTestWithRouter(swapData, address(arbitrumOrchestratorProxy));
     }
 
+    //////////////////// Polygon ////////////////////////////
+    //////////////////// Block number 64588691 //////////////
+
+    //////////////////////////////////////////////////////////
+    //////////////////     Quick Swap     ////////////////////
+    //////////////////////////////////////////////////////////
+
+    //passed
+    function test_dexSwapQuickSwapRouterUSDCToWETH()
+        public
+        setFork(polygonAnvilForkId)
+        addRouterInWhiteList(quickSwapRouterPolygon, address(polygonOrchestratorProxy))
+    {
+        uint256 fromAmount = 1e6; //1 usdc
+        uint256 toAmount = 0.000294773721275645e18;
+        uint256 toAmountMin = 0.000293299852669266e18;
+
+        bytes
+            memory dexData = hex"38ed173900000000000000000000000000000000000000000000000000000000000f387e00000000000000000000000000000000000000000000000000010ac13a4b12cf00000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000cd1722f3947def4cf144679da39c4c32bdc35681000000000000000000000000000000000000000000000000000000006740511a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000003c499c542cef5e3811e1192ce70d8cc03d5c33590000000000000000000000007ceb23fd6bc0add59e62ac25578270cff1b9f619";
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+            dexRouter: quickSwapRouterPolygon,
+            fromToken: usdcTokenPolygon,
+            fromAmount: fromAmount,
+            toToken: wethTokenPolygon,
+            toAmount: toAmount,
+            toAmountMin: toAmountMin,
+            dexData: dexData
+        });
+
+        _callTestWithRouter(swapData, address(polygonOrchestratorProxy));
+    }
+
+    //passed
+    function test_dexSwapQuickSwapRouterPOLToUSDC()
+        public
+        setFork(polygonAnvilForkId)
+        addRouterInWhiteList(quickSwapRouterPolygon, address(polygonOrchestratorProxy))
+    {
+        uint256 fromAmount = 0.001e18; //POL
+        uint256 toAmount = 0.000457e6; //usdc
+        uint256 toAmountMin = 0.000454e6; //usdc
+
+        bytes
+            memory dexData = hex"7ff36ab500000000000000000000000000000000000000000000000000000000000001c70000000000000000000000000000000000000000000000000000000000000080000000000000000000000000cd1722f3947def4cf144679da39c4c32bdc3568100000000000000000000000000000000000000000000000000000000674056ac00000000000000000000000000000000000000000000000000000000000000030000000000000000000000000d500b1d8e8ef31e21c99d1db9a6444d3adf12700000000000000000000000007ceb23fd6bc0add59e62ac25578270cff1b9f6190000000000000000000000003c499c542cef5e3811e1192ce70d8cc03d5c3359";
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+            dexRouter: quickSwapRouterPolygon,
+            fromToken: POL_TOKEN,
+            fromAmount: fromAmount,
+            toToken: usdcTokenPolygon,
+            toAmount: toAmount,
+            toAmountMin: toAmountMin,
+            dexData: dexData
+        });
+
+        _callTestWithRouter(swapData, address(polygonOrchestratorProxy));
+    }
+
+    //passed
+    function test_dexSwapQuickSwapRouterUSDCToPOL()
+        public
+        setFork(polygonAnvilForkId)
+        addRouterInWhiteList(quickSwapRouterPolygon, address(polygonOrchestratorProxy))
+    {
+        uint256 fromAmount = 1e6; //usdc
+        uint256 toAmount = 2.16620982591814043e18; //pol
+        uint256 toAmountMin = 2.155378776788549727e18; //pol
+
+        bytes
+            memory dexData = hex"18cbafe500000000000000000000000000000000000000000000000000000000000f387e0000000000000000000000000000000000000000000000001de9728f133bb56100000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000cd1722f3947def4cf144679da39c4c32bdc3568100000000000000000000000000000000000000000000000000000000674057b000000000000000000000000000000000000000000000000000000000000000020000000000000000000000003c499c542cef5e3811e1192ce70d8cc03d5c33590000000000000000000000000d500b1d8e8ef31e21c99d1db9a6444d3adf1270";
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+            dexRouter: quickSwapRouterPolygon,
+            fromToken: usdcTokenPolygon,
+            fromAmount: fromAmount,
+            toToken: POL_TOKEN,
+            toAmount: toAmount,
+            toAmountMin: toAmountMin,
+            dexData: dexData
+        });
+
+        _callTestWithRouter(swapData, address(polygonOrchestratorProxy));
+    }
+
+    //////////////////// Avalanche ////////////////////////////
+    //////////////////// Block number 53397798 //////////////
+
+    //////////////////////////////////////////////////////////
+    //////////////////     Pangolin Swap     /////////////////
+    //////////////////////////////////////////////////////////
+
+    //doesnt work
+    function test_dexSwapPangolinSwapRouterUSDCToWAVAX()
+        public
+        setFork(avalancheAnvilForkId)
+        addRouterInWhiteList(pangolinRouterAvalanche, address(avalancheOrchestratorProxy))
+    {
+        uint256 fromAmount = 1e6; //1 usdc
+        uint256 toAmount = 0.027249956050478939e18;
+        uint256 toAmountMin = 0.027113706270226544e18;
+
+        bytes
+            memory dexData = hex"38ed173900000000000000000000000000000000000000000000000000000000000f387e000000000000000000000000000000000000000000000000006053c8d8cb68b600000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000cd1722f3947def4cf144679da39c4c32bdc3568100000000000000000000000000000000000000000000000000000000674060d40000000000000000000000000000000000000000000000000000000000000003000000000000000000000000b97ef9ef8734c71904d8002f8b6bc66dd9c48a6e00000000000000000000000060781c2586d68229fde47564546784ab3faca982000000000000000000000000b31f66aa3c1e785363f0875a1b74e27b85fd66c7";
+
+        IDexSwap.SwapData[] memory swapData = new IDexSwap.SwapData[](1);
+        swapData[0] = IDexSwap.SwapData({
+            dexRouter: pangolinRouterAvalanche,
+            fromToken: usdcTokenAvalanche,
+            fromAmount: fromAmount,
+            toToken: wavaxTokenAvalanche,
+            toAmount: toAmount,
+            toAmountMin: toAmountMin,
+            dexData: dexData
+        });
+
+        _callTestWithRouter(swapData, address(avalancheOrchestratorProxy));
+    }
+
     //////////////////////////////////////////////////////////
     //////////////////     Utils     /////////////////////////
     //////////////////////////////////////////////////////////
-
-    function formatUnits(uint256 amount, uint256 decimals) public pure returns (uint256) {
-        return amount * 10 ** decimals;
-    }
 
     function _callTestWithRouter(IDexSwap.SwapData[] memory swapData, address proxy) internal {
         console.log("block.number", block.number);

@@ -13,7 +13,8 @@ interface IInfraOrchestrator {
     event IntegratorFeesCollected(address indexed integrator, address token, uint256 amount);
     event IntegratorFeesWithdrawn(address indexed integrator, address token, uint256 amount);
 
-    function isTxConfirmed(bytes32 _txId) external view returns (bool);
+    function isTxConfirmed(bytes32 _conceroMessageId) external view returns (bool);
+    function confirmTx(bytes32 _conceroMessageId) external;
 }
 
 interface IOrchestratorViewDelegate {

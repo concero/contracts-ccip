@@ -153,17 +153,17 @@
 		while (latestBlockNumber - logBlockNumber < chainMap[srcChainSelector].confirmations) {
 			await sleep(5000);
 			latestBlockNumber = BigInt(await provider.getBlockNumber());
+		}
 
-			const logs = await provider.getLogs({
-				address: srcContractAddress,
-				topics: [ethersId, conceroMessageId],
-				fromBlock: logBlockNumber,
-				toBlock: latestBlockNumber,
-			});
+		const newLogs = await provider.getLogs({
+			address: srcContractAddress,
+			topics: [ethersId, conceroMessageId],
+			fromBlock: logBlockNumber,
+			toBlock: latestBlockNumber,
+		});
 
-			if (!logs.some(l => l.transactionHash === log.transactionHash)) {
-				throw new Error('Log no longer exists.');
-			}
+		if (!newLogs.some(l => l.transactionHash === log.transactionHash)) {
+			throw new Error('Log no longer exists.');
 		}
 
 		const logData = {

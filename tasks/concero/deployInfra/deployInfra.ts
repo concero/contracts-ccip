@@ -12,7 +12,7 @@ import deployProxyAdmin from "../../../deploy/ConceroProxyAdmin";
 import deployTransparentProxy from "../../../deploy/TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import { DeployInfraParams } from "./types";
-import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecretsConfig";
+import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecrets";
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("deployproxy", "Deploy the proxy")

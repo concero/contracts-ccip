@@ -17,6 +17,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 import {LibZip} from "solady/src/utils/LibZip.sol";
+import {DexSwap} from "./DexSwap.sol";
 
 /* ERRORS */
 ///@notice error emitted when a TX was already added
@@ -34,6 +35,7 @@ error DstContractAddressNotSet();
 error OnlyProxyContext(address caller);
 ///@notice error emitted when the delegatecall to DexSwap fails
 error FailedToReleaseTx(bytes error);
+error InvalidSwapData(bytes32 conceroMessageId);
 
 contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     /* TYPE DECLARATIONS */
@@ -68,7 +70,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     /* EVENTS */
 
     ///@notice emitted when a Unconfirmed TX is added by a cross-chain TX
-    event UnconfirmedTXAdded(bytes32 indexed ccipMessageId);
+    event UnconfirmedTXAdded(bytes32 indexed conceroMessageId);
     event TXReleased(
         bytes32 indexed conceroMessageId,
         address indexed recipient,
@@ -80,6 +82,8 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     event CLFRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
     ///@notice emitted when the concero pool address is updated
     event ConceroPoolAddressUpdated(address previousAddress, address pool);
+    ///@notice emitted when dexSwap delegateCall fails in handleDstFunctionsResponse
+    event DstSwapFailed(bytes32 conceroMessageId);
 
     constructor(
         FunctionsVariables memory _variables,
@@ -114,12 +118,12 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     ) external onlyMessenger {
         if (s_transactions[conceroMessageId].txDataHash != bytes32(0)) {
             revert TxAlreadyExists(conceroMessageId);
+        } else {
+            s_transactions[conceroMessageId].txDataHash = txDataHash;
         }
 
-        s_transactions[conceroMessageId].txDataHash = txDataHash;
-
-        address dstContract = s_conceroContracts[srcChainSelector];
-        if (dstContract == address(0)) {
+        address srcContract = s_conceroContracts[srcChainSelector];
+        if (srcContract == address(0)) {
             revert DstContractAddressNotSet();
         }
 
@@ -127,7 +131,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         args[0] = abi.encodePacked(s_dstJsHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(RequestType.checkTxSrc);
-        args[3] = abi.encodePacked(dstContract);
+        args[3] = abi.encodePacked(srcContract);
         args[4] = abi.encodePacked(srcChainSelector);
         args[5] = abi.encodePacked(conceroMessageId);
         args[6] = abi.encodePacked(txDataHash);
@@ -288,9 +292,16 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
             (IDexSwap.SwapData[])
         );
 
-        if (swapData.length > 0) {
+        if (swapData.length == 0) {
+            IPool(i_poolProxy).takeLoan(bridgeableTokenDst, amountUsdcAfterFees, receiver);
+        } else {
+            //todo: remove with new DexSwap contract
+            if (swapData.length > 5) {
+                revert InvalidSwapData(conceroMessageId);
+            }
+
             swapData[0].fromAmount = amountUsdcAfterFees;
-            swapData[0].fromToken = bridgeableTokenDst; //todo: @lufaque do we need this?
+            swapData[0].fromToken = bridgeableTokenDst;
 
             IPool(i_poolProxy).takeLoan(bridgeableTokenDst, amountUsdcAfterFees, address(this));
 
@@ -299,9 +310,12 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
                 swapData,
                 receiver
             );
-            LibConcero.safeDelegateCall(i_dexSwap, swapDataArgs);
-        } else {
-            IPool(i_poolProxy).takeLoan(bridgeableTokenDst, amountUsdcAfterFees, receiver);
+
+            (bool success, ) = i_dexSwap.delegatecall(swapDataArgs);
+            if (!success) {
+                LibConcero.transferERC20(bridgeableTokenDst, amountUsdcAfterFees, receiver);
+                emit DstSwapFailed(conceroMessageId);
+            }
         }
 
         emit TXReleased(conceroMessageId, receiver, bridgeableTokenDst, amountUsdcAfterFees);

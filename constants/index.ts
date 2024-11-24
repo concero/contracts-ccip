@@ -13,9 +13,12 @@ import {
 import { rpc, urls } from "./rpcUrls";
 import { deployerTargetBalances, messengerTargetBalances } from "./targetBalances";
 import { conceroChains, liveChains, mainnetChains, testnetChains } from "./liveChains";
+import { clfFees, defaultCLFfee } from "./clfFees";
 
 export {
   secrets,
+  clfFees,
+  defaultCLFfee,
   CLFnetworks,
   CLFSimulationConfig,
   conceroNetworks,

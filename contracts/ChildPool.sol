@@ -319,8 +319,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
                 if (isTxConfirmed) {
                     s_loansInUse -= ccipReceivedAmount;
                 } else {
-                    // We don't subtract it here because the loan was not performed.
-                    // And the value is not added into the `s_loanInUse` variable.
+                    IInfraOrchestrator(i_infraProxy).confirmTx(txId);
                     i_USDC.safeTransfer(settlementTx[i].recipient, settlementTx[i].amount);
                 }
             }

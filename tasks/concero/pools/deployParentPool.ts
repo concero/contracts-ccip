@@ -11,7 +11,7 @@ import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import deployParentPool from "../../../deploy/ParentPool";
 import deployProxyAdmin from "../../../deploy/ConceroProxyAdmin";
 import deployParentPoolCLFCLA from "../../../deploy/ParenPoolCLFCLA";
-import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecretsConfig";
+import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecrets";
 
 task("deploy-parent-pool", "Deploy the pool")
   .addFlag("deployproxy", "Deploy the proxy")

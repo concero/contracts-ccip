@@ -21,4 +21,7 @@ const secrets: CLFSecrets = {
   PARENT_POOL_ALCHEMY_API_KEY: process.env.PARENT_POOL_ALCHEMY_API_KEY,
 };
 
+export const CLF_SECRETS_TESTNET_EXPIRATION = 4320;
+export const CLF_SECRETS_MAINNET_EXPIRATION = 129600;
+
 export default secrets;

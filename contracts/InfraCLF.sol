@@ -35,7 +35,7 @@ error DstContractAddressNotSet();
 error OnlyProxyContext(address caller);
 ///@notice error emitted when the delegatecall to DexSwap fails
 error FailedToReleaseTx(bytes error);
-error InvalidSwapData(bytes32 conceroMessageId);
+error InvalidSwapData();
 
 contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     /* TYPE DECLARATIONS */
@@ -297,7 +297,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         } else {
             //todo: remove with new DexSwap contract
             if (swapData.length > 5) {
-                revert InvalidSwapData(conceroMessageId);
+                revert InvalidSwapData();
             }
 
             swapData[0].fromAmount = amountUsdcAfterFees;

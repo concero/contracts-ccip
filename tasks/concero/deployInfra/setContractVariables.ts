@@ -21,6 +21,8 @@ import {
   ProxyEnum,
   testnetChains,
   viemReceiptConfig,
+  clfFees,
+  defaultCLFfee,
 } from "../../../constants";
 import { ethersV6CodeUrl, infraDstJsCodeUrl, infraSrcJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 
@@ -296,14 +298,6 @@ export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: a
 }
 
 export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: any) {
-  const defaultFee = 20000000000000000n;
-  const fees: Record<CNetworkNames, bigint> = {
-    polygon: 33131965864723535n,
-    arbitrum: 20000000000000000n,
-    base: 60000000000000000n,
-    avalanche: 240000000000000000n,
-  };
-
   const { viemChain: dcViemChain, name: dcName, type } = deployableChain;
   const [conceroProxy, conceroProxyAlias] = getEnvAddress(ProxyEnum.infraProxy, dcName);
   const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
@@ -312,7 +306,7 @@ export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: an
 
   for (const chain of chainsToSet) {
     try {
-      const feeToSet = fees[dcName] ?? defaultFee;
+      const feeToSet = clfFees[dcName] ?? defaultCLFfee;
       const { request: setFunctionsPremiumFeesReq } = await publicClient.simulateContract({
         address: conceroProxy,
         abi,

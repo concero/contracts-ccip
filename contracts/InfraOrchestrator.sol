@@ -28,8 +28,11 @@ error InvalidSwapData();
 ///@notice error emitted when the token to bridge is not USDC
 error UnsupportedBridgeToken();
 error InvalidIntegratorFeeBps();
+error FailedToWithdrawIntegratorFees(address token, uint256 amount);
 error InvalidRecipient();
 error TransferFailed();
+error TxAlreadyConfirmed();
+error OnlyPool();
 
 contract InfraOrchestrator is
     IFunctionsClient,

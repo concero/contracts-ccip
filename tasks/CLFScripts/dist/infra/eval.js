@@ -1,11 +1,13 @@
 try {
-	const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';
+	const m = 'https://raw.githubusercontent.com/';
+	const u = m + 'ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';
 	const [t, p] = await Promise.all([
 		fetch(u),
 		fetch(
-			'https://raw.githubusercontent.com/concero/contracts-ccip/' +
-				'feature/pools-rebalancing' +
-				`/packages/hardhat/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`,
+			m +
+				'concero/contracts-ccip/' +
+				'master' +
+				`/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`,
 		),
 	]);
 	const [e, c] = await Promise.all([t.text(), p.text()]);

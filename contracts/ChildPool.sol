@@ -322,6 +322,9 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
                     // We don't subtract it here because the loan was not performed.
                     // And the value is not added into the `s_loanInUse` variable.
                     i_USDC.safeTransfer(settlementTx[i].recipient, settlementTx[i].amount);
+
+                    // TODO: Implement the event
+                    // emit ExecutionLayerFailed(settlementTx[i].id);
                 }
             }
         }

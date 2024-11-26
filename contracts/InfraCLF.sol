@@ -15,14 +15,18 @@ import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/Fu
 import {FunctionsRequest} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/libraries/FunctionsRequest.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {LibConcero} from "./Libraries/LibConcero.sol";
+import {LibZip} from "solady/src/utils/LibZip.sol";
+import {DexSwap} from "./DexSwap.sol";
 
 /* ERRORS */
 ///@notice error emitted when a TX was already added
-error TxAlreadyExists(bytes32 txHash, bool isConfirmed);
+error TxAlreadyExists(bytes32 txHash);
 ///@notice error emitted when a unexpected ID is added
 error UnexpectedCLFRequestId(bytes32 requestId);
 ///@notice error emitted when a transaction does not exist
 error TxDoesntExist();
+error TxDataHashSumMismatch();
 ///@notice error emitted when a transaction was already confirmed
 error TxAlreadyConfirmed();
 ///@notice error emitted when function receive a call from a not allowed address
@@ -31,6 +35,7 @@ error DstContractAddressNotSet();
 error OnlyProxyContext(address caller);
 ///@notice error emitted when the delegatecall to DexSwap fails
 error FailedToReleaseTx(bytes error);
+error InvalidSwapData();
 
 contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     /* TYPE DECLARATIONS */
@@ -41,7 +46,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     uint32 public constant CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT = 150_000;
     uint32 public constant CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT = 2_000_000;
     uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 220_500;
-    uint8 private constant CL_SRC_RESPONSE_LENGTH = 192;
+
     ///@notice JS Code for Chainlink Functions
     string private constant CL_JS_CODE =
         "try { const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js'; const [t, p] = await Promise.all([ fetch(u), fetch( 'https://raw.githubusercontent.com/concero/contracts-ccip/' + 'master' + `/packages/hardhat/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`, ), ]); const [e, c] = await Promise.all([t.text(), p.text()]); const g = async s => { return ( '0x' + Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))) .map(v => ('0' + v.toString(16)).slice(-2).toLowerCase()) .join('') ); }; const r = await g(c); const x = await g(e); const b = bytesArgs[0].toLowerCase(); const o = bytesArgs[1].toLowerCase(); if (r === b && x === o) { const ethers = new Function(e + '; return ethers;')(); return await eval(c); } throw new Error(`${r}!=${b}||${x}!=${o}`); } catch (e) { throw new Error(e.message.slice(0, 255));}";
@@ -65,10 +70,9 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     /* EVENTS */
 
     ///@notice emitted when a Unconfirmed TX is added by a cross-chain TX
-    event UnconfirmedTXAdded(bytes32 indexed ccipMessageId);
+    event UnconfirmedTXAdded(bytes32 indexed conceroMessageId);
     event TXReleased(
-        bytes32 indexed ccipMessageId,
-        address indexed sender,
+        bytes32 indexed conceroMessageId,
         address indexed recipient,
         address token,
         uint256 amount
@@ -78,6 +82,8 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     event CLFRequestError(bytes32 indexed ccipMessageId, bytes32 requestId, uint8 requestType);
     ///@notice emitted when the concero pool address is updated
     event ConceroPoolAddressUpdated(address previousAddress, address pool);
+    ///@notice emitted when dexSwap delegateCall fails in handleDstFunctionsResponse
+    event DstSwapFailed(bytes32 conceroMessageId);
 
     constructor(
         FunctionsVariables memory _variables,
@@ -101,64 +107,42 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
 
     /**
      * @notice Receives an unconfirmed TX from the source chain and validates it through Chainlink Functions
-     * @param messageId The concero message ID from the initiate bridge transaction
-     * @param sender The address of the TX sender
-     * @param recipient The address of the bridge token receiver
-     * @param amount the amount of the token to be processed
-     * @param srcChainSelector the Chainlink variable for the src chain
-     * @param token the token address
-     * @param blockNumber the blockNumber in which the transaction was initiated
-     * @param dstSwapData The Payload to process the destination swap.
-     * @dev dstSwapData can be empty. Which means the user will receive USDC.
+     * @param conceroMessageId the concero message ID
+     * @param srcChainSelector the source chain selector
+     * @param txDataHash the hash of the data to be sent to the destination chain
      */
     function addUnconfirmedTX(
-        bytes32 messageId,
-        address sender,
-        address recipient,
-        uint256 amount,
+        bytes32 conceroMessageId,
         uint64 srcChainSelector,
-        CCIPToken token,
-        uint256 blockNumber,
-        bytes calldata dstSwapData
+        bytes32 txDataHash
     ) external onlyMessenger {
-        Transaction memory transaction = s_transactions[messageId];
-        if (transaction.sender != address(0)) {
-            revert TxAlreadyExists(messageId, transaction.isConfirmed);
+        if (s_transactions[conceroMessageId].txDataHash != bytes32(0)) {
+            revert TxAlreadyExists(conceroMessageId);
+        } else {
+            s_transactions[conceroMessageId].txDataHash = txDataHash;
         }
 
-        s_transactions[messageId] = Transaction(
-            messageId,
-            sender,
-            recipient,
-            amount,
-            token,
-            srcChainSelector,
-            false,
-            dstSwapData
-        );
+        address srcContract = s_conceroContracts[srcChainSelector];
+        if (srcContract == address(0)) {
+            revert DstContractAddressNotSet();
+        }
 
-        bytes[] memory args = new bytes[](13);
+        bytes[] memory args = new bytes[](7);
         args[0] = abi.encodePacked(s_dstJsHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(RequestType.checkTxSrc);
-        args[3] = abi.encodePacked(s_conceroContracts[srcChainSelector]);
+        args[3] = abi.encodePacked(srcContract);
         args[4] = abi.encodePacked(srcChainSelector);
-        args[5] = abi.encodePacked(blockNumber);
-        args[6] = abi.encodePacked(messageId);
-        args[7] = abi.encodePacked(sender);
-        args[8] = abi.encodePacked(recipient);
-        args[9] = abi.encodePacked(uint8(token));
-        args[10] = abi.encodePacked(amount);
-        args[11] = abi.encodePacked(i_chainSelector);
-        args[12] = abi.encodePacked(keccak256(dstSwapData));
+        args[5] = abi.encodePacked(conceroMessageId);
+        args[6] = abi.encodePacked(txDataHash);
 
         bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT);
 
         s_requests[reqId].requestType = RequestType.checkTxSrc;
         s_requests[reqId].isPending = true;
-        s_requests[reqId].ccipMessageId = messageId;
+        s_requests[reqId].conceroMessageId = conceroMessageId;
 
-        emit UnconfirmedTXAdded(messageId);
+        emit UnconfirmedTXAdded(conceroMessageId);
     }
 
     /**
@@ -190,7 +174,9 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         bytes memory response,
         bytes memory err
     ) external {
-        if (address(this) != i_proxy) revert OnlyProxyContext(address(this));
+        if (address(this) != i_proxy) {
+            revert OnlyProxyContext(address(this));
+        }
 
         fulfillRequest(requestId, response, err);
     }
@@ -212,116 +198,127 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
 
         if (!request.isPending) {
             revert UnexpectedCLFRequestId(requestId);
+        } else {
+            request.isPending = false;
         }
 
-        request.isPending = false;
-
         if (err.length > 0) {
-            emit CLFRequestError(request.ccipMessageId, requestId, uint8(request.requestType));
+            emit CLFRequestError(request.conceroMessageId, requestId, uint8(request.requestType));
             return;
         }
 
         if (request.requestType == RequestType.checkTxSrc) {
-            _handleDstFunctionsResponse(request);
+            _handleDstFunctionsResponse(requestId, response);
         } else if (request.requestType == RequestType.addUnconfirmedTxDst) {
             _handleSrcFunctionsResponse(response);
         }
     }
 
     /**
-     * @notice Internal helper function to check if the TX is valid
-     * @param transaction the storage to be updated.
-     */
-    function _confirmTX(Transaction storage transaction) internal {
-        if (transaction.sender == address(0)) revert TxDoesntExist();
-        if (transaction.isConfirmed == true) revert TxAlreadyConfirmed();
-        transaction.isConfirmed = true;
-    }
-
-    /**
      * @notice Sends an unconfirmed TX to the destination chain
-     * @param messageId the CCIP message to be checked
-     * @param sender the address to query information
-     * @param dstChainSelector CCIP chain selector for destination chain
-     * @param recipient address of recipient on destination chain
-     * @param tokenType IInfraStorage.CCIPToken (CCIP compatible tokens like USDC)
-     * @param amount the amount to be transferred
-     * @param dstSwapData the payload to be swapped if it exists
+     * @param conceroMessageId the concero message ID
+     * @param dstChainSelector the destination chain selector
+     * @param txDataHash the hash of the data to be sent to the destination chain
      */
     function _sendUnconfirmedTX(
-        bytes32 messageId,
-        address sender,
+        bytes32 conceroMessageId,
         uint64 dstChainSelector,
-        address recipient,
-        CCIPToken tokenType,
-        uint256 amount,
-        IDexSwap.SwapData[] memory dstSwapData
+        bytes32 txDataHash
     ) internal {
         if (s_conceroContracts[dstChainSelector] == address(0)) {
             revert DstContractAddressNotSet();
         }
 
-        bytes[] memory args = new bytes[](13);
+        bytes[] memory args = new bytes[](8);
         args[0] = abi.encodePacked(s_srcJsHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(RequestType.addUnconfirmedTxDst);
         args[3] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
-        args[4] = abi.encodePacked(messageId);
-        args[5] = abi.encodePacked(sender);
-        args[6] = abi.encodePacked(recipient);
-        args[7] = abi.encodePacked(amount);
-        args[8] = abi.encodePacked(i_chainSelector);
-        args[9] = abi.encodePacked(dstChainSelector);
-        args[10] = abi.encodePacked(uint8(tokenType));
-        args[11] = abi.encodePacked(block.number);
-        args[12] = _swapDataToBytes(dstSwapData);
+        args[4] = abi.encodePacked(conceroMessageId);
+        args[5] = abi.encodePacked(i_chainSelector);
+        args[6] = abi.encodePacked(dstChainSelector);
+        args[7] = abi.encodePacked(txDataHash);
 
         bytes32 reqId = sendRequest(args, CL_JS_CODE, CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT);
+
         s_requests[reqId].requestType = RequestType.addUnconfirmedTxDst;
         s_requests[reqId].isPending = true;
-        s_requests[reqId].ccipMessageId = messageId;
+        s_requests[reqId].conceroMessageId = conceroMessageId;
     }
 
     /**
      * @notice Internal CLF function to finalize bridge process on Destination
-     * @param request the CLF request to be used
+     * @param response the response from the CLF
      */
-    function _handleDstFunctionsResponse(Request storage request) internal {
-        Transaction storage transaction = s_transactions[request.ccipMessageId];
+    function _handleDstFunctionsResponse(bytes32 requestId, bytes memory response) internal {
+        bytes32 conceroMessageId = s_requests[requestId].conceroMessageId;
+        bytes32 txDataHash = s_transactions[conceroMessageId].txDataHash;
 
-        _confirmTX(transaction);
-
-        address tokenReceived = _getUSDCAddressByChainIndex(transaction.token, i_chainIndex);
-        uint256 amount = transaction.amount - getDstTotalFeeInUsdc(transaction.amount);
-
-        if (transaction.dstSwapData.length > 1) {
-            IDexSwap.SwapData[] memory swapData = abi.decode(
-                transaction.dstSwapData,
-                (IDexSwap.SwapData[])
-            );
-            swapData[0].fromAmount = amount;
-
-            IPool(i_poolProxy).takeLoan(tokenReceived, amount, address(this));
-
-            (bool swapSuccess, bytes memory swapError) = i_dexSwap.delegatecall(
-                abi.encodeWithSelector(
-                    IDexSwap.entrypoint.selector,
-                    swapData,
-                    transaction.recipient
-                )
-            );
-            if (!swapSuccess) revert FailedToReleaseTx(swapError);
-        } else {
-            IPool(i_poolProxy).takeLoan(tokenReceived, amount, transaction.recipient);
+        if (txDataHash == bytes32(0)) {
+            revert TxDoesntExist();
         }
 
-        emit TXReleased(
-            request.ccipMessageId,
-            transaction.sender,
-            transaction.recipient,
-            tokenReceived,
-            amount
+        if (s_transactions[conceroMessageId].isConfirmed) {
+            revert TxAlreadyConfirmed();
+        } else {
+            s_transactions[conceroMessageId].isConfirmed = true;
+        }
+
+        (address receiver, uint256 amount, bytes memory compressedDstSwapData) = abi.decode(
+            response,
+            (address, uint256, bytes)
         );
+
+        bytes32 recomputedTxDataHash = keccak256(
+            abi.encode(
+                conceroMessageId,
+                amount,
+                i_chainSelector,
+                receiver,
+                keccak256(compressedDstSwapData)
+            )
+        );
+
+        if (recomputedTxDataHash != txDataHash) {
+            revert TxDataHashSumMismatch();
+        }
+
+        address bridgeableTokenDst = _getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
+        uint256 amountUsdcAfterFees = amount - getDstTotalFeeInUsdc(amount);
+
+        bytes memory decompressedDstSwapData = LibZip.cdDecompress(compressedDstSwapData);
+        IDexSwap.SwapData[] memory swapData = abi.decode(
+            decompressedDstSwapData,
+            (IDexSwap.SwapData[])
+        );
+
+        if (swapData.length == 0) {
+            IPool(i_poolProxy).takeLoan(bridgeableTokenDst, amountUsdcAfterFees, receiver);
+        } else {
+            //todo: remove with new DexSwap contract
+            if (swapData.length > 5) {
+                revert InvalidSwapData();
+            }
+
+            swapData[0].fromAmount = amountUsdcAfterFees;
+            swapData[0].fromToken = bridgeableTokenDst;
+
+            IPool(i_poolProxy).takeLoan(bridgeableTokenDst, amountUsdcAfterFees, address(this));
+
+            bytes memory swapDataArgs = abi.encodeWithSelector(
+                IDexSwap.entrypoint.selector,
+                swapData,
+                receiver
+            );
+
+            (bool success, ) = i_dexSwap.delegatecall(swapDataArgs);
+            if (!success) {
+                LibConcero.transferERC20(bridgeableTokenDst, amountUsdcAfterFees, receiver);
+                emit DstSwapFailed(conceroMessageId);
+            }
+        }
+
+        emit TXReleased(conceroMessageId, receiver, bridgeableTokenDst, amountUsdcAfterFees);
     }
 
     /**
@@ -329,10 +326,6 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
      * @param response the CLF response that contains the data
      */
     function _handleSrcFunctionsResponse(bytes memory response) internal {
-        if (response.length != CL_SRC_RESPONSE_LENGTH) {
-            return;
-        }
-
         (
             uint256 dstGasPrice,
             uint256 srcGasPrice,
@@ -368,15 +361,15 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
      * @notice Helper function to convert swapData into bytes payload to be sent through functions
      * @param _swapData The array of swap data
      */
-    function _swapDataToBytes(
-        IDexSwap.SwapData[] memory _swapData
-    ) internal pure returns (bytes memory _encodedData) {
-        if (_swapData.length == 0) {
-            _encodedData = new bytes(1);
-        } else {
-            _encodedData = abi.encode(_swapData);
-        }
-    }
+    //    function _swapDataToBytes(
+    //        IDexSwap.SwapData[] memory _swapData
+    //    ) internal pure returns (bytes memory _encodedData) {
+    //        if (_swapData.length == 0) {
+    //            _encodedData = new bytes(1);
+    //        } else {
+    //            _encodedData = abi.encode(_swapData);
+    //        }
+    //    }
 
     /**
      * @notice getter function to calculate Destination fee amount on Source

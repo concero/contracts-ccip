@@ -3,7 +3,7 @@ const { INFURA_API_KEY, ALCHEMY_API_KEY, BLAST_API_KEY, CHAINSTACK_API_KEY, TEND
 export const rpc: Record<string, string> = {
   arbitrum: `https://arbitrum-mainnet.infura.io/v3/${INFURA_API_KEY}`,
   arbitrumSepolia: `https://arbitrum-sepolia.infura.io/v3/${INFURA_API_KEY}`,
-  base: `https://base-sepolia.infura.io/v3/${INFURA_API_KEY}`,
+  base: `https://base.infura.io/v3/${INFURA_API_KEY}`,
   baseSepolia: `https://base-sepolia.infura.io/v3/${INFURA_API_KEY}`,
   avalanche: `https://avalanche-mainnet.infura.io/v3/${INFURA_API_KEY}`,
   avalancheFuji: `https://avalanche-fuji.infura.io/v3/${INFURA_API_KEY}`,

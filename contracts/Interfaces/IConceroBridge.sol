@@ -15,11 +15,10 @@ interface IConceroBridge is IInfraStorage {
     /// @notice event emitted when an individual tx is sent through CLF
     event ConceroBridgeSent(
         bytes32 indexed conceroMessageId,
-        CCIPToken tokenType,
         uint256 amount,
         uint64 dstChainSelector,
         address receiver,
-        bytes32 dstSwapDataHash
+        bytes compressedDstSwapData
     );
 
     /// @notice event emitted when a batched CCIP message is sent
@@ -28,13 +27,13 @@ interface IConceroBridge is IInfraStorage {
     /**
      * @notice Function responsible to trigger CCIP and start the bridging process
      * @param bridgeData The bytes data payload with transaction infos
-     * @param dstSwapData The bytes data payload with destination swap Data
-     * @dev dstSwapData can be empty if there is no swap on destination
+     * @param compressedDstSwapData The bytes data payload with destination swap Data
+     * @dev compressedDstSwapData can be empty if there is no swap on destination
      * @dev this function should only be able to called thought infra Proxy
      */
     function bridge(
         BridgeData memory bridgeData,
-        IDexSwap.SwapData[] memory dstSwapData
+        bytes calldata compressedDstSwapData
     ) external payable;
 
     //todo: rename this function to getTotalBridgeFeeUSDC

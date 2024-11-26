@@ -56,30 +56,48 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
     /**
      * @notice Function responsible to trigger CCIP and start the bridging process
      * @param bridgeData The bytes data payload with transaction infos
-     * @param dstSwapData The bytes data payload with destination swap Data
-     * @dev dstSwapData can be empty if there is no swap on destination
+     * @param compressedDstSwapData The bytes data payload with destination swap Data
+     * @dev compressedDstSwapData can be empty if there is no swap on destination
      * @dev this function should only be able to called thought infra Proxy
      */
     function bridge(
         BridgeData memory bridgeData,
-        IDexSwap.SwapData[] memory dstSwapData
+        bytes calldata compressedDstSwapData
     ) external payable {
         if (address(this) != i_proxy) revert OnlyProxyContext(address(this));
         uint64 dstChainSelector = bridgeData.dstChainSelector;
-        address fromToken = _getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
+        uint256 amount = bridgeData.amount;
+        address fromToken = _getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
         uint256 totalSrcFee = _convertToUSDCDecimals(
-            _getSrcTotalFeeInUsdc(dstChainSelector, bridgeData.amount)
+            _getSrcTotalFeeInUsdc(dstChainSelector, amount)
         );
 
-        if (bridgeData.amount <= totalSrcFee) {
-            revert InsufficientFees(bridgeData.amount, totalSrcFee);
+        if (amount <= totalSrcFee) {
+            revert InsufficientFees(amount, totalSrcFee);
         }
+        uint256 amountToSendAfterFees = amount - totalSrcFee;
+        uint256 batchedTxAmount = s_pendingSettlementTxAmountByDstChain[dstChainSelector];
 
-        bytes32 dstSwapDataHashSum = keccak256(_swapDataToBytes(dstSwapData));
-        uint256 amountToSendAfterFees = bridgeData.amount - totalSrcFee;
-        bytes32 bridgeDataHash = keccak256(abi.encode(bridgeData));
         bytes32 conceroMessageId = keccak256(
-            abi.encode(bridgeDataHash, dstSwapDataHashSum, block.number)
+            abi.encode(
+                dstChainSelector,
+                i_chainSelector,
+                msg.sender,
+                bridgeData.receiver,
+                amountToSendAfterFees,
+                batchedTxAmount,
+                block.number
+            )
+        );
+
+        bytes32 txDataHash = keccak256(
+            abi.encode(
+                conceroMessageId,
+                amountToSendAfterFees,
+                dstChainSelector,
+                bridgeData.receiver,
+                keccak256(compressedDstSwapData)
+            )
         );
 
         _addPendingSettlementTx(
@@ -89,17 +107,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
             dstChainSelector
         );
 
-        uint256 batchedTxAmount = s_pendingSettlementTxAmountByDstChain[dstChainSelector];
-
-        _sendUnconfirmedTX(
-            conceroMessageId,
-            msg.sender,
-            dstChainSelector,
-            bridgeData.receiver,
-            bridgeData.tokenType,
-            amountToSendAfterFees,
-            dstSwapData
-        );
+        _sendUnconfirmedTX(conceroMessageId, dstChainSelector, txDataHash);
 
         if (
             batchedTxAmount >= BATCHED_TX_THRESHOLD ||
@@ -111,11 +119,10 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
 
         emit ConceroBridgeSent(
             conceroMessageId,
-            bridgeData.tokenType,
             amountToSendAfterFees,
             dstChainSelector,
             bridgeData.receiver,
-            dstSwapDataHashSum
+            compressedDstSwapData
         );
     }
 
@@ -161,8 +168,8 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
     function getFunctionsFeeInUsdc(uint64 dstChainSelector) public view returns (uint256) {
         //    uint256 functionsFeeInLink = getFunctionsFeeInLink(dstChainSelector);
         //    return (functionsFeeInLink * s_latestLinkUsdcRate) / STANDARD_TOKEN_DECIMALS;
-
-        return clfPremiumFees[dstChainSelector] + clfPremiumFees[i_chainSelector];
+        uint256 baseFee = clfPremiumFees[dstChainSelector] + clfPremiumFees[i_chainSelector];
+        return (baseFee * 2) / 100;
     }
 
     /**

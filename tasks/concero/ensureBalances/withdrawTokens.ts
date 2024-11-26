@@ -1,6 +1,6 @@
 import { conceroNetworks, ProxyEnum, viemReceiptConfig } from "../../../constants";
 import monitorTokenBalances from "./viewTokenBalances";
-import { formatUnits } from "viem";
+import { formatUnits, parseAbi } from "viem";
 import { getEnvAddress, getFallbackClients, log } from "../../../utils";
 
 async function withdrawTokens(isTestnet: boolean) {
@@ -66,7 +66,7 @@ async function withdrawTokens(isTestnet: boolean) {
 
       const { request: withdrawReq } = await publicClient.simulateContract({
         address: contractAddress,
-        abi,
+        abi: parseAbi(["function withdraw(address recipient, address token, uint256 amount) external payable"]),
         functionName: "withdraw",
         account,
         args: [account.address, address, amountToWithdraw],

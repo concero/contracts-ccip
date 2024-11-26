@@ -17,10 +17,10 @@ import {ParentPoolStorage} from "./Libraries/ParentPoolStorage.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 error CallerNotAllowed(address caller);
-error WithdrawAlreadyTriggered(bytes32);
-error WithdrawRequestDoesntExist(bytes32 id);
-error WithdrawRequestNotReady(bytes32 id);
-
+error WithdrawalAlreadyTriggered(bytes32 id);
+error WithdrawalRequestDoesntExist(bytes32 id);
+error WithdrawalRequestNotReady(bytes32 id);
+error WithdrawalAlreadyPerformed(bytes32 id);
 contract ParentPoolCLFCLA is
     IParentPoolCLFCLA,
     FunctionsClient,
@@ -47,7 +47,7 @@ contract ParentPoolCLFCLA is
         IParentPool.CLFRequestType requestType,
         bytes err
     );
-    event RetryWithdrawPerformed(bytes32 id);
+    event RetryWithdrawalPerformed(bytes32 id);
     event WithdrawUpkeepPerformed(bytes32 id);
     event WithdrawRequestUpdated(bytes32 id);
     event PendingWithdrawRequestAdded(bytes32 id);
@@ -131,35 +131,19 @@ contract ParentPoolCLFCLA is
     function checkUpkeep(
         bytes calldata /* checkData */
     ) external view override cannotExecute returns (bool, bytes memory) {
-        uint256 withdrawalRequestsCount = s_withdrawalRequestIds.length;
-
-        for (uint256 i; i < withdrawalRequestsCount; ++i) {
+        for (uint256 i; i < s_withdrawalRequestIds.length; ++i) {
             bytes32 withdrawalId = s_withdrawalRequestIds[i];
 
-            IParentPool.WithdrawRequest storage withdrawalRequest = s_withdrawRequests[
-                withdrawalId
-            ];
-
-            address lpAddress = withdrawalRequest.lpAddress;
-            uint256 amountToWithdraw = withdrawalRequest.amountToWithdraw;
-            uint256 liquidityRequestedFromEachPool = withdrawalRequest
-                .liquidityRequestedFromEachPool;
-
-            if (amountToWithdraw == 0) {
+            if (s_withdrawRequests[withdrawalId].amountToWithdraw == 0) {
                 continue;
             }
-            // s_withdrawTriggered is used to prevent multiple CLA triggers of the same withdrawal request
+
             if (
-                s_withdrawTriggered[withdrawalId] == false &&
-                block.timestamp > withdrawalRequest.triggeredAtTimestamp
+                !s_withdrawTriggered[withdrawalId] &&
+                block.timestamp > s_withdrawRequests[withdrawalId].triggeredAtTimestamp
             ) {
-                bytes memory _performData = abi.encode(
-                    lpAddress,
-                    liquidityRequestedFromEachPool,
-                    withdrawalId
-                );
-                bool _upkeepNeeded = true;
-                return (_upkeepNeeded, _performData);
+                bytes memory _performData = abi.encode(withdrawalId);
+                return (true, _performData);
             }
         }
         return (false, "");
@@ -171,15 +155,26 @@ contract ParentPoolCLFCLA is
      * @dev this function must be called only by the Chainlink Forwarder unique address
      */
     function performUpkeep(bytes calldata _performData) external override onlyProxyContext {
-        (, uint256 liquidityRequestedFromEachPool, bytes32 withdrawalId) = abi.decode(
-            _performData,
-            (address, uint256, bytes32)
-        );
+        bytes32 withdrawalId = abi.decode(_performData, (bytes32));
 
-        if (s_withdrawTriggered[withdrawalId] == true) {
-            revert WithdrawAlreadyTriggered(withdrawalId);
+        if (withdrawalId == bytes32(0)) {
+            revert WithdrawalRequestDoesntExist(withdrawalId);
+        }
+
+        if (block.timestamp < s_withdrawRequests[withdrawalId].triggeredAtTimestamp) {
+            revert WithdrawalRequestNotReady(withdrawalId);
+        }
+
+        if (s_withdrawTriggered[withdrawalId]) {
+            revert WithdrawalAlreadyTriggered(withdrawalId);
         } else {
             s_withdrawTriggered[withdrawalId] = true;
+        }
+
+        uint256 liquidityRequestedFromEachPool = s_withdrawRequests[withdrawalId]
+            .liquidityRequestedFromEachPool;
+        if (liquidityRequestedFromEachPool == 0) {
+            revert WithdrawalRequestDoesntExist(withdrawalId);
         }
 
         bytes32 reqId = _sendLiquidityCollectionRequest(
@@ -188,31 +183,32 @@ contract ParentPoolCLFCLA is
         );
 
         s_clfRequestTypes[reqId] = IParentPool.CLFRequestType.withdrawal_requestLiquidityCollection;
-
         _addWithdrawalOnTheWayAmountById(withdrawalId);
         emit WithdrawUpkeepPerformed(reqId);
     }
 
-    //todo: may be a DOS attack vector if executed multiple times at once
     function retryPerformWithdrawalRequest() external onlyProxyContext {
         bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
-        IParentPool.WithdrawRequest storage withdrawalRequest = s_withdrawRequests[withdrawalId];
 
-        uint256 amountToWithdraw = withdrawalRequest.amountToWithdraw;
-        address lpAddress = withdrawalRequest.lpAddress;
-        uint256 liquidityRequestedFromEachPool = withdrawalRequest.liquidityRequestedFromEachPool;
-        uint256 triggeredAtTimestamp = withdrawalRequest.triggeredAtTimestamp;
-
-        if (msg.sender != lpAddress) {
+        if (msg.sender != s_withdrawRequests[withdrawalId].lpAddress) {
             revert CallerNotAllowed(msg.sender);
         }
 
-        if (amountToWithdraw == 0) {
-            revert WithdrawRequestDoesntExist(withdrawalId);
+        uint256 liquidityRequestedFromEachPool = s_withdrawRequests[withdrawalId]
+            .liquidityRequestedFromEachPool;
+        if (liquidityRequestedFromEachPool == 0) {
+            revert WithdrawalRequestDoesntExist(withdrawalId);
         }
 
-        if (block.timestamp < triggeredAtTimestamp + CCIP_ESTIMATED_TIME_TO_COMPLETE) {
-            revert WithdrawRequestNotReady(withdrawalId);
+        if (s_withdrawRequests[withdrawalId].remainingLiquidityFromChildPools < 10) {
+            revert WithdrawalAlreadyPerformed(withdrawalId);
+        }
+
+        if (
+            block.timestamp <
+            s_withdrawRequests[withdrawalId].triggeredAtTimestamp + CCIP_ESTIMATED_TIME_TO_COMPLETE
+        ) {
+            revert WithdrawalRequestNotReady(withdrawalId);
         }
 
         bytes32 reqId = _sendLiquidityCollectionRequest(
@@ -220,7 +216,7 @@ contract ParentPoolCLFCLA is
             liquidityRequestedFromEachPool
         );
 
-        emit RetryWithdrawPerformed(reqId);
+        emit RetryWithdrawalPerformed(reqId);
     }
 
     function calculateWithdrawableAmount(
@@ -391,7 +387,7 @@ contract ParentPoolCLFCLA is
             s_withdrawRequests[_withdrawalId].liquidityRequestedFromEachPool;
 
         if (amountToWithdraw == 0) {
-            revert WithdrawRequestDoesntExist(_withdrawalId);
+            revert WithdrawalRequestDoesntExist(_withdrawalId);
         }
 
         s_withdrawalsOnTheWayAmount += amountToWithdraw;

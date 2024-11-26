@@ -1,6 +1,6 @@
 import { Address } from "viem";
 import { WalletClient } from "viem/clients/createWalletClient";
-import ERC20ABI from "../../abi/ERC20.json";
+import { erc20Abi } from "viem";
 import { PublicClient } from "viem/clients/createPublicClient";
 import { HttpTransport } from "viem/clients/transports/http";
 import { Chain } from "viem/types/chain";
@@ -16,7 +16,7 @@ export async function approve(
 ) {
   const senderAddress = walletClient.account.address;
   const tokenAllowance = await publicClient.readContract({
-    abi: ERC20ABI,
+    abi: erc20Abi,
     functionName: "allowance",
     address: erc20TokenAddress as `0x${string}`,
     args: [senderAddress, contractAddress],
@@ -27,14 +27,14 @@ export async function approve(
   }
 
   const tokenAmount = await publicClient.readContract({
-    abi: ERC20ABI,
+    abi: erc20Abi,
     functionName: "balanceOf",
     address: erc20TokenAddress as `0x${string}`,
     args: [senderAddress],
   });
 
   const tokenHash = await walletClient.writeContract({
-    abi: ERC20ABI,
+    abi: erc20Abi,
     functionName: "approve",
     address: erc20TokenAddress as `0x${string}`,
     args: [contractAddress, amount],

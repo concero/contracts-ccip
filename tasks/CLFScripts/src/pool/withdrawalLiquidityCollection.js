@@ -13,16 +13,16 @@
 				usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
 				poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
 			},
-			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
-				urls: [
-					`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://avalanche-fuji-c-chain-rpc.publicnode.com',
-					'https://avalanche-fuji.blockpi.network/v1/rpc/public',
-				],
-				chainId: '0xa869',
-				usdcAddress: '${USDC_FUJI}',
-				poolAddress: '${CHILD_POOL_PROXY_FUJI}',
-			},
+			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
+			// 	urls: [
+			// 		`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
+			// 		'https://avalanche-fuji-c-chain-rpc.publicnode.com',
+			// 		'https://avalanche-fuji.blockpi.network/v1/rpc/public',
+			// 	],
+			// 	chainId: '0xa869',
+			// 	usdcAddress: '${USDC_FUJI}',
+			// 	poolAddress: '${CHILD_POOL_PROXY_FUJI}',
+			// },
 
 			// mainnets
 			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {

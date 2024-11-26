@@ -321,6 +321,9 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
                 } else {
                     IInfraOrchestrator(i_infraProxy).confirmTx(txId);
                     i_USDC.safeTransfer(settlementTx[i].recipient, settlementTx[i].amount);
+
+                    // TODO: Implement the event
+                    // emit ExecutionLayerFailed(settlementTx[i].id);
                 }
             }
         }

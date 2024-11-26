@@ -20,7 +20,7 @@ export async function bridgeBase({
   publicClient,
 }: IBridgeBase) {
   const { abi: ConceroOrchestratorAbi } = await import(
-    "../../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json"
+    "../../../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json"
   );
 
   await approve(srcTokenAddress, srcContractAddress, srcTokenAmount, walletClient, publicClient);

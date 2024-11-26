@@ -1,5 +1,6 @@
 import { CNetwork } from "../../types/CNetwork";
-import ierc20Abi from "@chainlink/contracts/abi/v0.8/IERC20.json";
+
+import { erc20Abi } from "viem";
 import { conceroNetworks, networkEnvKeys, viemReceiptConfig } from "../../constants";
 import { dripBnm } from "./dripBnm";
 import { task } from "hardhat/config";
@@ -14,7 +15,7 @@ export async function ensureDeployerBnMBalance(chains: CNetwork[]) {
     const { publicClient, account } = getFallbackClients(chain);
     const balance = await publicClient.readContract({
       address: ccipBnmToken,
-      abi: ierc20Abi,
+      abi: erc20Abi,
       functionName: "balanceOf",
       args: [account.address],
     });
@@ -38,7 +39,7 @@ export async function fundContract(chains: CNetwork[], amount: number = 1) {
       await ensureDeployerBnMBalance(chains);
       const { request: sendReq } = await publicClient.simulateContract({
         functionName: "transfer",
-        abi: ierc20Abi,
+        abi: erc20Abi,
         account,
         address: ccipBnmToken,
         args: [contract, BigInt(amount) * 10n ** 18n],

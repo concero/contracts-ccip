@@ -1,8 +1,8 @@
 import "@nomicfoundation/hardhat-chai-matchers";
 import { parseUnits } from "viem";
 import { bridgeBase } from "../testBase/bridgeBase";
-import { getFallbackClients } from "../../utils";
-import { conceroNetworks } from "../../constants";
+import { getFallbackClients } from "../../../utils";
+import { conceroNetworks } from "../../../constants";
 
 describe("bridge", () => {
   const { walletClient, publicClient } = getFallbackClients(conceroNetworks.arbitrumSepolia);

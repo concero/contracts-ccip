@@ -119,7 +119,7 @@ async function addPoolsToAllChains(hre) {
         hash: setPoolHash,
       });
 
-      err(`Added pool ${poolAddressToAdd}. Gas used: ${setPoolGasUsed.toString()}`, "addPoolsToAllChains", chainName);
+      log(`Added pool ${poolAddressToAdd}. Gas used: ${setPoolGasUsed.toString()}`, "addPoolsToAllChains", chainName);
     } catch (error) {
       console.error(error);
     }

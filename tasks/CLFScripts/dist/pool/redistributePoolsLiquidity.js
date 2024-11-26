@@ -83,12 +83,13 @@
 			const getPoolsBalances = async () => {
 				const getBalancePromises = [];
 				for (const chain in chainSelectors) {
-					if (chain === newPoolChainSelector) continue;
-					const provider = getProviderByChainSelector(chain);
-					const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
-					const pool = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, provider);
-					getBalancePromises.push(erc20.balanceOf(chainSelectors[chain].poolAddress));
-					getBalancePromises.push(pool.s_loansInUse());
+					if (chain !== newPoolChainSelector) {
+						const provider = getProviderByChainSelector(chain);
+						const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
+						const pool = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, provider);
+						getBalancePromises.push(erc20.balanceOf(chainSelectors[chain].poolAddress));
+						getBalancePromises.push(pool.s_loansInUse());
+					}
 				}
 				const results = await Promise.all(getBalancePromises);
 				const balances = {};
@@ -103,13 +104,14 @@
 			const newPoolBalance = poolsTotalBalance / BigInt(newPoolsCount);
 			const distributeAmountPromises = [];
 			for (const chain in chainSelectors) {
-				if (chain === newPoolChainSelector) continue;
-				const signer = getSignerByChainSelector(chain);
-				const poolContract = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, signer);
-				const amountToDistribute = poolsBalances[chain] - newPoolBalance;
-				distributeAmountPromises.push(
-					poolContract.distributeLiquidity(newPoolChainSelector, amountToDistribute, distributeLiquidityRequestId),
-				);
+				if (chain !== newPoolChainSelector) {
+					const signer = getSignerByChainSelector(chain);
+					const poolContract = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, signer);
+					const amountToDistribute = poolsBalances[chain] - newPoolBalance;
+					distributeAmountPromises.push(
+						poolContract.distributeLiquidity(newPoolChainSelector, amountToDistribute, distributeLiquidityRequestId),
+					);
+				}
 			}
 			await Promise.all(distributeAmountPromises);
 			return Functions.encodeUint256(1n);

@@ -131,28 +131,19 @@ contract ParentPoolCLFCLA is
     function checkUpkeep(
         bytes calldata /* checkData */
     ) external view override cannotExecute returns (bool, bytes memory) {
-        uint256 withdrawalRequestsCount = s_withdrawalRequestIds.length;
-
-        for (uint256 i; i < withdrawalRequestsCount; ++i) {
+        for (uint256 i; i < s_withdrawalRequestIds.length; ++i) {
             bytes32 withdrawalId = s_withdrawalRequestIds[i];
 
-            IParentPool.WithdrawRequest storage withdrawalRequest = s_withdrawRequests[
-                withdrawalId
-            ];
-
-            uint256 amountToWithdraw = withdrawalRequest.amountToWithdraw;
-
-            if (amountToWithdraw == 0) {
+            if (s_withdrawRequests[withdrawalId].amountToWithdraw == 0) {
                 continue;
             }
 
             if (
-                s_withdrawTriggered[withdrawalId] == false &&
-                block.timestamp > withdrawalRequest.triggeredAtTimestamp
+                !s_withdrawTriggered[withdrawalId] &&
+                block.timestamp > s_withdrawRequests[withdrawalId].triggeredAtTimestamp
             ) {
                 bytes memory _performData = abi.encode(withdrawalId);
-                bool _upkeepNeeded = true;
-                return (_upkeepNeeded, _performData);
+                return (true, _performData);
             }
         }
         return (false, "");
@@ -166,6 +157,14 @@ contract ParentPoolCLFCLA is
     function performUpkeep(bytes calldata _performData) external override onlyProxyContext {
         bytes32 withdrawalId = abi.decode(_performData, (bytes32));
 
+        if (withdrawalId == bytes32(0)) {
+            revert WithdrawalRequestDoesntExist(withdrawalId);
+        }
+
+        if (block.timestamp < s_withdrawRequests[withdrawalId].triggeredAtTimestamp) {
+            revert WithdrawalRequestNotReady(withdrawalId);
+        }
+
         if (s_withdrawTriggered[withdrawalId]) {
             revert WithdrawalAlreadyTriggered(withdrawalId);
         } else {
@@ -176,10 +175,6 @@ contract ParentPoolCLFCLA is
             .liquidityRequestedFromEachPool;
         if (liquidityRequestedFromEachPool == 0) {
             revert WithdrawalRequestDoesntExist(withdrawalId);
-        }
-
-        if (s_withdrawRequests[withdrawalId].remainingLiquidityFromChildPools < 10) {
-            revert WithdrawalAlreadyPerformed(withdrawalId);
         }
 
         bytes32 reqId = _sendLiquidityCollectionRequest(
@@ -199,7 +194,9 @@ contract ParentPoolCLFCLA is
             revert CallerNotAllowed(msg.sender);
         }
 
-        if (s_withdrawRequests[withdrawalId].amountToWithdraw == 0) {
+        uint256 liquidityRequestedFromEachPool = s_withdrawRequests[withdrawalId]
+            .liquidityRequestedFromEachPool;
+        if (liquidityRequestedFromEachPool == 0) {
             revert WithdrawalRequestDoesntExist(withdrawalId);
         }
 
@@ -216,7 +213,7 @@ contract ParentPoolCLFCLA is
 
         bytes32 reqId = _sendLiquidityCollectionRequest(
             withdrawalId,
-            s_withdrawRequests[withdrawalId].liquidityRequestedFromEachPool
+            liquidityRequestedFromEachPool
         );
 
         emit RetryWithdrawalPerformed(reqId);

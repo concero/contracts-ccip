@@ -29,6 +29,8 @@ error InvalidSwapData();
 error UnsupportedBridgeToken();
 error InvalidIntegratorFeeBps();
 error FailedToWithdrawIntegratorFees(address token, uint256 amount);
+error InvalidRecipient();
+error TransferFailed();
 error TxAlreadyConfirmed();
 error OnlyPool();
 

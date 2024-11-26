@@ -1,10 +1,12 @@
 try {
 	const [b, o, f] = bytesArgs;
-	const u = 'https://raw.githubusercontent.com/ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';
+	const m = 'https://raw.githubusercontent.com/';
+	const u = m + 'ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';
 	const q =
-		'https://raw.githubusercontent.com/concero/contracts-ccip/' +
+		m +
+		'concero/contracts-ccip/' +
 		'${CLF_JS_CODE_BRANCH}' +
-		`/packages/hardhat/tasks/CLFScripts/dist/pool/${f === '0x02' ? 'collectLiquidity' : f === '0x01' ? 'distributeLiquidity' : 'getChildPoolsLiquidity'}.min.js`;
+		`/tasks/CLFScripts/dist/pool/${f === '0x02' ? 'collectLiquidity' : f === '0x01' ? 'distributeLiquidity' : 'getChildPoolsLiquidity'}.min.js`;
 	const [t, p] = await Promise.all([fetch(u), fetch(q)]);
 	const [e, c] = await Promise.all([t.text(), p.text()]);
 	const g = async s => {

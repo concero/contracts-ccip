@@ -70,14 +70,14 @@ async function deployInfra(params: DeployInfraParams) {
     await upgradeProxyImplementation(hre, ProxyEnum.infraProxy, false);
   }
 
+  if (uploadSecrets) {
+    await uploadDonSecrets(
+      deployableChains,
+      slotId,
+      isTestnet ? CLF_SECRETS_TESTNET_EXPIRATION : CLF_SECRETS_MAINNET_EXPIRATION,
+    );
+  }
   if (setVars) {
-    if (uploadSecrets) {
-      await uploadDonSecrets(
-        deployableChains,
-        slotId,
-        isTestnet ? CLF_SECRETS_TESTNET_EXPIRATION : CLF_SECRETS_MAINNET_EXPIRATION,
-      );
-    }
     await setContractVariables(deployableChains, slotId, uploadSecrets);
     await setConceroProxyDstContracts(deployableChains);
   }

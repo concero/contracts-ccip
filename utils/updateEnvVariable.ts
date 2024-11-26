@@ -6,7 +6,7 @@ import { CNetworkNames } from "../types/CNetwork";
 import { EnvFileName, EnvPrefixes } from "../types/deploymentVariables";
 
 export function updateEnvVariable(key: string, newValue: string, envFileName: EnvFileName) {
-  const filePath = path.join(__dirname, `./.env.${envFileName}`);
+  const filePath = path.join(__dirname, `../.env.${envFileName}`);
   if (!filePath) throw new Error(`File not found: ${filePath}`);
 
   const envContents = readFileSync(filePath, "utf8");

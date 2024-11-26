@@ -4,15 +4,14 @@ pragma solidity ^0.8.20;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-error UnableToCompleteDelegateCall(bytes data);
-error InvalidAddress();
-
 library LibConcero {
     using SafeERC20 for IERC20;
 
     error TransferToNullAddress();
     error NativeTokenIsNotERC20();
     error InsufficientBalance(uint256 balance, uint256 amount);
+    error UnableToCompleteDelegateCall(bytes data);
+    error InvalidAddress();
 
     function getBalance(address _token, address _contract) internal view returns (uint256) {
         if (_token == address(0)) {

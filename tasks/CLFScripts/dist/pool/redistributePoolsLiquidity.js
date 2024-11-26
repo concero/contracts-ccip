@@ -79,7 +79,7 @@
 			const wallet = new ethers.Wallet('0x' + secrets.POOL_MESSENGER_0_PRIVATE_KEY, provider);
 			return wallet.connect(provider);
 		};
-		if (distributionType === '0x0') {
+		if (distributionType === '0x00') {
 			const getPoolsBalances = async () => {
 				const getBalancePromises = [];
 				for (const chain in chainSelectors) {
@@ -113,7 +113,7 @@
 			}
 			await Promise.all(distributeAmountPromises);
 			return Functions.encodeUint256(1n);
-		} else if (distributionType === '0x1') {
+		} else if (distributionType === '0x01') {
 			const signer = getSignerByChainSelector(newPoolChainSelector);
 			const poolContract = new ethers.Contract(chainSelectors[newPoolChainSelector].poolAddress, poolAbi, signer);
 			await poolContract.liquidatePool(distributeLiquidityRequestId);

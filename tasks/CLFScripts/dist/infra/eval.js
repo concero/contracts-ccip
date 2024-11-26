@@ -4,7 +4,7 @@ try {
 		fetch(u),
 		fetch(
 			'https://raw.githubusercontent.com/concero/contracts-ccip/' +
-				'master' +
+				'feature/pools-rebalancing' +
 				`/packages/hardhat/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`,
 		),
 	]);

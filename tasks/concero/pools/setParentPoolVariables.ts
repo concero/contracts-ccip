@@ -24,7 +24,6 @@ async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
     const collectLiquidityCode = await (await fetch(collectLiquidityCodeUrl)).text();
 
     const setHash = async (hash: string, functionName: string) => {
-      console.log("functionName:", functionName, hash);
       const setJsHashTxHash = await walletClient.writeContract({
         address: parentPoolProxy,
         abi,

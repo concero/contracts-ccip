@@ -6,6 +6,11 @@ export const messengerTargetBalances: Record<string, bigint> = {
   polygon: parseEther("0.1"),
   avalanche: parseEther("0.1"),
   base: parseEther("0.025"),
+  //testnet
+  baseSepolia: parseEther("0.01"),
+  arbitrumSepolia: parseEther("0.01"),
+  polygonAmoy: parseEther("0.01"),
+  avalancheFuji: parseEther("0.1"),
 };
 
 export const deployerTargetBalances: Record<string, bigint> = {

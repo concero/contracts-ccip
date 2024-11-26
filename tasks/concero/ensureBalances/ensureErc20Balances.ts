@@ -14,15 +14,22 @@ const donorAccount = privateKeyToAccount(`0x${process.env.DEPLOYER_PRIVATE_KEY}`
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 const prompt = (question: string): Promise<string> => new Promise(resolve => rl.question(question, resolve));
 
-const minBalances: Record<ProxyEnum, bigint> = {
-  parentPoolProxy: parseEther("24"),
-  childPoolProxy: parseEther("3"),
-  infraProxy: parseEther("20"),
+const minBalances: Record<"mainnet" | "testnet", Record<ProxyEnum, bigint>> = {
+  mainnet: {
+    parentPoolProxy: parseEther("24"),
+    childPoolProxy: parseEther("3"),
+    infraProxy: parseEther("20"),
+  },
+  testnet: {
+    parentPoolProxy: parseEther("0.5"),
+    childPoolProxy: parseEther("0.1"),
+    infraProxy: parseEther("1"),
+  },
 };
 
-async function checkChainBalance(chain: CNetwork, contractType: ProxyEnum): Promise<BalanceInfo> {
+async function checkChainBalance(chain: CNetwork, contractType: ProxyEnum, isTestnet: boolean): Promise<BalanceInfo> {
   const { linkToken } = chain;
-  const minBalance = minBalances[contractType];
+  const minBalance = minBalances[isTestnet ? "testnet" : "mainnet"][contractType];
 
   const [address, alias] = getEnvAddress(contractType, chain.name);
 
@@ -67,7 +74,7 @@ async function ensureERC20Balances(isTestnet: boolean, autoTopUp: boolean): Prom
 
   try {
     for (const [chainType, chainList] of Object.entries(chains)) {
-      const balancePromises = chainList.map(chain => checkChainBalance(chain, `${chainType}Proxy`));
+      const balancePromises = chainList.map(chain => checkChainBalance(chain, `${chainType}Proxy`, isTestnet));
       balanceInfos.push(...(await Promise.all(balancePromises)));
     }
 

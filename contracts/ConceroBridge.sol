@@ -27,6 +27,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
     uint64 private constant HALF_DST_GAS = 600_000;
     uint256 internal constant BATCHED_TX_THRESHOLD = 5_000_000_000;
     uint8 internal constant MAX_PENDING_SETTLEMENT_TXS_BY_LANE = 200;
+    uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 220_500;
 
     constructor(
         FunctionsVariables memory _variables,

@@ -197,7 +197,7 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
   }
 }
 
-async function setPools(chain: CNetwork, abi: any) {
+async function setPools(chain: CNetwork, abi: any, rebalance) {
   const { name, type } = chain;
   if (!name) throw new Error("Chain name not found");
 
@@ -217,7 +217,7 @@ async function setPools(chain: CNetwork, abi: any) {
       const { request: setReceiverReq } = await publicClient.simulateContract({
         address: parentPoolProxy,
         functionName: "setPools",
-        args: [dstChainSelector, childPoolProxy, false],
+        args: [dstChainSelector, childPoolProxy, rebalance],
         abi,
         account,
       });
@@ -237,7 +237,7 @@ async function setPools(chain: CNetwork, abi: any) {
   }
 }
 
-export async function setParentPoolVariables(chain: CNetwork, slotId: number) {
+export async function setParentPoolVariables(chain: CNetwork, slotId: number, rebalance = false) {
   const { abi: ParentPoolAbi } = await import("../../../artifacts/contracts/ParentPool.sol/ParentPool.json");
 
   await setParentPoolSecretsVersion(chain, ParentPoolAbi, slotId);
@@ -246,6 +246,6 @@ export async function setParentPoolVariables(chain: CNetwork, slotId: number) {
   await setParentPoolJsHashes(chain, ParentPoolAbi);
 
   await setParentPoolCap(chain, ParentPoolAbi); // once
-  await setPools(chain, ParentPoolAbi); // once
+  await setPools(chain, ParentPoolAbi, rebalance); // once
   await setConceroContractSenders(chain, ParentPoolAbi); // once
 }

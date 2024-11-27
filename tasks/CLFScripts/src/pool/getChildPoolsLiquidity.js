@@ -97,12 +97,12 @@
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
 
 	const getBaseDepositsOneTheWayArray = () => {
-		const pool = new ethers.Contract('${PARENT_POOL_PROXY_BASE}', poolAbi, baseProvider);
+		const pool = new ethers.Contract(chainSelectors[baseChainSelector].poolAddress, poolAbi, baseProvider);
 		return pool.getDepositsOnTheWay();
 	};
 
 	const getChildPoolsCcipLogs = async ccipLines => {
-		const ethersId = ethers.id('ConceroChildPool_CCIPReceived(bytes32,uint64,address,address,uint256)');
+		const ethersId = ethers.id('CCIPReceived(bytes32,uint64,address,address,uint256)');
 		const indexes = {};
 
 		const getCcipLogs = async () => {

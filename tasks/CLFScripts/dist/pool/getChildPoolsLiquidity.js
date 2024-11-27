@@ -55,11 +55,11 @@
 	};
 	const baseProvider = getProviderByChainSelector(baseChainSelector);
 	const getBaseDepositsOneTheWayArray = () => {
-		const pool = new ethers.Contract('0x0AE1B2730066AD46481ab0a5fd2B5893f8aBa323', poolAbi, baseProvider);
+		const pool = new ethers.Contract(chainSelectors[baseChainSelector].poolAddress, poolAbi, baseProvider);
 		return pool.getDepositsOnTheWay();
 	};
 	const getChildPoolsCcipLogs = async ccipLines => {
-		const ethersId = ethers.id('ConceroChildPool_CCIPReceived(bytes32,uint64,address,address,uint256)');
+		const ethersId = ethers.id('CCIPReceived(bytes32,uint64,address,address,uint256)');
 		const indexes = {};
 		const getCcipLogs = async () => {
 			const promises = [];

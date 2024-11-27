@@ -29,6 +29,7 @@ import { getSwapAndBridgeCost } from "./getSwapAndBridgeCost/getSwapAndBridgeCos
 import removeParentPoolChildPoolsTask from "./pools/removeParentPoolChildPoolsTask";
 import addParentPoolChildPool from "./pools/addParentPoolChildPoolTask";
 import setParentPoolVariablesTask from "./pools/setParentPoolVariablesTask";
+import updateParentPoolHashesTask from "./pools/updateParentPoolHashesTask";
 
 export default {
   deployConceroDexSwap,
@@ -59,4 +60,5 @@ export default {
   removeParentPoolChildPoolsTask,
   addParentPoolChildPool,
   setParentPoolVariablesTask
+  updateParentPoolHashesTask,
 };

@@ -1,6 +1,6 @@
 import { task, types } from "hardhat/config";
 import { conceroChains, conceroNetworks, networkTypes, ProxyEnum } from "../../../constants";
-import { setContractVariables } from "./setContractVariables";
+import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
 import { CNetwork } from "../../../types/CNetwork";
 import uploadDonSecrets from "../../CLF/donSecrets/upload";
 import deployConcero from "../../../deploy/ConceroBridge";

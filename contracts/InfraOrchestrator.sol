@@ -202,35 +202,20 @@ contract InfraOrchestrator is
 
     /**
      * @notice Wrapper function to delegate call to ConceroBridge.addUnconfirmedTX
-     * @param ccipMessageId the CCIP message ID to be added on destination
-     * @param sender the address of the sender
-     * @param recipient the address of recipient of the bridge transaction
-     * @param amount the amount to be bridged
-     * @param srcChainSelector the CCIP chain selector of source chain
-     * @param token the address of the token
-     * @param blockNumber the transaction block number
-     * @param dstSwapData the swap data to perform, if it's not empty
+     * @param conceroMessageId the Concerro message ID
+     * @param srcChainSelector the source chain selector
+     * @param txDataHash the transaction data hash
      */
     function addUnconfirmedTX(
-        bytes32 ccipMessageId,
-        address sender,
-        address recipient,
-        uint256 amount,
+        bytes32 conceroMessageId,
         uint64 srcChainSelector,
-        CCIPToken token,
-        uint256 blockNumber,
-        bytes calldata dstSwapData
+        bytes32 txDataHash
     ) external onlyMessenger {
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             IInfraCLF.addUnconfirmedTX.selector,
-            ccipMessageId,
-            sender,
-            recipient,
-            amount,
+            conceroMessageId,
             srcChainSelector,
-            token,
-            blockNumber,
-            dstSwapData
+            txDataHash
         );
 
         LibConcero.safeDelegateCall(i_conceroBridge, delegateCallArgs);

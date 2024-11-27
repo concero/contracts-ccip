@@ -69,6 +69,8 @@ const getSimulationArgs: {[functionName: string]: ArgBuilder} = {
 			amount,
 			dstChainSelector,
 		];
+
+		return [getEnvVar('CONCERO_INFRA_PROXY_ARBITRUM_SEPOLIA'), getEnvVar('CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA')];
 	},
 	collect_liq: async () => {
 		const srcJsHashSum = getHashSum(await (await fetch(collectLiquidityCodeUrl)).text());

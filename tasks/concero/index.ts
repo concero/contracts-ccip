@@ -30,6 +30,7 @@ import removeParentPoolChildPoolsTask from "./pools/removeParentPoolChildPoolsTa
 import addParentPoolChildPool from "./pools/addParentPoolChildPoolTask";
 import setParentPoolVariablesTask from "./pools/setParentPoolVariablesTask";
 import updateParentPoolHashesTask from "./pools/updateParentPoolHashesTask";
+import removeParentPoolChildPoolsTask from "./pools/removeParentPoolChildPoolsTask";
 
 export default {
   deployConceroDexSwap,
@@ -61,4 +62,5 @@ export default {
   addParentPoolChildPool,
   setParentPoolVariablesTask
   updateParentPoolHashesTask,
+  removeParentPoolChildPoolsTask,
 };

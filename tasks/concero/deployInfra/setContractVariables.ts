@@ -1,4 +1,4 @@
-import { CNetwork, CNetworkNames } from "../../../types/CNetwork";
+import { CNetwork } from "../../../types/CNetwork";
 import {
   err,
   formatGas,
@@ -13,16 +13,16 @@ import {
 import { SecretsManager } from "@chainlink/functions-toolkit";
 
 import {
-  conceroNetworks,
+  clfFees,
   conceroChains,
+  conceroNetworks,
+  defaultCLFfee,
   mainnetChains,
   networkEnvKeys,
   networkTypes,
   ProxyEnum,
   testnetChains,
   viemReceiptConfig,
-  clfFees,
-  defaultCLFfee,
 } from "../../../constants";
 import { ethersV6CodeUrl, infraDstJsCodeUrl, infraSrcJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 

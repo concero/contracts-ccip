@@ -13,7 +13,7 @@
 			poolAddress: '0xD5B19458Ddd36f75Cb8309B0e3bfB607Ccc04EB6',
 		},
 	};
-	const baseChainSelector = '15971525489660198786';
+	const baseChainSelector = '10344971235874465080';
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 	const poolAbi = [
 		'function s_loansInUse() external view returns (uint256)',

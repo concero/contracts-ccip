@@ -177,7 +177,7 @@
 		const receiver = decodedLog.args[3];
 		const compressedDstSwapData = decodedLog.args[4];
 
-		const eventHashData = ethers.defaultAbiCoder.encode(
+		const eventHashData = new ethers.AbiCoder().encode(
 			['bytes32', 'uint256', 'uint64', 'address', 'bytes32'],
 			[decodedLog.args[0], amount, decodedLog.args[2], receiver, ethers.keccak256(compressedDstSwapData)],
 		);

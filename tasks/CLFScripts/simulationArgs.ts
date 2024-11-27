@@ -5,7 +5,6 @@ import {
 	infraSrcJsCodeUrl,
 	parentPoolDistributeLiqJsCodeUrl,
 } from '../../constants/functionsJsCodeUrls';
-import {parseUnits} from 'viem';
 
 type ArgBuilder = () => Promise<string[]>;
 
@@ -42,35 +41,15 @@ const getSimulationArgs: {[functionName: string]: ArgBuilder} = {
 		];
 	},
 	infra_dst: async () => {
-		const srcJsHashSum = '0x03a10af5b94376dd622652937371b52b0df82f0a3f0e2ad68a0e6384911fd7bd';
-		const ethersHashSum = '0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4';
-		const placeholder = '0x1';
-		const srcContractAddress = getEnvVar('CONCERO_INFRA_PROXY_ARBITRUM_SEPOLIA');
-		const srcChainSelector = '0x' + BigInt(getEnvVar('CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA')).toString(16);
-		const txBlockNumber = '0x6748AE';
-		const conceroBridgeId = '0x2e36844a859b5802e47c2b5cd9ae5f2f424e83c13fc5919b8bf3d6e641e43c95';
-		const sender = '0xdddddb8a8e41c194ac6542a0ad7ba663a72741e0';
-		const recipient = '0xdddddb8a8e41c194ac6542a0ad7ba663a72741e0';
-		const token = '0x' + BigInt(1).toString(16);
-		const amount = '0x' + parseUnits('1', 6).toString(16);
-		const dstChainSelector = '0x' + BigInt(getEnvVar('CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA')).toString(16);
-
 		return [
-			srcJsHashSum,
-			ethersHashSum,
-			placeholder,
-			srcContractAddress,
-			srcChainSelector,
-			txBlockNumber,
-			conceroBridgeId,
-			sender,
-			recipient,
-			token,
-			amount,
-			dstChainSelector,
+			'0x0',
+			'0x0',
+			'0x0',
+			'0x' + BigInt(getEnvVar('CONCERO_INFRA_PROXY_ARBITRUM_SEPOLIA')).toString(16),
+			'0x' + BigInt(getEnvVar('CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA')).toString(16),
+			'0x1c3361b28a9e61f3b848807c9a816c7ac9d7ac1a8859dc0a0b8b5a5f68aec5b6',
+			'0xfa726ca69b8b707f6f491e77865af8c8c035d5e16b083ecf11835788df1e12fd',
 		];
-
-		return [getEnvVar('CONCERO_INFRA_PROXY_ARBITRUM_SEPOLIA'), getEnvVar('CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA')];
 	},
 	collect_liq: async () => {
 		const srcJsHashSum = getHashSum(await (await fetch(collectLiquidityCodeUrl)).text());

@@ -28,6 +28,7 @@ import checkRPCStatus from "./checkRPCStatus";
 import { getSwapAndBridgeCost } from "./getSwapAndBridgeCost/getSwapAndBridgeCost";
 import updateParentPoolHashesTask from "./pools/updateParentPoolHashesTask";
 import removeParentPoolChildPoolsTask from "./pools/removeParentPoolChildPoolsTask";
+import updateInfraHashesTask from "./deployInfra/updateInfraHashesTask";
 
 export default {
   deployConceroDexSwap,
@@ -57,4 +58,5 @@ export default {
   getSwapAndBridgeCost,
   updateParentPoolHashesTask,
   removeParentPoolChildPoolsTask,
+  updateInfraHashesTask,
 };

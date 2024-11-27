@@ -162,7 +162,7 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
   }
 }
 
-async function setJsHashes(deployableChain: CNetwork, abi: any) {
+export async function setJsHashes(deployableChain: CNetwork, abi: any) {
   try {
     const { viemChain, name } = deployableChain;
     const { walletClient, publicClient, account } = getFallbackClients(deployableChain);

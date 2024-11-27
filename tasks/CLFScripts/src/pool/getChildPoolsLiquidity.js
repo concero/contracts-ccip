@@ -48,7 +48,8 @@
 		// },
 	};
 
-	const baseChainSelector = '${CL_CCIP_CHAIN_SELECTOR_BASE}';
+	// const baseChainSelector = '${CL_CCIP_CHAIN_SELECTOR_BASE}';
+	const baseChainSelector = '${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}';
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 	const poolAbi = [
 		'function s_loansInUse() external view returns (uint256)',

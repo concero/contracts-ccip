@@ -80,7 +80,7 @@ async function setConceroProxySender(hre) {
   }
 }
 
-async function addPoolsToAllChains(hre, rebalance = false) {
+async function addPoolsToAllChains(hre) {
   const chain = conceroNetworks[hre.network.name];
   const { name: chainName, viemChain, type } = chain;
   const clients = getFallbackClients(chain);
@@ -107,7 +107,7 @@ async function addPoolsToAllChains(hre, rebalance = false) {
       const { request: setPoolReq } = await publicClient.simulateContract({
         address: conceroPoolAddress,
         functionName: "setPools",
-        args: [dstChainSelector, poolAddressToAdd, rebalance],
+        args: [dstChainSelector, poolAddressToAdd],
         abi,
         account,
         viemChain,
@@ -126,7 +126,7 @@ async function addPoolsToAllChains(hre, rebalance = false) {
   }
 }
 
-export async function setChildProxyVariables(hre, rebalance = false) {
+export async function setChildProxyVariables(hre) {
   await setConceroProxySender(hre);
-  await addPoolsToAllChains(hre, rebalance);
+  await addPoolsToAllChains(hre);
 }

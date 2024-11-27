@@ -5,6 +5,7 @@ import deployConceroOrchestrator from "./deployInfra/deployConceroOrchestrator";
 import deployChildPool from "./pools/deployChildPool";
 import deployAllPools from "./pools/deployAllPools";
 import deployParentPool from "./pools/deployParentPool";
+import deployParentPoolRebalance from "./pools/deployParentPoolRebalance";
 import removePoolFromPool from "./pools/removePoolFromPool";
 import deployLpToken from "./deployLpToken/deployLpToken";
 import withdrawInfraProxy from "./withdraw/withdrawInfraProxy";
@@ -32,6 +33,7 @@ export default {
   deployConceroOrchestrator,
   withdrawInfraProxy,
   deployParentPool,
+  deployParentPoolRebalance,
   deployLpToken,
   deployChildPool,
   deployAllPools,

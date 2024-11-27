@@ -13,13 +13,13 @@ import deployProxyAdmin from "../../../deploy/ConceroProxyAdmin";
 import deployParentPoolCLFCLA from "../../../deploy/ParenPoolCLFCLA";
 import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecretsConfig";
 
-task("deploy-parent-pool-rebalance", "Deploy the pool")
+task("deploy-parent-pool-rebalance", "Deploy the pool with rebalance option")
     .addFlag("deployproxy", "Deploy the proxy")
     .addFlag("deployimplementation", "Deploy the implementation")
     .addOptionalParam("slotid", "DON-Hosted secrets slot id", 0, types.int)
     .addFlag("setvars", "Set the contract variables")
-    .addOptionalParam("rebalance", "Rebalance the pool", false, types.boolean)
-    .addFlag("uploadsecrets", "Set the contract variables")
+    .addOptionalParam("rebalance", "Rebalance the pool", true, types.boolean)
+    .addFlag("uploadsecrets", "Deploy secrets")
     .setAction(async taskArgs => {
         const hre: HardhatRuntimeEnvironment = require("hardhat");
         compileContracts({ quiet: true });

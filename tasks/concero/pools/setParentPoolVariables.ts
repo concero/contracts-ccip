@@ -14,7 +14,7 @@ import getHashSum from "../../../utils/getHashSum";
 
 import { SecretsManager } from "@chainlink/functions-toolkit";
 
-async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
+export async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
   const { viemChain, name } = chain;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);

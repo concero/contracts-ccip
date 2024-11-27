@@ -179,13 +179,7 @@
 
 		const eventHashData = ethers.defaultAbiCoder.encode(
 			['bytes32', 'uint256', 'uint64', 'address', 'bytes32'],
-			[
-				decodedLog.args[0], // conceroMessageId
-				amount,
-				decodedLog.args[2], // dstChainSelector
-				receiver,
-				ethers.keccak256(compressedDstSwapData), // dstSwapDataHash
-			],
+			[decodedLog.args[0], amount, decodedLog.args[2], receiver, ethers.keccak256(compressedDstSwapData)],
 		);
 
 		const recomputedTxDataHash = ethers.keccak256(eventHashData);

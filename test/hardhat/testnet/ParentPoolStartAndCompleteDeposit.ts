@@ -4,7 +4,7 @@ import { approve } from "../utils/approve";
 import { getFallbackClients } from "../../../utils";
 import { conceroNetworks } from "../../../constants";
 
-const usdcAmount = parseUnits("4", 6);
+const usdcAmount = parseUnits("10", 6);
 const usdcTokenAddress = process.env.USDC_BASE_SEPOLIA as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 

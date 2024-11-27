@@ -1,6 +1,5 @@
-import { Address } from "viem";
+import { Address, erc20Abi } from "viem";
 import { WalletClient } from "viem/clients/createWalletClient";
-import { erc20Abi } from "viem";
 import { PublicClient } from "viem/clients/createPublicClient";
 import { HttpTransport } from "viem/clients/transports/http";
 import { Chain } from "viem/types/chain";
@@ -25,13 +24,6 @@ export async function approve(
   if (tokenAllowance >= amount) {
     return;
   }
-
-  const tokenAmount = await publicClient.readContract({
-    abi: erc20Abi,
-    functionName: "balanceOf",
-    address: erc20TokenAddress as `0x${string}`,
-    args: [senderAddress],
-  });
 
   const tokenHash = await walletClient.writeContract({
     abi: erc20Abi,

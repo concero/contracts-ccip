@@ -1,4 +1,5 @@
 import { approve } from "../utils/approve";
+import { zeroAddress } from "viem";
 
 export interface IBridgeBase {
   srcTokenAddress: string;
@@ -26,17 +27,21 @@ export async function bridgeBase({
   await approve(srcTokenAddress, srcContractAddress, srcTokenAmount, walletClient, publicClient);
 
   const bridgeData = {
-    tokenType: 1n,
-    amount: srcTokenAmount,
     dstChainSelector: BigInt(dstChainSelector),
     receiver: senderAddress,
+    amount: srcTokenAmount,
+  };
+
+  const integration = {
+    integrator: zeroAddress,
+    feeBps: 0n,
   };
 
   const bridgeTx = await walletClient.writeContract({
     abi: ConceroOrchestratorAbi,
     functionName: "bridge",
     address: srcContractAddress,
-    args: [bridgeData, []],
+    args: [bridgeData, "", integration],
     gas: 4_000_000n,
   });
 

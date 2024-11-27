@@ -6,12 +6,14 @@
 			usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
 			poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
 		},
+
 		// ['${CL_CCIP_CHAIN_SELECTOR_FUJI}']: {
 		// 	urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
 		// 	chainId: '0xa869',
 		// 	usdcAddress: '${USDC_FUJI}',
 		// 	poolAddress: '${CHILD_POOL_PROXY_FUJI}',
 		// },
+
 		['${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}']: {
 			urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
 			chainId: '0x14a34',
@@ -46,8 +48,7 @@
 		// },
 	};
 
-	// const baseChainSelector = '${CL_CCIP_CHAIN_SELECTOR_BASE}';
-	const baseChainSelector = '${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}';
+	const baseChainSelector = '${CL_CCIP_CHAIN_SELECTOR_BASE}';
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 	const poolAbi = [
 		'function s_loansInUse() external view returns (uint256)',
@@ -100,13 +101,6 @@
 	};
 
 	const getChildPoolsCcipLogs = async ccipLines => {
-		const ethersId = ethers.id('CCIPReceived(bytes32,uint64,address,address,uint256)');
-
-		for (const chain in chainSelectors) {
-			const reqFromLines = ccipLines.filter(line => {
-				const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`.toLowerCase();
-				return hexChainSelector === chain;
-			});
 		const ethersId = ethers.id('ConceroChildPool_CCIPReceived(bytes32,uint64,address,address,uint256)');
 		const indexes = {};
 

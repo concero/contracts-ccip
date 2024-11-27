@@ -13,7 +13,7 @@
 			poolAddress: '0xD5B19458Ddd36f75Cb8309B0e3bfB607Ccc04EB6',
 		},
 	};
-	const baseChainSelector = '10344971235874465080';
+	const baseChainSelector = '15971525489660198786';
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 	const poolAbi = [
 		'function s_loansInUse() external view returns (uint256)',
@@ -59,13 +59,6 @@
 		return pool.getDepositsOnTheWay();
 	};
 	const getChildPoolsCcipLogs = async ccipLines => {
-		const ethersId = ethers.id('CCIPReceived(bytes32,uint64,address,address,uint256)');
-		const promises = [];
-		for (const chain in chainSelectors) {
-			const reqFromLines = ccipLines.filter(line => {
-				const hexChainSelector = `0x${BigInt(line.chainSelector).toString(16)}`.toLowerCase();
-				return hexChainSelector === chain;
-			});
 		const ethersId = ethers.id('ConceroChildPool_CCIPReceived(bytes32,uint64,address,address,uint256)');
 		const indexes = {};
 		const getCcipLogs = async () => {

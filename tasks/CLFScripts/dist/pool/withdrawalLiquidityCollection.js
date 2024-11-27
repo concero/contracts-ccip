@@ -10,7 +10,7 @@
 				],
 				chainId: '0x66eee',
 				usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-				poolAddress: '0x5211008399d650F4a8ABaf07A802b1A88496822d',
+				poolAddress: '0x63AE868A78F37a73Fb9CE077f1d6Cb8EB178467c',
 			},
 			[`0x${BigInt('14767482510784806043').toString(16)}`]: {
 				urls: [

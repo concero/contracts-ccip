@@ -7,12 +7,28 @@ import {task, types} from 'hardhat/config';
 import log, {err} from '../../utils/log';
 import fs from 'fs';
 import path from 'path';
-
+import vm from 'vm';
 export const pathToScript = [__dirname, '../', 'CLFScripts'];
 
 function checkFileAccessibility(filePath) {
 	if (!fs.existsSync(filePath)) {
 		err(`The file ${filePath} does not exist.`, 'checkFileAccessibility');
+		process.exit(1);
+	}
+}
+
+/* Validates the JavaScript syntax of the file content */
+function validateSyntax(content, filePath) {
+	const ignoredErrors = [
+		'Cannot use import statement outside a module',
+		'await is only valid in async functions and the top level bodies of modules',
+	];
+	try {
+		new vm.Script(content);
+	} catch (error) {
+		if (ignoredErrors.includes(error.message)) return;
+
+		err(`Syntax error in file ${filePath}: ${error.message}`, 'validateSyntax');
 		process.exit(1);
 	}
 }
@@ -76,6 +92,8 @@ function build(fileToBuild: string, quiet: boolean): void {
 
 	try {
 		let fileContent = fs.readFileSync(fileToBuild, 'utf8');
+		validateSyntax(fileContent, fileToBuild);
+
 		fileContent = replaceEnvironmentVariables(fileContent);
 		const cleanedUpFile = cleanupFile(fileContent);
 		const minifiedFile = minifyFile(cleanedUpFile);
@@ -85,9 +103,10 @@ function build(fileToBuild: string, quiet: boolean): void {
 			scriptType = 'infra';
 		}
 
-		// Save the cleaned-up and minified versions
 		saveProcessedFile(cleanedUpFile, fileToBuild, scriptType, quiet);
 		saveProcessedFile(minifiedFile, fileToBuild.replace('.js', '.min.js'), scriptType, quiet);
+		validateSyntax(cleanedUpFile, fileToBuild);
+		validateSyntax(minifiedFile, fileToBuild);
 	} catch (error) {
 		err(`Error processing file ${fileToBuild}: ${error}`, 'buildScript');
 		process.exit(1);

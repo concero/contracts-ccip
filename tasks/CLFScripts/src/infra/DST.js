@@ -3,9 +3,11 @@
 		const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 		const constructResult = (receiver, amount, compressedDstSwapData) => {
-			const encodedReceiver = ethers.zeroPadValue(receiver, 32);
+			const encodedReceiver = Functions.encodeUint256(BigInt(receiver));
 			const encodedAmount = Functions.encodeUint256(BigInt(amount));
 			const encodedCompressedData = ethers.getBytes(compressedDstSwapData);
+
+			console.log(encodedReceiver, encodedAmount, encodedCompressedData);
 
 			const totalLength = encodedReceiver.length + encodedAmount.length + encodedCompressedData.length;
 			const result = new Uint8Array(totalLength);
@@ -172,11 +174,9 @@
 		};
 
 		const decodedLog = contract.parseLog(logData);
-
 		const amount = decodedLog.args[1];
 		const receiver = decodedLog.args[3];
 		const compressedDstSwapData = decodedLog.args[4];
-
 		const eventHashData = new ethers.AbiCoder().encode(
 			['bytes32', 'uint256', 'uint64', 'address', 'bytes32'],
 			[decodedLog.args[0], amount, decodedLog.args[2], receiver, ethers.keccak256(compressedDstSwapData)],

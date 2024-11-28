@@ -266,28 +266,17 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
             (address, uint256, bytes)
         );
 
-        bytes32 recomputedTxDataHash = keccak256(
-            abi.encode(
-                conceroMessageId,
-                amount,
-                i_chainSelector,
-                receiver,
-                keccak256(compressedDstSwapData)
-            )
+        _validateBridgeDataHash(
+            conceroMessageId,
+            amount,
+            txDataHash,
+            receiver,
+            compressedDstSwapData
         );
-
-        if (recomputedTxDataHash != txDataHash) {
-            revert TxDataHashSumMismatch();
-        }
 
         address bridgeableTokenDst = _getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
         uint256 amountUsdcAfterFees = amount - getDstTotalFeeInUsdc(amount);
-
-        bytes memory decompressedDstSwapData = LibZip.cdDecompress(compressedDstSwapData);
-        IDexSwap.SwapData[] memory swapData = abi.decode(
-            decompressedDstSwapData,
-            (IDexSwap.SwapData[])
-        );
+        IDexSwap.SwapData[] memory swapData = _decompressSwapData(compressedDstSwapData);
 
         if (swapData.length == 0) {
             IPool(i_poolProxy).takeLoan(bridgeableTokenDst, amountUsdcAfterFees, receiver);
@@ -316,6 +305,35 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         }
 
         emit TXReleased(conceroMessageId, receiver, bridgeableTokenDst, amountUsdcAfterFees);
+    }
+
+    function _validateBridgeDataHash(
+        bytes32 conceroMessageId,
+        uint256 amount,
+        bytes32 txDataHash,
+        address receiver,
+        bytes memory compressedDstSwapData
+    ) internal view {
+        bytes32 recomputedTxDataHash = keccak256(
+            abi.encode(
+                conceroMessageId,
+                amount,
+                i_chainSelector,
+                receiver,
+                keccak256(compressedDstSwapData)
+            )
+        );
+
+        if (recomputedTxDataHash != txDataHash) {
+            revert TxDataHashSumMismatch();
+        }
+    }
+
+    function _decompressSwapData(
+        bytes memory compressedDstSwapData
+    ) internal pure returns (IDexSwap.SwapData[] memory swapData) {
+        bytes memory decompressedDstSwapData = LibZip.cdDecompress(compressedDstSwapData);
+        return abi.decode(decompressedDstSwapData, (IDexSwap.SwapData[]));
     }
 
     /**

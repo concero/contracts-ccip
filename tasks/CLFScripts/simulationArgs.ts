@@ -47,8 +47,8 @@ const getSimulationArgs: {[functionName: string]: ArgBuilder} = {
 			'0x0',
 			'0x' + BigInt(getEnvVar('CONCERO_INFRA_PROXY_ARBITRUM_SEPOLIA')).toString(16),
 			'0x' + BigInt(getEnvVar('CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA')).toString(16),
-			'0x1c3361b28a9e61f3b848807c9a816c7ac9d7ac1a8859dc0a0b8b5a5f68aec5b6',
-			'0xfa726ca69b8b707f6f491e77865af8c8c035d5e16b083ecf11835788df1e12fd',
+			'0x5dfd8ea23941faa8daa3d2eff5701ed8527a5c7b344c11540498b6c595194873',
+			'0x38ea807e539efdb47e976510b5b9bc9c3b5dbfc468cdc8cb8070e1ee259751df',
 		];
 	},
 	collect_liq: async () => {

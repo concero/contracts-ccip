@@ -261,10 +261,11 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
             s_transactions[conceroMessageId].isConfirmed = true;
         }
 
-        (address receiver, uint256 amount, bytes memory compressedDstSwapData) = abi.decode(
-            response,
-            (address, uint256, bytes)
-        );
+        (
+            address receiver,
+            uint256 amount,
+            bytes memory compressedDstSwapData
+        ) = _decodeDstClfResponse(response);
 
         _validateBridgeDataHash(
             conceroMessageId,
@@ -333,7 +334,23 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         bytes memory compressedDstSwapData
     ) internal pure returns (IDexSwap.SwapData[] memory swapData) {
         bytes memory decompressedDstSwapData = LibZip.cdDecompress(compressedDstSwapData);
-        return abi.decode(decompressedDstSwapData, (IDexSwap.SwapData[]));
+
+        if (decompressedDstSwapData.length == 0) {
+            return new IDexSwap.SwapData[](0);
+        } else {
+            return abi.decode(decompressedDstSwapData, (IDexSwap.SwapData[]));
+        }
+    }
+
+    function _decodeDstClfResponse(
+        bytes memory response
+    ) internal pure returns (address, uint256, bytes memory) {
+        if (response.length == 64) {
+            (address receiver, uint256 amount) = abi.decode(response, (address, uint256));
+            return (receiver, amount, new bytes(0));
+        } else {
+            return abi.decode(response, (address, uint256, bytes));
+        }
     }
 
     /**

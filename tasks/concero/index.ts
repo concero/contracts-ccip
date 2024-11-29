@@ -26,7 +26,6 @@ import decodeCLFFulfill from "./decodeClfFulfill";
 import testScript from "./test";
 import checkRPCStatus from "./checkRPCStatus";
 import { getSwapAndBridgeCost } from "./getSwapAndBridgeCost/getSwapAndBridgeCost";
-import removeParentPoolChildPoolsTask from "./pools/removeParentPoolChildPoolsTask";
 import addParentPoolChildPool from "./pools/addParentPoolChildPoolTask";
 import setParentPoolVariablesTask from "./pools/setParentPoolVariablesTask";
 import updateParentPoolHashesTask from "./pools/updateParentPoolHashesTask";
@@ -61,8 +60,7 @@ export default {
   getSwapAndBridgeCost,
   removeParentPoolChildPoolsTask,
   addParentPoolChildPool,
-  setParentPoolVariablesTask
+  setParentPoolVariablesTask,
   updateParentPoolHashesTask,
-  removeParentPoolChildPoolsTask,
   updateInfraHashesTask,
 };

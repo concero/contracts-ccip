@@ -176,7 +176,7 @@ contract ParentPoolCLFCLA is
             (address, uint256, bytes32)
         );
 
-        if (s_withdrawTriggered[withdrawalId] == true) {
+        if (s_withdrawTriggered[withdrawalId]) {
             revert WithdrawAlreadyTriggered(withdrawalId);
         } else {
             s_withdrawTriggered[withdrawalId] = true;

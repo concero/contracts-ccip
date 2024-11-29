@@ -150,7 +150,7 @@ contract ParentPoolCLFCLA is
             }
             // s_withdrawTriggered is used to prevent multiple CLA triggers of the same withdrawal request
             if (
-                s_withdrawTriggered[withdrawalId] == false &&
+                !s_withdrawTriggered[withdrawalId] &&
                 block.timestamp > withdrawalRequest.triggeredAtTimestamp
             ) {
                 bytes memory _performData = abi.encode(

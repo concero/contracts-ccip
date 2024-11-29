@@ -5,12 +5,12 @@ import { getFallbackClients } from "../../../utils";
 import { conceroNetworks } from "../../../constants";
 
 describe("bridge", () => {
-  const { walletClient, publicClient } = getFallbackClients(conceroNetworks.arbitrumSepolia);
+  const { walletClient, publicClient } = getFallbackClients(conceroNetworks.baseSepolia);
   const senderAddress = process.env.DEPLOYER_ADDRESS;
-  const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
-  const srcTokenAddress = process.env.USDC_ARBITRUM_SEPOLIA;
+  const dstChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA;
+  const srcTokenAddress = process.env.USDC_BASE_SEPOLIA;
   const srcTokenAmount = parseUnits("1", 6);
-  const srcContractAddress = process.env.CONCERO_INFRA_PROXY_ARBITRUM_SEPOLIA;
+  const srcContractAddress = process.env.CONCERO_INFRA_PROXY_BASE_SEPOLIA;
 
   it("should bridge", () =>
     bridgeBase({

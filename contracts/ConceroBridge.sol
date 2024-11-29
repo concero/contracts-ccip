@@ -24,7 +24,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
 
     /* CONSTANT VARIABLES */
     uint16 internal constant CONCERO_FEE_FACTOR = 1000;
-    uint64 private constant HALF_DST_GAS = 600_000;
+    uint64 private constant HALF_DST_GAS = 200_000;
     uint256 internal constant BATCHED_TX_THRESHOLD = 5_000_000_000;
     uint8 internal constant MAX_PENDING_SETTLEMENT_TXS_BY_LANE = 200;
     uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 220_500;
@@ -169,8 +169,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
     function getFunctionsFeeInUsdc(uint64 dstChainSelector) public view returns (uint256) {
         //    uint256 functionsFeeInLink = getFunctionsFeeInLink(dstChainSelector);
         //    return (functionsFeeInLink * s_latestLinkUsdcRate) / STANDARD_TOKEN_DECIMALS;
-        uint256 baseFee = clfPremiumFees[dstChainSelector] + clfPremiumFees[i_chainSelector];
-        return (baseFee * 2) / 100;
+        return clfPremiumFees[dstChainSelector] + clfPremiumFees[i_chainSelector];
     }
 
     /**
@@ -186,7 +185,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
      * @param _dstChainSelector the destination blockchain chain selector
      */
     function getCCIPFeeInUsdc(uint64 _dstChainSelector) public view returns (uint256) {
-        uint256 ccipFeeInLink = getCCIPFeeInLink(_dstChainSelector);
+        uint256 ccipFeeInLink = s_lastCCIPFeeInLink[_dstChainSelector];
         return (ccipFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
     }
 

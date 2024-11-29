@@ -267,13 +267,21 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
             bytes memory compressedDstSwapData
         ) = _decodeDstClfResponse(response);
 
-        _validateBridgeDataHash(
-            conceroMessageId,
-            amount,
-            txDataHash,
-            receiver,
-            compressedDstSwapData
-        );
+        {
+            bytes32 recomputedTxDataHash = keccak256(
+                abi.encode(
+                    conceroMessageId,
+                    amount,
+                    i_chainSelector,
+                    receiver,
+                    keccak256(compressedDstSwapData)
+                )
+            );
+
+            if (recomputedTxDataHash != txDataHash) {
+                revert TxDataHashSumMismatch();
+            }
+        }
 
         address bridgeableTokenDst = _getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
         uint256 amountUsdcAfterFees = amount - getDstTotalFeeInUsdc(amount);
@@ -282,51 +290,45 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         if (swapData.length == 0) {
             IPool(i_poolProxy).takeLoan(bridgeableTokenDst, amountUsdcAfterFees, receiver);
         } else {
-            //todo: remove with new DexSwap contract
-            if (swapData.length > 5) {
-                revert InvalidSwapData();
-            }
-
-            swapData[0].fromAmount = amountUsdcAfterFees;
-            swapData[0].fromToken = bridgeableTokenDst;
-
-            IPool(i_poolProxy).takeLoan(bridgeableTokenDst, amountUsdcAfterFees, address(this));
-
-            bytes memory swapDataArgs = abi.encodeWithSelector(
-                IDexSwap.entrypoint.selector,
+            _performDstSwap(
                 swapData,
-                receiver
+                amountUsdcAfterFees,
+                conceroMessageId,
+                receiver,
+                bridgeableTokenDst
             );
-
-            (bool success, ) = i_dexSwap.delegatecall(swapDataArgs);
-            if (!success) {
-                LibConcero.transferERC20(bridgeableTokenDst, amountUsdcAfterFees, receiver);
-                emit DstSwapFailed(conceroMessageId);
-            }
         }
 
         emit TXReleased(conceroMessageId, receiver, bridgeableTokenDst, amountUsdcAfterFees);
     }
 
-    function _validateBridgeDataHash(
+    function _performDstSwap(
+        IDexSwap.SwapData[] memory swapData,
+        uint256 amountUsdcAfterFees,
         bytes32 conceroMessageId,
-        uint256 amount,
-        bytes32 txDataHash,
         address receiver,
-        bytes memory compressedDstSwapData
-    ) internal view {
-        bytes32 recomputedTxDataHash = keccak256(
-            abi.encode(
-                conceroMessageId,
-                amount,
-                i_chainSelector,
-                receiver,
-                keccak256(compressedDstSwapData)
-            )
+        address bridgeableTokenDst
+    ) internal {
+        //todo: remove with new DexSwap contract
+        if (swapData.length > 5) {
+            revert InvalidSwapData();
+        }
+
+        swapData[0].fromAmount = amountUsdcAfterFees;
+        swapData[0].fromToken = bridgeableTokenDst;
+
+        IPool(i_poolProxy).takeLoan(bridgeableTokenDst, amountUsdcAfterFees, address(this));
+
+        bytes memory swapDataArgs = abi.encodeWithSelector(
+            IDexSwap.entrypoint.selector,
+            swapData,
+            receiver
         );
 
-        if (recomputedTxDataHash != txDataHash) {
-            revert TxDataHashSumMismatch();
+        (bool success, ) = i_dexSwap.delegatecall(swapDataArgs);
+        if (!success) {
+            LibConcero.transferERC20(bridgeableTokenDst, amountUsdcAfterFees, receiver);
+            emit DstSwapFailed(conceroMessageId);
         }
     }
 

@@ -23,38 +23,22 @@
 				chainId: '0xa869',
 			},
 			[`0x${BigInt('16015286601757825753').toString(16)}`]: {
-				urls: [
-					`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://ethereum-sepolia-rpc.publicnode.com',
-					'https://ethereum-sepolia.blockpi.network/v1/rpc/public',
-				],
+				urls: ['https://ethereum-sepolia-rpc.publicnode.com'],
 				confirmations: 3n,
 				chainId: '0xaa36a7',
 			},
 			[`0x${BigInt('3478487238524512106').toString(16)}`]: {
-				urls: [
-					`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
-					'https://arbitrum-sepolia-rpc.publicnode.com',
-				],
+				urls: ['https://arbitrum-sepolia-rpc.publicnode.com'],
 				confirmations: 3n,
 				chainId: '0x66eee',
 			},
 			[`0x${BigInt('10344971235874465080').toString(16)}`]: {
-				urls: [
-					`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-					'https://base-sepolia.blockpi.network/v1/rpc/public',
-					'https://base-sepolia-rpc.publicnode.com',
-				],
+				urls: ['https://base-sepolia-rpc.publicnode.com'],
 				confirmations: 3n,
 				chainId: '0x14a34',
 			},
 			[`0x${BigInt('5224473277236331295').toString(16)}`]: {
-				urls: [
-					`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://optimism-sepolia.blockpi.network/v1/rpc/public',
-					'https://optimism-sepolia-rpc.publicnode.com',
-				],
+				urls: ['https://optimism-sepolia-rpc.publicnode.com'],
 				confirmations: 3n,
 				chainId: '0xaa37dc',
 			},

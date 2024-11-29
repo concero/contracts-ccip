@@ -12,16 +12,6 @@
 				usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
 				poolAddress: '0x63AE868A78F37a73Fb9CE077f1d6Cb8EB178467c',
 			},
-			[`0x${BigInt('14767482510784806043').toString(16)}`]: {
-				urls: [
-					`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://avalanche-fuji-c-chain-rpc.publicnode.com',
-					'https://avalanche-fuji.blockpi.network/v1/rpc/public',
-				],
-				chainId: '0xa869',
-				usdcAddress: '0x5425890298aed601595a70ab815c96711a31bc65',
-				poolAddress: '0x63AE868A78F37a73Fb9CE077f1d6Cb8EB178467c',
-			},
 		};
 		const getChainIdByUrl = url => {
 			for (const chain in chainSelectors) {

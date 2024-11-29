@@ -20,7 +20,7 @@
 				],
 				chainId: '0xa869',
 				usdcAddress: '0x5425890298aed601595a70ab815c96711a31bc65',
-				poolAddress: '0x5211008399d650F4a8ABaf07A802b1A88496822d',
+				poolAddress: '0x63AE868A78F37a73Fb9CE077f1d6Cb8EB178467c',
 			},
 		};
 		const getChainIdByUrl = url => {

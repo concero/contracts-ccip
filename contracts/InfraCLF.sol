@@ -279,31 +279,31 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         uint256 amountUsdcAfterFees = amount - getDstTotalFeeInUsdc(amount);
         IDexSwap.SwapData[] memory swapData = _decompressSwapData(compressedDstSwapData);
 
-        //        if (swapData.length == 0) {
-        IPool(i_poolProxy).takeLoan(bridgeableTokenDst, amountUsdcAfterFees, receiver);
-        //        } else {
-        //            //todo: remove with new DexSwap contract
-        //            if (swapData.length > 5) {
-        //                revert InvalidSwapData();
-        //            }
-        //
-        //            swapData[0].fromAmount = amountUsdcAfterFees;
-        //            swapData[0].fromToken = bridgeableTokenDst;
-        //
-        //            IPool(i_poolProxy).takeLoan(bridgeableTokenDst, amountUsdcAfterFees, address(this));
-        //
-        //            bytes memory swapDataArgs = abi.encodeWithSelector(
-        //                IDexSwap.entrypoint.selector,
-        //                swapData,
-        //                receiver
-        //            );
-        //
-        //            (bool success, ) = i_dexSwap.delegatecall(swapDataArgs);
-        //            if (!success) {
-        //                LibConcero.transferERC20(bridgeableTokenDst, amountUsdcAfterFees, receiver);
-        //                emit DstSwapFailed(conceroMessageId);
-        //            }
-        //        }
+        if (swapData.length == 0) {
+            IPool(i_poolProxy).takeLoan(bridgeableTokenDst, amountUsdcAfterFees, receiver);
+        } else {
+            //todo: remove with new DexSwap contract
+            if (swapData.length > 5) {
+                revert InvalidSwapData();
+            }
+
+            swapData[0].fromAmount = amountUsdcAfterFees;
+            swapData[0].fromToken = bridgeableTokenDst;
+
+            IPool(i_poolProxy).takeLoan(bridgeableTokenDst, amountUsdcAfterFees, address(this));
+
+            bytes memory swapDataArgs = abi.encodeWithSelector(
+                IDexSwap.entrypoint.selector,
+                swapData,
+                receiver
+            );
+
+            (bool success, ) = i_dexSwap.delegatecall(swapDataArgs);
+            if (!success) {
+                LibConcero.transferERC20(bridgeableTokenDst, amountUsdcAfterFees, receiver);
+                emit DstSwapFailed(conceroMessageId);
+            }
+        }
 
         emit TXReleased(conceroMessageId, receiver, bridgeableTokenDst, amountUsdcAfterFees);
     }
@@ -348,26 +348,14 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         assembly {
             receiver := mload(add(response, 32))
             amount := mload(add(response, 64))
+        }
 
-            let responseLength := mload(response)
-            let compressedDstSwapDataLength := sub(responseLength, 64)
+        if (response.length > 64) {
+            uint256 compressedDstSwapDataLength = response.length - 64;
+            compressedDstSwapData = new bytes(compressedDstSwapDataLength);
 
-            if gt(compressedDstSwapDataLength, 0) {
-                compressedDstSwapData := mload(0x40)
-                mstore(compressedDstSwapData, compressedDstSwapDataLength)
-
-                let dataStart := add(response, 64)
-                let dataEnd := add(dataStart, compressedDstSwapDataLength)
-                for {
-                    let dest := add(compressedDstSwapData, 32)
-                } lt(dataStart, dataEnd) {
-                    dataStart := add(dataStart, 32)
-                    dest := add(dest, 32)
-                } {
-                    mstore(dest, mload(dataStart))
-                }
-
-                mstore(0x40, add(compressedDstSwapData, add(32, compressedDstSwapDataLength)))
+            for (uint256 i = 0; i < compressedDstSwapDataLength; i++) {
+                compressedDstSwapData[i] = response[64 + i];
             }
         }
     }

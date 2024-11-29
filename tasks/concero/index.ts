@@ -27,6 +27,9 @@ import decodeCLFFulfill from "./decodeClfFulfill";
 import testScript from "./test";
 import checkRPCStatus from "./checkRPCStatus";
 import { getSwapAndBridgeCost } from "./getSwapAndBridgeCost/getSwapAndBridgeCost";
+import removeParentPoolChildPoolsTask from "./pools/removeParentPoolChildPoolsTask";
+import addParentPoolChildPool from "./pools/addParentPoolChildPoolTask";
+import setParentPoolVariablesTask from "./pools/setParentPoolVariablesTask";
 
 export default {
   deployConceroDexSwap,
@@ -55,4 +58,7 @@ export default {
   removePoolFromPool,
   checkRPCStatus,
   getSwapAndBridgeCost,
+  removeParentPoolChildPoolsTask,
+  addParentPoolChildPool,
+  setParentPoolVariablesTask
 };

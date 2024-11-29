@@ -14,7 +14,7 @@ import getHashSum from "../../../utils/getHashSum";
 
 import { SecretsManager } from "@chainlink/functions-toolkit";
 
-async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
+export async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
   const { viemChain, name } = chain;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
@@ -50,7 +50,7 @@ async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
   }
 }
 
-async function setParentPoolCap(chain: CNetwork, abi: any) {
+export async function setParentPoolCap(chain: CNetwork, abi: any) {
   const { name } = chain;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
@@ -80,7 +80,7 @@ async function setParentPoolCap(chain: CNetwork, abi: any) {
   }
 }
 
-async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slotId: number) {
+export async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slotId: number) {
   const { functionsRouter, functionsDonIdAlias, functionsGatewayUrls, name } = chain;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
@@ -124,7 +124,7 @@ async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slotId: nu
   }
 }
 
-async function setParentPoolSecretsSlotId(chain: CNetwork, abi: any, slotId: number) {
+export async function setParentPoolSecretsSlotId(chain: CNetwork, abi: any, slotId: number) {
   const { name } = chain;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
@@ -151,7 +151,7 @@ async function setParentPoolSecretsSlotId(chain: CNetwork, abi: any, slotId: num
   }
 }
 
-async function setConceroContractSenders(chain: CNetwork, abi: any) {
+export async function setConceroContractSenders(chain: CNetwork, abi: any) {
   const { name, type } = chain;
   if (!name) throw new Error("Chain name not found");
 
@@ -197,7 +197,7 @@ async function setConceroContractSenders(chain: CNetwork, abi: any) {
   }
 }
 
-async function setPools(chain: CNetwork, abi: any, rebalance) {
+export async function setPools(chain: CNetwork, abi: any, rebalance: boolean) {
   const { name, type } = chain;
   if (!name) throw new Error("Chain name not found");
 
@@ -217,7 +217,7 @@ async function setPools(chain: CNetwork, abi: any, rebalance) {
       const { request: setReceiverReq } = await publicClient.simulateContract({
         address: parentPoolProxy,
         functionName: "setPools",
-        args: [dstChainSelector, childPoolProxy, rebalance],
+        args: [BigInt(dstChainSelector), childPoolProxy, rebalance],
         abi,
         account,
       });

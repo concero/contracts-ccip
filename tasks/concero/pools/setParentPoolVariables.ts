@@ -2,11 +2,12 @@ import { CNetwork } from "../../../types/CNetwork";
 import {
   formatGas,
   getEnvAddress,
+  getEnvVar,
   getEthersV5FallbackSignerAndProvider,
   getFallbackClients,
   shorten,
 } from "../../../utils";
-import { mainnetChains, networkTypes, ProxyEnum, testnetChains, viemReceiptConfig } from "../../../constants";
+import { mainnetChains, networkEnvKeys, networkTypes, ProxyEnum, testnetChains, viemReceiptConfig } from "../../../constants";
 import { collectLiquidityCodeUrl, ethersV6CodeUrl, parentPoolJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 import { Address } from "viem";
 import log, { err } from "../../../utils/log";
@@ -85,28 +86,35 @@ export async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slo
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
     const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress(ProxyEnum.parentPoolProxy, name);
-    const { signer: dcSigner } = getEthersV5FallbackSignerAndProvider(name);
+    //const { signer: dcSigner } = getEthersV5FallbackSignerAndProvider(name);
 
-    const secretsManager = new SecretsManager({
-      signer: dcSigner,
-      functionsRouterAddress: functionsRouter,
-      donId: functionsDonIdAlias,
-    });
-    await secretsManager.initialize();
+    
+    const version = getEnvVar(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`);
 
-    const { result } = await secretsManager.listDONHostedEncryptedSecrets(functionsGatewayUrls);
-    const nodeResponse = result.nodeResponses[0];
-    if (!nodeResponse.rows) return log(`No secrets found for ${name}.`, "updateContract");
+    // try {
+    //   const secretsManager = new SecretsManager({
+    //     signer: dcSigner,
+    //     functionsRouterAddress: functionsRouter,
+    //     donId: functionsDonIdAlias,
+    //   });
+    //   await secretsManager.initialize();
+    //   const { result } = await secretsManager.listDONHostedEncryptedSecrets(functionsGatewayUrls);
+    //   const nodeResponse = result.nodeResponses[0];
+    //   if (!nodeResponse.rows) return log(`No secrets found for ${name}.`, "updateContract");
 
-    const rowBySlotId = nodeResponse.rows.find(row => row.slot_id === slotId);
-    if (!rowBySlotId) return log(`No secrets found for ${name} at slot ${slotId}.`, "updateContract");
+    //   const rowBySlotId = nodeResponse.rows.find(row => row.slot_id === slotId);
+    //   if (!rowBySlotId) return log(`No secrets found for ${name} at slot ${slotId}.`, "updateContract");
+    //   version = rowBySlotId.version
+    // } catch (error) {
+    //   err(`${error?.message}`, "setDonHostedSecretsVersion", name);
+    // }
 
     const { request: setDstConceroContractReq } = await publicClient.simulateContract({
       address: parentPoolProxy,
       abi,
       functionName: "setDonHostedSecretsVersion",
       account,
-      args: [rowBySlotId.version],
+      args: [version],
     });
     const setDstConceroContractHash = await walletClient.writeContract(setDstConceroContractReq);
 
@@ -116,7 +124,7 @@ export async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slo
     });
 
     log(
-      `[Set] ${parentPoolProxyAlias}.donHostedSecretsVersion -> ${rowBySlotId.version}. Gas: ${formatGas(cumulativeGasUsed)}`,
+      `[Set] ${parentPoolProxyAlias}.donHostedSecretsVersion -> ${version}. Gas: ${formatGas(cumulativeGasUsed)}`,
       "setDonHostedSecretsVersion",
     );
   } catch (error) {

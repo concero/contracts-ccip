@@ -85,7 +85,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
      * @notice modifier to check if the caller is the an approved messenger
      */
     modifier onlyMessenger() {
-        if (_isMessenger(msg.sender) == false) revert NotMessenger(msg.sender);
+        if (!_isMessenger(msg.sender)) revert NotMessenger(msg.sender);
         _;
     }
 

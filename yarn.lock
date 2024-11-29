@@ -305,7 +305,7 @@
     "@chainlink/contracts" "^1.1.1"
     "@chainlink/contracts-ccip" "^1.5.0"
 
-"@chainlink/solhint-plugin-chainlink-solidity@^1.0.1":
+"@chainlink/solhint-plugin-chainlink-solidity@^1.0.1", "solhint-plugin-chainlink-solidity@npm:@chainlink/solhint-plugin-chainlink-solidity":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@chainlink/solhint-plugin-chainlink-solidity/-/solhint-plugin-chainlink-solidity-1.0.1.tgz#bc4c417fe068ed3b13c239e071f550cc130f6bee"
   integrity sha512-ld0eHzKJZjs/iNKfZtwbR4yP/0YdkBiB+GASYCUz89V+hEn6nCaRoRywgIONRERhHIv5DEDOhcKjo2u2zYHIUA==
@@ -1641,7 +1641,7 @@
     "@openzeppelin/contracts" "4.7.3"
     "@openzeppelin/contracts-upgradeable" "4.7.3"
 
-"@openzeppelin/contracts-upgradeable-4.7.3@npm:@openzeppelin/contracts-upgradeable@v4.7.3":
+"@openzeppelin/contracts-upgradeable-4.7.3@npm:@openzeppelin/contracts-upgradeable@v4.7.3", "@openzeppelin/contracts-upgradeable@4.7.3":
   version "4.7.3"
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.7.3.tgz#f1d606e2827d409053f3e908ba4eb8adb1dd6995"
   integrity sha512-+wuegAMaLcZnLCJIvrVUDzA9z/Wp93f0Dla/4jJvIhijRrPabjQbZe6fWiECLaJyfn5ci9fqf9vTw3xpQOad2A==
@@ -1650,11 +1650,6 @@
   version "4.5.2"
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.5.2.tgz#90d9e47bacfd8693bfad0ac8a394645575528d05"
   integrity sha512-xgWZYaPlrEOQo3cBj97Ufiuv79SPd8Brh4GcFYhPgb6WvAq4ppz8dWKL6h+jLAK01rUqMRp/TS9AdXgAeNvCLA==
-
-"@openzeppelin/contracts-upgradeable@4.7.3":
-  version "4.7.3"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.7.3.tgz#f1d606e2827d409053f3e908ba4eb8adb1dd6995"
-  integrity sha512-+wuegAMaLcZnLCJIvrVUDzA9z/Wp93f0Dla/4jJvIhijRrPabjQbZe6fWiECLaJyfn5ci9fqf9vTw3xpQOad2A==
 
 "@openzeppelin/contracts-upgradeable@4.8.3":
   version "4.8.3"
@@ -2030,10 +2025,10 @@
   dependencies:
     defer-to-connect "^2.0.1"
 
-"@tenderly/api-client@^1.0.0":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@tenderly/api-client/-/api-client-1.0.1.tgz#0238bf5cc48e9a87a8f4b4c4a13743aab8721ea8"
-  integrity sha512-u/982299rccyvkuGuyM93AxnGXFHpIs8ZozD+E8gXHIRxLPyz/rZW/mjrcOGW9EBJwCvimVpLKcdDTKQ+DJTlQ==
+"@tenderly/api-client@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@tenderly/api-client/-/api-client-1.1.0.tgz#fa06adf17ecc1ef83c5fb8536b71b542e7023228"
+  integrity sha512-kyye7TQ+RbDbJ7bSUjNf/O9fTtRYNUDIEUZQSrmNonowMw5/EpNi664eWaOoC00NEzxgttVrtme/GHvIOu7rNg==
   dependencies:
     axios "^0.27.2"
     cli-table3 "^0.6.2"
@@ -2044,12 +2039,12 @@
     prompts "^2.4.2"
     tslog "^4.4.0"
 
-"@tenderly/hardhat-integration@^1.0.0":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@tenderly/hardhat-integration/-/hardhat-integration-1.0.2.tgz#639519ad1d47bf11bf68d34a30355a50ed85130f"
-  integrity sha512-ZcmorNYGEdmNJ2SVZx90bpOcK43Ay6fOAJem+qbL3o8iRlxfcDvr72kTBq7Ed/CPyfvLWBVwcyGxQIsQWNMruQ==
+"@tenderly/hardhat-integration@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@tenderly/hardhat-integration/-/hardhat-integration-1.1.0.tgz#028abf38950d72d0bd59efe57e76ec365762f1a7"
+  integrity sha512-JGeEneTnI/OuQ0SGJVAgt5o67hMVWw34RSNeaKokAGelzaAkJ5SA3gWZcUgPXRytdEmOIQusPVOFlE0dyiG4Yw==
   dependencies:
-    "@tenderly/api-client" "^1.0.0"
+    "@tenderly/api-client" "^1.1.0"
     axios "^1.6.7"
     dotenv "^16.4.5"
     fs-extra "^10.1.0"
@@ -2060,10 +2055,10 @@
     tslog "^4.3.1"
     typescript "^5.5.4"
 
-"@tenderly/hardhat-tenderly@^2.4.0":
-  version "2.4.0"
-  resolved "https://registry.yarnpkg.com/@tenderly/hardhat-tenderly/-/hardhat-tenderly-2.4.0.tgz#c1a7e5fc4a88323169253f24a9c0d7acc61bf1b9"
-  integrity sha512-WbKdjJ03JK2lTjtkNorOQiN6QRqzBkCUbkPcxfYAJHEaQSfIEZrP9Ui7mFl1quP9L5mFfu8PFZtXcxzzHGIBWA==
+"@tenderly/hardhat-tenderly@^2.5.1":
+  version "2.5.1"
+  resolved "https://registry.yarnpkg.com/@tenderly/hardhat-tenderly/-/hardhat-tenderly-2.5.1.tgz#b15544a2690d71e4a76e008f820e9afa921834d2"
+  integrity sha512-RdDl4gY5W2ZYistPkIIdHZRe3vHqs6JOgqQjqmI2OaE9y5FRlPeVUHRLAqoroVU+PkQhFPrgjBv5er/pJSonLA==
   dependencies:
     "@ethersproject/bignumber" "^5.7.0"
     "@nomicfoundation/hardhat-ethers" "^3.0.0"
@@ -2071,7 +2066,7 @@
     "@nomicfoundation/hardhat-verify" "^2.0.8"
     "@openzeppelin/hardhat-upgrades" "^3.3.0"
     "@openzeppelin/upgrades-core" "^1.32.2"
-    "@tenderly/hardhat-integration" "^1.0.0"
+    "@tenderly/hardhat-integration" "^1.1.0"
     dotenv "^16.4.5"
     ethers "^6.8.1"
 
@@ -2530,7 +2525,7 @@
     "@uniswap/v3-core" "^1.0.0"
     base64-sol "1.0.1"
 
-"@uniswap/v3-periphery@https://github.com/sushiswap/v3-periphery":
+"@uniswap/v3-periphery@https://github.com/sushiswap/v3-periphery", "sushiswap-v3-periphery@https://github.com/sushiswap/v3-periphery":
   version "1.4.3"
   resolved "https://github.com/sushiswap/v3-periphery#c526ab65338a1141afdbc0682b345721ea872abc"
   dependencies:
@@ -5181,43 +5176,7 @@ ethereumjs-vm@^2.3.4:
     rustbn.js "~0.2.0"
     safe-buffer "^5.1.1"
 
-"ethers-v5@npm:ethers@5.7.2":
-  version "5.7.2"
-  resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.7.2.tgz#3a7deeabbb8c030d4126b24f84e525466145872e"
-  integrity sha512-wswUsmWo1aOK8rR7DIKiWSw9DbLWe6x98Jrn8wcTflTVvaXhAMaB5zGAXy0GYQEQp9iO1iSHWVyARQm11zUtyg==
-  dependencies:
-    "@ethersproject/abi" "5.7.0"
-    "@ethersproject/abstract-provider" "5.7.0"
-    "@ethersproject/abstract-signer" "5.7.0"
-    "@ethersproject/address" "5.7.0"
-    "@ethersproject/base64" "5.7.0"
-    "@ethersproject/basex" "5.7.0"
-    "@ethersproject/bignumber" "5.7.0"
-    "@ethersproject/bytes" "5.7.0"
-    "@ethersproject/constants" "5.7.0"
-    "@ethersproject/contracts" "5.7.0"
-    "@ethersproject/hash" "5.7.0"
-    "@ethersproject/hdnode" "5.7.0"
-    "@ethersproject/json-wallets" "5.7.0"
-    "@ethersproject/keccak256" "5.7.0"
-    "@ethersproject/logger" "5.7.0"
-    "@ethersproject/networks" "5.7.1"
-    "@ethersproject/pbkdf2" "5.7.0"
-    "@ethersproject/properties" "5.7.0"
-    "@ethersproject/providers" "5.7.2"
-    "@ethersproject/random" "5.7.0"
-    "@ethersproject/rlp" "5.7.0"
-    "@ethersproject/sha2" "5.7.0"
-    "@ethersproject/signing-key" "5.7.0"
-    "@ethersproject/solidity" "5.7.0"
-    "@ethersproject/strings" "5.7.0"
-    "@ethersproject/transactions" "5.7.0"
-    "@ethersproject/units" "5.7.0"
-    "@ethersproject/wallet" "5.7.0"
-    "@ethersproject/web" "5.7.1"
-    "@ethersproject/wordlists" "5.7.0"
-
-ethers@5.7.2, ethers@^5.4.7, ethers@^5.7.0, ethers@^5.7.2, ethers@~5.7.0:
+"ethers-v5@npm:ethers@5.7.2", ethers@5.7.2, ethers@^5.4.7, ethers@^5.7.0, ethers@^5.7.2, ethers@~5.7.0:
   version "5.7.2"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.7.2.tgz#3a7deeabbb8c030d4126b24f84e525466145872e"
   integrity sha512-wswUsmWo1aOK8rR7DIKiWSw9DbLWe6x98Jrn8wcTflTVvaXhAMaB5zGAXy0GYQEQp9iO1iSHWVyARQm11zUtyg==
@@ -9267,10 +9226,10 @@ socks@^2.8.3:
     ip-address "^9.0.5"
     smart-buffer "^4.2.0"
 
-solady@^0.0.267:
-  version "0.0.267"
-  resolved "https://registry.yarnpkg.com/solady/-/solady-0.0.267.tgz#4251bdad3e9f1d560a57d5c14f09d8d9cc46d136"
-  integrity sha512-Jjl5odGoXARF2TOGJMLtKy5Z+qsu1Bfq+al0uNVnBQjHH8Rw/oOMb7Em1igxxx4UQcjcKEpQiAYtsawK+B3TKg==
+solady@^0.0.273:
+  version "0.0.273"
+  resolved "https://registry.yarnpkg.com/solady/-/solady-0.0.273.tgz#4d97ff0f8d7fe21a6d8e4e933d367e4a0d59d4af"
+  integrity sha512-pzIl6AR7Qmlcxh8CNzcdlw7NCp4HnIZgrl4zecGCDSO6e3jWNm7jKkt8uxu7xjmqJ5z7LVgmVAK2QOmnCEvKNA==
 
 solc@0.8.26:
   version "0.8.26"
@@ -9309,11 +9268,6 @@ solhint-community@^4.0.0:
     text-table "^0.2.0"
   optionalDependencies:
     prettier "^2.8.3"
-
-"solhint-plugin-chainlink-solidity@npm:@chainlink/solhint-plugin-chainlink-solidity":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@chainlink/solhint-plugin-chainlink-solidity/-/solhint-plugin-chainlink-solidity-1.0.1.tgz#bc4c417fe068ed3b13c239e071f550cc130f6bee"
-  integrity sha512-ld0eHzKJZjs/iNKfZtwbR4yP/0YdkBiB+GASYCUz89V+hEn6nCaRoRywgIONRERhHIv5DEDOhcKjo2u2zYHIUA==
 
 solhint-plugin-prettier@^0.1.0:
   version "0.1.0"
@@ -9501,7 +9455,7 @@ string-format@^2.0.0:
   resolved "https://registry.yarnpkg.com/string-format/-/string-format-2.0.0.tgz#f2df2e7097440d3b65de31b6d40d54c96eaffb9b"
   integrity sha512-bbEs3scLeYNXLecRRuk6uJxdXUSj6le/8rNPHChIJTn2V79aXVTR1EH2OH5zLKKoz0V02fOUKZZcw01pLUShZA==
 
-"string-width-cjs@npm:string-width@^4.2.0":
+"string-width-cjs@npm:string-width@^4.2.0", string-width@^4.0.0, string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.2, string-width@^4.2.3:
   version "4.2.3"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
   integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
@@ -9517,15 +9471,6 @@ string-width@^2.1.1:
   dependencies:
     is-fullwidth-code-point "^2.0.0"
     strip-ansi "^4.0.0"
-
-string-width@^4.0.0, string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.2, string-width@^4.2.3:
-  version "4.2.3"
-  resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
-  integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
-  dependencies:
-    emoji-regex "^8.0.0"
-    is-fullwidth-code-point "^3.0.0"
-    strip-ansi "^6.0.1"
 
 string-width@^5.0.1, string-width@^5.1.2:
   version "5.1.2"
@@ -9564,7 +9509,7 @@ string_decoder@~1.1.1:
   dependencies:
     safe-buffer "~5.1.0"
 
-"strip-ansi-cjs@npm:strip-ansi@^6.0.1":
+"strip-ansi-cjs@npm:strip-ansi@^6.0.1", strip-ansi@^6.0.0, strip-ansi@^6.0.1:
   version "6.0.1"
   resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
   integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
@@ -9577,13 +9522,6 @@ strip-ansi@^4.0.0:
   integrity sha512-4XaJ2zQdCzROZDivEVIDPkcQn8LMFSa8kj8Gxb/Lnwzv9A8VctNZ+lfivC/sV3ivW8ElJTERXZoPBRrZKkNKow==
   dependencies:
     ansi-regex "^3.0.0"
-
-strip-ansi@^6.0.0, strip-ansi@^6.0.1:
-  version "6.0.1"
-  resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
-  integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
-  dependencies:
-    ansi-regex "^5.0.1"
 
 strip-ansi@^7.0.1, strip-ansi@^7.1.0:
   version "7.1.0"
@@ -9646,16 +9584,6 @@ supports-preserve-symlinks-flag@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/supports-preserve-symlinks-flag/-/supports-preserve-symlinks-flag-1.0.0.tgz#6eda4bd344a3c94aea376d4cc31bc77311039e09"
   integrity sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==
-
-"sushiswap-v3-periphery@https://github.com/sushiswap/v3-periphery":
-  version "1.4.3"
-  resolved "https://github.com/sushiswap/v3-periphery#c526ab65338a1141afdbc0682b345721ea872abc"
-  dependencies:
-    "@openzeppelin/contracts" "3.4.2-solc-0.7"
-    "@uniswap/lib" "^4.0.1-alpha"
-    "@uniswap/v2-core" "1.0.1"
-    "@uniswap/v3-core" "1.0.0"
-    base64-sol "1.0.1"
 
 swarm-js@^0.1.40:
   version "0.1.42"
@@ -10739,7 +10667,7 @@ workerpool@^6.5.1:
   resolved "https://registry.yarnpkg.com/workerpool/-/workerpool-6.5.1.tgz#060f73b39d0caf97c6db64da004cd01b4c099544"
   integrity sha512-Fs4dNYcsdpYSAfVxhnl1L5zTksjvOJxtC5hzMNl+1t9B8hTJTdKDyZ5ju7ztgPy+ft9tBFXoOlDNiOT9WUXZlA==
 
-"wrap-ansi-cjs@npm:wrap-ansi@^7.0.0":
+"wrap-ansi-cjs@npm:wrap-ansi@^7.0.0", wrap-ansi@^7.0.0:
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
   integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
@@ -10752,15 +10680,6 @@ wrap-ansi@^6.2.0:
   version "6.2.0"
   resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-6.2.0.tgz#e9393ba07102e6c91a3b221478f0257cd2856e53"
   integrity sha512-r6lPcBGxZXlIcymEu7InxDMhdW0KDxpLgoFLcguasxCaJ/SOIZwINatK9KY/tf+ZrlywOKU0UDj3ATXUBfxJXA==
-  dependencies:
-    ansi-styles "^4.0.0"
-    string-width "^4.1.0"
-    strip-ansi "^6.0.0"
-
-wrap-ansi@^7.0.0:
-  version "7.0.0"
-  resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
-  integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
   dependencies:
     ansi-styles "^4.0.0"
     string-width "^4.1.0"

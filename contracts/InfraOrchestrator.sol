@@ -326,16 +326,9 @@ contract InfraOrchestrator is
         }
     }
 
-    function getTransaction(
-        bytes32 _conceroBridgeTxId
-    ) external view returns (Transaction memory transaction) {
-        transaction = s_transactions[_conceroBridgeTxId];
-    }
-
-    function isTxConfirmed(bytes32 _txId) external view returns (bool) {
-        Transaction storage transaction = s_transactions[_txId];
-
-        if (transaction.messageId == bytes32(0)) {
+    function isTxConfirmed(bytes32 _conceroMessageId) external view returns (bool) {
+        bytes32 txDataHash = s_transactions[_conceroMessageId].txDataHash;
+        if (txDataHash == bytes32(0)) {
             return false;
         }
         bool isConfirmed = s_transactions[_conceroMessageId].isConfirmed;

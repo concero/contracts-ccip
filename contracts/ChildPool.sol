@@ -313,14 +313,14 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
             );
             for (uint256 i; i < settlementTx.length; ++i) {
                 bytes32 txId = settlementTx[i].id;
-
+                uint256 txAmount = settlementTx[i].amount;
                 bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
 
                 if (isTxConfirmed) {
-                    s_loansInUse -= ccipReceivedAmount;
+                    s_loansInUse -= txAmount;
                 } else {
                     IInfraOrchestrator(i_infraProxy).confirmTx(txId);
-                    i_USDC.safeTransfer(settlementTx[i].recipient, settlementTx[i].amount);
+                    i_USDC.safeTransfer(settlementTx[i].recipient, txAmount);
 
                     // TODO: Implement the event
                     // emit ExecutionLayerFailed(settlementTx[i].id);

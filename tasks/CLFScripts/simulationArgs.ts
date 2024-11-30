@@ -12,32 +12,28 @@ const getSimulationArgs: {[functionName: string]: ArgBuilder} = {
 	infra_src: async () => {
 		const srcJsHashSum = getHashSum(await (await fetch(infraSrcJsCodeUrl)).text());
 		const ethersHashSum = getHashSum(await (await fetch(ethersV6CodeUrl)).text());
-		const placeholder = '0x0';
-		const dstContractAddress = getEnvVar('CONCERO_INFRA_PROXY_ARBITRUM');
+		const jsCodeType = '0x0';
+		const dstContractAddress = getEnvVar('CONCERO_INFRA_PROXY_ARBITRUM_SEPOLIA');
 		const ccipMessageId = '0xf721b113e0a0401ba87f48aff9801c78f037cab36cb43c72bd115ccec7845d27';
 		const sender = '0x70E73f067a1fC9FE6D53151bd271715811746d3a';
 		const recipient = '0x70E73f067a1fC9FE6D53151bd271715811746d3a';
 		const amount = '0x' + BigInt(100000000000000000).toString(16);
-		const srcChainSelector = '0x' + BigInt(getEnvVar('CL_CCIP_CHAIN_SELECTOR_BASE')).toString(16);
-		const dstChainSelector = '0x' + BigInt(getEnvVar('CL_CCIP_CHAIN_SELECTOR_ARBITRUM')).toString(16);
+		const srcChainSelector = '0x' + BigInt(getEnvVar('CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA')).toString(16);
+		const dstChainSelector = '0x' + BigInt(getEnvVar('CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA')).toString(16);
 		const token = '0x' + BigInt(1).toString(16);
 		const blockNumber = '0xA65233';
 		const dstSwapData = '0x00';
+		const txDataHash = '0x064f6190edeced1d56cad0917491d69e28e6983908e20da84151f09a56db5654';
 
 		return [
 			srcJsHashSum,
 			ethersHashSum,
-			placeholder,
+			jsCodeType,
 			dstContractAddress,
 			ccipMessageId,
-			sender,
-			recipient,
-			amount,
 			srcChainSelector,
 			dstChainSelector,
-			token,
-			blockNumber,
-			dstSwapData,
+			txDataHash,
 		];
 	},
 	infra_dst: async () => {

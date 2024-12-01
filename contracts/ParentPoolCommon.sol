@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.20;
 
 import {LPToken} from "./LPToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 error NotParentPoolProxy(address sender);
-error NotMessenger(address sender);
+error NotMessenger();
 
 contract ParentPoolCommon {
     /* CONSTANT VARIABLES */
-    uint256 internal constant USDC_DECIMALS = 1_000_000; // 10 ** 6
+    uint256 internal constant USDC_DECIMALS = 1e6;
     uint256 internal constant LP_TOKEN_DECIMALS = 1 ether;
-    uint256 internal constant PRECISION_HANDLER = 10_000_000_000; // 10 ** 10
+    uint256 internal constant PRECISION_HANDLER = 1e10;
     uint8 internal constant MAX_DEPOSITS_ON_THE_WAY_COUNT = 150;
     /*CHANGE-IN-PRODUCTION-TO-597_600*/
     uint256 internal constant WITHDRAWAL_COOLDOWN_SECONDS = 60;
@@ -38,7 +38,7 @@ contract ParentPoolCommon {
      * @notice modifier to check if the caller is the an approved messenger
      */
     modifier onlyMessenger() {
-        if (!_isMessenger(msg.sender)) revert NotMessenger(msg.sender);
+        if (!_isMessenger(msg.sender)) revert NotMessenger();
         _;
     }
 

@@ -7,14 +7,16 @@ import fs from "fs";
 async function getWithdrawalStatuses() {
   const chain = conceroNetworks.base;
   const { publicClient } = getClients(chain.name, chain.url);
-  const contractAddress = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);
-  const { abi: claAbi } = await import("../../artifacts/contracts/ConceroAutomation.sol/ConceroAutomation.json");
+  const contractAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chain.name]}`);
+  const { abi: parentPoolCLAAbi } = await import(
+    "../../artifacts/contracts/ParentPoolCLFCLA.sol/ParentPoolCLFCLA.json"
+  );
 
   // Get all withdrawal request IDs
   const withdrawalRequestIds = await publicClient.readContract({
     address: contractAddress,
-    abi: claAbi,
-    functionName: "getPendingRequests",
+    abi: parentPoolCLAAbi,
+    functionName: "getPendingWithdrawalRequestIds",
     chain: chain.viemChain,
   });
 
@@ -25,7 +27,7 @@ async function getWithdrawalStatuses() {
     withdrawalRequestIds.map(async id => {
       const isTriggered = await publicClient.readContract({
         address: contractAddress,
-        abi: claAbi,
+        abi: parentPoolCLAAbi,
         functionName: "s_withdrawTriggered",
         args: [id],
       });

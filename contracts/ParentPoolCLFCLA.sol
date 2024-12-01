@@ -4,7 +4,7 @@
  * @notice If you discover any security vulnerabilities, please report them responsibly.
  * @contact email: security@concero.io
  */
-pragma solidity ^0.8.0;
+pragma solidity 0.8.20;
 
 import {AutomationCompatible} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import {FunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/FunctionsClient.sol";
@@ -16,7 +16,7 @@ import {ParentPoolCommon} from "./ParentPoolCommon.sol";
 import {ParentPoolStorage} from "./Libraries/ParentPoolStorage.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-error CallerNotAllowed(address caller);
+error Unauthorized();
 error WithdrawalAlreadyTriggered(bytes32 id);
 error WithdrawalRequestDoesntExist(bytes32 id);
 error WithdrawalRequestNotReady(bytes32 id);
@@ -33,7 +33,7 @@ contract ParentPoolCLFCLA is
 
     /* CONSTANT VARIABLES */
     uint256 internal constant CCIP_ESTIMATED_TIME_TO_COMPLETE = 30 minutes;
-    uint32 internal constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 2_000_000;
+    uint32 internal constant CLF_CALLBACK_GAS_LIMIT = 2_000_000;
     string internal constant JS_CODE =
         "try{const [b,o,f]=bytesArgs;const m='https://raw.githubusercontent.com/';const u=m+'ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';const q=m+'concero/contracts-ccip/'+'master'+`/tasks/CLFScripts/dist/pool/${f==='0x02' ? 'collectLiquidity':f==='0x01' ? 'distributeLiquidity':'getChildPoolsLiquidity'}.min.js`;const [t,p]=await Promise.all([fetch(u),fetch(q)]);const [e,c]=await Promise.all([t.text(),p.text()]);const g=async s=>{return('0x'+Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))).map(v=>('0'+v.toString(16)).slice(-2).toLowerCase()).join(''));};const r=await g(c);const x=await g(e);if(r===b.toLowerCase()&& x===o.toLowerCase()){const ethers=new Function(e+';return ethers;')();return await eval(c);}throw new Error(`${r}!=${b}||${x}!=${o}`);}catch(e){throw new Error(e.message.slice(0,255));}";
 
@@ -191,7 +191,7 @@ contract ParentPoolCLFCLA is
         bytes32 withdrawalId = s_withdrawalIdByLPAddress[msg.sender];
 
         if (msg.sender != s_withdrawRequests[withdrawalId].lpAddress) {
-            revert CallerNotAllowed(msg.sender);
+            revert Unauthorized();
         }
 
         uint256 liquidityRequestedFromEachPool = s_withdrawRequests[withdrawalId]
@@ -237,7 +237,6 @@ contract ParentPoolCLFCLA is
     /* INTERNAL FUNCTIONS */
     function _handleStartDepositCLFFulfill(bytes32 requestId, bytes memory response) internal {
         IParentPool.DepositRequest storage request = s_depositRequests[requestId];
-
         (
             uint256 childPoolsLiquidity,
             bytes1[] memory depositsOnTheWayIdsToDelete
@@ -348,8 +347,12 @@ contract ParentPoolCLFCLA is
             withdrawalPortionPerPool;
         _withdrawalRequest.triggeredAtTimestamp = block.timestamp + WITHDRAWAL_COOLDOWN_SECONDS;
 
-        _addPendingWithdrawalId(_withdrawalId);
-        emit WithdrawRequestUpdated(_withdrawalId);
+        s_withdrawalRequestIds.push(_withdrawalId);
+        emit WithdrawalRequestInitiated(
+            _withdrawalId,
+            msg.sender,
+            block.timestamp + WITHDRAWAL_COOLDOWN_SECONDS
+        );
     }
 
     /**
@@ -362,35 +365,18 @@ contract ParentPoolCLFCLA is
         req.addDONHostedSecrets(s_donHostedSecretsSlotId, s_donHostedSecretsVersion);
         req.setBytesArgs(_args);
 
-        return
-            _sendRequest(req.encodeCBOR(), i_clfSubId, CL_FUNCTIONS_CALLBACK_GAS_LIMIT, i_clfDonId);
-    }
-
-    /**
-     * @notice Function to add new withdraw request to CLA monitoring system
-     * @param _withdrawalId the ID of the withdrawal request
-     * @dev this function should only be called by the ConceroPool.sol
-     */
-    function _addPendingWithdrawalId(bytes32 _withdrawalId) internal {
-        s_withdrawalRequestIds.push(_withdrawalId);
-        emit PendingWithdrawRequestAdded(_withdrawalId);
-    }
-
-    function _getWithdrawalRequestById(
-        bytes32 _withdrawalId
-    ) internal view onlyProxyContext returns (IParentPool.WithdrawRequest memory) {
-        return s_withdrawRequests[_withdrawalId];
+        return _sendRequest(req.encodeCBOR(), i_clfSubId, CLF_CALLBACK_GAS_LIMIT, i_clfDonId);
     }
 
     function _addWithdrawalOnTheWayAmountById(bytes32 _withdrawalId) internal {
-        uint256 amountToWithdraw = s_withdrawRequests[_withdrawalId].amountToWithdraw -
-            s_withdrawRequests[_withdrawalId].liquidityRequestedFromEachPool;
+        uint256 awaitedChildPoolsWithdrawalAmount = s_withdrawRequests[_withdrawalId]
+            .amountToWithdraw - s_withdrawRequests[_withdrawalId].liquidityRequestedFromEachPool;
 
-        if (amountToWithdraw == 0) {
+        if (awaitedChildPoolsWithdrawalAmount == 0) {
             revert WithdrawalRequestDoesntExist(_withdrawalId);
         }
 
-        s_withdrawalsOnTheWayAmount += amountToWithdraw;
+        s_withdrawalsOnTheWayAmount += awaitedChildPoolsWithdrawalAmount;
     }
 
     function _calculateWithdrawableAmount(
@@ -425,9 +411,7 @@ contract ParentPoolCLFCLA is
         args[4] = abi.encodePacked(withdrawalId);
 
         bytes32 reqId = _sendRequest(args);
-
         s_withdrawalIdByCLFRequestId[reqId] = withdrawalId;
-
         return reqId;
     }
 }

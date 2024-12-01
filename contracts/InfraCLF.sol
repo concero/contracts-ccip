@@ -43,6 +43,8 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     using FunctionsRequest for FunctionsRequest.Request;
 
     /* CONSTANT VARIABLES */
+    uint256 internal constant PRECISION_HANDLER = 10_000_000_000;
+    uint256 internal constant LP_FEE_FACTOR = 1000;
     uint32 public constant CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT = 150_000;
     uint32 public constant CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT = 2_000_000;
     string private constant CL_JS_CODE =
@@ -65,7 +67,6 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     Chain internal immutable i_chainIndex;
 
     /* EVENTS */
-
     ///@notice emitted when a Unconfirmed TX is added by a cross-chain TX
     event UnconfirmedTXAdded(bytes32 indexed conceroMessageId);
     event TXReleased(
@@ -222,7 +223,8 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         uint64 dstChainSelector,
         bytes32 txDataHash
     ) internal {
-        if (s_conceroContracts[dstChainSelector] == address(0)) {
+        address destinationContract = s_conceroContracts[dstChainSelector];
+        if (destinationContract == address(0)) {
             revert DstContractAddressNotSet();
         }
 
@@ -230,7 +232,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         args[0] = abi.encodePacked(s_srcJsHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(RequestType.addUnconfirmedTxDst);
-        args[3] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
+        args[3] = abi.encodePacked(destinationContract);
         args[4] = abi.encodePacked(conceroMessageId);
         args[5] = abi.encodePacked(i_chainSelector);
         args[6] = abi.encodePacked(dstChainSelector);
@@ -418,7 +420,6 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
      * @return the fee amount
      */
     function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
-        return amount / 1000;
-        //@audit we can have loss of precision here?
+        return (amount * PRECISION_HANDLER) / LP_FEE_FACTOR / PRECISION_HANDLER;
     }
 }

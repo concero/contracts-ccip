@@ -42,7 +42,7 @@ contract ParentPoolStorage {
 
     ///@notice Mapping to keep track of allowed pool senders
     mapping(uint64 chainSelector => mapping(address poolAddress => bool))
-        public s_contractsToReceiveFrom;
+        public s_isSenderContractAllowed;
 
     ///@notice Mapping to keep track of Liquidity Providers withdraw requests
     mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;

@@ -8,7 +8,7 @@ contract InfraStorageSetters is InfraStorage {
     ///@notice error emitted when the input is the address(0)
     error InvalidAddress();
     ///@notice error emitted when a non-owner address call access controlled functions
-    error CallableOnlyByOwner(address msgSender, address owner);
+    error NotOwner();
 
     /* IMMUTABLE VARIABLES */
     address internal immutable i_owner;
@@ -18,7 +18,7 @@ contract InfraStorageSetters is InfraStorage {
     }
 
     modifier onlyOwner() {
-        if (msg.sender != i_owner) revert CallableOnlyByOwner(msg.sender, i_owner);
+        if (msg.sender != i_owner) revert NotOwner();
         _;
     }
 

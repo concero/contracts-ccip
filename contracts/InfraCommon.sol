@@ -10,7 +10,7 @@ import {USDC_ARBITRUM, USDC_BASE, USDC_OPTIMISM, USDC_POLYGON, USDC_POLYGON_AMOY
 import {CHAIN_ID_AVALANCHE, WRAPPED_NATIVE_AVALANCHE, CHAIN_ID_ETHEREUM, WRAPPED_NATIVE_ETHEREUM, CHAIN_ID_ARBITRUM, WRAPPED_NATIVE_ARBITRUM, CHAIN_ID_BASE, WRAPPED_NATIVE_BASE, CHAIN_ID_POLYGON, WRAPPED_NATIVE_POLYGON} from "./Constants.sol";
 import {IInfraStorage} from "./Interfaces/IInfraStorage.sol";
 
-error NotMessenger(address _messenger);
+error NotMessenger();
 error ChainIndexOutOfBounds();
 error TokenTypeOutOfBounds();
 error ChainNotSupported();
@@ -35,7 +35,7 @@ contract InfraCommon {
      * @notice modifier to check if the caller is the an approved messenger
      */
     modifier onlyMessenger() {
-        if (!_isMessenger(msg.sender)) revert NotMessenger(msg.sender);
+        if (!_isMessenger(msg.sender)) revert NotMessenger();
         _;
     }
 
@@ -45,7 +45,7 @@ contract InfraCommon {
      * @param tokenType The enum flag of the token
      * @param _chainIndex the index of the chain
      */
-
+    //TODO: get rid of _chainIndex in all constructors, change this function to use block.number only.
     function _getUSDCAddressByChainIndex(
         IInfraStorage.CCIPToken tokenType,
         IInfraStorage.Chain _chainIndex

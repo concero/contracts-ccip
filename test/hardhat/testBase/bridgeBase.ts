@@ -37,7 +37,7 @@ export async function bridgeBase({
     feeBps: 0n,
   };
 
-  const bridgeTx = await walletClient.writeContract({
+  const bridgeTxHash = await walletClient.writeContract({
     abi: ConceroOrchestratorAbi,
     functionName: "bridge",
     address: srcContractAddress,
@@ -45,11 +45,11 @@ export async function bridgeBase({
     gas: 4_000_000n,
   });
 
-  const { status } = await publicClient.waitForTransactionReceipt({ hash: bridgeTx });
+  const { status } = await publicClient.waitForTransactionReceipt({ hash: bridgeTxHash });
 
   if (status === "success") {
-    console.log(`Bridge successful`, "bridge", "hash:", bridgeTx);
+    console.log(`Bridge successful`, "bridge", "hash:", bridgeTxHash);
   } else {
-    throw new Error(`Bridge failed. Hash: ${bridgeTx}`);
+    throw new Error(`Bridge failed. Hash: ${bridgeTxHash}`);
   }
 }

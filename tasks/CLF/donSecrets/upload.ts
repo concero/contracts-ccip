@@ -9,6 +9,7 @@ import log, { err } from "../../../utils/log";
 import listSecrets from "./list";
 import { setDonHostedSecretsVersion } from "../../concero/deployInfra/setContractVariables";
 import { liveChains } from "../../../constants";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 async function upload(chains: CNetwork[], slotid: number, ttl: number) {
   const slotId = parseInt(slotid);
@@ -61,7 +62,7 @@ task("clf-donsecrets-upload", "Encrypts and uploads secrets to the DON")
   .addFlag("all", "Upload secrets to all networks")
   .addFlag("updatecontracts", "Update the contracts with the new secrets")
   .setAction(async taskArgs => {
-    const hre = require("hardhat");
+    const hre: HardhatRuntimeEnvironment = require("hardhat");
     const { slotid, ttl, all, updatecontracts } = taskArgs;
 
     const processNetwork = async (chain: CNetwork) => {

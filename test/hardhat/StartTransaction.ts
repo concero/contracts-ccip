@@ -54,9 +54,9 @@ const srcContractAddress = process.env.CONCERO_PROXY_POLYGON;
 const dstContractAddress = process.env.CONCERO_PROXY_BASE;
 
 describe("startBatchTransactions\n", async () => {
-  const { abi: ConceroAbi } = await import("../artifacts/contracts/ConceroBridge.sol/ConceroBridge.json");
+  const { abi: ConceroAbi } = await import("../../artifacts/contracts/ConceroBridge.sol/ConceroBridge.json");
   const { abi: ConceroOrchestratorAbi } = await import(
-    "../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json"
+    "../../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json"
   );
 
   let Concero: Concero;

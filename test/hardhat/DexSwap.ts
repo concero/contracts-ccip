@@ -68,7 +68,7 @@ describe("swap", () => {
   it("should swap", async () => {
     try {
       const { abi: ConceroOrchestratorAbi } = await import(
-        "../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json"
+        "../../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json"
       );
 
       await approveToken(publicClient, walletClient, srcTokenAddress, srcTokenAmount);

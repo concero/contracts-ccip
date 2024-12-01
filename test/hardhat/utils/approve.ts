@@ -1,14 +1,8 @@
-import { Address, erc20Abi } from "viem";
-import { WalletClient } from "viem/clients/createWalletClient";
-import { PublicClient } from "viem/clients/createPublicClient";
-import { HttpTransport } from "viem/clients/transports/http";
-import { Chain } from "viem/types/chain";
-import type { Account } from "viem/accounts/types";
-import { RpcSchema } from "viem/types/eip1193";
+import { Address, erc20Abi, WalletClient, PublicClient, HttpTransport, Chain, Account, RpcSchema } from "viem";
 
 export async function approve(
-  erc20TokenAddress: Address | string,
-  contractAddress: Address | string,
+  erc20TokenAddress: Address,
+  contractAddress: Address,
   amount: BigInt,
   walletClient: WalletClient,
   publicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema>,
@@ -28,7 +22,7 @@ export async function approve(
   const tokenHash = await walletClient.writeContract({
     abi: erc20Abi,
     functionName: "approve",
-    address: erc20TokenAddress as `0x${string}`,
+    address: erc20TokenAddress,
     args: [contractAddress, amount],
   });
 

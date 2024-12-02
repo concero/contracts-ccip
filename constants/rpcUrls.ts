@@ -72,10 +72,10 @@ export const urls: Record<string, string[]> = {
     `https://polygon-amoy.infura.io/v3/${INFURA_API_KEY}`,
   ],
   base: [
-    `https://base-mainnet.infura.io/v3/${INFURA_API_KEY}`,
-    // "https://rpc.ankr.com/base",
-    // `https://base-rpc.publicnode.com`,
-    // `https://base-mainnet.blastapi.io/${BLAST_API_KEY}`,
+    // `https://base-mainnet.infura.io/v3/${INFURA_API_KEY}`,
+    `https://base-rpc.publicnode.com`,
+    "https://rpc.ankr.com/base",
+    `https://base-mainnet.blastapi.io/${BLAST_API_KEY}`,
   ],
   baseSepolia: [
     `https://base-sepolia.infura.io/v3/${INFURA_API_KEY}`,

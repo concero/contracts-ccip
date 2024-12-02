@@ -4,8 +4,8 @@ try {
 	const u = m + 'ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';
 	const q =
 		m +
-		'concero/contracts-ccip/' +
-		'master' +
+		'concero/contracts-v1/' +
+		'release' +
 		`/tasks/CLFScripts/dist/pool/${f === '0x02' ? 'withdrawalLiquidityCollection' : f === '0x01' ? 'redistributePoolsLiquidity' : 'getChildPoolsLiquidity'}.min.js`;
 	const [t, p] = await Promise.all([fetch(u), fetch(q)]);
 	const [e, c] = await Promise.all([t.text(), p.text()]);

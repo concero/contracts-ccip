@@ -5,7 +5,7 @@ try {
 		fetch(u),
 		fetch(
 			m +
-				'concero/contracts-ccip/' +
+				'concero/contracts-v1/' +
 				'${CLF_JS_CODE_BRANCH}' +
 				`/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`,
 		),

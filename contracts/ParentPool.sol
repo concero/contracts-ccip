@@ -46,7 +46,6 @@ error WithdrawRequestDoesntExist(bytes32 withdrawalId);
 error NotOwner();
 error OnlyRouterCanFulfill(address);
 error Unauthorized();
-error MsgSigNotMatched(bytes4 sig);
 error NotUsdcToken();
 
 contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolStorage {

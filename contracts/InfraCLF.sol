@@ -17,7 +17,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 import {LibZip} from "solady/src/utils/LibZip.sol";
-import {DexSwap} from "./DexSwap.sol";
 
 /* ERRORS */
 ///@notice error emitted when a TX was already added
@@ -33,8 +32,6 @@ error TxAlreadyConfirmed();
 error DstContractAddressNotSet();
 ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
 error OnlyProxyContext(address caller);
-///@notice error emitted when the delegatecall to DexSwap fails
-error FailedToReleaseTx(bytes error);
 error InvalidSwapData();
 
 contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {

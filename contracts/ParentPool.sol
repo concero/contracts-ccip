@@ -21,7 +21,7 @@ import {LPToken} from "./LPToken.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 import {ParentPoolCommon} from "./ParentPoolCommon.sol";
-import {ParentPoolStorage} from "contracts/Libraries/ParentPoolStorage.sol";
+import {ParentPoolStorage} from "./Libraries/ParentPoolStorage.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /* ERRORS */
@@ -29,15 +29,11 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 error InvalidAddress();
 ///@notice error emitted when the CCIP message sender is not allowed.
 error SenderNotAllowed(address _sender);
-///@notice error emitted when an attempt to create a new request is made while other is still active.
-error ActiveRequestNotFulfilledYet();
 error WithdrawalRequestAlreadyExists();
 error DepositAmountBelowMinimum(uint256 minAmount);
 error DepositRequestNotReady();
 error DepositsOnTheWayArrayFull();
 error WithdrawAmountBelowMinimum(uint256 minAmount);
-///@notice emitted in withdrawLiquidity when the amount to withdraws is bigger than the balance
-error WithdrawalAmountNotReady(uint256 received);
 ///@notice error emitted when the caller is not the Orchestrator
 error NotConceroInfraProxy();
 ///@notice error emitted when the max amount accepted by the pool is reached
@@ -46,8 +42,7 @@ error DistributeLiquidityRequestAlreadyProceeded(bytes32 requestId);
 ///@notice error emitted when the caller is not the LP who opened the request
 error NotAllowedToCompleteDeposit();
 ///@notice error emitted when the request doesn't exist
-error WithdrawRequestDoesntExist(bytes32 withdrawId);
-error UnableToCompleteDelegateCall(bytes data);
+error WithdrawRequestDoesntExist(bytes32 withdrawalId);
 error NotOwner();
 error OnlyRouterCanFulfill(address);
 error Unauthorized();

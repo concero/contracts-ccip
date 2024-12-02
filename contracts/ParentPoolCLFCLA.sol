@@ -131,7 +131,8 @@ contract ParentPoolCLFCLA is
     function checkUpkeep(
         bytes calldata /* checkData */
     ) external view override cannotExecute returns (bool, bytes memory) {
-        for (uint256 i; i < s_withdrawalRequestIds.length; ++i) {
+        uint256 s_withdrawalRequestIdsLength = s_withdrawalRequestIds.length;
+        for (uint256 i; i < s_withdrawalRequestIdsLength; ++i) {
             bytes32 withdrawalId = s_withdrawalRequestIds[i];
 
             if (s_withdrawRequests[withdrawalId].amountToWithdraw == 0) {

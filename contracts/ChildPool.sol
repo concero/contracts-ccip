@@ -8,7 +8,7 @@ pragma solidity 0.8.20;
 
 import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
-import {ChildPoolStorage} from "contracts/Libraries/ChildPoolStorage.sol";
+import {ChildPoolStorage} from "./Libraries/ChildPoolStorage.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {ICCIP} from "./Interfaces/ICCIP.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -27,8 +27,6 @@ error InvalidAddress();
 error NotMessenger();
 ///@notice error emitted when the caller is not the owner of the contract
 error NotOwner();
-///@notice error emitted when the CCIP message sender is not allowed.
-error SenderNotAllowed(address sender);
 ///@notice error emitted if the array is empty.
 error NoPoolsToDistribute();
 error DistributeLiquidityRequestAlreadyProceeded(bytes32 reqId);
@@ -87,7 +85,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
      * @notice modifier to check if the caller is the an approved messenger
      */
     modifier onlyMessenger() {
-        if (_isMessenger(msg.sender) == false) revert NotMessenger();
+        if (!_isMessenger(msg.sender)) revert NotMessenger();
         _;
     }
 

@@ -14,7 +14,6 @@ import {LibConcero} from "./Libraries/LibConcero.sol";
 import {IFunctionsClient} from "@chainlink/contracts/src/v0.8/functions/v1_0_0/interfaces/IFunctionsClient.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /* ERRORS */
 ///@notice error emitted when the balance input is smaller than the specified amount param
@@ -28,7 +27,6 @@ error InvalidSwapData();
 ///@notice error emitted when the token to bridge is not USDC
 error UnsupportedBridgeToken();
 error InvalidIntegratorFeeBps();
-error FailedToWithdrawIntegratorFees(address token, uint256 amount);
 error InvalidRecipient();
 error TransferFailed();
 error TxAlreadyConfirmed();
@@ -380,21 +378,21 @@ contract InfraOrchestrator is
         LibConcero.safeDelegateCall(i_conceroBridge, delegateCallArgs);
     }
 
-    function _getUSDCAddressByChainSelector(
-        uint64 _chainSelector
-    ) internal pure returns (address _token) {
-        if (_chainSelector == CHAIN_SELECTOR_ARBITRUM) {
-            _token = USDC_ARBITRUM;
-        } else if (_chainSelector == CHAIN_SELECTOR_BASE) {
-            _token = USDC_BASE;
-        } else if (_chainSelector == CHAIN_SELECTOR_POLYGON) {
-            _token = USDC_POLYGON;
-        } else if (_chainSelector == CHAIN_SELECTOR_AVALANCHE) {
-            _token = USDC_AVALANCHE;
-        } else {
-            revert UnsupportedBridgeToken();
-        }
-    }
+    // function _getUSDCAddressByChainSelector(
+    //     uint64 _chainSelector
+    // ) internal pure returns (address _token) {
+    //     if (_chainSelector == CHAIN_SELECTOR_ARBITRUM) {
+    //         _token = USDC_ARBITRUM;
+    //     } else if (_chainSelector == CHAIN_SELECTOR_BASE) {
+    //         _token = USDC_BASE;
+    //     } else if (_chainSelector == CHAIN_SELECTOR_POLYGON) {
+    //         _token = USDC_POLYGON;
+    //     } else if (_chainSelector == CHAIN_SELECTOR_AVALANCHE) {
+    //         _token = USDC_AVALANCHE;
+    //     } else {
+    //         revert UnsupportedBridgeToken();
+    //     }
+    // }
 
     function _collectSwapFee(
         IDexSwap.SwapData[] memory swapData,

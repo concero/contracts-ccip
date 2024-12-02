@@ -796,25 +796,21 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             s_loansInUse +
             s_depositsOnTheWayAmount -
             s_depositFeeAmount;
-        //todo: we must add withdrawalsOnTheWay
+        //TODO: add withdrawalsOnTheWay
 
         uint256 totalCrossChainLiquidity = _childPoolsTotalBalance + parentPoolLiquidity;
-        uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(totalCrossChainLiquidity);
-        uint256 amountDepositedConverted = _convertToLPTokenDecimals(_amountToDeposit);
         uint256 _totalLPSupply = i_lpToken.totalSupply();
 
-        //N° lpTokens = (((Total USDC Liq + user deposit) * Total sToken) / Total USDC Liq) - Total sToken
-        uint256 lpTokensToMint;
-
-        if (_totalLPSupply != 0) {
-            lpTokensToMint =
-                (((crossChainBalanceConverted + amountDepositedConverted) * _totalLPSupply) /
-                    crossChainBalanceConverted) -
-                _totalLPSupply;
-        } else {
-            lpTokensToMint = amountDepositedConverted;
+        if (_totalLPSupply == 0) {
+            return _convertToLPTokenDecimals(_amountToDeposit);
         }
-        return lpTokensToMint;
+
+        uint256 crossChainBalanceConverted = _convertToLPTokenDecimals(totalCrossChainLiquidity);
+        uint256 amountDepositedConverted = _convertToLPTokenDecimals(_amountToDeposit);
+
+        return
+            (((crossChainBalanceConverted + amountDepositedConverted) * _totalLPSupply) /
+                crossChainBalanceConverted) - _totalLPSupply;
     }
 
     function _addDepositOnTheWay(

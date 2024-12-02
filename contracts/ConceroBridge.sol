@@ -191,16 +191,13 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         uint256 batchedTxAmount,
         uint64 dstChainSelector
     ) internal {
-        bytes32[] memory pendingCCIPTransactionsByDstChain = s_pendingSettlementIdsByDstChain[
-            dstChainSelector
-        ];
+        bytes32[] memory pendingTxs = s_pendingSettlementIdsByDstChain[dstChainSelector];
+        uint256 pendingTxsLength = pendingTxs.length;
 
-        CcipSettlementTx[] memory ccipSettlementTxs = new CcipSettlementTx[](
-            pendingCCIPTransactionsByDstChain.length
-        );
+        CcipSettlementTx[] memory ccipSettlementTxs = new CcipSettlementTx[](pendingTxsLength);
 
-        for (uint256 i; i < pendingCCIPTransactionsByDstChain.length; ++i) {
-            bytes32 txId = pendingCCIPTransactionsByDstChain[i];
+        for (uint256 i; i < pendingTxsLength; ++i) {
+            bytes32 txId = pendingTxs[i];
 
             ccipSettlementTxs[i] = CcipSettlementTx(
                 txId,

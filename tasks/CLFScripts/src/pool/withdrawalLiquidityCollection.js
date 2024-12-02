@@ -3,16 +3,16 @@
 		const [_, __, ___, liquidityRequestedFromEachPool, withdrawalId] = bytesArgs;
 
 		const chainSelectors = {
-			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
-				urls: [
-					`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
-					'https://arbitrum-sepolia-rpc.publicnode.com',
-				],
-				chainId: '0x66eee',
-				usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
-				poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
-			},
+			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
+			// 	urls: [
+			// 		`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+			// 		'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
+			// 		'https://arbitrum-sepolia-rpc.publicnode.com',
+			// 	],
+			// 	chainId: '0x66eee',
+			// 	usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
+			// 	poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
+			// },
 			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 			// 	urls: [
 			// 		`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
@@ -23,7 +23,6 @@
 			// 	usdcAddress: '${USDC_FUJI}',
 			// 	poolAddress: '${CHILD_POOL_PROXY_FUJI}',
 			// },
-
 			// mainnets
 			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
 			// 	urls: [

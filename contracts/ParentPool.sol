@@ -59,6 +59,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     uint256 internal constant MIN_DEPOSIT = 1 * USDC_DECIMALS;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * USDC_DECIMALS;
+    uint256 internal constant LP_FEE_FACTOR = 1000;
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
 
     /* IMMUTABLE VARIABLES */
@@ -623,21 +624,22 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         }
 
         if (ccipTxData.ccipTxType == ICCIP.CcipTxType.batchedSettlement) {
-            IConceroBridge.CcipSettlementTx[] memory settlementTx = abi.decode(
+            IConceroBridge.CcipSettlementTx[] memory settlementTxs = abi.decode(
                 ccipTxData.data,
                 (IConceroBridge.CcipSettlementTx[])
             );
-            for (uint256 i; i < settlementTx.length; ++i) {
-                bytes32 txId = settlementTx[i].id;
-                uint256 txAmount = settlementTx[i].amount;
+            for (uint256 i; i < settlementTxs.length; ++i) {
+                bytes32 txId = settlementTxs[i].id;
+                uint256 txAmount = settlementTxs[i].amount;
                 bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
 
                 if (isTxConfirmed) {
+                    txAmount -= getDstTotalFeeInUsdc(txAmount);
                     s_loansInUse -= txAmount;
                 } else {
                     IInfraOrchestrator(i_infraProxy).confirmTx(txId);
-                    i_USDC.safeTransfer(settlementTx[i].recipient, txAmount);
-                    emit FailedExecutionLayerTxSettled(settlementTx[i].id);
+                    i_USDC.safeTransfer(settlementTxs[i].recipient, txAmount);
+                    emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
                 }
             }
         } else if (ccipTxData.ccipTxType == ICCIP.CcipTxType.withdrawal) {
@@ -851,6 +853,15 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         }
 
         return index;
+    }
+
+    /**
+     * @notice getter function to calculate Destination fee amount on Source
+     * @param amount the amount of tokens to calculate over
+     * @return the fee amount
+     */
+    function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
+        return (amount * PRECISION_HANDLER) / LP_FEE_FACTOR / PRECISION_HANDLER;
     }
 
     // function _calculateDepositTransactionFee(uint256 _amountToDistribute) internal view returns(uint256 _totalUSDCCost){

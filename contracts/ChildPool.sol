@@ -40,6 +40,8 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     /* CONSTANT VARIABLES */
     uint32 public constant CLF_CALLBACK_GAS_LIMIT = 300_000;
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
+    uint256 internal constant PRECISION_HANDLER = 10_000_000_000;
+    uint256 internal constant LP_FEE_FACTOR = 1000;
 
     /* IMMUTABLE VARIABLES */
     address private immutable i_infraProxy;
@@ -303,21 +305,22 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         }
 
         if (ccipTxData.ccipTxType == ICCIP.CcipTxType.batchedSettlement) {
-            IConceroBridge.CcipSettlementTx[] memory settlementTx = abi.decode(
+            IConceroBridge.CcipSettlementTx[] memory settlementTxs = abi.decode(
                 ccipTxData.data,
                 (IConceroBridge.CcipSettlementTx[])
             );
-            for (uint256 i; i < settlementTx.length; ++i) {
-                bytes32 txId = settlementTx[i].id;
-                uint256 txAmount = settlementTx[i].amount;
+            for (uint256 i; i < settlementTxs.length; ++i) {
+                bytes32 txId = settlementTxs[i].id;
+                uint256 txAmount = settlementTxs[i].amount;
                 bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
 
                 if (isTxConfirmed) {
+                    txAmount -= getDstTotalFeeInUsdc(txAmount);
                     s_loansInUse -= txAmount;
                 } else {
                     IInfraOrchestrator(i_infraProxy).confirmTx(txId);
-                    i_USDC.safeTransfer(settlementTx[i].recipient, txAmount);
-                    emit FailedExecutionLayerTxSettled(settlementTx[i].id);
+                    i_USDC.safeTransfer(settlementTxs[i].recipient, txAmount);
+                    emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
                 }
             }
         }
@@ -365,6 +368,16 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     }
 
     /* VIEW & PURE FUNCTIONS */
+
+    /**
+     * @notice getter function to calculate Destination fee amount on Source
+     * @param amount the amount of tokens to calculate over
+     * @return the fee amount
+     */
+    function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
+        return (amount * PRECISION_HANDLER) / LP_FEE_FACTOR / PRECISION_HANDLER;
+    }
+
     /**
      * @notice Function to check if a caller address is an allowed messenger
      * @param _messenger the address of the caller

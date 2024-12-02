@@ -309,6 +309,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         address bridgeableTokenDst
     ) internal {
         //todo: remove with new DexSwap contract
+        //TODO: when validation fails, take loan and fulfil bridge TX
         if (swapData.length > 5) {
             revert InvalidSwapData();
         }

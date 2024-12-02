@@ -158,10 +158,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     }
 
     function checkUpkeepViaDelegate() external returns (bool, bytes memory) {
-        if (msg.sig != AutomationCompatibleInterface.checkUpkeep.selector) {
-            revert MsgSigNotMatched(msg.sig);
-        }
-
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             AutomationCompatibleInterface.checkUpkeep.selector,
             bytes("")

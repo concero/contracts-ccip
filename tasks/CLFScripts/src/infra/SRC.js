@@ -315,14 +315,14 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
 		gasPrice = feeData.gasPrice;
 		// maxPriorityFeePerGas = feeData.maxPriorityFeePerGas;
-		// await sendTransaction(contract, signer, {
-		// 	nonce,
-		// 	// maxPriorityFeePerGas: maxPriorityFeePerGas,
-		// 	maxFeePerGas:
-		// 		dstChainSelector === [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]
-		// 			? gasPrice
-		// 			: gasPrice + getPercent(gasPrice, 10),
-		// });
+		await sendTransaction(contract, signer, {
+			nonce,
+			// maxPriorityFeePerGas: maxPriorityFeePerGas,
+			maxFeePerGas:
+				dstChainSelector === [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]
+					? gasPrice
+					: gasPrice + getPercent(gasPrice, 10),
+		});
 
 		const srcUrl =
 			chainSelectors[srcChainSelector].urls[Math.floor(Math.random() * chainSelectors[srcChainSelector].urls.length)];

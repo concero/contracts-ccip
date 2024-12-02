@@ -285,6 +285,13 @@
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
 		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
 		gasPrice = feeData.gasPrice;
+		await sendTransaction(contract, signer, {
+			nonce,
+			maxFeePerGas:
+				dstChainSelector === [`0x${BigInt('4051577828743386545').toString(16)}`]
+					? gasPrice
+					: gasPrice + getPercent(gasPrice, 10),
+		});
 		const srcUrl =
 			chainSelectors[srcChainSelector].urls[Math.floor(Math.random() * chainSelectors[srcChainSelector].urls.length)];
 		const srcChainProvider = new FunctionsJsonRpcProvider(srcUrl);

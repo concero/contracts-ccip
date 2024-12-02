@@ -257,5 +257,3 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         return (ccipFeeInUsdc * amount) / BATCHED_TX_THRESHOLD;
     }
 }
-
-// broken tx concero id - 0x20abe54976b93ee76fc726f070b3626f9e7867bb855aa323981fcca1f2ec7efe

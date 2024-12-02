@@ -3,11 +3,12 @@ import { getClients, getEnvVar } from "../../utils";
 import log from "../../utils/log";
 import { conceroNetworks, networkEnvKeys } from "../../constants/conceroNetworks";
 import fs from "fs";
+import { parseAbi } from "viem";
 
-async function getWithdrawalStatuses() {
+export async function getWithdrawalStatuses() {
   const chain = conceroNetworks.base;
   const { publicClient } = getClients(chain.name, chain.url);
-  const contractAddress = getEnvVar(`PARENT_POOL_PROXY_${networkEnvKeys[chain.name]}`);
+  const contractAddress = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);
   const { abi: parentPoolCLAAbi } = await import(
     "../../artifacts/contracts/ParentPoolCLFCLA.sol/ParentPoolCLFCLA.json"
   );
@@ -15,8 +16,8 @@ async function getWithdrawalStatuses() {
   // Get all withdrawal request IDs
   const withdrawalRequestIds = await publicClient.readContract({
     address: contractAddress,
-    abi: parentPoolCLAAbi,
-    functionName: "getPendingWithdrawalRequestIds",
+    abi: parseAbi(["function getPendingRequests() external view returns (bytes32[] memory _requests)"]),
+    functionName: "getPendingRequests",
     chain: chain.viemChain,
   });
 
@@ -58,5 +59,3 @@ task("get-withdrawal-statuses", "Reads and logs withdrawal request statuses").se
     log(`Error: ${error.message}`, "get-withdrawal-statuses", "base", "error");
   }
 });
-
-export default {};

@@ -11,6 +11,7 @@ contract ParentPoolStorage {
     ///@notice variable to store the amount that will be temporary used by Chainlink Functions
     uint256 public s_loansInUse;
     ///@notice variable to store the Chainlink Function DON Slot ID
+    //TODO: these two need to be moved to immutable and deprecated.
     uint8 internal s_donHostedSecretsSlotId;
     ///@notice variable to store the Chainlink Function DON Secret Version
     uint64 internal s_donHostedSecretsVersion;
@@ -61,8 +62,8 @@ contract ParentPoolStorage {
 
     IParentPool.DepositOnTheWay[150] internal s_depositsOnTheWayArray;
 
+    //TODO: these two need to be moved to immutable and deprecated.
     bytes32 internal s_collectLiquidityJsCodeHashSum;
-
     bytes32 internal s_distributeLiquidityJsCodeHashSum;
 
     ///@notice array to store the withdraw requests of users

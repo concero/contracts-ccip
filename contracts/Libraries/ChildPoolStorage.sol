@@ -13,11 +13,11 @@ contract ChildPoolStorage {
     uint64[] s_poolChainSelectors;
 
     ///@notice Mapping to keep track of allowed pool senders
-    mapping(uint64 chainSelector => mapping(address conceroContract => bool))
+    mapping(uint64 chainSelector => mapping(address conceroContract => bool isAllowed))
         public s_isSenderContractAllowed;
     ///@notice Mapping to keep track of valid pools to transfer in case of liquidation or rebalance
-    mapping(uint64 chainSelector => address pools) public s_dstPoolByChainSelector;
-    mapping(bytes32 requestId => bool) public s_distributeLiquidityRequestProcessed;
+    mapping(uint64 chainSelector => address pool) public s_dstPoolByChainSelector;
+    mapping(bytes32 requestId => bool isProcessed) public s_distributeLiquidityRequestProcessed;
     //@notice Prevents CLF from triggering the same withdrawal request more than once
-    mapping(bytes32 withdrawalId => bool) public s_isWithdrawalRequestTriggered;
+    mapping(bytes32 withdrawalId => bool isTriggered) public s_isWithdrawalRequestTriggered;
 }

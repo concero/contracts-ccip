@@ -3,7 +3,7 @@ try {
 	const q =
 		'https://raw.githubusercontent.com/concero/contracts-v1/' +
 		'${CLF_JS_CODE_BRANCH}' +
-		'/packages/hardhat/tasks/CLFScripts/dist/pool/collectLiquidity.min.js';
+		'/tasks/CLFScripts/dist/pool/collectLiquidity.min.js';
 	const [t, p] = await Promise.all([fetch(u), fetch(q)]);
 	const [e, c] = await Promise.all([t.text(), p.text()]);
 

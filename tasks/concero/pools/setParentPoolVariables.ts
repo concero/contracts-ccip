@@ -8,7 +8,7 @@ import {
   shorten,
 } from "../../../utils";
 import { mainnetChains, networkEnvKeys, networkTypes, ProxyEnum, testnetChains, viemReceiptConfig } from "../../../constants";
-import { collectLiquidityCodeUrl, ethersV6CodeUrl, parentPoolJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
+import { collectLiquidityCodeUrl, ethersV6CodeUrl, parentPoolJsCodeUrl, parentPoolDistributeLiqJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
 import { Address } from "viem";
 import log, { err } from "../../../utils/log";
 import getHashSum from "../../../utils/getHashSum";
@@ -23,6 +23,7 @@ export async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
     const parentPoolJsCode = await (await fetch(parentPoolJsCodeUrl)).text();
     const ethersCode = await (await fetch(ethersV6CodeUrl)).text();
     const collectLiquidityCode = await (await fetch(collectLiquidityCodeUrl)).text();
+    const redistributeLiquidityCode = await (await fetch(parentPoolDistributeLiqJsCodeUrl)).text();
 
     const setHash = async (hash: string, functionName: string) => {
       const setJsHashTxHash = await walletClient.writeContract({
@@ -45,6 +46,8 @@ export async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
     await setHash(getHashSum(parentPoolJsCode), "setGetBalanceJsCodeHashSum");
     await setHash(getHashSum(collectLiquidityCode), "setCollectLiquidityJsCodeHashSum");
     await setHash(getHashSum(ethersCode), "setEthersHashSum");
+    await setHash(getHashSum(redistributeLiquidityCode), "setDistributeLiquidityJsCodeHashSum")
+
   } catch (error) {
     err(`${error?.message}`, "setHashSum", name);
   }
@@ -87,7 +90,7 @@ export async function setParentPoolSecretsVersion(chain: CNetwork, abi: any, slo
     const [parentPoolProxy, parentPoolProxyAlias] = getEnvAddress(ProxyEnum.parentPoolProxy, name);
     //const { signer: dcSigner } = getEthersV5FallbackSignerAndProvider(name);
 
-    
+
     const version = getEnvVar(`CLF_DON_SECRETS_VERSION_${networkEnvKeys[name]}`);
 
     // try {

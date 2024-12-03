@@ -74,7 +74,7 @@
 		} else if (chainIdLowerCase == '0x2105') {
 			chainsMap = chainsMapMainnet;
 		} else {
-			throw new Error('Wrong chain id');
+			throw new Error(`Wrong chain id ${chainIdLowerCase}`);
 		}
 
 		const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];

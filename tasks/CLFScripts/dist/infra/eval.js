@@ -6,7 +6,7 @@ try {
 		fetch(
 			m +
 				'concero/contracts-v1/' +
-				'release' +
+				'feature/pools-rebalancing' +
 				`/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`,
 		),
 	]);

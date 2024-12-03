@@ -4,13 +4,13 @@
 			urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
 			chainId: '0x66eee',
 			usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-			poolAddress: '0x08b7325A4fF82F97803ff650A3288E036FB424ea',
+			poolAddress: '0x63AE868A78F37a73Fb9CE077f1d6Cb8EB178467c',
 		},
 		['10344971235874465080']: {
 			urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
 			chainId: '0x14a34',
 			usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-			poolAddress: '0xD5B19458Ddd36f75Cb8309B0e3bfB607Ccc04EB6',
+			poolAddress: '0xf35D33f4881377027116DD0D632a05Ac29607801',
 		},
 	};
 	const baseChainSelector = '10344971235874465080';

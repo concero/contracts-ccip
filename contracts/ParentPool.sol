@@ -541,13 +541,14 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
                 )
             );
 
-            bytes[] memory args = new bytes[](6);
+            bytes[] memory args = new bytes[](7);
             args[0] = abi.encodePacked(s_distributeLiquidityJsCodeHashSum);
             args[1] = abi.encodePacked(s_ethersHashSum);
             args[2] = abi.encodePacked(CLFRequestType.liquidityRedistribution);
             args[3] = abi.encodePacked(_chainSelector);
             args[4] = abi.encodePacked(distributeLiquidityRequestId);
             args[5] = abi.encodePacked(RedistributeLiquidityType.addPool);
+            args[6] = abi.encodePacked(block.chainid);
 
             bytes memory delegateCallArgs = abi.encodeWithSelector(
                 IParentPoolCLFCLA.sendCLFRequest.selector,

@@ -1,29 +1,29 @@
 (async () => {
 	try {
-		const [_, __, ___, newPoolChainSelector, distributeLiquidityRequestId, distributionType] = bytesArgs;
-		const chainSelectors = {
-			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
-			// 	urls: [
-			// 		`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-			// 		'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
-			// 		'https://arbitrum-sepolia-rpc.publicnode.com',
-			// 	],
-			// 	chainId: '0x66eee',
-			// 	usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
-			// 	poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
-			// },
-			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
-			// 	urls: [
-			// 		`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
-			// 		'https://avalanche-fuji-c-chain-rpc.publicnode.com',
-			// 		'https://avalanche-fuji.blockpi.network/v1/rpc/public',
-			// 	],
-			// 	chainId: '0xa869',
-			// 	usdcAddress: '${USDC_FUJI}',
-			// 	poolAddress: '${CHILD_POOL_PROXY_FUJI}',
-			// },
-
-			// mainnet
+		const [_, __, ___, newPoolChainSelector, distributeLiquidityRequestId, distributionType, chainId] = bytesArgs;
+		const chainsMapTestnet = {
+			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
+				urls: [
+					`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
+					'https://arbitrum-sepolia-rpc.publicnode.com',
+				],
+				chainId: '0x66eee',
+				usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
+				poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
+			},
+			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
+				urls: [
+					`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`,
+					'https://avalanche-fuji-c-chain-rpc.publicnode.com',
+					'https://avalanche-fuji.blockpi.network/v1/rpc/public',
+				],
+				chainId: '0xa869',
+				usdcAddress: '${USDC_FUJI}',
+				poolAddress: '${CHILD_POOL_PROXY_FUJI}',
+			},
+		};
+		const chainsMapMainnet = {
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
 				urls: [
 					`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
@@ -66,6 +66,17 @@
 			},
 		};
 
+		let chainsMap;
+		const chainIdLowerCase = chainId.toLowerCase();
+
+		if (chainIdLowerCase === '0x14a34') {
+			chainsMap = chainsMapTestnet;
+		} else if (chainIdLowerCase == '0x2105') {
+			chainsMap = chainsMapMainnet;
+		} else {
+			throw new Error('Wrong chain id');
+		}
+
 		const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 		const poolAbi = [
 			'function s_loansInUse() external view returns (uint256)',
@@ -73,7 +84,7 @@
 			'function liquidatePool(bytes32) external',
 		];
 
-		const chainSelectorsArr = Object.keys(chainSelectors);
+		const chainSelectorsArr = Object.keys(chainsMap);
 
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 			constructor(url) {
@@ -96,8 +107,7 @@
 		}
 
 		const getProviderByChainSelector = _chainSelector => {
-			const url =
-				chainSelectors[_chainSelector].urls[Math.floor(Math.random() * chainSelectors[_chainSelector].urls.length)];
+			const url = chainsMap[_chainSelector].urls[Math.floor(Math.random() * chainsMap[_chainSelector].urls.length)];
 			return new FunctionsJsonRpcProvider(url);
 		};
 
@@ -111,12 +121,12 @@
 			const getPoolsBalances = async () => {
 				const getBalancePromises = [];
 
-				for (const chain in chainSelectors) {
+				for (const chain in chainsMap) {
 					if (chain !== newPoolChainSelector) {
 						const provider = getProviderByChainSelector(chain);
-						const erc20 = new ethers.Contract(chainSelectors[chain].usdcAddress, erc20Abi, provider);
-						const pool = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, provider);
-						getBalancePromises.push(erc20.balanceOf(chainSelectors[chain].poolAddress));
+						const erc20 = new ethers.Contract(chainsMap[chain].usdcAddress, erc20Abi, provider);
+						const pool = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, provider);
+						getBalancePromises.push(erc20.balanceOf(chainsMap[chain].poolAddress));
 						getBalancePromises.push(pool.s_loansInUse());
 					}
 				}
@@ -133,14 +143,14 @@
 
 			const poolsBalances = await getPoolsBalances();
 			const poolsTotalBalance = chainSelectorsArr.reduce((acc, pool) => acc + poolsBalances[pool], 0n);
-			const newPoolsCount = Object.keys(chainSelectors).length + 1;
+			const newPoolsCount = Object.keys(chainsMap).length + 1;
 			const newPoolBalance = poolsTotalBalance / BigInt(newPoolsCount);
 			const distributeAmountPromises = [];
 
-			for (const chain in chainSelectors) {
+			for (const chain in chainsMap) {
 				if (chain !== newPoolChainSelector) {
 					const signer = getSignerByChainSelector(chain);
-					const poolContract = new ethers.Contract(chainSelectors[chain].poolAddress, poolAbi, signer);
+					const poolContract = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, signer);
 					const amountToDistribute = poolsBalances[chain] - newPoolBalance;
 					distributeAmountPromises.push(
 						poolContract.distributeLiquidity(newPoolChainSelector, amountToDistribute, distributeLiquidityRequestId),
@@ -153,7 +163,7 @@
 			return Functions.encodeUint256(1n);
 		} else if (distributionType === '0x01') {
 			const signer = getSignerByChainSelector(newPoolChainSelector);
-			const poolContract = new ethers.Contract(chainSelectors[newPoolChainSelector].poolAddress, poolAbi, signer);
+			const poolContract = new ethers.Contract(chainsMap[newPoolChainSelector].poolAddress, poolAbi, signer);
 			await poolContract.liquidatePool(distributeLiquidityRequestId);
 
 			return Functions.encodeUint256(1n);

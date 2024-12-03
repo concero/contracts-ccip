@@ -40,7 +40,7 @@ async function addParentPoolChildPool(parentPoolChain: CNetwork, chainToAdd: CNe
 }
 
 
-task("add-child-pool", "Add the child pool with rebalance option")
+task("add-child-pool-to-parent-pool", "Add the child pool with rebalance option")
     .addParam("childpoolchain", "The child pool chain to add in the parent pool")
     .addOptionalParam("rebalance", "Rebalance the pool", true, types.boolean)
     .setAction(async taskArgs => {

@@ -9,7 +9,6 @@ library LibConcero {
 
     error TransferToNullAddress();
     error NativeTokenIsNotERC20();
-    error InsufficientBalance(uint256 balance, uint256 amount);
     error UnableToCompleteDelegateCall(bytes data);
     error InvalidAddress();
 

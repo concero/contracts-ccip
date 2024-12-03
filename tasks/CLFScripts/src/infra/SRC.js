@@ -22,11 +22,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}').toString(16)}`]: {
-			urls: [
-				`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://ethereum-sepolia-rpc.publicnode.com',
-				'https://ethereum-sepolia.blockpi.network/v1/rpc/public',
-			],
+			urls: [`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://ethereum-sepolia-rpc.publicnode.com'],
 			chainId: '0xaa36a7',
 			nativeCurrency: 'eth',
 			priceFeed: {
@@ -39,7 +35,6 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 			urls: [
 				`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
 				'https://arbitrum-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x66eee',
@@ -54,7 +49,6 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`]: {
 			urls: [
 				`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-				'https://base-sepolia.blockpi.network/v1/rpc/public',
 				'https://base-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x14a34',
@@ -64,14 +58,13 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 				usdcUsd: '${USDC_USD_PRICEFEED_BASE_SEPOLIA}',
 				nativeUsd: '${NATIVE_USD_PRICEFEED_BASE_SEPOLIA}',
 				linkNative: '${LINK_NATIVE_PRICEFEED_BASE_SEPOLIA}',
-				maticUsd: '${MATIC_USD_PRICEFEED_BASE}',
-				avaxUsd: '${AVAX_USD_PRICEFEED_BASE}',
+				// maticUsd: '${MATIC_USD_PRICEFEED_BASE}',
+				// avaxUsd: '${AVAX_USD_PRICEFEED_BASE}',
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
 			urls: [
 				`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://optimism-sepolia.blockpi.network/v1/rpc/public',
 				'https://optimism-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0xaa37dc',
@@ -84,11 +77,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY}').toString(16)}`]: {
-			urls: [
-				`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://polygon-amoy.blockpi.network/v1/rpc/public',
-				'https://polygon-amoy-bor-rpc.publicnode.com',
-			],
+			urls: [`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://polygon-amoy-bor-rpc.publicnode.com'],
 			chainId: '0x13882',
 			nativeCurrency: 'matic',
 			priceFeed: {
@@ -158,6 +147,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 	const getPercent = (value, percent) => (BigInt(value) * BigInt(percent)) / 100n;
 	const getPriceRates = async (provider, chainSelector) => {
 		const priceFeedsAbi = ['function latestRoundData() external view returns (uint80, int256, uint256, uint256, uint80)'];
+
 		const linkUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.linkUsd, priceFeedsAbi, provider);
 		const usdcUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.usdcUsd, priceFeedsAbi, provider);
 		const nativeUsdContract = new ethers.Contract(
@@ -170,6 +160,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 			priceFeedsAbi,
 			provider,
 		);
+
 		const promises = [
 			linkUsdContract.latestRoundData(),
 			usdcUsdContract.latestRoundData(),
@@ -240,6 +231,8 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 			if (dstAssetUsdPriceFeed === undefined) return 1n;
 
 			const srcNativeDstNativeRate = nativeUsdPriceFeed / dstAssetUsdPriceFeed;
+			if (srcNativeDstNativeRate === 0n) return 1n;
+
 			const dstGasPriceInSrcCurrency = gasPriceInDstCurrency / srcNativeDstNativeRate;
 
 			return dstGasPriceInSrcCurrency < 1n ? 1n : dstGasPriceInSrcCurrency;

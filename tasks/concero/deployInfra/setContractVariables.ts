@@ -338,11 +338,11 @@ export async function setContractVariables(deployableChains: CNetwork[], slotId:
 
   for (const deployableChain of deployableChains) {
     if (deployableChain.type === networkTypes.mainnet) await setDexSwapAllowedRouters(deployableChain, abi); // once
-    await setDstConceroPools(deployableChain, abi); // once
 
     await setDonHostedSecretsVersion(deployableChain, slotId, abi);
     await setDonSecretsSlotId(deployableChain, slotId, abi);
 
+    await setDstConceroPools(deployableChain, abi); // once
     await setFunctionsPremiumFees(deployableChain, abi);
     await setJsHashes(deployableChain, abi);
   }

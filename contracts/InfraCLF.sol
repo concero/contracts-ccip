@@ -17,7 +17,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 import {LibZip} from "solady/src/utils/LibZip.sol";
-import {DexSwap} from "./DexSwap.sol";
 
 /* ERRORS */
 ///@notice error emitted when a TX was already added
@@ -33,8 +32,6 @@ error TxAlreadyConfirmed();
 error DstContractAddressNotSet();
 ///@notice error emitted when an arbitrary address calls fulfillRequestWrapper
 error OnlyProxyContext(address caller);
-///@notice error emitted when the delegatecall to DexSwap fails
-error FailedToReleaseTx(bytes error);
 error InvalidSwapData();
 
 contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
@@ -43,10 +40,12 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     using FunctionsRequest for FunctionsRequest.Request;
 
     /* CONSTANT VARIABLES */
+    uint256 internal constant PRECISION_HANDLER = 10_000_000_000;
+    uint256 internal constant LP_FEE_FACTOR = 1000;
     uint32 public constant CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT = 150_000;
     uint32 public constant CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT = 2_000_000;
     string private constant CL_JS_CODE =
-        "try{const m='https://raw.githubusercontent.com/';const u=m+'ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';const [t,p]=await Promise.all([ fetch(u),fetch(m+'concero/contracts-ccip/'+'master'+`/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2])===1n ? 'DST':'SRC'}.min.js`,),]);const [e,c]=await Promise.all([t.text(),p.text()]);const g=async s=>{return('0x'+Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))).map(v=>('0'+v.toString(16)).slice(-2).toLowerCase()).join(''));};const r=await g(c);const x=await g(e);const b=bytesArgs[0].toLowerCase();const o=bytesArgs[1].toLowerCase();if(r===b && x===o){const ethers=new Function(e+';return ethers;')();return await eval(c);}throw new Error(`${r}!=${b}||${x}!=${o}`);}catch(e){throw new Error(e.message.slice(0,255));}";
+        "try{const m='https://raw.githubusercontent.com/';const u=m+'ethers-io/ethers.js/v6.10.0/dist/ethers.umd.min.js';const [t,p]=await Promise.all([ fetch(u),fetch(m+'concero/contracts-v1/'+'release'+`/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2])===1n ? 'DST':'SRC'}.min.js`,),]);const [e,c]=await Promise.all([t.text(),p.text()]);const g=async s=>{return('0x'+Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))).map(v=>('0'+v.toString(16)).slice(-2).toLowerCase()).join(''));};const r=await g(c);const x=await g(e);const b=bytesArgs[0].toLowerCase();const o=bytesArgs[1].toLowerCase();if(r===b && x===o){const ethers=new Function(e+';return ethers;')();return await eval(c);}throw new Error(`${r}!=${b}||${x}!=${o}`);}catch(e){throw new Error(e.message.slice(0,255));}";
 
     /* IMMUTABLE VARIABLES */
     ///@notice Chainlink Function Don ID
@@ -65,7 +64,6 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
     Chain internal immutable i_chainIndex;
 
     /* EVENTS */
-
     ///@notice emitted when a Unconfirmed TX is added by a cross-chain TX
     event UnconfirmedTXAdded(bytes32 indexed conceroMessageId);
     event TXReleased(
@@ -222,7 +220,8 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         uint64 dstChainSelector,
         bytes32 txDataHash
     ) internal {
-        if (s_conceroContracts[dstChainSelector] == address(0)) {
+        address destinationContract = s_conceroContracts[dstChainSelector];
+        if (destinationContract == address(0)) {
             revert DstContractAddressNotSet();
         }
 
@@ -230,7 +229,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         args[0] = abi.encodePacked(s_srcJsHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(RequestType.addUnconfirmedTxDst);
-        args[3] = abi.encodePacked(s_conceroContracts[dstChainSelector]);
+        args[3] = abi.encodePacked(destinationContract);
         args[4] = abi.encodePacked(conceroMessageId);
         args[5] = abi.encodePacked(i_chainSelector);
         args[6] = abi.encodePacked(dstChainSelector);
@@ -310,6 +309,7 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
         address bridgeableTokenDst
     ) internal {
         //todo: remove with new DexSwap contract
+        //TODO: when validation fails, take loan and fulfil bridge TX
         if (swapData.length > 5) {
             revert InvalidSwapData();
         }
@@ -418,7 +418,6 @@ contract InfraCLF is IInfraCLF, FunctionsClient, InfraCommon, InfraStorage {
      * @return the fee amount
      */
     function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
-        return amount / 1000;
-        //@audit we can have loss of precision here?
+        return (amount * PRECISION_HANDLER) / LP_FEE_FACTOR / PRECISION_HANDLER;
     }
 }

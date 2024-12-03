@@ -10,7 +10,7 @@
 				],
 				chainId: '0x66eee',
 				usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-				poolAddress: '0x63AE868A78F37a73Fb9CE077f1d6Cb8EB178467c',
+				poolAddress: '0x08b7325A4fF82F97803ff650A3288E036FB424ea',
 			},
 		};
 		const getChainIdByUrl = url => {

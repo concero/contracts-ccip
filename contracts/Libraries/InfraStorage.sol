@@ -7,6 +7,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 abstract contract InfraStorage is ReentrancyGuard, IInfraStorage {
     /* STATE VARIABLES */
     ///@notice variable to store the Chainlink Function DON Slot ID
+    //TODO: these 5 need to be moved to immutable and deprecated.
     uint8 public s_donHostedSecretsSlotId;
     ///@notice variable to store the Chainlink Function DON Secret Version
     uint64 public s_donHostedSecretsVersion;

@@ -1,4 +1,3 @@
-import { Concero } from "../typechain-types";
 import "@nomicfoundation/hardhat-chai-matchers";
 import { WalletClient } from "viem/clients/createWalletClient";
 import { HttpTransport } from "viem/clients/transports/http";
@@ -8,7 +7,6 @@ import { RpcSchema } from "viem/types/eip1193";
 import { privateKeyToAccount } from "viem/accounts";
 import { Address, createPublicClient, createWalletClient, decodeEventLog, http, PrivateKeyAccount } from "viem";
 import { arbitrumSepolia, base, baseSepolia, optimismSepolia, polygon, polygonAmoy } from "viem/chains";
-
 import { PublicClient } from "viem/clients/createPublicClient";
 import ierc20Abi from "@chainlink/contracts/abi/v0.8/IERC20.json";
 
@@ -54,12 +52,11 @@ const srcContractAddress = process.env.CONCERO_PROXY_POLYGON;
 const dstContractAddress = process.env.CONCERO_PROXY_BASE;
 
 describe("startBatchTransactions\n", async () => {
-  const { abi: ConceroAbi } = await import("../artifacts/contracts/ConceroBridge.sol/ConceroBridge.json");
+  const { abi: ConceroAbi } = await import("../../artifacts/contracts/ConceroBridge.sol/ConceroBridge.json");
   const { abi: ConceroOrchestratorAbi } = await import(
-    "../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json"
+    "../../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json"
   );
 
-  let Concero: Concero;
   let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
     chain: chainsMap[srcChainSelector].viemChain,
     transport: chainsMap[srcChainSelector].viemTransport,

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {IInfraOrchestrator} from "./IInfraOrchestrator.sol";
-import {IDexSwap} from "./IDexSwap.sol";
 import {IInfraStorage} from "./IInfraStorage.sol";
 
 interface IConceroBridge is IInfraStorage {

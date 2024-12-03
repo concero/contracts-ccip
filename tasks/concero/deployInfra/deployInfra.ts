@@ -13,6 +13,7 @@ import deployTransparentProxy from "../../../deploy/TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import { DeployInfraParams } from "./types";
 import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecrets";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("deployproxy", "Deploy the proxy")
@@ -23,7 +24,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
   .setAction(async taskArgs => {
     compileContracts({ quiet: true });
 
-    const hre = require("hardhat");
+    const hre: HardhatRuntimeEnvironment = require("hardhat");
     const { live, name } = hre.network;
     const networkType = conceroNetworks[name].type;
     let deployableChains: CNetwork[] = [];

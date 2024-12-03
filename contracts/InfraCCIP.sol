@@ -22,7 +22,7 @@ contract InfraCCIP is InfraCLF {
     using SafeERC20 for IERC20;
 
     /* CONSTANT VARIABLES */
-    uint64 private constant CCIP_CALLBACK_GAS_LIMIT = 150_000;
+    uint64 private constant CCIP_CALLBACK_GAS_LIMIT = 1_000_000;
 
     /* IMMUTABLE VARIABLES */
     LinkTokenInterface internal immutable i_linkToken;

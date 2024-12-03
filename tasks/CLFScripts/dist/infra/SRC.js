@@ -15,11 +15,7 @@
 			},
 		},
 		[`0x${BigInt('16015286601757825753').toString(16)}`]: {
-			urls: [
-				`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://ethereum-sepolia-rpc.publicnode.com',
-				'https://ethereum-sepolia.blockpi.network/v1/rpc/public',
-			],
+			urls: [`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://ethereum-sepolia-rpc.publicnode.com'],
 			chainId: '0xaa36a7',
 			nativeCurrency: 'eth',
 			priceFeed: {
@@ -32,7 +28,6 @@
 		[`0x${BigInt('3478487238524512106').toString(16)}`]: {
 			urls: [
 				`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
 				'https://arbitrum-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x66eee',
@@ -47,7 +42,6 @@
 		[`0x${BigInt('10344971235874465080').toString(16)}`]: {
 			urls: [
 				`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-				'https://base-sepolia.blockpi.network/v1/rpc/public',
 				'https://base-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x14a34',
@@ -57,14 +51,11 @@
 				usdcUsd: '0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165',
 				nativeUsd: '0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1',
 				linkNative: '0x56a43EB56Da12C0dc1D972ACb089c06a5dEF8e69',
-				maticUsd: '0x12129aAC52D6B0f0125677D4E1435633E61fD25f',
-				avaxUsd: '0xE70f2D34Fd04046aaEC26a198A35dD8F2dF5cd92',
 			},
 		},
 		[`0x${BigInt('5224473277236331295').toString(16)}`]: {
 			urls: [
 				`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://optimism-sepolia.blockpi.network/v1/rpc/public',
 				'https://optimism-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0xaa37dc',
@@ -77,11 +68,7 @@
 			},
 		},
 		[`0x${BigInt('16281711391670634445').toString(16)}`]: {
-			urls: [
-				`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://polygon-amoy.blockpi.network/v1/rpc/public',
-				'https://polygon-amoy-bor-rpc.publicnode.com',
-			],
+			urls: [`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://polygon-amoy-bor-rpc.publicnode.com'],
 			chainId: '0x13882',
 			nativeCurrency: 'matic',
 			priceFeed: {
@@ -223,6 +210,7 @@
 		const getGasPriceByPriceFeeds = (nativeUsdPriceFeed, dstAssetUsdPriceFeed, gasPriceInDstCurrency) => {
 			if (dstAssetUsdPriceFeed === undefined) return 1n;
 			const srcNativeDstNativeRate = nativeUsdPriceFeed / dstAssetUsdPriceFeed;
+			if (srcNativeDstNativeRate === 0n) return 1n;
 			const dstGasPriceInSrcCurrency = gasPriceInDstCurrency / srcNativeDstNativeRate;
 			return dstGasPriceInSrcCurrency < 1n ? 1n : dstGasPriceInSrcCurrency;
 		};

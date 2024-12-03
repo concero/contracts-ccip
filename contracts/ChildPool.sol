@@ -8,7 +8,7 @@ pragma solidity 0.8.20;
 
 import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
 import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
-import {ChildPoolStorage} from "contracts/Libraries/ChildPoolStorage.sol";
+import {ChildPoolStorage} from "./Libraries/ChildPoolStorage.sol";
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {ICCIP} from "./Interfaces/ICCIP.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -20,27 +20,28 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 /* ERRORS */
 ///@notice error emitted when the caller is not the Orchestrator
 error CallerIsNotTheProxy(address delegatedCaller);
-///@notice error emitted when a not-concero address call takeLoan
-error CallerIsNotConcero(address caller);
+error Unauthorized();
 ///@notice error emitted when the receiver is the address(0)
 error InvalidAddress();
 ///@notice error emitted when the caller is a non-messenger address
-error NotMessenger(address caller);
+error NotMessenger();
 ///@notice error emitted when the caller is not the owner of the contract
-error NotContractOwner();
-///@notice error emitted when the CCIP message sender is not allowed.
-error SenderNotAllowed(address sender);
+error NotOwner();
 ///@notice error emitted if the array is empty.
-error ThereIsNoPoolToDistribute();
-error RequestAlreadyProceeded(bytes32 reqId);
-error WithdrawAlreadyPerformed();
+error NoPoolsToDistribute();
+error DistributeLiquidityRequestAlreadyProceeded(bytes32 reqId);
+error WithdrawalAlreadyTriggered();
+error NotUsdcToken();
+error NotConceroInfraProxy();
 
 contract ChildPool is CCIPReceiver, ChildPoolStorage {
     using SafeERC20 for IERC20;
 
     /* CONSTANT VARIABLES */
-    uint32 public constant CL_FUNCTIONS_CALLBACK_GAS_LIMIT = 300_000;
+    uint32 public constant CLF_CALLBACK_GAS_LIMIT = 300_000;
     uint32 private constant CCIP_SEND_GAS_LIMIT = 300_000;
+    uint256 internal constant PRECISION_HANDLER = 10_000_000_000;
+    uint256 internal constant LP_FEE_FACTOR = 1000;
 
     /* IMMUTABLE VARIABLES */
     address private immutable i_infraProxy;
@@ -53,6 +54,7 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     address private immutable i_msgr2;
 
     /* EVENTS */
+    event FailedExecutionLayerTxSettled(bytes32 indexed conceroMessageId);
     ///@notice event emitted when a Cross-chain tx is received.
     event CCIPReceived(
         bytes32 indexed ccipMessageId,
@@ -85,12 +87,12 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
      * @notice modifier to check if the caller is the an approved messenger
      */
     modifier onlyMessenger() {
-        if (!_isMessenger(msg.sender)) revert NotMessenger(msg.sender);
+        if (!_isMessenger(msg.sender)) revert NotMessenger();
         _;
     }
 
     modifier onlyOwner() {
-        if (msg.sender != i_owner) revert NotContractOwner();
+        if (msg.sender != i_owner) revert NotOwner();
         _;
     }
 
@@ -100,8 +102,8 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
      * @param _sender address of the sender contract
      */
     modifier onlyAllowlistedSenderOfChainSelector(uint64 _chainSelector, address _sender) {
-        if (!s_contractsToReceiveFrom[_chainSelector][_sender]) {
-            revert SenderNotAllowed(_sender);
+        if (!s_isSenderContractAllowed[_chainSelector][_sender]) {
+            revert Unauthorized();
         }
         _;
     }
@@ -131,26 +133,26 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     /* EXTERNAL FUNCTIONS */
 
     /**
-     * @notice Function called by Messenger process withdraw calls
+     * @notice Function called by Messenger to process withdrawal requests
      * @param _chainSelector The destination chain selector will always be from Parent Pool
      * @param _amountToSend the amount to redistribute between pools.
-     * @param _withdrawId the id of the withdraw request
+     * @param _withdrawalId the id of the withdraw request
      */
     function ccipSendToPool(
         uint64 _chainSelector,
         uint256 _amountToSend,
-        bytes32 _withdrawId
+        bytes32 _withdrawalId
     ) external onlyProxyContext onlyMessenger {
-        if (s_poolToSendTo[_chainSelector] == address(0)) revert InvalidAddress();
-        if (s_withdrawRequests[_withdrawId]) {
-            revert WithdrawAlreadyPerformed();
+        if (s_dstPoolByChainSelector[_chainSelector] == address(0)) revert InvalidAddress();
+        if (s_isWithdrawalRequestTriggered[_withdrawalId]) {
+            revert WithdrawalAlreadyTriggered();
+        } else {
+            s_isWithdrawalRequestTriggered[_withdrawalId] = true;
         }
-
-        s_withdrawRequests[_withdrawId] = true;
 
         ICCIP.CcipTxData memory ccipTxData = ICCIP.CcipTxData({
             ccipTxType: ICCIP.CcipTxType.withdrawal,
-            data: abi.encode(_withdrawId)
+            data: abi.encode(_withdrawalId)
         });
 
         _ccipSend(_chainSelector, _amountToSend, ccipTxData);
@@ -166,11 +168,12 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         uint256 _amountToSend,
         bytes32 _requestId
     ) external onlyProxyContext onlyMessenger {
-        if (s_poolToSendTo[_chainSelector] == address(0)) revert InvalidAddress();
+        if (s_dstPoolByChainSelector[_chainSelector] == address(0)) revert InvalidAddress();
         if (s_distributeLiquidityRequestProcessed[_requestId] != false) {
-            revert RequestAlreadyProceeded(_requestId);
+            revert DistributeLiquidityRequestAlreadyProceeded(_requestId);
+        } else {
+            s_distributeLiquidityRequestProcessed[_requestId] = true;
         }
-        s_distributeLiquidityRequestProcessed[_requestId] = true;
         ICCIP.CcipTxData memory _ccipTxData = ICCIP.CcipTxData({
             ccipTxType: ICCIP.CcipTxType.liquidityRebalancing,
             data: bytes("")
@@ -187,26 +190,24 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     function liquidatePool(
         bytes32 distributeLiquidityRequestId
     ) external onlyProxyContext onlyMessenger {
-        if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] != false) {
-            revert RequestAlreadyProceeded(distributeLiquidityRequestId);
+        if (s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId]) {
+            revert DistributeLiquidityRequestAlreadyProceeded(distributeLiquidityRequestId);
+        } else {
+            s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
         }
-        s_distributeLiquidityRequestProcessed[distributeLiquidityRequestId] = true;
 
         uint256 poolsCount = s_poolChainSelectors.length;
-        if (poolsCount == 0) revert ThereIsNoPoolToDistribute();
+        if (poolsCount == 0) revert NoPoolsToDistribute();
 
-        uint256 amountToSendToEachPool = (i_USDC.balanceOf(address(this)) / poolsCount) - 1;
+        uint256 amountToSendPerPool = (i_USDC.balanceOf(address(this)) / poolsCount) - 1;
         ICCIP.CcipTxData memory ccipTxData = ICCIP.CcipTxData({
             ccipTxType: ICCIP.CcipTxType.liquidityRebalancing,
-            data: ""
+            data: bytes("")
         });
 
-        for (uint256 i; i < poolsCount; ) {
+        for (uint256 i; i < poolsCount; i++) {
             //This is a function to deal with adding&removing pools. So, the second param will always be address(0)
-            _ccipSend(s_poolChainSelectors[i], amountToSendToEachPool, ccipTxData);
-            unchecked {
-                ++i;
-            }
+            _ccipSend(s_poolChainSelectors[i], amountToSendPerPool, ccipTxData);
         }
     }
 
@@ -223,12 +224,11 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         uint256 _amount,
         address _receiver
     ) external onlyProxyContext {
-        if (msg.sender != i_infraProxy) revert CallerIsNotConcero(msg.sender);
+        if (msg.sender != i_infraProxy) revert NotConceroInfraProxy();
         if (_receiver == address(0)) revert InvalidAddress();
-
-        s_loansInUse = s_loansInUse + _amount;
-
+        if (_token != address(i_USDC)) revert NotUsdcToken();
         IERC20(_token).safeTransfer(_receiver, _amount);
+        s_loansInUse += _amount;
     }
 
     /* SETTER FUNCTIONS */
@@ -245,9 +245,9 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         uint64 _chainSelector,
         address _contractAddress,
         bool _isAllowed
-    ) external payable onlyProxyContext onlyOwner {
+    ) external payable onlyOwner {
         if (_contractAddress == address(0)) revert InvalidAddress();
-        s_contractsToReceiveFrom[_chainSelector][_contractAddress] = _isAllowed;
+        s_isSenderContractAllowed[_chainSelector][_contractAddress] = _isAllowed;
     }
 
     /**
@@ -257,31 +257,25 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
      * @dev only owner can call it
      * @dev it's payable to save some gas.
      */
-    function setPools(
-        uint64 _chainSelector,
-        address _pool
-    ) external payable onlyProxyContext onlyOwner {
-        if (s_poolToSendTo[_chainSelector] == _pool || _pool == address(0)) {
+    function setPools(uint64 _chainSelector, address _pool) external payable onlyOwner {
+        if (s_dstPoolByChainSelector[_chainSelector] == _pool || _pool == address(0)) {
             revert InvalidAddress();
         }
 
         s_poolChainSelectors.push(_chainSelector);
-        s_poolToSendTo[_chainSelector] = _pool;
+        s_dstPoolByChainSelector[_chainSelector] = _pool;
     }
 
     /**
      * @notice Function to remove Cross-chain address disapproving transfers
      * @param _chainSelector the CCIP chainSelector for the specific chain
      */
-    function removePools(uint64 _chainSelector) external payable onlyProxyContext onlyOwner {
-        for (uint256 i; i < s_poolChainSelectors.length; ) {
+    function removePools(uint64 _chainSelector) external payable onlyOwner {
+        for (uint256 i; i < s_poolChainSelectors.length; i++) {
             if (s_poolChainSelectors[i] == _chainSelector) {
                 s_poolChainSelectors[i] = s_poolChainSelectors[s_poolChainSelectors.length - 1];
                 s_poolChainSelectors.pop();
-                delete s_poolToSendTo[_chainSelector];
-            }
-            unchecked {
-                ++i;
+                delete s_dstPoolByChainSelector[_chainSelector];
             }
         }
     }
@@ -306,24 +300,27 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
 
+        if (ccipReceivedToken != address(i_USDC)) {
+            revert NotUsdcToken();
+        }
+
         if (ccipTxData.ccipTxType == ICCIP.CcipTxType.batchedSettlement) {
-            IConceroBridge.CcipSettlementTx[] memory settlementTx = abi.decode(
+            IConceroBridge.CcipSettlementTx[] memory settlementTxs = abi.decode(
                 ccipTxData.data,
                 (IConceroBridge.CcipSettlementTx[])
             );
-            for (uint256 i; i < settlementTx.length; ++i) {
-                bytes32 txId = settlementTx[i].id;
-
+            for (uint256 i; i < settlementTxs.length; ++i) {
+                bytes32 txId = settlementTxs[i].id;
+                uint256 txAmount = settlementTxs[i].amount;
                 bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(txId);
 
                 if (isTxConfirmed) {
-                    s_loansInUse -= ccipReceivedAmount;
+                    txAmount -= getDstTotalFeeInUsdc(txAmount);
+                    s_loansInUse -= txAmount;
                 } else {
                     IInfraOrchestrator(i_infraProxy).confirmTx(txId);
-                    i_USDC.safeTransfer(settlementTx[i].recipient, settlementTx[i].amount);
-
-                    // TODO: Implement the event
-                    // emit ExecutionLayerFailed(settlementTx[i].id);
+                    i_USDC.safeTransfer(settlementTxs[i].recipient, txAmount);
+                    emit FailedExecutionLayerTxSettled(settlementTxs[i].id);
                 }
             }
         }
@@ -352,10 +349,10 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
     ) internal returns (bytes32) {
         Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](1);
         tokenAmounts[0] = Client.EVMTokenAmount({token: address(i_USDC), amount: _amount});
-        address poolToSendTo = s_poolToSendTo[_chainSelector];
+        address destinationPool = s_dstPoolByChainSelector[_chainSelector];
 
         Client.EVM2AnyMessage memory evm2AnyMessage = Client.EVM2AnyMessage({
-            receiver: abi.encode(poolToSendTo),
+            receiver: abi.encode(destinationPool),
             data: abi.encode(ccipTxData),
             tokenAmounts: tokenAmounts,
             extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: CCIP_SEND_GAS_LIMIT})),
@@ -367,14 +364,20 @@ contract ChildPool is CCIPReceiver, ChildPoolStorage {
         i_USDC.approve(i_ccipRouter, _amount);
         i_linkToken.approve(i_ccipRouter, ccipFeeAmount);
 
-        bytes32 messageId = IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
-
-        emit CCIPSent(messageId, _chainSelector, poolToSendTo, address(i_linkToken), ccipFeeAmount);
-
-        return messageId;
+        return IRouterClient(i_ccipRouter).ccipSend(_chainSelector, evm2AnyMessage);
     }
 
     /* VIEW & PURE FUNCTIONS */
+
+    /**
+     * @notice getter function to calculate Destination fee amount on Source
+     * @param amount the amount of tokens to calculate over
+     * @return the fee amount
+     */
+    function getDstTotalFeeInUsdc(uint256 amount) public pure returns (uint256) {
+        return (amount * PRECISION_HANDLER) / LP_FEE_FACTOR / PRECISION_HANDLER;
+    }
+
     /**
      * @notice Function to check if a caller address is an allowed messenger
      * @param _messenger the address of the caller

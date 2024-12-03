@@ -11,7 +11,7 @@ const srcChainSelector = process.env.CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 
 describe("calculate withdrawable amount from pools\n", async () => {
-  const { abi: ParentPoolAbi } = await import("../artifacts/contracts/ParentPool.sol/ParentPool.json");
+  const { abi: ParentPoolAbi } = await import("../../artifacts/contracts/ParentPool.sol/ParentPool.json");
 
   const publicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
     chain: chainsMap[srcChainSelector].viemChain,

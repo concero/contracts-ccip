@@ -31,7 +31,7 @@ import setParentPoolVariablesTask from "./pools/setParentPoolVariablesTask";
 import updateParentPoolHashesTask from "./pools/updateParentPoolHashesTask";
 import removeParentPoolChildPoolsTask from "./pools/removeParentPoolChildPoolsTask";
 import updateInfraHashesTask from "./deployInfra/updateInfraHashesTask";
-
+import { getWithdrawalStatuses } from "./getWithdrawalStatuses";
 export default {
   deployConceroDexSwap,
   deployConceroOrchestrator,
@@ -63,4 +63,5 @@ export default {
   setParentPoolVariablesTask,
   updateParentPoolHashesTask,
   updateInfraHashesTask,
+  getWithdrawalStatuses,
 };

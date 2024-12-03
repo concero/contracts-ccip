@@ -8,6 +8,11 @@
 pragma solidity 0.8.20;
 
 interface IParentPoolCLFCLA {
+    event WithdrawalRequestInitiated(
+        bytes32 indexed requestId,
+        address caller,
+        uint256 triggedAtTimestamp
+    );
     function sendCLFRequest(bytes[] memory args) external returns (bytes32);
 
     function calculateWithdrawableAmount(

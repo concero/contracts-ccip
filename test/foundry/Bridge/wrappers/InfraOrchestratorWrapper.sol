@@ -101,12 +101,12 @@ contract InfraOrchestratorWrapper is InfraOrchestrator {
         return srcTotalFeeInUsdc;
     }
 
-    function calculateIntegratorFee(
-        uint256 integratorFeePercent,
-        uint256 amount
-    ) external returns (uint256) {
-        return _calculateIntegratorFeeAmount(integratorFeePercent, amount);
-    }
+    // function calculateIntegratorFee(
+    //     uint256 integratorFeePercent,
+    //     uint256 amount
+    // ) external returns (uint256) {
+    //     return _calculateIntegratorFeeAmount(integratorFeePercent, amount);
+    // }
 
     function getCollectedIntegratorFeeByToken(
         address integrator,

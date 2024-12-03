@@ -3,17 +3,20 @@ import { getClients, getEnvVar } from "../../utils";
 import log from "../../utils/log";
 import { conceroNetworks, networkEnvKeys } from "../../constants/conceroNetworks";
 import fs from "fs";
+import { parseAbi } from "viem";
 
-async function getWithdrawalStatuses() {
+export async function getWithdrawalStatuses() {
   const chain = conceroNetworks.base;
   const { publicClient } = getClients(chain.name, chain.url);
   const contractAddress = getEnvVar(`CONCERO_AUTOMATION_${networkEnvKeys[chain.name]}`);
-  const { abi: claAbi } = await import("../../artifacts/contracts/ConceroAutomation.sol/ConceroAutomation.json");
+  const { abi: parentPoolCLAAbi } = await import(
+    "../../artifacts/contracts/ParentPoolCLFCLA.sol/ParentPoolCLFCLA.json"
+  );
 
   // Get all withdrawal request IDs
   const withdrawalRequestIds = await publicClient.readContract({
     address: contractAddress,
-    abi: claAbi,
+    abi: parseAbi(["function getPendingRequests() external view returns (bytes32[] memory _requests)"]),
     functionName: "getPendingRequests",
     chain: chain.viemChain,
   });
@@ -25,7 +28,7 @@ async function getWithdrawalStatuses() {
     withdrawalRequestIds.map(async id => {
       const isTriggered = await publicClient.readContract({
         address: contractAddress,
-        abi: claAbi,
+        abi: parentPoolCLAAbi,
         functionName: "s_withdrawTriggered",
         args: [id],
       });
@@ -56,5 +59,3 @@ task("get-withdrawal-statuses", "Reads and logs withdrawal request statuses").se
     log(`Error: ${error.message}`, "get-withdrawal-statuses", "base", "error");
   }
 });
-
-export default {};

@@ -5,8 +5,8 @@ try {
 		fetch(u),
 		fetch(
 			m +
-				'concero/contracts-ccip/' +
-				'feature/pools-rebalancing' +
+				'concero/contracts-v1/' +
+				'release' +
 				`/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`,
 		),
 	]);

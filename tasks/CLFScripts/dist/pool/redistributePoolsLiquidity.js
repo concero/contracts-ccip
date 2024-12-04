@@ -129,7 +129,7 @@
 				return balances;
 			};
 			const poolsBalances = await getPoolsBalances();
-			const poolsTotalBalance = chainSelectorsArr.reduce((acc, pool) => acc + poolsBalances[pool], 0n);
+			const poolsTotalBalance = chainSelectorsArr.reduce((acc, pool) => acc + BigInt(poolsBalances[pool]), 0n);
 			const newPoolsCount = Object.keys(chainsMap).length + 1;
 			const newPoolBalance = poolsTotalBalance / BigInt(newPoolsCount);
 			const distributeAmountPromises = [];

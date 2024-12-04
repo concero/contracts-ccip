@@ -134,14 +134,14 @@
 				const balances = {};
 
 				for (let i = 0, k = 0; i < results.length; i += 2, k++) {
-					balances[chainSelectorsArr[k]] = results[i] + results[i + 1];
+					balances[chainSelectorsArr[k]] = BigInt(results[i]) + BigInt(results[i + 1]);
 				}
 
 				return balances;
 			};
 
 			const poolsBalances = await getPoolsBalances();
-			const poolsTotalBalance = chainSelectorsArr.reduce((acc, pool) => acc + poolsBalances[pool], 0n);
+			const poolsTotalBalance = chainSelectorsArr.reduce((acc, pool) => acc + BigInt(poolsBalances[pool]), 0n);
 			const newPoolsCount = Object.keys(chainsMap).length + 1;
 			const newPoolBalance = BigInt(poolsTotalBalance) / BigInt(newPoolsCount);
 			const distributeAmountPromises = [];

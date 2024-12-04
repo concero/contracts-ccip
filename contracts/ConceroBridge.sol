@@ -246,7 +246,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
 
     /**
      * @notice Function to calculate the proportional CCIP fee based on the amount
-     * @param ccipFeeInUsdc the total CCIP fee for a full batch (5000 USDC)
+     * @param ccipFeeInUsdc the total CCIP fee for a full batch
      * @param amount the amount of USDC being transferred
      */
     function _calculateProportionalCCIPFee(

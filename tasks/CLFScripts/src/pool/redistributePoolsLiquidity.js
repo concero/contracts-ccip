@@ -67,14 +67,13 @@
 		};
 
 		let chainsMap;
-		const chainIdLowerCase = chainId.toLowerCase();
-
-		if (chainIdLowerCase === '0x14a34') {
+		const chainIdNumber = parseInt(chainId, 16);
+		if (chainIdNumber === 84532) {
 			chainsMap = chainsMapTestnet;
-		} else if (chainIdLowerCase == '0x2105') {
+		} else if (chainIdNumber === 8453) {
 			chainsMap = chainsMapMainnet;
 		} else {
-			throw new Error(`Wrong chain id ${chainIdLowerCase}`);
+			throw new Error(`Wrong chain id ${chainIdNumber}`);
 		}
 
 		const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];

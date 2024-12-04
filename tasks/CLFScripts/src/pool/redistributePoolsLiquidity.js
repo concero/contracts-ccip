@@ -150,7 +150,7 @@
 				if (chain !== newPoolChainSelector) {
 					const signer = getSignerByChainSelector(chain);
 					const poolContract = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, signer);
-					const amountToDistribute = poolsBalances[chain] - newPoolBalance;
+					const amountToDistribute = BigInt(poolsBalances[chain]) - newPoolBalance;
 					distributeAmountPromises.push(
 						poolContract.distributeLiquidity(newPoolChainSelector, amountToDistribute, distributeLiquidityRequestId),
 					);

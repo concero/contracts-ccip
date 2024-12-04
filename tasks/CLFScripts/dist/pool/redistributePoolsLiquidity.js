@@ -1,6 +1,7 @@
 (async () => {
 	try {
 		const [_, __, ___, newPoolChainSelector, distributeLiquidityRequestId, distributionType, chainId] = bytesArgs;
+		console.log(newPoolChainSelector, distributeLiquidityRequestId, distributionType, chainId);
 		const chainsMapTestnet = {
 			[`0x${BigInt('3478487238524512106').toString(16)}`]: {
 				urls: [
@@ -129,14 +130,15 @@
 				return balances;
 			};
 			const poolsBalances = await getPoolsBalances();
-			const poolsTotalBalance = chainSelectorsArr.reduce((acc, pool) => acc + BigInt(poolsBalances[pool]), 0n);
+			const poolsTotalBalance = chainSelectorsArr.reduce((acc, pool) => acc + poolsBalances[pool], 0n);
 			const newPoolsCount = Object.keys(chainsMap).length + 1;
-			const newPoolBalance = BigInt(poolsTotalBalance) / BigInt(newPoolsCount);
+			const newPoolBalance = poolsTotalBalance / BigInt(newPoolsCount);
 			const distributeAmountPromises = [];
 			for (const chain in chainsMap) {
 				if (chain !== newPoolChainSelector) {
 					const signer = getSignerByChainSelector(chain);
 					const poolContract = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, signer);
+					console.log('poolsBalances[chain]', poolsBalances[chain]);
 					const amountToDistribute = BigInt(poolsBalances[chain]) - newPoolBalance;
 					distributeAmountPromises.push(
 						poolContract.distributeLiquidity(newPoolChainSelector, amountToDistribute, distributeLiquidityRequestId),

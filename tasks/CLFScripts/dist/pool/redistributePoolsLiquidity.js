@@ -131,7 +131,7 @@
 			const poolsBalances = await getPoolsBalances();
 			const poolsTotalBalance = chainSelectorsArr.reduce((acc, pool) => acc + poolsBalances[pool], 0n);
 			const newPoolsCount = Object.keys(chainsMap).length + 1;
-			const newPoolBalance = poolsTotalBalance / BigInt(newPoolsCount);
+			const newPoolBalance = BigInt(poolsTotalBalance) / BigInt(newPoolsCount);
 			const distributeAmountPromises = [];
 			for (const chain in chainsMap) {
 				if (chain !== newPoolChainSelector) {

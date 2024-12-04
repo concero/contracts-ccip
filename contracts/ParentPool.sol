@@ -130,6 +130,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         return s_withdrawalRequestIds;
     }
 
+    function getLiquidityCap() external view returns (uint256) {
+        return s_liquidityCap;
+    }
+
     function handleOracleFulfillment(
         bytes32 requestId,
         bytes memory delegateCallResponse,

@@ -47,6 +47,7 @@ error NotOwner();
 error OnlyRouterCanFulfill(address);
 error Unauthorized();
 error NotUsdcToken();
+error DepositDeadlinePassed();
 
 contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolStorage {
     /* TYPE DECLARATIONS */
@@ -305,6 +306,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         if (msg.sender != lpAddress) {
             revert NotAllowedToCompleteDeposit();
         }
+        if (block.timestamp > request.deadline) {
+            revert DepositDeadlinePassed();
+        }
         if (childPoolsLiquiditySnapshot == 0) {
             revert DepositRequestNotReady();
         }
@@ -325,6 +329,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         emit DepositCompleted(_depositRequestId, msg.sender, usdcAmount, lpTokensToMint);
 
         delete s_depositRequests[_depositRequestId];
+        delete s_clfRequestTypes[_depositRequestId];
     }
 
     /*

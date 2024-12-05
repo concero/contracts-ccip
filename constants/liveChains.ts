@@ -5,7 +5,7 @@ import { ConceroChains } from "../types/chains";
 export const liveChains: CNetwork[] = [
   conceroNetworks.baseSepolia,
   conceroNetworks.arbitrumSepolia,
-  conceroNetworks.avalancheFuji,
+  // conceroNetworks.avalancheFuji,
   // conceroNetworks.optimismSepolia,
   // conceroNetworks.polygonAmoy,
 ];

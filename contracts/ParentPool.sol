@@ -831,14 +831,11 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
     function _findLowestDepositOnTheWayUnusedIndex() internal returns (uint8) {
         uint8 index;
-        for (uint8 i = 1; i < MAX_DEPOSITS_ON_THE_WAY_COUNT; ) {
+        for (uint8 i = 1; i < MAX_DEPOSITS_ON_THE_WAY_COUNT; i++) {
             if (s_depositsOnTheWayArray[i].ccipMessageId == bytes32(0)) {
                 index = i;
                 s_latestDepositOnTheWayIndex = i;
                 break;
-            }
-            unchecked {
-                ++i;
             }
         }
 

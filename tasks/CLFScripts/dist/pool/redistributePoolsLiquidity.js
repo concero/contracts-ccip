@@ -6,13 +6,13 @@
 				urls: ['https://arbitrum-sepolia-rpc.publicnode.com'],
 				chainId: '0x66eee',
 				usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-				poolAddress: '0x08b7325A4fF82F97803ff650A3288E036FB424ea',
+				poolAddress: '0x9c561A2D0Cb9bCe69a95F48cdcEbf0FAE14013B2',
 			},
 			['10344971235874465080']: {
 				urls: ['https://base-sepolia-rpc.publicnode.com'],
 				chainId: '0x14a34',
 				usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-				poolAddress: '0xD5B19458Ddd36f75Cb8309B0e3bfB607Ccc04EB6',
+				poolAddress: '0x64CD83B03Ce68E2110A8A4A821AF053D193E881C',
 			},
 		};
 		const chainsMapMainnet = {

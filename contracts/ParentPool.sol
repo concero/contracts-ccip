@@ -329,7 +329,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         emit DepositCompleted(_depositRequestId, msg.sender, usdcAmount, lpTokensToMint);
 
         delete s_depositRequests[_depositRequestId];
-        delete s_clfRequestTypes[_depositRequestId];
     }
 
     /*

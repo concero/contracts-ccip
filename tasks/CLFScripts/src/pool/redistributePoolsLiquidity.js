@@ -8,12 +8,12 @@
 				usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
 				poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
 			},
-			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
-				urls: ['https://avalanche-fuji-c-chain-rpc.publicnode.com'],
-				chainId: '0xa869',
-				usdcAddress: '${USDC_FUJI}',
-				poolAddress: '${CHILD_POOL_PROXY_FUJI}',
-			},
+			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
+			// 	urls: ['https://avalanche-fuji-c-chain-rpc.publicnode.com'],
+			// 	chainId: '0xa869',
+			// 	usdcAddress: '${USDC_FUJI}',
+			// 	poolAddress: '${CHILD_POOL_PROXY_FUJI}',
+			// },
 			['${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}']: {
 				urls: ['https://base-sepolia-rpc.publicnode.com'],
 				chainId: '0x14a34',
@@ -76,7 +76,7 @@
 
 		const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 		const poolAbi = [
-			'function getUsdcInUse() external view returns (uint256)',
+			'function s_loansInUse() external view returns (uint256)',
 			'function distributeLiquidity(uint64, uint256, bytes32) external',
 			'function liquidatePool(bytes32) external',
 		];
@@ -119,20 +119,19 @@
 				const getBalancePromises = [];
 
 				for (const chain in chainsMap) {
-					console.log(chain);
-					// if (chain !== newPoolChainSelector) {
-					// 	const provider = getProviderByChainSelector(chain);
-					// 	const erc20 = new ethers.Contract(chainsMap[chain].usdcAddress, erc20Abi, provider);
-					// 	const pool = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, provider);
-					// 	getBalancePromises.push(erc20.balanceOf(chainsMap[chain].poolAddress));
-					// 	getBalancePromises.push(pool.getUsdcInUse());
-					// }
+					if (chain !== newPoolChainSelector) {
+						const provider = getProviderByChainSelector(chain);
+						const erc20 = new ethers.Contract(chainsMap[chain].usdcAddress, erc20Abi, provider);
+						const pool = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, provider);
+						getBalancePromises.push(erc20.balanceOf(chainsMap[chain].poolAddress));
+						getBalancePromises.push(pool.s_loansInUse());
+					}
 				}
 
 				const results = await Promise.all(getBalancePromises);
 				const balances = {};
 
-				for (let i = 0, k = 0; i < results.length - 1; i += 2, k++) {
+				for (let i = 0, k = 0; i < results.length; i += 2, k++) {
 					balances[chainSelectorsArr[k]] = BigInt(results[i]) + BigInt(results[i + 1]);
 				}
 
@@ -141,34 +140,35 @@
 
 			const poolsBalances = await getPoolsBalances();
 			const poolsTotalBalance = chainSelectorsArr.reduce((acc, pool) => acc + BigInt(poolsBalances[pool]), 0n);
-			const newPoolsCount = Object.keys(chainsMap).length + 1;
-			const newPoolBalance = poolsTotalBalance / BigInt(newPoolsCount);
+			const newPoolsCount = BigInt(Object.keys(chainsMap).length + 1);
+			const newPoolBalance = poolsTotalBalance / newPoolsCount;
 			const distributeAmountPromises = [];
 
-			// for (const chain in chainsMap) {
-			// 	if (chain !== newPoolChainSelector) {
-			// 		const signer = getSignerByChainSelector(chain);
-			// 		const poolContract = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, signer);
-			// 		const amountToDistribute = BigInt(poolsBalances[chain]) - newPoolBalance;
-			// 		distributeAmountPromises.push(
-			// 			poolContract.distributeLiquidity(
-			// 				newPoolChainSelector,
-			// 				amountToDistribute,
-			// 				distributeLiquidityRequestId,
-			// 			),
-			// 		);
-			// 	}
-			// }
-			//
-			// await Promise.all(distributeAmountPromises);
+			for (const chain in chainsMap) {
+				if (chain !== newPoolChainSelector) {
+					const signer = getSignerByChainSelector(chain);
+					const poolContract = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, signer);
+					const amountToDistribute = BigInt(poolsBalances[chain]) - newPoolBalance;
+					console.log(amountToDistribute);
+					distributeAmountPromises.push(
+						poolContract.distributeLiquidity(
+							newPoolChainSelector,
+							amountToDistribute,
+							distributeLiquidityRequestId,
+						),
+					);
+				}
+			}
+
+			await Promise.all(distributeAmountPromises);
 
 			return Functions.encodeUint256(1n);
 		} else if (distributionType === '0x01') {
-			const signer = getSignerByChainSelector(newPoolChainSelector);
-			const poolContract = new ethers.Contract(chainsMap[newPoolChainSelector].poolAddress, poolAbi, signer);
-			await poolContract.liquidatePool(distributeLiquidityRequestId);
-
-			return Functions.encodeUint256(1n);
+			// const signer = getSignerByChainSelector(newPoolChainSelector);
+			// const poolContract = new ethers.Contract(chainsMap[newPoolChainSelector].poolAddress, poolAbi, signer);
+			// await poolContract.liquidatePool(distributeLiquidityRequestId);
+			//
+			// return Functions.encodeUint256(1n);
 		}
 
 		throw new Error('Invalid distribution type');

@@ -8,12 +8,6 @@
 				usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
 				poolAddress: '0x08b7325A4fF82F97803ff650A3288E036FB424ea',
 			},
-			[`0x${BigInt('14767482510784806043').toString(16)}`]: {
-				urls: ['https://avalanche-fuji-c-chain-rpc.publicnode.com'],
-				chainId: '0xa869',
-				usdcAddress: '0x5425890298aed601595a70ab815c96711a31bc65',
-				poolAddress: '0x769462BC176b5648330C67F7283a597ad2Ab1De2',
-			},
 			['10344971235874465080']: {
 				urls: ['https://base-sepolia-rpc.publicnode.com'],
 				chainId: '0x14a34',
@@ -74,7 +68,7 @@
 		}
 		const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 		const poolAbi = [
-			'function getUsdcInUse() external view returns (uint256)',
+			'function s_loansInUse() external view returns (uint256)',
 			'function distributeLiquidity(uint64, uint256, bytes32) external',
 			'function liquidatePool(bytes32) external',
 		];
@@ -112,26 +106,44 @@
 			const getPoolsBalances = async () => {
 				const getBalancePromises = [];
 				for (const chain in chainsMap) {
-					console.log(chain);
+					if (chain !== newPoolChainSelector) {
+						const provider = getProviderByChainSelector(chain);
+						const erc20 = new ethers.Contract(chainsMap[chain].usdcAddress, erc20Abi, provider);
+						const pool = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, provider);
+						getBalancePromises.push(erc20.balanceOf(chainsMap[chain].poolAddress));
+						getBalancePromises.push(pool.s_loansInUse());
+					}
 				}
 				const results = await Promise.all(getBalancePromises);
 				const balances = {};
-				for (let i = 0, k = 0; i < results.length - 1; i += 2, k++) {
+				for (let i = 0, k = 0; i < results.length; i += 2, k++) {
 					balances[chainSelectorsArr[k]] = BigInt(results[i]) + BigInt(results[i + 1]);
 				}
 				return balances;
 			};
 			const poolsBalances = await getPoolsBalances();
 			const poolsTotalBalance = chainSelectorsArr.reduce((acc, pool) => acc + BigInt(poolsBalances[pool]), 0n);
-			const newPoolsCount = Object.keys(chainsMap).length + 1;
-			const newPoolBalance = poolsTotalBalance / BigInt(newPoolsCount);
+			const newPoolsCount = BigInt(Object.keys(chainsMap).length + 1);
+			const newPoolBalance = poolsTotalBalance / newPoolsCount;
 			const distributeAmountPromises = [];
+			for (const chain in chainsMap) {
+				if (chain !== newPoolChainSelector) {
+					const signer = getSignerByChainSelector(chain);
+					const poolContract = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, signer);
+					const amountToDistribute = BigInt(poolsBalances[chain]) - newPoolBalance;
+					console.log(amountToDistribute);
+					distributeAmountPromises.push(
+						poolContract.distributeLiquidity(
+							newPoolChainSelector,
+							amountToDistribute,
+							distributeLiquidityRequestId,
+						),
+					);
+				}
+			}
+			await Promise.all(distributeAmountPromises);
 			return Functions.encodeUint256(1n);
 		} else if (distributionType === '0x01') {
-			const signer = getSignerByChainSelector(newPoolChainSelector);
-			const poolContract = new ethers.Contract(chainsMap[newPoolChainSelector].poolAddress, poolAbi, signer);
-			await poolContract.liquidatePool(distributeLiquidityRequestId);
-			return Functions.encodeUint256(1n);
 		}
 		throw new Error('Invalid distribution type');
 	} catch (e) {

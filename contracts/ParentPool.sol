@@ -428,8 +428,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     function distributeLiquidity(
         uint64 _chainSelector,
         uint256 _amountToSend,
-        bytes32 _requestId,
-        ICCIP.CcipTxType _ccipTxType
+        bytes32 _requestId
     ) external onlyProxyContext onlyMessenger {
         if (s_childPools[_chainSelector] == address(0)) revert InvalidAddress();
         if (s_distributeLiquidityRequestProcessed[_requestId]) {
@@ -437,7 +436,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         } else {
             s_distributeLiquidityRequestProcessed[_requestId] = true;
         }
-        _ccipSend(_chainSelector, _amountToSend, _ccipTxType);
+        _ccipSend(_chainSelector, _amountToSend, ICCIP.CcipTxType.liquidityRebalancing);
     }
 
     function withdrawDepositFees() external payable onlyOwner {

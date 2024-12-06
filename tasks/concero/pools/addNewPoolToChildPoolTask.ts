@@ -1,11 +1,10 @@
 import { task } from "hardhat/config";
 import { conceroNetworks, ProxyEnum } from "../../../constants";
-import { getEnvAddress, getFallbackClients } from "../../../utils";
+import { getEnvAddress, getFallbackClients, log } from "../../../utils";
 
-task("add-new-pool-to-parent-pool", "Add a new pool to the parent pool")
+task("add-new-pool-to-child-pool", "Add a new pool to the child pool")
   .addParam("newchain", "", "")
   .setAction(async taskArgs => {
-    console.log(`Adding ${taskArgs.newchain} to the parent pool`);
     const hre = require("hardhat");
     const currentPoolChain = conceroNetworks[hre.network.name];
     const { publicClient, walletClient } = getFallbackClients(currentPoolChain);
@@ -17,20 +16,27 @@ task("add-new-pool-to-parent-pool", "Add a new pool to the parent pool")
     const newPoolChainSelector = newPoolChain.chainSelector;
     const [newPoolAddress] = getEnvAddress(ProxyEnum.childPoolProxy, newPoolChain.name);
 
-    const txHash = await walletClient.writeContract({
+    const setPoolsTxHash = await walletClient.writeContract({
       abi: ChildPoolAbi,
       functionName: "setPools",
+      args: [newPoolChainSelector, newPoolAddress],
+      gas: 3_000_000n,
+    });
+
+    const { status: setPoolsStatus } = await publicClient.waitForTransactionReceipt({ hash: setPoolsTxHash });
+    log(`set child pool ${setPoolsStatus}`, "setPools", currentPoolChain.name);
+
+    const allowContractSenderTxHash = await walletClient.writeContract({
+      abi: ChildPoolAbi,
+      functionName: "setConceroContractSender",
       args: [newPoolChainSelector, newPoolAddress, true],
       gas: 3_000_000n,
     });
 
-    const { status } = await publicClient.waitForTransactionReceipt({ hash: txHash });
-
-    if (status === "reverted") {
-      throw new Error(`Transaction failed: ${txHash}`);
-    } else {
-      console.log(`Transaction successful: ${txHash}`);
-    }
+    const { status: allowContractSenderStatus } = await publicClient.waitForTransactionReceipt({
+      hash: allowContractSenderTxHash,
+    });
+    log(`set child pool ${allowContractSenderStatus}`, "setConceroContractSender", currentPoolChain.name);
   });
 
 export default {};

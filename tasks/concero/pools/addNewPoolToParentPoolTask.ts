@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import { conceroNetworks, ProxyEnum } from "../../../constants";
-import { getEnvAddress, getFallbackClients } from "../../../utils";
+import { getEnvAddress, getFallbackClients, log } from "../../../utils";
 
 task("add-new-pool-to-parent-pool", "Add a new pool to the parent pool")
   .addParam("newchain", "", "")
@@ -25,12 +25,7 @@ task("add-new-pool-to-parent-pool", "Add a new pool to the parent pool")
     });
 
     const { status } = await publicClient.waitForTransactionReceipt({ hash: txHash });
-
-    if (status === "reverted") {
-      throw new Error(`Transaction failed: ${txHash}`);
-    } else {
-      console.log(`Transaction successful: ${txHash}`);
-    }
+    log(`set parent pool ${status}`, "setPools", parentPoolChain.name);
   });
 
 export default {};

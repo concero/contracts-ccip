@@ -8,7 +8,7 @@
 				usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
 				poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
 			},
-			// [`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
+			// ['${CL_CCIP_CHAIN_SELECTOR_FUJI}']: {
 			// 	urls: ['https://avalanche-fuji-c-chain-rpc.publicnode.com'],
 			// 	chainId: '0xa869',
 			// 	usdcAddress: '${USDC_FUJI}',
@@ -119,13 +119,13 @@
 				const getBalancePromises = [];
 
 				for (const chain in chainsMap) {
-					if (chain !== newPoolChainSelector) {
-						const provider = getProviderByChainSelector(chain);
-						const erc20 = new ethers.Contract(chainsMap[chain].usdcAddress, erc20Abi, provider);
-						const pool = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, provider);
-						getBalancePromises.push(erc20.balanceOf(chainsMap[chain].poolAddress));
-						getBalancePromises.push(pool.s_loansInUse());
-					}
+					if (BigInt(chain) === BigInt(newPoolChainSelector)) continue;
+
+					const provider = getProviderByChainSelector(chain);
+					const erc20 = new ethers.Contract(chainsMap[chain].usdcAddress, erc20Abi, provider);
+					const pool = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, provider);
+					getBalancePromises.push(erc20.balanceOf(chainsMap[chain].poolAddress));
+					getBalancePromises.push(pool.s_loansInUse());
 				}
 
 				const results = await Promise.all(getBalancePromises);
@@ -139,24 +139,28 @@
 			};
 
 			const poolsBalances = await getPoolsBalances();
-			const poolsTotalBalance = chainSelectorsArr.reduce((acc, pool) => acc + BigInt(poolsBalances[pool]), 0n);
+			const poolsTotalBalance = chainSelectorsArr.reduce((acc, pool) => {
+				if (BigInt(pool) === BigInt(newPoolChainSelector)) return acc;
+				return acc + BigInt(poolsBalances[pool]);
+			}, 0n);
 			const newPoolsCount = BigInt(Object.keys(chainsMap).length + 1);
 			const newPoolBalance = poolsTotalBalance / newPoolsCount;
 			const distributeAmountPromises = [];
 
 			for (const chain in chainsMap) {
-				if (chain !== newPoolChainSelector) {
-					const signer = getSignerByChainSelector(chain);
-					const poolContract = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, signer);
-					const amountToDistribute = poolsBalances[chain] - newPoolBalance;
-					distributeAmountPromises.push(
-						poolContract.distributeLiquidity(
-							newPoolChainSelector,
-							amountToDistribute,
-							distributeLiquidityRequestId,
-						),
-					);
-				}
+				if (BigInt(chain) === BigInt(newPoolChainSelector)) continue;
+
+				const signer = getSignerByChainSelector(chain);
+				const poolContract = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, signer);
+				const amountToDistribute = poolsBalances[chain] - newPoolBalance;
+
+				distributeAmountPromises.push(
+					poolContract.distributeLiquidity(
+						newPoolChainSelector,
+						amountToDistribute,
+						distributeLiquidityRequestId,
+					),
+				);
 			}
 
 			await Promise.all(distributeAmountPromises);

@@ -16,9 +16,11 @@ task("add-new-pool-to-parent-pool", "Add a new pool to the parent pool")
     }
     const newPoolChainSelector = newPoolChain.chainSelector;
     const [newPoolAddress] = getEnvAddress(ProxyEnum.childPoolProxy, newPoolChain.name);
+    const [parentPoolAddress] = getEnvAddress(ProxyEnum.parentPoolProxy, parentPoolChain.name);
 
     const txHash = await walletClient.writeContract({
       abi: ParentPoolAbi,
+      address: parentPoolAddress,
       functionName: "setPools",
       args: [newPoolChainSelector, newPoolAddress, true],
       gas: 3_000_000n,

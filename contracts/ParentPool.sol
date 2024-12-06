@@ -572,29 +572,29 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             }
         }
 
-        bytes32 distributeLiquidityRequestId = keccak256(
-            abi.encodePacked(
-                removedPool,
-                _chainSelector,
-                RedistributeLiquidityType.removePool,
-                block.timestamp,
-                block.number
-            )
-        );
-
-        bytes[] memory args = new bytes[](6);
-        args[0] = abi.encodePacked(s_distributeLiquidityJsCodeHashSum);
-        args[1] = abi.encodePacked(s_ethersHashSum);
-        args[2] = abi.encodePacked(CLFRequestType.liquidityRedistribution);
-        args[3] = abi.encodePacked(_chainSelector);
-        args[4] = abi.encodePacked(distributeLiquidityRequestId);
-        args[5] = abi.encodePacked(RedistributeLiquidityType.removePool);
-
-        bytes memory delegateCallArgs = abi.encodeWithSelector(
-            IParentPoolCLFCLA.sendCLFRequest.selector,
-            args
-        );
-        LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
+        //        bytes32 distributeLiquidityRequestId = keccak256(
+        //            abi.encodePacked(
+        //                removedPool,
+        //                _chainSelector,
+        //                RedistributeLiquidityType.removePool,
+        //                block.timestamp,
+        //                block.number
+        //            )
+        //        );
+        //
+        //        bytes[] memory args = new bytes[](6);
+        //        args[0] = abi.encodePacked(s_distributeLiquidityJsCodeHashSum);
+        //        args[1] = abi.encodePacked(s_ethersHashSum);
+        //        args[2] = abi.encodePacked(CLFRequestType.liquidityRedistribution);
+        //        args[3] = abi.encodePacked(_chainSelector);
+        //        args[4] = abi.encodePacked(distributeLiquidityRequestId);
+        //        args[5] = abi.encodePacked(RedistributeLiquidityType.removePool);
+        //
+        //        bytes memory delegateCallArgs = abi.encodeWithSelector(
+        //            IParentPoolCLFCLA.sendCLFRequest.selector,
+        //            args
+        //        );
+        //        LibConcero.safeDelegateCall(address(i_parentPoolCLFCLA), delegateCallArgs);
     }
 
     /* INTERNAL FUNCTIONS */

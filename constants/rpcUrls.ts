@@ -78,10 +78,10 @@ export const urls: Record<string, string[]> = {
     // `https://base-mainnet.blastapi.io/${BLAST_API_KEY}`,
   ],
   baseSepolia: [
-    `https://base-sepolia.infura.io/v3/${INFURA_API_KEY}`,
-    `https://base-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+    // `https://base-sepolia.infura.io/v3/${INFURA_API_KEY}`,
+    // `https://base-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
     "https://rpc.ankr.com/base_sepolia",
-    `https://base-sepolia.blastapi.io/${BLAST_API_KEY}`,
+    // `https://base-sepolia.blastapi.io/${BLAST_API_KEY}`,
   ],
   bsc: ["https://rpc.ankr.com/bsc"],
   scroll: ["https://rpc.ankr.com/scroll"],

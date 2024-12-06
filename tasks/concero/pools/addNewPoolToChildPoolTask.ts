@@ -15,19 +15,21 @@ task("add-new-pool-to-child-pool", "Add a new pool to the child pool")
     }
     const newPoolChainSelector = newPoolChain.chainSelector;
     const [newPoolAddress] = getEnvAddress(ProxyEnum.childPoolProxy, newPoolChain.name);
+    const [currentPoolAddress] = getEnvAddress(ProxyEnum.childPoolProxy, currentPoolChain.name);
 
     const setPoolsTxHash = await walletClient.writeContract({
       abi: ChildPoolAbi,
       functionName: "setPools",
+      address: currentPoolAddress,
       args: [newPoolChainSelector, newPoolAddress],
       gas: 3_000_000n,
     });
-
     const { status: setPoolsStatus } = await publicClient.waitForTransactionReceipt({ hash: setPoolsTxHash });
     log(`set child pool ${setPoolsStatus}`, "setPools", currentPoolChain.name);
 
     const allowContractSenderTxHash = await walletClient.writeContract({
       abi: ChildPoolAbi,
+      address: currentPoolAddress,
       functionName: "setConceroContractSender",
       args: [newPoolChainSelector, newPoolAddress, true],
       gas: 3_000_000n,

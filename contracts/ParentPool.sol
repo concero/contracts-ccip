@@ -493,7 +493,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         s_collectLiquidityJsCodeHashSum = _hashSum;
     }
 
-    function setDistributeLiquidityJsCodeHashSum(bytes32 _hashSum) external payable onlyOwner {
+    function setRedistributeLiquidityJsCodeHashSum(bytes32 _hashSum) external payable onlyOwner {
         s_distributeLiquidityJsCodeHashSum = _hashSum;
     }
 

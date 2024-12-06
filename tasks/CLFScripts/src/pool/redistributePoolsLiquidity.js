@@ -2,7 +2,7 @@
 	try {
 		const [_, __, ___, newPoolChainSelector, distributeLiquidityRequestId, distributionType, chainId] = bytesArgs;
 		const chainsMapTestnet = {
-			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
+			['${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}']: {
 				urls: ['https://arbitrum-sepolia-rpc.publicnode.com'],
 				chainId: '0x66eee',
 				usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
@@ -148,8 +148,7 @@
 				if (chain !== newPoolChainSelector) {
 					const signer = getSignerByChainSelector(chain);
 					const poolContract = new ethers.Contract(chainsMap[chain].poolAddress, poolAbi, signer);
-					const amountToDistribute = BigInt(poolsBalances[chain]) - newPoolBalance;
-					console.log(amountToDistribute);
+					const amountToDistribute = poolsBalances[chain] - newPoolBalance;
 					distributeAmountPromises.push(
 						poolContract.distributeLiquidity(
 							newPoolChainSelector,

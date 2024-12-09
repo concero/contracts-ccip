@@ -253,21 +253,12 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         uint64 dstChainSelector,
         uint256 amount
     ) internal view returns (uint256) {
-        uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
-        uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(dstChainSelector);
-        uint256 proportionalCCIPFeeInUSDC = _calculateProportionalCCIPFee(ccipFeeInUsdc, amount);
+        (uint256 clfFees, uint256 ccipFees, uint256 conceroFees) = getFees(
+            dstChainSelector,
+            amount
+        );
 
-        uint256 conceroFee = amount / CONCERO_FEE_FACTOR;
-
-        uint256 messengerDstGasInNative = HALF_DST_GAS * s_lastGasPrices[dstChainSelector];
-        uint256 messengerSrcGasInNative = HALF_DST_GAS * s_lastGasPrices[i_chainSelector];
-        uint256 messengerGasFeeInUsdc = ((messengerDstGasInNative + messengerSrcGasInNative) *
-            s_latestNativeUsdcRate) / STANDARD_TOKEN_DECIMALS;
-
-        return (functionsFeeInUsdc +
-            proportionalCCIPFeeInUSDC +
-            conceroFee +
-            messengerGasFeeInUsdc);
+        return (clfFees + ccipFees + conceroFees);
     }
 
     /**

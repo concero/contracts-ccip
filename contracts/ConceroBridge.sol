@@ -178,25 +178,18 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         return (ccipFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
     }
 
-    function getSrcTotalFeeInUSDC(
-        uint64 dstChainSelector,
-        uint256 amount
-    ) external view returns (uint256) {
-        return _getSrcTotalFeeInUsdc(dstChainSelector, amount);
-    }
-
-		/**
-		 * @notice Function to get the total amount of fees in USDC
-		 * @param dstChainSelector the destination blockchain chain selector
-		 * @param amount the amount to calculate the fees for
-		 * @return clfFees the amount of Chainlink functions fees in USDC
-		 * @return ccipFees the amount of CCIP fees in USDC
-		 * @return conceroFees the amount of Concero fees in USDC
-		 */
+    /**
+     * @notice Function to get the total amount of fees in USDC
+     * @param dstChainSelector the destination blockchain chain selector
+     * @param amount the amount to calculate the fees for
+     * @return clfFees the amount of Chainlink functions fees in USDC
+     * @return ccipFees the amount of CCIP fees in USDC
+     * @return conceroFees the amount of Concero fees in USDC
+     */
     function getFees(
         uint64 dstChainSelector,
         uint256 amount
-    ) external view returns (uint256 clfFees, uint256 ccipFees, uint256 conceroFees) {
+    ) public view returns (uint256 clfFees, uint256 ccipFees, uint256 conceroFees) {
         uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
         uint256 messengerDstGasInNative = HALF_DST_GAS * s_lastGasPrices[dstChainSelector];
         uint256 messengerSrcGasInNative = HALF_DST_GAS * s_lastGasPrices[i_chainSelector];
@@ -208,6 +201,13 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         clfFees = functionsFeeInUsdc + messengerGasFeeInUsdc;
         ccipFees = _calculateProportionalCCIPFee(ccipFeeInUsdc, amount);
         conceroFees = amount / CONCERO_FEE_FACTOR;
+    }
+
+    function getSrcTotalFeeInUSDC(
+        uint64 dstChainSelector,
+        uint256 amount
+    ) external view returns (uint256) {
+        return _getSrcTotalFeeInUsdc(dstChainSelector, amount);
     }
 
     /* INTERNAL FUNCTIONS */

@@ -24,6 +24,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
     uint64 private constant HALF_DST_GAS = 200_000;
     uint256 internal constant BATCHED_TX_THRESHOLD = 3_000 * USDC_DECIMALS;
     uint8 internal constant MAX_PENDING_SETTLEMENT_TXS_BY_LANE = 200;
+
     //    uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 220_500; // unused
 
     constructor(
@@ -182,6 +183,31 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         uint256 amount
     ) external view returns (uint256) {
         return _getSrcTotalFeeInUsdc(dstChainSelector, amount);
+    }
+
+		/**
+		 * @notice Function to get the total amount of fees in USDC
+		 * @param dstChainSelector the destination blockchain chain selector
+		 * @param amount the amount to calculate the fees for
+		 * @return clfFees the amount of Chainlink functions fees in USDC
+		 * @return ccipFees the amount of CCIP fees in USDC
+		 * @return conceroFees the amount of Concero fees in USDC
+		 */
+    function getFees(
+        uint64 dstChainSelector,
+        uint256 amount
+    ) external view returns (uint256 clfFees, uint256 ccipFees, uint256 conceroFees) {
+        uint256 functionsFeeInUsdc = getFunctionsFeeInUsdc(dstChainSelector);
+        uint256 messengerDstGasInNative = HALF_DST_GAS * s_lastGasPrices[dstChainSelector];
+        uint256 messengerSrcGasInNative = HALF_DST_GAS * s_lastGasPrices[i_chainSelector];
+        uint256 messengerGasFeeInUsdc = ((messengerDstGasInNative + messengerSrcGasInNative) *
+            s_latestNativeUsdcRate) / STANDARD_TOKEN_DECIMALS;
+
+        uint256 ccipFeeInUsdc = getCCIPFeeInUsdc(dstChainSelector);
+
+        clfFees = functionsFeeInUsdc + messengerGasFeeInUsdc;
+        ccipFees = _calculateProportionalCCIPFee(ccipFeeInUsdc, amount);
+        conceroFees = amount / CONCERO_FEE_FACTOR;
     }
 
     /* INTERNAL FUNCTIONS */

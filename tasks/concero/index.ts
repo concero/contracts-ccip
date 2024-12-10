@@ -31,6 +31,7 @@ import removeParentPoolChildPoolsTask from "./pools/removeParentPoolChildPoolsTa
 import updateInfraHashesTask from "./deployInfra/updateInfraHashesTask";
 import { getWithdrawalStatuses } from "./getWithdrawalStatuses";
 import populateWithdrawalRequests from "./populateWithdrawalRequests";
+import { getFailedCCIPTxs } from "./getFailedCCIPTxs";
 export default {
   deployConceroDexSwap,
   deployConceroOrchestrator,
@@ -62,4 +63,5 @@ export default {
   updateInfraHashesTask,
   getWithdrawalStatuses,
   populateWithdrawalRequests,
+  getFailedCCIPTxs,
 };

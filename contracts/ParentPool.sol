@@ -689,6 +689,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
     }
 
     function _processOldCcipFailedMessage(Client.Any2EVMMessage memory message) internal {
+        if (message.destTokenAmounts[0].token != address(i_USDC)) {
+            revert NotUsdcToken();
+        }
+
         (address lpAddress, address user, uint256 receivedFee) = abi.decode(
             message.data,
             (address, address, uint256)
@@ -711,6 +715,14 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         } else if (isWithdrawalTx) {
             revert("Old CCIP failed message");
         }
+
+        emit CCIPReceived(
+            message.messageId,
+            message.sourceChainSelector,
+            abi.decode(message.sender, (address)),
+            message.destTokenAmounts[0].token,
+            message.destTokenAmounts[0].amount
+        );
     }
 
     function _isOldCcipFailedMessage(

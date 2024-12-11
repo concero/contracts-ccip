@@ -705,10 +705,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(message.messageId);
 
             if (!isTxConfirmed) {
-                //We don't subtract fee here because the loan was not performed. And the value is not summed into the `s_loanInUse` variable.
+                IInfraOrchestrator(i_infraProxy).confirmTx(message.messageId);
                 i_USDC.safeTransfer(user, message.destTokenAmounts[0].amount);
             } else {
-                //subtract the amount from the committed total amount
                 uint256 amountAfterFees = (message.destTokenAmounts[0].amount - receivedFee);
                 s_loansInUse -= amountAfterFees;
             }

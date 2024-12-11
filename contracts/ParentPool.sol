@@ -621,6 +621,11 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             abi.decode(any2EvmMessage.sender, (address))
         )
     {
+        if (_isOldCcipFailedMessage(any2EvmMessage)) {
+            _processOldCcipFailedMessage(any2EvmMessage);
+            return;
+        }
+
         ICCIP.CcipTxData memory ccipTxData = abi.decode(any2EvmMessage.data, (ICCIP.CcipTxData));
         uint256 ccipReceivedAmount = any2EvmMessage.destTokenAmounts[0].amount;
         address ccipReceivedToken = any2EvmMessage.destTokenAmounts[0].token;
@@ -681,6 +686,70 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             ccipReceivedToken,
             ccipReceivedAmount
         );
+    }
+
+    function _processOldCcipFailedMessage(Client.Any2EVMMessage memory message) internal {
+        if (message.destTokenAmounts[0].token != address(i_USDC)) {
+            revert NotUsdcToken();
+        }
+
+        (address lpAddress, address user, uint256 receivedFee) = abi.decode(
+            message.data,
+            (address, address, uint256)
+        );
+
+        bool isUserTx = receivedFee > 0 && user != address(0);
+        bool isWithdrawalTx = lpAddress != address(0);
+
+        if (isUserTx) {
+            bool isTxConfirmed = IInfraOrchestrator(i_infraProxy).isTxConfirmed(message.messageId);
+
+            if (!isTxConfirmed) {
+                IInfraOrchestrator(i_infraProxy).confirmTx(message.messageId);
+                i_USDC.safeTransfer(user, message.destTokenAmounts[0].amount);
+            } else {
+                uint256 amountAfterFees = (message.destTokenAmounts[0].amount - receivedFee);
+                s_loansInUse -= amountAfterFees;
+            }
+        } else if (isWithdrawalTx) {
+            revert("Old CCIP failed message");
+        }
+
+        emit CCIPReceived(
+            message.messageId,
+            message.sourceChainSelector,
+            abi.decode(message.sender, (address)),
+            message.destTokenAmounts[0].token,
+            message.destTokenAmounts[0].amount
+        );
+    }
+
+    function _isOldCcipFailedMessage(
+        Client.Any2EVMMessage memory message
+    ) internal pure returns (bool) {
+        bytes32[13] memory failedMessages = [
+            bytes32(0xf5fa6715661250a9a69c0b7a3deee972f05e4a6ecc551e3731254c2d99bb0039),
+            bytes32(0x4214466b4db150fa026c619a1c37a5fa26864fde962e326bf78b4116ab25481f),
+            bytes32(0xbf395fee83447a4ec365efdf6b698daebaa7e1d93220b8bf7952a26493317205),
+            bytes32(0xb05685f874de4e1377e9b280a99d862fd52add8d7dea879f10b6fe0dcfdd7211),
+            bytes32(0x087e924eb468df95e97d0aea0cc85bf7367c476bb1751c570033dd6487206c90),
+            bytes32(0xfbf870987a20d29b24823f413342ccd5a1e85694bc49270b03bcd0091596024e),
+            bytes32(0xd6c0a2fb3bd52a0edef1c782d2ccd122c1945dd34179148e9488f75bc5e41e68),
+            bytes32(0x406f4caaaef00a91b16589fff2f4fcd334a9c05978296da810663b2e827b2224),
+            bytes32(0x32f49eac7b11d44f33215257f9b152e87b3cf572a872c26e7905752b56e7f368),
+            bytes32(0x828d6857ef072b9bc0f36bc8b363c624c92a67fd76ea62f39b5fa23b637a05c8),
+            bytes32(0xe70206c11d0773b922e331ec598cedc379e5e7ad2eed813171faf2f72e3d7e1c),
+            bytes32(0x184e805eec1e349090750e44abf68df005ff06d95a8929cf7eea86bf397a1730),
+            bytes32(0x185eb6b85943ffaa724a59f151d2b5e717ff1bb9dbaf802ceaec5f63910e0551)
+        ];
+
+        for (uint256 i; i < failedMessages.length; i++) {
+            if (message.messageId == failedMessages[i]) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

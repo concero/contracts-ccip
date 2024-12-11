@@ -18,7 +18,7 @@ export const rpc: Record<string, string> = {
 // Warning: ANKR endpoints are limited to 30 requests/sec and not suitable for production use
 
 export const urls: Record<string, string[]> = {
-  mainnet: [
+  ethereum: [
     `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
     `https://eth-mainnet.blastapi.io/${BLAST_API_KEY}`,
     "https://rpc.ankr.com/eth",
@@ -49,11 +49,7 @@ export const urls: Record<string, string[]> = {
     `https://arbitrum-sepolia.blastapi.io/${BLAST_API_KEY}`,
     "https://rpc.ankr.com/arbitrum_sepolia",
   ],
-  optimism: [
-    `https://optimism-mainnet.infura.io/v3/${INFURA_API_KEY}`,
-    `https://optimism-mainnet.blastapi.io/${BLAST_API_KEY}`,
-    "https://rpc.ankr.com/optimism",
-  ],
+  optimism: ["https://optimism.llamarpc.com", "https://rpc.ankr.com/optimism"],
   optimismSepolia: [
     `https://optimism-sepolia.infura.io/v3/${INFURA_API_KEY}`,
     `https://optimism-sepolia.blastapi.io/${BLAST_API_KEY}`,

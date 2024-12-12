@@ -16,7 +16,7 @@
 			},
 		};
 		const chainsMapMainnet = {
-			[`0x${BigInt('4949039107694359620').toString(16)}`]: {
+			['4949039107694359620']: {
 				urls: [
 					`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 					'https://arbitrum.blockpi.network/v1/rpc/public',
@@ -26,7 +26,7 @@
 				usdcAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
 				poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
 			},
-			[`0x${BigInt('4051577828743386545').toString(16)}`]: {
+			['4051577828743386545']: {
 				urls: [
 					`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 					'https://polygon.blockpi.network/v1/rpc/public',
@@ -36,7 +36,7 @@
 				usdcAddress: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
 				poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
 			},
-			[`0x${BigInt('6433500567565415381').toString(16)}`]: {
+			['6433500567565415381']: {
 				urls: [
 					`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 					'https://avalanche.blockpi.network/v1/rpc/public',
@@ -46,7 +46,7 @@
 				usdcAddress: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
 				poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
 			},
-			[`0x${BigInt('15971525489660198786').toString(16)}`]: {
+			['15971525489660198786']: {
 				urls: [
 					`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
 					'https://base.blockpi.network/v1/rpc/public',

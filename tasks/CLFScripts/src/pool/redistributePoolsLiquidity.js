@@ -22,7 +22,7 @@
 			},
 		};
 		const chainsMapMainnet = {
-			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}').toString(16)}`]: {
+			['${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}']: {
 				urls: [
 					`https://arbitrum-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 					'https://arbitrum.blockpi.network/v1/rpc/public',
@@ -32,7 +32,7 @@
 				usdcAddress: '${USDC_ARBITRUM}',
 				poolAddress: '${CHILD_POOL_PROXY_ARBITRUM}',
 			},
-			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON}').toString(16)}`]: {
+			['${CL_CCIP_CHAIN_SELECTOR_POLYGON}']: {
 				urls: [
 					`https://polygon-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 					'https://polygon.blockpi.network/v1/rpc/public',
@@ -42,7 +42,7 @@
 				usdcAddress: '${USDC_POLYGON}',
 				poolAddress: '${CHILD_POOL_PROXY_POLYGON}',
 			},
-			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}').toString(16)}`]: {
+			['${CL_CCIP_CHAIN_SELECTOR_AVALANCHE}']: {
 				urls: [
 					`https://avalanche-mainnet.infura.io/v3/${secrets.INFURA_API_KEY}`,
 					'https://avalanche.blockpi.network/v1/rpc/public',
@@ -52,7 +52,7 @@
 				usdcAddress: '${USDC_AVALANCHE}',
 				poolAddress: '${CHILD_POOL_PROXY_AVALANCHE}',
 			},
-			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE}').toString(16)}`]: {
+			['${CL_CCIP_CHAIN_SELECTOR_BASE}']: {
 				urls: [
 					`https://base-mainnet.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
 					'https://base.blockpi.network/v1/rpc/public',

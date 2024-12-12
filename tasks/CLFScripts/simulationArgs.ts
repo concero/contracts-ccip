@@ -58,10 +58,10 @@ const getSimulationArgs: {[functionName: string]: ArgBuilder} = {
 		return [srcJsHashSum, ethersHashSum];
 	},
 	pool_redistribute_liq: async () => {
-		const newPoolChainSelector = '0x' + BigInt(getEnvVar('CL_CCIP_CHAIN_SELECTOR_FUJI')).toString(16);
+		const newPoolChainSelector = '0x' + BigInt(getEnvVar('CL_CCIP_CHAIN_SELECTOR_OPTIMISM')).toString(16);
 		const distributeLiquidityRequestId = '0x05f8cc312ae3687e5581353da9c5889b92d232f7776c8b81dc234fb330fda265';
 		const distributionType = '0x00';
-		const chainId = '0x' + Number(84532).toString(16);
+		const chainId = '0x' + Number(8453).toString(16);
 
 		return ['0x0', '0x0', '0x0', newPoolChainSelector, distributeLiquidityRequestId, distributionType, chainId];
 	},

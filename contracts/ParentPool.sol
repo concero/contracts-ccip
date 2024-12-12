@@ -532,12 +532,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
         if (isRebalancingNeeded) {
             bytes32 distributeLiquidityRequestId = keccak256(
-                abi.encodePacked(
-                    _pool,
-                    _chainSelector,
-                    RedistributeLiquidityType.addPool,
-                    block.number
-                )
+                abi.encodePacked(_pool, _chainSelector, RedistributeLiquidityType.addPool)
             );
 
             bytes[] memory args = new bytes[](7);

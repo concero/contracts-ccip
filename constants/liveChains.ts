@@ -15,20 +15,26 @@ export const liveChains: CNetwork[] = [
 export const conceroChains: ConceroChains = {
   testnet: {
     parentPool: [conceroNetworks.baseSepolia],
-    childPool: [
-      conceroNetworks.arbitrumSepolia,
-      // conceroNetworks.avalancheFuji
-    ],
-    infra: [
-      conceroNetworks.arbitrumSepolia,
-      // conceroNetworks.avalancheFuji,
-      conceroNetworks.baseSepolia,
-    ],
+    childPool: [conceroNetworks.arbitrumSepolia, conceroNetworks.avalancheFuji],
+    infra: [conceroNetworks.arbitrumSepolia, conceroNetworks.avalancheFuji, conceroNetworks.baseSepolia],
   },
   mainnet: {
     parentPool: [conceroNetworks.base],
-    childPool: [conceroNetworks.polygon, conceroNetworks.arbitrum, conceroNetworks.avalanche],
-    infra: [conceroNetworks.polygon, conceroNetworks.arbitrum, conceroNetworks.avalanche, conceroNetworks.base],
+    childPool: [
+      conceroNetworks.polygon,
+      conceroNetworks.arbitrum,
+      conceroNetworks.avalanche,
+      conceroNetworks.ethereum,
+      conceroNetworks.optimism,
+    ],
+    infra: [
+      conceroNetworks.polygon,
+      conceroNetworks.arbitrum,
+      conceroNetworks.avalanche,
+      conceroNetworks.base,
+      conceroNetworks.ethereum,
+      conceroNetworks.optimism,
+    ],
   },
 };
 

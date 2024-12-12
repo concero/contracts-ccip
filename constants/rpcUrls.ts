@@ -56,8 +56,8 @@ export const urls: Record<string, string[]> = {
     "https://rpc.ankr.com/arbitrum_sepolia",
   ],
   optimism: [
-    `https://lb.drpc.org/ogrpc?network=optimism&dkey=${DRPC_API_KEY}`,
     "https://optimism.llamarpc.com",
+    `https://lb.drpc.org/ogrpc?network=optimism&dkey=${DRPC_API_KEY}`,
     `https://optimism-mainnet.infura.io/v3/${INFURA_API_KEY}`,
     `https://optimism-mainnet.blastapi.io/${BLAST_API_KEY}`,
     "https://rpc.ankr.com/optimism",

@@ -35,10 +35,14 @@ task("add-new-pool-to-child-pool", "Add a new pool to the child pool")
       gas: 3_000_000n,
     });
 
-    const { status: allowContractSenderStatus } = await publicClient.waitForTransactionReceipt({
+    const { transactionHash, status: allowContractSenderStatus } = await publicClient.waitForTransactionReceipt({
       hash: allowContractSenderTxHash,
     });
-    log(`set child pool ${allowContractSenderStatus}`, "setConceroContractSender", currentPoolChain.name);
+    log(
+      `set child pool ${allowContractSenderStatus}. tx: ${transactionHash}`,
+      "setConceroContractSender",
+      currentPoolChain.name,
+    );
   });
 
 export default {};

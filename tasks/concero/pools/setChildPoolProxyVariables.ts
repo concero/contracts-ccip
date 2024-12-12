@@ -91,6 +91,8 @@ async function addPoolsToAllChains(hre) {
 
   for (const dstChain of chains) {
     if (dstChain.chainId === chain.chainId) continue;
+    if (dstChain.chainId === conceroNetworks.base.chainId || dstChain.chainId === conceroNetworks.baseSepolia.chainId)
+      continue;
 
     const { name: dstChainName, chainSelector: dstChainSelector } = dstChain;
     const poolAddressToAdd =
@@ -119,14 +121,14 @@ async function addPoolsToAllChains(hre) {
         hash: setPoolHash,
       });
 
-      err(`Added pool ${poolAddressToAdd}. Gas used: ${setPoolGasUsed.toString()}`, "addPoolsToAllChains", chainName);
+      log(`Added pool ${poolAddressToAdd}. Gas used: ${setPoolGasUsed.toString()}`, "addPoolsToAllChains", chainName);
     } catch (error) {
       console.error(error);
     }
   }
 }
 
-export async function setChildProxyVariables(hre) {
+export async function setChildPoolProxyVariables(hre) {
   await setConceroProxySender(hre);
-  // await addPoolsToAllChains(hre);
+  await addPoolsToAllChains(hre);
 }

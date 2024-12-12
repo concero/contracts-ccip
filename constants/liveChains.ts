@@ -24,7 +24,7 @@ export const conceroChains: ConceroChains = {
       conceroNetworks.polygon,
       conceroNetworks.arbitrum,
       conceroNetworks.avalanche,
-      conceroNetworks.ethereum,
+      // conceroNetworks.ethereum,
       conceroNetworks.optimism,
     ],
     infra: [
@@ -32,7 +32,7 @@ export const conceroChains: ConceroChains = {
       conceroNetworks.arbitrum,
       conceroNetworks.avalanche,
       conceroNetworks.base,
-      conceroNetworks.ethereum,
+      // conceroNetworks.ethereum,
       conceroNetworks.optimism,
     ],
   },

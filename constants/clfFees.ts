@@ -7,4 +7,4 @@ export const clfFees: Record<CNetworkNames, bigint> = {
   avalanche: 280000000000000000n,
 };
 
-export const defaultCLFfee = 20000000000000000n;
+export const defaultCLFfee = 60000000000000000n;

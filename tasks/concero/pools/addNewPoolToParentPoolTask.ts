@@ -26,8 +26,8 @@ task("add-new-pool-to-parent-pool", "Add a new pool to the parent pool with reba
       gas: 3_000_000n,
     });
 
-    const { status } = await publicClient.waitForTransactionReceipt({ hash: txHash });
-    log(`set parent pool ${status}`, "setPools", parentPoolChain.name);
+    const { transactionHash, status } = await publicClient.waitForTransactionReceipt({ hash: txHash });
+    log(`set parent pool ${status}, tx: ${transactionHash}`, "setPools", parentPoolChain.name);
   });
 
 export default {};

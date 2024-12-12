@@ -3,7 +3,6 @@ import { conceroChains, networkEnvKeys, ProxyEnum } from "../../../constants";
 import { getEnvAddress, getEnvVar, getFallbackClients, log, err } from "../../../utils";
 import { erc20Abi, formatUnits } from "viem";
 import { type CNetwork } from "../../../types/CNetwork";
-
 interface PoolBalance {
   chain: string;
   address: string;
@@ -11,6 +10,8 @@ interface PoolBalance {
   loansInUse: string;
   withdrawalsOnTheWay?: string;
   depositsOnTheWay?: string;
+  withdrawAmountLocked?: string;
+  actualBalance: string;
 }
 
 async function getPoolBalance(chain: CNetwork, isParent: boolean): Promise<PoolBalance | null> {
@@ -35,14 +36,15 @@ async function getPoolBalance(chain: CNetwork, isParent: boolean): Promise<PoolB
       functionName: "s_loansInUse",
     });
 
-    let withdrawalsOnTheWay, depositsOnTheWay;
+    let withdrawalsOnTheWay, depositsOnTheWay, withdrawAmountLocked;
+    let actualBalance;
 
     if (isParent) {
       [withdrawalsOnTheWay, depositsOnTheWay, withdrawAmountLocked] = await Promise.all([
         publicClient.readContract({
           address: poolAddress,
           abi: abi,
-          functionName: "s_withdrawalsOnTheWayAmount",
+          functionName: "getWithdrawalsOnTheWayAmount",
         }),
         publicClient.readContract({
           address: poolAddress,
@@ -55,6 +57,14 @@ async function getPoolBalance(chain: CNetwork, isParent: boolean): Promise<PoolB
           functionName: "s_withdrawAmountLocked",
         }),
       ]);
+      actualBalance =
+        BigInt(usdcBalance) +
+        BigInt(loansInUse) +
+        BigInt(withdrawalsOnTheWay) +
+        BigInt(depositsOnTheWay) -
+        BigInt(withdrawAmountLocked);
+    } else {
+      actualBalance = BigInt(usdcBalance) + BigInt(loansInUse);
     }
 
     return {
@@ -65,7 +75,9 @@ async function getPoolBalance(chain: CNetwork, isParent: boolean): Promise<PoolB
       ...(isParent && {
         withdrawalsOnTheWay: formatUnits(withdrawalsOnTheWay, 6),
         depositsOnTheWay: formatUnits(depositsOnTheWay, 6),
+        withdrawAmountLocked: formatUnits(withdrawAmountLocked, 6),
       }),
+      actualBalance: formatUnits(actualBalance, 6),
     };
   } catch (error) {
     err(`Error getting pool balance for ${chain.name}: ${error}`, "getPoolBalance");

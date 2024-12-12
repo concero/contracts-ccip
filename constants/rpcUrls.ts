@@ -82,8 +82,8 @@ export const urls: Record<string, string[]> = {
     `https://polygon-amoy.infura.io/v3/${INFURA_API_KEY}`,
   ],
   base: [
-    `https://lb.drpc.org/ogrpc?network=base&dkey=${DRPC_API_KEY}`,
-    "https://base.llamarpc.com",
+    // `https://lb.drpc.org/ogrpc?network=base&dkey=${DRPC_API_KEY}`,
+    // "https://base.llamarpc.com",
     "https://base.blockpi.network/v1/rpc/public",
     `https://base-mainnet.infura.io/v3/${INFURA_API_KEY}`,
     `https://base-rpc.publicnode.com`,

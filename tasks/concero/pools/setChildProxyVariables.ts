@@ -128,5 +128,5 @@ async function addPoolsToAllChains(hre) {
 
 export async function setChildProxyVariables(hre) {
   await setConceroProxySender(hre);
-  await addPoolsToAllChains(hre);
+  // await addPoolsToAllChains(hre);
 }

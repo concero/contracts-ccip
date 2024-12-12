@@ -32,6 +32,7 @@ import updateInfraHashesTask from "./deployInfra/updateInfraHashesTask";
 import { getWithdrawalStatuses } from "./getWithdrawalStatuses";
 import addNewPoolToParentPoolTask from "./pools/addNewPoolToParentPoolTask";
 import addNewPoolToChildPoolTask from "./pools/addNewPoolToChildPoolTask";
+import deployPauseDummy from "./deployPauseDummy";
 
 export default {
   deployConceroDexSwap,
@@ -65,4 +66,5 @@ export default {
   getWithdrawalStatuses,
   addNewPoolToParentPoolTask,
   addNewPoolToChildPoolTask,
+  deployPauseDummy,
 };

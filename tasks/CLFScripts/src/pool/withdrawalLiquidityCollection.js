@@ -54,6 +54,16 @@
 				usdcAddress: '${USDC_AVALANCHE}',
 				poolAddress: '${CHILD_POOL_PROXY_AVALANCHE}',
 			},
+			['${CL_CCIP_CHAIN_SELECTOR_OPTIMISM}']: {
+				urls: [
+					'https://optimism-rpc.publicnode.com',
+					'https://rpc.ankr.com/optimism',
+					'https://optimism.drpc.org',
+				],
+				chainId: '0xa',
+				usdcAddress: '${USDC_OPTIMISM}',
+				poolAddress: '${CHILD_POOL_PROXY_OPTIMISM}',
+			},
 		};
 
 		const getChainIdByUrl = url => {
@@ -97,7 +107,9 @@
 
 		for (const chainSelector in chainSelectors) {
 			const url =
-				chainSelectors[chainSelector].urls[Math.floor(Math.random() * chainSelectors[chainSelector].urls.length)];
+				chainSelectors[chainSelector].urls[
+					Math.floor(Math.random() * chainSelectors[chainSelector].urls.length)
+				];
 			const provider = new FunctionsJsonRpcProvider(url);
 			const wallet = new ethers.Wallet('0x' + secrets.POOL_MESSENGER_0_PRIVATE_KEY, provider);
 			const signer = wallet.connect(provider);
@@ -110,7 +122,11 @@
 		return Functions.encodeUint256(1n);
 	} catch (e) {
 		const {message, code} = e;
-		if (code === 'NONCE_EXPIRED' || message?.includes('replacement fee too low') || message?.includes('already known')) {
+		if (
+			code === 'NONCE_EXPIRED' ||
+			message?.includes('replacement fee too low') ||
+			message?.includes('already known')
+		) {
 			return Functions.encodeUint256(1n);
 		}
 		throw e;

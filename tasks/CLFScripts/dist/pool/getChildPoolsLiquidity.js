@@ -24,6 +24,12 @@
 			usdcAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
 			poolAddress: '0x0AE1B2730066AD46481ab0a5fd2B5893f8aBa323',
 		},
+		['3734403246176062136']: {
+			urls: ['https://optimism-mainnet.infura.io/v3/${secrets.PARENT_POOL_INFURA_API_KEY}'],
+			chainId: '0xa',
+			usdcAddress: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+			poolAddress: '0x8698c6DF1E354Ce3ED0dE508EF7AF4baB85D2F2D',
+		},
 	};
 	const baseChainSelector = '15971525489660198786';
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];

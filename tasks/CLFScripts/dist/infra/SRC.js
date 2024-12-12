@@ -1,5 +1,6 @@
 (async () => {
-	const [_, __, ___, dstContractAddress, conceroMessageId, srcChainSelector, dstChainSelector, txDataHash] = bytesArgs;
+	const [_, __, ___, dstContractAddress, conceroMessageId, srcChainSelector, dstChainSelector, txDataHash] =
+		bytesArgs;
 	const chainSelectors = {
 		[`0x${BigInt('14767482510784806043').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
@@ -15,7 +16,10 @@
 			},
 		},
 		[`0x${BigInt('16015286601757825753').toString(16)}`]: {
-			urls: [`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://ethereum-sepolia-rpc.publicnode.com'],
+			urls: [
+				`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://ethereum-sepolia-rpc.publicnode.com',
+			],
 			chainId: '0xaa36a7',
 			nativeCurrency: 'eth',
 			priceFeed: {
@@ -68,7 +72,10 @@
 			},
 		},
 		[`0x${BigInt('16281711391670634445').toString(16)}`]: {
-			urls: [`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://polygon-amoy-bor-rpc.publicnode.com'],
+			urls: [
+				`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`,
+				'https://polygon-amoy-bor-rpc.publicnode.com',
+			],
 			chainId: '0x13882',
 			nativeCurrency: 'matic',
 			priceFeed: {
@@ -129,14 +136,37 @@
 				maticUsd: '0x1db18D41E4AD2403d9f52b5624031a2D9932Fd73',
 			},
 		},
+		[`0x${BigInt('3734403246176062136').toString(16)}`]: {
+			urls: ['https://optimism-rpc.publicnode.com', 'https://rpc.ankr.com/optimism', 'https://optimism.drpc.org'],
+			chainId: '0xa',
+			nativeCurrency: 'eth',
+			priceFeed: {
+				linkUsd: '0xCc232dcFAAE6354cE191Bd574108c1aD03f86450',
+				usdcUsd: '0x16a9FA2FDa030272Ce99B29CF780dFA30361E0f3',
+				nativeUsd: '0x13e3Ee699D1909E989722E753853AE30b17e08c5',
+				linkNative: '0x464A1515ADc20de946f8d0DEB99cead8CEAE310d',
+				ethUsd: '0x13e3Ee699D1909E989722E753853AE30b17e08c5',
+				maticUsd: '0x0ded608AFc23724f614B76955bbd9dFe7dDdc828',
+			},
+		},
 	};
 	const UINT256_BYTES_LENGTH = 32;
 	const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 	const getPercent = (value, percent) => (BigInt(value) * BigInt(percent)) / 100n;
 	const getPriceRates = async (provider, chainSelector) => {
-		const priceFeedsAbi = ['function latestRoundData() external view returns (uint80, int256, uint256, uint256, uint80)'];
-		const linkUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.linkUsd, priceFeedsAbi, provider);
-		const usdcUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.usdcUsd, priceFeedsAbi, provider);
+		const priceFeedsAbi = [
+			'function latestRoundData() external view returns (uint80, int256, uint256, uint256, uint80)',
+		];
+		const linkUsdContract = new ethers.Contract(
+			chainSelectors[chainSelector].priceFeed.linkUsd,
+			priceFeedsAbi,
+			provider,
+		);
+		const usdcUsdContract = new ethers.Contract(
+			chainSelectors[chainSelector].priceFeed.usdcUsd,
+			priceFeedsAbi,
+			provider,
+		);
 		const nativeUsdContract = new ethers.Contract(
 			chainSelectors[chainSelector].priceFeed.nativeUsd,
 			priceFeedsAbi,
@@ -169,7 +199,11 @@
 			promises.push(promiseUndefined());
 		}
 		if (chainSelectors[chainSelector].priceFeed.ethUsd) {
-			const ethUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.ethUsd, priceFeedsAbi, provider);
+			const ethUsdContract = new ethers.Contract(
+				chainSelectors[chainSelector].priceFeed.ethUsd,
+				priceFeedsAbi,
+				provider,
+			);
 			promises.push(ethUsdContract.latestRoundData());
 		} else {
 			promises.push(promiseUndefined());
@@ -217,7 +251,11 @@
 		const srcNativeCurrency = chainSelectors[srcChainSelector].nativeCurrency;
 		const dstNativeCurrency = chainSelectors[dstChainSelector].nativeCurrency;
 		if (srcNativeCurrency !== dstNativeCurrency) {
-			return getGasPriceByPriceFeeds(srcPriceFeeds.nativeUsd, srcPriceFeeds[`${dstNativeCurrency}Usd`], _gasPrice);
+			return getGasPriceByPriceFeeds(
+				srcPriceFeeds.nativeUsd,
+				srcPriceFeeds[`${dstNativeCurrency}Usd`],
+				_gasPrice,
+			);
 		}
 		return _gasPrice;
 	};
@@ -275,7 +313,9 @@
 			}
 		}
 		const dstUrl =
-			chainSelectors[dstChainSelector].urls[Math.floor(Math.random() * chainSelectors[dstChainSelector].urls.length)];
+			chainSelectors[dstChainSelector].urls[
+				Math.floor(Math.random() * chainSelectors[dstChainSelector].urls.length)
+			];
 		const provider = new FunctionsJsonRpcProvider(dstUrl);
 		const wallet = new ethers.Wallet('0x' + secrets.MESSENGER_0_PRIVATE_KEY, provider);
 		const signer = wallet.connect(provider);
@@ -284,7 +324,10 @@
 			'function s_transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool, bytes)',
 		];
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);
-		const [feeData, nonce] = await Promise.all([provider.getFeeData(), provider.getTransactionCount(wallet.address)]);
+		const [feeData, nonce] = await Promise.all([
+			provider.getFeeData(),
+			provider.getTransactionCount(wallet.address),
+		]);
 		gasPrice = feeData.gasPrice;
 		await sendTransaction(contract, signer, {
 			nonce,
@@ -294,7 +337,9 @@
 					: gasPrice + getPercent(gasPrice, 10),
 		});
 		const srcUrl =
-			chainSelectors[srcChainSelector].urls[Math.floor(Math.random() * chainSelectors[srcChainSelector].urls.length)];
+			chainSelectors[srcChainSelector].urls[
+				Math.floor(Math.random() * chainSelectors[srcChainSelector].urls.length)
+			];
 		const srcChainProvider = new FunctionsJsonRpcProvider(srcUrl);
 		const [srcFeeData, srcPriceFeeds] = await Promise.all([
 			srcChainProvider.getFeeData(),

@@ -71,6 +71,15 @@
 				confirmations: 3n,
 				chainId: '0xa86a',
 			},
+			[`0x${BigInt('3734403246176062136').toString(16)}`]: {
+				urls: [
+					'https://optimism-rpc.publicnode.com',
+					'https://rpc.ankr.com/optimism',
+					'https://optimism.drpc.org',
+				],
+				confirmations: 3n,
+				chainId: '0xa',
+			},
 		};
 		class FunctionsJsonRpcProvider extends ethers.JsonRpcProvider {
 			constructor(url) {

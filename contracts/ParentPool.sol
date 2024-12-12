@@ -119,6 +119,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         return s_loansInUse;
     }
 
+    function getWithdrawalsOnTheWayAmount() external view returns (uint256) {
+        return s_withdrawalsOnTheWayAmount;
+    }
+
     function getDepositsOnTheWay()
         external
         view

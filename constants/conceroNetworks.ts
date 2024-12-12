@@ -29,7 +29,7 @@ export const networkTypes: Record<NetworkType, string> = {
 
 export const networkEnvKeys: Record<string, string> = {
   // mainnets
-  mainnet: "MAINNET",
+  ethereum: "ETHEREUM",
   arbitrum: "ARBITRUM",
   optimism: "OPTIMISM",
   polygon: "POLYGON",

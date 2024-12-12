@@ -8,7 +8,7 @@ export const rpc: Record<string, string> = {
   baseSepolia: `https://base-sepolia.infura.io/v3/${INFURA_API_KEY}`,
   avalanche: `https://avalanche-mainnet.infura.io/v3/${INFURA_API_KEY}`,
   avalancheFuji: `https://avalanche-fuji.infura.io/v3/${INFURA_API_KEY}`,
-  mainnet: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
+  ethereum: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
   sepolia: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
   optimism: `https://optimism-mainnet.infura.io/v3/${INFURA_API_KEY}`,
   optimismSepolia: `https://optimism-sepolia.infura.io/v3/${INFURA_API_KEY}`,

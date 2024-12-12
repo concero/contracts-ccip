@@ -29,7 +29,7 @@ export const networkTypes: Record<NetworkType, string> = {
 
 export const networkEnvKeys: Record<string, string> = {
   // mainnets
-  mainnet: "MAINNET",
+  ethereum: "ETHEREUM",
   arbitrum: "ARBITRUM",
   optimism: "OPTIMISM",
   polygon: "POLYGON",
@@ -216,7 +216,7 @@ export const conceroNetworks: Record<CNetworkNames, CNetwork> = {
     type: networkTypes.testnet,
     saveDeployments,
     chainId: 84532,
-    url: `https://base-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+    url: urls.baseSepolia[0],
     rpcs: urls.baseSepolia,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_BASE_SEPOLIA,

@@ -32,6 +32,7 @@ import updateInfraHashesTask from "./deployInfra/updateInfraHashesTask";
 import { getWithdrawalStatuses } from "./getWithdrawalStatuses";
 import addNewPoolToParentPoolTask from "./pools/addNewPoolToParentPoolTask";
 import addNewPoolToChildPoolTask from "./pools/addNewPoolToChildPoolTask";
+import getPoolBalances from "./pools/getPoolBalances";
 import deployPauseDummy from "./deployPauseDummy";
 
 import populateWithdrawalRequests from "./populateWithdrawalRequests";
@@ -71,4 +72,5 @@ export default {
   deployPauseDummy,
   populateWithdrawalRequests,
   getFailedCCIPTxs,
+  getPoolBalances,
 };

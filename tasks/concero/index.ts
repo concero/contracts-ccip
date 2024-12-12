@@ -34,6 +34,8 @@ import addNewPoolToParentPoolTask from "./pools/addNewPoolToParentPoolTask";
 import addNewPoolToChildPoolTask from "./pools/addNewPoolToChildPoolTask";
 import deployPauseDummy from "./deployPauseDummy";
 
+import populateWithdrawalRequests from "./populateWithdrawalRequests";
+import { getFailedCCIPTxs } from "./getFailedCCIPTxs";
 export default {
   deployConceroDexSwap,
   deployConceroOrchestrator,
@@ -67,4 +69,6 @@ export default {
   addNewPoolToParentPoolTask,
   addNewPoolToChildPoolTask,
   deployPauseDummy,
+  populateWithdrawalRequests,
+  getFailedCCIPTxs,
 };

@@ -47,6 +47,7 @@ error NotOwner();
 error OnlyRouterCanFulfill(address);
 error Unauthorized();
 error NotUsdcToken();
+error DepositDeadlinePassed();
 
 contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolStorage {
     /* TYPE DECLARATIONS */
@@ -128,6 +129,10 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
     function getPendingWithdrawalRequestIds() external view returns (bytes32[] memory) {
         return s_withdrawalRequestIds;
+    }
+
+    function getLiquidityCap() external view returns (uint256) {
+        return s_liquidityCap;
     }
 
     function handleOracleFulfillment(
@@ -245,6 +250,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * @param _usdcAmount amount to be deposited
      */
     function startDeposit(uint256 _usdcAmount) external onlyProxyContext {
+        revert("paused");
         if (_usdcAmount < MIN_DEPOSIT) {
             revert DepositAmountBelowMinimum(MIN_DEPOSIT);
         }
@@ -292,6 +298,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * @param _depositRequestId the ID of the deposit request
      */
     function completeDeposit(bytes32 _depositRequestId) external onlyProxyContext {
+        revert("paused");
         DepositRequest storage request = s_depositRequests[_depositRequestId];
         address lpAddress = request.lpAddress;
         uint256 usdcAmount = request.usdcAmountToDeposit;
@@ -301,7 +308,9 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
         if (msg.sender != lpAddress) {
             revert NotAllowedToCompleteDeposit();
         }
-
+        if (block.timestamp > request.deadline) {
+            revert DepositDeadlinePassed();
+        }
         if (childPoolsLiquiditySnapshot == 0) {
             revert DepositRequestNotReady();
         }
@@ -330,6 +339,7 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * @param _lpAmount the amount of LP tokens to be burnt
      */
     function startWithdrawal(uint256 _lpAmount) external onlyProxyContext {
+        revert("paused");
         if (_lpAmount < 1 ether) revert WithdrawAmountBelowMinimum(1 ether);
         if (s_withdrawalIdByLPAddress[msg.sender] != bytes32(0)) {
             revert WithdrawalRequestAlreadyExists();

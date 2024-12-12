@@ -2,7 +2,7 @@ import { task } from "hardhat/config";
 import { conceroNetworks, ProxyEnum } from "../../../constants";
 import { getEnvAddress, getFallbackClients, log } from "../../../utils";
 
-task("add-new-pool-to-parent-pool", "Add a new pool to the parent pool")
+task("add-new-pool-to-parent-pool", "Add a new pool to the parent pool with rebalancing")
   .addParam("newchain", "", "")
   .setAction(async taskArgs => {
     console.log(`Adding ${taskArgs.newchain} to the parent pool`);

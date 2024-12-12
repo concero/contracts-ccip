@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE, USDC_ARBITRUM, USDC_BASE, USDC_POLYGON, USDC_AVALANCHE} from "./Constants.sol";
+import {CHAIN_SELECTOR_ARBITRUM, CHAIN_SELECTOR_BASE, CHAIN_SELECTOR_OPTIMISM, CHAIN_SELECTOR_POLYGON, CHAIN_SELECTOR_AVALANCHE, CHAIN_SELECTOR_ETHEREUM, USDC_ARBITRUM, USDC_BASE, USDC_POLYGON, USDC_AVALANCHE, USDC_OPTIMISM, USDC_ETHEREUM} from "./Constants.sol";
 import {InfraCommon} from "./InfraCommon.sol";
 import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
@@ -41,7 +41,7 @@ contract InfraOrchestrator is
     using SafeERC20 for IERC20;
 
     /* CONSTANT VARIABLES */
-    uint8 internal constant SUPPORTED_CHAINS_COUNT = 4;
+    uint8 internal constant SUPPORTED_CHAINS_COUNT = 6;
     uint16 internal constant MAX_INTEGRATOR_FEE_BPS = 1000;
     uint16 internal constant CONCERO_FEE_FACTOR = 1000;
     uint16 internal constant BPS_DIVISOR = 10000;
@@ -289,7 +289,9 @@ contract InfraOrchestrator is
                     CHAIN_SELECTOR_ARBITRUM,
                     CHAIN_SELECTOR_BASE,
                     CHAIN_SELECTOR_POLYGON,
-                    CHAIN_SELECTOR_AVALANCHE
+                    CHAIN_SELECTOR_AVALANCHE,
+                    CHAIN_SELECTOR_ETHEREUM,
+                    CHAIN_SELECTOR_OPTIMISM
                 ];
                 for (uint256 j = 0; j < SUPPORTED_CHAINS_COUNT; ++j) {
                     batchedReserves += s_pendingSettlementTxAmountByDstChain[chainSelectors[j]];

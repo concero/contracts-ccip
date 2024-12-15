@@ -5,7 +5,7 @@ import { ConceroChains } from "../types/chains";
 export const liveChains: CNetwork[] = [
   conceroNetworks.baseSepolia,
   conceroNetworks.arbitrumSepolia,
-  conceroNetworks.avalancheFuji,
+  // conceroNetworks.avalancheFuji,
   // conceroNetworks.optimismSepolia,
   // conceroNetworks.polygonAmoy,
 ];
@@ -20,8 +20,21 @@ export const conceroChains: ConceroChains = {
   },
   mainnet: {
     parentPool: [conceroNetworks.base],
-    childPool: [conceroNetworks.polygon, conceroNetworks.arbitrum, conceroNetworks.avalanche],
-    infra: [conceroNetworks.polygon, conceroNetworks.arbitrum, conceroNetworks.avalanche, conceroNetworks.base],
+    childPool: [
+      conceroNetworks.polygon,
+      conceroNetworks.arbitrum,
+      conceroNetworks.avalanche,
+      // conceroNetworks.ethereum,
+      conceroNetworks.optimism,
+    ],
+    infra: [
+      conceroNetworks.polygon,
+      conceroNetworks.arbitrum,
+      conceroNetworks.avalanche,
+      conceroNetworks.base,
+      // conceroNetworks.ethereum,
+      conceroNetworks.optimism,
+    ],
   },
 };
 

@@ -1,6 +1,6 @@
 import { conceroNetworks, ProxyEnum, viemReceiptConfig } from "../../../constants";
 import monitorTokenBalances from "./viewTokenBalances";
-import { formatUnits } from "viem";
+import { formatUnits, parseAbi } from "viem";
 import { getEnvAddress, getFallbackClients, log } from "../../../utils";
 
 async function withdrawTokens(isTestnet: boolean) {
@@ -58,33 +58,32 @@ async function withdrawTokens(isTestnet: boolean) {
       continue;
     }
 
-    // Step 4: Withdraw the tokens
-    for (const token of tokensWithBalance) {
-      const { address, symbol, balance, decimals } = token;
+    const tokenAddresses = tokensWithBalance.map(token => token.address);
+    const { request: withdrawReq } = await publicClient.simulateContract({
+      address: contractAddress,
+      abi,
+      functionName: "withdrawConceroFees",
+      account,
+      args: [account.address, tokenAddresses],
+      chain: viemChain,
+    });
 
-      const amountToWithdraw = BigInt(balance); // Withdrawing the full balance
+    const hash = await walletClient.writeContract(withdrawReq);
+    const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({
+      ...viemReceiptConfig,
+      hash,
+    });
 
-      const { request: withdrawReq } = await publicClient.simulateContract({
-        address: contractAddress,
-        abi,
-        functionName: "withdraw",
-        account,
-        args: [account.address, address, amountToWithdraw],
-        chain: viemChain,
-      });
+    // Log withdrawal results
+    const withdrawnTokens = tokensWithBalance
+      .map(token => `${formatUnits(BigInt(token.balance), token.decimals)} ${token.symbol}`)
+      .join(", ");
 
-      const hash = await walletClient.writeContract(withdrawReq);
-      const { cumulativeGasUsed } = await publicClient.waitForTransactionReceipt({
-        ...viemReceiptConfig,
-        hash,
-      });
-
-      log(
-        `Withdrawn ${formatUnits(amountToWithdraw, decimals)} ${symbol} on ${chainName} (Gas Used: ${cumulativeGasUsed})`,
-        "withdrawToken",
-        chain.name,
-      );
-    }
+    log(
+      `Withdrawn tokens on ${chainName}: ${withdrawnTokens} (Gas Used: ${cumulativeGasUsed})`,
+      "withdrawTokens",
+      chain.name,
+    );
   }
 }
 

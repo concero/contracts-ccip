@@ -1,4 +1,6 @@
 "use strict";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+
 var __importDefault =
   (this && this.__importDefault) ||
   function (mod) {
@@ -12,7 +14,7 @@ const CNetworks_1 = __importDefault(require("../../../../constants/conceroNetwor
   .addParam("subid", "Subscription ID")
   .addParam("newowner", "Address of the new owner")
   .setAction(async taskArgs => {
-    const hre = require("hardhat");
+    const hre: HardhatRuntimeEnvironment = require("hardhat");
     const { name, live } = hre.network;
     if (!CNetworks_1.default[name]) throw new Error(`Chain ${name} not supported`);
     const subscriptionId = parseInt(taskArgs.subid);

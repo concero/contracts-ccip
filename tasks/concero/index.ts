@@ -26,7 +26,17 @@ import decodeCLFFulfill from "./decodeClfFulfill";
 import testScript from "./test";
 import checkRPCStatus from "./checkRPCStatus";
 import { getSwapAndBridgeCost } from "./getSwapAndBridgeCost/getSwapAndBridgeCost";
+import updateParentPoolHashesTask from "./pools/updateParentPoolHashesTask";
+import removeParentPoolChildPoolsTask from "./pools/removeParentPoolChildPoolsTask";
+import updateInfraHashesTask from "./deployInfra/updateInfraHashesTask";
+import { getWithdrawalStatuses } from "./getWithdrawalStatuses";
+import addNewPoolToParentPoolTask from "./pools/addNewPoolToParentPoolTask";
+import addNewPoolToChildPoolTask from "./pools/addNewPoolToChildPoolTask";
+import getPoolBalances from "./pools/getPoolBalances";
+import deployPauseDummy from "./deployPauseDummy";
 
+import populateWithdrawalRequests from "./populateWithdrawalRequests";
+import { getFailedCCIPTxs } from "./getFailedCCIPTxs";
 export default {
   deployConceroDexSwap,
   deployConceroOrchestrator,
@@ -53,4 +63,14 @@ export default {
   removePoolFromPool,
   checkRPCStatus,
   getSwapAndBridgeCost,
+  updateParentPoolHashesTask,
+  removeParentPoolChildPoolsTask,
+  updateInfraHashesTask,
+  getWithdrawalStatuses,
+  addNewPoolToParentPoolTask,
+  addNewPoolToChildPoolTask,
+  deployPauseDummy,
+  populateWithdrawalRequests,
+  getFailedCCIPTxs,
+  getPoolBalances,
 };

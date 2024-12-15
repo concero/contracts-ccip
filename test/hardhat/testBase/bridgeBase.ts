@@ -1,4 +1,5 @@
 import { approve } from "../utils/approve";
+import { zeroAddress } from "viem";
 
 export interface IBridgeBase {
   srcTokenAddress: string;
@@ -20,31 +21,35 @@ export async function bridgeBase({
   publicClient,
 }: IBridgeBase) {
   const { abi: ConceroOrchestratorAbi } = await import(
-    "../../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json"
+    "../../../artifacts/contracts/InfraOrchestrator.sol/InfraOrchestrator.json"
   );
 
   await approve(srcTokenAddress, srcContractAddress, srcTokenAmount, walletClient, publicClient);
 
   const bridgeData = {
-    tokenType: 1n,
-    amount: srcTokenAmount,
     dstChainSelector: BigInt(dstChainSelector),
     receiver: senderAddress,
+    amount: srcTokenAmount,
   };
 
-  const bridgeTx = await walletClient.writeContract({
+  const integration = {
+    integrator: zeroAddress,
+    feeBps: 0n,
+  };
+
+  const bridgeTxHash = await walletClient.writeContract({
     abi: ConceroOrchestratorAbi,
     functionName: "bridge",
     address: srcContractAddress,
-    args: [bridgeData, []],
+    args: [bridgeData, "", integration],
     gas: 4_000_000n,
   });
 
-  const { status } = await publicClient.waitForTransactionReceipt({ hash: bridgeTx });
+  const { status } = await publicClient.waitForTransactionReceipt({ hash: bridgeTxHash });
 
   if (status === "success") {
-    console.log(`Bridge successful`, "bridge", "hash:", bridgeTx);
+    console.log(`Bridge successful`, "bridge", "hash:", bridgeTxHash);
   } else {
-    throw new Error(`Bridge failed. Hash: ${bridgeTx}`);
+    throw new Error(`Bridge failed. Hash: ${bridgeTxHash}`);
   }
 }

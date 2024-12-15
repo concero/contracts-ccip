@@ -40,6 +40,24 @@ contract BridgeCompressionTest is BridgeBaseTest {
                              LIBZIP COMPRESSION TESTS
     //////////////////////////////////////////////////////////////*/
 
+    function test_emptySwapData_validateCompression() public {
+        // empty array, uncompressed: 0x00
+        // empty array, compressed: 0xffff
+        IDexSwap.SwapData[] memory emptySwapData = new IDexSwap.SwapData[](0);
+        //        encodedDstSwapData = _swapDataToBytes(originalSwapData);
+        //        bytes memory customData = abi.encode(uint16(0x11), encodedDstSwapData);
+        bytes memory encodedData = abi.encode(emptySwapData);
+        console.logBytes(encodedData);
+
+        compressedDstSwapData = LibZip.cdCompress(encodedData);
+        console.logBytes(compressedDstSwapData);
+
+        bytes memory uncompressedDstSwapData = LibZip.cdDecompress(compressedDstSwapData);
+        console.logBytes(uncompressedDstSwapData);
+
+        assertEq(encodedData, uncompressedDstSwapData, "Empty array compression failed");
+    }
+
     function test_calldataCompression_validateDecompression() public {
         IDexSwap.SwapData[] memory originalSwapData = _createDstSwapData();
         encodedDstSwapData = _swapDataToBytes(originalSwapData);

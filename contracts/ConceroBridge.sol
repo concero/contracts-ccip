@@ -9,23 +9,22 @@ pragma solidity 0.8.20;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {InfraCCIP} from "./InfraCCIP.sol";
-import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {IConceroBridge} from "./Interfaces/IConceroBridge.sol";
+import {IInfraStorage} from "./Interfaces/IInfraStorage.sol";
 
 /* ERRORS */
 ///@notice error emitted when the input amount is less than the fees
-error InsufficientFees(uint256 amount, uint256 fee);
-///@notice error emitted when a non orchestrator address call startBridge
-error OnlyProxyContext(address caller);
+error InsufficientFees();
 
 contract ConceroBridge is IConceroBridge, InfraCCIP {
     using SafeERC20 for IERC20;
 
     /* CONSTANT VARIABLES */
     uint16 internal constant CONCERO_FEE_FACTOR = 1000;
-    uint64 private constant HALF_DST_GAS = 600_000;
-    uint256 internal constant BATCHED_TX_THRESHOLD = 5_000_000_000;
+    uint64 private constant HALF_DST_GAS = 200_000;
+    uint256 internal constant BATCHED_TX_THRESHOLD = 3_000 * USDC_DECIMALS;
     uint8 internal constant MAX_PENDING_SETTLEMENT_TXS_BY_LANE = 200;
+    //    uint256 public constant CL_FUNCTIONS_GAS_OVERHEAD = 220_500; // unused
 
     constructor(
         FunctionsVariables memory _variables,
@@ -55,66 +54,72 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
     /**
      * @notice Function responsible to trigger CCIP and start the bridging process
      * @param bridgeData The bytes data payload with transaction infos
-     * @param dstSwapData The bytes data payload with destination swap Data
-     * @dev dstSwapData can be empty if there is no swap on destination
+     * @param compressedDstSwapData The bytes data payload with destination swap Data
+     * @dev compressedDstSwapData can be empty if there is no swap on destination
      * @dev this function should only be able to called thought infra Proxy
      */
     function bridge(
         BridgeData memory bridgeData,
-        IDexSwap.SwapData[] memory dstSwapData
+        bytes calldata compressedDstSwapData
     ) external payable {
-        if (address(this) != i_proxy) revert OnlyProxyContext(address(this));
-        uint64 dstChainSelector = bridgeData.dstChainSelector;
-        address fromToken = _getUSDCAddressByChainIndex(bridgeData.tokenType, i_chainIndex);
+        address fromToken = _getUSDCAddressByChainIndex(CCIPToken.usdc, i_chainIndex);
         uint256 totalSrcFee = _convertToUSDCDecimals(
-            _getSrcTotalFeeInUsdc(dstChainSelector, bridgeData.amount)
+            _getSrcTotalFeeInUsdc(bridgeData.dstChainSelector, bridgeData.amount)
         );
 
         if (bridgeData.amount <= totalSrcFee) {
-            revert InsufficientFees(bridgeData.amount, totalSrcFee);
+            revert InsufficientFees();
         }
-
-        bytes32 dstSwapDataHashSum = keccak256(_swapDataToBytes(dstSwapData));
         uint256 amountToSendAfterFees = bridgeData.amount - totalSrcFee;
-        bytes32 bridgeDataHash = keccak256(abi.encode(bridgeData));
+        uint256 batchedTxAmount = s_pendingSettlementTxAmountByDstChain[
+            bridgeData.dstChainSelector
+        ];
+
         bytes32 conceroMessageId = keccak256(
-            abi.encode(bridgeDataHash, dstSwapDataHashSum, block.number)
+            abi.encode(
+                bridgeData.dstChainSelector,
+                i_chainSelector,
+                msg.sender,
+                bridgeData.receiver,
+                amountToSendAfterFees,
+                batchedTxAmount,
+                block.number
+            )
         );
 
-        _addPendingSettlementTx(
+        bytes32 txDataHash = keccak256(
+            abi.encode(
+                conceroMessageId,
+                amountToSendAfterFees,
+                bridgeData.dstChainSelector,
+                bridgeData.receiver,
+                keccak256(compressedDstSwapData)
+            )
+        );
+
+        uint256 newBatchedTxAmount = _addPendingSettlementTx(
             conceroMessageId,
             amountToSendAfterFees,
             bridgeData.receiver,
-            dstChainSelector
+            bridgeData.dstChainSelector
         );
 
-        uint256 batchedTxAmount = s_pendingSettlementTxAmountByDstChain[dstChainSelector];
-
-        _sendUnconfirmedTX(
-            conceroMessageId,
-            msg.sender,
-            dstChainSelector,
-            bridgeData.receiver,
-            bridgeData.tokenType,
-            amountToSendAfterFees,
-            dstSwapData
-        );
+        _sendUnconfirmedTX(conceroMessageId, bridgeData.dstChainSelector, txDataHash);
 
         if (
-            batchedTxAmount >= BATCHED_TX_THRESHOLD ||
-            s_pendingSettlementIdsByDstChain[dstChainSelector].length >=
+            newBatchedTxAmount >= BATCHED_TX_THRESHOLD ||
+            s_pendingSettlementIdsByDstChain[bridgeData.dstChainSelector].length >=
             MAX_PENDING_SETTLEMENT_TXS_BY_LANE
         ) {
-            _sendBatchViaSettlement(fromToken, batchedTxAmount, dstChainSelector);
+            _sendBatchViaSettlement(fromToken, newBatchedTxAmount, bridgeData.dstChainSelector);
         }
 
         emit ConceroBridgeSent(
             conceroMessageId,
-            bridgeData.tokenType,
             amountToSendAfterFees,
-            dstChainSelector,
+            bridgeData.dstChainSelector,
             bridgeData.receiver,
-            dstSwapDataHashSum
+            compressedDstSwapData
         );
     }
 
@@ -123,12 +128,12 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         uint256 amountToSendAfterFees,
         address receiver,
         uint64 dstChainSelector
-    ) internal {
+    ) internal returns (uint256 newAmount) {
         SettlementTx memory bridgeTx = SettlementTx(amountToSendAfterFees, receiver);
 
         s_pendingSettlementIdsByDstChain[dstChainSelector].push(conceroMessageId);
         s_pendingSettlementTxsById[conceroMessageId] = bridgeTx;
-        s_pendingSettlementTxAmountByDstChain[dstChainSelector] += amountToSendAfterFees;
+        return s_pendingSettlementTxAmountByDstChain[dstChainSelector] += amountToSendAfterFees;
     }
 
     /* VIEW & PURE FUNCTIONS */
@@ -136,22 +141,22 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
      * @notice Function to get the total amount of fees charged by Chainlink functions in Link
      * @param dstChainSelector the destination blockchain chain selector
      */
-    function getFunctionsFeeInLink(uint64 dstChainSelector) public view returns (uint256) {
-        uint256 srcGasPrice = s_lastGasPrices[i_chainSelector];
-        uint256 dstGasPrice = s_lastGasPrices[dstChainSelector];
-        uint256 srcClFeeInLink = clfPremiumFees[i_chainSelector] +
-            (srcGasPrice *
-                (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT) *
-                s_latestLinkNativeRate) /
-            1e18;
-
-        uint256 dstClFeeInLink = clfPremiumFees[dstChainSelector] +
-            ((dstGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT)) *
-                s_latestLinkNativeRate) /
-            1e18;
-
-        return srcClFeeInLink + dstClFeeInLink;
-    }
+    //    function getFunctionsFeeInLink(uint64 dstChainSelector) public view returns (uint256) {
+    //        uint256 srcGasPrice = s_lastGasPrices[i_chainSelector];
+    //        uint256 dstGasPrice = s_lastGasPrices[dstChainSelector];
+    //        uint256 srcClFeeInLink = clfPremiumFees[i_chainSelector] +
+    //            (srcGasPrice *
+    //                (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_SRC_CALLBACK_GAS_LIMIT) *
+    //                s_latestLinkNativeRate) /
+    //            1e18;
+    //
+    //        uint256 dstClFeeInLink = clfPremiumFees[dstChainSelector] +
+    //            ((dstGasPrice * (CL_FUNCTIONS_GAS_OVERHEAD + CL_FUNCTIONS_DST_CALLBACK_GAS_LIMIT)) *
+    //                s_latestLinkNativeRate) /
+    //            1e18;
+    //
+    //        return srcClFeeInLink + dstClFeeInLink;
+    //    }
 
     /**
      * @notice Function to get the total amount of fees charged by Chainlink functions in USDC
@@ -160,16 +165,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
     function getFunctionsFeeInUsdc(uint64 dstChainSelector) public view returns (uint256) {
         //    uint256 functionsFeeInLink = getFunctionsFeeInLink(dstChainSelector);
         //    return (functionsFeeInLink * s_latestLinkUsdcRate) / STANDARD_TOKEN_DECIMALS;
-
         return clfPremiumFees[dstChainSelector] + clfPremiumFees[i_chainSelector];
-    }
-
-    /**
-     * @notice Function to get the total amount of CCIP fees in Link
-     * @param _dstChainSelector the destination blockchain chain selector
-     */
-    function getCCIPFeeInLink(uint64 _dstChainSelector) public view returns (uint256) {
-        return s_lastCCIPFeeInLink[_dstChainSelector];
     }
 
     /**
@@ -177,7 +173,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
      * @param _dstChainSelector the destination blockchain chain selector
      */
     function getCCIPFeeInUsdc(uint64 _dstChainSelector) public view returns (uint256) {
-        uint256 ccipFeeInLink = getCCIPFeeInLink(_dstChainSelector);
+        uint256 ccipFeeInLink = s_lastCCIPFeeInLink[_dstChainSelector];
         return (ccipFeeInLink * uint256(s_latestLinkUsdcRate)) / STANDARD_TOKEN_DECIMALS;
     }
 
@@ -195,21 +191,18 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
         uint256 batchedTxAmount,
         uint64 dstChainSelector
     ) internal {
-        bytes32[] memory pendingCCIPTransactionsByDstChain = s_pendingSettlementIdsByDstChain[
-            dstChainSelector
-        ];
+        bytes32[] memory pendingTxs = s_pendingSettlementIdsByDstChain[dstChainSelector];
+        uint256 pendingTxsLength = pendingTxs.length;
 
-        CcipSettlementTx[] memory ccipSettlementTxs = new CcipSettlementTx[](
-            pendingCCIPTransactionsByDstChain.length
-        );
+        CcipSettlementTx[] memory ccipSettlementTxs = new CcipSettlementTx[](pendingTxsLength);
 
-        for (uint256 i; i < pendingCCIPTransactionsByDstChain.length; ++i) {
-            bytes32 txId = pendingCCIPTransactionsByDstChain[i];
-            SettlementTx memory pendingSettlementTx = s_pendingSettlementTxsById[txId];
+        for (uint256 i; i < pendingTxsLength; ++i) {
+            bytes32 txId = pendingTxs[i];
+
             ccipSettlementTxs[i] = CcipSettlementTx(
                 txId,
-                pendingSettlementTx.amount,
-                pendingSettlementTx.recipient
+                s_pendingSettlementTxsById[txId].amount,
+                s_pendingSettlementTxsById[txId].recipient
             );
         }
 
@@ -253,7 +246,7 @@ contract ConceroBridge is IConceroBridge, InfraCCIP {
 
     /**
      * @notice Function to calculate the proportional CCIP fee based on the amount
-     * @param ccipFeeInUsdc the total CCIP fee for a full batch (5000 USDC)
+     * @param ccipFeeInUsdc the total CCIP fee for a full batch
      * @param amount the amount of USDC being transferred
      */
     function _calculateProportionalCCIPFee(

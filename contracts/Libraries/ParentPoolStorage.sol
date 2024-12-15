@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {IParentPool} from "contracts/Interfaces/IParentPool.sol";
+import {IParentPool} from "../Interfaces/IParentPool.sol";
 
 contract ParentPoolStorage {
     /* STATE VARIABLES */
@@ -11,6 +11,7 @@ contract ParentPoolStorage {
     ///@notice variable to store the amount that will be temporary used by Chainlink Functions
     uint256 public s_loansInUse;
     ///@notice variable to store the Chainlink Function DON Slot ID
+    //TODO: these two need to be moved to immutable and deprecated.
     uint8 internal s_donHostedSecretsSlotId;
     ///@notice variable to store the Chainlink Function DON Secret Version
     uint64 internal s_donHostedSecretsVersion;
@@ -42,7 +43,7 @@ contract ParentPoolStorage {
 
     ///@notice Mapping to keep track of allowed pool senders
     mapping(uint64 chainSelector => mapping(address poolAddress => bool))
-        public s_contractsToReceiveFrom;
+        public s_isSenderContractAllowed;
 
     ///@notice Mapping to keep track of Liquidity Providers withdraw requests
     mapping(bytes32 => bool) public s_distributeLiquidityRequestProcessed;
@@ -61,8 +62,8 @@ contract ParentPoolStorage {
 
     IParentPool.DepositOnTheWay[150] internal s_depositsOnTheWayArray;
 
+    //TODO: these two need to be moved to immutable and deprecated.
     bytes32 internal s_collectLiquidityJsCodeHashSum;
-
     bytes32 internal s_distributeLiquidityJsCodeHashSum;
 
     ///@notice array to store the withdraw requests of users

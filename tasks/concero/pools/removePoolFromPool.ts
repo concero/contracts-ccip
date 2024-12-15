@@ -1,13 +1,14 @@
 import { compileContracts, getClients, getEnvAddress, getEnvVar } from "../../../utils";
 import { conceroNetworks, networkEnvKeys, ProxyEnum } from "../../../constants";
 import { task } from "hardhat/config";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 task("remove-pool-from-pool", "Deploy the CCIP infrastructure")
   .addParam("pooltoremovechain", "Deploy the proxy")
   .setAction(async taskArgs => {
     compileContracts({ quiet: true });
 
-    const hre = require("hardhat");
+    const hre: HardhatRuntimeEnvironment = require("hardhat");
     const { live, name } = hre.network;
     const poolToRemoveNetworkName = taskArgs.pooltoremovechain;
     const [poolToRemoveFromAddress] = getEnvAddress(ProxyEnum.parentPoolProxy, name);

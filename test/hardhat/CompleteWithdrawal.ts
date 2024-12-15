@@ -1,4 +1,3 @@
-import { Concero } from "../typechain-types";
 import "@nomicfoundation/hardhat-chai-matchers";
 import { WalletClient } from "viem/clients/createWalletClient";
 import { HttpTransport } from "viem/clients/transports/http";
@@ -18,8 +17,7 @@ const lpTokenAddress = process.env.LPTOKEN_BASE_SEPOLIA as Address;
 const poolAddress = process.env.PARENT_POOL_PROXY_BASE_SEPOLIA as Address;
 
 describe("complete withdraw usdc from pool\n", async () => {
-  let Concero: Concero;
-  const { abi: ParentPoolAbi } = await import("../artifacts/contracts/ParentPool.sol/ParentPool.json");
+  const { abi: ParentPoolAbi } = await import("../../artifacts/contracts/ParentPool.sol/ParentPool.json");
 
   let srcPublicClient: PublicClient<HttpTransport, Chain, Account, RpcSchema> = createPublicClient({
     chain: chainsMap[srcChainSelector].viemChain,

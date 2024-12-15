@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {IDexSwap} from "./IDexSwap.sol";
 import {IInfraStorage} from "./IInfraStorage.sol";
 
 interface IInfraOrchestrator {
@@ -13,11 +12,8 @@ interface IInfraOrchestrator {
     event IntegratorFeesCollected(address indexed integrator, address token, uint256 amount);
     event IntegratorFeesWithdrawn(address indexed integrator, address token, uint256 amount);
 
-    function getTransaction(
-        bytes32 _conceroBridgeTxId
-    ) external view returns (IInfraStorage.Transaction memory transaction);
-
-    function isTxConfirmed(bytes32 _txId) external view returns (bool);
+    function isTxConfirmed(bytes32 _conceroMessageId) external view returns (bool);
+    function confirmTx(bytes32 _conceroMessageId) external;
 }
 
 interface IOrchestratorViewDelegate {

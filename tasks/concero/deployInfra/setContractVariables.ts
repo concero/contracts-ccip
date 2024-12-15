@@ -1,4 +1,4 @@
-import { CNetwork, CNetworkNames } from "../../../types/CNetwork";
+import { CNetwork } from "../../../types/CNetwork";
 import {
   err,
   formatGas,
@@ -13,8 +13,10 @@ import {
 import { SecretsManager } from "@chainlink/functions-toolkit";
 
 import {
-  conceroNetworks,
+  clfFees,
   conceroChains,
+  conceroNetworks,
+  defaultCLFfee,
   mainnetChains,
   networkEnvKeys,
   networkTypes,
@@ -160,7 +162,7 @@ export async function setDonHostedSecretsVersion(deployableChain: CNetwork, slot
   }
 }
 
-async function setJsHashes(deployableChain: CNetwork, abi: any) {
+export async function setJsHashes(deployableChain: CNetwork, abi: any) {
   try {
     const { viemChain, name } = deployableChain;
     const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
@@ -296,14 +298,6 @@ export async function setDexSwapAllowedRouters(deployableChain: CNetwork, abi: a
 }
 
 export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: any) {
-  const defaultFee = 20000000000000000n;
-  const fees: Record<CNetworkNames, bigint> = {
-    polygon: 33131965864723535n,
-    arbitrum: 20000000000000000n,
-    base: 60000000000000000n,
-    avalanche: 240000000000000000n,
-  };
-
   const { viemChain: dcViemChain, name: dcName, type } = deployableChain;
   const [conceroProxy, conceroProxyAlias] = getEnvAddress(ProxyEnum.infraProxy, dcName);
   const { walletClient, publicClient, account } = getFallbackClients(deployableChain);
@@ -312,7 +306,7 @@ export async function setFunctionsPremiumFees(deployableChain: CNetwork, abi: an
 
   for (const chain of chainsToSet) {
     try {
-      const feeToSet = fees[dcName] ?? defaultFee;
+      const feeToSet = clfFees[dcName] ?? defaultCLFfee;
       const { request: setFunctionsPremiumFeesReq } = await publicClient.simulateContract({
         address: conceroProxy,
         abi,
@@ -344,11 +338,11 @@ export async function setContractVariables(deployableChains: CNetwork[], slotId:
 
   for (const deployableChain of deployableChains) {
     if (deployableChain.type === networkTypes.mainnet) await setDexSwapAllowedRouters(deployableChain, abi); // once
-    await setDstConceroPools(deployableChain, abi); // once
 
     await setDonHostedSecretsVersion(deployableChain, slotId, abi);
     await setDonSecretsSlotId(deployableChain, slotId, abi);
 
+    await setDstConceroPools(deployableChain, abi); // once
     await setFunctionsPremiumFees(deployableChain, abi);
     await setJsHashes(deployableChain, abi);
   }

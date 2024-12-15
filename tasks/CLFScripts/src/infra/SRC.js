@@ -6,82 +6,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 /*BUILD_REMOVES_EVERYTHING_ABOVE_THIS_LINE*/
 
 (async () => {
-	/* SOLADY BEGIN */
-	function hexString(data) {
-		if (typeof data === 'string' || data instanceof String) {
-			if ((data = data.match(/^[\s\uFEFF\xA0]*(0[Xx])?([0-9A-Fa-f]*)[\s\uFEFF\xA0]*$/))) {
-				if (data[2].length % 2) {
-					throw new Error('Hex string length must be a multiple of 2.');
-				}
-				return data[2];
-			}
-		}
-		throw new Error('Data must be a hex string.');
-	}
-
-	function byteToString(b) {
-		return (b | 0x100).toString(16).slice(1);
-	}
-
-	function parseByte(data, i) {
-		return parseInt(data.substr(i, 2), 16);
-	}
-
-	function cdCompress(data) {
-		data = hexString(data);
-		var o = '0x',
-			z = 0,
-			y = 0,
-			i = 0,
-			c;
-
-		function pushByte(b) {
-			o += byteToString(((o.length < 4 * 2 + 2) * 0xff) ^ b);
-		}
-
-		function rle(v, d) {
-			pushByte(0x00);
-			pushByte(d - 1 + v * 0x80);
-		}
-
-		for (; i < data.length; i += 2) {
-			c = parseByte(data, i);
-			if (!c) {
-				if (y) rle(1, y), (y = 0);
-				if (++z === 0x80) rle(0, 0x80), (z = 0);
-				continue;
-			}
-			if (c === 0xff) {
-				if (z) rle(0, z), (z = 0);
-				if (++y === 0x20) rle(1, 0x20), (y = 0);
-				continue;
-			}
-			if (y) rle(1, y), (y = 0);
-			if (z) rle(0, z), (z = 0);
-			pushByte(c);
-		}
-		if (y) rle(1, y), (y = 0);
-		if (z) rle(0, z), (z = 0);
-		return o;
-	}
-	/* SOLADY END */
-
-	console.log('SRC');
-	const [
-		_,
-		__,
-		___,
-		dstContractAddress,
-		ccipMessageId,
-		sender,
-		recipient,
-		amount,
-		srcChainSelector,
-		dstChainSelector,
-		token,
-		blockNumber,
-		dstSwapData,
-	] = bytesArgs;
+	const [_, __, ___, dstContractAddress, conceroMessageId, srcChainSelector, dstChainSelector, txDataHash] = bytesArgs;
 	const chainSelectors = {
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
@@ -97,11 +22,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}').toString(16)}`]: {
-			urls: [
-				`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://ethereum-sepolia-rpc.publicnode.com',
-				'https://ethereum-sepolia.blockpi.network/v1/rpc/public',
-			],
+			urls: [`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://ethereum-sepolia-rpc.publicnode.com'],
 			chainId: '0xaa36a7',
 			nativeCurrency: 'eth',
 			priceFeed: {
@@ -114,7 +35,6 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
 			urls: [
 				`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
 				'https://arbitrum-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x66eee',
@@ -129,7 +49,6 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`]: {
 			urls: [
 				`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-				'https://base-sepolia.blockpi.network/v1/rpc/public',
 				'https://base-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0x14a34',
@@ -139,14 +58,13 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 				usdcUsd: '${USDC_USD_PRICEFEED_BASE_SEPOLIA}',
 				nativeUsd: '${NATIVE_USD_PRICEFEED_BASE_SEPOLIA}',
 				linkNative: '${LINK_NATIVE_PRICEFEED_BASE_SEPOLIA}',
-				maticUsd: '${MATIC_USD_PRICEFEED_BASE}',
-				avaxUsd: '${AVAX_USD_PRICEFEED_BASE}',
+				// maticUsd: '${MATIC_USD_PRICEFEED_BASE}',
+				// avaxUsd: '${AVAX_USD_PRICEFEED_BASE}',
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
 			urls: [
 				`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://optimism-sepolia.blockpi.network/v1/rpc/public',
 				'https://optimism-sepolia-rpc.publicnode.com',
 			],
 			chainId: '0xaa37dc',
@@ -159,11 +77,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 			},
 		},
 		[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_POLYGON_AMOY}').toString(16)}`]: {
-			urls: [
-				`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`,
-				'https://polygon-amoy.blockpi.network/v1/rpc/public',
-				'https://polygon-amoy-bor-rpc.publicnode.com',
-			],
+			urls: [`https://polygon-amoy.infura.io/v3/${secrets.INFURA_API_KEY}`, 'https://polygon-amoy-bor-rpc.publicnode.com'],
 			chainId: '0x13882',
 			nativeCurrency: 'matic',
 			priceFeed: {
@@ -233,6 +147,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 	const getPercent = (value, percent) => (BigInt(value) * BigInt(percent)) / 100n;
 	const getPriceRates = async (provider, chainSelector) => {
 		const priceFeedsAbi = ['function latestRoundData() external view returns (uint80, int256, uint256, uint256, uint80)'];
+
 		const linkUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.linkUsd, priceFeedsAbi, provider);
 		const usdcUsdContract = new ethers.Contract(chainSelectors[chainSelector].priceFeed.usdcUsd, priceFeedsAbi, provider);
 		const nativeUsdContract = new ethers.Contract(
@@ -245,6 +160,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 			priceFeedsAbi,
 			provider,
 		);
+
 		const promises = [
 			linkUsdContract.latestRoundData(),
 			usdcUsdContract.latestRoundData(),
@@ -315,6 +231,8 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 			if (dstAssetUsdPriceFeed === undefined) return 1n;
 
 			const srcNativeDstNativeRate = nativeUsdPriceFeed / dstAssetUsdPriceFeed;
+			if (srcNativeDstNativeRate === 0n) return 1n;
+
 			const dstGasPriceInSrcCurrency = gasPriceInDstCurrency / srcNativeDstNativeRate;
 
 			return dstGasPriceInSrcCurrency < 1n ? 1n : dstGasPriceInSrcCurrency;
@@ -335,23 +253,11 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 	let gasPrice;
 	// let maxPriorityFeePerGas;
 
-	const compressedDstSwapData = cdCompress(dstSwapData);
-
 	const sendTransaction = async (contract, signer, txOptions) => {
 		try {
-			if ((await contract.s_transactions(ccipMessageId))[1] !== '0x0000000000000000000000000000000000000000') return;
+			if ((await contract.s_transactions(conceroMessageId))[0] !== ethers.ZeroHash) return;
 
-			await contract.addUnconfirmedTX(
-				ccipMessageId,
-				sender,
-				recipient,
-				amount,
-				srcChainSelector,
-				token,
-				blockNumber,
-				compressedDstSwapData,
-				txOptions,
-			);
+			await contract.addUnconfirmedTX(conceroMessageId, srcChainSelector, txDataHash, txOptions);
 		} catch (err) {
 			const {message, code} = err;
 			if (retries >= 5) {
@@ -404,7 +310,7 @@ numAllowedQueries: 2 – a minimum to initialise Viem.
 		const wallet = new ethers.Wallet('0x' + secrets.MESSENGER_0_PRIVATE_KEY, provider);
 		const signer = wallet.connect(provider);
 		const abi = [
-			'function addUnconfirmedTX(bytes32, address, address, uint256, uint64, uint8, uint256, bytes) external',
+			'function addUnconfirmedTX(bytes32, uint64, bytes32) external',
 			'function s_transactions(bytes32) view returns (bytes32, address, address, uint256, uint8, uint64, bool, bytes)',
 		];
 		const contract = new ethers.Contract(dstContractAddress, abi, signer);

@@ -56,7 +56,7 @@ const deployParentPoolCLFCLA: (hre: HardhatRuntimeEnvironment, constructorArgs?:
       ],
       log: true,
       autoMine: true,
-      gasPrice,
+      gasPrice: gasPrice,
     })) as Deployment;
 
     if (live) {

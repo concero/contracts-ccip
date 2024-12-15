@@ -7,14 +7,19 @@ import {
   shorten,
 } from "../../../utils";
 import { mainnetChains, networkTypes, ProxyEnum, testnetChains, viemReceiptConfig } from "../../../constants";
-import { collectLiquidityCodeUrl, ethersV6CodeUrl, parentPoolJsCodeUrl } from "../../../constants/functionsJsCodeUrls";
+import {
+  collectLiquidityCodeUrl,
+  ethersV6CodeUrl,
+  parentPoolJsCodeUrl,
+  parentPoolRedistributeLiqJsCodeUrl,
+} from "../../../constants/functionsJsCodeUrls";
 import { Address } from "viem";
 import log, { err } from "../../../utils/log";
 import getHashSum from "../../../utils/getHashSum";
 
 import { SecretsManager } from "@chainlink/functions-toolkit";
 
-async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
+export async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
   const { viemChain, name } = chain;
   try {
     const { walletClient, publicClient, account } = getFallbackClients(chain);
@@ -22,9 +27,9 @@ async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
     const parentPoolJsCode = await (await fetch(parentPoolJsCodeUrl)).text();
     const ethersCode = await (await fetch(ethersV6CodeUrl)).text();
     const collectLiquidityCode = await (await fetch(collectLiquidityCodeUrl)).text();
+    const redistributePoolsLiqCode = await (await fetch(parentPoolRedistributeLiqJsCodeUrl)).text();
 
     const setHash = async (hash: string, functionName: string) => {
-      console.log("functionName:", functionName, hash);
       const setJsHashTxHash = await walletClient.writeContract({
         address: parentPoolProxy,
         abi,
@@ -44,6 +49,8 @@ async function setParentPoolJsHashes(chain: CNetwork, abi: any) {
 
     await setHash(getHashSum(parentPoolJsCode), "setGetBalanceJsCodeHashSum");
     await setHash(getHashSum(collectLiquidityCode), "setCollectLiquidityJsCodeHashSum");
+    await setHash(getHashSum(redistributePoolsLiqCode), "setRedistributeLiquidityJsCodeHashSum");
+
     await setHash(getHashSum(ethersCode), "setEthersHashSum");
   } catch (error) {
     err(`${error?.message}`, "setHashSum", name);

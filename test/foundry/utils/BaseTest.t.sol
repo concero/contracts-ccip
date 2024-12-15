@@ -16,6 +16,7 @@ import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interface
 //import {Register} from "../../../lib/chainlink-local/src/ccip/Register.sol";
 import {ConceroBridge} from "contracts/ConceroBridge.sol";
 import {InfraOrchestrator} from "contracts/InfraOrchestrator.sol";
+import {InfraStorageSetters} from "contracts/Libraries/InfraStorageSetters.sol";
 import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 //import {IOwner} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IOwner.sol";
 import {DexSwap} from "contracts/DexSwap.sol";
@@ -194,7 +195,7 @@ contract BaseTest is Test {
         vm.stopPrank();
     }
 
-    function _deployChildPools() public {
+    function _deployChildPoolsAndSetToParentPool() public {
         (arbitrumChildProxy, arbitrumChildImplementation) = _deployChildPool(
             vm.envAddress("CONCERO_INFRA_PROXY_ARBITRUM"),
             vm.envAddress("LINK_ARBITRUM"),
@@ -290,7 +291,7 @@ contract BaseTest is Test {
     }
 
     function _setParentPoolVars() public {
-        _deployChildPools();
+        _deployChildPoolsAndSetToParentPool();
 
         vm.prank(deployer);
         IParentPool(address(parentPoolProxy)).setConceroContractSender(
@@ -716,16 +717,14 @@ contract BaseTest is Test {
 	   //////////////////////////////////////////////////////////////*/
 
     function _setChildPoolForParentPool(uint64 chainSelector, address childPool) internal {
-        vm.prank(deployer);
-        (bool success, bytes memory data) = address(parentPoolProxy).call(
-            abi.encodeWithSignature(
-                "setPools(uint64,address,bool)",
-                chainSelector,
-                childPool,
-                false
-            )
+        vm.startPrank(deployer);
+        ParentPool(payable(parentPoolProxy)).setPools(chainSelector, childPool, true);
+        ParentPool(payable(parentPoolProxy)).setConceroContractSender(
+            chainSelector,
+            childPool,
+            true
         );
-        require(success, string(data));
+        vm.stopPrank();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -744,6 +743,16 @@ contract BaseTest is Test {
         );
         require(success, string(data));
     }
+
+    function _setInfraClfPremiumFeeByChainSelector(
+        address target,
+        uint64 chainSelector,
+        uint256 feeAmount
+    ) internal {
+        vm.prank(deployer);
+        InfraStorageSetters(target).setClfPremiumFees(chainSelector, feeAmount);
+    }
+
 
     /*//////////////////////////////////////////////////////////////
                                 DEXSWAP

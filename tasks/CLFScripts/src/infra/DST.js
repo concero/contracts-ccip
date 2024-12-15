@@ -1,8 +1,28 @@
 (async () => {
 	try {
 		const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-		const [_, __, ___, srcContractAddress, srcChainSelector, txBlockNumber, ...eventArgs] = bytesArgs;
-		const messageId = eventArgs[0];
+
+		const constructResult = (receiver, amount, compressedDstSwapData) => {
+			const encodedReceiver = Functions.encodeUint256(BigInt(receiver));
+			const encodedAmount = Functions.encodeUint256(BigInt(amount));
+			const encodedCompressedData = ethers.getBytes(compressedDstSwapData);
+
+			const totalLength = encodedReceiver.length + encodedAmount.length + encodedCompressedData.length;
+			const result = new Uint8Array(totalLength);
+
+			let offset = 0;
+			result.set(encodedReceiver, offset);
+			offset += encodedReceiver.length;
+
+			result.set(encodedAmount, offset);
+			offset += encodedAmount.length;
+
+			result.set(encodedCompressedData, offset);
+			return result;
+		};
+
+		const [_, __, ___, srcContractAddress, srcChainSelector, conceroMessageId, txDataHash] = bytesArgs;
+
 		const chainMap = {
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_FUJI}').toString(16)}`]: {
 				urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
@@ -10,38 +30,22 @@
 				chainId: '0xa869',
 			},
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_SEPOLIA}').toString(16)}`]: {
-				urls: [
-					`https://sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://ethereum-sepolia-rpc.publicnode.com',
-					'https://ethereum-sepolia.blockpi.network/v1/rpc/public',
-				],
+				urls: ['https://ethereum-sepolia-rpc.publicnode.com'],
 				confirmations: 3n,
 				chainId: '0xaa36a7',
 			},
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}').toString(16)}`]: {
-				urls: [
-					`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://arbitrum-sepolia.blockpi.network/v1/rpc/public',
-					'https://arbitrum-sepolia-rpc.publicnode.com',
-				],
+				urls: ['https://arbitrum-sepolia-rpc.publicnode.com'],
 				confirmations: 3n,
 				chainId: '0x66eee',
 			},
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}').toString(16)}`]: {
-				urls: [
-					`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`,
-					'https://base-sepolia.blockpi.network/v1/rpc/public',
-					'https://base-sepolia-rpc.publicnode.com',
-				],
+				urls: ['https://base-sepolia-rpc.publicnode.com'],
 				confirmations: 3n,
 				chainId: '0x14a34',
 			},
 			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM_SEPOLIA}').toString(16)}`]: {
-				urls: [
-					`https://optimism-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`,
-					'https://optimism-sepolia.blockpi.network/v1/rpc/public',
-					'https://optimism-sepolia-rpc.publicnode.com',
-				],
+				urls: ['https://optimism-sepolia-rpc.publicnode.com'],
 				confirmations: 3n,
 				chainId: '0xaa37dc',
 			},
@@ -100,6 +104,9 @@
 				return result;
 			}
 		}
+		const abi = ['event ConceroBridgeSent(bytes32 indexed, uint256, uint64, address, bytes)'];
+		const ethersId = ethers.id('ConceroBridgeSent(bytes32,uint256,uint64,address,bytes)');
+		const contract = new ethers.Interface(abi);
 
 		const fallBackProviders = chainMap[srcChainSelector].urls.map(url => {
 			return {
@@ -113,19 +120,9 @@
 		const provider = new ethers.FallbackProvider(fallBackProviders, null, {quorum: 1});
 		let latestBlockNumber = BigInt(await provider.getBlockNumber());
 
-		while (latestBlockNumber - BigInt(txBlockNumber) < chainMap[srcChainSelector].confirmations) {
-			latestBlockNumber = BigInt(await provider.getBlockNumber());
-			await sleep(5000);
-		}
-
-		if (latestBlockNumber - BigInt(txBlockNumber) < chainMap[srcChainSelector].confirmations) {
-			throw new Error('Not enough confirmations');
-		}
-
-		const ethersId = ethers.id('ConceroBridgeSent(bytes32,uint8,uint256,uint64,address,bytes32)');
 		const logs = await provider.getLogs({
 			address: srcContractAddress,
-			topics: [ethersId, messageId],
+			topics: [ethersId, conceroMessageId],
 			fromBlock: latestBlockNumber - 1000n,
 			toBlock: latestBlockNumber,
 		});
@@ -135,21 +132,44 @@
 		}
 
 		const log = logs[0];
-		const abi = ['event ConceroBridgeSent(bytes32 indexed, uint8, uint256, uint64, address, bytes32)'];
-		const contract = new ethers.Interface(abi);
+		const logBlockNumber = BigInt(log.blockNumber);
+
+		while (latestBlockNumber - logBlockNumber < chainMap[srcChainSelector].confirmations) {
+			await sleep(5000);
+			latestBlockNumber = BigInt(await provider.getBlockNumber());
+		}
+
+		const newLogs = await provider.getLogs({
+			address: srcContractAddress,
+			topics: [ethersId, conceroMessageId],
+			fromBlock: logBlockNumber,
+			toBlock: latestBlockNumber,
+		});
+
+		if (!newLogs.some(l => l.transactionHash === log.transactionHash)) {
+			throw new Error('Log no longer exists.');
+		}
+
 		const logData = {
 			topics: [ethersId, log.topics[1]],
 			data: log.data,
 		};
-		const decodedLog = contract.parseLog(logData);
 
-		for (let i = 0; i < decodedLog.length; i++) {
-			if (decodedLog.args[i].toString().toLowerCase() !== eventArgs[i].toString().toLowerCase()) {
-				throw new Error('Message ID does not match the event log');
-			}
+		const decodedLog = contract.parseLog(logData);
+		const amount = decodedLog.args[1];
+		const receiver = decodedLog.args[3];
+		const compressedDstSwapData = decodedLog.args[4];
+		const eventHashData = new ethers.AbiCoder().encode(
+			['bytes32', 'uint256', 'uint64', 'address', 'bytes32'],
+			[decodedLog.args[0], amount, decodedLog.args[2], receiver, ethers.keccak256(compressedDstSwapData)],
+		);
+
+		const recomputedTxDataHash = ethers.keccak256(eventHashData);
+		if (recomputedTxDataHash.toLowerCase() !== txDataHash.toLowerCase()) {
+			throw new Error('TxDataHash mismatch');
 		}
 
-		return Functions.encodeUint256(BigInt(messageId));
+		return constructResult(receiver, amount, compressedDstSwapData);
 	} catch (error) {
 		throw new Error(error.message.slice(0, 255));
 	}

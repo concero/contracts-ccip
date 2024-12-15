@@ -2,8 +2,6 @@
 pragma solidity 0.8.20;
 
 import {IPool} from "./IPool.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IInfraStorage} from "./IInfraStorage.sol";
 import {ICCIP} from "./ICCIP.sol";
 
 interface IParentPool is IPool {
@@ -69,13 +67,9 @@ interface IParentPool is IPool {
 
     /* EVENTS */
 
+    event FailedExecutionLayerTxSettled(bytes32 indexed conceroMessageId);
     ///@notice event emitted when a new withdraw request is made
-    event WithdrawalRequestInitiated(
-        bytes32 indexed requestId,
-        address caller,
-        IERC20 token,
-        uint256 deadline
-    );
+    event WithdrawalRequestInitiated(bytes32 indexed requestId, address caller);
     ///@notice event emitted when a value is withdraw from the contract
     event WithdrawalCompleted(
         bytes32 indexed requestId,
@@ -119,8 +113,7 @@ interface IParentPool is IPool {
     function distributeLiquidity(
         uint64 _chainSelector,
         uint256 _amountToSend,
-        bytes32 distributeLiquidityRequestId,
-        ICCIP.CcipTxType _ccipTxType
+        bytes32 distributeLiquidityRequestId
     ) external;
     function setPools(
         uint64 _chainSelector,

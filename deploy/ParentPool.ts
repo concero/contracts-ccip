@@ -68,7 +68,7 @@ const deployParentPool: (hre: HardhatRuntimeEnvironment, constructorArgs?: Const
       ],
       log: true,
       autoMine: true,
-      gasPrice,
+      gasPrice: gasPrice,
     })) as Deployment;
 
     if (live) {

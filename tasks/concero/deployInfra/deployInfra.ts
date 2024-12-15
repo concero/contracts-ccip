@@ -1,5 +1,5 @@
 import { task, types } from "hardhat/config";
-import { conceroChains, networkTypes, ProxyEnum, conceroNetworks } from "../../../constants";
+import { conceroChains, conceroNetworks, networkTypes, ProxyEnum } from "../../../constants";
 import { setConceroProxyDstContracts, setContractVariables } from "./setContractVariables";
 import { CNetwork } from "../../../types/CNetwork";
 import uploadDonSecrets from "../../CLF/donSecrets/upload";
@@ -12,7 +12,8 @@ import deployProxyAdmin from "../../../deploy/ConceroProxyAdmin";
 import deployTransparentProxy from "../../../deploy/TransparentProxy";
 import { upgradeProxyImplementation } from "../upgradeProxyImplementation";
 import { DeployInfraParams } from "./types";
-import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecretsConfig";
+import { CLF_SECRETS_MAINNET_EXPIRATION, CLF_SECRETS_TESTNET_EXPIRATION } from "../../../constants/CLFSecrets";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 task("deploy-infra", "Deploy the CCIP infrastructure")
   .addFlag("deployproxy", "Deploy the proxy")
@@ -23,7 +24,7 @@ task("deploy-infra", "Deploy the CCIP infrastructure")
   .setAction(async taskArgs => {
     compileContracts({ quiet: true });
 
-    const hre = require("hardhat");
+    const hre: HardhatRuntimeEnvironment = require("hardhat");
     const { live, name } = hre.network;
     const networkType = conceroNetworks[name].type;
     let deployableChains: CNetwork[] = [];
@@ -70,14 +71,14 @@ async function deployInfra(params: DeployInfraParams) {
     await upgradeProxyImplementation(hre, ProxyEnum.infraProxy, false);
   }
 
+  if (uploadSecrets) {
+    await uploadDonSecrets(
+      deployableChains,
+      slotId,
+      isTestnet ? CLF_SECRETS_TESTNET_EXPIRATION : CLF_SECRETS_MAINNET_EXPIRATION,
+    );
+  }
   if (setVars) {
-    if (uploadSecrets) {
-      await uploadDonSecrets(
-        deployableChains,
-        slotId,
-        isTestnet ? CLF_SECRETS_TESTNET_EXPIRATION : CLF_SECRETS_MAINNET_EXPIRATION,
-      );
-    }
     await setContractVariables(deployableChains, slotId, uploadSecrets);
     await setConceroProxyDstContracts(deployableChains);
   }

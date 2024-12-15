@@ -37,7 +37,7 @@ contract InfraOrchestratorWrapper is InfraOrchestrator {
         s_lastCCIPFeeInLink[_dstChainSelector] = _lastFeeInLink;
     }
 
-    function setLastGasPrices(uint64 _chainSelector, uint256 _lastGasPrice) external {
+    function setLastGasPriceByChainSelector(uint64 _chainSelector, uint256 _lastGasPrice) external {
         s_lastGasPrices[_chainSelector] = _lastGasPrice;
     }
 
@@ -101,12 +101,12 @@ contract InfraOrchestratorWrapper is InfraOrchestrator {
         return srcTotalFeeInUsdc;
     }
 
-    function calculateIntegratorFee(
-        uint256 integratorFeePercent,
-        uint256 amount
-    ) external returns (uint256) {
-        return _calculateIntegratorFeeAmount(integratorFeePercent, amount);
-    }
+    // function calculateIntegratorFee(
+    //     uint256 integratorFeePercent,
+    //     uint256 amount
+    // ) external returns (uint256) {
+    //     return _calculateIntegratorFeeAmount(integratorFeePercent, amount);
+    // }
 
     function getCollectedIntegratorFeeByToken(
         address integrator,

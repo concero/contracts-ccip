@@ -96,17 +96,17 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         }
 
         uint256 recipientBalanceAfter = LibConcero.getBalance(dstToken, _recipient);
-        uint256 dstTokenRecieved = recipientBalanceAfter - recipientBalanceBefore;
+        uint256 dstTokenReceived = recipientBalanceAfter - recipientBalanceBefore;
 
         emit ConceroSwap(
             _swapData[0].fromToken,
             dstToken,
             _swapData[0].fromAmount,
-            dstTokenRecieved,
+            dstTokenReceived,
             _recipient
         );
 
-        return dstTokenRecieved;
+        return dstTokenReceived;
     }
 
     function _performSwap(IDexSwap.SwapData memory _swapData) private {
@@ -146,21 +146,21 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
     // }
 
     /* HELPER FUNCTIONS */
-    function _extractTokens(
-        bytes memory _path
-    ) private pure returns (address _firstToken, address _lastToken) {
-        uint256 pathSize = _path.length;
-
-        bytes memory tokenBytes = _path.slice(0, 20);
-
-        assembly {
-            _firstToken := mload(add(tokenBytes, 20))
-        }
-
-        bytes memory secondTokenBytes = _path.slice(pathSize - 20, 20);
-
-        assembly {
-            _lastToken := mload(add(secondTokenBytes, 20))
-        }
-    }
+    //    function _extractTokens(
+    //        bytes memory _path
+    //    ) private pure returns (address _firstToken, address _lastToken) {
+    //        uint256 pathSize = _path.length;
+    //
+    //        bytes memory tokenBytes = _path.slice(0, 20);
+    //
+    //        assembly {
+    //            _firstToken := mload(add(tokenBytes, 20))
+    //        }
+    //
+    //        bytes memory secondTokenBytes = _path.slice(pathSize - 20, 20);
+    //
+    //        assembly {
+    //            _lastToken := mload(add(secondTokenBytes, 20))
+    //        }
+    //    }
 }

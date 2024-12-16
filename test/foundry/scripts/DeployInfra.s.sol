@@ -9,6 +9,7 @@ import {Script} from "forge-std/src/Script.sol";
 import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/TransparentUpgradeableProxy.sol";
 import {console} from "forge-std/src/Console.sol";
 import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
+import {InfraStorageSetters} from "contracts/Libraries/InfraStorageSetters.sol";
 
 contract DeployInfraScript is DeployHelper {
     // @notice contract addresses
@@ -47,6 +48,7 @@ contract DeployInfraScript is DeployHelper {
     function _deployFullInfra() internal {
         _deployInfraProxy();
         _deployAndSetImplementation();
+        _setInfraVars();
     }
 
     function _deployInfraProxy() internal {
@@ -100,5 +102,20 @@ contract DeployInfraScript is DeployHelper {
             getChainIndex(),
             messengers
         );
+    }
+
+    function _setInfraVars() internal {
+        _setAllowedDexRouters();
+    }
+
+    function _setAllowedDexRouters() internal {
+        address[] memory dexRouters = getDexRouters();
+        vm.startPrank(deployer);
+
+        for (uint i; i < dexRouters.length; i++) {
+            InfraStorageSetters(address(infraProxy)).setDexRouterAddress(dexRouters[i], true);
+        }
+
+        vm.stopPrank();
     }
 }

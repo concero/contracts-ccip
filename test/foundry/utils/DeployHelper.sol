@@ -145,4 +145,17 @@ contract DeployHelper is Script {
 
         return vm.envAddress("CL_CCIP_ROUTER_BASE");
     }
+
+    function getDexRouters() public returns (address[] memory) {
+        uint256 chainId = block.chainid;
+
+        if (chainId == vm.envUint("BASE_CHAIN_ID")) {
+            address[] memory routers = new address[](1);
+            routers[0] = vm.envAddress("UNISWAP_ROUTER_BASE");
+            return routers;
+        }
+
+        address[] memory res = new address[](0);
+        return res;
+    }
 }

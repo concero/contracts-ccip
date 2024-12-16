@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
-import {console, Vm, Test} from "forge-std/Test.sol";
+import {console, Vm, Test} from "forge-std/src/Test.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ParentPool} from "contracts/ParentPool.sol";
 import {ParentPoolCLFCLA} from "contracts/ParentPoolCLFCLA.sol";
@@ -29,7 +29,6 @@ contract BaseTest is Test {
     uint256 internal constant LINK_INIT_BALANCE = 100 * 1e18;
     uint256 internal constant USDC_DECIMALS = 1e6;
     uint256 internal constant PARENT_POOL_CAP = 100_000_000 * USDC_DECIMALS;
-    uint256 internal constant ARBITRUM_ANVIL_FORK_BLOCK_NUMBER = 21234930;
 
     ParentPoolCLFCLA public parentPoolCLFCLA;
     ParentPool public parentPoolImplementation;
@@ -42,8 +41,6 @@ contract BaseTest is Test {
     DexSwap public avalancheDexSwap;
 
     FunctionsSubscriptions public functionsSubscriptions;
-    //    CCIPLocalSimulator public ccipLocalSimulator;
-    //    CCIPLocalSimulatorFork public ccipLocalSimulatorFork;
 
     address internal user1 = makeAddr("user1");
     address internal user2 = makeAddr("user2");
@@ -51,12 +48,12 @@ contract BaseTest is Test {
 
     address internal deployer = vm.envAddress("FORGE_DEPLOYER_ADDRESS");
     address internal proxyDeployer = vm.envAddress("FORGE_PROXY_DEPLOYER_ADDRESS");
-    uint256 internal baseAnvilForkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
-    uint256 internal arbitrumAnvilForkId =
+    uint256 internal baseForkId = vm.createFork(vm.envString("LOCAL_BASE_FORK_RPC_URL"));
+    uint256 internal arbitrumForkId =
         vm.createFork(vm.envString("LOCAL_ARBITRUM_FORK_RPC_URL"), 276843772);
-    uint256 internal polygonAnvilForkId =
+    uint256 internal polygonForkId =
         vm.createFork(vm.envString("LOCAL_POLYGON_FORK_RPC_URL"), 64588691);
-    uint256 internal avalancheAnvilForkId =
+    uint256 internal avalancheForkId =
         vm.createFork(vm.envString("LOCAL_AVALANCHE_FORK_RPC_URL"), 53397798);
 
     uint64 internal baseChainSelector = uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_BASE"));
@@ -97,27 +94,13 @@ contract BaseTest is Test {
                                  SETUP
     //////////////////////////////////////////////////////////////*/
     function setUp() public virtual {
-        vm.selectFork(baseAnvilForkId);
+        vm.selectFork(baseForkId);
 
         _deployOrchestratorProxy();
         deployArbitrumInfra();
         deployBaseInfra();
         deployPolygonInfra();
         deployAvalancheInfra();
-
-        //deployPoolsInfra();
-        //_deployOrchestratorImplementation();
-
-        // _setProxyImplementation(
-        //     address(baseOrchestratorProxy),
-        //     address(baseOrchestratorImplementation)
-        // );
-
-        // _setDstInfraContractsForInfra(
-        //     address(baseOrchestratorProxy),
-        //     arbitrumChainSelector,
-        //     arbitrumOrchestratorProxy
-        // );
     }
 
     function deployPoolsInfra() public {
@@ -138,7 +121,7 @@ contract BaseTest is Test {
         addFunctionsConsumer(address(baseOrchestratorProxy));
     }
 
-    function deployArbitrumInfra() public setFork(arbitrumAnvilForkId) {
+    function deployArbitrumInfra() public setFork(arbitrumForkId) {
         _deployOrchestratorProxyArbitrum();
         _deployDexSwapArbitrum();
         _deployOrchestratorImplementationArbitrum();
@@ -149,7 +132,7 @@ contract BaseTest is Test {
         );
     }
 
-    function deployBaseInfra() public setFork(baseAnvilForkId) {
+    function deployBaseInfra() public setFork(baseForkId) {
         _deployOrchestratorProxyBase();
         _deployDexSwapBase();
         _deployOrchestratorImplementationBase();
@@ -160,7 +143,7 @@ contract BaseTest is Test {
         );
     }
 
-    function deployPolygonInfra() public setFork(polygonAnvilForkId) {
+    function deployPolygonInfra() public setFork(polygonForkId) {
         _deployOrchestratorProxyPolygon();
         _deployDexSwapPolygon();
         _deployOrchestratorImplementationPolygon();
@@ -171,7 +154,7 @@ contract BaseTest is Test {
         );
     }
 
-    function deployAvalancheInfra() public setFork(avalancheAnvilForkId) {
+    function deployAvalancheInfra() public setFork(avalancheForkId) {
         _deployOrchestratorProxyAvalanche();
         _deployDexSwapAvalanche();
         _deployOrchestratorImplementationAvalanche();
@@ -253,34 +236,6 @@ contract BaseTest is Test {
         lpToken = new LPToken(deployer, address(parentPoolProxy));
         vm.stopPrank();
     }
-
-    //    function _deployCCIPLocalSimulatorFork() internal {
-    //        uint256 BASE_CHAIN_ID = 8453;
-    //
-    //        ccipLocalSimulatorFork = new CCIPLocalSimulatorFork();
-    //        vm.makePersistent(address(ccipLocalSimulatorFork));
-    //
-    //        Register.NetworkDetails memory baseDetails = Register.NetworkDetails({
-    //            chainSelector: uint64(vm.envUint("CL_CCIP_CHAIN_SELECTOR_BASE")),
-    //            routerAddress: vm.envAddress("CL_CCIP_ROUTER_BASE"),
-    //            linkAddress: vm.envAddress("LINK_BASE"),
-    //            wrappedNativeAddress: 0x4200000000000000000000000000000000000006,
-    //            ccipBnMAddress: address(0),
-    //            ccipLnMAddress: address(0),
-    //            rmnProxyAddress: address(0),
-    //            registryModuleOwnerCustomAddress: address(0),
-    //            tokenAdminRegistryAddress: address(0)
-    //        });
-    //
-    //        ccipLocalSimulatorFork.setNetworkDetails(BASE_CHAIN_ID, baseDetails);
-    //    }
-    //
-    //    function _deployCcipLocalSimulation() private {
-    //        ccipLocalSimulator = new CCIPLocalSimulator();
-    //        ccipLocalSimulator.configuration();
-    //        //        vm.prank(IOwner(vm.envAddress("USDC_BASE")).owner());
-    //        ccipLocalSimulator.supportNewTokenViaOwner(vm.envAddress("USDC_BASE"));
-    //    }
 
     /*//////////////////////////////////////////////////////////////
                                 SETTERS
@@ -752,7 +707,6 @@ contract BaseTest is Test {
         vm.prank(deployer);
         InfraStorageSetters(target).setClfPremiumFees(chainSelector, feeAmount);
     }
-
 
     /*//////////////////////////////////////////////////////////////
                                 DEXSWAP

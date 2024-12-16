@@ -11,7 +11,6 @@
 #   - `make test`            : Run all tests using forge with any optional arguments specified in --args.
 #                              For example: `make test args="--match-test Deposit"`
 
-include .env.foundry
 include ./.env
 include ./.env.tokens
 include ./.env.clccip
@@ -19,8 +18,9 @@ include ./.env.clf
 include ./.env.deployments.mainnet
 include ./.env.deployments.testnet
 include ./.env.wallets
+include .env.foundry
 
-ENV_FILES := .env.foundry ./.env ./.env.tokens ./.env.clccip ./.env.clf ./.env.deployments.mainnet ./.env.deployments.testnet ./.env.wallets
+ENV_FILES := ./.env ./.env.tokens ./.env.clccip ./.env.clf ./.env.deployments.mainnet ./.env.deployments.testnet ./.env.wallets .env.foundry 
 export $(shell cat $(ENV_FILES) | sed 's/=.*//' | sort | uniq)
 args =
 

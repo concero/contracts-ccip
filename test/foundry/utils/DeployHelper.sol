@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.20;
 
 import {Script} from "forge-std/src/Script.sol";
 
 contract DeployHelper is Script {
-    function getClfRouter() public returns (address) {
+    function getClfRouter() public view returns (address) {
         uint256 chainId = block.chainid;
 
         if (chainId == vm.envUint("BASE_CHAIN_ID")) {
@@ -23,7 +24,7 @@ contract DeployHelper is Script {
         return vm.envAddress("CLF_ROUTER_BASE");
     }
 
-    function getCLfSubId() public returns (uint64) {
+    function getCLfSubId() public view returns (uint64) {
         uint256 chainId = block.chainid;
         uint256 res = vm.envUint("CLF_SUBID_BASE");
 
@@ -44,7 +45,7 @@ contract DeployHelper is Script {
         return uint64(res);
     }
 
-    function getDonId() public returns (bytes32) {
+    function getDonId() public view returns (bytes32) {
         uint256 chainId = block.chainid;
 
         if (chainId == vm.envUint("BASE_CHAIN_ID")) {
@@ -64,7 +65,7 @@ contract DeployHelper is Script {
         return vm.envBytes32("CLF_DONID_BASE");
     }
 
-    function getChainSelector() public returns (uint64) {
+    function getChainSelector() public view returns (uint64) {
         uint256 chainId = block.chainid;
         uint256 res = vm.envUint("CL_CCIP_CHAIN_SELECTOR_BASE");
 
@@ -85,7 +86,7 @@ contract DeployHelper is Script {
         return uint64(res);
     }
 
-    function getChainIndex() public returns (uint8) {
+    function getChainIndex() public view returns (uint8) {
         uint256 chainId = block.chainid;
         uint256 res = 1;
 
@@ -106,7 +107,7 @@ contract DeployHelper is Script {
         return uint8(res);
     }
 
-    function getLinkAddress() public returns (address) {
+    function getLinkAddress() public view returns (address) {
         uint256 chainId = block.chainid;
 
         if (chainId == vm.envUint("BASE_CHAIN_ID")) {
@@ -126,7 +127,7 @@ contract DeployHelper is Script {
         return vm.envAddress("LINK_BASE");
     }
 
-    function getCcipRouter() public returns (address) {
+    function getCcipRouter() public view returns (address) {
         uint256 chainId = block.chainid;
 
         if (chainId == vm.envUint("BASE_CHAIN_ID")) {
@@ -146,7 +147,7 @@ contract DeployHelper is Script {
         return vm.envAddress("CL_CCIP_ROUTER_BASE");
     }
 
-    function getDexRouters() public returns (address[] memory) {
+    function getDexRouters() public view returns (address[] memory) {
         uint256 chainId = block.chainid;
 
         if (chainId == vm.envUint("BASE_CHAIN_ID")) {

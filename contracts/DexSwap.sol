@@ -13,7 +13,6 @@ import {InfraStorage} from "./Libraries/InfraStorage.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
 import {InfraCommon} from "./InfraCommon.sol";
-import {IWETH} from "./Interfaces/IWETH.sol";
 
 /* ERRORS */
 ///@notice error emitted when the caller is not allowed
@@ -26,7 +25,6 @@ error DexRouterNotAllowed();
 error InvalidTokenPath();
 ///@notice error emitted when the DexData is not valid
 error InvalidDexData();
-error UnwrapWNativeFailed();
 ///@notice error emitted when the amount is not sufficient
 error InsufficientAmount(uint256 amount);
 ///@notice error emitted when the transfer failed
@@ -57,56 +55,67 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
     }
 
     function entrypoint(
-        IDexSwap.SwapData[] memory _swapData,
-        address _recipient
+        IDexSwap.SwapData[] memory swapData,
+        address recipient
     ) external payable returns (uint256) {
         if (address(this) != i_proxy) revert OnlyProxyContext(address(this));
 
-        uint256 swapDataLength = _swapData.length;
-        address dstToken = _swapData[swapDataLength - 1].toToken;
-        uint256 recipientBalanceBefore = LibConcero.getBalance(dstToken, _recipient);
+        uint256 swapDataLength = swapData.length;
+        address dstToken = swapData[swapDataLength - 1].toToken;
+        uint256 addressThisBalanceBefore = LibConcero.getBalance(dstToken, address(this));
+        uint256 balanceAfter;
 
-        for (uint256 i; i < swapDataLength; ) {
-            //seems to be useless
-            uint256 preSwapBalance = LibConcero.getBalance(_swapData[i].toToken, address(this));
+        for (uint256 i; i < swapDataLength; i++) {
+            uint256 balanceBefore = LibConcero.getBalance(swapData[i].toToken, address(this));
 
-            _performSwap(_swapData[i]);
+            _performSwap(swapData[i]);
 
-            if (i < swapDataLength - 1) {
-                if (_swapData[i].toToken != _swapData[i + 1].fromToken) {
-                    revert InvalidTokenPath();
-                }
-                //seems to be useless
-                uint256 postSwapBalance = LibConcero.getBalance(
-                    _swapData[i].toToken,
-                    address(this)
-                );
-                uint256 remainingBalance = postSwapBalance - preSwapBalance;
+            balanceAfter = LibConcero.getBalance(swapData[i].toToken, address(this));
+            uint256 remainingBalance = balanceAfter - balanceBefore;
 
-                if (remainingBalance < _swapData[i].toAmountMin) {
-                    revert InsufficientAmount(remainingBalance);
-                }
-
-                _swapData[i + 1].fromAmount = remainingBalance;
+            if (remainingBalance < swapData[i].toAmountMin) {
+                revert InsufficientAmount(remainingBalance);
             }
 
-            unchecked {
-                ++i;
+            if (i < swapDataLength - 1) {
+                if (swapData[i].toToken != swapData[i + 1].fromToken) {
+                    revert InvalidTokenPath();
+                }
+
+                swapData[i + 1].fromAmount = remainingBalance;
             }
         }
 
-        uint256 recipientBalanceAfter = LibConcero.getBalance(dstToken, _recipient);
-        uint256 dstTokenReceived = recipientBalanceAfter - recipientBalanceBefore;
+        uint256 dstTokenReceived = balanceAfter - addressThisBalanceBefore;
+
+        if (recipient != address(this)) {
+            _transferTokenToUser(recipient, dstToken, dstTokenReceived);
+        }
 
         emit ConceroSwap(
-            _swapData[0].fromToken,
+            swapData[0].fromToken,
             dstToken,
-            _swapData[0].fromAmount,
+            swapData[0].fromAmount,
             dstTokenReceived,
-            _recipient
+            recipient
         );
 
         return dstTokenReceived;
+    }
+
+    function _transferTokenToUser(address recipient, address token, uint256 amount) internal {
+        if (amount == 0 || recipient == address(0)) {
+            revert InvalidDexData();
+        }
+
+        if (token == address(0)) {
+            (bool success, ) = recipient.call{value: amount}("");
+            if (!success) {
+                revert TransferFailed();
+            }
+        } else {
+            IERC20(token).safeTransfer(recipient, amount);
+        }
     }
 
     function _performSwap(IDexSwap.SwapData memory _swapData) private {
@@ -128,39 +137,4 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
 
         if (!success) revert InvalidDexData();
     }
-
-    // function _wrapNative(IDexSwap.SwapData memory _swapData) private {
-    //     address wrappedNative = _getWrappedNative();
-    //     IWETH(wrappedNative).deposit{value: _swapData.fromAmount}();
-    // }
-
-    // function _unwrapWNative(IDexSwap.SwapData memory _swapData, address _recipient) private {
-    //     if (_swapData.fromToken != _getWrappedNative()) revert InvalidDexData();
-
-    //     IWETH(_swapData.fromToken).withdraw(_swapData.fromAmount);
-
-    //     (bool sent, ) = _recipient.call{value: _swapData.fromAmount}("");
-    //     if (!sent) {
-    //         revert UnwrapWNativeFailed();
-    //     }
-    // }
-
-    /* HELPER FUNCTIONS */
-    //    function _extractTokens(
-    //        bytes memory _path
-    //    ) private pure returns (address _firstToken, address _lastToken) {
-    //        uint256 pathSize = _path.length;
-    //
-    //        bytes memory tokenBytes = _path.slice(0, 20);
-    //
-    //        assembly {
-    //            _firstToken := mload(add(tokenBytes, 20))
-    //        }
-    //
-    //        bytes memory secondTokenBytes = _path.slice(pathSize - 20, 20);
-    //
-    //        assembly {
-    //            _lastToken := mload(add(secondTokenBytes, 20))
-    //        }
-    //    }
 }

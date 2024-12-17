@@ -151,8 +151,9 @@ contract DeployHelper is Script {
         uint256 chainId = block.chainid;
 
         if (chainId == vm.envUint("BASE_CHAIN_ID")) {
-            address[] memory routers = new address[](1);
+            address[] memory routers = new address[](2);
             routers[0] = vm.envAddress("UNISWAP_ROUTER_BASE");
+            routers[1] = vm.envAddress("SUSHISWAP_ROUTER_BASE");
             return routers;
         }
 

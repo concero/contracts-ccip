@@ -29,6 +29,7 @@ error InvalidDexData();
 error InsufficientAmount(uint256 amount);
 ///@notice error emitted when the transfer failed
 error TransferFailed();
+error SwapFailed();
 
 contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
     using SafeERC20 for IERC20;
@@ -65,16 +66,16 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         uint256 addressThisBalanceBefore = LibConcero.getBalance(dstToken, address(this));
         uint256 balanceAfter;
 
-        for (uint256 i; i < swapDataLength; i++) {
+        for (uint256 i; i < swapDataLength; ++i) {
             uint256 balanceBefore = LibConcero.getBalance(swapData[i].toToken, address(this));
 
             _performSwap(swapData[i]);
 
             balanceAfter = LibConcero.getBalance(swapData[i].toToken, address(this));
-            uint256 remainingBalance = balanceAfter - balanceBefore;
+            uint256 tokenReceived = balanceAfter - balanceBefore;
 
-            if (remainingBalance < swapData[i].toAmountMin) {
-                revert InsufficientAmount(remainingBalance);
+            if (tokenReceived < swapData[i].toAmountMin) {
+                revert InsufficientAmount(tokenReceived);
             }
 
             if (i < swapDataLength - 1) {
@@ -82,7 +83,7 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
                     revert InvalidTokenPath();
                 }
 
-                swapData[i + 1].fromAmount = remainingBalance;
+                swapData[i + 1].fromAmount = tokenReceived;
             }
         }
 
@@ -135,6 +136,8 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
             (success, ) = routerAddress.call(_swapData.dexData);
         }
 
-        if (!success) revert InvalidDexData();
+        if (!success) {
+            revert SwapFailed();
+        }
     }
 }

@@ -7,7 +7,7 @@ import {InfraOrchestrator} from "contracts/InfraOrchestrator.sol";
 import {PauseDummy} from "contracts/PauseDummy.sol";
 import {Script} from "forge-std/src/Script.sol";
 import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from "contracts/Proxy/TransparentUpgradeableProxy.sol";
-import {console} from "forge-std/src/Console.sol";
+import {console} from "forge-std/src/console.sol";
 import {IInfraStorage} from "contracts/Interfaces/IInfraStorage.sol";
 import {InfraStorageSetters} from "contracts/Libraries/InfraStorageSetters.sol";
 

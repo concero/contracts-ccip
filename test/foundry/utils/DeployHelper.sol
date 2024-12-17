@@ -151,9 +151,29 @@ contract DeployHelper is Script {
         uint256 chainId = block.chainid;
 
         if (chainId == vm.envUint("BASE_CHAIN_ID")) {
-            address[] memory routers = new address[](2);
+            address[] memory routers = new address[](3);
             routers[0] = vm.envAddress("UNISWAP_ROUTER_BASE");
             routers[1] = vm.envAddress("SUSHISWAP_ROUTER_BASE");
+            routers[2] = vm.envAddress("ALIENBASE_ROUTER_BASE");
+            return routers;
+        }
+
+        if (chainId == vm.envUint("POLYGON_CHAIN_ID")) {
+            address[] memory routers = new address[](2);
+            routers[0] = vm.envAddress("QUICKSWAP_ROUTER_POLYGON");
+            routers[1] = vm.envAddress("UNISWAP_ROUTER_POLYGON");
+            return routers;
+        }
+
+        if (chainId == vm.envUint("AVALANCHE_CHAIN_ID")) {
+            address[] memory routers = new address[](1);
+            routers[0] = vm.envAddress("PARASWAP_ROUTER_AVALANCHE");
+            return routers;
+        }
+
+				if (chainId == vm.envUint("OPTIMISM_CHAIN_ID")) {
+            address[] memory routers = new address[](1);
+            routers[0] = vm.envAddress("ODOS_ROUTER_OPTIMISM");
             return routers;
         }
 

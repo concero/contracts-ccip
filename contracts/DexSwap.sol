@@ -8,7 +8,6 @@ pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
 import {InfraStorage} from "./Libraries/InfraStorage.sol";
 import {IDexSwap} from "./Interfaces/IDexSwap.sol";
 import {LibConcero} from "./Libraries/LibConcero.sol";
@@ -33,11 +32,6 @@ error SwapFailed();
 
 contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
     using SafeERC20 for IERC20;
-    using BytesLib for bytes;
-
-    /* CONSTANT VARIABLES */
-    uint256 private constant BASE_CHAIN_ID = 8453;
-    uint256 private constant AVAX_CHAIN_ID = 43114;
 
     /* IMMUTABLE VARIABLES */
     address private immutable i_proxy;
@@ -87,6 +81,10 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
             }
         }
 
+        if (balanceAfter == 0) {
+            revert InvalidDexData();
+        }
+
         uint256 dstTokenReceived = balanceAfter - addressThisBalanceBefore;
 
         if (recipient != address(this)) {
@@ -102,21 +100,6 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
         );
 
         return dstTokenReceived;
-    }
-
-    function _transferTokenToUser(address recipient, address token, uint256 amount) internal {
-        if (amount == 0 || recipient == address(0)) {
-            revert InvalidDexData();
-        }
-
-        if (token == address(0)) {
-            (bool success, ) = recipient.call{value: amount}("");
-            if (!success) {
-                revert TransferFailed();
-            }
-        } else {
-            IERC20(token).safeTransfer(recipient, amount);
-        }
     }
 
     function _performSwap(IDexSwap.SwapData memory swapData) private {
@@ -138,6 +121,21 @@ contract DexSwap is IDexSwap, InfraCommon, InfraStorage {
 
         if (!success) {
             revert SwapFailed();
+        }
+    }
+
+    function _transferTokenToUser(address recipient, address token, uint256 amount) internal {
+        if (amount == 0 || recipient == address(0)) {
+            revert InvalidDexData();
+        }
+
+        if (token == address(0)) {
+            (bool success, ) = recipient.call{value: amount}("");
+            if (!success) {
+                revert TransferFailed();
+            }
+        } else {
+            IERC20(token).safeTransfer(recipient, amount);
         }
     }
 }

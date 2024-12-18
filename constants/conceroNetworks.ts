@@ -301,7 +301,7 @@ export const conceroNetworks: Record<CNetworkNames, CNetwork> = {
     type: networkTypes.mainnet,
     saveDeployments,
     chainId: 8453,
-    url: urls.arbitrum[0],
+    url: urls.base[0],
     rpcs: urls.base,
     accounts: [deployerPK, proxyDeployerPK],
     functionsDonId: process.env.CLF_DONID_BASE,

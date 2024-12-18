@@ -1,5 +1,26 @@
 (async () => {
-	const chainSelectors = {
+	const [_, __, ___, parentPoolChainId] = bytesArgs;
+	const chainsMapTestnet = {
+		['3478487238524512106']: {
+			urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
+			chainId: '0x66eee',
+			usdcAddress: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
+			poolAddress: '0x9c561A2D0Cb9bCe69a95F48cdcEbf0FAE14013B2',
+		},
+		['14767482510784806043']: {
+			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
+			chainId: '0xa869',
+			usdcAddress: '0x5425890298aed601595a70AB815c96711a31Bc65',
+			poolAddress: '0xb34FB20F548A9829C628f3c4fA95D89Af56fE6B5',
+		},
+		['10344971235874465080']: {
+			urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
+			chainId: '0x14a34',
+			usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+			poolAddress: '0x64CD83B03Ce68E2110A8A4A821AF053D193E881C',
+		},
+	};
+	const chainsMapMainnet = {
 		['4949039107694359620']: {
 			urls: [`https://arbitrum-mainnet.infura.io/v3/${secrets.PARENT_POOL_INFURA_API_KEY}`],
 			chainId: '0xa4b1',
@@ -25,6 +46,15 @@
 			poolAddress: '0x0AE1B2730066AD46481ab0a5fd2B5893f8aBa323',
 		},
 	};
+	let chainSelectors;
+	const numberParentPoolChainId = parseInt(parentPoolChainId, 16);
+	if (numberParentPoolChainId === 84532) {
+		chainSelectors = chainsMapTestnet;
+	} else if (numberParentPoolChainId === 8453) {
+		chainSelectors = chainsMapMainnet;
+	} else {
+		throw new Error(`Wrong chain id ${numberParentPoolChainId}`);
+	}
 	const baseChainSelector = '15971525489660198786';
 	const erc20Abi = ['function balanceOf(address) external view returns (uint256)'];
 	const poolAbi = [

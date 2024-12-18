@@ -1,27 +1,27 @@
 (async () => {
-	const chainSelectors = {
-		// ['${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}']: {
-		// 	urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
-		// 	chainId: '0x66eee',
-		// 	usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
-		// 	poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
-		// },
+	const [_, __, ___, parentPoolChainId] = bytesArgs;
+	const chainsMapTestnet = {
+		['${CL_CCIP_CHAIN_SELECTOR_ARBITRUM_SEPOLIA}']: {
+			urls: [`https://arbitrum-sepolia.infura.io/v3/${secrets.INFURA_API_KEY}`],
+			chainId: '0x66eee',
+			usdcAddress: '${USDC_ARBITRUM_SEPOLIA}',
+			poolAddress: '${CHILD_POOL_PROXY_ARBITRUM_SEPOLIA}',
+		},
+		['${CL_CCIP_CHAIN_SELECTOR_FUJI}']: {
+			urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
+			chainId: '0xa869',
+			usdcAddress: '${USDC_FUJI}',
+			poolAddress: '${CHILD_POOL_PROXY_FUJI}',
+		},
 
-		// ['${CL_CCIP_CHAIN_SELECTOR_FUJI}']: {
-		// 	urls: [`https://avalanche-fuji.infura.io/v3/${secrets.INFURA_API_KEY}`],
-		// 	chainId: '0xa869',
-		// 	usdcAddress: '${USDC_FUJI}',
-		// 	poolAddress: '${CHILD_POOL_PROXY_FUJI}',
-		// },
-		//
-		// ['${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}']: {
-		// 	urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
-		// 	chainId: '0x14a34',
-		// 	usdcAddress: '${USDC_BASE_SEPOLIA}',
-		// 	poolAddress: '${PARENT_POOL_PROXY_BASE_SEPOLIA}',
-		// },
-
-		// mainnets
+		['${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}']: {
+			urls: [`https://base-sepolia.g.alchemy.com/v2/${secrets.ALCHEMY_API_KEY}`],
+			chainId: '0x14a34',
+			usdcAddress: '${USDC_BASE_SEPOLIA}',
+			poolAddress: '${PARENT_POOL_PROXY_BASE_SEPOLIA}',
+		},
+	};
+	const chainsMapMainnet = {
 		['${CL_CCIP_CHAIN_SELECTOR_ARBITRUM}']: {
 			urls: [`https://arbitrum-mainnet.infura.io/v3/${secrets.PARENT_POOL_INFURA_API_KEY}`],
 			chainId: '0xa4b1',
@@ -47,6 +47,16 @@
 			poolAddress: '${PARENT_POOL_PROXY_BASE}',
 		},
 	};
+
+	let chainSelectors;
+	const numberParentPoolChainId = parseInt(parentPoolChainId, 16);
+	if (numberParentPoolChainId === 84532) {
+		chainSelectors = chainsMapTestnet;
+	} else if (numberParentPoolChainId === 8453) {
+		chainSelectors = chainsMapMainnet;
+	} else {
+		throw new Error(`Wrong chain id ${numberParentPoolChainId}`);
+	}
 
 	const baseChainSelector = '${CL_CCIP_CHAIN_SELECTOR_BASE}';
 	// const baseChainSelector = '${CL_CCIP_CHAIN_SELECTOR_BASE_SEPOLIA}';

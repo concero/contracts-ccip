@@ -55,7 +55,8 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
 
     /* CONSTANT VARIABLES */
     //TODO: move testnet-mainnet-dependent variables to immutables
-    uint256 internal constant MIN_DEPOSIT = 100 * USDC_DECIMALS;
+    //    uint256 internal constant MIN_DEPOSIT = 100 * USDC_DECIMALS;
+    uint256 internal constant MIN_DEPOSIT = 4 * USDC_DECIMALS;
     uint256 internal constant DEPOSIT_DEADLINE_SECONDS = 60;
     uint256 internal constant DEPOSIT_FEE_USDC = 3 * USDC_DECIMALS;
     uint256 internal constant LP_FEE_FACTOR = 1000;
@@ -254,7 +255,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * @param _usdcAmount amount to be deposited
      */
     function startDeposit(uint256 _usdcAmount) external onlyProxyContext {
-        revert("paused");
         if (_usdcAmount < MIN_DEPOSIT) {
             revert DepositAmountBelowMinimum(MIN_DEPOSIT);
         }
@@ -272,10 +272,11 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
             revert MaxDepositCapReached(liquidityCap);
         }
 
-        bytes[] memory args = new bytes[](3);
+        bytes[] memory args = new bytes[](4);
         args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
         args[2] = abi.encodePacked(CLFRequestType.startDeposit_getChildPoolsLiquidity);
+        args[4] = abi.encodePacked(block.chainid);
 
         bytes memory delegateCallArgs = abi.encodeWithSelector(
             IParentPoolCLFCLA.sendCLFRequest.selector,
@@ -302,7 +303,6 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * @param _depositRequestId the ID of the deposit request
      */
     function completeDeposit(bytes32 _depositRequestId) external onlyProxyContext {
-        revert("paused");
         DepositRequest storage request = s_depositRequests[_depositRequestId];
         address lpAddress = request.lpAddress;
         uint256 usdcAmount = request.usdcAmountToDeposit;
@@ -343,15 +343,16 @@ contract ParentPool is IParentPool, CCIPReceiver, ParentPoolCommon, ParentPoolSt
      * @param _lpAmount the amount of LP tokens to be burnt
      */
     function startWithdrawal(uint256 _lpAmount) external onlyProxyContext {
-        revert("paused");
         if (_lpAmount < 1 ether) revert WithdrawAmountBelowMinimum(1 ether);
         if (s_withdrawalIdByLPAddress[msg.sender] != bytes32(0)) {
             revert WithdrawalRequestAlreadyExists();
         }
 
-        bytes[] memory args = new bytes[](2);
+        bytes[] memory args = new bytes[](4);
         args[0] = abi.encodePacked(s_getChildPoolsLiquidityJsCodeHashSum);
         args[1] = abi.encodePacked(s_ethersHashSum);
+        args[2] = abi.encodePacked(CLFRequestType.startWithdrawal_getChildPoolsLiquidity);
+        args[3] = abi.encodePacked(block.chainid);
 
         IERC20(i_lpToken).safeTransferFrom(msg.sender, address(this), _lpAmount);
 

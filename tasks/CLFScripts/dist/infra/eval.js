@@ -6,7 +6,7 @@ try {
 		fetch(
 			m +
 				'concero/contracts-v1/' +
-				'release' +
+				'master' +
 				`/tasks/CLFScripts/dist/infra/${BigInt(bytesArgs[2]) === 1n ? 'DST' : 'SRC'}.min.js`,
 		),
 	]);

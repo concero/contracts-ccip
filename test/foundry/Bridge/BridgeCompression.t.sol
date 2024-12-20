@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.20;
 
-import {console, Vm} from "forge-std/Test.sol";
+import {console, Vm} from "forge-std/src/Test.sol";
 import {BridgeBaseTest} from "./BridgeBaseTest.t.sol";
 import {IDexSwap} from "contracts/Interfaces/IDexSwap.sol";
 import {LibZip} from "solady/src/utils/LibZip.sol";
@@ -216,7 +216,7 @@ contract BridgeCompressionTest is BridgeBaseTest {
 
         IDexSwap.SwapData[] memory _dstSwapData = new IDexSwap.SwapData[](1);
         IDexSwap.SwapData memory singleSwap = IDexSwap.SwapData({
-            dexType: IDexSwap.DexType.UniswapV3Single,
+            dexRouter: routerAddress,
             fromToken: usdcAvalanche,
             fromAmount: USER_FUNDS / 2,
             toToken: DAI_AVALANCHE,

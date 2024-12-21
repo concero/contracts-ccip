@@ -51,7 +51,7 @@ const getSimulationArgs: {[functionName: string]: ArgBuilder} = {
 
 		return [srcJsHashSum, ethersHashSum, placeholder, liquidityRequestedFromEachPool, withdrawalId];
 	},
-	pool_get_total_balance: async () => {
+	pool_get_child_pools_liquidity: async () => {
 		const srcJsHashSum = '0xef64cf53063700bbbd8e42b0282d3d8579aac289ea03f826cf16f9bd96c7703a';
 		const ethersHashSum = '0x984202f6c36a048a80e993557555488e5ae13ff86f2dfbcde698aacd0a7d4eb4';
 

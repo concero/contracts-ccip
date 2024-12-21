@@ -54,7 +54,7 @@
 				usdcAddress: '${USDC_AVALANCHE}',
 				poolAddress: '${CHILD_POOL_PROXY_AVALANCHE}',
 			},
-			['${CL_CCIP_CHAIN_SELECTOR_OPTIMISM}']: {
+			[`0x${BigInt('${CL_CCIP_CHAIN_SELECTOR_OPTIMISM}').toString(16)}`]: {
 				urls: [
 					'https://optimism-rpc.publicnode.com',
 					'https://rpc.ankr.com/optimism',

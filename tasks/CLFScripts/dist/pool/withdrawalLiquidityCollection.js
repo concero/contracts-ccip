@@ -32,7 +32,7 @@
 				usdcAddress: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
 				poolAddress: '0x164c20A4E11cBE0d8B5e23F5EE35675890BE280d',
 			},
-			['3734403246176062136']: {
+			[`0x${BigInt('3734403246176062136').toString(16)}`]: {
 				urls: [
 					'https://optimism-rpc.publicnode.com',
 					'https://rpc.ankr.com/optimism',
